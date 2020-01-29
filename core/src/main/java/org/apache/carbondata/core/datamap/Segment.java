@@ -173,8 +173,7 @@ public class Segment implements Serializable, Writable {
     return readCommittedScope.getCommittedIndexFile(this);
   }
 
-  public SegmentRefreshInfo getSegmentRefreshInfo(UpdateVO updateVo)
-      throws IOException {
+  public SegmentRefreshInfo getSegmentRefreshInfo(UpdateVO updateVo) {
     return readCommittedScope.getCommittedSegmentRefreshInfo(this, updateVo);
   }
 

@@ -131,7 +131,7 @@ public class TableProcessingOperations {
     try {
       localFolderDeletionService.submit(new Callable<Void>() {
         @Override
-        public Void call() throws Exception {
+        public Void call() {
           long startTime = System.currentTimeMillis();
           String[] locArray = StringUtils.split(localStoreLocations, File.pathSeparator);
           for (String loc : locArray) {

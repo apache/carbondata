@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.processing.loading.converter;
 
-import java.io.IOException;
-
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 
@@ -27,7 +25,7 @@ import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingExcep
  */
 public interface RowConverter extends DictionaryCardinalityFinder {
 
-  void initialize() throws IOException;
+  void initialize();
 
   CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException;
 

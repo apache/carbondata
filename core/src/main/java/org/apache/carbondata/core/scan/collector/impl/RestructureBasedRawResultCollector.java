@@ -22,7 +22,6 @@ import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -205,12 +204,8 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
           }
         }
       }
-      try {
-        dictKeyArray = restructuredKeyGenerator.generateKey(keyArrayWithNewAddedColumns);
-        byteArrayWrapper.setDictionaryKey(dictKeyArray);
-      } catch (KeyGenException e) {
-        throw new RuntimeException(e);
-      }
+      dictKeyArray = restructuredKeyGenerator.generateKey(keyArrayWithNewAddedColumns);
+      byteArrayWrapper.setDictionaryKey(dictKeyArray);
     }
   }
 

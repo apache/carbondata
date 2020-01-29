@@ -32,7 +32,6 @@ import org.apache.carbondata.core.datastore.page.FallbackEncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.format.LocalDictionaryChunk;
 
 import org.apache.log4j.Logger;
@@ -197,7 +196,7 @@ public class BlockletEncodedColumnPage {
     if (null != pageLevelDictionary) {
       try {
         return pageLevelDictionary.getLocalDictionaryChunkForBlocklet();
-      } catch (IOException | MemoryException e) {
+      } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }

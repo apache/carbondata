@@ -100,7 +100,7 @@ public class SortDataRows {
   /**
    * This method will be used to initialize
    */
-  public void initialize() throws CarbonSortKeyAndGroupByException {
+  public void initialize() {
 
     // create holder list which will hold incoming rows
     // size of list will be sort buffer size + 1 to avoid creation of new
@@ -256,9 +256,8 @@ public class SortDataRows {
   /**
    * This method will be used to delete sort temp location is it is exites
    *
-   * @throws CarbonSortKeyAndGroupByException
    */
-  private void deleteSortLocationIfExists() throws CarbonSortKeyAndGroupByException {
+  private void deleteSortLocationIfExists() {
     CarbonDataProcessorUtil.deleteSortLocationIfExists(parameters.getTempFileLocation());
   }
 

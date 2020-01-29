@@ -32,7 +32,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -130,10 +129,9 @@ public class QueryUtil {
    * @param keyOrdinalList
    * @param generator
    * @return
-   * @throws KeyGenException
    */
-  public static byte[] getMaxKeyBasedOnOrinal(List<Integer> keyOrdinalList, KeyGenerator generator)
-      throws KeyGenException {
+  public static byte[] getMaxKeyBasedOnOrdinal(
+      List<Integer> keyOrdinalList, KeyGenerator generator) {
     long[] max = new long[generator.getDimCount()];
     Arrays.fill(max, 0L);
 
@@ -154,10 +152,9 @@ public class QueryUtil {
    * @param queryDimensions dimension selected in query
    * @param generator       key generator
    * @return max key for dimension
-   * @throws KeyGenException if any problem while generating the key
    */
   public static byte[] getMaxKeyBasedOnDimensions(List<ProjectionDimension> queryDimensions,
-      KeyGenerator generator) throws KeyGenException {
+      KeyGenerator generator) {
     long[] max = new long[generator.getDimCount()];
     Arrays.fill(max, 0L);
 

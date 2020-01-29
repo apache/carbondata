@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.metadata.schema.table;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,7 +47,7 @@ public class DatabaseDMSchemaStorageProvider implements DataMapSchemaStorageProv
   }
 
   @Override
-  public List<DataMapSchema> retrieveAllSchemas() throws IOException {
+  public List<DataMapSchema> retrieveAllSchemas() {
     return new ArrayList<>(0);
   }
 

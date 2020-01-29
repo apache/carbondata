@@ -129,7 +129,7 @@ class LocalCarbonStore extends MetaCachedCarbonStore {
   }
 
   @Override
-  public Iterator<CarbonRow> sql(String sqlString) throws IOException {
+  public Iterator<CarbonRow> sql(String sqlString) {
     throw new UnsupportedOperationException();
   }
 }

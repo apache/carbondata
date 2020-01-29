@@ -358,7 +358,7 @@ public class CarbonTableReader {
 
   private CarbonTableInputFormat<Object> createInputFormat(Configuration conf,
       AbsoluteTableIdentifier identifier, DataMapFilter dataMapFilter,
-      List<PartitionSpec> filteredPartitions) throws IOException {
+      List<PartitionSpec> filteredPartitions) {
     CarbonTableInputFormat format = new CarbonTableInputFormat<Object>();
     CarbonTableInputFormat
         .setTablePath(conf, identifier.appendWithLocalPrefix(identifier.getTablePath()));

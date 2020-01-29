@@ -23,7 +23,6 @@ import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
@@ -59,13 +58,13 @@ public interface MeasureColumnChunkReader {
    * @throws IOException
    */
   ColumnPage decodeColumnPage(MeasureRawColumnChunk measureRawColumnChunk, int pageNumber,
-      ReusableDataBuffer reusableDataBuffer) throws IOException, MemoryException;
+      ReusableDataBuffer reusableDataBuffer) throws IOException;
 
   /**
    * Decode raw data and fill the vector
    */
   void decodeColumnPageAndFillVector(MeasureRawColumnChunk measureRawColumnChunk, int pageNumber,
       ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
-      throws IOException, MemoryException;
+      throws IOException;
 
 }

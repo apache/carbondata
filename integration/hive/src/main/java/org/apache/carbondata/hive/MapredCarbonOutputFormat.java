@@ -40,7 +40,7 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
 
   @Override
   public RecordWriter<Void, T> getRecordWriter(FileSystem fileSystem, JobConf jobConf, String s,
-      Progressable progressable) throws IOException {
+      Progressable progressable) {
     return null;
   }
 
@@ -54,7 +54,7 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
   @Override
   public FileSinkOperator.RecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath,
       Class<? extends Writable> valueClass, boolean isCompressed, Properties tableProperties,
-      Progressable progress) throws IOException {
+      Progressable progress) {
     return null;
   }
 }

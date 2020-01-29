@@ -35,7 +35,6 @@ import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeCarbonRowForMerge;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeInmemoryMergeHolder;
-import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
 
 import org.apache.log4j.Logger;
@@ -133,10 +132,8 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
    * This method will be used to get the sorted record from file
    *
    * @return sorted record sorted record
-   * @throws CarbonSortKeyAndGroupByException
    */
-  private UnsafeCarbonRowForMerge getSortedRecordFromMemory()
-      throws CarbonSortKeyAndGroupByException {
+  private UnsafeCarbonRowForMerge getSortedRecordFromMemory() {
     UnsafeCarbonRowForMerge row = null;
 
     // poll the top object from heap
@@ -174,9 +171,8 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
    * record holder heap and then it will read first record from each file and
    * initialize the heap
    *
-   * @throws CarbonSortKeyAndGroupByException
    */
-  private void startSorting() throws CarbonSortKeyAndGroupByException {
+  private void startSorting() {
     LOGGER.info("Number of row pages in intermediate merger: " + this.holderCounter);
 
     // create record holder heap
@@ -214,9 +210,8 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
    * This method will be used to get the sorted row
    *
    * @return sorted row
-   * @throws CarbonSortKeyAndGroupByException
    */
-  private UnsafeCarbonRowForMerge next() throws CarbonSortKeyAndGroupByException {
+  private UnsafeCarbonRowForMerge next() {
     if (hasNext()) {
       return getSortedRecordFromMemory();
     } else {

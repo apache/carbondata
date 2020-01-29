@@ -114,7 +114,7 @@ public class CarbonCompactionExecutor {
    * In Range Column compaction we will have a Filter Expression to process
    */
   public Map<String, List<RawResultIterator>> processTableBlocks(Configuration configuration,
-      Expression filterExpr) throws QueryExecutionException, IOException {
+      Expression filterExpr) throws IOException {
 
     Map<String, List<RawResultIterator>> resultList = new HashMap<>(2);
     resultList.put(CarbonCompactionUtil.UNSORTED_IDX,
@@ -177,7 +177,7 @@ public class CarbonCompactionExecutor {
 
   private RawResultIterator getRawResultIterator(Configuration configuration, String segmentId,
       String task, List<TableBlockInfo> tableBlockInfoList)
-      throws QueryExecutionException, IOException {
+      throws IOException {
     SegmentProperties sourceSegmentProperties =
         new SegmentProperties(tableBlockInfoList.get(0).getDataFileFooter().getColumnInTable(),
             tableBlockInfoList.get(0).getDataFileFooter().getSegmentInfo().getColumnCardinality());
@@ -264,7 +264,7 @@ public class CarbonCompactionExecutor {
    */
   private CarbonIterator<RowBatch> executeBlockList(List<TableBlockInfo> blockList,
       String segmentId, String taskId, Configuration configuration)
-      throws QueryExecutionException, IOException {
+      throws IOException {
     queryModel.setTableBlockInfos(blockList);
     QueryStatisticsRecorder executorRecorder = CarbonTimeStatisticsFactory
         .createExecutorRecorder(queryModel.getQueryId() + "_" + segmentId + "_" + taskId);

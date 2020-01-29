@@ -30,7 +30,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
@@ -153,7 +152,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     return null;
   }
 
-  private void doExecute(Iterator<CarbonRowBatch> iterator, int iteratorIndex) throws IOException {
+  private void doExecute(Iterator<CarbonRowBatch> iterator, int iteratorIndex) {
     String[] storeLocation = getStoreLocation();
     DataMapWriterListener listener = getDataMapWriterListener(0);
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(
@@ -270,7 +269,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
    * @param row
    * @return
    */
-  private CarbonRow convertRow(CarbonRow row) throws KeyGenException {
+  private CarbonRow convertRow(CarbonRow row) {
     int dictIndex = 0;
     int nonDicIndex = 0;
     int[] dim = new int[this.dimensionCount];
@@ -325,12 +324,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
     @Override
     public void run() {
-      try {
-        doExecute(this.iterator, iteratorIndex);
-      } catch (IOException e) {
-        LOGGER.error(e.getMessage(), e);
-        throw new RuntimeException(e);
-      }
+      doExecute(this.iterator, iteratorIndex);
     }
   }
 

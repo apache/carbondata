@@ -32,7 +32,6 @@ import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsColle
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -90,11 +89,7 @@ public abstract class ColumnPage {
   private static ColumnPage createDecimalPage(ColumnPageEncoderMeta columnPageEncoderMeta,
       int pageSize) {
     if (isUnsafeEnabled(columnPageEncoderMeta)) {
-      try {
-        return new UnsafeDecimalColumnPage(columnPageEncoderMeta, pageSize);
-      } catch (MemoryException e) {
-        throw new RuntimeException(e);
-      }
+      return new UnsafeDecimalColumnPage(columnPageEncoderMeta, pageSize);
     } else {
       return new SafeDecimalColumnPage(columnPageEncoderMeta, pageSize);
     }
@@ -103,11 +98,7 @@ public abstract class ColumnPage {
   private static ColumnPage createVarLengthPage(ColumnPageEncoderMeta columnPageEncoderMeta,
       int pageSize) {
     if (isUnsafeEnabled(columnPageEncoderMeta)) {
-      try {
-        return new UnsafeVarLengthColumnPage(columnPageEncoderMeta, pageSize);
-      } catch (MemoryException e) {
-        throw new RuntimeException(e);
-      }
+      return new UnsafeVarLengthColumnPage(columnPageEncoderMeta, pageSize);
     } else {
       return new SafeVarLengthColumnPage(columnPageEncoderMeta, pageSize);
     }
@@ -116,11 +107,7 @@ public abstract class ColumnPage {
   private static ColumnPage createFixLengthPage(
       ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     if (isUnsafeEnabled(columnPageEncoderMeta)) {
-      try {
-        return new UnsafeFixLengthColumnPage(columnPageEncoderMeta, pageSize);
-      } catch (MemoryException e) {
-        throw new RuntimeException(e);
-      }
+      return new UnsafeFixLengthColumnPage(columnPageEncoderMeta, pageSize);
     } else {
       return new SafeFixLengthColumnPage(columnPageEncoderMeta, pageSize);
     }
@@ -129,11 +116,7 @@ public abstract class ColumnPage {
   private static ColumnPage createFixLengthByteArrayPage(
       ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize, int eachValueSize) {
     if (isUnsafeEnabled(columnPageEncoderMeta)) {
-      try {
-        return new UnsafeFixLengthColumnPage(columnPageEncoderMeta, pageSize, eachValueSize);
-      } catch (MemoryException e) {
-        throw new RuntimeException(e);
-      }
+      return new UnsafeFixLengthColumnPage(columnPageEncoderMeta, pageSize, eachValueSize);
     } else {
       return new SafeFixLengthColumnPage(columnPageEncoderMeta, pageSize);
     }
@@ -150,13 +133,13 @@ public abstract class ColumnPage {
   }
 
   public static ColumnPage newDecimalPage(ColumnPageEncoderMeta columnPageEncoderMeta,
-      int pageSize) throws MemoryException {
+      int pageSize) {
     return newPage(columnPageEncoderMeta, pageSize);
   }
 
   public static ColumnPage newLocalDictPage(ColumnPageEncoderMeta columnPageEncoderMeta,
       int pageSize, LocalDictionaryGenerator localDictionaryGenerator,
-      boolean isComplexTypePrimitive) throws MemoryException {
+      boolean isComplexTypePrimitive) {
     boolean isDecoderBasedFallBackEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
             CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT));
@@ -183,8 +166,7 @@ public abstract class ColumnPage {
   /**
    * Create a new page of dataType and number of row = pageSize
    */
-  public static ColumnPage newPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize)
-      throws MemoryException {
+  public static ColumnPage newPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     ColumnPage instance;
     DataType dataType = columnPageEncoderMeta.getStoreDataType();
     TableSpec.ColumnSpec columnSpec = columnPageEncoderMeta.getColumnSpec();
@@ -315,25 +297,25 @@ public abstract class ColumnPage {
   }
 
   private static ColumnPage newDecimalPage(ColumnPageEncoderMeta meta,
-      byte[] lvEncodedByteArray) throws MemoryException {
+      byte[] lvEncodedByteArray) {
     return VarLengthColumnPageBase
         .newDecimalColumnPage(meta, lvEncodedByteArray, lvEncodedByteArray.length);
   }
 
   private static ColumnPage newLVBytesPage(TableSpec.ColumnSpec columnSpec,
-      byte[] lvEncodedByteArray, int lvLength, String compressorName) throws MemoryException {
+      byte[] lvEncodedByteArray, int lvLength, String compressorName) {
     return VarLengthColumnPageBase.newLVBytesColumnPage(
         columnSpec, lvEncodedByteArray, lvLength, compressorName);
   }
 
   private static ColumnPage newComplexLVBytesPage(TableSpec.ColumnSpec columnSpec,
-      byte[] lvEncodedByteArray, int lvLength, String compressorName) throws MemoryException {
+      byte[] lvEncodedByteArray, int lvLength, String compressorName) {
     return VarLengthColumnPageBase.newComplexLVBytesColumnPage(
         columnSpec, lvEncodedByteArray, lvLength, compressorName);
   }
 
   private static ColumnPage newFixedByteArrayPage(TableSpec.ColumnSpec columnSpec,
-      byte[] lvEncodedByteArray, int eachValueSize, String compressorName) throws MemoryException {
+      byte[] lvEncodedByteArray, int eachValueSize, String compressorName) {
     int pageSize = lvEncodedByteArray.length / eachValueSize;
     ColumnPage fixLengthByteArrayPage = createFixLengthByteArrayPage(
         new ColumnPageEncoderMeta(columnSpec, columnSpec.getSchemaDataType(), compressorName),
@@ -696,7 +678,6 @@ public abstract class ColumnPage {
   /**
    * For complex type columns
    * @return
-   * @throws IOException
    */
   public abstract byte[] getComplexChildrenLVFlattenedBytePage(DataType dataType)
       throws IOException;
@@ -704,7 +685,6 @@ public abstract class ColumnPage {
   /**
    * For complex type columns
    * @return
-   * @throws IOException
    */
   public abstract byte[] getComplexParentFlattenedBytePage() throws IOException;
 
@@ -765,7 +745,7 @@ public abstract class ColumnPage {
   /**
    * Compress page data using specified compressor
    */
-  public byte[] compress(Compressor compressor) throws MemoryException, IOException {
+  public byte[] compress(Compressor compressor) throws IOException {
     DataType dataType = columnPageEncoderMeta.getStoreDataType();
     if (dataType == DataTypes.BOOLEAN) {
       return compressor.compressByte(getBooleanPage());
@@ -809,8 +789,7 @@ public abstract class ColumnPage {
    * except for decimal page
    */
   public static ColumnPage decompress(ColumnPageEncoderMeta meta, byte[] compressedData, int offset,
-      int length, boolean isLVEncoded, boolean isComplexPrimitiveIntLengthEncoding)
-      throws MemoryException {
+      int length, boolean isLVEncoded, boolean isComplexPrimitiveIntLengthEncoding) {
     Compressor compressor = CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
     DataType storeDataType = meta.getStoreDataType();
@@ -880,7 +859,7 @@ public abstract class ColumnPage {
    * Decompress data and create a decimal column page using the decompressed data
    */
   public static ColumnPage decompressDecimalPage(ColumnPageEncoderMeta meta, byte[] compressedData,
-      int offset, int length) throws MemoryException {
+      int offset, int length) {
     Compressor compressor = CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
     ColumnPage decimalPage;
     DataType storeDataType = meta.getStoreDataType();

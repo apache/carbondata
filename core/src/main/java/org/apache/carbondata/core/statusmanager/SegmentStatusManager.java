@@ -586,7 +586,7 @@ public class SegmentStatusManager {
   }
 
   // a dummy func for mocking in testcase, which simulates IOException
-  private static void mockForTest() throws IOException {
+  private static void mockForTest() {
   }
 
   /**

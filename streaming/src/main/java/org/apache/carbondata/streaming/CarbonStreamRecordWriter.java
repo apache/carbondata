@@ -159,7 +159,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     }
   }
 
-  private void initializeAtFirstRow() throws IOException, InterruptedException {
+  private void initializeAtFirstRow() throws IOException {
     // initialize parser and converter
     rowParser = new RowParserImpl(dataFields, configuration);
     badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
@@ -205,7 +205,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   }
 
   @Override
-  public void write(Void key, Object value) throws IOException, InterruptedException {
+  public void write(Void key, Object value) throws IOException {
     if (isFirstRow) {
       initializeAtFirstRow();
     }
@@ -361,7 +361,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   }
 
   @Override
-  public void close(TaskAttemptContext context) throws IOException, InterruptedException {
+  public void close(TaskAttemptContext context) throws IOException {
     try {
       isClosed = true;
       // append remain buffer data

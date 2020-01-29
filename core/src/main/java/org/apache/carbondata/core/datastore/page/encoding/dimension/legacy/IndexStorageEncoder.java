@@ -26,7 +26,6 @@ import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorage;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.SortState;
 
@@ -37,7 +36,7 @@ public abstract class IndexStorageEncoder extends ColumnPageEncoder {
   abstract void encodeIndexStorage(ColumnPage inputPage);
 
   @Override
-  protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
+  protected byte[] encodeData(ColumnPage input) throws IOException {
     encodeIndexStorage(input);
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream out = new DataOutputStream(stream);
@@ -72,8 +71,7 @@ public abstract class IndexStorageEncoder extends ColumnPageEncoder {
   }
 
   @Override
-  protected void fillLegacyFields(DataChunk2 dataChunk)
-      throws IOException {
+  protected void fillLegacyFields(DataChunk2 dataChunk) {
     SortState sort = (indexStorage.getRowIdPageLengthInBytes() > 0) ?
         SortState.SORT_EXPLICIT : SortState.SORT_NATIVE;
     dataChunk.setSort_state(sort);

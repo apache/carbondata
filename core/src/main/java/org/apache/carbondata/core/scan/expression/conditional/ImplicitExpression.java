@@ -27,8 +27,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
-import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
-import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 
@@ -71,8 +69,7 @@ public class ImplicitExpression extends Expression {
   }
 
   @Override
-  public ExpressionResult evaluate(RowIntf value)
-      throws FilterUnsupportedException, FilterIllegalMemberException {
+  public ExpressionResult evaluate(RowIntf value) {
     throw new UnsupportedOperationException("Operation not supported for Implicit expression");
   }
 

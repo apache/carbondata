@@ -228,10 +228,8 @@ public class SegmentIndexFileStore {
    *
    * @param segmentPath
    * @return
-   * @throws IOException
    */
-  public Map<String, String> getMergeOrIndexFilesFromSegment(String segmentPath)
-      throws IOException {
+  public Map<String, String> getMergeOrIndexFilesFromSegment(String segmentPath) {
     CarbonFile[] carbonIndexFiles =
         getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
     Map<String, String> indexFiles = new HashMap<>();

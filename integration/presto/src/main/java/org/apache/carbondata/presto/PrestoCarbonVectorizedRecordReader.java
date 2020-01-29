@@ -93,7 +93,7 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
    */
   @Override
   public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
-      throws IOException, InterruptedException, UnsupportedOperationException {
+      throws IOException, UnsupportedOperationException {
     // The input split can contain single HDFS block or multiple blocks, so firstly get all the
     // blocks and then set them in the query model.
     List<CarbonInputSplit> splitList;
@@ -110,13 +110,9 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
     queryModel.setTableBlockInfos(tableBlockInfoList);
     queryModel.setVectorReader(true);
-    try {
-      queryExecutor =
-          QueryExecutorFactory.getQueryExecutor(queryModel, taskAttemptContext.getConfiguration());
-      iterator = (AbstractDetailQueryResultIterator) queryExecutor.execute(queryModel);
-    } catch (QueryExecutionException e) {
-      throw new InterruptedException(e.getMessage());
-    }
+    queryExecutor =
+        QueryExecutorFactory.getQueryExecutor(queryModel, taskAttemptContext.getConfiguration());
+    iterator = (AbstractDetailQueryResultIterator) queryExecutor.execute(queryModel);
   }
 
   @Override
@@ -135,7 +131,7 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   }
 
   @Override
-  public boolean nextKeyValue() throws IOException, InterruptedException {
+  public boolean nextKeyValue() {
     resultBatch();
 
     if (returnColumnarBatch) return nextBatch();
@@ -148,7 +144,7 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   }
 
   @Override
-  public Object getCurrentValue() throws IOException, InterruptedException {
+  public Object getCurrentValue() {
     if (returnColumnarBatch) {
       rowCount += columnarBatch.numValidRows();
       return columnarBatch;
@@ -158,12 +154,12 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   }
 
   @Override
-  public Void getCurrentKey() throws IOException, InterruptedException {
+  public Void getCurrentKey() {
     return null;
   }
 
   @Override
-  public float getProgress() throws IOException, InterruptedException {
+  public float getProgress() {
     // TODO : Implement it based on total number of rows it is going to retrieve.
     return 0;
   }

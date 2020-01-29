@@ -66,7 +66,7 @@ public final class ProxyRecoverableOutputStream extends RecoverableFsDataOutputS
   }
 
   @Override
-  public void close() throws IOException {
+  public void close() {
     // TODO streaming结束的时候和出异常的时候都会调用该方法
     if (this.writer != null) {
       this.writer.close();
@@ -102,7 +102,7 @@ public final class ProxyRecoverableOutputStream extends RecoverableFsDataOutputS
     }
 
     @Override
-    public void commitAfterRecovery() throws IOException {
+    public void commitAfterRecovery() {
       // to do nothing.
     }
 

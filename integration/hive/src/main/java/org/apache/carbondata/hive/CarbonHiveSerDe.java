@@ -91,8 +91,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
   }
 
   @Override
-  public void initialize(@Nullable Configuration configuration, Properties tbl)
-      throws SerDeException {
+  public void initialize(@Nullable Configuration configuration, Properties tbl) {
 
     final TypeInfo rowTypeInfo;
     final List<String> columnNames;
@@ -269,7 +268,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
   }
 
   @Override
-  public Object deserialize(Writable writable) throws SerDeException {
+  public Object deserialize(Writable writable) {
     status = LAST_OPERATION.DESERIALIZE;
     if (writable instanceof ArrayWritable) {
       deserializedSize += ((StructObjectInspector) objInspector).getAllStructFieldRefs().size();
@@ -280,7 +279,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
   }
 
   @Override
-  public ObjectInspector getObjectInspector() throws SerDeException {
+  public ObjectInspector getObjectInspector() {
     return objInspector;
   }
 }

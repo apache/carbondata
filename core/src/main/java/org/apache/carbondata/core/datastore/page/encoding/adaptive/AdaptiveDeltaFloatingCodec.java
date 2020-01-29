@@ -34,7 +34,6 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
@@ -83,7 +82,7 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
     return new ColumnPageEncoder() {
       byte[] result = null;
       @Override
-      protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
+      protected byte[] encodeData(ColumnPage input) throws IOException {
         if (encodedPage != null) {
           throw new IllegalStateException("already encoded");
         }
@@ -115,7 +114,7 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       }
 
       @Override
-      protected void fillLegacyFields(DataChunk2 dataChunk) throws IOException {
+      protected void fillLegacyFields(DataChunk2 dataChunk) {
         fillLegacyFieldsIfRequired(dataChunk, result);
       }
 
@@ -126,8 +125,7 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
   public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
     return new ColumnPageDecoder() {
       @Override
-      public ColumnPage decode(byte[] input, int offset, int length)
-          throws MemoryException, IOException {
+      public ColumnPage decode(byte[] input, int offset, int length) {
         ColumnPage page = ColumnPage.decompress(meta, input, offset, length, false, false);
         return LazyColumnPage.newPage(page, converter);
       }
@@ -135,8 +133,7 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       @Override
       public void decodeAndFillVector(byte[] input, int offset, int length,
           ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
-          ReusableDataBuffer reusableDataBuffer)
-          throws MemoryException, IOException {
+          ReusableDataBuffer reusableDataBuffer) {
         Compressor compressor =
             CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
         byte[] unCompressData;
@@ -152,8 +149,7 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       }
 
       @Override
-      public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
-          throws MemoryException, IOException {
+      public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded) {
         return decode(input, offset, length);
       }
     };

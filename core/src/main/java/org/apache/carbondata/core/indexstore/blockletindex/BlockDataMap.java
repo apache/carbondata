@@ -48,7 +48,6 @@ import org.apache.carbondata.core.indexstore.UnsafeMemoryDMStore;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.DataMapRowImpl;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
@@ -111,8 +110,7 @@ public class BlockDataMap extends CoarseGrainDataMap
   protected boolean isFilePathStored;
 
   @Override
-  public void init(DataMapModel dataMapModel)
-      throws IOException, MemoryException {
+  public void init(DataMapModel dataMapModel) throws IOException {
     long startTime = System.currentTimeMillis();
     assert (dataMapModel instanceof BlockletDataMapModel);
     BlockletDataMapModel blockletDataMapInfo = (BlockletDataMapModel) dataMapModel;
@@ -170,7 +168,7 @@ public class BlockDataMap extends CoarseGrainDataMap
   }
 
   private void finishWriting(CarbonRowSchema[] taskSummarySchema, byte[] filePath, byte[] fileName,
-      byte[] segmentId, DataMapRowImpl summaryRow) throws MemoryException {
+      byte[] segmentId, DataMapRowImpl summaryRow) {
     if (memoryDMStore != null) {
       memoryDMStore.finishWriting();
     }
@@ -187,12 +185,10 @@ public class BlockDataMap extends CoarseGrainDataMap
    * @param segmentProperties
    * @param blockletDataMapInfo
    * @param indexInfo
-   * @throws IOException
-   * @throws MemoryException
    */
   protected DataMapRowImpl loadMetadata(CarbonRowSchema[] taskSummarySchema,
       SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
-      List<DataFileFooter> indexInfo) throws IOException, MemoryException {
+      List<DataFileFooter> indexInfo) {
     if (isLegacyStore) {
       return loadBlockInfoForOldStore(taskSummarySchema, segmentProperties, blockletDataMapInfo,
           indexInfo);
@@ -224,12 +220,10 @@ public class BlockDataMap extends CoarseGrainDataMap
    *
    * @param blockletDataMapInfo
    * @param indexInfo
-   * @throws IOException
-   * @throws MemoryException
    */
   protected DataMapRowImpl loadBlockInfoForOldStore(CarbonRowSchema[] taskSummarySchema,
       SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
-      List<DataFileFooter> indexInfo) throws IOException, MemoryException {
+      List<DataFileFooter> indexInfo) {
     DataMapRowImpl summaryRow = null;
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     boolean[] minMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
@@ -278,12 +272,10 @@ public class BlockDataMap extends CoarseGrainDataMap
    *
    * @param blockletDataMapInfo
    * @param indexInfo
-   * @throws IOException
-   * @throws MemoryException
    */
   private DataMapRowImpl loadBlockMetaInfo(CarbonRowSchema[] taskSummarySchema,
       SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
-      List<DataFileFooter> indexInfo) throws IOException, MemoryException {
+      List<DataFileFooter> indexInfo) {
     String tempFilePath = null;
     DataFileFooter previousDataFileFooter = null;
     int footerCounter = 0;
@@ -594,8 +586,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     return updatedMinMaxValues;
   }
 
-  protected void createMemorySchema(BlockletDataMapModel blockletDataMapModel)
-      throws MemoryException {
+  protected void createMemorySchema(BlockletDataMapModel blockletDataMapModel) {
     memoryDMStore = getMemoryDMStore(blockletDataMapModel.isAddToUnsafe());
   }
 
@@ -604,10 +595,8 @@ public class BlockDataMap extends CoarseGrainDataMap
    * once per datamap. It stores datamap level max/min of each column and partition information of
    * datamap
    *
-   * @throws MemoryException
    */
-  protected void createSummaryDMStore(BlockletDataMapModel blockletDataMapModel)
-      throws MemoryException {
+  protected void createSummaryDMStore(BlockletDataMapModel blockletDataMapModel) {
     taskSummaryDMStore = getMemoryDMStore(blockletDataMapModel.isAddToUnsafe());
   }
 
@@ -785,7 +774,7 @@ public class BlockDataMap extends CoarseGrainDataMap
 
   @Override
   public List<Blocklet> prune(Expression expression, SegmentProperties properties,
-      List<PartitionSpec> partitions, CarbonTable carbonTable) throws IOException {
+      List<PartitionSpec> partitions, CarbonTable carbonTable) {
     return prune(new DataMapFilter(properties, carbonTable, expression).getResolver(), properties,
         partitions);
   }
@@ -1037,8 +1026,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     return segmentPropertiesWrapper.getColumnsInTable();
   }
 
-  protected AbstractMemoryDMStore getMemoryDMStore(boolean addToUnsafe)
-      throws MemoryException {
+  protected AbstractMemoryDMStore getMemoryDMStore(boolean addToUnsafe) {
     AbstractMemoryDMStore memoryDMStore;
     if (addToUnsafe) {
       memoryDMStore = new UnsafeMemoryDMStore();
@@ -1053,11 +1041,7 @@ public class BlockDataMap extends CoarseGrainDataMap
   }
 
   protected CarbonRowSchema[] getTaskSummarySchema() {
-    try {
-      return segmentPropertiesWrapper.getTaskSummarySchemaForBlock(true, isFilePathStored);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
+    return segmentPropertiesWrapper.getTaskSummarySchemaForBlock(true, isFilePathStored);
   }
 
   /**
@@ -1065,7 +1049,7 @@ public class BlockDataMap extends CoarseGrainDataMap
    *
    * @throws MemoryException
    */
-  public void convertToUnsafeDMStore() throws MemoryException {
+  public void convertToUnsafeDMStore() {
     if (memoryDMStore instanceof SafeMemoryDMStore) {
       UnsafeMemoryDMStore unsafeMemoryDMStore = memoryDMStore.convertToUnsafeDMStore(
           getFileFooterEntrySchema());

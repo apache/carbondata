@@ -52,7 +52,6 @@ import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifierWrapper;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
@@ -109,13 +108,13 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
 
   @Override
   public DataMapWriter createWriter(Segment segment, String shardName,
-      SegmentProperties segmentProperties) throws IOException {
+      SegmentProperties segmentProperties) {
     throw new UnsupportedOperationException("not implemented");
   }
 
   @Override
   public DataMapBuilder createBuilder(Segment segment, String shardName,
-      SegmentProperties segmentProperties) throws IOException {
+      SegmentProperties segmentProperties) {
     throw new UnsupportedOperationException("not implemented");
   }
 
@@ -454,7 +453,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   }
 
   @Override
-  public void deleteDatamapData(Segment segment) throws IOException {
+  public void deleteDatamapData(Segment segment) {
 
   }
 
@@ -480,8 +479,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   }
 
   @Override
-  public SegmentProperties getSegmentPropertiesFromDataMap(DataMap coarseGrainDataMap)
-      throws IOException {
+  public SegmentProperties getSegmentPropertiesFromDataMap(DataMap coarseGrainDataMap) {
     assert (coarseGrainDataMap instanceof BlockDataMap);
     BlockDataMap dataMap = (BlockDataMap) coarseGrainDataMap;
     return dataMap.getSegmentProperties();
@@ -506,7 +504,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
 
   @Override
   public void cache(TableBlockIndexUniqueIdentifierWrapper tableBlockIndexUniqueIdentifierWrapper,
-      BlockletDataMapIndexWrapper blockletDataMapIndexWrapper) throws IOException, MemoryException {
+      BlockletDataMapIndexWrapper blockletDataMapIndexWrapper) throws IOException {
     cache.put(tableBlockIndexUniqueIdentifierWrapper, blockletDataMapIndexWrapper);
   }
 

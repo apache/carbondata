@@ -25,7 +25,6 @@ import java.util.ArrayList;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.core.memory.MemoryException;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -168,11 +167,7 @@ public class CarbonCli {
       command = new ScanBenchmark(path, outPuts);
     } else if (cmd.equalsIgnoreCase("sort_columns")) {
       if (line.hasOption("p")) {
-        try {
-          new FileCollector(outPuts).collectSortColumns(line.getOptionValue("p"));
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
+        new FileCollector(outPuts).collectSortColumns(line.getOptionValue("p"));
       }
       return;
     } else {
@@ -183,7 +178,7 @@ public class CarbonCli {
 
     try {
       command.run(line);
-    } catch (IOException | MemoryException e) {
+    } catch (IOException e) {
       e.printStackTrace();
     }
   }

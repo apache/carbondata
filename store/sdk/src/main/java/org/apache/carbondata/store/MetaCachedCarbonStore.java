@@ -62,7 +62,7 @@ abstract class MetaCachedCarbonStore implements CarbonStore {
   }
 
   @Override
-  public void close() throws IOException {
+  public void close() {
     cache.clear();
   }
 }

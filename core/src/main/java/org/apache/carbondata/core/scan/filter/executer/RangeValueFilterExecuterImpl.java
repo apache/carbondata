@@ -32,7 +32,6 @@ import org.apache.carbondata.core.scan.expression.conditional.GreaterThanEqualTo
 import org.apache.carbondata.core.scan.expression.conditional.GreaterThanExpression;
 import org.apache.carbondata.core.scan.expression.conditional.LessThanEqualToExpression;
 import org.apache.carbondata.core.scan.expression.conditional.LessThanExpression;
-import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -130,17 +129,16 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
    * Method to apply the filter.
    * @param rawBlockletColumnChunks
    * @return
-   * @throws FilterUnsupportedException
    * @throws IOException
    */
   public BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
-      boolean useBitsetPipeLine) throws FilterUnsupportedException, IOException {
+      boolean useBitsetPipeLine) throws IOException {
     return applyNoAndDirectFilter(rawBlockletColumnChunks, useBitsetPipeLine);
   }
 
   @Override
   public BitSet prunePages(RawBlockletColumnChunks blockChunkHolder)
-      throws FilterUnsupportedException, IOException {
+      throws IOException {
     // In case of Alter Table Add and Delete Columns the isDimensionPresentInCurrentBlock can be
     // false, in that scenario the default values of the column should be shown.
     // select all rows if dimension does not exists in the current block
@@ -179,8 +177,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
   /**
    * apply range filter on a row
    */
-  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
-      throws FilterUnsupportedException, IOException {
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
 
     byte[] col = (byte[]) value.getVal(dimColEvaluatorInfo.getDimension().getOrdinal());
     byte[][] filterValues = this.filterRangesValues;

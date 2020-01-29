@@ -236,7 +236,7 @@ class CarbondataPageSource implements ConnectorPageSource {
     } catch (PrestoException e) {
       closeWithSuppression(e);
       throw e;
-    } catch (RuntimeException | InterruptedException | IOException e) {
+    } catch (RuntimeException e) {
       closeWithSuppression(e);
       throw new CarbonDataLoadingException("Exception when creating the Carbon data Block", e);
     }
@@ -283,7 +283,7 @@ class CarbondataPageSource implements ConnectorPageSource {
     } catch (PrestoException e) {
       closeWithSuppression(e);
       throw e;
-    } catch (RuntimeException | InterruptedException | IOException e) {
+    } catch (RuntimeException | IOException e) {
       closeWithSuppression(e);
       throw new CarbonDataLoadingException("Exception when creating the Carbon data Block", e);
     }

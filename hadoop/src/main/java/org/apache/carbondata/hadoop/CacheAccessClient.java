@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.hadoop;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -62,9 +61,8 @@ public class CacheAccessClient<K, V> {
    *
    * @param key
    * @return
-   * @throws IOException in case memory is not sufficient to load data into memory
    */
-  public V get(K key) throws IOException {
+  public V get(K key) {
     V value = cache.get(key);
     if (value != null) {
       segmentSet.add(key);

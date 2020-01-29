@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.filter.executer;
 
-import java.io.IOException;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
@@ -49,7 +48,7 @@ public class RestructureIncludeFilterExecutorImpl extends RestructureEvaluatorIm
 
   @Override
   public BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
-      boolean useBitsetPipeLine) throws IOException {
+      boolean useBitsetPipeLine) {
     int numberOfRows = rawBlockletColumnChunks.getDataBlock().numRows();
     return FilterUtil.createBitSetGroupWithDefaultValue(
         rawBlockletColumnChunks.getDataBlock().numberOfPages(),

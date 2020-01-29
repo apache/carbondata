@@ -23,7 +23,6 @@ import java.util.List;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
@@ -46,7 +45,7 @@ public class SafeMemoryDMStore extends AbstractMemoryDMStore {
    * @return
    */
   @Override
-  public void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow) throws MemoryException {
+  public void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow) {
     dataMapRows.add(indexRow);
     runningLength += indexRow.getTotalSizeInBytes();
   }
@@ -78,8 +77,7 @@ public class SafeMemoryDMStore extends AbstractMemoryDMStore {
   }
 
   @Override
-  public UnsafeMemoryDMStore convertToUnsafeDMStore(CarbonRowSchema[] schema)
-      throws MemoryException {
+  public UnsafeMemoryDMStore convertToUnsafeDMStore(CarbonRowSchema[] schema) {
     setSchemaDataType(schema);
     UnsafeMemoryDMStore unsafeMemoryDMStore = new UnsafeMemoryDMStore();
     for (DataMapRow dataMapRow : dataMapRows) {

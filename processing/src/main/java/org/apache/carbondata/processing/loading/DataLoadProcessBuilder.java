@@ -59,7 +59,7 @@ public final class DataLoadProcessBuilder {
       LogServiceFactory.getLogService(DataLoadProcessBuilder.class.getName());
 
   public AbstractDataLoadProcessorStep build(CarbonLoadModel loadModel, String[] storeLocation,
-      CarbonIterator[] inputIterators) throws Exception {
+      CarbonIterator[] inputIterators) {
     CarbonDataLoadConfiguration configuration = createConfiguration(loadModel, storeLocation);
     SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     if (loadModel.isLoadWithoutConverterStep()) {
@@ -150,7 +150,7 @@ public final class DataLoadProcessBuilder {
   }
 
   private AbstractDataLoadProcessorStep buildInternalForBucketing(CarbonIterator[] inputIterators,
-      CarbonDataLoadConfiguration configuration) throws Exception {
+      CarbonDataLoadConfiguration configuration) {
     // 1. Reads the data input iterators and parses the data.
     AbstractDataLoadProcessorStep inputProcessorStep =
         new InputProcessorStepImpl(configuration, inputIterators);

@@ -485,8 +485,7 @@ public final class DataMapStoreManager {
   }
 
   public List<String> getSegmentsToBeRefreshed(CarbonTable carbonTable,
-      SegmentUpdateStatusManager updateStatusManager, List<Segment> filteredSegmentToAccess)
-      throws IOException {
+      SegmentUpdateStatusManager updateStatusManager, List<Segment> filteredSegmentToAccess) {
     List<String> toBeCleanedSegments = new ArrayList<>();
     for (Segment filteredSegment : filteredSegmentToAccess) {
       boolean refreshNeeded = getTableSegmentRefresher(carbonTable).isRefreshNeeded(filteredSegment,
@@ -726,7 +725,7 @@ public final class DataMapStoreManager {
       }
     }
 
-    public boolean isRefreshNeeded(Segment seg, UpdateVO updateVo) throws IOException {
+    public boolean isRefreshNeeded(Segment seg, UpdateVO updateVo) {
       SegmentRefreshInfo segmentRefreshInfo =
           seg.getSegmentRefreshInfo(updateVo);
       String segmentId = seg.getSegmentNo();

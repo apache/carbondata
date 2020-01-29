@@ -747,7 +747,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   @Override
-  public SplitLocationInfo[] getLocationInfo() throws IOException {
+  public SplitLocationInfo[] getLocationInfo() {
     return hostInfos;
   }
 

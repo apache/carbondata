@@ -26,7 +26,6 @@ import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.FilterExecutorUtil;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
@@ -155,8 +154,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
   }
 
   @Override
-  public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
-      throws FilterUnsupportedException, IOException {
+  public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks) {
     int numberOfPages = rawBlockletColumnChunks.getDataBlock().numberOfPages();
     BitSet bitSet = new BitSet(numberOfPages);
     bitSet.set(0, numberOfPages);

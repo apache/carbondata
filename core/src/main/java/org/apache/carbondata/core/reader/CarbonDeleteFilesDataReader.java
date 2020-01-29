@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.reader;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -204,7 +203,7 @@ public class CarbonDeleteFilesDataReader {
     }
 
     @Override
-    public DeleteDeltaBlockDetails call() throws IOException {
+    public DeleteDeltaBlockDetails call() {
       CarbonDeleteDeltaFileReaderImpl deltaFileReader =
           new CarbonDeleteDeltaFileReaderImpl(deltaFile);
       return deltaFileReader.readJson();

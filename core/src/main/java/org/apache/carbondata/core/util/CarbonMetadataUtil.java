@@ -75,8 +75,7 @@ public class CarbonMetadataUtil {
    * @return FileFooter
    */
   public static FileFooter3 convertFileFooterVersion3(List<BlockletInfo3> infoList,
-      List<BlockletIndex> blockletIndexs, int[] cardinalities, int numberOfColumns)
-      throws IOException {
+      List<BlockletIndex> blockletIndexs, int[] cardinalities, int numberOfColumns) {
     FileFooter3 footer = getFileFooter3(infoList, blockletIndexs, cardinalities, numberOfColumns);
     for (BlockletInfo3 info : infoList) {
       footer.addToBlocklet_info_list3(info);

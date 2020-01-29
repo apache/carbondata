@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.filter.executer;
 
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.BitSet;
 import java.util.List;
@@ -110,7 +109,7 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
 
   @Override
   public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
-      throws FilterUnsupportedException, IOException {
+      throws FilterUnsupportedException {
     throw new FilterUnsupportedException("Unsupported RestructureEvaluatorImpl on pune pages");
   }
 

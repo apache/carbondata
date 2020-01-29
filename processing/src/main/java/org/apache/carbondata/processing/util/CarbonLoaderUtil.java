@@ -1204,10 +1204,9 @@ public final class CarbonLoaderUtil {
    * @param segmentId
    * @param uuid
    * @return
-   * @throws IOException
    */
   public static String mergeIndexFilesInPartitionedSegment(CarbonTable table, String segmentId,
-      String uuid, String partitionPath) throws IOException {
+      String uuid, String partitionPath) {
     String tablePath = table.getTablePath();
     return new CarbonIndexFileMergeWriter(table)
         .mergeCarbonIndexFilesOfSegment(segmentId, uuid, tablePath, partitionPath);

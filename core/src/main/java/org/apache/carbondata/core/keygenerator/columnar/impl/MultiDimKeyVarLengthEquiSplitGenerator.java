@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 
@@ -145,12 +144,12 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
   }
 
   @Override
-  public byte[][] generateAndSplitKey(long[] keys) throws KeyGenException {
+  public byte[][] generateAndSplitKey(long[] keys) {
     return splitKey(generateKey(keys));
   }
 
   @Override
-  public byte[][] generateAndSplitKey(int[] keys) throws KeyGenException {
+  public byte[][] generateAndSplitKey(int[] keys) {
     return splitKey(generateKey(keys));
   }
 

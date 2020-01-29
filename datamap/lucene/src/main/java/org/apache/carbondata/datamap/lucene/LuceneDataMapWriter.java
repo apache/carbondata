@@ -111,14 +111,14 @@ public class LuceneDataMapWriter extends DataMapWriter {
   /**
    * Start of new block notification.
    */
-  public void onBlockStart(String blockId) throws IOException {
+  public void onBlockStart(String blockId) {
 
   }
 
   /**
    * End of block notification
    */
-  public void onBlockEnd(String blockId) throws IOException {
+  public void onBlockEnd(String blockId) {
 
   }
 
