@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.processing.sort.DummyRowUpdater;
 import org.apache.carbondata.processing.sort.SchemaBasedRowUpdater;
@@ -125,7 +125,7 @@ public class TableFieldStat implements Serializable {
     List<CarbonDimension> updatedDimensions = updateDimensionsBasedOnSortColumns(allDimensions);
     for (int i = 0; i < updatedDimensions.size(); i++) {
       CarbonDimension carbonDimension = updatedDimensions.get(i);
-      if (carbonDimension.hasEncoding(Encoding.DICTIONARY) && !carbonDimension.isComplex()) {
+      if (carbonDimension.getDataType() == DataTypes.DATE && !carbonDimension.isComplex()) {
         if (carbonDimension.isSortColumn()) {
           dictSortDimIdx[tmpDictSortCnt++] = i;
         } else {

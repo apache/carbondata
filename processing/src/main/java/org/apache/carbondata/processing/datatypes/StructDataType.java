@@ -58,9 +58,9 @@ public class StructDataType implements GenericDataType<StructObject> {
   private int outputArrayIndex;
 
   /**
-   * Dictionary column
+   * True if this is for dictionary column
    */
-  private boolean isDictionaryColumn;
+  private boolean isDictionary;
 
   /**
    * data counter
@@ -95,14 +95,14 @@ public class StructDataType implements GenericDataType<StructObject> {
    * @param name
    * @param parentName
    * @param columnId
-   * @param isDictionaryColumn
+   * @param isDictionary
    */
   public StructDataType(String name, String parentName, String columnId,
-      Boolean isDictionaryColumn) {
+      Boolean isDictionary) {
     this.name = name;
     this.parentName = parentName;
     this.columnId = columnId;
-    this.isDictionaryColumn = isDictionaryColumn;
+    this.isDictionary = isDictionary;
   }
 
   /*
@@ -177,7 +177,7 @@ public class StructDataType implements GenericDataType<StructObject> {
 
   @Override
   public boolean getIsColumnDictionary() {
-    return isDictionaryColumn;
+    return isDictionary;
   }
 
   @Override

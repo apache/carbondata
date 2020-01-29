@@ -90,7 +90,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
         for (int i = 0; i < queryDimensions.length; i++) {
           // fill default value in case the dimension does not exist in the current block
           if (!dimensionInfo.getDimensionExists()[i]) {
-            if (dictionaryEncodingArray[i] || directDictionaryEncodingArray[i]) {
+            if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
               row[order[i]] = dimensionInfo.getDefaultValues()[i];
               dictionaryColumnIndex++;
             } else if (queryDimensions[i].getDimension().getDataType() == DataTypes.STRING) {

@@ -27,7 +27,7 @@ import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.filter.FilterExecutorUtil;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
@@ -179,7 +179,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     // for no dictionary measure column comparison can be done
     // on the original data as like measure column
     if (DataTypeUtil.isPrimitiveColumn(dimColumnEvaluatorInfo.getDimension().getDataType())
-        && !dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+        && dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.DATE) {
       scanRequired = isScanRequired(dimensionRawColumnChunk.getMaxValues()[columnIndex],
           dimensionRawColumnChunk.getMinValues()[columnIndex],
           dimColumnExecuterInfo.getFilterKeys(),
@@ -500,9 +500,8 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       chunkIndex = dimColumnEvaluatorInfo.getColumnIndexInMinMaxByteArray();
       // for no dictionary measure column comparison can be done
       // on the original data as like measure column
-      if (DataTypeUtil
-          .isPrimitiveColumn(dimColumnEvaluatorInfo.getDimension().getDataType())
-          && !dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+      if (DataTypeUtil.isPrimitiveColumn(dimColumnEvaluatorInfo.getDimension().getDataType()) &&
+          dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.DATE) {
         isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex], filterValues,
             dimColumnEvaluatorInfo.getDimension().getDataType());
       } else {

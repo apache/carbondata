@@ -227,7 +227,7 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
     indexColumns.foreach { col =>
       if (col.isDimension) {
         val dim = carbonTable.getDimensionByName(col.getColName)
-        if (!dim.isGlobalDictionaryEncoding && !dim.isDirectDictionaryEncoding) {
+        if (dim.getDataType != DataTypes.DATE) {
           indexCol2IdxInNoDictArray =
             indexCol2IdxInNoDictArray + (col.getColName -> indexCol2IdxInNoDictArray.size)
         } else {

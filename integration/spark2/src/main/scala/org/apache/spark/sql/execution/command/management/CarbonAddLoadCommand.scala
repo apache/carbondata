@@ -80,11 +80,6 @@ case class CarbonAddLoadCommand(
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
-    if (carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala.exists(
-      c => c.hasEncoding(Encoding.DICTIONARY) && !c.hasEncoding(Encoding.DIRECT_DICTIONARY))) {
-      throw new MalformedCarbonCommandException(
-        "Unsupported operation on global dictionary columns table")
-    }
     if (carbonTable.isChildTableForMV) {
       throw new MalformedCarbonCommandException("Unsupported operation on MV table")
     }

@@ -26,7 +26,7 @@ import java.util.Objects;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapFilter;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -63,7 +63,7 @@ public class QueryModelBuilder {
       CarbonDimension dimension = table.getDimensionByName(projectionColumnName);
       if (dimension != null) {
         CarbonDimension complexParentDimension = dimension.getComplexParentDimension();
-        if (null != complexParentDimension && dimension.hasEncoding(Encoding.DICTIONARY)) {
+        if (null != complexParentDimension && dimension.getDataType() == DataTypes.DATE) {
           if (!isAlreadyExists(complexParentDimension, projection.getDimensions())) {
             projection.addDimension(complexParentDimension, i);
             i++;

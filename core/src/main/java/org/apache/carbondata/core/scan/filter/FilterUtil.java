@@ -788,7 +788,7 @@ public final class FilterUtil {
   public static byte[][] getKeyArray(ColumnFilterInfo columnFilterInfo,
       CarbonDimension carbonDimension, SegmentProperties segmentProperties, boolean isExclude,
       boolean isDictRange) {
-    if (!carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
+    if (carbonDimension.getDataType() != DataTypes.DATE) {
       return columnFilterInfo.getNoDictionaryFilterValuesList()
           .toArray((new byte[columnFilterInfo.getNoDictionaryFilterValuesList().size()][]));
     }
@@ -870,7 +870,7 @@ public final class FilterUtil {
         dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
     // step 1
     for (Map.Entry<CarbonDimension, List<ColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
-      if (!entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
+      if (entry.getKey().getDataType() != DataTypes.DATE) {
         List<ColumnFilterInfo> listOfDimColFilterInfo = entry.getValue();
         if (null == listOfDimColFilterInfo) {
           continue;
@@ -933,7 +933,7 @@ public final class FilterUtil {
         dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
     // step 1
     for (Map.Entry<CarbonDimension, List<ColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
-      if (!entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
+      if (entry.getKey().getDataType() != DataTypes.DATE) {
         List<ColumnFilterInfo> listOfDimColFilterInfo = entry.getValue();
         if (null == listOfDimColFilterInfo) {
           continue;
@@ -984,7 +984,7 @@ public final class FilterUtil {
       SegmentProperties segmentProperties, long[] startKey, List<long[]> startKeyList) {
     for (Map.Entry<CarbonDimension, List<ColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
       List<ColumnFilterInfo> values = entry.getValue();
-      if (null == values || !entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
+      if (null == values || entry.getKey().getDataType() != DataTypes.DATE) {
         continue;
       }
       boolean isExcludePresent = false;
@@ -1037,11 +1037,9 @@ public final class FilterUtil {
     List<CarbonDimension> listOfCarbonDimPartOfKeyGen =
         new ArrayList<CarbonDimension>(carbonDimensions.size());
     for (CarbonDimension carbonDim : carbonDimensions) {
-      if (CarbonUtil.hasEncoding(carbonDim.getEncoder(), Encoding.DICTIONARY) || CarbonUtil
-          .hasEncoding(carbonDim.getEncoder(), Encoding.DIRECT_DICTIONARY)) {
+      if (carbonDim.getDataType() == DataTypes.DATE) {
         listOfCarbonDimPartOfKeyGen.add(carbonDim);
       }
-
     }
     return listOfCarbonDimPartOfKeyGen;
   }
@@ -1051,7 +1049,7 @@ public final class FilterUtil {
       SegmentProperties segmentProperties, long[] endKey, List<long[]> endKeyList) {
     for (Map.Entry<CarbonDimension, List<ColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
       List<ColumnFilterInfo> values = entry.getValue();
-      if (null == values || !entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
+      if (null == values || entry.getKey().getDataType() != DataTypes.DATE) {
         continue;
       }
       boolean isExcludeFilterPresent = false;
@@ -1717,8 +1715,8 @@ public final class FilterUtil {
   public static int compareValues(byte[] filterValue, byte[] minMaxBytes,
       CarbonDimension carbonDimension, boolean isMin) {
     DataType dataType = carbonDimension.getDataType();
-    if (DataTypeUtil.isPrimitiveColumn(dataType) && !carbonDimension
-        .hasEncoding(Encoding.DICTIONARY)) {
+    if (DataTypeUtil.isPrimitiveColumn(dataType) &&
+        dataType != DataTypes.DATE) {
       Object value =
           DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(minMaxBytes, dataType);
       // filter value should be in range of max and min value i.e

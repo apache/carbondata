@@ -32,7 +32,6 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
@@ -97,7 +96,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     dataTypes = new DataType[configuration.getDataFields().length];
     for (int i = 0; i < dataTypes.length; i++) {
-      if (configuration.getDataFields()[i].getColumn().hasEncoding(Encoding.DICTIONARY)) {
+      if (configuration.getDataFields()[i].getColumn().getDataType() == DataTypes.DATE) {
         dataTypes[i] = DataTypes.INT;
       } else {
         dataTypes[i] = configuration.getDataFields()[i].getColumn().getDataType();

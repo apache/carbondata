@@ -183,7 +183,7 @@ object CarbonScalaUtil {
       value: String,
       column: ColumnSchema): String = {
     try {
-      if (column.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      if (column.getDataType.equals(CarbonDataTypes.DATE)) {
         if (column.getDataType.equals(CarbonDataTypes.TIMESTAMP)) {
           return DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
             column.getDataType,

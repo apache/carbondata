@@ -62,9 +62,9 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   private int outputArrayIndex;
 
   /**
-   * Dictionary column
+   * True if this is for dictionary column
    */
-  private boolean isDictionaryColumn;
+  private boolean isDictionary;
 
   /**
    * current data counter
@@ -99,14 +99,14 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
    * @param name
    * @param parentName
    * @param columnId
-   * @param isDictionaryColumn
+   * @param isDictionary
    */
   public ArrayDataType(String name, String parentName, String columnId,
-      Boolean isDictionaryColumn) {
+      Boolean isDictionary) {
     this.name = name;
     this.parentName = parentName;
     this.columnId = columnId;
-    this.isDictionaryColumn = isDictionaryColumn;
+    this.isDictionary = isDictionary;
   }
 
   /*
@@ -175,7 +175,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
 
   @Override
   public boolean getIsColumnDictionary() {
-    return isDictionaryColumn;
+    return isDictionary;
   }
 
   @Override

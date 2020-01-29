@@ -28,7 +28,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.complextypes.StructQueryType;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
@@ -58,10 +57,6 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
   protected int[] order;
 
   private int[] actualIndexInSurrogateKey;
-
-  boolean[] dictionaryEncodingArray;
-
-  boolean[] directDictionaryEncodingArray;
 
   private boolean[] implicitColumnArray;
 
@@ -220,7 +215,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         // TODO have to fill out for dictionary columns. Once the support for push down in
         // complex dictionary columns comes.
         ByteBuffer buffer;
-        if (!dictionaryEncodingArray[i]) {
+        if (queryDimensions[i].getDimension().getDataType() != DataTypes.DATE) {
           if (implicitColumnArray[i]) {
             throw new RuntimeException("Not Supported Column Type");
           } else if (complexDataTypeArray[i]) {
@@ -228,7 +223,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
           } else {
             buffer = ByteBuffer.wrap(noDictionaryKeys[noDictionaryComplexColumnIndex++]);
           }
-        } else if (directDictionaryEncodingArray[i]) {
+        } else if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
           throw new RuntimeException("Direct Dictionary Column Type Not Supported Yet.");
         } else if (complexDataTypeArray[i]) {
           buffer = ByteBuffer.wrap(complexTypeKeyArray[complexTypeComplexColumnIndex++]);
@@ -263,7 +258,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       byte[][] noDictionaryKeys, byte[][] complexTypeKeyArray,
       Map<Integer, GenericQueryType> complexDimensionInfoMap, Object[] row, int i,
       int actualOrdinal) {
-    if (!dictionaryEncodingArray[i]) {
+    if (queryDimensions[i].getDimension().getDataType() != DataTypes.DATE) {
       if (implicitColumnArray[i]) {
         if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
             .equals(queryDimensions[i].getColumnName())) {
@@ -297,7 +292,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
               queryDimensions[i].getDimension().getDataType());
         }
       }
-    } else if (directDictionaryEncodingArray[i]) {
+    } else if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
       if (directDictionaryGenerators[i] != null) {
         row[order[i]] = directDictionaryGenerators[i].getValueFromSurrogate(
             surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]]);
@@ -355,8 +350,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
   void initDimensionAndMeasureIndexesForFillingData() {
     List<Integer> dictionaryIndexes = new ArrayList<Integer>();
     for (int i = 0; i < queryDimensions.length; i++) {
-      if (queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY) || queryDimensions[i]
-          .getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
         dictionaryIndexes.add(queryDimensions[i].getDimension().getOrdinal());
       }
     }
@@ -366,16 +360,13 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     actualIndexInSurrogateKey = new int[dictionaryIndexes.size()];
     int index = 0;
 
-    dictionaryEncodingArray = CarbonUtil.getDictionaryEncodingArray(queryDimensions);
-    directDictionaryEncodingArray = CarbonUtil.getDirectDictionaryEncodingArray(queryDimensions);
     implicitColumnArray = CarbonUtil.getImplicitColumnArray(queryDimensions);
     complexDataTypeArray = CarbonUtil.getComplexDataTypeArray(queryDimensions);
 
     parentToChildColumnsMap.clear();
     queryDimensionToComplexParentOrdinal.clear();
     for (int i = 0; i < queryDimensions.length; i++) {
-      if (queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY) || queryDimensions[i]
-          .getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
         actualIndexInSurrogateKey[index++] =
             Arrays.binarySearch(primitive, queryDimensions[i].getDimension().getOrdinal());
       }

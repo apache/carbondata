@@ -30,7 +30,6 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
@@ -133,8 +132,8 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
         DataType dataType = dimColEvaluatorInfoList.get(0).getDimension().getDataType();
         // for no dictionary measure column comparison can be done
         // on the original data as like measure column
-        if (DataTypeUtil.isPrimitiveColumn(dataType) && !dimColEvaluatorInfoList.get(0)
-            .getDimension().hasEncoding(Encoding.DICTIONARY)) {
+        if (DataTypeUtil.isPrimitiveColumn(dataType) &&
+            dimColEvaluatorInfoList.get(0).getDimension().getDataType() != DataTypes.DATE) {
           isScanRequired = isScanRequired(maxValue, filterRangeValues, dataType);
         } else {
           isScanRequired =
@@ -329,8 +328,8 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     DataType dataType = dimColEvaluatorInfoList.get(0).getDimension().getDataType();
     // for no dictionary measure column comparison can be done
     // on the original data as like measure column
-    if (DataTypeUtil.isPrimitiveColumn(dataType) && !dimColEvaluatorInfoList.get(0).getDimension()
-        .hasEncoding(Encoding.DICTIONARY)) {
+    if (DataTypeUtil.isPrimitiveColumn(dataType) &&
+        dimColEvaluatorInfoList.get(0).getDimension().getDataType() != DataTypes.DATE) {
       scanRequired =
           isScanRequired(rawColumnChunk.getMaxValues()[columnIndex], this.filterRangeValues,
               dataType);
@@ -457,16 +456,14 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     byte[] defaultValue = null;
     if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.STRING) {
       defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
-    } else if (dimColEvaluatorInfoList.get(0).getDimension()
-        .hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+    } else if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.DATE) {
       defaultValue = FilterUtil
           .getDefaultNullValue(dimColEvaluatorInfoList.get(0).getDimension(), segmentProperties);
     } else if (!dimensionColumnPage.isAdaptiveEncoded()) {
       defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
     }
-    if (dimensionColumnPage.isNoDicitionaryColumn() || (
-        dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)
-            && dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY))) {
+    if (dimensionColumnPage.isNoDicitionaryColumn() ||
+        dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.DATE) {
       FilterUtil.removeNullValues(dimensionColumnPage, bitSet, defaultValue);
     }
     return bitSet;
@@ -581,7 +578,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
   @Override
   public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) throws IOException {
     if (isDimensionPresentInCurrentBlock[0]) {
-      if (!dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
+      if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() != DataTypes.DATE) {
         super.readColumnChunks(rawBlockletColumnChunks);
       }
       int chunkIndex = dimensionChunkIndex[0];
