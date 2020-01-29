@@ -43,7 +43,7 @@ import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.DatabaseLocationProvider;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
@@ -367,14 +367,14 @@ public class CarbonTable implements Serializable, Writable {
           if (!columnSchema.isInvisible() && columnSchema.isSortColumn()) {
             this.numberOfSortColumns++;
           }
-          if (!columnSchema.getEncodingList().contains(Encoding.DICTIONARY)) {
+          if (columnSchema.getDataType() != DataTypes.DATE) {
             CarbonDimension dimension = new CarbonDimension(columnSchema, dimensionOrdinal++,
                 columnSchema.getSchemaOrdinal(), -1, -1);
             if (!columnSchema.isInvisible() && columnSchema.isSortColumn()) {
               this.numberOfNoDictSortColumns++;
             }
             allDimensions.add(dimension);
-          } else if (columnSchema.getEncodingList().contains(Encoding.DICTIONARY)) {
+          } else if (columnSchema.getDataType() == DataTypes.DATE) {
             CarbonDimension dimension = new CarbonDimension(columnSchema, dimensionOrdinal++,
                 columnSchema.getSchemaOrdinal(), keyOrdinal++, -1);
             allDimensions.add(dimension);
@@ -824,7 +824,7 @@ public class CarbonTable implements Serializable, Writable {
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dimension = dimensions.get(i);
       if (dimension.isSortColumn() &&
-          !dimension.getColumnSchema().hasEncoding(Encoding.DICTIONARY)) {
+          dimension.getDataType() != DataTypes.DATE) {
         noDictSortColumns.add(dimension);
       }
     }

@@ -22,7 +22,6 @@ import java.util.List;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -76,7 +75,7 @@ public class FieldEncoderFactory {
       if (dataField.getColumn().isIndexColumn()) {
         return new IndexFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord,
             configuration);
-      } else if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY) &&
+      } else if (dataField.getColumn().getDataType() == DataTypes.DATE &&
           !dataField.getColumn().isComplex()) {
         return new DirectDictionaryFieldConverterImpl(dataField, nullFormat, index,
             isEmptyBadRecord);
@@ -146,7 +145,7 @@ public class FieldEncoderFactory {
       // Create array parser with complex delimiter
       ArrayDataType arrayDataType =
           new ArrayDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId(),
-              carbonColumn.hasEncoding(Encoding.DICTIONARY));
+              carbonColumn.getDataType() == DataTypes.DATE);
       for (CarbonDimension dimension : listOfChildDimensions) {
         arrayDataType.addChildren(
             createComplexType(dimension, carbonColumn.getColName(), nullFormat, binaryDecoder));
@@ -158,7 +157,7 @@ public class FieldEncoderFactory {
       // Create struct parser with complex delimiter
       StructDataType structDataType =
           new StructDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId(),
-              carbonColumn.hasEncoding(Encoding.DICTIONARY));
+              carbonColumn.getDataType() == DataTypes.DATE);
       for (CarbonDimension dimension : dimensions) {
         structDataType.addChildren(
             createComplexType(dimension, carbonColumn.getColName(), nullFormat, binaryDecoder));

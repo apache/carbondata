@@ -104,14 +104,6 @@ public class CarbonDimension extends CarbonColumn {
     this.complexTypeOrdinal = complexTypeOrdinal;
   }
 
-  public boolean isDirectDictionaryEncoding() {
-    return getEncoder().contains(Encoding.DIRECT_DICTIONARY);
-  }
-
-  public boolean isGlobalDictionaryEncoding() {
-    return getEncoder().contains(Encoding.DICTIONARY);
-  }
-
   /**
    * @return is column participated in sorting or not
    */

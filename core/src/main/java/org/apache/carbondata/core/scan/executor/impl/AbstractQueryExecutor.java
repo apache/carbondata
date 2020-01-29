@@ -47,7 +47,7 @@ import org.apache.carbondata.core.indexstore.blockletindex.IndexWrapper;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -641,8 +641,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     while (counter < queryDimension.size()) {
       if (queryDimension.get(counter).getDimension().getNumberOfChild() > 0) {
         counter += queryDimension.get(counter).getDimension().getNumberOfChild();
-      } else if (!CarbonUtil.hasEncoding(queryDimension.get(counter).getDimension().getEncoder(),
-          Encoding.DICTIONARY)) {
+      } else if (queryDimension.get(counter).getDimension().getDataType() != DataTypes.DATE) {
         counter++;
       } else {
         fixedLengthDimensionOrdinal.add(blockMetadataInfo.getDimensionOrdinalToChunkMapping()

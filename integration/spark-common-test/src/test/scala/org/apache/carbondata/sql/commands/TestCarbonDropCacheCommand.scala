@@ -28,6 +28,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 
 class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
 
@@ -64,7 +65,7 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
     val tableIdentifier = new TableIdentifier(tableName, Some(dbName))
     val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sqlContext.sparkSession)
     val tablePath = carbonTable.getTablePath + CarbonCommonConstants.FILE_SEPARATOR
-    val dictIds = carbonTable.getAllDimensions.asScala.filter(_.isGlobalDictionaryEncoding)
+    val dictIds = carbonTable.getAllDimensions.asScala.filter(_.getDataType == DataTypes.DATE)
       .map(_.getColumnId).toArray
 
     // Check if table index entries are dropped

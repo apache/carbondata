@@ -31,7 +31,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonUtil;
 
@@ -135,8 +134,7 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
       }
       indexValue = CarbonUtil.getValueAsBytes(indexColumns.get(indexColIdx).getDataType(), value);
     } else {
-      if (indexColumns.get(indexColIdx).hasEncoding(Encoding.DICTIONARY)
-          || indexColumns.get(indexColIdx).hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      if (indexColumns.get(indexColIdx).getDataType() == DataTypes.DATE) {
         indexValue = convertDictionaryValue(indexColIdx, value);
       } else {
         indexValue = convertNonDictionaryValue(indexColIdx, value);

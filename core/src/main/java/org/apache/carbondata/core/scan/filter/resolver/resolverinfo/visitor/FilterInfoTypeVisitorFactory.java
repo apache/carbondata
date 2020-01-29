@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.scan.filter.resolver.resolverinfo.visitor;
 
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -34,21 +35,21 @@ public class FilterInfoTypeVisitorFactory {
   public static ResolvedFilterInfoVisitorIntf getResolvedFilterInfoVisitor(
       ColumnExpression columnExpression, Expression exp) {
     if (exp instanceof RangeExpression) {
-      if (columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      if (columnExpression.getDimension().getDataType() == DataTypes.DATE) {
         return new RangeDirectDictionaryVisitor();
       } else if (columnExpression.getDimension().hasEncoding(Encoding.IMPLICIT)) {
         return new ImplicitColumnVisitor();
-      } else if (!columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+      } else if (columnExpression.getDimension().getDataType() != DataTypes.DATE) {
         return new RangeNoDictionaryTypeVisitor();
       }
     }
     else {
       if (null != columnExpression.getDimension()) {
-        if (columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        if (columnExpression.getDimension().getDataType() == DataTypes.DATE) {
           return new CustomTypeDictionaryVisitor();
         } else if (columnExpression.getDimension().hasEncoding(Encoding.IMPLICIT)) {
           return new ImplicitColumnVisitor();
-        } else if (!columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+        } else if (columnExpression.getDimension().getDataType() != DataTypes.DATE) {
           return new NoDictionaryTypeVisitor();
         }
       } else if (columnExpression.getMeasure().isMeasure()) {

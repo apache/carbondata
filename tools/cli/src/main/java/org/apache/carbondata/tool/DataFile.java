@@ -32,7 +32,6 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonFooterReaderV3;
 import org.apache.carbondata.core.reader.CarbonHeaderReader;
@@ -447,7 +446,7 @@ class DataFile {
      */
     private double computePercentage(byte[] data, byte[] min, byte[] max, ColumnSchema column) {
       if (column.getDataType() == DataTypes.STRING || column.getDataType() == DataTypes.BOOLEAN
-          || column.hasEncoding(Encoding.DICTIONARY) || column.getDataType().isComplexType()) {
+          || column.getDataType() == DataTypes.DATE || column.getDataType().isComplexType()) {
         // for string, we do not calculate
         return 0;
       } else if (DataTypes.isDecimal(column.getDataType())) {

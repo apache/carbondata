@@ -34,7 +34,6 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -152,7 +151,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     isNoDictColumn = CarbonDataProcessorUtil.getNoDictionaryMapping(storageColumns);
     directDictionaryGenerators = new DirectDictionaryGenerator[storageColumns.length];
     for (int i = 0; i < storageColumns.length; i++) {
-      if (storageColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      if (storageColumns[i].getDataType() == DataTypes.DATE) {
         directDictionaryGenerators[i] = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(storageColumns[i].getDataType());
       }

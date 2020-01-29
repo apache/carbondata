@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
@@ -97,13 +98,13 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
         columnVectorInfo.dimension = queryDimensions[i];
         columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
         allColumnInfo[queryDimensions[i].getOrdinal()] = columnVectorInfo;
-      } else if (!queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)) {
+      } else if (queryDimensions[i].getDimension().getDataType() != DataTypes.DATE) {
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
         noDictInfoList.add(columnVectorInfo);
         columnVectorInfo.dimension = queryDimensions[i];
         columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
         allColumnInfo[queryDimensions[i].getOrdinal()] = columnVectorInfo;
-      } else if (queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      } else if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
         dictInfoList.add(columnVectorInfo);
         columnVectorInfo.dimension = queryDimensions[i];

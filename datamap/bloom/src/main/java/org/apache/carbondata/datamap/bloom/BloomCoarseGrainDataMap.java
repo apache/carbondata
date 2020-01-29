@@ -37,7 +37,6 @@ import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -306,8 +305,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         convertedValue = BooleanConvert.boolean2Byte((Boolean)convertedValue);
       }
       internalFilterValue = CarbonUtil.getValueAsBytes(carbonColumn.getDataType(), convertedValue);
-    } else if (carbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY) ||
-        carbonColumn.hasEncoding(Encoding.DICTIONARY)) {
+    } else if (carbonColumn.getDataType() == DataTypes.DATE) {
       // for dictionary/date columns, convert the surrogate key to bytes
       internalFilterValue = CarbonUtil.getValueAsBytes(DataTypes.INT, convertedValue);
     } else {

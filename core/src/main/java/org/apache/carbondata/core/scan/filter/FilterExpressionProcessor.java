@@ -225,30 +225,24 @@ public class FilterExpressionProcessor implements FilterProcessor {
             return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true,
                 currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
           }
-          // getting new dim index.
-          if (!currentCondExpression.getColumnList().get(0).getCarbonColumn()
-              .hasEncoding(Encoding.DICTIONARY) || currentCondExpression.getColumnList().get(0)
-              .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY) || currentCondExpression
-              .isAlreadyResolved()) {
-            // In case of Range Column Dictionary Include we do not need to resolve the range
-            // expression as it is already resolved and has the surrogates in the filter value
-            if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
-                && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
-                FilterUtil.checkIfRightExpressionRequireEvaluation(currentCondExpression.getRight())
-                    || FilterUtil
-                    .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
-              return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
-                  tableIdentifier);
-            }
-            if (currentCondExpression.getFilterExpressionType() == ExpressionType.GREATERTHAN
-                || currentCondExpression.getFilterExpressionType() == ExpressionType.LESSTHAN
-                || currentCondExpression.getFilterExpressionType()
-                == ExpressionType.GREATERTHAN_EQUALTO
-                || currentCondExpression.getFilterExpressionType()
-                == ExpressionType.LESSTHAN_EQUALTO) {
-              return new RowLevelRangeFilterResolverImpl(expression, isExpressionResolve, true,
-                  tableIdentifier);
-            }
+          // In case of Range Column Dictionary Include we do not need to resolve the range
+          // expression as it is already resolved and has the surrogates in the filter value
+          if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
+              && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
+              FilterUtil.checkIfRightExpressionRequireEvaluation(currentCondExpression.getRight())
+                  || FilterUtil
+                  .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
+            return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
+                tableIdentifier);
+          }
+          if (currentCondExpression.getFilterExpressionType() == ExpressionType.GREATERTHAN
+              || currentCondExpression.getFilterExpressionType() == ExpressionType.LESSTHAN
+              || currentCondExpression.getFilterExpressionType()
+              == ExpressionType.GREATERTHAN_EQUALTO
+              || currentCondExpression.getFilterExpressionType()
+              == ExpressionType.LESSTHAN_EQUALTO) {
+            return new RowLevelRangeFilterResolverImpl(expression, isExpressionResolve, true,
+                tableIdentifier);
           }
           return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true,
               currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
@@ -282,28 +276,23 @@ public class FilterExpressionProcessor implements FilterProcessor {
             return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false, true);
           }
 
-          if (!currentCondExpression.getColumnList().get(0).getCarbonColumn()
-              .hasEncoding(Encoding.DICTIONARY) || currentCondExpression.getColumnList().get(0)
-              .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-            if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
-                && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
-                FilterUtil.checkIfRightExpressionRequireEvaluation(currentCondExpression.getRight())
-                    || FilterUtil
-                    .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
-              return new RowLevelFilterResolverImpl(expression, isExpressionResolve, false,
-                  tableIdentifier);
-            }
-            if (expressionTree.getFilterExpressionType() == ExpressionType.GREATERTHAN
-                || expressionTree.getFilterExpressionType() == ExpressionType.LESSTHAN
-                || expressionTree.getFilterExpressionType() == ExpressionType.GREATERTHAN_EQUALTO
-                || expressionTree.getFilterExpressionType() == ExpressionType.LESSTHAN_EQUALTO) {
-
-              return new RowLevelRangeFilterResolverImpl(expression, isExpressionResolve, false,
-                  tableIdentifier);
-            }
-
-            return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false, false);
+          if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
+              && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
+              FilterUtil.checkIfRightExpressionRequireEvaluation(currentCondExpression.getRight())
+                  || FilterUtil
+                  .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
+            return new RowLevelFilterResolverImpl(expression, isExpressionResolve, false,
+                tableIdentifier);
           }
+          if (expressionTree.getFilterExpressionType() == ExpressionType.GREATERTHAN
+              || expressionTree.getFilterExpressionType() == ExpressionType.LESSTHAN
+              || expressionTree.getFilterExpressionType() == ExpressionType.GREATERTHAN_EQUALTO
+              || expressionTree.getFilterExpressionType() == ExpressionType.LESSTHAN_EQUALTO) {
+
+            return new RowLevelRangeFilterResolverImpl(expression, isExpressionResolve, false,
+                tableIdentifier);
+          }
+
           return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false, false);
         }
         break;
@@ -314,10 +303,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
           column = condExpression.getColumnList().get(0).getCarbonColumn();
           if (condExpression.isSingleColumn() && !column.isComplex()) {
             condExpression = (ConditionalExpression) expression;
-            if ((condExpression.getColumnList().get(0).getCarbonColumn()
-                .hasEncoding(Encoding.DICTIONARY) && !condExpression.getColumnList().get(0)
-                .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY))
-                || (condExpression.getColumnList().get(0).getCarbonColumn().isMeasure())) {
+            if (condExpression.getColumnList().get(0).getCarbonColumn().isMeasure()) {
               return new ConditionalFilterResolverImpl(expression, true, true,
                   condExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
             }
