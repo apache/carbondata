@@ -47,18 +47,11 @@ import org.apache.carbondata.format.Encoding;
  * <Column4 Data ChunkV3><Column4<Page1><Page2><Page3><Page4>>
  * <File Footer>
  */
-public class DimensionChunkPageReaderV3
-    extends DimensionChunkReaderV3 {
-
-  /**
-   * end position of last dimension in carbon data file
-   */
-  private long lastDimensionOffsets;
+public class DimensionChunkPageReaderV3 extends DimensionChunkReaderV3 {
 
   public DimensionChunkPageReaderV3(BlockletInfo blockletInfo,
       int[] eachColumnValueSize, String filePath) {
     super(blockletInfo, eachColumnValueSize, filePath);
-    lastDimensionOffsets = blockletInfo.getDimensionOffset();
   }
 
   /**

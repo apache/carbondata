@@ -245,7 +245,7 @@ class CarbondataPageSource implements ConnectorPageSource {
   private Page getNextPageForRow() {
     if (isFrstPage) {
       isFrstPage = false;
-      initialReaderForRow();BlockInfo.java
+      initialReaderForRow();
     }
 
     if (nanoStart == 0) {

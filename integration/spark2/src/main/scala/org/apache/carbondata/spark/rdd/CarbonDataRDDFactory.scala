@@ -929,7 +929,8 @@ object CarbonDataRDDFactory {
     if (!carbonLoadModel.isCarbonTransactionalTable && overwriteTable) {
       CarbonLoaderUtil.deleteNonTransactionalTableForInsertOverwrite(carbonLoadModel)
     }
-    val done = CarbonLoaderUtil.recordNewLoadMetadata(metadataDetails, carbonLoadModel, false, overwriteTable)
+    val done = CarbonLoaderUtil.recordNewLoadMetadata(
+      metadataDetails, carbonLoadModel, false, overwriteTable)
     if (!done) {
       val errorMessage = s"Dataload failed due to failure in table status updation for" +
                          s" ${carbonLoadModel.getTableName}"
