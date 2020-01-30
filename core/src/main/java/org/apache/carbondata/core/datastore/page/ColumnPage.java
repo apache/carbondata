@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -35,6 +36,7 @@ import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGener
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE;
@@ -642,7 +644,12 @@ public abstract class ColumnPage {
   public abstract byte[] getBytes(int rowId);
 
   /**
-   * Get byte value page
+   * Get page content as Byte Buffer
+   */
+  public abstract ByteBuffer getPage();
+
+  /**
+   * Get byte value page as bytearray
    */
   public abstract byte[] getBytePage();
 
@@ -767,6 +774,16 @@ public abstract class ColumnPage {
    */
   public byte[] compress(Compressor compressor) throws MemoryException, IOException {
     DataType dataType = columnPageEncoderMeta.getStoreDataType();
+
+    // if the columnpage is isUnsafeEnabled and the Datatype is primitive.
+    // we try to compress the data in offheap directly, avoiding a copy from offheap to heap
+    if (isUnsafeEnabled() && (dataType == DataTypes.BOOLEAN || dataType == BYTE
+        || dataType == SHORT || dataType == DataTypes.SHORT_INT || dataType == INT
+        || dataType == LONG || dataType == FLOAT || dataType == DOUBLE
+        || DataTypes.isDecimal(dataType))) {
+      return ByteUtil.byteBufferToBytes(compressor.compressByte(getPage()));
+    }
+
     if (dataType == DataTypes.BOOLEAN) {
       return compressor.compressByte(getBooleanPage());
     } else if (dataType == BYTE) {
@@ -913,6 +930,15 @@ public abstract class ColumnPage {
       byte[] lvEncodedBytes = compressor.unCompressByte(compressedData, offset, length);
       return newDecimalPage(meta, lvEncodedBytes);
     }
+  }
+
+  /**
+   * Whether unsafe enabled or not. In case of filling complete vector flow there is no need to use
+   * unsafe flow as we don't store the data in memory for long time.
+   * @return boolean Whether unsafe enabled or not
+   */
+  private boolean isUnsafeEnabled() {
+    return unsafe && !getColumnPageEncoderMeta().isFillCompleteVector();
   }
 
   /**

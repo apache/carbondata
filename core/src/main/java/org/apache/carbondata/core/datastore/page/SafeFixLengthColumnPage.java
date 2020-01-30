@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -219,6 +220,14 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   @Override
   public byte[] getBytes(int rowId) {
     return this.fixedLengthdata[rowId];
+  }
+
+  /**
+   * Get page as Byte Buffer
+   */
+  @Override
+  public ByteBuffer getPage() {
+    throw new UnsupportedOperationException("Get ByteBuffer is not supported in Safe mode");
   }
 
   /**

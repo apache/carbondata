@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -318,6 +319,11 @@ public class LocalDictColumnPage extends ColumnPage {
   @Override
   public byte[] getBytes(int rowId) {
     return actualDataColumnPage.getBytes(rowId);
+  }
+
+  @Override
+  public ByteBuffer getPage() {
+    throw new UnsupportedOperationException("Operation not supported");
   }
 
   @Override

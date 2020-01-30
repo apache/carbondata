@@ -18,7 +18,10 @@
 package org.apache.carbondata.core.util;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -28,6 +31,17 @@ import org.apache.carbondata.core.memory.CarbonUnsafe;
  * Util class for byte comparision
  */
 public final class ByteUtil {
+  private static final Field address, capacity;
+  static {
+    try {
+      address = Buffer.class.getDeclaredField("address");
+      address.setAccessible(true);
+      capacity = Buffer.class.getDeclaredField("capacity");
+      capacity.setAccessible(true);
+    } catch (NoSuchFieldException e) {
+      throw new AssertionError(e);
+    }
+  }
 
   public static final int SIZEOF_BYTE = 1;
 
@@ -755,5 +769,29 @@ public final class ByteUtil {
         ((long) bytes[offset + 5] & 0xff) << 40) | (((long) bytes[offset + 4] & 0xff) << 32) | (
         ((long) bytes[offset + 3] & 0xff) << 24) | (((long) bytes[offset + 2] & 0xff) << 16) | (
         ((long) bytes[offset + 1] & 0xff) << 8) | (((long) bytes[offset] & 0xff)));
+  }
+
+  public static ByteBuffer wrapAddress(long addr, int length, boolean useDirect) {
+    ByteBuffer bb = useDirect ?
+        ByteBuffer.allocateDirect(0).order(ByteOrder.nativeOrder()) :
+        ByteBuffer.allocate(0).order(ByteOrder.nativeOrder());
+    try {
+      address.setLong(bb, addr);
+      capacity.setInt(bb, length);
+      bb.clear();
+    } catch (IllegalAccessException e) {
+      throw new AssertionError(e);
+    }
+    return bb;
+  }
+
+  public static byte[] byteBufferToBytes(ByteBuffer buffer) {
+    if (buffer.isDirect()) {
+      byte[] arr = new byte[buffer.remaining()];
+      buffer.get(arr);
+      return arr;
+    } else {
+      return buffer.array();
+    }
   }
 }

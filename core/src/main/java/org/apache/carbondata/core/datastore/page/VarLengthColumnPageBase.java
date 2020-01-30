@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.page;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
@@ -449,6 +450,10 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
       offset += length;
     }
     return data;
+  }
+
+  public ByteBuffer getPage() {
+    return ByteUtil.wrapAddress(baseOffset, totalLength, true);
   }
 
   /**

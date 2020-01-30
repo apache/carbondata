@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
@@ -316,6 +317,11 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
       data[(int)i] = CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset);
     }
     return data;
+  }
+
+  @Override
+  public ByteBuffer getPage() {
+    return ByteUtil.wrapAddress(baseOffset, totalLength, true);
   }
 
   @Override
