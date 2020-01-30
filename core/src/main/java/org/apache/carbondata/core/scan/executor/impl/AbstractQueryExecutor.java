@@ -226,8 +226,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             blockletInfo.getBlockletIndex().getMinMaxIndex().setIsMinMaxSet(minMaxFlag);
           }
         }
-        readAndFillBlockletInfo(tableBlockInfos, blockInfo,
-            blockletDetailInfo, fileFooter);
+        readAndFillBlockletInfo(tableBlockInfos, blockInfo, blockletDetailInfo, fileFooter);
       } else {
         if (null == segmentProperties) {
           segmentProperties = new SegmentProperties(blockInfo.getDetailInfo().getColumnSchemas(),

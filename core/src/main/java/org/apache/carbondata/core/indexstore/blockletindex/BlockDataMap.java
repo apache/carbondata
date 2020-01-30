@@ -236,7 +236,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     FilterUtil.setMinMaxFlagForLegacyStore(minMaxFlag, segmentProperties);
     long totalRowCount = 0;
     for (DataFileFooter fileFooter : indexInfo) {
-      TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
+      TableBlockInfo blockInfo = fileFooter.getBlockInfo();
       BlockMetaInfo blockMetaInfo =
           blockletDataMapInfo.getBlockMetaInfoMap().get(blockInfo.getFilePath());
       // Here it loads info about all blocklets of index
@@ -302,7 +302,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     Arrays.fill(taskSummaryMinMaxFlag, true);
     long totalRowCount = 0;
     for (DataFileFooter fileFooter : indexInfo) {
-      TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
+      TableBlockInfo blockInfo = fileFooter.getBlockInfo();
       BlockMetaInfo blockMetaInfo =
           blockletDataMapInfo.getBlockMetaInfoMap().get(blockInfo.getFilePath());
       footerCounter++;
@@ -336,8 +336,7 @@ public class BlockDataMap extends CoarseGrainDataMap
         // with unique file path because each unique path will correspond to one
         // block in the task. OR condition is to handle the loading of last file footer
         if (!blockInfo.getFilePath().equals(tempFilePath) || footerCounter == indexInfo.size()) {
-          TableBlockInfo previousBlockInfo =
-              previousDataFileFooter.getBlockInfo().getTableBlockInfo();
+          TableBlockInfo previousBlockInfo = previousDataFileFooter.getBlockInfo();
           summaryRow = loadToUnsafeBlock(schema, taskSummarySchema, previousDataFileFooter,
               segmentProperties, getMinMaxCacheColumns(), previousBlockInfo.getFilePath(),
               summaryRow,
@@ -370,9 +369,9 @@ public class BlockDataMap extends CoarseGrainDataMap
       summaryRow =
           loadToUnsafeBlock(schema, taskSummarySchema, previousDataFileFooter, segmentProperties,
               getMinMaxCacheColumns(),
-              previousDataFileFooter.getBlockInfo().getTableBlockInfo().getFilePath(), summaryRow,
+              previousDataFileFooter.getBlockInfo().getFilePath(), summaryRow,
               blockletDataMapInfo.getBlockMetaInfoMap()
-                  .get(previousDataFileFooter.getBlockInfo().getTableBlockInfo().getFilePath()),
+                  .get(previousDataFileFooter.getBlockInfo().getFilePath()),
               blockMinValues, blockMaxValues, minMaxFlag);
       totalRowCount += previousDataFileFooter.getNumberOfRows();
       blockletCountInEachBlock.add(totalBlockletsInOneBlock);
@@ -455,7 +454,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     // add schema updated time
     row.setLong(fileFooter.getSchemaUpdatedTimeStamp(), ordinal++);
     // add block offset
-    row.setLong(fileFooter.getBlockInfo().getTableBlockInfo().getBlockOffset(), ordinal++);
+    row.setLong(fileFooter.getBlockInfo().getBlockOffset(), ordinal++);
     try {
       setLocations(blockMetaInfo.getLocationInfo(), row, ordinal++);
       // store block size

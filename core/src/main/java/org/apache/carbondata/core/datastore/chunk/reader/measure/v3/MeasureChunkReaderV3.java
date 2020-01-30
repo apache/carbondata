@@ -103,15 +103,14 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
     DataChunk3 dataChunk =
         CarbonUtil.readDataChunk3(buffer, 0, measureColumnChunkLength.get(columnIndex));
 
-    return getMeasureRawColumnChunk(fileReader, columnIndex, 0,  dataLength, buffer,
-        dataChunk);
+    return getMeasureRawColumnChunk(fileReader, columnIndex, 0, buffer, dataChunk);
   }
 
   MeasureRawColumnChunk getMeasureRawColumnChunk(FileReader fileReader, int columnIndex,
-      long offset, int dataLength, ByteBuffer buffer, DataChunk3 dataChunk) {
+      long offset, ByteBuffer buffer, DataChunk3 dataChunk) {
     // creating a raw chunks instance and filling all the details
     MeasureRawColumnChunk rawColumnChunk =
-        new MeasureRawColumnChunk(columnIndex, buffer, offset, dataLength, this);
+        new MeasureRawColumnChunk(columnIndex, buffer, offset, this);
     int numberOfPages = dataChunk.getPage_length().size();
     byte[][] maxValueOfEachPage = new byte[numberOfPages][];
     byte[][] minValueOfEachPage = new byte[numberOfPages][];
@@ -129,8 +128,6 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
     rawColumnChunk.setMaxValues(maxValueOfEachPage);
     rawColumnChunk.setMinValues(minValueOfEachPage);
     rawColumnChunk.setRowCount(eachPageLength);
-    rawColumnChunk.setOffsets(ArrayUtils
-        .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));
     return rawColumnChunk;
   }
 
@@ -176,7 +173,7 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
       DataChunk3 dataChunk =
           CarbonUtil.readDataChunk3(buffer, runningLength, measureColumnChunkLength.get(i));
       MeasureRawColumnChunk measureRawColumnChunk =
-          getMeasureRawColumnChunk(fileReader, i, runningLength, currentLength, buffer, dataChunk);
+          getMeasureRawColumnChunk(fileReader, i, runningLength, buffer, dataChunk);
       measureDataChunk[index] = measureRawColumnChunk;
       runningLength += currentLength;
       index++;

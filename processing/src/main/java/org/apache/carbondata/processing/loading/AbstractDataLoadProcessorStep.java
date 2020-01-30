@@ -22,7 +22,6 @@ import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
 

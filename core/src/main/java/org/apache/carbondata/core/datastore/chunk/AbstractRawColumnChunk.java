@@ -34,8 +34,6 @@ public abstract class AbstractRawColumnChunk {
 
   protected ByteBuffer rawData;
 
-  private int[] offsets;
-
   private int[] rowCount;
 
   protected int pagesCount;
@@ -44,15 +42,12 @@ public abstract class AbstractRawColumnChunk {
 
   private long offSet;
 
-  protected int length;
-
   private DataChunk3 dataChunkV3;
 
-  public AbstractRawColumnChunk(int columnIndex, ByteBuffer rawData, long offSet, int length) {
+  public AbstractRawColumnChunk(int columnIndex, ByteBuffer rawData, long offSet) {
     this.columnIndex = columnIndex;
     this.rawData = rawData;
     this.offSet = offSet;
-    this.length = length;
   }
 
   public byte[][] getMinValues() {
@@ -73,14 +68,6 @@ public abstract class AbstractRawColumnChunk {
 
   public ByteBuffer getRawData() {
     return rawData;
-  }
-
-  public int[] getOffsets() {
-    return offsets;
-  }
-
-  public void setOffsets(int[] offsets) {
-    this.offsets = offsets;
   }
 
   public int getPagesCount() {
@@ -109,10 +96,6 @@ public abstract class AbstractRawColumnChunk {
 
   public long getOffSet() {
     return offSet;
-  }
-
-  public int getLength() {
-    return length;
   }
 
   public DataChunk3 getDataChunkV3() {

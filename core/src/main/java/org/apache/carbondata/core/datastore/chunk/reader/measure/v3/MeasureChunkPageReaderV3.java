@@ -75,19 +75,6 @@ public class MeasureChunkPageReaderV3
   @Override
   public MeasureRawColumnChunk readRawMeasureChunk(FileReader fileReader,
       int blockletColumnIndex) throws IOException {
-    int dataLength = 0;
-    // to calculate the length of the data to be read
-    // column other than last column we can subtract the offset of current column with
-    // next column and get the total length.
-    // but for last column we need to use lastDimensionOffset which is the end position
-    // of the last dimension, we can subtract current dimension offset from lastDimensionOffset
-    if (measureColumnChunkOffsets.size() - 1 == blockletColumnIndex) {
-      dataLength = (int) (measureOffsets - measureColumnChunkOffsets.get(blockletColumnIndex));
-    } else {
-      dataLength =
-          (int) (measureColumnChunkOffsets.get(blockletColumnIndex + 1) - measureColumnChunkOffsets
-              .get(blockletColumnIndex));
-    }
     ByteBuffer buffer;
     // read the data from carbon data file
     synchronized (fileReader) {
@@ -98,7 +85,7 @@ public class MeasureChunkPageReaderV3
     // get the data chunk which will have all the details about the data pages
     DataChunk3 dataChunk = CarbonUtil.readDataChunk3(new ByteArrayInputStream(buffer.array()));
     return getMeasureRawColumnChunk(fileReader, blockletColumnIndex,
-        measureColumnChunkOffsets.get(blockletColumnIndex), dataLength, null, dataChunk);
+        measureColumnChunkOffsets.get(blockletColumnIndex), null, dataChunk);
   }
 
   /**

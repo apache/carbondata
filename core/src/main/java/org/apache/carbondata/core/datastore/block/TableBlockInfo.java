@@ -39,8 +39,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 /**
- * class will be used to pass the block detail detail will be passed form driver
- * to all the executor to load the b+ tree
+ * class will be used to pass the block information form driver
+ * to all the executor to read the block
  */
 public class TableBlockInfo implements Distributable, Serializable {
 
@@ -73,11 +73,6 @@ public class TableBlockInfo implements Distributable, Serializable {
    * id of the segment this will be used to sort the blocks
    */
   private Segment segment;
-
-  /**
-   * id of the Blocklet.
-   */
-  private String blockletId;
 
   private String[] locations;
 
@@ -134,7 +129,6 @@ public class TableBlockInfo implements Distributable, Serializable {
       String[] locations, long blockLength, ColumnarFormatVersion version,
       String[] deletedDeltaFilePath) {
     this.filePath = FileFactory.getUpdatedFilePath(filePath);
-    this.blockletId = "0";
     this.blockOffset = blockOffset;
     this.segment = Segment.toSegment(segmentId);
     this.locations = locations;
@@ -149,13 +143,6 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   /**
    * constructor to initialize the TbaleBlockInfo with BlockletInfos
-   *
-   * @param filePath
-   * @param blockOffset
-   * @param segmentId
-   * @param locations
-   * @param blockLength
-   * @param blockletInfos
    */
   public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
       long blockLength, BlockletInfos blockletInfos, ColumnarFormatVersion version,
@@ -166,40 +153,13 @@ public class TableBlockInfo implements Distributable, Serializable {
   }
 
   /**
-   * constructor to initialize the TableBlockInfo with blockletIds
-   *
-   * @param filePath
-   * @param blockOffset
-   * @param segmentId
-   * @param locations
-   * @param blockLength
-   * @param blockletInfos
-   */
-  public TableBlockInfo(String filePath, String blockletId, long blockOffset, String segmentId,
-      String[] locations, long blockLength, BlockletInfos blockletInfos,
-      ColumnarFormatVersion version, String[] deletedDeltaFilePath) {
-    this(filePath, blockOffset, segmentId, locations, blockLength, blockletInfos, version,
-        deletedDeltaFilePath);
-    this.blockletId = blockletId;
-  }
-
-  /**
    * constructor to initialize the TableBlockInfo with blockStorageIdMap
-   *
-   * @param filePath
-   * @param blockOffset
-   * @param segmentId
-   * @param locations
-   * @param blockLength
-   * @param blockletInfos
-   * @param version
-   * @param blockStorageIdMap
    */
-  public TableBlockInfo(String filePath, String blockletId, long blockOffset, String segmentId,
-      String[] locations, long blockLength, BlockletInfos blockletInfos,
-      ColumnarFormatVersion version, Map<String, String> blockStorageIdMap,
+  public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
+      long blockLength, BlockletInfos blockletInfos, ColumnarFormatVersion version,
+      Map<String, String> blockStorageIdMap,
       String[] deletedDeltaFilePath) {
-    this(filePath, blockletId, blockOffset, segmentId, locations, blockLength, blockletInfos,
+    this(filePath, blockOffset, segmentId, locations, blockLength, blockletInfos,
         version, deletedDeltaFilePath);
     this.blockStorageIdMap = blockStorageIdMap;
   }
@@ -213,7 +173,6 @@ public class TableBlockInfo implements Distributable, Serializable {
     info.blockOffset = blockOffset;
     info.blockLength = blockLength;
     info.segment = segment;
-    info.blockletId = blockletId;
     info.locations = locations;
     info.version = version;
     info.isDataBlockFromOldStore = isDataBlockFromOldStore;
@@ -427,14 +386,6 @@ public class TableBlockInfo implements Distributable, Serializable {
     this.detailInfo = detailInfo;
   }
 
-  public String getBlockletId() {
-    return blockletId;
-  }
-
-  public void setBlockletId(String blockletId) {
-    this.blockletId = blockletId;
-  }
-
   public boolean isDataBlockFromOldStore() {
     return isDataBlockFromOldStore;
   }
@@ -474,7 +425,6 @@ public class TableBlockInfo implements Distributable, Serializable {
     sb.append(", blockOffset=").append(blockOffset);
     sb.append(", blockLength=").append(blockLength);
     sb.append(", segment='").append(segment.toString()).append('\'');
-    sb.append(", blockletId='").append(blockletId).append('\'');
     sb.append(", locations=").append(Arrays.toString(locations));
     sb.append('}');
     return sb.toString();

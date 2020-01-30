@@ -79,17 +79,6 @@ public class DimensionChunkPageReaderV3
       int blockletColumnIndex) throws IOException {
     // get the current dimension offset
     long currentDimensionOffset = dimensionChunksOffset.get(blockletColumnIndex);
-    int length = 0;
-    // to calculate the length of the data to be read
-    // column other than last column we can subtract the offset of current column with
-    // next column and get the total length.
-    // but for last column we need to use lastDimensionOffset which is the end position
-    // of the last dimension, we can subtract current dimension offset from lastDimensionOffset
-    if (dimensionChunksOffset.size() - 1 == blockletColumnIndex) {
-      length = (int) (lastDimensionOffsets - currentDimensionOffset);
-    } else {
-      length = (int) (dimensionChunksOffset.get(blockletColumnIndex + 1) - currentDimensionOffset);
-    }
     ByteBuffer buffer;
     // read the data from carbon data file
     synchronized (fileReader) {
@@ -99,7 +88,7 @@ public class DimensionChunkPageReaderV3
     // get the data chunk which will have all the details about the data pages
     DataChunk3 dataChunk = CarbonUtil.readDataChunk3(new ByteArrayInputStream(buffer.array()));
     DimensionRawColumnChunk rawColumnChunk =
-        getDimensionRawColumnChunk(fileReader, blockletColumnIndex, currentDimensionOffset, length,
+        getDimensionRawColumnChunk(fileReader, blockletColumnIndex, currentDimensionOffset,
             null, dataChunk);
 
     return rawColumnChunk;

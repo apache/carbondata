@@ -716,15 +716,14 @@ public class SegmentFileStore {
       // duplicates
       Set<String> blocks = new LinkedHashSet<>();
       for (DataFileFooter footer : indexInfo) {
-        blocks.add(footer.getBlockInfo().getTableBlockInfo().getFilePath());
+        blocks.add(footer.getBlockInfo().getFilePath());
       }
       indexFilesMap.put(entry.getKey(), new ArrayList<>(blocks));
       boolean added = false;
       for (Map.Entry<String, List<String>> mergeFile : indexFileStore
           .getCarbonMergeFileToIndexFilesMap().entrySet()) {
         if (mergeFile.getValue().contains(entry.getKey()
-            .substring(entry.getKey().lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR) + 1,
-                entry.getKey().length()))) {
+            .substring(entry.getKey().lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR) + 1))) {
           indexOrMergeFiles.add(mergeFile.getKey());
           added = true;
           break;

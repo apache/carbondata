@@ -263,11 +263,6 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
             true);
     OperationContext operationContext = (OperationContext) getOperationContext();
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
-    String uuid = "";
-    if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildTableForMV()
-        && operationContext != null) {
-      uuid = operationContext.getProperty("uuid").toString();
-    }
     String tempFolderPath = loadModel.getSegmentId() + "_" + loadModel.getFactTimeStamp() + ".tmp";
     if (operationContext != null) {
       operationContext.setProperty("partitionPath", partitionPath);

@@ -128,9 +128,6 @@ public final class FilterUtil {
     if (null != filterExecuterType) {
       switch (filterExecuterType) {
         case INCLUDE:
-          if (null != filterExpressionResolverTree.getDimColResolvedFilterInfo()) {
-            filterExpressionResolverTree.getDimColResolvedFilterInfo();
-          }
           // return true filter expression if filter column min/max is not cached in driver
           if (checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(filterExpressionResolverTree,
               segmentProperties, minMaxCacheColumns, isStreamDataFile)) {

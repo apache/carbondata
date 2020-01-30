@@ -113,15 +113,15 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
     }
     // get the data chunk which will have all the details about the data pages
     DataChunk3 dataChunk = CarbonUtil.readDataChunk3(buffer, 0, length);
-    return getDimensionRawColumnChunk(fileReader, columnIndex, 0, length, buffer,
+    return getDimensionRawColumnChunk(fileReader, columnIndex, 0, buffer,
         dataChunk);
   }
 
   protected DimensionRawColumnChunk getDimensionRawColumnChunk(FileReader fileReader,
-      int columnIndex, long offset, int length, ByteBuffer buffer, DataChunk3 dataChunk) {
+      int columnIndex, long offset, ByteBuffer buffer, DataChunk3 dataChunk) {
     // creating a raw chunks instance and filling all the details
     DimensionRawColumnChunk rawColumnChunk =
-        new DimensionRawColumnChunk(columnIndex, buffer, offset, length, this);
+        new DimensionRawColumnChunk(columnIndex, buffer, offset, this);
     int numberOfPages = dataChunk.getPage_length().size();
     byte[][] maxValueOfEachPage = new byte[numberOfPages][];
     byte[][] minValueOfEachPage = new byte[numberOfPages][];
@@ -148,8 +148,6 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
     rawColumnChunk.setMinValues(minValueOfEachPage);
     rawColumnChunk.setMinMaxFlagArray(minMaxFlag);
     rawColumnChunk.setRowCount(eachPageLength);
-    rawColumnChunk.setOffsets(ArrayUtils
-        .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));
     return rawColumnChunk;
   }
 
@@ -194,8 +192,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
       DataChunk3 dataChunk =
           CarbonUtil.readDataChunk3(buffer, runningLength, dimensionChunksLength.get(i));
       dimensionDataChunks[index] =
-          getDimensionRawColumnChunk(fileReader, i, runningLength, currentLength, buffer,
-              dataChunk);
+          getDimensionRawColumnChunk(fileReader, i, runningLength, buffer, dataChunk);
       runningLength += currentLength;
       index++;
     }

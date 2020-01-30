@@ -303,7 +303,7 @@ public class CarbonInputSplit extends FileSplit
           new BlockletInfos();
       try {
         TableBlockInfo blockInfo =
-            new TableBlockInfo(split.getFilePath(), split.blockletId, split.getStart(),
+            new TableBlockInfo(split.getFilePath(), split.getStart(),
                 split.getSegment().toString(), split.getLocations(), split.getLength(),
                 blockletInfos, split.getVersion(), split.getDeleteDeltaFiles());
         blockInfo.setDetailInfo(split.getDetailInfo());
@@ -325,8 +325,8 @@ public class CarbonInputSplit extends FileSplit
         new BlockletInfos();
     try {
       TableBlockInfo blockInfo =
-          new TableBlockInfo(inputSplit.getFilePath(), inputSplit.blockletId,
-              inputSplit.getStart(), inputSplit.getSegment().toString(), inputSplit.getLocations(),
+          new TableBlockInfo(inputSplit.getFilePath(), inputSplit.getStart(),
+              inputSplit.getSegment().toString(), inputSplit.getLocations(),
               inputSplit.getLength(), blockletInfos, inputSplit.getVersion(),
               inputSplit.getDeleteDeltaFiles());
       blockInfo.setDetailInfo(inputSplit.getDetailInfo());

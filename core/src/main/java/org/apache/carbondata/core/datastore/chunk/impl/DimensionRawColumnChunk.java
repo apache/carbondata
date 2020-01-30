@@ -57,9 +57,9 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
 
   private CarbonDictionary localDictionary;
 
-  public DimensionRawColumnChunk(int columnIndex, ByteBuffer rawData, long offSet, int length,
+  public DimensionRawColumnChunk(int columnIndex, ByteBuffer rawData, long offSet,
       DimensionColumnChunkReader columnChunkReader) {
-    super(columnIndex, rawData, offSet, length);
+    super(columnIndex, rawData, offSet);
     this.chunkReader = columnChunkReader;
   }
 

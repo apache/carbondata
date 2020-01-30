@@ -19,8 +19,6 @@ package org.apache.carbondata.processing.loading.csvinput;
 
 import java.io.Serializable;
 
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
