@@ -70,11 +70,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
   }
 
   @Override
-  public int getColsCount() {
-    return 1;
-  }
-
-  @Override
   public void parseBlocksAndReturnComplexColumnByteArray(DimensionRawColumnChunk[] rawColumnChunks,
       DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber,
       DataOutputStream dataOutputStream) throws IOException {

@@ -74,15 +74,6 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
   }
 
   @Override
-  public int getColsCount() {
-    int colsCount = 1;
-    for (int i = 0; i < children.size(); i++) {
-      colsCount += children.get(i).getColsCount();
-    }
-    return colsCount;
-  }
-
-  @Override
   public void parseBlocksAndReturnComplexColumnByteArray(
       DimensionRawColumnChunk[] dimensionColumnDataChunks,
       DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber,

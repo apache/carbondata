@@ -33,8 +33,6 @@ public interface GenericQueryType {
 
   void addChildren(GenericQueryType children);
 
-  int getColsCount();
-
   void parseBlocksAndReturnComplexColumnByteArray(DimensionRawColumnChunk[] rawColumnChunks,
       DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber,
       DataOutputStream dataOutputStream) throws IOException;

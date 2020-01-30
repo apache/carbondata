@@ -209,9 +209,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
    * This object is reused. Calling this enables the vectorized reader. This should be called
    * before any calls to nextKeyValue/nextBatch.
    */
-
-  public void initBatch(MemoryMode memMode, StructType partitionColumns,
-      InternalRow partitionValues) {
+  public void initBatch(StructType partitionColumns, InternalRow partitionValues) {
     List<ProjectionDimension> queryDimension = queryModel.getProjectionDimensions();
     List<ProjectionMeasure> queryMeasures = queryModel.getProjectionMeasures();
     StructField[] fields = new StructField[queryDimension.size() + queryMeasures.size()];
@@ -330,7 +328,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
   }
 
   private void initBatch() {
-    initBatch(DEFAULT_MEMORY_MODE, new StructType(), InternalRow.empty());
+    initBatch(new StructType(), InternalRow.empty());
   }
 
   private void resultBatch() {

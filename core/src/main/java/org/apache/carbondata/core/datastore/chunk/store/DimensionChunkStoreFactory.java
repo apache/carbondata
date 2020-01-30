@@ -70,7 +70,7 @@ public class DimensionChunkStoreFactory {
       switch (storeType) {
         case FIXED_LENGTH:
           return new UnsafeFixedLengthDimensionDataChunkStore(totalSize, columnValueSize,
-              isInvertedIndex, numberOfRows, dataLength);
+              isInvertedIndex, dataLength);
         case VARIABLE_SHORT_LENGTH:
           return new UnsafeVariableShortLengthDimensionDataChunkStore(totalSize, isInvertedIndex,
               numberOfRows, dataLength);
@@ -79,8 +79,7 @@ public class DimensionChunkStoreFactory {
               numberOfRows, dataLength);
         case LOCAL_DICT:
           return new LocalDictDimensionDataChunkStore(
-              new UnsafeFixedLengthDimensionDataChunkStore(totalSize, 3, isInvertedIndex,
-                  numberOfRows, dataLength), dictionary, dataLength);
+              new UnsafeFixedLengthDimensionDataChunkStore(totalSize, 3, isInvertedIndex, dataLength), dictionary, dataLength);
         default:
           throw new UnsupportedOperationException("Invalid dimension store type");
       }

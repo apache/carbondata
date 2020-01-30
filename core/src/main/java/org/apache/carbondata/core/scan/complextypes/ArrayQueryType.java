@@ -81,11 +81,6 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
   }
 
   @Override
-  public int getColsCount() {
-    return children.getColsCount() + 1;
-  }
-
-  @Override
   public void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder)
       throws IOException {
     readBlockDataChunk(blockChunkHolder);

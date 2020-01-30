@@ -61,15 +61,6 @@ public class TableBlockIndexUniqueIdentifierWrapper implements Serializable {
     this.configuration = configuration;
   }
 
-  // Note: The constructor is getting used in extensions with other functionalities.
-  // Kindly do not remove
-  public TableBlockIndexUniqueIdentifierWrapper(
-      TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier, CarbonTable carbonTable,
-      Configuration configuration, boolean addTableBlockToUnsafeAndLRUCache) {
-    this(tableBlockIndexUniqueIdentifier, carbonTable, configuration);
-    this.addTableBlockToUnsafeAndLRUCache = addTableBlockToUnsafeAndLRUCache;
-  }
-
   public TableBlockIndexUniqueIdentifier getTableBlockIndexUniqueIdentifier() {
     return tableBlockIndexUniqueIdentifier;
   }

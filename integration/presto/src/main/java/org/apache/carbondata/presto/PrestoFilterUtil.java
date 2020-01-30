@@ -23,9 +23,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
@@ -65,8 +63,6 @@ import static com.google.common.base.Preconditions.checkArgument;
  * PrestoFilterUtil create the carbonData Expression from the presto-domain
  */
 public class PrestoFilterUtil {
-
-  private static Map<Integer, Expression> filterMap = new HashMap<>();
 
   private static final String HIVE_DEFAULT_DYNAMIC_PARTITION = "__HIVE_DEFAULT_PARTITION__";
 
@@ -317,14 +313,4 @@ public class PrestoFilterUtil {
     return rawdata;
   }
 
-  /**
-   * get the filters from key
-   */
-  static Expression getFilters(Integer key) {
-    return filterMap.get(key);
-  }
-
-  static void setFilter(Integer tableId, Expression filter) {
-    filterMap.put(tableId, filter);
-  }
 }

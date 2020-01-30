@@ -430,7 +430,7 @@ class SparkCarbonFileFormat extends FileFormat
             null,
             supportBatchValue.toString)
           vectorizedReader.initialize(split, hadoopAttemptContext)
-          vectorizedReader.initBatch(MemoryMode.ON_HEAP, partitionSchema, file.partitionValues)
+          vectorizedReader.initBatch(partitionSchema, file.partitionValues)
           logDebug(s"Appending $partitionSchema ${ file.partitionValues }")
           vectorizedReader
         } else {
