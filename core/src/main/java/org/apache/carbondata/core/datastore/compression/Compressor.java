@@ -18,10 +18,13 @@
 package org.apache.carbondata.core.datastore.compression;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public interface Compressor {
 
   String getName();
+
+  ByteBuffer compressByte(ByteBuffer unCompInput);
 
   byte[] compressByte(byte[] unCompInput);
 

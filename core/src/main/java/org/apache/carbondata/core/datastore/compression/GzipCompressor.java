@@ -20,6 +20,9 @@ package org.apache.carbondata.core.datastore.compression;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.WritableByteChannel;
 
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
@@ -64,6 +67,36 @@ public class GzipCompressor extends AbstractCompressor {
   }
 
   /**
+   * This method takes the Byte Buffer data and Compresses in gzip format
+   *
+   * @param buffer Data Byte Buffer passed for compression
+   * @return Compressed Byte Array
+   */
+  private ByteBuffer compressData(ByteBuffer buffer) {
+    int initialSize = (buffer.remaining() / 2) == 0 ? buffer.remaining() : buffer.remaining() / 2;
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(initialSize);
+    try {
+      GzipCompressorOutputStream gzipCompressorOutputStream =
+          new GzipCompressorOutputStream(byteArrayOutputStream);
+      try {
+        /**
+         * Below api will write bytes from specified byte array to the gzipCompressorOutputStream
+         * The output stream will compress the given byte array.
+         */
+        WritableByteChannel channel = Channels.newChannel(gzipCompressorOutputStream);
+        channel.write(buffer);
+      } catch (IOException e) {
+        throw new RuntimeException("Error during Compression writing step ", e);
+      } finally {
+        gzipCompressorOutputStream.close();
+      }
+    } catch (IOException e) {
+      throw new RuntimeException("Error during Compression step ", e);
+    }
+    return ByteBuffer.wrap(byteArrayOutputStream.toByteArray());
+  }
+
+  /**
    * This method takes the Byte Array data and Decompresses in gzip format
    *
    * @param data   Data Byte Array for Compression
@@ -91,6 +124,15 @@ public class GzipCompressor extends AbstractCompressor {
       throw new RuntimeException("Error during Decompression step ", e);
     }
     return byteOutputStream.toByteArray();
+  }
+
+  @Override
+  public ByteBuffer compressByte(ByteBuffer unCompInput) {
+    if (unCompInput.isDirect()) {
+      return compressData(unCompInput);
+    } else {
+      return ByteBuffer.wrap(compressByte(unCompInput.array()));
+    }
   }
 
   @Override

@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.compression;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import com.github.luben.zstd.Zstd;
 
@@ -30,6 +31,18 @@ public class ZstdCompressor extends AbstractCompressor {
   @Override
   public String getName() {
     return "zstd";
+  }
+
+  @Override
+  public ByteBuffer compressByte(ByteBuffer unCompInput) {
+    // If the input is direct bytebuffer, compress directly
+    // Otherwise, the input should be converted to byte array,
+    // considering Zstd can't compress non-direct bytebuffer directly
+    if (unCompInput.isDirect()) {
+      return Zstd.compress(unCompInput, COMPRESS_LEVEL);
+    } else {
+      return ByteBuffer.wrap(compressByte(unCompInput.array()));
+    }
   }
 
   @Override

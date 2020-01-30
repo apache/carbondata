@@ -50,6 +50,8 @@ case class Rcd(booleanField: Boolean, shortField: Short, intField: Int, bigintFi
 class CustomizeCompressor extends Compressor {
   override def getName: String = "org.apache.carbondata.integration.spark.testsuite.dataload.CustomizeCompressor"
 
+  override def compressByte(unCompInput: ByteBuffer): ByteBuffer = unCompInput
+
   override def compressByte(unCompInput: Array[Byte]): Array[Byte] = unCompInput
 
   override def compressByte(unCompInput: Array[Byte], byteSize: Int): Array[Byte] = unCompInput

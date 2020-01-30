@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.compression;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 
@@ -55,6 +56,48 @@ public class SnappyCompressor extends AbstractCompressor {
   @Override
   public String getName() {
     return "snappy";
+  }
+
+  @Override
+  public ByteBuffer compressByte(ByteBuffer unCompInput) {
+    try {
+      // If the input is direct bytebuffer, compress directly
+      // Otherwise, the input should be converted to byte array,
+      // considering Snappy can't compress non-direct bytebuffer directly
+      if (unCompInput.isDirect()) {
+        // init a directbytebuffer to hold the compressed data
+        int maxCompressedLength = (int) maxCompressedLength(unCompInput.remaining());
+        ByteBuffer compOutput = ByteBuffer.allocateDirect(maxCompressedLength);
+
+        // compress
+        int compressSize = Snappy.compress(unCompInput, compOutput);
+
+        // verify
+        if (!Snappy.isValidCompressedBuffer(compOutput)) {
+          throw new IOException("the compressed output isnot valid compressed buffer");
+        }
+        if (compOutput.position() != 0) {
+          throw new IOException("the position of compressed output isnot zero but "
+              + compOutput.position());
+        }
+        if (compOutput.limit() != compressSize) {
+          throw new IOException("the limit of compressed output isnot equals to compressSize, " +
+              "the compressed output's limit is " + compOutput.limit() + ", the compressSize is"
+              + compressSize);
+        }
+        if (compOutput.remaining() != compressSize) {
+          throw new IOException("the remaining of compressed output isnot equals to compressSize, "
+              + "the compressed output's remaining is " + compOutput.limit()
+              + ", the compressSize is" + compressSize);
+        }
+        return compOutput;
+      } else {
+        return ByteBuffer.wrap(compressByte(unCompInput.array()));
+      }
+    } catch (IOException e) {
+      LOGGER.error(e.getMessage(), e);
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
