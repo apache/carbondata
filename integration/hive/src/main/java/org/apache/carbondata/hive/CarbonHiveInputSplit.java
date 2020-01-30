@@ -35,14 +35,13 @@ import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.hadoop.internal.index.Block;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.FileSplit;
 
 public class CarbonHiveInputSplit extends FileSplit
-    implements Distributable, Serializable, Writable, Block {
+    implements Distributable, Serializable, Writable {
 
   private static final long serialVersionUID = 3520344046772190208L;
   private String taskId;
@@ -309,11 +308,6 @@ public class CarbonHiveInputSplit extends FileSplit
     result = 31 * result + invalidSegments.hashCode();
     result = 31 * result + numberOfBlocklets;
     return result;
-  }
-
-  @Override
-  public String getBlockPath() {
-    return getPath().getName();
   }
 
   /**

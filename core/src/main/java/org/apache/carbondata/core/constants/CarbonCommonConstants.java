@@ -205,17 +205,6 @@ public final class CarbonCommonConstants {
   public static final String ZOOKEEPER_LOCATION = "/CarbonLocks";
 
   /**
-   * xxhash algorithm property for hashmap
-   */
-  @CarbonProperty
-  public static final String ENABLE_XXHASH = "carbon.enableXXHash";
-
-  /**
-   * xxhash algorithm property for hashmap Default value false
-   */
-  public static final String ENABLE_XXHASH_DEFAULT = "true";
-
-  /**
    * System property to enable or disable local dictionary generation
    */
   @CarbonProperty
@@ -1593,11 +1582,6 @@ public final class CarbonCommonConstants {
   //////////////////////////////////////////////////////////////////////////////////////////
 
   /**
-   * surrogate value of null
-   */
-  public static final int DICT_VALUE_NULL = 1;
-
-  /**
    * surrogate value of null for direct dictionary
    */
   public static final int DIRECT_DICT_VALUE_NULL = 1;
@@ -1611,11 +1595,6 @@ public final class CarbonCommonConstants {
    * short size in bytes
    */
   public static final int SHORT_SIZE_IN_BYTE = 2;
-
-  /**
-   * DOUBLE size in bytes
-   */
-  public static final int DOUBLE_SIZE_IN_BYTE = 8;
 
   /**
    * LONG size in bytes
@@ -1750,11 +1729,6 @@ public final class CarbonCommonConstants {
   public static final String MERGERD_EXTENSION = ".merge";
 
   /**
-   * CSV_READ_COPIES
-   */
-  public static final String DEFAULT_NUMBER_CORES = "2";
-
-  /**
    * CSV_FILE_EXTENSION
    */
   public static final String CSV_FILE_EXTENSION = ".csv";
@@ -1780,11 +1754,6 @@ public final class CarbonCommonConstants {
   public static final String SEMICOLON_SPC_CHARACTER = ";#!@:SEMIC:@!#;";
 
   /**
-   * AMPERSAND_SPC_CHARACTER
-   */
-  public static final String AMPERSAND_SPC_CHARACTER = "&#!@:AMPER:@!#&";
-
-  /**
    * ATTHERATE_SPC_CHARACTER
    */
   public static final String COMA_SPC_CHARACTER = ",#!:COMA:!#,";
@@ -1803,11 +1772,6 @@ public final class CarbonCommonConstants {
    * DEFAULT_COLLECTION_SIZE
    */
   public static final int DEFAULT_COLLECTION_SIZE = 16;
-
-  /**
-   * DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE
-   */
-  public static final String DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE = "1";
 
   public static final String IS_FULLY_FILLED_BITS_DEFAULT_VALUE = "true";
 
@@ -2127,11 +2091,6 @@ public final class CarbonCommonConstants {
   public static final String MEASURE_METADATA_FILE_NAME = "/msrMetaData_";
 
   /**
-   * DUMMY aggregation function
-   */
-  public static final String DUMMY = "dummy";
-
-  /**
    * Bytes for string 0, it is used in codegen in case of null values.
    */
   public static final byte[] ZERO_BYTE_ARRAY = "0".getBytes(Charset.forName(DEFAULT_CHARSET));
@@ -2195,22 +2154,6 @@ public final class CarbonCommonConstants {
    * LEVEL_METADATA_FILE
    */
   public static final String LEVEL_METADATA_FILE = "levelmetadata_";
-
-  /**
-   * DASH
-   */
-  public static final String DASH = "-";
-
-  /**
-   * FACT_UPDATE_EXTENSION.
-   */
-  public static final String FACT_UPDATE_EXTENSION = ".carbondata_update";
-  public static final String FACT_DELETE_EXTENSION = "_delete";
-
-  /**
-   * MARKED_FOR_UPDATION
-   */
-  public static final String FACT_FILE_UPDATED = "update";
 
   /**
    * default value in size for cache size of bloom filter datamap.

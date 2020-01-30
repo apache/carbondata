@@ -204,28 +204,6 @@ public class BlockletDataMapUtil {
   }
 
   /**
-   * This method will filter out the TableBlockIndexUniqueIdentifier belongs to that distributable
-   *
-   * @param tableBlockIndexUniqueIdentifiers
-   * @param distributable
-   * @return
-   */
-  public static TableBlockIndexUniqueIdentifier filterIdentifiersBasedOnDistributable(
-      Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers,
-      BlockletDataMapDistributable distributable) {
-    TableBlockIndexUniqueIdentifier validIdentifier = null;
-    String fileName = CarbonTablePath.DataFileUtil.getFileName(distributable.getFilePath());
-    for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier :
-        tableBlockIndexUniqueIdentifiers) {
-      if (fileName.equals(tableBlockIndexUniqueIdentifier.getIndexFileName())) {
-        validIdentifier = tableBlockIndexUniqueIdentifier;
-        break;
-      }
-    }
-    return validIdentifier;
-  }
-
-  /**
    * This method will the index files tableBlockIndexUniqueIdentifiers of a merge index file
    *
    * @param identifier

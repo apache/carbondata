@@ -78,11 +78,5 @@ public interface Cache<K, V> {
    */
   void put(K key, V value) throws IOException, MemoryException;
 
-  /**
-   * Access count of Cacheable entry will be decremented
-   *
-   * @param keys
-   */
-  void clearAccessCount(List<K> keys);
 }
 

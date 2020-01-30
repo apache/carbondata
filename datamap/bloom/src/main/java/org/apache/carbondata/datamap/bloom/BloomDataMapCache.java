@@ -87,7 +87,4 @@ public class BloomDataMapCache
     // No impl required.
   }
 
-  @Override
-  public void clearAccessCount(List<BloomCacheKeyValue.CacheKey> keys) {
-  }
 }

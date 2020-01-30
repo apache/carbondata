@@ -319,19 +319,4 @@ public class BlockletDataMapIndexStore
     return segmentLoderLockObject;
   }
 
-  /**
-   * The method clears the access count of table segments
-   *
-   * @param tableSegmentUniqueIdentifiersWrapper
-   */
-  @Override
-  public void clearAccessCount(
-      List<TableBlockIndexUniqueIdentifierWrapper> tableSegmentUniqueIdentifiersWrapper) {
-    for (TableBlockIndexUniqueIdentifierWrapper
-             identifierWrapper : tableSegmentUniqueIdentifiersWrapper) {
-      BlockDataMap cacheable = (BlockDataMap) lruCache.get(
-          identifierWrapper.getTableBlockIndexUniqueIdentifier().getUniqueTableSegmentIdentifier());
-      cacheable.clear();
-    }
-  }
 }

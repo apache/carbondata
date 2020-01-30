@@ -49,7 +49,6 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.hadoop.internal.index.Block;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
@@ -60,7 +59,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
  * Carbon input split to allow distributed read of CarbonTableInputFormat.
  */
 public class CarbonInputSplit extends FileSplit
-    implements Distributable, Serializable, Writable, Block {
+    implements Distributable, Serializable, Writable {
 
   private static final long serialVersionUID = 3520344046772190207L;
   public String taskId;
@@ -564,7 +563,6 @@ public class CarbonInputSplit extends FileSplit
     return result;
   }
 
-  @Override
   public String getBlockPath() {
     if (null == blockPath) {
       blockPath = getPath().getName();

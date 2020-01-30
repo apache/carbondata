@@ -275,8 +275,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     return false;
   }
 
-  private BitSet getFilteredIndexesForMeasures(ColumnPage columnPage,
-      int rowsInPage, DataType msrType) {
+  private BitSet getFilteredIndexesForMeasures(ColumnPage columnPage, int rowsInPage) {
     // Here the algorithm is
     // Get the measure values from the chunk. compare sequentially with the
     // the filter values. The one that matches sets it Bitset.
@@ -304,7 +303,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       return getFilteredIndexesForMsrUsingPrvBitSet(measureColumnPage, prvBitSetGroup, pageNumber,
           numberOfRows, msrDataType);
     } else {
-      return getFilteredIndexesForMeasures(measureColumnPage, numberOfRows, msrDataType);
+      return getFilteredIndexesForMeasures(measureColumnPage, numberOfRows);
     }
   }
 
