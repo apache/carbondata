@@ -23,12 +23,9 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesTestUtil;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 
 import junit.framework.TestCase;
-import mockit.Mock;
-import mockit.MockUp;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -148,12 +145,12 @@ public class QueryUtilTest extends TestCase {
     assertArrayEquals(expectedValue, actualValue);
   }
 
-  @Test public void testGetMaxKeyBasedOnOrinal() throws Exception {
+  @Test public void testGetMaxKeyBasedOnOrdinal() throws Exception {
     List<Integer> dummyList = new ArrayList<>();
     dummyList.add(0, 1);
     dummyList.add(1, 2);
     byte[] actualValue =
-        QueryUtil.getMaxKeyBasedOnOrinal(dummyList, segmentProperties.getDimensionKeyGenerator());
+        QueryUtil.getMaxKeyBasedOnOrdinal(dummyList, segmentProperties.getDimensionKeyGenerator());
     byte[] expectedValue = { 0, -1, -1, 0, 0, 0 };
     assertArrayEquals(expectedValue, actualValue);
   }

@@ -93,7 +93,7 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
    */
   @Override
   public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
-      throws IOException, InterruptedException, UnsupportedOperationException {
+      throws IOException, UnsupportedOperationException {
     // The input split can contain single HDFS block or multiple blocks, so firstly get all the
     // blocks and then set them in the query model.
     List<CarbonInputSplit> splitList;

@@ -130,7 +130,7 @@ public class QueryUtil {
    * @param generator
    * @return
    */
-  public static byte[] getMaxKeyBasedOnOrinal(
+  public static byte[] getMaxKeyBasedOnOrdinal(
       List<Integer> keyOrdinalList, KeyGenerator generator) {
     long[] max = new long[generator.getDimCount()];
     Arrays.fill(max, 0L);

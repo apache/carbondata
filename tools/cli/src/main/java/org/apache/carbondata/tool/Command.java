@@ -19,10 +19,8 @@ package org.apache.carbondata.tool;
 
 import java.io.IOException;
 
-import org.apache.carbondata.core.memory.MemoryException;
-
 import org.apache.commons.cli.CommandLine;
 
 interface Command {
-  void run(CommandLine line) throws IOException, MemoryException;
+  void run(CommandLine line) throws IOException;
 }
