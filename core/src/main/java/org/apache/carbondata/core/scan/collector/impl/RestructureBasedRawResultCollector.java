@@ -86,27 +86,16 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
         } else {
           // partitioner index will be 1 every column will be in columnar format
           updatedDimensionPartitioner.add(1);
-          // for direct dictionary 4 bytes need to be allocated else 1
-          if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
-            updatedColumnCardinality.add(Integer.MAX_VALUE);
-          } else {
-            // cardinality will be 2 will user has provided a default value
-            byte[] defaultValue = queryDimensions[i].getDimension().getDefaultValue();
-            if (null != defaultValue) {
-              updatedColumnCardinality
-                  .add(CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY + 1);
-            } else {
-              updatedColumnCardinality.add(CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY);
-            }
-          }
+          // for direct dictionary 4 bytes need to be allocated
+          updatedColumnCardinality.add(Integer.MAX_VALUE);
         }
       }
     }
     if (!updatedColumnCardinality.isEmpty()) {
       int[] latestColumnCardinality = ArrayUtils.toPrimitive(
-          updatedColumnCardinality.toArray(new Integer[updatedColumnCardinality.size()]));
+          updatedColumnCardinality.toArray(new Integer[0]));
       int[] latestColumnPartitioner = ArrayUtils.toPrimitive(
-          updatedDimensionPartitioner.toArray(new Integer[updatedDimensionPartitioner.size()]));
+          updatedDimensionPartitioner.toArray(new Integer[0]));
       int[] dimensionBitLength =
           CarbonUtil.getDimensionBitLength(latestColumnCardinality, latestColumnPartitioner);
       restructuredKeyGenerator = new MultiDimKeyVarLengthGenerator(dimensionBitLength);
