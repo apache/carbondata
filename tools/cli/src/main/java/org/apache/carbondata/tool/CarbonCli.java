@@ -179,7 +179,7 @@ public class CarbonCli {
 
     try {
       command.run(line);
-    } catch (IOException | MemoryException e) {
+    } catch (IOException e) {
       e.printStackTrace();
     }
   }
