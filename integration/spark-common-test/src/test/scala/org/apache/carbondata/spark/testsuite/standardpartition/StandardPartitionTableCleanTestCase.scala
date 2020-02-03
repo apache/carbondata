@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.spark.testsuite.standardpartition
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.test.util.QueryTest
@@ -51,7 +51,9 @@ class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterA
   }
 
   def validateDataFiles(tableUniqueName: String, segmentId: String, partition: Int, indexes: Int): Unit = {
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
+    val tableAndDbName = tableUniqueName.split("_")
+    val carbonTable = CarbonEnv.getCarbonTable(Some(tableAndDbName(0)), tableAndDbName(1))(
+      sqlContext.sparkSession)
     val partitions = CarbonFilters.getPartitions(
       Seq.empty,
       sqlContext.sparkSession,

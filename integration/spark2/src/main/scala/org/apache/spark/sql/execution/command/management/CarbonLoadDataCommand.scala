@@ -102,23 +102,13 @@ case class CarbonLoadDataCommand(
   var finalPartition : Map[String, Option[String]] = Map.empty
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     setAuditTable(dbName, tableName)
     table = if (tableInfoOp.isDefined) {
-        CarbonTable.buildFromTableInfo(tableInfoOp.get)
-      } else {
-        val relation = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
-        if (relation == null) {
-          throw new NoSuchTableException(dbName, tableName)
-        }
-        if (null == relation.carbonTable) {
-          LOGGER.error(s"Data loading failed. table not found: $dbName.$tableName")
-          throw new NoSuchTableException(dbName, tableName)
-        }
-        relation.carbonTable
-      }
+      CarbonTable.buildFromTableInfo(tableInfoOp.get)
+    } else {
+      CarbonEnv.getCarbonTable(Option(dbName), tableName)(sparkSession)
+    }
     if (table.isHivePartitionTable) {
       logicalPartitionRelation =
         new FindDataSourceTable(sparkSession).apply(
