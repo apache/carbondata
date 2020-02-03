@@ -98,20 +98,7 @@ object CarbonSetCommand {
       }
     } else if (key.startsWith(CarbonCommonConstants.CARBON_DATAMAP_VISIBLE)) {
       if (key.split("\\.").length == 6) {
-        val keyArray = key.split("\\.")
-        val dbName = keyArray(keyArray.length - 3)
-        val tableName = keyArray(keyArray.length - 2)
-        val table = CarbonEnv.getCarbonTable(Some(dbName), tableName)(SparkSQLUtil.getSparkSession)
-        val isValid = DataMapStoreManager.getInstance
-          .isDataMapExist(table.getTableId, keyArray(keyArray.length - 1))
-        if (!isValid) throw new InvalidConfigurationException(String.format(
-          "Invalid configuration of %s, datamap does not exist",
-          key))
         sessionParams.addProperty(key.toLowerCase, value)
-      } else {
-        throw new MalformedCarbonCommandException("property should be in " +
-          "\" carbon.datamap.visible.<database_name>.<table_name>.<datamap_name>" +
-          " = <true/false> \" format")
       }
     } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL)) {
       if (key.split("\\.").length == 6) {

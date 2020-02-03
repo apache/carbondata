@@ -196,6 +196,11 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
       @Override
       public void close() {
+        // Clear the datamaps from executor
+        if (isFallbackJob) {
+          DataMapStoreManager.getInstance()
+              .clearDataMapCache(table.getAbsoluteTableIdentifier(), false);
+        }
       }
     };
   }

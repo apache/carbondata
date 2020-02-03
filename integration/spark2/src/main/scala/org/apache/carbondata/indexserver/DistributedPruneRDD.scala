@@ -142,7 +142,6 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
         while (reader.nextKeyValue()) {
           blocklets.add(reader.getCurrentValue)
         }
-        reader.close()
         blocklets.asScala
       }
     }

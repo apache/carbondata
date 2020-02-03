@@ -513,7 +513,18 @@ public final class DataMapStoreManager {
    * @param identifier Table identifier
    */
   public void clearDataMaps(AbsoluteTableIdentifier identifier) {
-    clearDataMaps(identifier, true);
+    CarbonTable carbonTable = getCarbonTable(identifier);
+    boolean launchJob = false;
+    try {
+      // launchJob will be true if either the table has a CGDatamap or index server is enabled for
+      // the specified table.
+      launchJob = hasCGDataMap(carbonTable) ||
+          CarbonProperties.getInstance().isDistributedPruningEnabled(identifier.getDatabaseName(),
+              identifier.getTableName());
+    } catch (IOException e) {
+      LOGGER.warn("Unable to launch job to clear datamaps.", e);
+    }
+    clearDataMapCache(identifier, launchJob);
   }
 
   /**
@@ -521,9 +532,9 @@ public final class DataMapStoreManager {
    *
    * @param identifier Table identifier
    */
-  public void clearDataMaps(AbsoluteTableIdentifier identifier, boolean launchJob) {
+  public void clearDataMapCache(AbsoluteTableIdentifier identifier, boolean clearInAllWorkers) {
     String tableId = identifier.getCarbonTableIdentifier().getTableId();
-    if (launchJob) {
+    if (clearInAllWorkers) {
       // carbon table need to lookup only if launch job is set.
       CarbonTable carbonTable = getCarbonTable(identifier);
       if (null != carbonTable) {
@@ -789,6 +800,15 @@ public final class DataMapStoreManager {
       SegmentPropertiesAndSchemaHolder.getInstance()
           .invalidate(carbonTable.getAbsoluteTableIdentifier());
     }
+  }
+
+  private boolean hasCGDataMap(CarbonTable carbonTable) throws IOException {
+    for (TableDataMap tableDataMap : getAllVisibleDataMap(carbonTable)) {
+      if (tableDataMap.getDataMapFactory().getDataMapLevel().equals(DataMapLevel.CG)) {
+        return true;
+      }
+    }
+    return false;
   }
 
 }
