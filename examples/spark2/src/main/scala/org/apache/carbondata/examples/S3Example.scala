@@ -41,7 +41,6 @@ object S3Example {
     val path = s"$rootPath/examples/spark2/src/main/resources/data1.csv"
     val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-    import org.apache.spark.sql.CarbonUtils._
     if (args.length < 3 || args.length > 5) {
       logger.error("Usage: java CarbonS3Example <access-key> <secret-key>" +
         "<table-path-on-s3> [s3-endpoint] [spark-master]")

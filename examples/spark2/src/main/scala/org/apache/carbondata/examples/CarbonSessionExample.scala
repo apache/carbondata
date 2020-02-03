@@ -40,11 +40,18 @@ object CarbonSessionExample {
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "false")
     val spark = ExampleUtils.createCarbonSession("CarbonSessionExample")
     spark.sparkContext.setLogLevel("error")
-    exampleBody(spark)
+    Seq(
+      "stored as carbondata",
+      "using carbondata",
+      "stored by 'carbondata'",
+      "stored by 'org.apache.carbondata.format'"
+    ).foreach { formatSyntax =>
+      exampleBody(spark, formatSyntax)
+    }
     spark.close()
   }
 
-  def exampleBody(spark : SparkSession): Unit = {
+  def exampleBody(spark : SparkSession, formatSyntax: String = "stored as carbondata"): Unit = {
 
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
@@ -66,7 +73,7 @@ object CarbonSessionExample {
          | charField CHAR(5),
          | floatField FLOAT
          | )
-         | STORED AS carbondata
+         | $formatSyntax
        """.stripMargin)
 
     val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"

@@ -81,7 +81,6 @@ object S3UsingSdkExample {
   def main(args: Array[String]) {
     val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-    import org.apache.spark.sql.CarbonUtils._
     if (args.length < 2 || args.length > 6) {
       logger.error("Usage: java CarbonS3Example <access-key> <secret-key>" +
         "[table-path-on-s3] [s3-endpoint] [number-of-rows] [spark-master]")
