@@ -79,3 +79,42 @@ jobject CarbonSchemaReader::readSchema(char *path, bool validateSchema) {
     Configuration conf(jniEnv);
     return readSchema(path, validateSchema, conf);
 }
+
+char *CarbonSchemaReader::getVersionDetails(char *path) {
+    if (path == NULL) {
+        throw std::runtime_error("path parameter can't be NULL.");
+    }
+    jmethodID methodID = jniEnv->GetStaticMethodID(carbonSchemaReaderClass, "getVersionDetails",
+            "(Ljava/lang/String;)Ljava/lang/String;");
+    if (methodID == NULL) {
+        throw std::runtime_error("Can't find the method in java: getVersionDetails");
+    }
+    jstring jPath = jniEnv->NewStringUTF(path);
+    jvalue args[1];
+    args[0].l = jPath;
+    jobject result = jniEnv->CallStaticObjectMethodA(carbonSchemaReaderClass, methodID, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
+    return (char *) jniEnv->GetStringUTFChars((jstring) result, JNI_FALSE);
+}
+
+char *CarbonSchemaReader::getVersionDetails(char *path, Configuration conf) {
+    if (path == NULL) {
+        throw std::runtime_error("path parameter can't be NULL.");
+    }
+    jmethodID methodID = jniEnv->GetStaticMethodID(carbonSchemaReaderClass, "getVersionDetails",
+        "(Ljava/lang/String;Lorg/apache/hadoop/conf/Configuration;)Ljava/lang/String;");
+    if (methodID == NULL) {
+        throw std::runtime_error("Can't find the method in java: getVersionDetails");
+    }
+    jstring jPath = jniEnv->NewStringUTF(path);
+    jvalue args[2];
+    args[0].l = jPath;
+    args[1].l = conf.getConfigurationObject();
+    jobject result = jniEnv->CallStaticObjectMethodA(carbonSchemaReaderClass, methodID, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
+    return (char *) jniEnv->GetStringUTFChars((jstring) result, JNI_FALSE);
+}
