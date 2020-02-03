@@ -23,6 +23,7 @@ import scala.collection.mutable
 import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.types.{ArrayType, DataType, DataTypes, FloatType, MapType, StructField, StructType}
+import org.apache.spark.SparkConf
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
@@ -102,6 +103,16 @@ object CarbonSparkUtil {
       "\\\\" + delimiter
     case _ =>
       delimiter
+  }
+
+  def getSparkConfForS3(accessKey: String, secretKey: String, endpoint: String): SparkConf = {
+    val sparkConf = new SparkConf(false)
+    val prefix = "spark.hadoop."
+    Seq(ACCESS_KEY, CarbonCommonConstants.S3N_ACCESS_KEY, CarbonCommonConstants.S3_ACCESS_KEY)
+      .foreach(key => sparkConf.set(prefix + key, accessKey))
+    Seq(SECRET_KEY, CarbonCommonConstants.S3N_SECRET_KEY, CarbonCommonConstants.S3_SECRET_KEY)
+      .foreach(key => sparkConf.set(prefix + key, secretKey))
+    sparkConf.set(prefix + ENDPOINT, endpoint)
   }
 
   def getKeyOnPrefix(path: String): (String, String, String) = {
