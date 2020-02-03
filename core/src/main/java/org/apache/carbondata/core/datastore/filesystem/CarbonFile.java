@@ -33,6 +33,8 @@ public interface CarbonFile {
 
   CarbonFile[] listFiles();
 
+  CarbonFile[] listFiles(boolean recursive, int maxCount) throws IOException;
+
   List<CarbonFile> listFiles(Boolean recursive) throws IOException;
 
   List<CarbonFile> listFiles(boolean recursive, CarbonFileFilter fileFilter) throws IOException;
