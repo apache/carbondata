@@ -180,9 +180,10 @@ final class CarbonS3Writer extends CarbonWriter {
         return;
       }
       try {
+        // make it ordered by time in case the files ordered by file name.
         String stageInputPath = CarbonTablePath.getStageDir(
             table.getAbsoluteTableIdentifier().getTablePath()) +
-            CarbonCommonConstants.FILE_SEPARATOR + UUID.randomUUID();
+            CarbonCommonConstants.FILE_SEPARATOR + System.currentTimeMillis() + UUID.randomUUID();
         StageManager.writeStageInput(stageInputPath, stageInput);
       } catch (Throwable exception) {
         this.deleteSegmentDataFilesQuietly(dataPath);
