@@ -80,7 +80,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     cacheManagement | alterDataMap | insertStageData
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
-    deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | addLoad
+    deleteLoadsByID | deleteLoadsByLoadDate | deleteStage | cleanFiles | addLoad
 
   protected lazy val restructure: Parser[LogicalPlan] = alterTableDropColumn
 
@@ -125,9 +125,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
    * AS SELECT COUNT(COL1) FROM tableName
    */
   protected lazy val createStream: Parser[LogicalPlan] =
-    CREATE ~> STREAM ~>  opt(IF ~> NOT ~> EXISTS) ~ ident ~
+    CREATE ~> STREAM ~> opt(IF ~> NOT ~> EXISTS) ~ ident ~
     (ON ~> TABLE ~> (ident <~ ".").?) ~ ident ~
-    (STMPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? ~
+    (STMPROPERTIES ~> "(" ~> repsep(options, ",") <~ ")").? ~
     (AS ~> restInput) <~ opt(";") ^^ {
       case ifNotExists ~ streamName ~ dbName ~ tableName ~ options ~ query =>
         val optionMap = options.getOrElse(List[(String, String)]()).toMap[String, String]
@@ -167,7 +167,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     opt(ontable) ~
     (USING ~> stringLit) ~
     opt(WITH ~> DEFERRED ~> REBUILD) ~
-    (DMPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? ~
+    (DMPROPERTIES ~> "(" ~> repsep(options, ",") <~ ")").? ~
     (AS ~> restInput).? <~ opt(";") ^^ {
       case ifnotexists ~ dmname ~ tableIdent ~ dmProviderName ~ deferred ~ dmprops ~ query =>
         val map = dmprops.getOrElse(List[(String, String)]()).toMap[String, String]
@@ -454,7 +454,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
     (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
     (PARTITION ~> "(" ~> repsep(partitions, ",") <~ ")").? ~
-    (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
+    (OPTIONS ~> "(" ~> repsep(options, ",") <~ ")").? <~ opt(";") ^^ {
       case filePath ~ isOverwrite ~ table ~ partitions ~ optionsList =>
         val (databaseNameOp, tableName) = table match {
           case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
@@ -487,6 +487,17 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   /**
+   * DELETE FROM TABLE [dbName.]tableName STAGE OPTIONS (key1=value1, key2=value2, ...)
+   */
+  protected lazy val deleteStage: Parser[LogicalPlan] =
+    DELETE ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
+    STAGE ~ (OPTIONS ~> "(" ~> repsep(options, ",") <~ ")").? <~ opt(";") ^^ {
+      case database ~ table ~ _ ~ options =>
+            CarbonDeleteStageFilesCommand(database, table,
+              options.getOrElse(List[(String, String)]()).toMap[String, String])
+    }
+
+  /**
    * ALTER TABLE [dbName.]tableName ADD SEGMENT
    * OPTIONS('path'='path','format'='format', ['partition'='schema list'])
    *
@@ -495,7 +506,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
    */
   protected lazy val addLoad: Parser[LogicalPlan] =
     ALTER ~ TABLE ~> (ident <~ ".").? ~ ident ~ (ADD ~> SEGMENT) ~
-    (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")") <~ opt(";") ^^ {
+    (OPTIONS ~> "(" ~> repsep(options, ",") <~ ")") <~ opt(";") ^^ {
       case dbName ~ tableName ~ segment ~ optionsList =>
         CarbonAddLoadCommand(dbName, tableName, optionsList.toMap)
     }
@@ -505,8 +516,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
    */
   protected lazy val insertStageData: Parser[LogicalPlan] =
     INSERT ~ INTO ~> (ident <~ ".").? ~ ident ~ STAGE ~
-    (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
-      case dbName ~ tableName ~ stage ~ options =>
+    (OPTIONS ~> "(" ~> repsep(options, ",") <~ ")").? <~ opt(";") ^^ {
+      case dbName ~ tableName ~ _ ~ options =>
         CarbonInsertFromStageCommand(dbName, tableName,
           options.getOrElse(List[(String, String)]()).toMap[String, String])
     }
@@ -575,7 +586,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val alterTableAddColumns: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~
     (ADD ~> COLUMNS ~> "(" ~> repsep(anyFieldDef, ",") <~ ")") ~
-    (TBLPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
+    (TBLPROPERTIES ~> "(" ~> repsep(options, ",") <~ ")").? <~ opt(";") ^^ {
       case dbName ~ table ~ fields ~ tblProp =>
         CarbonSparkSqlParserUtil.alterTableAddColumns(
           dbName, table, fields, tblProp)

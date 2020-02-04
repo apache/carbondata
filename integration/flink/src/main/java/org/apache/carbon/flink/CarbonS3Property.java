@@ -27,8 +27,6 @@ final class CarbonS3Property {
 
   static final String DATA_TEMP_PATH = "carbon.writer.s3.data.temp.path";
 
-  static final String DATA_PATH = "carbon.writer.s3.data.path";
-
   static final String COMMIT_THRESHOLD = "carbon.writer.s3.commit.threshold";
 
   private CarbonS3Property() {
