@@ -17,7 +17,6 @@
 
 package org.apache.carbon.flink
 
-import java.io.File
 import java.util.Properties
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -47,14 +46,11 @@ class TestCarbonWriter extends QueryTest {
     val rootPath = System.getProperty("user.dir") + "/target/test-classes"
 
     val dataTempPath = rootPath + "/data/temp/"
-    val dataPath = rootPath + "/data/"
-    new File(dataPath).delete()
-    new File(dataPath).mkdir()
 
     try {
       val tablePath = storeLocation + "/" + tableName + "/"
 
-      val writerProperties = newWriterProperties(dataTempPath, dataPath, storeLocation)
+      val writerProperties = newWriterProperties(dataTempPath, storeLocation)
       val carbonProperties = newCarbonProperties(storeLocation)
 
       val environment = StreamExecutionEnvironment.getExecutionEnvironment
@@ -109,7 +105,6 @@ class TestCarbonWriter extends QueryTest {
 
     } finally {
       sql(s"DROP TABLE IF EXISTS $tableName").collect()
-      new File(dataPath).delete()
     }
   }
 
@@ -125,14 +120,11 @@ class TestCarbonWriter extends QueryTest {
     val rootPath = System.getProperty("user.dir") + "/target/test-classes"
 
     val dataTempPath = rootPath + "/data/temp/"
-    val dataPath = rootPath + "/data/"
-    new File(dataPath).delete()
-    new File(dataPath).mkdir()
 
     try {
       val tablePath = storeLocation + "/" + tableName + "/"
 
-      val writerProperties = newWriterProperties(dataTempPath, dataPath, storeLocation)
+      val writerProperties = newWriterProperties(dataTempPath, storeLocation)
       val carbonProperties = newCarbonProperties(storeLocation)
 
       writerProperties.put(CarbonLocalProperty.COMMIT_THRESHOLD, "100")
@@ -186,17 +178,14 @@ class TestCarbonWriter extends QueryTest {
       checkAnswer(sql(s"SELECT count(1) FROM $tableName"), Seq(Row(1000)))
     } finally {
       sql(s"DROP TABLE IF EXISTS $tableName").collect()
-      new File(dataPath).delete()
     }
   }
 
   private def newWriterProperties(
     dataTempPath: String,
-    dataPath: String,
     storeLocation: String) = {
     val properties = new Properties
     properties.setProperty(CarbonLocalProperty.DATA_TEMP_PATH, dataTempPath)
-    properties.setProperty(CarbonLocalProperty.DATA_PATH, dataPath)
     properties
   }
 

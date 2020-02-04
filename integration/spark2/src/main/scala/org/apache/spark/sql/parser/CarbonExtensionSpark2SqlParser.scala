@@ -53,7 +53,7 @@ class CarbonExtensionSpark2SqlParser extends CarbonSpark2SqlParser {
   override protected lazy val alterTableAddColumns: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~
     (ADD ~> COLUMNS ~> "(" ~> repsep(anyFieldDef, ",") <~ ")") ~
-    (TBLPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")") <~ opt(";") ^^ {
+    (TBLPROPERTIES ~> "(" ~> repsep(options, ",") <~ ")") <~ opt(";") ^^ {
       case dbName ~ table ~ fields ~ tblProp =>
         CarbonSparkSqlParserUtil.alterTableAddColumns(
           dbName, table, fields, Option(tblProp))
@@ -66,7 +66,7 @@ class CarbonExtensionSpark2SqlParser extends CarbonSpark2SqlParser {
     LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
     (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
     (PARTITION ~> "(" ~> repsep(partitions, ",") <~ ")").? ~
-    (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")") <~ opt(";") ^^ {
+    (OPTIONS ~> "(" ~> repsep(options, ",") <~ ")") <~ opt(";") ^^ {
       case filePath ~ isOverwrite ~ table ~ partitions ~ optionsList =>
         val (databaseNameOp, tableName) = table match {
           case databaseName ~ tableName => (databaseName, tableName.toLowerCase())

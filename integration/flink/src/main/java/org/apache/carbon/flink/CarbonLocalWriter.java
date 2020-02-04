@@ -150,16 +150,7 @@ final class CarbonLocalWriter extends CarbonWriter {
       LOGGER.debug("Commit write. " + this.toString());
     }
     try {
-      final Properties writerProperties =
-          this.getFactory().getConfiguration().getWriterProperties();
-      String dataPath = writerProperties.getProperty(CarbonLocalProperty.DATA_PATH);
-      if (dataPath == null) {
-        throw new IllegalArgumentException(
-                "Writer property [" + CarbonLocalProperty.DATA_PATH + "] is not set."
-        );
-      }
-      dataPath = dataPath + this.table.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR
-          + this.table.getTableName() + CarbonCommonConstants.FILE_SEPARATOR;
+      String dataPath = CarbonTablePath.getStageDataDir(this.table.getTablePath());
       tryCreateLocalDirectory(new File(dataPath));
       StageInput stageInput = this.uploadSegmentDataFiles(this.writePath, dataPath);
       if (stageInput == null) {

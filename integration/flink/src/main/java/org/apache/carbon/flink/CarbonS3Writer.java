@@ -160,21 +160,7 @@ final class CarbonS3Writer extends CarbonWriter {
     ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo()
         .getNonSerializableExtraInfo().put("carbonConf", this.configuration);
     try {
-      final Properties writerProperties =
-          this.getFactory().getConfiguration().getWriterProperties();
-      String dataPath = writerProperties.getProperty(CarbonS3Property.DATA_PATH);
-      if (dataPath == null) {
-        throw new IllegalArgumentException(
-                "Writer property [" + CarbonS3Property.DATA_PATH + "] is not set."
-        );
-      }
-      if (!dataPath.startsWith(CarbonCommonConstants.S3A_PREFIX)) {
-        throw new IllegalArgumentException(
-                "Writer property [" + CarbonS3Property.DATA_PATH + "] is not a s3a path."
-        );
-      }
-      dataPath = dataPath + this.table.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR +
-          this.table.getTableName() + CarbonCommonConstants.FILE_SEPARATOR;
+      String dataPath = CarbonTablePath.getStageDataDir(this.table.getTablePath());
       StageInput stageInput = this.uploadSegmentDataFiles(this.writePath, dataPath);
       if (stageInput == null) {
         return;
