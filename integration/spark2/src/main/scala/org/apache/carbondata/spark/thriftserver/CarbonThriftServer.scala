@@ -30,7 +30,7 @@ import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 /**
  * CarbonThriftServer support different modes:
- * 1. read/write data from/to HDFS or local, no need parameters
+ * 1. read/write data from/to HDFS or local, no parameter is required in this case
  * 2. read/write data from/to S3, it needs provide access-key, secret-key, s3-endpoint
  */
 object CarbonThriftServer {
