@@ -1,12 +1,13 @@
 package org.apache.carbondata.geo
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
-class GeoTest extends QueryTest with BeforeAndAfterAll {
+class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfter {
   override def beforeAll(): Unit = {
     drop()
   }
@@ -80,6 +81,23 @@ class GeoTest extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("test polygon query") {
+    createTable()
+    loadData()
+    checkAnswer(
+      sql(s"select longitude, latitude from geotable where IN_POLYGON('116.321011 40.123503, " +
+          s"116.137676 39.947911, 116.560993 39.935276, 116.321011 40.123503')"),
+      Seq(Row(116187332, 39979316),
+        Row(116362699, 39942444),
+        Row(116288955, 39999101),
+        Row(116325378, 39963129),
+        Row(116337069, 39951887),
+        Row(116285807, 40084087)))
+  }
+
+  after {
+    drop()
+  }
   override def afterAll(): Unit = {
     drop()
   }
@@ -98,13 +116,13 @@ class GeoTest extends QueryTest with BeforeAndAfterAll {
            | TBLPROPERTIES ('INDEX_HANDLER'='mygeohash',
            | 'INDEX_HANDLER.mygeohash.type'='geohash',
            | 'INDEX_HANDLER.mygeohash.sourcecolumns'='longitude, latitude',
-           | 'INDEX_HANDLER.mygeohash.originLatitude'='1',
-           | 'INDEX_HANDLER.mygeohash.gridSize'='2',
-           | 'INDEX_HANDLER.mygeohash.minLongitude'='1',
-           | 'INDEX_HANDLER.mygeohash.maxLongitude'='4',
-           | 'INDEX_HANDLER.mygeohash.minLatitude'='1',
-           | 'INDEX_HANDLER.mygeohash.maxLatitude'='4',
-           | 'INDEX_HANDLER.mygeohash.conversionRatio'='1')
+           | 'INDEX_HANDLER.mygeohash.originLatitude'='39.832277',
+           | 'INDEX_HANDLER.mygeohash.gridSize'='50',
+           | 'INDEX_HANDLER.mygeohash.minLongitude'='115.811865',
+           | 'INDEX_HANDLER.mygeohash.maxLongitude'='116.782233',
+           | 'INDEX_HANDLER.mygeohash.minLatitude'='39.832277',
+           | 'INDEX_HANDLER.mygeohash.maxLatitude'='40.225281',
+           | 'INDEX_HANDLER.mygeohash.conversionRatio'='1000000')
        """.stripMargin)
   }
 

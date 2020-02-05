@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -28,9 +29,8 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
-import org.apache.carbondata.core.scan.expression.LiteralExpression;
-import org.apache.carbondata.core.scan.expression.conditional.InExpression;
-import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
+import org.apache.carbondata.core.scan.expression.UnknownExpression;
+import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpression;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.util.CustomIndex;
@@ -41,64 +41,85 @@ import org.apache.carbondata.core.util.CustomIndex;
  * InExpression with list of all the IDs present in those list of ranges.
  */
 @InterfaceAudience.Internal
-public class PolygonExpression extends Expression {
+public class PolygonExpression extends UnknownExpression implements ConditionalExpression {
   private String polygon;
-  private String columnName;
   private CustomIndex<List<Long[]>> handler;
-  private List<Expression> children = new ArrayList<Expression>();
+  private List<Long[]> ranges = new ArrayList<Long[]>();
+  private ColumnExpression column;
+  private ExpressionResult trueExpRes;
+  private ExpressionResult falseExpRes;
 
   public PolygonExpression(String polygon, String columnName, CustomIndex handler) {
     this.polygon = polygon;
     this.handler = handler;
-    this.columnName = columnName;
+    this.column = new ColumnExpression(columnName, DataTypes.LONG);
+    this.trueExpRes = new ExpressionResult(DataTypes.BOOLEAN, true);
+    this.falseExpRes = new ExpressionResult(DataTypes.BOOLEAN, false);
   }
 
-  private void buildExpression(List<Long[]> ranges) {
-    // Build InExpression with list of all the values present in the ranges
-    List<Expression> inList = new ArrayList<Expression>();
+  private void validate(List<Long[]> ranges) {
+    // Validate the ranges
     for (Long[] range : ranges) {
       if (range.length != 2) {
         throw new RuntimeException("Handler query must return list of ranges with each range "
             + "containing minimum and maximum values");
       }
-      for (long i = range[0]; i <= range[1]; i++) {
-        inList.add(new LiteralExpression(i, DataTypes.LONG));
-      }
     }
-    children.add(new InExpression(new ColumnExpression(columnName, DataTypes.LONG),
-        new ListExpression(inList)));
   }
 
   /**
-   * This method builds InExpression with list of all the values present in the list of ranges of
-   * IDs.
+   * This method calls the query processor and gets the list of ranges of IDs.
    */
   private void processExpression() {
-    List<Long[]> ranges;
     try {
       ranges = handler.query(polygon);
+      validate(ranges);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
-    buildExpression(ranges);
+  }
+
+  private boolean rangeBinarySearch(List<Long[]> ranges, long searchForNumber) {
+    Long[] range;
+    int low = 0, mid, high = ranges.size() - 1;
+    while (low <= high) {
+      mid = low + ((high - low) / 2);
+      range = ranges.get(mid);
+      if (searchForNumber >= range[0]) {
+        if (searchForNumber <= range[1]) {
+          // Return true if the number is between min and max values of the range
+          return true;
+        } else {
+          // Number is bigger than this range's min and max. Search on the right side of the range
+          low = mid + 1;
+        }
+      } else {
+        // Number is smaller than this range's min and max. Search on the left side of the range
+        high = mid - 1;
+      }
+    }
+    return false;
   }
 
   @Override
   public ExpressionResult evaluate(RowIntf value) {
-    throw new UnsupportedOperationException("Operation not supported for Polygon expression");
+    if (rangeBinarySearch(ranges, (Long) value.getVal(0))) {
+      return trueExpRes;
+    }
+    return falseExpRes;
   }
 
   @Override
   public ExpressionType getFilterExpressionType() {
-    return ExpressionType.POLYGON;
+    return ExpressionType.UNKNOWN;
   }
 
   @Override
   public List<Expression> getChildren() {
-    if (children.isEmpty()) {
+    if (ranges.isEmpty()) {
       processExpression();
     }
-    return children;
+    return super.getChildren();
   }
 
   @Override
@@ -107,7 +128,7 @@ public class PolygonExpression extends Expression {
 
   @Override
   public String getString() {
-    return polygon;
+    return getStatement();
   }
 
   @Override
@@ -117,14 +138,36 @@ public class PolygonExpression extends Expression {
 
   private void writeObject(ObjectOutputStream out) throws IOException {
     out.writeObject(polygon);
-    out.writeObject(columnName);
     out.writeObject(handler);
+    out.writeObject(column);
   }
 
   private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
     polygon = (String) in.readObject();
-    columnName = (String) in.readObject();
     handler = (CustomIndex<List<Long[]>>) in.readObject();
-    children = new ArrayList<Expression>();
+    column = (ColumnExpression) in.readObject();
+    ranges = new ArrayList<Long[]>();
+    trueExpRes = new ExpressionResult(DataTypes.BOOLEAN, true);
+    falseExpRes = new ExpressionResult(DataTypes.BOOLEAN, false);
+  }
+
+  @Override
+  public List<ColumnExpression> getAllColumnList() {
+    return new ArrayList<ColumnExpression>(Arrays.asList(column));
+  }
+
+  @Override
+  public List<ColumnExpression> getColumnList() {
+    return getAllColumnList();
+  }
+
+  @Override
+  public boolean isSingleColumn() {
+    return true;
+  }
+
+  @Override
+  public List<ExpressionResult> getLiterals() {
+    return null;
   }
 }
