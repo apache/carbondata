@@ -73,7 +73,7 @@ object FileUtils {
       throw new DataLoadingException("Input file path cannot be empty.")
     } else {
       val stringBuild = new StringBuilder()
-      val filePaths = inputPath.split(",")
+      val filePaths = inputPath.split(",").map(_.trim)
       for (i <- 0 until filePaths.size) {
         val filePath = CarbonUtil.checkAndAppendHDFSUrl(filePaths(i))
         val carbonFile = FileFactory.getCarbonFile(filePath, hadoopConf)
