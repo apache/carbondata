@@ -87,7 +87,6 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     rowConverter =
         new RowConverterImpl(configuration.getDataFields(), configuration, null);
     rowConverter.initialize();
-    configuration.setCardinalityFinder(rowConverter);
     noDictionaryMapping =
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
 

@@ -21,45 +21,6 @@ package org.apache.carbondata.core.keygenerator.columnar;
  * Splits the odometer key to columns.Further these columns can be stored in a columnar storage.
  */
 public interface ColumnarSplitter {
-  /**
-   * Splits generated MDKey to multiple columns.
-   *
-   * @param key MDKey
-   * @return Multiple columns in 2 dimensional byte array
-   */
-  byte[][] splitKey(byte[] key);
-
-  /**
-   * It generates and splits key to multiple columns
-   *
-   * @param keys
-   * @return
-   */
-  byte[][] generateAndSplitKey(long[] keys);
-
-  /**
-   * It generates and splits key to multiple columns
-   *
-   * @param keys
-   * @return
-   */
-  byte[][] generateAndSplitKey(int[] keys);
-
-  /**
-   * Takes the split keys and generates the surrogate key array
-   *
-   * @param key
-   * @return
-   */
-  long[] getKeyArray(byte[][] key);
-
-  /**
-   * Takes the split keys and generates the surrogate key array in bytes
-   *
-   * @param key
-   * @return
-   */
-  byte[] getKeyByteArray(byte[][] key);
 
   /**
    * Below method will be used to get the block size
@@ -67,13 +28,5 @@ public interface ColumnarSplitter {
    * @return
    */
   int[] getBlockKeySize();
-
-  /**
-   * Below method will be used to get the total key Size of the particular block
-   *
-   * @param blockIndexes
-   * @return
-   */
-  int getKeySizeByBlock(int[] blockIndexes);
 
 }

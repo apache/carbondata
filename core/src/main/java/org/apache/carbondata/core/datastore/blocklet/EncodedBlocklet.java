@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
-import org.apache.carbondata.core.datastore.page.key.TablePageKey;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 
 /**
@@ -37,11 +36,6 @@ public class EncodedBlocklet {
    * number of rows in a blocklet
    */
   private int blockletSize;
-
-  /**
-   * list of page metadata
-   */
-  private List<TablePageKey> pageMetadataList;
 
   /**
    * maintains encoded dimension data for each column
@@ -93,16 +87,11 @@ public class EncodedBlocklet {
    * encoded table page
    */
   private void addPageMetadata(EncodedTablePage encodedTablePage) {
-    // for first table page create new list
-    if (null == pageMetadataList) {
-      pageMetadataList = new ArrayList<>();
-    }
     if (null == rowCountInPage) {
       rowCountInPage = new ArrayList<>();
     }
     // update details
     blockletSize += encodedTablePage.getPageSize();
-    pageMetadataList.add(encodedTablePage.getPageKey());
     this.numberOfPages++;
     rowCountInPage.add((short)encodedTablePage.getPageSize());
   }
@@ -174,10 +163,6 @@ public class EncodedBlocklet {
     return blockletSize;
   }
 
-  public List<TablePageKey> getPageMetadataList() {
-    return pageMetadataList;
-  }
-
   public List<BlockletEncodedColumnPage> getEncodedDimensionColumnPages() {
     return encodedDimensionColumnPages;
   }
@@ -211,7 +196,6 @@ public class EncodedBlocklet {
     this.encodedDimensionColumnPages = null;
     this.blockletSize = 0;
     this.encodedMeasureColumnPages = null;
-    this.pageMetadataList = null;
     this.rowCountInPage = null;
   }
 }

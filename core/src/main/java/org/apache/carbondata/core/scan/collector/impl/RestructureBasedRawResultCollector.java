@@ -79,9 +79,9 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
           CarbonDimension currentBlockDimension = segmentProperties.getDimensions()
               .get(dictionaryColumnBlockIndex[dimCounterInCurrentBlock]);
           updatedColumnCardinality.add(
-              segmentProperties.getDimColumnsCardinality()[currentBlockDimension.getKeyOrdinal()]);
+              segmentProperties.createColumnValueLength()[currentBlockDimension.getKeyOrdinal()]);
           updatedDimensionPartitioner.add(
-              segmentProperties.getDimensionPartitions()[currentBlockDimension.getKeyOrdinal()]);
+              segmentProperties.createColumnValueLength()[currentBlockDimension.getKeyOrdinal()]);
           dimCounterInCurrentBlock++;
         } else {
           // partitioner index will be 1 every column will be in columnar format
@@ -118,9 +118,9 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
       CarbonDimension currentBlockDimension =
           segmentProperties.getDimensions().get(dictionaryColumnBlockIndex[i]);
       updatedColumnCardinality[i] =
-          segmentProperties.getDimColumnsCardinality()[currentBlockDimension.getKeyOrdinal()];
+          segmentProperties.createColumnValueLength()[currentBlockDimension.getKeyOrdinal()];
       updatedDimensionPartitioner[i] =
-          segmentProperties.getDimensionPartitions()[currentBlockDimension.getKeyOrdinal()];
+          segmentProperties.createColumnValueLength()[currentBlockDimension.getKeyOrdinal()];
     }
     if (dictionaryColumnBlockIndex.length > 0) {
       int[] dimensionBitLength =

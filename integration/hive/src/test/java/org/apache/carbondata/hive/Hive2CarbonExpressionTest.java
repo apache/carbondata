@@ -165,7 +165,7 @@ public class Hive2CarbonExpressionTest {
     format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
 
     List<InputSplit> list= format.getSplits(job);
-    Assert.assertTrue(list.size() == 1);
+    Assert.assertEquals(1, list.size());
   }
 
   @Test
@@ -199,7 +199,7 @@ public class Hive2CarbonExpressionTest {
     format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
 
     List<InputSplit> list= format.getSplits(job);
-    Assert.assertTrue(list.size() == 0);
+    Assert.assertEquals(0, list.size());
   }
 
   @Test
@@ -219,7 +219,7 @@ public class Hive2CarbonExpressionTest {
     format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
 
     List<InputSplit> list= format.getSplits(job);
-    Assert.assertTrue(list.size() == 0);
+    Assert.assertEquals(0, list.size());
   }
 
   @Test
@@ -265,7 +265,7 @@ public class Hive2CarbonExpressionTest {
     format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
 
     List<InputSplit> list= format.getSplits(job);
-    Assert.assertTrue(list.size() == 1);
+    Assert.assertEquals(1, list.size());
   }
 
   @Test
@@ -287,7 +287,7 @@ public class Hive2CarbonExpressionTest {
     format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
 
     List<InputSplit> list= format.getSplits(job);
-    Assert.assertTrue(list.size() == 1);
+    Assert.assertEquals(1, list.size());
 
   }
 
@@ -310,7 +310,7 @@ public class Hive2CarbonExpressionTest {
     format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
 
     List<InputSplit> list= format.getSplits(job);
-    Assert.assertTrue(list.size() == 1);
+    Assert.assertEquals(1, list.size());
 
   }
 
@@ -333,7 +333,7 @@ public class Hive2CarbonExpressionTest {
     format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
 
     List<InputSplit> list= format.getSplits(job);
-    Assert.assertTrue(list.size() == 0);
+    Assert.assertEquals(0, list.size());
 
   }
 
@@ -356,7 +356,7 @@ public class Hive2CarbonExpressionTest {
     format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
 
     List<InputSplit> list= format.getSplits(job);
-    Assert.assertTrue(list.size() == 0);
+    Assert.assertEquals(0, list.size());
 
   }
 }

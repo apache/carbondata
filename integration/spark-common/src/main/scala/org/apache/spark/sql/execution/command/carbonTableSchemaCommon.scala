@@ -111,8 +111,6 @@ case class CarbonMergerMapping(
     validSegments: Array[Segment],
     tableId: String,
     campactionType: CompactionType,
-    // maxSegmentColCardinality is Cardinality of last segment of compaction
-    var maxSegmentColCardinality: Array[Int],
     // maxSegmentColumnSchemaList is list of column schema of last segment of compaction
     var maxSegmentColumnSchemaList: List[ColumnSchema],
     @transient currentPartitions: Option[Seq[PartitionSpec]])

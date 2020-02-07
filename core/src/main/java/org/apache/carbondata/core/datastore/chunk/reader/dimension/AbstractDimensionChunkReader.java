@@ -40,12 +40,6 @@ public abstract class AbstractDimensionChunkReader implements DimensionColumnChu
   protected Compressor compressor;
 
   /**
-   * size of the each column value
-   * for no dictionary column it will be -1
-   */
-  protected int[] eachColumnValueSize;
-
-  /**
    * full qualified path of the data file from
    * which data will be read
    */
@@ -63,12 +57,9 @@ public abstract class AbstractDimensionChunkReader implements DimensionColumnChu
   /**
    * Constructor to get minimum parameter to create
    * instance of this class
-   *  @param eachColumnValueSize  size of the each column value
    * @param filePath             file from which data will be read
    */
-  public AbstractDimensionChunkReader(final BlockletInfo blockletInfo,
-      final int[] eachColumnValueSize, final String filePath) {
-    this.eachColumnValueSize = eachColumnValueSize;
+  public AbstractDimensionChunkReader(final BlockletInfo blockletInfo, final String filePath) {
     this.filePath = filePath;
     dimensionChunksOffset = blockletInfo.getDimensionChunkOffsets();
     dimensionChunksLength = blockletInfo.getDimensionChunksLength();

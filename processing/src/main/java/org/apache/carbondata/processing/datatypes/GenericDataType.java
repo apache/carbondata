@@ -25,7 +25,6 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 
 /**
@@ -63,11 +62,6 @@ public interface GenericDataType<T> {
       throws IOException;
 
   /**
-   * @return surrogateIndex for primitive column in complex type
-   */
-  int getSurrogateIndex();
-
-  /**
    * @param surrIndex - surrogate index of primitive column in complex type
    */
   void setSurrogateIndex(int surrIndex);
@@ -82,13 +76,11 @@ public interface GenericDataType<T> {
    * Parse the Complex Datatype from the ByteBuffer.
    * @param byteArrayInput
    * @param dataOutputStream
-   * @param generator
    * @return
    * @throws IOException
    * @throws KeyGenException
    */
-  void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
-      KeyGenerator[] generator)
+  void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream)
       throws IOException, KeyGenException;
 
   /**
@@ -123,33 +115,6 @@ public interface GenericDataType<T> {
    * @return current read row count
    */
   int getDataCounter();
-
-  /**
-   * fill agg key block including complex types
-   * @param aggKeyBlockWithComplex
-   * @param aggKeyBlock
-   */
-  void fillAggKeyBlock(List<Boolean> aggKeyBlockWithComplex, boolean[] aggKeyBlock);
-
-  /**
-   * fill block key size including complex types
-   * @param blockKeySizeWithComplex
-   * @param primitiveBlockKeySize
-   */
-  void fillBlockKeySize(List<Integer> blockKeySizeWithComplex, int[] primitiveBlockKeySize);
-
-  /**
-   * fill cardinality value including complex types
-   * @param dimCardWithComplex
-   * @param maxSurrogateKeyArray
-   */
-  void fillCardinalityAfterDataLoad(List<Integer> dimCardWithComplex, int[] maxSurrogateKeyArray);
-
-  /**
-   * Fill the cardinality of the primitive datatypes
-   * @param dimCardWithComplex
-   */
-  void fillCardinality(List<Integer> dimCardWithComplex);
 
   /**
    * clone self for multithread access (for complex type processing in table page)

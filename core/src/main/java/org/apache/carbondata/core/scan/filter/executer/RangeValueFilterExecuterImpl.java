@@ -643,7 +643,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
       byte[] defaultValue = null;
       if (dimColEvaluatorInfo.getDimension().getDataType() == DataTypes.DATE) {
         defaultValue =
-            FilterUtil.getDefaultNullValue(dimColEvaluatorInfo.getDimension(), segmentProperties);
+            FilterUtil.getDefaultNullValue(dimColEvaluatorInfo.getDimension());
       } else if (dimColEvaluatorInfo.getDimension().getDataType() == DataTypes.STRING) {
         defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
       } else if (!dimensionColumnPage.isAdaptiveEncoded()) {

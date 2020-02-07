@@ -223,7 +223,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
    * Comparator class for comparing 2 raw row result.
    */
   private class CarbonMdkeyComparator implements Comparator<RawResultIterator> {
-    int[] columnValueSizes = segprop.getEachDimColumnValueSize();
+    int[] columnValueSizes = segprop.createDimColumnValueLength();
     public CarbonMdkeyComparator() {
       initSortColumns();
     }

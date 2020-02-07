@@ -30,9 +30,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class PrimitiveQueryTypeTest {
-  private static PrimitiveQueryType primitiveQueryType, primitiveQueryTypeForInt,
-      primitiveQueryTypeForLong, primitiveQueryTypeForDouble, primitiveQueryTypeForBoolean,
-      primitiveQueryTypeForTimeStamp, primitiveQueryTypeForTimeStampForIsDictionaryFalse;
+  private static PrimitiveQueryType primitiveQueryTypeForDate;
 
   @BeforeClass public static void setUp() {
     String name = "test";
@@ -40,40 +38,17 @@ public class PrimitiveQueryTypeTest {
     int blockIndex = 1;
     int keySize = 1;
     boolean isDirectDictionary = true;
-    primitiveQueryType =
-        new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.STRING, keySize,
-            isDirectDictionary);
-    primitiveQueryTypeForInt =
-        new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.INT, keySize,
-            isDirectDictionary);
-    primitiveQueryTypeForDouble =
-        new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.DOUBLE, keySize,
-            isDirectDictionary);
-    primitiveQueryTypeForLong =
-        new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.LONG, keySize,
-            isDirectDictionary);
-    primitiveQueryTypeForBoolean =
-        new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.BOOLEAN, keySize,
-            isDirectDictionary);
-    primitiveQueryTypeForTimeStamp =
-        new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.TIMESTAMP, keySize,
-            isDirectDictionary);
-    primitiveQueryTypeForTimeStampForIsDictionaryFalse =
-        new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.TIMESTAMP, keySize, false);
+   primitiveQueryTypeForDate =
+        new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.DATE, true);
   }
 
   @Test public void testGetDataBasedOnDataTypeFromSurrogates() {
     ByteBuffer surrogateData = ByteBuffer.allocate(10);
     surrogateData.put(3, (byte) 1);
-    new MockUp<Bits>() {
-      @Mock public long[] getKeyArray(byte[] key, int offset) {
-        return new long[] { 1313045L };
-      }
-    };
-    Object expectedValue = 1313043000000L;
+    Object expectedValue = 1;
 
     Object actualValue =
-        primitiveQueryTypeForTimeStamp.getDataBasedOnDataType(surrogateData);
+        primitiveQueryTypeForDate.getDataBasedOnDataType(surrogateData);
     assertEquals(expectedValue, actualValue);
   }
 

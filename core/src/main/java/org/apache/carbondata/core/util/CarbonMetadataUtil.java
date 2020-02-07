@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.blocklet.BlockletEncodedColumnPage;
 import org.apache.carbondata.core.datastore.blocklet.EncodedBlocklet;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -62,6 +63,29 @@ public class CarbonMetadataUtil {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonMetadataUtil.class.getName());
 
+  // just for compatibility, not used
+  private static final List<Integer> dummyCardinality = new ArrayList<>(0);
+
+  // MDK start key, deprecated
+  private static final byte[] startKey = new byte[0];
+
+  // MDK no dictionary start key, deprecated
+  private static final byte[] noDictStartKey = new byte[0];
+
+  private static final byte[] DEPRECATED_MDK;
+
+  static  {
+    ByteBuffer buffer = ByteBuffer.allocate(
+        CarbonCommonConstants.INT_SIZE_IN_BYTE + CarbonCommonConstants.INT_SIZE_IN_BYTE
+            + startKey.length + noDictStartKey.length);
+    buffer.putInt(startKey.length);
+    buffer.putInt(noDictStartKey.length);
+    buffer.put(startKey);
+    buffer.put(noDictStartKey);
+    buffer.rewind();
+    DEPRECATED_MDK = buffer.array();
+  }
+
   private CarbonMetadataUtil() {
   }
 
@@ -70,13 +94,12 @@ public class CarbonMetadataUtil {
    *
    * @param infoList
    * @param blockletIndexs
-   * @param cardinalities
    * @param numberOfColumns
    * @return FileFooter
    */
   public static FileFooter3 convertFileFooterVersion3(List<BlockletInfo3> infoList,
-      List<BlockletIndex> blockletIndexs, int[] cardinalities, int numberOfColumns) {
-    FileFooter3 footer = getFileFooter3(infoList, blockletIndexs, cardinalities, numberOfColumns);
+      List<BlockletIndex> blockletIndexs, int numberOfColumns) {
+    FileFooter3 footer = getFileFooter3(infoList, blockletIndexs, numberOfColumns);
     for (BlockletInfo3 info : infoList) {
       footer.addToBlocklet_info_list3(info);
     }
@@ -88,15 +111,14 @@ public class CarbonMetadataUtil {
    *
    * @param infoList         blocklet info
    * @param blockletIndexs
-   * @param cardinalities    cardinlaity of dimension columns
    * @param numberOfColumns
    * @return file footer
    */
   private static FileFooter3 getFileFooter3(List<BlockletInfo3> infoList,
-      List<BlockletIndex> blockletIndexs, int[] cardinalities, int numberOfColumns) {
+      List<BlockletIndex> blockletIndexs, int numberOfColumns) {
     SegmentInfo segmentInfo = new SegmentInfo();
     segmentInfo.setNum_cols(numberOfColumns);
-    segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(cardinalities));
+    segmentInfo.setColumn_cardinalities(dummyCardinality);
     FileFooter3 footer = new FileFooter3();
     footer.setNum_rows(getNumberOfRowForFooter(infoList));
     footer.setSegment_info(segmentInfo);
@@ -263,12 +285,8 @@ public class CarbonMetadataUtil {
       blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(min));
     }
     BlockletBTreeIndex blockletBTreeIndex = new BlockletBTreeIndex();
-    byte[] startKey = encodedBlocklet.getPageMetadataList().get(0).serializeStartKey();
-    blockletBTreeIndex.setStart_key(startKey);
-    byte[] endKey =
-        encodedBlocklet.getPageMetadataList().get(encodedBlocklet.getPageMetadataList().size() - 1)
-            .serializeEndKey();
-    blockletBTreeIndex.setEnd_key(endKey);
+    blockletBTreeIndex.setStart_key(DEPRECATED_MDK);
+    blockletBTreeIndex.setEnd_key(DEPRECATED_MDK);
     BlockletIndex blockletIndex = new BlockletIndex();
     blockletIndex.setMin_max_index(blockletMinMaxIndex);
     blockletIndex.setB_tree_index(blockletBTreeIndex);
@@ -345,20 +363,19 @@ public class CarbonMetadataUtil {
   /**
    * Below method will be used to get the index header
    *
-   * @param columnCardinality cardinality of each column
    * @param columnSchemaList  list of column present in the table
    * @param bucketNumber
    * @param schemaTimeStamp current timestamp of schema
    * @return Index header object
    */
-  public static IndexHeader getIndexHeader(int[] columnCardinality,
+  public static IndexHeader getIndexHeader(
       List<ColumnSchema> columnSchemaList, int bucketNumber, long schemaTimeStamp) {
     // create segment info object
     SegmentInfo segmentInfo = new SegmentInfo();
     // set the number of columns
     segmentInfo.setNum_cols(columnSchemaList.size());
-    // setting the column cardinality
-    segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(columnCardinality));
+    // setting the column cardinality, deprecated
+    segmentInfo.setColumn_cardinalities(dummyCardinality);
     // create index header object
     IndexHeader indexHeader = new IndexHeader();
     ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();

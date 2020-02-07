@@ -20,7 +20,6 @@ package org.apache.carbondata.hadoop.stream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
@@ -215,13 +214,8 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
   private void initializeFilter() {
     List<ColumnSchema> wrapperColumnSchemaList = CarbonUtil
         .getColumnSchemaList(carbonTable.getVisibleDimensions(), carbonTable.getVisibleMeasures());
-    int[] dimLensWithComplex = new int[wrapperColumnSchemaList.size()];
-    Arrays.fill(dimLensWithComplex, Integer.MAX_VALUE);
 
-    int[] dictionaryColumnCardinality =
-        CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchemaList);
-    SegmentProperties segmentProperties =
-        new SegmentProperties(wrapperColumnSchemaList, dictionaryColumnCardinality);
+    SegmentProperties segmentProperties = new SegmentProperties(wrapperColumnSchemaList);
     Map<Integer, GenericQueryType> complexDimensionInfoMap = new HashMap<>();
 
     FilterResolverIntf resolverIntf = model.getDataMapFilter().getResolver();

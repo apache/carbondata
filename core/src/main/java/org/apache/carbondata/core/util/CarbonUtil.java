@@ -74,7 +74,6 @@ import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -104,7 +103,6 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockletHeader;
-import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 import org.apache.carbondata.format.IndexHeader;
 
@@ -909,9 +907,6 @@ public final class CarbonUtil {
           DataFileFooterConverterFactory.getInstance().getDataFileFooterConverter(version);
       List<ColumnSchema> schema = dataFileFooterConverter.getSchema(tableBlockInfo);
       fileFooter.setColumnInTable(schema);
-      SegmentInfo segmentInfo = new SegmentInfo();
-      segmentInfo.setColumnCardinality(detailInfo.getDimLens());
-      fileFooter.setSegmentInfo(segmentInfo);
       return fileFooter;
     }
   }
@@ -1138,29 +1133,6 @@ public final class CarbonUtil {
       }
     }
     return currentBlockMeasure;
-  }
-
-  /**
-   * @param dictionaryColumnCardinality
-   * @param wrapperColumnSchemaList
-   * @return It returns formatted cardinality by adding -1 value for NoDictionary columns
-   */
-  public static int[] getFormattedCardinality(int[] dictionaryColumnCardinality,
-      List<ColumnSchema> wrapperColumnSchemaList) {
-    List<Integer> cardinality = new ArrayList<>();
-    int counter = 0;
-    for (int i = 0; i < wrapperColumnSchemaList.size(); i++) {
-      if (CarbonUtil.hasEncoding(wrapperColumnSchemaList.get(i).getEncodingList(),
-          Encoding.DICTIONARY)) {
-        cardinality.add(dictionaryColumnCardinality[counter]);
-        counter++;
-      } else if (!wrapperColumnSchemaList.get(i).isDimensionColumn()) {
-        continue;
-      } else {
-        cardinality.add(-1);
-      }
-    }
-    return ArrayUtils.toPrimitive(cardinality.toArray(new Integer[cardinality.size()]));
   }
 
   public static List<ColumnSchema> getColumnSchemaList(List<CarbonDimension> carbonDimensionsList,
@@ -1437,17 +1409,6 @@ public final class CarbonUtil {
     return (DataChunk3) t;
   }
 
-  public static DataChunk2 readDataChunk(ByteBuffer dataChunkBuffer, int offset, int length)
-      throws IOException {
-    byte[] data = dataChunkBuffer.array();
-    return (DataChunk2) read(data, new ThriftReader.TBaseCreator() {
-      @Override
-      public TBase create() {
-        return new DataChunk2();
-      }
-    }, offset, length);
-  }
-
   /**
    * Below method will be used to convert the byte array value to thrift object for
    * data chunk
@@ -1716,7 +1677,8 @@ public final class CarbonUtil {
         surrogate ^= data[startOffsetOfData + 3] & 0xFF;
         return surrogate;
       default:
-        throw new IllegalArgumentException("Int cannot be more than 4 bytes");
+        throw new IllegalArgumentException("Int cannot be more than 4 bytes: " +
+            eachColumnValueSize);
     }
   }
 

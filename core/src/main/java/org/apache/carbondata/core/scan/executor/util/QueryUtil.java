@@ -22,17 +22,14 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -61,134 +58,6 @@ import org.apache.commons.lang3.ArrayUtils;
  * Utility class for query execution
  */
 public class QueryUtil {
-
-  /**
-   * Below method will be used to get the masked byte range based on the query
-   * dimension. It will give the range in the mdkey. This will be used to get
-   * the actual key array from masked mdkey
-   *
-   * @param queryDimensions query dimension selected in query
-   * @param keyGenerator    key generator
-   * @return masked key
-   */
-  public static int[] getMaskedByteRange(List<ProjectionDimension> queryDimensions,
-      KeyGenerator keyGenerator) {
-    Set<Integer> byteRangeSet = new TreeSet<Integer>();
-    int[] byteRange = null;
-    for (int i = 0; i < queryDimensions.size(); i++) {
-
-      // as no dictionary column and complex type columns
-      // are not selected in the mdkey
-      // so we will not select the those dimension for calculating the
-      // range
-      if (queryDimensions.get(i).getDimension().getKeyOrdinal() == -1) {
-        continue;
-      }
-      // get the offset of the dimension in the mdkey
-      byteRange =
-          keyGenerator.getKeyByteOffsets(queryDimensions.get(i).getDimension().getKeyOrdinal());
-      for (int j = byteRange[0]; j <= byteRange[1]; j++) {
-        byteRangeSet.add(j);
-      }
-    }
-    int[] maksedByteRange = new int[byteRangeSet.size()];
-    int index = 0;
-    Iterator<Integer> iterator = byteRangeSet.iterator();
-    // add the masked byte range
-    while (iterator.hasNext()) {
-      maksedByteRange[index++] = iterator.next();
-    }
-    return maksedByteRange;
-  }
-
-  public static int[] getMaskedByteRangeBasedOrdinal(List<Integer> ordinals,
-      KeyGenerator keyGenerator) {
-    Set<Integer> byteRangeSet = new TreeSet<Integer>();
-    int[] byteRange = null;
-    for (int i = 0; i < ordinals.size(); i++) {
-
-      // get the offset of the dimension in the mdkey
-      byteRange = keyGenerator.getKeyByteOffsets(ordinals.get(i));
-      for (int j = byteRange[0]; j <= byteRange[1]; j++) {
-        byteRangeSet.add(j);
-      }
-    }
-    int[] maksedByteRange = new int[byteRangeSet.size()];
-    int index = 0;
-    Iterator<Integer> iterator = byteRangeSet.iterator();
-    // add the masked byte range
-    while (iterator.hasNext()) {
-      maksedByteRange[index++] = iterator.next();
-    }
-    return maksedByteRange;
-  }
-
-  /**
-   * Below method will return the max key based on the dimension ordinal
-   *
-   * @param keyOrdinalList
-   * @param generator
-   * @return
-   */
-  public static byte[] getMaxKeyBasedOnOrdinal(
-      List<Integer> keyOrdinalList, KeyGenerator generator) {
-    long[] max = new long[generator.getDimCount()];
-    Arrays.fill(max, 0L);
-
-    for (int i = 0; i < keyOrdinalList.size(); i++) {
-      // adding for dimension which is selected in query
-      max[keyOrdinalList.get(i)] = Long.MAX_VALUE;
-    }
-    return generator.generateKey(max);
-  }
-
-  /**
-   * To get the max key based on dimensions. i.e. all other dimensions will be
-   * set to 0 bits and the required query dimension will be masked with all
-   * LONG.MAX so that we can mask key and then compare while aggregating This
-   * can be useful during filter query when only few dimensions were selected
-   * out of row group
-   *
-   * @param queryDimensions dimension selected in query
-   * @param generator       key generator
-   * @return max key for dimension
-   */
-  public static byte[] getMaxKeyBasedOnDimensions(List<ProjectionDimension> queryDimensions,
-      KeyGenerator generator) {
-    long[] max = new long[generator.getDimCount()];
-    Arrays.fill(max, 0L);
-
-    for (int i = 0; i < queryDimensions.size(); i++) {
-      // as no dictionary column and complex type columns
-      // are not selected in the mdkey
-      // so we will not select the those dimension for calculating the
-      // range
-      if (queryDimensions.get(i).getDimension().getKeyOrdinal() == -1) {
-        continue;
-      }
-      // adding for dimension which is selected in query
-      max[queryDimensions.get(i).getDimension().getKeyOrdinal()] = Long.MAX_VALUE;
-    }
-
-    return generator.generateKey(max);
-  }
-
-  /**
-   * Below method will be used to get the masked key for query
-   *
-   * @param keySize         size of the masked key
-   * @param maskedKeyRanges masked byte range
-   * @return masked bytes
-   */
-  public static int[] getMaskedByte(int keySize, int[] maskedKeyRanges) {
-    int[] maskedKey = new int[keySize];
-    // all the non selected dimension will be filled with -1
-    Arrays.fill(maskedKey, -1);
-    for (int i = 0; i < maskedKeyRanges.length; i++) {
-      maskedKey[maskedKeyRanges[i]] = i;
-    }
-    return maskedKey;
-  }
 
   /**
    * Below method will be used to get the dimension block index in file based
@@ -376,7 +245,7 @@ public class QueryUtil {
    */
   public static Map<Integer, GenericQueryType> getComplexDimensionsMap(
       List<ProjectionDimension> queryDimensions, Map<Integer, Integer> dimensionToBlockIndexMap,
-      int[] eachComplexColumnValueSize, Set<CarbonDimension> filterDimensions) {
+      Set<CarbonDimension> filterDimensions) {
     Map<Integer, GenericQueryType> complexTypeMap = new HashMap<Integer, GenericQueryType>();
     for (ProjectionDimension dimension : queryDimensions) {
       CarbonDimension actualDimension;
@@ -394,11 +263,9 @@ public class QueryUtil {
         continue;
       }
       if (complexDimension != null) {
-        fillParentDetails(dimensionToBlockIndexMap, complexDimension, complexTypeMap,
-            eachComplexColumnValueSize);
+        fillParentDetails(dimensionToBlockIndexMap, complexDimension, complexTypeMap);
       }
-      fillParentDetails(dimensionToBlockIndexMap, actualDimension, complexTypeMap,
-          eachComplexColumnValueSize);
+      fillParentDetails(dimensionToBlockIndexMap, actualDimension, complexTypeMap);
     }
     if (null != filterDimensions) {
       for (CarbonDimension filterDimension : filterDimensions) {
@@ -407,16 +274,14 @@ public class QueryUtil {
             || filterDimension.getNumberOfChild() == 0) {
           continue;
         }
-        fillParentDetails(dimensionToBlockIndexMap, filterDimension, complexTypeMap,
-            eachComplexColumnValueSize);
+        fillParentDetails(dimensionToBlockIndexMap, filterDimension, complexTypeMap);
       }
     }
     return complexTypeMap;
   }
 
   private static void fillParentDetails(Map<Integer, Integer> dimensionToBlockIndexMap,
-      CarbonDimension dimension, Map<Integer, GenericQueryType> complexTypeMap,
-      int[] eachComplexColumnValueSize) {
+      CarbonDimension dimension, Map<Integer, GenericQueryType> complexTypeMap) {
     int parentBlockIndex = dimensionToBlockIndexMap.get(dimension.getOrdinal());
     GenericQueryType parentQueryType;
     if (DataTypes.isArrayType(dimension.getDataType())) {
@@ -434,26 +299,25 @@ public class QueryUtil {
           " is not supported");
     }
     complexTypeMap.put(dimension.getOrdinal(), parentQueryType);
-    fillChildrenDetails(eachComplexColumnValueSize, parentBlockIndex,
-            dimension, parentQueryType);
+    fillChildrenDetails(parentBlockIndex, dimension, parentQueryType);
   }
 
-  private static int fillChildrenDetails(int[] eachComplexColumnValueSize, int parentBlockIndex,
-      CarbonDimension dimension, GenericQueryType parentQueryType) {
+  private static int fillChildrenDetails(int parentColumnIndex, CarbonDimension dimension,
+      GenericQueryType parentQueryType) {
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
       DataType dataType = dimension.getListOfChildDimensions().get(i).getDataType();
       if (DataTypes.isArrayType(dataType)) {
         parentQueryType.addChildren(
             new ArrayQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
-                dimension.getColName(), ++parentBlockIndex));
+                dimension.getColName(), ++parentColumnIndex));
       } else if (DataTypes.isStructType(dataType)) {
         parentQueryType.addChildren(
             new StructQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
-                dimension.getColName(), ++parentBlockIndex));
+                dimension.getColName(), ++parentColumnIndex));
       } else if (DataTypes.isMapType(dataType)) {
         parentQueryType.addChildren(
             new MapQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
-                dimension.getColName(), ++parentBlockIndex));
+                dimension.getColName(), ++parentColumnIndex));
       } else {
         boolean isDirectDictionary = CarbonUtil
             .hasEncoding(dimension.getListOfChildDimensions().get(i).getEncoder(),
@@ -461,17 +325,15 @@ public class QueryUtil {
 
         parentQueryType.addChildren(
             new PrimitiveQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
-                dimension.getColName(), ++parentBlockIndex,
-                dimension.getListOfChildDimensions().get(i).getDataType(),
-                eachComplexColumnValueSize[dimension.getListOfChildDimensions().get(i)
-                    .getComplexTypeOrdinal()], isDirectDictionary));
+                dimension.getColName(), ++parentColumnIndex,
+                dimension.getListOfChildDimensions().get(i).getDataType(), isDirectDictionary));
       }
       if (dimension.getListOfChildDimensions().get(i).getNumberOfChild() > 0) {
-        parentBlockIndex = fillChildrenDetails(eachComplexColumnValueSize, parentBlockIndex,
+        parentColumnIndex = fillChildrenDetails(parentColumnIndex,
             dimension.getListOfChildDimensions().get(i), parentQueryType);
       }
     }
-    return parentBlockIndex;
+    return parentColumnIndex;
   }
 
   public static void getAllFilterDimensionsAndMeasures(FilterResolverIntf filterResolverTree,
@@ -622,7 +484,6 @@ public class QueryUtil {
   public static BlockletDetailInfo getBlockletDetailInfo(DataFileFooter fileFooter,
       TableBlockInfo blockInfo) {
     BlockletDetailInfo detailInfo = new BlockletDetailInfo();
-    detailInfo.setDimLens(fileFooter.getSegmentInfo().getColumnCardinality());
     detailInfo.setBlockletInfoBinary(new byte[0]);
     detailInfo.setColumnSchemas(fileFooter.getColumnInTable());
     detailInfo.setBlockletId((short) -1);

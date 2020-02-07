@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.datastore.page;
 
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
-import org.apache.carbondata.core.datastore.page.key.TablePageKey;
 
 /**
  * Table page that after encoding and compression.
@@ -31,9 +30,6 @@ public class EncodedTablePage {
   // encoded data and metadata for each measure column
   private EncodedColumnPage[] measurePages;
 
-  // key of this page
-  private TablePageKey pageKey;
-
   // number of row in this page
   private int pageSize;
 
@@ -41,18 +37,15 @@ public class EncodedTablePage {
   private int encodedSize;
 
   public static EncodedTablePage newInstance(int pageSize,
-      EncodedColumnPage[] dimensionPages, EncodedColumnPage[] measurePages,
-      TablePageKey tablePageKey) {
-    return new EncodedTablePage(pageSize, dimensionPages, measurePages, tablePageKey);
+      EncodedColumnPage[] dimensionPages, EncodedColumnPage[] measurePages) {
+    return new EncodedTablePage(pageSize, dimensionPages, measurePages);
   }
 
   private EncodedTablePage(int pageSize,
-      EncodedColumnPage[] dimensionPages, EncodedColumnPage[] measurePages,
-      TablePageKey tablePageKey) {
+      EncodedColumnPage[] dimensionPages, EncodedColumnPage[] measurePages) {
     this.dimensionPages = dimensionPages;
     this.measurePages = measurePages;
     this.pageSize = pageSize;
-    this.pageKey = tablePageKey;
     this.encodedSize = calculatePageSize(dimensionPages, measurePages);
   }
 
@@ -83,10 +76,6 @@ public class EncodedTablePage {
 
   public int getNumMeasures() {
     return measurePages.length;
-  }
-
-  public TablePageKey getPageKey() {
-    return pageKey;
   }
 
   public EncodedColumnPage getDimension(int dimensionIndex) {

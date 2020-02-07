@@ -20,6 +20,7 @@ package org.apache.carbondata.core.util;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
@@ -756,4 +757,47 @@ public final class ByteUtil {
         ((long) bytes[offset + 3] & 0xff) << 24) | (((long) bytes[offset + 2] & 0xff) << 16) | (
         ((long) bytes[offset + 1] & 0xff) << 8) | (((long) bytes[offset] & 0xff)));
   }
+
+  public static byte[] convertDateToBytes(int date) {
+    return ByteUtil.toBytes(date);
+  }
+
+  public static int convertBytesToDate(byte[] date) {
+    return ByteUtil.toInt(date, 0);
+  }
+
+  public static int convertBytesToDate(byte[] date, int offset) {
+    return ByteUtil.toInt(date, offset);
+  }
+
+  public static int dateBytesSize() {
+    return 4;
+  }
+
+  public static byte[] convertDateToBytes(int[] input) {
+    byte[] output = new byte[input.length * 4];
+    for (int i = 0; i < input.length; i++) {
+      byte[] temp = convertDateToBytes(input[i]);
+      System.arraycopy(temp, 0, output, i * 4, 4);
+    }
+    return output;
+  }
+
+  public static byte[] convertDateToBytes(List<Integer> input) {
+    byte[] output = new byte[input.size() * 4];
+    for (int i = 0; i < input.size(); i++) {
+      byte[] temp = convertDateToBytes(input.get(i));
+      System.arraycopy(temp, 0, output, i * 4, 4);
+    }
+    return output;
+  }
+
+  public static int[] convertBytesToDateArray(byte[] input) {
+    int[] output = new int[input.length / 4];
+    for (int i = 0; i < input.length; i++) {
+      output[i] = convertBytesToDate(input, i * 4);
+    }
+    return output;
+  }
+
 }

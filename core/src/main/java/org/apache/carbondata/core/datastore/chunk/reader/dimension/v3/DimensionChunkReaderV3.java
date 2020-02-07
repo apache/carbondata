@@ -71,9 +71,8 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
    */
   private long lastDimensionOffsets;
 
-  public DimensionChunkReaderV3(BlockletInfo blockletInfo,
-      int[] eachColumnValueSize, String filePath) {
-    super(blockletInfo, eachColumnValueSize, filePath);
+  public DimensionChunkReaderV3(BlockletInfo blockletInfo, String filePath) {
+    super(blockletInfo, filePath);
     lastDimensionOffsets = blockletInfo.getDimensionOffset();
   }
 
@@ -319,6 +318,10 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
     return false;
   }
 
+  private int getColumnValueSize(List<Encoding> encodings) {
+    return encodings.contains(Encoding.DICTIONARY) ? 4 : -1;
+  }
+
   private DimensionColumnPage decodeDimensionLegacy(DimensionRawColumnChunk rawColumnPage,
       ByteBuffer pageData, DataChunk2 pageMetadata, int offset, ColumnVectorInfo vectorInfo,
       ReusableDataBuffer reusableDataBuffer) {
@@ -355,7 +358,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
       // uncompress the data with rle indexes
       dataPage = UnBlockIndexer.uncompressData(dataPage, rlePage,
           null == rawColumnPage.getLocalDictionary() ?
-              eachColumnValueSize[rawColumnPage.getColumnIndex()] :
+              getColumnValueSize(pageMetadata.encoders) :
               CarbonCommonConstants.LOCAL_DICT_ENCODED_BYTEARRAY_SIZE, uncompressedSize);
       uncompressedSize = dataPage.length;
     }
@@ -379,7 +382,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
       columnDataChunk =
           new FixedLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
               pageMetadata.getNumberOfRowsInpage(),
-              eachColumnValueSize[rawColumnPage.getColumnIndex()], vectorInfo, uncompressedSize);
+              getColumnValueSize(pageMetadata.encoders), vectorInfo, uncompressedSize);
     }
     return columnDataChunk;
   }

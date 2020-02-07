@@ -338,23 +338,13 @@ object DataLoadProcessorStepOnSpark {
         conf.get(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME))
     ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf)
     var tableName: String = null
-    var rowConverter: RowConverterImpl = null
     var dataWriter: DataWriterProcessorStepImpl = null
     try {
       val storeLocation = CommonUtil.getTempStoreLocations(index.toString)
       val conf = DataLoadProcessBuilder.createConfiguration(model, storeLocation)
 
       tableName = model.getTableName
-
-      // When we use sortBy, it means we have 2 stages. Stage1 can't get the finder from Stage2
-      // directly because they are in different processes. We need to set cardinality finder in
-      // Stage1 again.
-      rowConverter = new RowConverterImpl(conf.getDataFields, conf, null)
-      rowConverter.initialize()
-      conf.setCardinalityFinder(rowConverter)
-
       dataWriter = new DataWriterProcessorStepImpl(conf)
-
       val dataHandlerModel = dataWriter.getDataHandlerModel
       var dataHandler: CarbonFactHandler = null
       var rowsNotExist = true
@@ -381,9 +371,6 @@ object DataLoadProcessorStepOnSpark {
         LOGGER.error("Failed for table: " + tableName + " in Data Writer Step", e)
         throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage, e)
     } finally {
-      if (rowConverter != null) {
-        rowConverter.finish()
-      }
       // close the dataWriter once the write in done success or fail. if not closed then thread to
       // to prints the rows processed in each step for every 10 seconds will never exit.
       if(null != dataWriter) {
@@ -421,7 +408,6 @@ object DataLoadProcessorStepOnSpark {
     var model: CarbonLoadModel = null
     var tableName: String = null
     var inputProcessor: NewInputProcessorStepImpl = null
-    var rowConverter: RowConverterImpl = null
     var sortProcessor: SortProcessorStepImpl = null
     var dataWriter: DataWriterProcessorStepImpl = null
     try {
@@ -429,11 +415,6 @@ object DataLoadProcessorStepOnSpark {
       val storeLocation = CommonUtil.getTempStoreLocations(index.toString)
       val conf = DataLoadProcessBuilder.createConfiguration(model, storeLocation)
       tableName = model.getTableName
-
-      rowConverter = new RowConverterImpl(conf.getDataFields, conf, null)
-      rowConverter.initialize()
-      conf.setCardinalityFinder(rowConverter)
-
       inputProcessor = new NewInputProcessorStepImpl(conf, rows)
       sortProcessor = new SortProcessorStepImpl(conf, inputProcessor)
       dataWriter = new DataWriterProcessorStepImpl(conf, sortProcessor)
@@ -448,9 +429,6 @@ object DataLoadProcessorStepOnSpark {
         LOGGER.error("Failed for table: " + tableName + " in Data Writer Step", e)
         throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage, e)
     } finally {
-      if (rowConverter != null) {
-        rowConverter.finish()
-      }
       // close the dataWriter once the write in done success or fail. if not closed then thread to
       // to prints the rows processed in each step for every 10 seconds will never exit.
       if(null != dataWriter) {

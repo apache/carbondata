@@ -31,7 +31,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.devapi.BiDictionary;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -222,14 +221,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   @Override
   public void getAllPrimitiveChildren(List<GenericDataType> primitiveChild) {
 
-  }
-
-  /*
-   * get surrogate index
-   */
-  @Override
-  public int getSurrogateIndex() {
-    return index;
   }
 
   /*
@@ -428,16 +419,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   }
 
   @Override
-  public void fillCardinality(List<Integer> dimCardWithComplex) {
-    if (!this.carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
-      return;
-    }
-    dimCardWithComplex.add(dictionaryGenerator.size());
-  }
-
-  @Override
-  public void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
-      KeyGenerator[] generator)
+  public void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream)
       throws IOException {
     if (!this.isDictionary) {
       int sizeOfData;
@@ -453,7 +435,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       dataOutputStream.write(bb);
     } else {
       int data = byteArrayInput.getInt();
-      byte[] v = generator[index].generateKey(new int[] { data });
+      byte[] v = ByteUtil.convertDateToBytes(data);
       dataOutputStream.write(v);
     }
   }
@@ -520,32 +502,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    */
   public void setKeySize(int keySize) {
     this.keySize = keySize;
-  }
-
-  /*
-   * fill agg key block
-   */
-  @Override
-  public void fillAggKeyBlock(List<Boolean> aggKeyBlockWithComplex, boolean[] aggKeyBlock) {
-    aggKeyBlockWithComplex.add(aggKeyBlock[index]);
-  }
-
-  /*
-   * fill block key size
-   */
-  @Override
-  public void fillBlockKeySize(List<Integer> blockKeySizeWithComplex, int[] primitiveBlockKeySize) {
-    blockKeySizeWithComplex.add(primitiveBlockKeySize[index]);
-    this.keySize = primitiveBlockKeySize[index];
-  }
-
-  /*
-   * fill cardinality
-   */
-  @Override
-  public void fillCardinalityAfterDataLoad(List<Integer> dimCardWithComplex,
-      int[] maxSurrogateKeyArray) {
-    dimCardWithComplex.add(maxSurrogateKeyArray[index]);
   }
 
   @Override

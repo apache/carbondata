@@ -110,29 +110,29 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
   }
 
   private static void fillChildren(GenericQueryType parentQueryType, CarbonDimension dimension,
-      int parentBlockIndex) {
+      int parentColumnIndex) {
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
       CarbonDimension child = dimension.getListOfChildDimensions().get(i);
       DataType dataType = child.getDataType();
       GenericQueryType queryType = null;
       if (DataTypes.isArrayType(dataType)) {
         queryType =
-            new ArrayQueryType(child.getColName(), dimension.getColName(), ++parentBlockIndex);
+            new ArrayQueryType(child.getColName(), dimension.getColName(), ++parentColumnIndex);
 
       } else if (DataTypes.isStructType(dataType)) {
         queryType =
-            new StructQueryType(child.getColName(), dimension.getColName(), ++parentBlockIndex);
+            new StructQueryType(child.getColName(), dimension.getColName(), ++parentColumnIndex);
         parentQueryType.addChildren(queryType);
       } else {
         boolean isDirectDictionary =
             CarbonUtil.hasEncoding(child.getEncoder(), Encoding.DIRECT_DICTIONARY);
         queryType =
-            new PrimitiveQueryType(child.getColName(), dimension.getColName(), ++parentBlockIndex,
-                child.getDataType(), 4, isDirectDictionary);
+            new PrimitiveQueryType(child.getColName(), dimension.getColName(), ++parentColumnIndex,
+                child.getDataType(), isDirectDictionary);
       }
       parentQueryType.addChildren(queryType);
       if (child.getNumberOfChild() > 0) {
-        fillChildren(queryType, child, parentBlockIndex);
+        fillChildren(queryType, child, parentColumnIndex);
       }
     }
   }

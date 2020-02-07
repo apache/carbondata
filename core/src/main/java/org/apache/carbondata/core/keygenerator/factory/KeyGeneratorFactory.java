@@ -39,16 +39,5 @@ public final class KeyGeneratorFactory {
     return new MultiDimKeyVarLengthGenerator(incrementedCardinality);
   }
 
-  /**
-   *
-   * @param dimCardinality : dimension cardinality
-   * @param columnSplits : No of column in each block
-   * @return keygenerator
-   */
-  public static KeyGenerator getKeyGenerator(int[] dimCardinality, int[] columnSplits) {
-    int[] dimsBitLens = CarbonUtil.getDimensionBitLength(dimCardinality, columnSplits);
-
-    return new MultiDimKeyVarLengthGenerator(dimsBitLens);
-  }
 }
 

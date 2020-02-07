@@ -17,7 +17,6 @@
 
 package org.apache.spark.rdd
 
-import java.util
 import java.util.concurrent.Executors
 
 import scala.collection.JavaConverters._

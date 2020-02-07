@@ -455,7 +455,7 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
       defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
     } else if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.DATE) {
       defaultValue = FilterUtil
-          .getDefaultNullValue(dimColEvaluatorInfoList.get(0).getDimension(), segmentProperties);
+          .getDefaultNullValue(dimColEvaluatorInfoList.get(0).getDimension());
     } else if (!dimensionColumnPage.isAdaptiveEncoded()) {
       defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
     }

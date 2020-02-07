@@ -2666,7 +2666,6 @@ object testUtil{
           .getInstance
           .getDimensionColumnChunkReader(ColumnarFormatVersion.V3,
             blockletInfo,
-            dataFileFooter.getSegmentInfo.getColumnCardinality,
             carbonDataFiles.getAbsolutePath,
             false).asInstanceOf[DimensionChunkReaderV3]
       dimensionRawColumnChunks

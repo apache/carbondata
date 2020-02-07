@@ -26,7 +26,7 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.complexobjects.ArrayObject;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
@@ -158,14 +158,6 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   }
 
   /*
-   * return surrogate index
-   */
-  @Override
-  public int getSurrogateIndex() {
-    return 0;
-  }
-
-  /*
    * set surrogate index
    */
   @Override
@@ -194,27 +186,18 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   }
 
   @Override
-  public void fillCardinality(List<Integer> dimCardWithComplex) {
-    if (this.getIsColumnDictionary()) {
-      dimCardWithComplex.add(0);
-      children.fillCardinality(dimCardWithComplex);
-    }
-  }
-
-  @Override
-  public void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
-      KeyGenerator[] generator)
+  public void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream)
       throws IOException, KeyGenException {
     int dataLength = byteArrayInput.getInt();
 
     dataOutputStream.writeInt(dataLength);
     if (children instanceof PrimitiveDataType) {
       if (children.getIsColumnDictionary()) {
-        dataOutputStream.writeInt(generator[children.getSurrogateIndex()].getKeySizeInBytes());
+        dataOutputStream.writeInt(ByteUtil.dateBytesSize());
       }
     }
     for (int i = 0; i < dataLength; i++) {
-      children.parseComplexValue(byteArrayInput, dataOutputStream, generator);
+      children.parseComplexValue(byteArrayInput, dataOutputStream);
     }
   }
 
@@ -282,34 +265,6 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   @Override
   public int getDataCounter() {
     return this.dataCounter;
-  }
-
-  /*
-   * fill agg key blocks
-   */
-  @Override
-  public void fillAggKeyBlock(List<Boolean> aggKeyBlockWithComplex, boolean[] aggKeyBlock) {
-    aggKeyBlockWithComplex.add(false);
-    children.fillAggKeyBlock(aggKeyBlockWithComplex, aggKeyBlock);
-  }
-
-  /*
-   * fill key size
-   */
-  @Override
-  public void fillBlockKeySize(List<Integer> blockKeySizeWithComplex, int[] primitiveBlockKeySize) {
-    blockKeySizeWithComplex.add(8);
-    children.fillBlockKeySize(blockKeySizeWithComplex, primitiveBlockKeySize);
-  }
-
-  /*
-   * fill cardinality
-   */
-  @Override
-  public void fillCardinalityAfterDataLoad(List<Integer> dimCardWithComplex,
-      int[] maxSurrogateKeyArray) {
-    dimCardWithComplex.add(0);
-    children.fillCardinalityAfterDataLoad(dimCardWithComplex, maxSurrogateKeyArray);
   }
 
   @Override

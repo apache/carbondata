@@ -21,7 +21,6 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
@@ -165,7 +164,6 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
     converter =
         new RowConverterImpl(configuration.getDataFields(), configuration, badRecordLogger, true);
-    configuration.setCardinalityFinder(converter);
     converter.initialize();
 
     // initialize data writer and compressor
@@ -311,16 +309,8 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   private void writeFileHeader() throws IOException {
     List<ColumnSchema> wrapperColumnSchemaList = CarbonUtil
         .getColumnSchemaList(carbonTable.getVisibleDimensions(), carbonTable.getVisibleMeasures());
-    int[] dimLensWithComplex = new int[wrapperColumnSchemaList.size()];
-    for (int i = 0; i < dimLensWithComplex.length; i++) {
-      dimLensWithComplex[i] = Integer.MAX_VALUE;
-    }
-    int[] dictionaryColumnCardinality =
-        CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchemaList);
-    List<Integer> cardinality = new ArrayList<>();
     List<org.apache.carbondata.format.ColumnSchema> columnSchemaList = AbstractFactDataWriter
-        .getColumnSchemaListAndCardinality(cardinality, dictionaryColumnCardinality,
-            wrapperColumnSchemaList);
+        .getColumnSchemaListAndCardinality(wrapperColumnSchemaList);
     FileHeader fileHeader =
         CarbonMetadataUtil.getFileHeader(true, columnSchemaList, System.currentTimeMillis());
     fileHeader.setIs_footer_present(false);

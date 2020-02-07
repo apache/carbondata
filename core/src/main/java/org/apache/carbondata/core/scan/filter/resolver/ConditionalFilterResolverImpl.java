@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.scan.filter.resolver;
 
 import java.util.List;
-import java.util.SortedMap;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -203,33 +202,6 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    */
   public MeasureColumnResolvedFilterInfo getMsrColResolvedFilterInfo() {
     return msrColResolvedFilterInfo;
-  }
-
-  /**
-   * method will calculates the start key based on the filter surrogates
-   */
-  public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
-      SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList) {
-    if (null != dimColResolvedFilterInfo) {
-      FilterUtil.getStartKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(),
-          segmentProperties, startKey, startKeyList);
-      FilterUtil.getStartKeyForNoDictionaryDimension(dimColResolvedFilterInfo, segmentProperties,
-          setOfStartKeyByteArray);
-    }
-  }
-
-  /**
-   * get the start key based on the filter surrogates
-   */
-  @Override
-  public void getEndKey(SegmentProperties segmentProperties, long[] endKeys,
-      SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> endKeyList) {
-    if (null != dimColResolvedFilterInfo) {
-      FilterUtil.getEndKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(), endKeys,
-          segmentProperties, endKeyList);
-      FilterUtil.getEndKeyForNoDictionaryDimension(dimColResolvedFilterInfo, segmentProperties,
-          setOfEndKeyByteArray);
-    }
   }
 
   /**

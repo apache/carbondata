@@ -32,7 +32,6 @@ import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
 import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
@@ -104,7 +103,6 @@ public abstract class AbstractDataFileFooterConverter {
         columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
       }
       // get the segment info
-      SegmentInfo segmentInfo = getSegmentInfo(readIndexHeader.getSegment_info());
       BlockletIndex blockletIndex = null;
       int counter = 0;
       int index = 0;
@@ -126,7 +124,6 @@ public abstract class AbstractDataFileFooterConverter {
           dataFileFooter.setColumnInTable(columnSchemaList);
           dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
           dataFileFooter.setBlockInfo(new BlockInfo(tableBlockInfo));
-          dataFileFooter.setSegmentInfo(segmentInfo);
           if (readIndexHeader.isSetIs_sort()) {
             dataFileFooter.setSorted(readIndexHeader.isIs_sort());
           } else {
@@ -183,8 +180,6 @@ public abstract class AbstractDataFileFooterConverter {
       if (!isTransactionalTable) {
         QueryUtil.updateColumnUniqueIdForNonTransactionTable(columnSchemaList);
       }
-      // get the segment info
-      SegmentInfo segmentInfo = getSegmentInfo(readIndexHeader.getSegment_info());
       BlockletIndex blockletIndex = null;
       DataFileFooter dataFileFooter = null;
       // read the block info from file
@@ -198,7 +193,6 @@ public abstract class AbstractDataFileFooterConverter {
         dataFileFooter.setColumnInTable(columnSchemaList);
         dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
         dataFileFooter.setBlockInfo(new BlockInfo(tableBlockInfo));
-        dataFileFooter.setSegmentInfo(segmentInfo);
         dataFileFooter.setVersionId(tableBlockInfo.getVersion());
         // In case of old schema time stamp will not be found in the index header
         if (readIndexHeader.isSetSchema_time_stamp()) {
@@ -412,23 +406,6 @@ public abstract class AbstractDataFileFooterConverter {
       default:
         throw new IllegalArgumentException(encoderThrift.toString() + " is not supported");
     }
-  }
-
-  /**
-   * Below method will be used to convert thrift segment object to wrapper
-   * segment object
-   *
-   * @param segmentInfo thrift segment info object
-   * @return wrapper segment info object
-   */
-  protected SegmentInfo getSegmentInfo(org.apache.carbondata.format.SegmentInfo segmentInfo) {
-    SegmentInfo info = new SegmentInfo();
-    int[] cardinality = new int[segmentInfo.getColumn_cardinalities().size()];
-    for (int i = 0; i < cardinality.length; i++) {
-      cardinality[i] = segmentInfo.getColumn_cardinalities().get(i);
-    }
-    info.setColumnCardinality(cardinality);
-    return info;
   }
 
   /**

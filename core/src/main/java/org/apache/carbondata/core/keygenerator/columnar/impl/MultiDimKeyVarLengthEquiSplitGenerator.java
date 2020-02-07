@@ -131,64 +131,8 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
     return ints;
   }
 
-  @Override
-  public byte[][] splitKey(byte[] key) {
-    byte[][] split = new byte[blockKeySize.length][];
-    int copyIndex = 0;
-    for (int i = 0; i < split.length; i++) {
-      split[i] = new byte[blockKeySize[i]];
-      System.arraycopy(key, copyIndex, split[i], 0, split[i].length);
-      copyIndex += blockKeySize[i];
-    }
-    return split;
-  }
-
-  @Override
-  public byte[][] generateAndSplitKey(long[] keys) {
-    return splitKey(generateKey(keys));
-  }
-
-  @Override
-  public byte[][] generateAndSplitKey(int[] keys) {
-    return splitKey(generateKey(keys));
-  }
-
-  @Override
-  public long[] getKeyArray(byte[][] key) {
-    byte[] fullKey = new byte[getKeySizeInBytes()];
-    int copyIndex = 0;
-    for (int i = 0; i < key.length; i++) {
-      System.arraycopy(key[i], 0, fullKey, copyIndex, key[i].length);
-      copyIndex += key[i].length;
-    }
-    return getKeyArray(fullKey);
-  }
-
-  @Override
-  public byte[] getKeyByteArray(byte[][] key) {
-    byte[] fullKey = new byte[getKeySizeInBytes()];
-    int copyIndex = 0;
-    for (int i = 0; i < key.length; i++) {
-      System.arraycopy(key[i], 0, fullKey, copyIndex, key[i].length);
-      copyIndex += key[i].length;
-    }
-    return fullKey;
-  }
-
   public int[] getBlockKeySize() {
     return blockKeySize;
-  }
-
-  @Override
-  public int getKeySizeByBlock(int[] blockIndexes) {
-    int size = 0;
-
-    for (int i = 0; i < blockIndexes.length; i++) {
-      if (blockIndexes[i] < blockKeySize.length) {
-        size += blockKeySize[blockIndexes[i]];
-      }
-    }
-    return size;
   }
 
   @Override

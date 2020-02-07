@@ -73,7 +73,6 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
     RowConverter converter =
         new RowConverterImpl(child.getOutput(), configuration, badRecordLogger);
-    configuration.setCardinalityFinder(converter);
     converters.add(converter);
     converter.initialize();
 

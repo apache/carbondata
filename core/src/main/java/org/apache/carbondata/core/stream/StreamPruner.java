@@ -64,13 +64,8 @@ public class StreamPruner {
       // prepare cardinality of all dimensions
       List<ColumnSchema> listOfColumns =
           carbonTable.getTableInfo().getFactTable().getListOfColumns();
-      int[] columnCardinality = new int[listOfColumns.size()];
-      for (int index = 0; index < columnCardinality.length; index++) {
-        columnCardinality[index] = Integer.MAX_VALUE;
-      }
       // initial filter executor
-      SegmentProperties segmentProperties =
-          new SegmentProperties(listOfColumns, columnCardinality);
+      SegmentProperties segmentProperties = new SegmentProperties(listOfColumns);
       filterExecuter = FilterUtil.getFilterExecuterTree(
           filterExp, segmentProperties, null, minMaxCacheColumns, false);
     }

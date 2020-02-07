@@ -46,11 +46,6 @@ public class DataFileFooter implements Serializable {
   private long numberOfRows;
 
   /**
-   * Segment info (will be same/repeated for all block in this segment)
-   */
-  private SegmentInfo segmentInfo;
-
-  /**
    * Information about leaf nodes of all columns in this file
    */
   private List<BlockletInfo> blockletList;
@@ -106,20 +101,6 @@ public class DataFileFooter implements Serializable {
    */
   public void setNumberOfRows(long numberOfRows) {
     this.numberOfRows = numberOfRows;
-  }
-
-  /**
-   * @return the segmentInfo
-   */
-  public SegmentInfo getSegmentInfo() {
-    return segmentInfo;
-  }
-
-  /**
-   * @param segmentInfo the segmentInfo to set
-   */
-  public void setSegmentInfo(SegmentInfo segmentInfo) {
-    this.segmentInfo = segmentInfo;
   }
 
   /**

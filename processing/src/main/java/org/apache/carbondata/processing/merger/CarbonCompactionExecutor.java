@@ -179,8 +179,7 @@ public class CarbonCompactionExecutor {
       String task, List<TableBlockInfo> tableBlockInfoList)
       throws IOException {
     SegmentProperties sourceSegmentProperties =
-        new SegmentProperties(tableBlockInfoList.get(0).getDataFileFooter().getColumnInTable(),
-            tableBlockInfoList.get(0).getDataFileFooter().getSegmentInfo().getColumnCardinality());
+        new SegmentProperties(tableBlockInfoList.get(0).getDataFileFooter().getColumnInTable());
     boolean hasColumnDrift = carbonTable.hasColumnDrift() &&
         RestructureUtil.hasColumnDriftOnSegment(carbonTable, sourceSegmentProperties);
     if (hasColumnDrift) {
@@ -211,7 +210,7 @@ public class CarbonCompactionExecutor {
       // get the columnValueSize for the dataFileFooter
       IntArrayWrapper columnValueSize = new IntArrayWrapper(
           getSourceSegmentProperties(Collections.singletonList(tableBlock.getDataFileFooter()))
-              .getColumnsValueSize());
+              .createColumnValueLength());
       List<TableBlockInfo> tempBlockInfoList =
           columnvalueSizeToTableBlockInfoMap.get(columnValueSize);
       if (tempBlockInfoList == null) {
@@ -236,22 +235,11 @@ public class CarbonCompactionExecutor {
   private SegmentProperties getSourceSegmentProperties(List<DataFileFooter> listMetadata) {
     SegmentProperties sourceSegProperties = null;
     if (restructuredBlockExists) {
-      // update cardinality of source segment according to new schema
-      Map<String, Integer> columnToCardinalityMap =
-          new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-      CarbonCompactionUtil
-          .addColumnCardinalityToMap(columnToCardinalityMap, listMetadata.get(0).getColumnInTable(),
-              listMetadata.get(0).getSegmentInfo().getColumnCardinality());
       List<ColumnSchema> updatedColumnSchemaList =
           new ArrayList<>(listMetadata.get(0).getColumnInTable().size());
-      int[] updatedColumnCardinalities = CarbonCompactionUtil
-          .updateColumnSchemaAndGetCardinality(columnToCardinalityMap, carbonTable,
-              updatedColumnSchemaList);
-      sourceSegProperties =
-          new SegmentProperties(updatedColumnSchemaList, updatedColumnCardinalities);
+      sourceSegProperties = new SegmentProperties(updatedColumnSchemaList);
     } else {
-      sourceSegProperties = new SegmentProperties(listMetadata.get(0).getColumnInTable(),
-          listMetadata.get(0).getSegmentInfo().getColumnCardinality());
+      sourceSegProperties = new SegmentProperties(listMetadata.get(0).getColumnInTable());
     }
     return sourceSegProperties;
   }

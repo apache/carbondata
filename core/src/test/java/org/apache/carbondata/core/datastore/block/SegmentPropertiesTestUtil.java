@@ -42,13 +42,7 @@ public class SegmentPropertiesTestUtil {
     columnSchema.add(getDimensionColumn7());
     columnSchema.add(getMeasureColumn());
     columnSchema.add(getMeasureColumn1());
-    int[] cardinality = new int[columnSchema.size()];
-    int x = 100;
-    for (int i = 0; i < columnSchema.size(); i++) {
-      cardinality[i] = x;
-      x++;
-    }
-    return new SegmentProperties(columnSchema, cardinality);
+    return new SegmentProperties(columnSchema);
   }
 
   public static ColumnSchema getDimensionColumn1() {

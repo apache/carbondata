@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.filter;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -26,17 +25,13 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeSet;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
-import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
@@ -531,46 +526,6 @@ public final class FilterUtil {
   }
 
   /**
-   * method will get the masked keys based on the keys generated from surrogates.
-   *
-   * @param ranges
-   * @param key
-   * @return byte[]
-   */
-  private static byte[] getMaskedKey(int[] ranges, byte[] key) {
-    byte[] maskkey = new byte[ranges.length];
-
-    for (int i = 0; i < maskkey.length; i++) {
-      maskkey[i] = key[ranges[i]];
-    }
-    return maskkey;
-  }
-
-  /**
-   * This method will return the ranges for the masked Bytes based on the key
-   * Generator.
-   *
-   * @param queryDimensionsOrdinal
-   * @param generator
-   * @return
-   */
-  private static int[] getRangesForMaskedByte(int queryDimensionsOrdinal, KeyGenerator generator) {
-    Set<Integer> integers = new TreeSet<Integer>();
-    int[] range = generator.getKeyByteOffsets(queryDimensionsOrdinal);
-    for (int j = range[0]; j <= range[1]; j++) {
-      integers.add(j);
-    }
-
-    int[] byteIndexs = new int[integers.size()];
-    int j = 0;
-    for (Iterator<Integer> iterator = integers.iterator(); iterator.hasNext(); ) {
-      Integer integer = iterator.next();
-      byteIndexs[j++] = integer;
-    }
-    return byteIndexs;
-  }
-
-  /**
    * This method will get the no dictionary data based on filters and same
    * will be in ColumnFilterInfo
    *
@@ -700,11 +655,9 @@ public final class FilterUtil {
   }
 
   private static byte[][] getFilterValuesInBytes(ColumnFilterInfo columnFilterInfo,
-      boolean isExclude, KeyGenerator blockLevelKeyGenerator, int[] dimColumnsCardinality,
-      int[] keys, List<byte[]> filterValuesList, int keyOrdinalOfDimensionFromCurrentBlock) {
+      boolean isExclude, int[] keys, List<byte[]> filterValuesList,
+      int keyOrdinalOfDimensionFromCurrentBlock) {
     if (null != columnFilterInfo) {
-      int[] rangesForMaskedByte =
-          getRangesForMaskedByte(keyOrdinalOfDimensionFromCurrentBlock, blockLevelKeyGenerator);
       List<Integer> listOfsurrogates = null;
       if (!isExclude && columnFilterInfo.isIncludeFilter()) {
         listOfsurrogates = columnFilterInfo.getFilterList();
@@ -713,13 +666,8 @@ public final class FilterUtil {
       }
       if (null != listOfsurrogates) {
         for (Integer surrogate : listOfsurrogates) {
-          if (surrogate <= dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock]) {
-            keys[keyOrdinalOfDimensionFromCurrentBlock] = surrogate;
-            filterValuesList
-                .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
-          } else {
-            break;
-          }
+          keys[keyOrdinalOfDimensionFromCurrentBlock] = surrogate;
+          filterValuesList.add(ByteUtil.convertDateToBytes(surrogate));
         }
       }
     }
@@ -729,29 +677,20 @@ public final class FilterUtil {
   // This function is used for calculating filter values in case when Range Column
   // is given as a Dictionary Include Column
   private static byte[][] getFilterValueInBytesForDictRange(ColumnFilterInfo columnFilterInfo,
-      KeyGenerator blockLevelKeyGenerator, int[] dimColumnsCardinality, int[] keys,
-      List<byte[]> filterValuesList, int keyOrdinalOfDimensionFromCurrentBlock) {
+      int[] keys, List<byte[]> filterValuesList, int keyOrdinalOfDimensionFromCurrentBlock) {
     if (null != columnFilterInfo) {
-      int[] rangesForMaskedByte =
-          getRangesForMaskedByte(keyOrdinalOfDimensionFromCurrentBlock, blockLevelKeyGenerator);
       List<Integer> listOfsurrogates = columnFilterInfo.getFilterList();
       if (listOfsurrogates == null || listOfsurrogates.size() > 1) {
         throw new RuntimeException(
             "Filter values cannot be null in case of range in dictionary include");
       }
       // Here we only get the first column as there can be only one range column.
-      if (listOfsurrogates.get(0)
-          <= dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock]) {
-        keys[keyOrdinalOfDimensionFromCurrentBlock] = listOfsurrogates.get(0);
-      } else {
-        keys[keyOrdinalOfDimensionFromCurrentBlock] =
-            dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock];
-      }
-      filterValuesList
-          .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
+      keys[keyOrdinalOfDimensionFromCurrentBlock] = listOfsurrogates.get(0);
+      filterValuesList.add(ByteUtil.convertDateToBytes(listOfsurrogates.get(0)));
     }
     return filterValuesList.toArray(new byte[filterValuesList.size()][]);
   }
+
 
   /**
    * This method will be used to get the Filter key array list for blocks which do not contain
@@ -771,8 +710,8 @@ public final class FilterUtil {
     int keyOrdinalOfDimensionFromCurrentBlock = 0;
     List<byte[]> filterValuesList =
         new ArrayList<byte[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    return getFilterValuesInBytes(columnFilterInfo, isExclude, blockLevelKeyGenerator,
-        dimColumnsCardinality, keys, filterValuesList, keyOrdinalOfDimensionFromCurrentBlock);
+    return getFilterValuesInBytes(columnFilterInfo, isExclude, keys, filterValuesList,
+        keyOrdinalOfDimensionFromCurrentBlock);
   }
 
   /**
@@ -792,321 +731,18 @@ public final class FilterUtil {
       return columnFilterInfo.getNoDictionaryFilterValuesList()
           .toArray((new byte[columnFilterInfo.getNoDictionaryFilterValuesList().size()][]));
     }
-    KeyGenerator blockLevelKeyGenerator = segmentProperties.getDimensionKeyGenerator();
-    int[] dimColumnsCardinality = segmentProperties.getDimColumnsCardinality();
-    int[] keys = new int[blockLevelKeyGenerator.getDimCount()];
+    int[] keys = new int[segmentProperties.getDimensions().size()];
     List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
     Arrays.fill(keys, 0);
     int keyOrdinalOfDimensionFromCurrentBlock = carbonDimension.getKeyOrdinal();
     if (!isDictRange) {
-      return getFilterValuesInBytes(columnFilterInfo, isExclude, blockLevelKeyGenerator,
-          dimColumnsCardinality, keys, filterValuesList, keyOrdinalOfDimensionFromCurrentBlock);
+      return getFilterValuesInBytes(columnFilterInfo, isExclude, keys, filterValuesList,
+          keyOrdinalOfDimensionFromCurrentBlock);
     } else {
       // For Dictionary Include Range Column
-      return getFilterValueInBytesForDictRange(columnFilterInfo, blockLevelKeyGenerator,
-          dimColumnsCardinality, keys, filterValuesList, keyOrdinalOfDimensionFromCurrentBlock);
+      return getFilterValueInBytesForDictRange(columnFilterInfo, keys, filterValuesList,
+          keyOrdinalOfDimensionFromCurrentBlock);
     }
-  }
-
-  /**
-   * The method is used to get the single dictionary key's mask key
-   *
-   * @param surrogate
-   * @param carbonDimension
-   * @param blockLevelKeyGenerator
-   * @return
-   */
-  public static byte[] getMaskKey(int surrogate, CarbonDimension carbonDimension,
-      KeyGenerator blockLevelKeyGenerator) {
-    int[] keys = new int[blockLevelKeyGenerator.getDimCount()];
-    byte[] maskedKey = null;
-    Arrays.fill(keys, 0);
-    int[] rangesForMaskedByte =
-        getRangesForMaskedByte((carbonDimension.getKeyOrdinal()), blockLevelKeyGenerator);
-    keys[carbonDimension.getKeyOrdinal()] = surrogate;
-    maskedKey = getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys));
-    return maskedKey;
-  }
-
-  /**
-   * Method will return the start key based on KeyGenerator for the respective
-   * filter resolved instance.
-   *
-   * @param dimensionFilter
-   * @param startKey
-   * @param startKeyList
-   * @return long[] start key
-   */
-  public static void getStartKey(Map<CarbonDimension, List<ColumnFilterInfo>> dimensionFilter,
-      SegmentProperties segmentProperties, long[] startKey, List<long[]> startKeyList) {
-    for (int i = 0; i < startKey.length; i++) {
-      // The min surrogate key is 1, set it as the init value for starkey of each column level
-      startKey[i] = 1;
-    }
-    getStartKeyWithFilter(dimensionFilter, segmentProperties, startKey, startKeyList);
-  }
-
-  /**
-   * Algorithm for getting the start key for a filter
-   * step 1: Iterate through each dimension and verify whether its not an exclude filter.
-   * step 2: Initialize start key with the first filter member value present in each filter model
-   * for the respective dimensions.
-   * step 3: since its a no dictionary start key there will only actual value so compare
-   * the first filter model value with respect to the dimension data type.
-   * step 4: The least value will be considered as the start key of dimension by comparing all
-   * its filter model.
-   * step 5: create a byte array of start key which comprises of least filter member value of
-   * all dimension and the indexes which will help to read the respective filter value.
-   *
-   * @param dimColResolvedFilterInfo
-   * @param setOfStartKeyByteArray
-   * @return
-   */
-  public static void getStartKeyForNoDictionaryDimension(
-      DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
-      SegmentProperties segmentProperties,
-      SortedMap<Integer, byte[]> setOfStartKeyByteArray) {
-    Map<CarbonDimension, List<ColumnFilterInfo>> dimensionFilter =
-        dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
-    // step 1
-    for (Map.Entry<CarbonDimension, List<ColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
-      if (entry.getKey().getDataType() != DataTypes.DATE) {
-        List<ColumnFilterInfo> listOfDimColFilterInfo = entry.getValue();
-        if (null == listOfDimColFilterInfo) {
-          continue;
-        }
-        boolean isExcludePresent = false;
-        for (ColumnFilterInfo info : listOfDimColFilterInfo) {
-          if (!info.isIncludeFilter()) {
-            isExcludePresent = true;
-          }
-        }
-        if (isExcludePresent) {
-          continue;
-        }
-        // in case of restructure scenarios it can happen that the filter dimension is not
-        // present in the current block. In those cases no need to determine the key
-        CarbonDimension dimensionFromCurrentBlock = CarbonUtil
-            .getDimensionFromCurrentBlock(segmentProperties.getDimensions(), entry.getKey());
-        if (null == dimensionFromCurrentBlock) {
-          continue;
-        }
-        // step 2
-        byte[] noDictionaryStartKey =
-            listOfDimColFilterInfo.get(0).getNoDictionaryFilterValuesList().get(0);
-        if (setOfStartKeyByteArray.isEmpty()) {
-          setOfStartKeyByteArray.put(dimensionFromCurrentBlock.getOrdinal(), noDictionaryStartKey);
-        } else if (null == setOfStartKeyByteArray.get(dimensionFromCurrentBlock.getOrdinal())) {
-          setOfStartKeyByteArray.put(dimensionFromCurrentBlock.getOrdinal(), noDictionaryStartKey);
-
-        } else if (ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(setOfStartKeyByteArray.get(dimensionFromCurrentBlock.getOrdinal()),
-                noDictionaryStartKey) > 0) {
-          setOfStartKeyByteArray.put(dimensionFromCurrentBlock.getOrdinal(), noDictionaryStartKey);
-        }
-      }
-    }
-  }
-
-  /**
-   * Algorithm for getting the end key for a filter
-   * step 1: Iterate through each dimension and verify whether its not an exclude filter.
-   * step 2: Initialize end key with the last filter member value present in each filter model
-   * for the respective dimensions.(Already filter models are sorted)
-   * step 3: since its a no dictionary end key there will only actual value so compare
-   * the last filter model value with respect to the dimension data type.
-   * step 4: The highest value will be considered as the end key of dimension by comparing all
-   * its filter model.
-   * step 5: create a byte array of end key which comprises of highest filter member value of
-   * all dimension and the indexes which will help to read the respective filter value.
-   *
-   * @param dimColResolvedFilterInfo
-   * @param setOfEndKeyByteArray
-   * @return end key array
-   */
-  public static void getEndKeyForNoDictionaryDimension(
-      DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
-      SegmentProperties segmentProperties,
-      SortedMap<Integer, byte[]> setOfEndKeyByteArray) {
-
-    Map<CarbonDimension, List<ColumnFilterInfo>> dimensionFilter =
-        dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
-    // step 1
-    for (Map.Entry<CarbonDimension, List<ColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
-      if (entry.getKey().getDataType() != DataTypes.DATE) {
-        List<ColumnFilterInfo> listOfDimColFilterInfo = entry.getValue();
-        if (null == listOfDimColFilterInfo) {
-          continue;
-        }
-        boolean isExcludePresent = false;
-        for (ColumnFilterInfo info : listOfDimColFilterInfo) {
-          if (!info.isIncludeFilter()) {
-            isExcludePresent = true;
-          }
-        }
-        if (isExcludePresent) {
-          continue;
-        }
-        // in case of restructure scenarios it can happen that the filter dimension is not
-        // present in the current block. In those cases no need to determine the key
-        CarbonDimension dimensionFromCurrentBlock = CarbonUtil
-            .getDimensionFromCurrentBlock(segmentProperties.getDimensions(), entry.getKey());
-        if (null == dimensionFromCurrentBlock) {
-          continue;
-        }
-        // step 2
-        byte[] noDictionaryEndKey = listOfDimColFilterInfo.get(0).getNoDictionaryFilterValuesList()
-            .get(listOfDimColFilterInfo.get(0).getNoDictionaryFilterValuesList().size() - 1);
-        if (setOfEndKeyByteArray.isEmpty()) {
-          setOfEndKeyByteArray.put(dimensionFromCurrentBlock.getOrdinal(), noDictionaryEndKey);
-        } else if (null == setOfEndKeyByteArray.get(dimensionFromCurrentBlock.getOrdinal())) {
-          setOfEndKeyByteArray.put(dimensionFromCurrentBlock.getOrdinal(), noDictionaryEndKey);
-
-        } else if (ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(setOfEndKeyByteArray.get(dimensionFromCurrentBlock.getOrdinal()),
-                noDictionaryEndKey) < 0) {
-          setOfEndKeyByteArray.put(dimensionFromCurrentBlock.getOrdinal(), noDictionaryEndKey);
-        }
-
-      }
-    }
-  }
-
-  /**
-   * This method will fill the start key array  with the surrogate key present
-   * in filterinfo instance.
-   *
-   * @param dimensionFilter
-   * @param startKey
-   */
-  private static void getStartKeyWithFilter(
-      Map<CarbonDimension, List<ColumnFilterInfo>> dimensionFilter,
-      SegmentProperties segmentProperties, long[] startKey, List<long[]> startKeyList) {
-    for (Map.Entry<CarbonDimension, List<ColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
-      List<ColumnFilterInfo> values = entry.getValue();
-      if (null == values || entry.getKey().getDataType() != DataTypes.DATE) {
-        continue;
-      }
-      boolean isExcludePresent = false;
-      for (ColumnFilterInfo info : values) {
-        if (!info.isIncludeFilter()) {
-          isExcludePresent = true;
-        }
-      }
-      if (isExcludePresent) {
-        continue;
-      }
-      // search the query dimension in current block dimensions. If the dimension is not found
-      // that means the key cannot be included in start key formation.
-      // Applicable for restructure scenarios
-      CarbonDimension dimensionFromCurrentBlock =
-          segmentProperties.getDimensionFromCurrentBlock(entry.getKey());
-      if (null == dimensionFromCurrentBlock) {
-        continue;
-      }
-      int keyOrdinalOfDimensionFromCurrentBlock = dimensionFromCurrentBlock.getKeyOrdinal();
-      for (ColumnFilterInfo info : values) {
-        if (keyOrdinalOfDimensionFromCurrentBlock < startKey.length) {
-          if (startKey[keyOrdinalOfDimensionFromCurrentBlock] < info.getFilterList().get(0)) {
-            startKey[keyOrdinalOfDimensionFromCurrentBlock] = info.getFilterList().get(0);
-          }
-        }
-      }
-      long[] newStartKey = new long[startKey.length];
-      System.arraycopy(startKey, 0, newStartKey, 0, startKey.length);
-      startKeyList.add(newStartKey);
-    }
-  }
-
-  public static void getEndKey(Map<CarbonDimension, List<ColumnFilterInfo>> dimensionFilter,
-      long[] endKey, SegmentProperties segmentProperties,
-      List<long[]> endKeyList) {
-
-    List<CarbonDimension> updatedDimListBasedOnKeyGenerator =
-        getCarbonDimsMappedToKeyGenerator(segmentProperties.getDimensions());
-    for (int i = 0; i < endKey.length; i++) {
-      endKey[i] = getMaxValue(updatedDimListBasedOnKeyGenerator.get(i),
-          segmentProperties.getDimColumnsCardinality());
-    }
-    getEndKeyWithFilter(dimensionFilter, segmentProperties, endKey, endKeyList);
-
-  }
-
-  private static List<CarbonDimension> getCarbonDimsMappedToKeyGenerator(
-      List<CarbonDimension> carbonDimensions) {
-    List<CarbonDimension> listOfCarbonDimPartOfKeyGen =
-        new ArrayList<CarbonDimension>(carbonDimensions.size());
-    for (CarbonDimension carbonDim : carbonDimensions) {
-      if (carbonDim.getDataType() == DataTypes.DATE) {
-        listOfCarbonDimPartOfKeyGen.add(carbonDim);
-      }
-    }
-    return listOfCarbonDimPartOfKeyGen;
-  }
-
-  private static void getEndKeyWithFilter(
-      Map<CarbonDimension, List<ColumnFilterInfo>> dimensionFilter,
-      SegmentProperties segmentProperties, long[] endKey, List<long[]> endKeyList) {
-    for (Map.Entry<CarbonDimension, List<ColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
-      List<ColumnFilterInfo> values = entry.getValue();
-      if (null == values || entry.getKey().getDataType() != DataTypes.DATE) {
-        continue;
-      }
-      boolean isExcludeFilterPresent = false;
-      for (ColumnFilterInfo info : values) {
-        if (!info.isIncludeFilter()) {
-          isExcludeFilterPresent = true;
-        }
-      }
-      if (isExcludeFilterPresent) {
-        continue;
-      }
-      // search the query dimension in current block dimensions. If the dimension is not found
-      // that means the key cannot be included in start key formation.
-      // Applicable for restructure scenarios
-      CarbonDimension dimensionFromCurrentBlock =
-          segmentProperties.getDimensionFromCurrentBlock(entry.getKey());
-      if (null == dimensionFromCurrentBlock) {
-        continue;
-      }
-      int keyOrdinalOfDimensionFromCurrentBlock = dimensionFromCurrentBlock.getKeyOrdinal();
-      int endFilterValue = 0;
-      for (ColumnFilterInfo info : values) {
-        if (keyOrdinalOfDimensionFromCurrentBlock < endKey.length) {
-          endFilterValue = info.getFilterList().get(info.getFilterList().size() - 1);
-          if (endFilterValue == 0) {
-            endFilterValue =
-                segmentProperties.getDimColumnsCardinality()[keyOrdinalOfDimensionFromCurrentBlock];
-          }
-          if (endKey[keyOrdinalOfDimensionFromCurrentBlock] > endFilterValue) {
-            endKey[keyOrdinalOfDimensionFromCurrentBlock] = endFilterValue;
-          }
-        }
-      }
-      long[] newEndKey = new long[endKey.length];
-      System.arraycopy(endKey, 0, newEndKey, 0, endKey.length);
-      endKeyList.add(newEndKey);
-    }
-
-  }
-
-  /**
-   * This API will get the max value of surrogate key which will be used for
-   * determining the end key of particular btree.
-   *
-   * @param dimCardinality
-   */
-  private static long getMaxValue(CarbonDimension carbonDimension, int[] dimCardinality) {
-    // Get data from all the available slices of the table
-    if (null != dimCardinality) {
-      return dimCardinality[carbonDimension.getKeyOrdinal()];
-    }
-    return -1;
-  }
-
-  public static IndexKey createIndexKeyFromResolvedFilterVal(long[] startOrEndKey,
-      KeyGenerator keyGenerator, byte[] startOrEndKeyForNoDictDimension) {
-    return new IndexKey(keyGenerator.generateKey(startOrEndKey), startOrEndKeyForNoDictDimension);
   }
 
   /**
@@ -1176,101 +812,6 @@ public final class FilterUtil {
         dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
       }
     }
-  }
-
-  /**
-   * method will create a default end key in case of no end key is been derived using existing
-   * filter or in case of non filter queries.
-   *
-   * @param segmentProperties
-   * @return
-   */
-  public static IndexKey prepareDefaultEndIndexKey(SegmentProperties segmentProperties) {
-    long[] dictionarySurrogateKey = new long[segmentProperties.getNumberOfDictSortColumns()];
-    int index = 0;
-    int[] dimColumnsCardinality = segmentProperties.getDimColumnsCardinality();
-    for (int i = 0; i < dictionarySurrogateKey.length; i++) {
-      dictionarySurrogateKey[index++] = dimColumnsCardinality[i];
-    }
-    IndexKey endIndexKey;
-    byte[] dictionaryendMdkey =
-        segmentProperties.getSortColumnsGenerator().generateKey(dictionarySurrogateKey);
-    byte[] noDictionaryEndKeyBuffer = getNoDictionaryDefaultEndKey(segmentProperties);
-    endIndexKey = new IndexKey(dictionaryendMdkey, noDictionaryEndKeyBuffer);
-    return endIndexKey;
-  }
-
-  public static byte[] getNoDictionaryDefaultEndKey(SegmentProperties segmentProperties) {
-
-    int numberOfNoDictionaryDimension = segmentProperties.getNumberOfNoDictSortColumns();
-    // in case of non filter query when no dictionary columns are present we
-    // need to set the default end key, as for non filter query
-    // we need to get the last
-    // block of the btree so we are setting the max byte value in the end key
-    ByteBuffer noDictionaryEndKeyBuffer = ByteBuffer.allocate(
-        (numberOfNoDictionaryDimension * CarbonCommonConstants.SHORT_SIZE_IN_BYTE)
-            + numberOfNoDictionaryDimension);
-    // end key structure will be
-    //<Offset of first No Dictionary key in 2 Bytes><Offset of second No Dictionary key in 2 Bytes>
-    //<Offset of n No Dictionary key in 2 Bytes><first no dictionary column value>
-    // <second no dictionary column value> <N no dictionary column value>
-    //example if we have 2 no dictionary column
-    //<[0,4,0,5,127,127]>
-    short startPoint =
-        (short) (numberOfNoDictionaryDimension * CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
-    for (int i = 0; i < numberOfNoDictionaryDimension; i++) {
-      noDictionaryEndKeyBuffer.putShort((startPoint));
-      startPoint++;
-    }
-    for (int i = 0; i < numberOfNoDictionaryDimension; i++) {
-      noDictionaryEndKeyBuffer.put((byte) 0xFF);
-    }
-    return noDictionaryEndKeyBuffer.array();
-  }
-
-  /**
-   * method will create a default end key in case of no end key is been
-   * derived using existing filter or in case of non filter queries.
-   *
-   * @param segmentProperties
-   * @return
-   */
-  public static IndexKey prepareDefaultStartIndexKey(SegmentProperties segmentProperties) {
-    IndexKey startIndexKey;
-    long[] dictionarySurrogateKey = new long[segmentProperties.getNumberOfDictSortColumns()];
-    byte[] dictionaryStartMdkey =
-        segmentProperties.getSortColumnsGenerator().generateKey(dictionarySurrogateKey);
-    byte[] noDictionaryStartKeyArray = getNoDictionaryDefaultStartKey(segmentProperties);
-
-    startIndexKey = new IndexKey(dictionaryStartMdkey, noDictionaryStartKeyArray);
-    return startIndexKey;
-  }
-
-  public static byte[] getNoDictionaryDefaultStartKey(SegmentProperties segmentProperties) {
-
-    int numberOfNoDictionaryDimension = segmentProperties.getNumberOfNoDictSortColumns();
-    // in case of non filter query when no dictionary columns are present we
-    // need to set the default start key, as for non filter query we need to get the first
-    // block of the btree so we are setting the least byte value in the start key
-    ByteBuffer noDictionaryStartKeyBuffer = ByteBuffer.allocate(
-        (numberOfNoDictionaryDimension * CarbonCommonConstants.SHORT_SIZE_IN_BYTE)
-            + numberOfNoDictionaryDimension);
-    // end key structure will be
-    //<Offset of first No Dictionary key in 2 Bytes><Offset of second No Dictionary key in 2 Bytes>
-    //<Offset of n No Dictionary key in 2 Bytes><first no dictionary column value>
-    // <second no dictionary column value> <N no dictionary column value>
-    //example if we have 2 no dictionary column
-    //<[0,4,0,5,0,0]>
-    short startPoint =
-        (short) (numberOfNoDictionaryDimension * CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
-    for (int i = 0; i < numberOfNoDictionaryDimension; i++) {
-      noDictionaryStartKeyBuffer.putShort((startPoint));
-      startPoint++;
-    }
-    for (int i = 0; i < numberOfNoDictionaryDimension; i++) {
-      noDictionaryStartKeyBuffer.put((byte) 0);
-    }
-    return noDictionaryStartKeyBuffer.array();
   }
 
   public static int compareFilterKeyBasedOnDataType(String dictionaryVal, String memberVal,
@@ -1741,31 +1282,13 @@ public final class FilterUtil {
   /**
    * This method is used to get default null values for a direct dictionary column
    * @param currentBlockDimension
-   * @param segmentProperties
    * @return
    */
-  public static byte[] getDefaultNullValue(CarbonDimension currentBlockDimension,
-      SegmentProperties segmentProperties) {
-    byte[] defaultValue = null;
+  public static byte[] getDefaultNullValue(CarbonDimension currentBlockDimension) {
     DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
         .getDirectDictionaryGenerator(currentBlockDimension.getDataType());
     int key = directDictionaryGenerator.generateDirectSurrogateKey(null);
-    if (currentBlockDimension.isSortColumn()) {
-      defaultValue = FilterUtil
-          .getMaskKey(key, currentBlockDimension, segmentProperties.getSortColumnsGenerator());
-    } else {
-      defaultValue = FilterUtil
-          .getMaskKey(key, currentBlockDimension, segmentProperties.getDimensionKeyGenerator());
-    }
-    return defaultValue;
-  }
-
-  public static void setMinMaxFlagForLegacyStore(boolean[] minMaxFlag,
-      SegmentProperties segmentProperties) {
-    int index = segmentProperties.getEachDimColumnValueSize().length + segmentProperties
-        .getEachComplexDimColumnValueSize().length;
-    Arrays.fill(minMaxFlag, 0, index, true);
-    Arrays.fill(minMaxFlag, index, minMaxFlag.length, false);
+    return ByteUtil.convertDateToBytes(key);
   }
 
 }

@@ -170,54 +170,6 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
   // for the measures
   var indexCol2IdxInMeasureArray: Map[String, Int] = Map()
 
-  /**
-   * rebuild process get data from query, if some columns added to table but not in this segment
-   * it will be filled with default value and generate new key for dict dimension.
-   * Here we use same way as `RowIdRestructureBasedRawResultCollector` to prepare
-   * key generator to get surrogate value of dict column result.
-   * So we do not need to make a fake mdk to split when adding row to datamap
-   */
-  def prepareKeyGenForDictIndexColumns(carbonTable: CarbonTable,
-                                       dictIndexColumns: ListBuffer[CarbonColumn]): Unit = {
-
-    val columnCardinality = new util.ArrayList[Integer](dictIndexColumns.length)
-    val columnPartitioner = new util.ArrayList[Integer](dictIndexColumns.length)
-
-    dictIndexColumns.foreach { col =>
-      val dim = carbonTable.getDimensionByName(col.getColName)
-      val currentBlockDimension = segmentProperties.getDimensionFromCurrentBlock(dim)
-      if (null != currentBlockDimension) {
-        columnCardinality.add(segmentProperties.getDimColumnsCardinality.apply(
-          currentBlockDimension.getKeyOrdinal))
-        columnPartitioner.add(segmentProperties.getDimensionPartitions.apply(
-          currentBlockDimension.getKeyOrdinal
-        ))
-      } else {
-        columnPartitioner.add(1)
-        if (col.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-          columnCardinality.add(Integer.MAX_VALUE)
-        } else {
-          val defaultValue = col.getDefaultValue
-          if (null != col.getDefaultValue) {
-            columnCardinality.add(CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY + 1)
-          } else {
-            columnCardinality.add(CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY)
-          }
-        }
-      }
-    }
-
-    if (!columnCardinality.isEmpty) {
-      val latestColumnCardinality = ArrayUtils.toPrimitive(columnCardinality.toArray(
-        new Array[Integer](columnCardinality.size)))
-      val latestColumnPartitioner = ArrayUtils.toPrimitive(columnPartitioner.toArray(
-        new Array[Integer](columnPartitioner.size)))
-      val dimensionBitLength = CarbonUtil.getDimensionBitLength(
-        latestColumnCardinality, latestColumnPartitioner)
-      this.dimensionKeyGenerator = new MultiDimKeyVarLengthGenerator(dimensionBitLength)
-    }
-  }
-
   override def initialize(carbonColumns: Array[CarbonColumn],
       carbonTable: CarbonTable): Unit = {
 
@@ -241,8 +193,8 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
       }
     }
 
-    if (dictIndexColumns.size > 0) {
-      prepareKeyGenForDictIndexColumns(carbonTable, dictIndexColumns)
+    if (dictIndexColumns.nonEmpty) {
+      this.dimensionKeyGenerator = new MultiDimKeyVarLengthGenerator(dictIndexColumns.size)
     }
   }
 

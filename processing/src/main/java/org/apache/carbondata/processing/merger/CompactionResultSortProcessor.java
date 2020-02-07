@@ -36,6 +36,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -309,14 +310,12 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private Object[] prepareRowObjectForSorting(Object[] row) {
     ByteArrayWrapper wrapper = (ByteArrayWrapper) row[0];
-    // ByteBuffer[] noDictionaryBuffer = new ByteBuffer[noDictionaryCount];
     Object[] preparedRow = new Object[dimensions.size() + measureCount];
-    // convert the dictionary from MDKey to surrogate key
     byte[] dictionaryKey = wrapper.getDictionaryKey();
-    long[] keyArray = segmentProperties.getDimensionKeyGenerator().getKeyArray(dictionaryKey);
+    int[] keyArray = ByteUtil.convertBytesToDateArray(dictionaryKey);
     Object[] dictionaryValues = new Object[dimensionColumnCount + measureCount];
     for (int i = 0; i < keyArray.length; i++) {
-      dictionaryValues[i] = Long.valueOf(keyArray[i]).intValue();
+      dictionaryValues[i] = keyArray[i];
     }
     int noDictionaryIndex = 0;
     int dictionaryIndex = 0;

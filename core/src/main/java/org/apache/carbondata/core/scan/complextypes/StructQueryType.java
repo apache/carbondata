@@ -37,8 +37,8 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
   private String name;
   private String parentName;
 
-  public StructQueryType(String name, String parentName, int blockIndex) {
-    super(name, parentName, blockIndex);
+  public StructQueryType(String name, String parentName, int columnIndex) {
+    super(name, parentName, columnIndex);
     this.name = name;
     this.parentName = parentName;
   }

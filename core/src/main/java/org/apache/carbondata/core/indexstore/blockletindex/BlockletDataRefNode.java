@@ -45,11 +45,9 @@ public class BlockletDataRefNode implements DataRefNode {
 
   private int index;
 
-  private int[] dimensionLens;
-
   private BlockletSerializer blockletSerializer;
 
-  BlockletDataRefNode(List<TableBlockInfo> blockInfos, int index, int[] dimensionLens) {
+  BlockletDataRefNode(List<TableBlockInfo> blockInfos, int index) {
     this.blockInfos = blockInfos;
     // Update row count and page count to blocklet info
     for (TableBlockInfo blockInfo : blockInfos) {
@@ -80,14 +78,13 @@ public class BlockletDataRefNode implements DataRefNode {
       }
     }
     this.index = index;
-    this.dimensionLens = dimensionLens;
     this.blockletSerializer = new BlockletSerializer();
   }
 
   @Override
   public DataRefNode getNextDataRefNode() {
     if (index + 1 < blockInfos.size()) {
-      return new BlockletDataRefNode(blockInfos, index + 1, dimensionLens);
+      return new BlockletDataRefNode(blockInfos, index + 1);
     }
     return null;
   }
@@ -95,11 +92,6 @@ public class BlockletDataRefNode implements DataRefNode {
   @Override
   public int numRows() {
     return blockInfos.get(index).getDetailInfo().getRowCount();
-  }
-
-  @Override
-  public long nodeIndex() {
-    return index;
   }
 
   @Override
@@ -208,11 +200,11 @@ public class BlockletDataRefNode implements DataRefNode {
         ColumnarFormatVersion.valueOf(blockInfos.get(index).getDetailInfo().getVersionNumber());
     if (fileReader.isReadPageByPage()) {
       return CarbonDataReaderFactory.getInstance().getDimensionColumnChunkReader(version,
-          blockInfos.get(index).getDetailInfo().getBlockletInfo(), dimensionLens,
+          blockInfos.get(index).getDetailInfo().getBlockletInfo(),
           blockInfos.get(index).getFilePath(), true);
     } else {
       return CarbonDataReaderFactory.getInstance().getDimensionColumnChunkReader(version,
-          blockInfos.get(index).getDetailInfo().getBlockletInfo(), dimensionLens,
+          blockInfos.get(index).getDetailInfo().getBlockletInfo(),
           blockInfos.get(index).getFilePath(), false);
     }
   }

@@ -45,8 +45,6 @@ public class CarbonLoadModel implements Serializable {
 
   private String tablePath;
 
-  private String parentTablePath;
-
   /*
      This points if the carbonTable is a Non Transactional Table or not.
      The path will be pointed by the tablePath. And there will be
@@ -226,14 +224,6 @@ public class CarbonLoadModel implements Serializable {
     isAggLoadRequest = aggLoadRequest;
   }
 
-  public String getParentTablePath() {
-    return parentTablePath;
-  }
-
-  public void setParentTablePath(String parentTablePath) {
-    this.parentTablePath = parentTablePath;
-  }
-
   /**
    * get escape char
    *
@@ -401,7 +391,6 @@ public class CarbonLoadModel implements Serializable {
     copy.isLoadWithoutConverterStep = isLoadWithoutConverterStep;
     copy.sortColumnsBoundsStr = sortColumnsBoundsStr;
     copy.loadMinSize = loadMinSize;
-    copy.parentTablePath = parentTablePath;
     copy.sdkWriterCores = sdkWriterCores;
     copy.columnCompressor = columnCompressor;
     copy.binaryDecoder = binaryDecoder;
@@ -454,7 +443,6 @@ public class CarbonLoadModel implements Serializable {
     copyObj.isAggLoadRequest = isAggLoadRequest;
     copyObj.sortColumnsBoundsStr = sortColumnsBoundsStr;
     copyObj.loadMinSize = loadMinSize;
-    copyObj.parentTablePath = parentTablePath;
     copyObj.sdkWriterCores = sdkWriterCores;
     copyObj.columnCompressor = columnCompressor;
     copyObj.binaryDecoder = binaryDecoder;
@@ -554,13 +542,6 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setFactTimeStamp(long factTimeStamp) {
     this.factTimeStamp = factTimeStamp;
-  }
-
-  public String[] getDelimiters() {
-    checkAndInitializeComplexDelimiterList();
-    String[] delimiters = new String[complexDelimiters.size()];
-    delimiters = complexDelimiters.toArray(delimiters);
-    return delimiters;
   }
 
   private void checkAndInitializeComplexDelimiterList() {

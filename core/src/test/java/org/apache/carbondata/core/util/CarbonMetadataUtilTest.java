@@ -147,17 +147,16 @@ public class CarbonMetadataUtilTest {
   }
 
   @Test public void testGetIndexHeader() {
-    int[] columnCardinality = { 1, 2, 3, 4 };
     SegmentInfo segmentInfo = new SegmentInfo();
     segmentInfo.setNum_cols(0);
-    segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(columnCardinality));
+    segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(new int[0]));
     IndexHeader indexHeader = new IndexHeader();
     indexHeader.setVersion(3);
     indexHeader.setSegment_info(segmentInfo);
     indexHeader.setTable_columns(columnSchemaList);
     indexHeader.setBucket_id(0);
     indexHeader.setSchema_time_stamp(0L);
-    IndexHeader indexheaderResult = getIndexHeader(columnCardinality, columnSchemaList, 0, 0L);
+    IndexHeader indexheaderResult = getIndexHeader(columnSchemaList, 0, 0L);
     assertEquals(indexHeader, indexheaderResult);
   }
 

@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.SortedMap;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -115,53 +114,6 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
       return measureFilterValuesList.toArray((new Object[measureFilterValuesList.size()]));
     }
     return null;
-  }
-
-  /**
-   * method will get the start key based on the filter surrogates
-   *
-   * @return start IndexKey
-   */
-  public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
-      SortedMap<Integer, byte[]> noDictStartKeys, List<long[]> startKeyList) {
-    switch (exp.getFilterExpressionType()) {
-      case GREATERTHAN:
-      case GREATERTHAN_EQUALTO:
-        if (dimColEvaluatorInfoList.size() > 0) {
-          FilterUtil
-              .getStartKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
-                  segmentProperties, startKey, startKeyList);
-          FilterUtil.getStartKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0),
-              segmentProperties, noDictStartKeys);
-        }
-        break;
-      default:
-        //do nothing
-    }
-  }
-
-  /**
-   * method will get the start key based on the filter surrogates
-   *
-   * @return end IndexKey
-   */
-  @Override
-  public void getEndKey(SegmentProperties segmentProperties, long[] endKeys,
-      SortedMap<Integer, byte[]> noDicEndKeys, List<long[]> endKeyList) {
-    switch (exp.getFilterExpressionType()) {
-      case LESSTHAN:
-      case LESSTHAN_EQUALTO:
-        if (dimColEvaluatorInfoList.size() > 0) {
-          FilterUtil.getEndKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
-              endKeys, segmentProperties, endKeyList);
-          FilterUtil
-              .getEndKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), segmentProperties,
-                  noDicEndKeys);
-        }
-        break;
-      default:
-        //do nothing
-    }
   }
 
   private List<byte[]> getNoDictionaryRangeValues() {
