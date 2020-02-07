@@ -144,14 +144,6 @@ public class ExtendedBlocklet extends Blocklet {
     return inputSplit;
   }
 
-  public void setColumnCardinality(int[] cardinality) {
-    inputSplit.setColumnCardinality(cardinality);
-  }
-
-  public void setLegacyStore(boolean isLegacyStore) {
-    inputSplit.setLegacyStore(isLegacyStore);
-  }
-
   public void setUseMinMaxForPruning(boolean useMinMaxForPruning) {
     this.inputSplit.setUseMinMaxForPruning(useMinMaxForPruning);
   }

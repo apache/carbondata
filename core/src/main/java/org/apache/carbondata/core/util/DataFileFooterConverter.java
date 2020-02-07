@@ -19,7 +19,6 @@ package org.apache.carbondata.core.util;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileReader;
@@ -28,7 +27,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonFooterReader;
@@ -68,7 +66,6 @@ public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
       FileFooter footer = reader.readFooter();
       dataFileFooter.setVersionId(ColumnarFormatVersion.valueOf((short) footer.getVersion()));
       dataFileFooter.setNumberOfRows(footer.getNum_rows());
-      dataFileFooter.setSegmentInfo(getSegmentInfo(footer.getSegment_info()));
       List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
       List<org.apache.carbondata.format.ColumnSchema> table_columns = footer.getTable_columns();
       for (int i = 0; i < table_columns.size(); i++) {
@@ -112,24 +109,6 @@ public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
   private BlockletInfo getBlockletInfo(
       org.apache.carbondata.format.BlockletInfo blockletInfoThrift) {
     BlockletInfo blockletInfo = new BlockletInfo();
-    List<DataChunk> dimensionColumnChunk = new ArrayList<DataChunk>();
-    List<DataChunk> measureChunk = new ArrayList<DataChunk>();
-    Iterator<org.apache.carbondata.format.DataChunk> column_data_chunksIterator =
-        blockletInfoThrift.getColumn_data_chunksIterator();
-    if (null != column_data_chunksIterator) {
-      while (column_data_chunksIterator.hasNext()) {
-        org.apache.carbondata.format.DataChunk next = column_data_chunksIterator.next();
-        if (next.isRowMajor()) {
-          dimensionColumnChunk.add(getDataChunk(next, false));
-        } else if (next.getEncoders().contains(org.apache.carbondata.format.Encoding.DELTA)) {
-          measureChunk.add(getDataChunk(next, true));
-        } else {
-          dimensionColumnChunk.add(getDataChunk(next, false));
-        }
-      }
-    }
-    blockletInfo.setDimensionColumnChunk(dimensionColumnChunk);
-    blockletInfo.setMeasureColumnChunk(measureChunk);
     blockletInfo.setNumberOfRows(blockletInfoThrift.getNum_rows());
     return blockletInfo;
   }

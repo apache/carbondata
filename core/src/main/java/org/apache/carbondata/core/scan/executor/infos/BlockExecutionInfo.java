@@ -20,7 +20,6 @@ package org.apache.carbondata.core.scan.executor.infos;
 import java.util.Map;
 
 import org.apache.carbondata.core.datastore.DataRefNode;
-import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
@@ -46,20 +45,6 @@ public class BlockExecutionInfo {
    * execution
    */
   private MeasureInfo measureInfo;
-
-  /**
-   * this will be used to get the first tentative block from which query
-   * execution start, this will be useful in case of filter query to get the
-   * start block based on filter values
-   */
-  private IndexKey startKey;
-
-  /**
-   * this will be used to get the last tentative block till which scanning
-   * will be done, this will be useful in case of filter query to get the last
-   * block based on filter values
-   */
-  private IndexKey endKey;
 
   private String blockId;
 
@@ -116,11 +101,6 @@ public class BlockExecutionInfo {
    * no dictionary column block indexes in based on the query order
    */
   private int[] noDictionaryColumnChunkIndexes;
-
-  /**
-   * each column value size
-   */
-  private int[] eachColumnValueSize;
 
   /**
    * filter tree to execute the filter
@@ -255,34 +235,6 @@ public class BlockExecutionInfo {
   }
 
   /**
-   * @return the startKey
-   */
-  public IndexKey getStartKey() {
-    return startKey;
-  }
-
-  /**
-   * @param startKey the startKey to set
-   */
-  public void setStartKey(IndexKey startKey) {
-    this.startKey = startKey;
-  }
-
-  /**
-   * @return the endKey
-   */
-  public IndexKey getEndKey() {
-    return endKey;
-  }
-
-  /**
-   * @param endKey the endKey to set
-   */
-  public void setEndKey(IndexKey endKey) {
-    this.endKey = endKey;
-  }
-
-  /**
    * @return the totalNumberDimensionToRead
    */
   public int getTotalNumberDimensionToRead() {
@@ -392,20 +344,6 @@ public class BlockExecutionInfo {
    */
   public void setFilterExecuterTree(FilterExecuter filterExecuterTree) {
     this.filterExecuterTree = filterExecuterTree;
-  }
-
-  /**
-   * @return the eachColumnValueSize
-   */
-  public int[] getEachColumnValueSize() {
-    return eachColumnValueSize;
-  }
-
-  /**
-   * @param eachColumnValueSize the eachColumnValueSize to set
-   */
-  public void setEachColumnValueSize(int[] eachColumnValueSize) {
-    this.eachColumnValueSize = eachColumnValueSize;
   }
 
   /**

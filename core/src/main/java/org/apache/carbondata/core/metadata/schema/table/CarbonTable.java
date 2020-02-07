@@ -353,9 +353,10 @@ public class CarbonTable implements Serializable, Writable {
       ColumnSchema columnSchema = listOfColumns.get(i);
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
+          ++complexTypeOrdinal;
           CarbonDimension complexDimension =
-              new CarbonDimension(columnSchema, dimensionOrdinal++, columnSchema.getSchemaOrdinal(),
-                  -1, ++complexTypeOrdinal);
+              new CarbonDimension(columnSchema, dimensionOrdinal++, -1,
+                  columnSchema.getSchemaOrdinal());
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           allDimensions.add(complexDimension);
           dimensionOrdinal =
@@ -368,15 +369,15 @@ public class CarbonTable implements Serializable, Writable {
             this.numberOfSortColumns++;
           }
           if (columnSchema.getDataType() != DataTypes.DATE) {
-            CarbonDimension dimension = new CarbonDimension(columnSchema, dimensionOrdinal++,
-                columnSchema.getSchemaOrdinal(), -1, -1);
+            CarbonDimension dimension = new CarbonDimension(columnSchema, dimensionOrdinal++, -1,
+                columnSchema.getSchemaOrdinal());
             if (!columnSchema.isInvisible() && columnSchema.isSortColumn()) {
               this.numberOfNoDictSortColumns++;
             }
             allDimensions.add(dimension);
           } else if (columnSchema.getDataType() == DataTypes.DATE) {
             CarbonDimension dimension = new CarbonDimension(columnSchema, dimensionOrdinal++,
-                columnSchema.getSchemaOrdinal(), keyOrdinal++, -1);
+                keyOrdinal++, columnSchema.getSchemaOrdinal());
             allDimensions.add(dimension);
           }
         }
@@ -422,8 +423,8 @@ public class CarbonTable implements Serializable, Writable {
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
-              new CarbonDimension(columnSchema, dimensionOrdinal++, columnSchema.getSchemaOrdinal(),
-                  -1, -1);
+              new CarbonDimension(columnSchema, dimensionOrdinal++, -1,
+                  columnSchema.getSchemaOrdinal());
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           parentDimension.getListOfChildDimensions().add(complexDimension);
           dimensionOrdinal =
@@ -431,8 +432,8 @@ public class CarbonTable implements Serializable, Writable {
                   listOfColumns, complexDimension);
         } else {
           CarbonDimension carbonDimension =
-              new CarbonDimension(columnSchema, dimensionOrdinal++, columnSchema.getSchemaOrdinal(),
-                  -1, -1);
+              new CarbonDimension(columnSchema, dimensionOrdinal++, -1,
+                  columnSchema.getSchemaOrdinal());
           parentDimension.getListOfChildDimensions().add(carbonDimension);
         }
       }

@@ -717,7 +717,7 @@ public class SegmentFileStore {
       // duplicates
       Set<String> blocks = new LinkedHashSet<>();
       for (DataFileFooter footer : indexInfo) {
-        blocks.add(footer.getBlockInfo().getTableBlockInfo().getFilePath());
+        blocks.add(footer.getBlockInfo().getFilePath());
       }
       indexFilesMap.put(entry.getKey(), new ArrayList<>(blocks));
       boolean added = false;

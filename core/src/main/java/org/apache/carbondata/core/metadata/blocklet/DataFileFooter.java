@@ -20,7 +20,7 @@ package org.apache.carbondata.core.metadata.blocklet;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.carbondata.core.datastore.block.BlockInfo;
+import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -46,11 +46,6 @@ public class DataFileFooter implements Serializable {
   private long numberOfRows;
 
   /**
-   * Segment info (will be same/repeated for all block in this segment)
-   */
-  private SegmentInfo segmentInfo;
-
-  /**
    * Information about leaf nodes of all columns in this file
    */
   private List<BlockletInfo> blockletList;
@@ -68,7 +63,7 @@ public class DataFileFooter implements Serializable {
   /**
    * to store the block info detail like file name block index and locations
    */
-  private BlockInfo blockInfo;
+  private TableBlockInfo blockInfo;
 
   /**
    * schema updated time stamp to be used for restructure scenarios
@@ -106,20 +101,6 @@ public class DataFileFooter implements Serializable {
    */
   public void setNumberOfRows(long numberOfRows) {
     this.numberOfRows = numberOfRows;
-  }
-
-  /**
-   * @return the segmentInfo
-   */
-  public SegmentInfo getSegmentInfo() {
-    return segmentInfo;
-  }
-
-  /**
-   * @param segmentInfo the segmentInfo to set
-   */
-  public void setSegmentInfo(SegmentInfo segmentInfo) {
-    this.segmentInfo = segmentInfo;
   }
 
   /**
@@ -167,14 +148,14 @@ public class DataFileFooter implements Serializable {
   /**
    * @return the tableBlockInfo
    */
-  public BlockInfo getBlockInfo() {
+  public TableBlockInfo getBlockInfo() {
     return blockInfo;
   }
 
   /**
    * @param tableBlockInfo the tableBlockInfo to set
    */
-  public void setBlockInfo(BlockInfo tableBlockInfo) {
+  public void setBlockInfo(TableBlockInfo tableBlockInfo) {
     this.blockInfo = tableBlockInfo;
   }
 

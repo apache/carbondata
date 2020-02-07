@@ -102,7 +102,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
       return;
     }
     traverseAndResolveTree(filterResolverTree.getLeft(), tableIdentifier);
-    filterResolverTree.resolve(tableIdentifier);
+    filterResolverTree.resolve();
     traverseAndResolveTree(filterResolverTree.getRight(), tableIdentifier);
   }
 

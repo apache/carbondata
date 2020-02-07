@@ -17,13 +17,11 @@
 
 package org.apache.carbondata.core.datastore.block;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.datastore.DataRefNode;
-import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 
 public abstract class AbstractIndex implements Cacheable {
@@ -71,13 +69,6 @@ public abstract class AbstractIndex implements Cacheable {
   public DataRefNode getDataRefNode() {
     return dataRefNode;
   }
-
-  /**
-   * Below method will be used to load the data block
-   *
-   * @param footerList footer list
-   */
-  public abstract void buildIndex(List<DataFileFooter> footerList);
 
   /**
    * the method returns the access count

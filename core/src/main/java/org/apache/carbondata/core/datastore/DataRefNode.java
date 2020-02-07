@@ -40,13 +40,6 @@ public interface DataRefNode {
   int numRows();
 
   /**
-   * Return the block index. This can be used when multiple
-   * thread can be used scan group of blocks in that can we can assign
-   * some of the blocks to one thread and some to other
-   */
-  long nodeIndex();
-
-  /**
    * Return the blocklet index in the node
    */
   short blockletIndex();

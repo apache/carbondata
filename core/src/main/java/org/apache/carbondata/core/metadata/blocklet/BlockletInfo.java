@@ -24,7 +24,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 
 import org.apache.hadoop.io.Writable;
@@ -43,16 +42,6 @@ public class BlockletInfo implements Serializable, Writable {
    * Number of rows in this blocklet
    */
   private int numberOfRows;
-
-  /**
-   * Information about dimension chunk of all dimensions in this blocklet
-   */
-  private List<DataChunk> dimensionColumnChunk;
-
-  /**
-   * Information about measure chunk of all measures in this blocklet
-   */
-  private List<DataChunk> measureColumnChunk;
 
   private List<Long> dimensionChunkOffsets;
 
@@ -99,34 +88,6 @@ public class BlockletInfo implements Serializable, Writable {
    */
   public void setNumberOfRows(int numberOfRows) {
     this.numberOfRows = numberOfRows;
-  }
-
-  /**
-   * @return the dimensionColumnChunk
-   */
-  public List<DataChunk> getDimensionColumnChunk() {
-    return dimensionColumnChunk;
-  }
-
-  /**
-   * @param dimensionColumnChunk the dimensionColumnChunk to set
-   */
-  public void setDimensionColumnChunk(List<DataChunk> dimensionColumnChunk) {
-    this.dimensionColumnChunk = dimensionColumnChunk;
-  }
-
-  /**
-   * @return the measureColumnChunk
-   */
-  public List<DataChunk> getMeasureColumnChunk() {
-    return measureColumnChunk;
-  }
-
-  /**
-   * @param measureColumnChunk the measureColumnChunk to set
-   */
-  public void setMeasureColumnChunk(List<DataChunk> measureColumnChunk) {
-    this.measureColumnChunk = measureColumnChunk;
   }
 
   /**

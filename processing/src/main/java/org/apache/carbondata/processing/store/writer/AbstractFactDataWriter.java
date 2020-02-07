@@ -39,7 +39,6 @@ import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
@@ -93,10 +92,6 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    */
   protected int pageId = 0;
 
-  /**
-   * Local cardinality for the segment
-   */
-  protected int[] localCardinality;
   /**
    * thrift column schema
    */
@@ -190,11 +185,8 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
                 true));
     executorServiceSubmitList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // in case of compaction we will pass the cardinality.
-    this.localCardinality = this.model.getColCardinality();
 
-    List<Integer> cardinalityList = new ArrayList<Integer>();
-    thriftColumnSchemaList = getColumnSchemaListAndCardinality(cardinalityList, localCardinality,
-        this.model.getWrapperColumnSchema());
+    thriftColumnSchemaList = getColumnSchemaListAndCardinality(this.model.getWrapperColumnSchema());
     blockletMetadata = new ArrayList<BlockletInfo3>();
     blockletIndex = new ArrayList<>();
     listener = this.model.getDataMapWriterlistener();
@@ -366,24 +358,14 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       long footerOffset, long fileSize);
 
   public static List<org.apache.carbondata.format.ColumnSchema> getColumnSchemaListAndCardinality(
-      List<Integer> cardinality, int[] dictionaryColumnCardinality,
       List<ColumnSchema> wrapperColumnSchemaList) {
     List<org.apache.carbondata.format.ColumnSchema> columnSchemaList =
         new ArrayList<org.apache.carbondata.format.ColumnSchema>(
             CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
-    int counter = 0;
     for (int i = 0; i < wrapperColumnSchemaList.size(); i++) {
       columnSchemaList
           .add(schemaConverter.fromWrapperToExternalColumnSchema(wrapperColumnSchemaList.get(i)));
-      if (wrapperColumnSchemaList.get(i).getDataType() == DataTypes.DATE) {
-        cardinality.add(dictionaryColumnCardinality[counter]);
-        counter++;
-      } else if (!wrapperColumnSchemaList.get(i).isDimensionColumn()) {
-        continue;
-      } else {
-        cardinality.add(-1);
-      }
     }
     return columnSchemaList;
   }
@@ -401,7 +383,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     }
     // get the header
     IndexHeader indexHeader = CarbonMetadataUtil
-        .getIndexHeader(localCardinality, thriftColumnSchemaList, model.getBucketId(),
+        .getIndexHeader(thriftColumnSchemaList, model.getBucketId(),
             model.getSchemaUpdatedTimeStamp());
     indexHeader.setIs_sort(model.getSortScope() != null && model.getSortScope() != NO_SORT);
     // get the block index info thrift

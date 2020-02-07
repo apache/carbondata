@@ -184,7 +184,6 @@ public final class DataLoadProcessBuilder {
     CarbonDataLoadConfiguration configuration = new CarbonDataLoadConfiguration();
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
-    configuration.setParentTablePath(loadModel.getParentTablePath());
     configuration.setTableIdentifier(identifier);
     configuration.setCarbonTransactionalTable(loadModel.isCarbonTransactionalTable());
     configuration.setSchemaUpdatedTimeStamp(carbonTable.getTableLastUpdatedTime());
@@ -221,7 +220,6 @@ public final class DataLoadProcessBuilder {
         loadModel.getSkipEmptyLine());
     configuration.setDataLoadProperty(DataLoadProcessorConstants.FACT_FILE_PATH,
         loadModel.getFactFilePath());
-    configuration.setParentTablePath(loadModel.getParentTablePath());
     configuration
         .setDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, loadModel.getSortScope());
     configuration.setDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,

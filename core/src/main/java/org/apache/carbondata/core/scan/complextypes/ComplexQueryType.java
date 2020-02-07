@@ -28,12 +28,12 @@ public class ComplexQueryType {
 
   protected String parentName;
 
-  protected int blockIndex;
+  protected int columnIndex;
 
-  public ComplexQueryType(String name, String parentName, int blockIndex) {
+  public ComplexQueryType(String name, String parentName, int columnIndex) {
     this.name = name;
     this.parentName = parentName;
-    this.blockIndex = blockIndex;
+    this.columnIndex = columnIndex;
   }
 
   /**
@@ -43,7 +43,7 @@ public class ComplexQueryType {
   protected byte[] copyBlockDataChunk(DimensionRawColumnChunk[] rawColumnChunks,
       DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber) {
     byte[] data =
-        getDecodedDimensionPage(dimensionColumnPages, rawColumnChunks[blockIndex], pageNumber)
+        getDecodedDimensionPage(dimensionColumnPages, rawColumnChunks[columnIndex], pageNumber)
             .getChunkData(rowNumber);
     byte[] output = new byte[data.length];
     System.arraycopy(data, 0, output, 0, output.length);
@@ -54,17 +54,17 @@ public class ComplexQueryType {
    * This method will read the block data chunk from the respective block
    */
   protected void readBlockDataChunk(RawBlockletColumnChunks blockChunkHolder) throws IOException {
-    if (null == blockChunkHolder.getDimensionRawColumnChunks()[blockIndex]) {
-      blockChunkHolder.getDimensionRawColumnChunks()[blockIndex] = blockChunkHolder.getDataBlock()
-          .readDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
+    if (null == blockChunkHolder.getDimensionRawColumnChunks()[columnIndex]) {
+      blockChunkHolder.getDimensionRawColumnChunks()[columnIndex] = blockChunkHolder.getDataBlock()
+          .readDimensionChunk(blockChunkHolder.getFileReader(), columnIndex);
     }
   }
 
   private DimensionColumnPage getDecodedDimensionPage(DimensionColumnPage[][] dimensionColumnPages,
       DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber) {
-    if (dimensionColumnPages == null || null == dimensionColumnPages[blockIndex]) {
+    if (dimensionColumnPages == null || null == dimensionColumnPages[columnIndex]) {
       return dimensionRawColumnChunk.decodeColumnPage(pageNumber);
     }
-    return dimensionColumnPages[blockIndex][pageNumber];
+    return dimensionColumnPages[columnIndex][pageNumber];
   }
 }

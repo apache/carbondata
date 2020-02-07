@@ -45,11 +45,9 @@ public class BlockletDataRefNode implements DataRefNode {
 
   private int index;
 
-  private int[] dimensionLens;
-
   private BlockletSerializer blockletSerializer;
 
-  BlockletDataRefNode(List<TableBlockInfo> blockInfos, int index, int[] dimensionLens) {
+  BlockletDataRefNode(List<TableBlockInfo> blockInfos, int index) {
     this.blockInfos = blockInfos;
     // Update row count and page count to blocklet info
     for (TableBlockInfo blockInfo : blockInfos) {
@@ -80,14 +78,13 @@ public class BlockletDataRefNode implements DataRefNode {
       }
     }
     this.index = index;
-    this.dimensionLens = dimensionLens;
     this.blockletSerializer = new BlockletSerializer();
   }
 
   @Override
   public DataRefNode getNextDataRefNode() {
     if (index + 1 < blockInfos.size()) {
-      return new BlockletDataRefNode(blockInfos, index + 1, dimensionLens);
+      return new BlockletDataRefNode(blockInfos, index + 1);
     }
     return null;
   }
@@ -95,11 +92,6 @@ public class BlockletDataRefNode implements DataRefNode {
   @Override
   public int numRows() {
     return blockInfos.get(index).getDetailInfo().getRowCount();
-  }
-
-  @Override
-  public long nodeIndex() {
-    return index;
   }
 
   @Override
@@ -160,7 +152,6 @@ public class BlockletDataRefNode implements DataRefNode {
     MeasureColumnChunkReader measureColumnChunkReader = getMeasureColumnChunkReader(fileReader);
     MeasureRawColumnChunk[] measureRawColumnChunks =
         measureColumnChunkReader.readRawMeasureChunks(fileReader, columnIndexRange);
-    updateMeasureRawColumnChunkMinMaxValues(measureRawColumnChunks);
     return measureRawColumnChunks;
   }
 
@@ -170,37 +161,7 @@ public class BlockletDataRefNode implements DataRefNode {
     MeasureColumnChunkReader measureColumnChunkReader = getMeasureColumnChunkReader(fileReader);
     MeasureRawColumnChunk measureRawColumnChunk =
         measureColumnChunkReader.readRawMeasureChunk(fileReader, columnIndex);
-    updateMeasureRawColumnChunkMinMaxValues(measureRawColumnChunk);
     return measureRawColumnChunk;
-  }
-
-  /**
-   * This method is written specifically for old store wherein the measure min and max values
-   * are written opposite (i.e min in place of max and amx in place of min). Due to this computing
-   * f measure filter with current code is impacted. In order to sync with current min and
-   * max values only in case old store and measures is reversed
-   *
-   * @param measureRawColumnChunk
-   */
-  private void updateMeasureRawColumnChunkMinMaxValues(
-      MeasureRawColumnChunk measureRawColumnChunk) {
-    if (blockInfos.get(index).isDataBlockFromOldStore()) {
-      byte[][] maxValues = measureRawColumnChunk.getMaxValues();
-      byte[][] minValues = measureRawColumnChunk.getMinValues();
-      measureRawColumnChunk.setMaxValues(minValues);
-      measureRawColumnChunk.setMinValues(maxValues);
-    }
-  }
-
-  private void updateMeasureRawColumnChunkMinMaxValues(
-      MeasureRawColumnChunk[] measureRawColumnChunks) {
-    if (blockInfos.get(index).isDataBlockFromOldStore()) {
-      for (int i = 0; i < measureRawColumnChunks.length; i++) {
-        if (null != measureRawColumnChunks[i]) {
-          updateMeasureRawColumnChunkMinMaxValues(measureRawColumnChunks[i]);
-        }
-      }
-    }
   }
 
   private DimensionColumnChunkReader getDimensionColumnChunkReader(FileReader fileReader) {
@@ -208,11 +169,11 @@ public class BlockletDataRefNode implements DataRefNode {
         ColumnarFormatVersion.valueOf(blockInfos.get(index).getDetailInfo().getVersionNumber());
     if (fileReader.isReadPageByPage()) {
       return CarbonDataReaderFactory.getInstance().getDimensionColumnChunkReader(version,
-          blockInfos.get(index).getDetailInfo().getBlockletInfo(), dimensionLens,
+          blockInfos.get(index).getDetailInfo().getBlockletInfo(),
           blockInfos.get(index).getFilePath(), true);
     } else {
       return CarbonDataReaderFactory.getInstance().getDimensionColumnChunkReader(version,
-          blockInfos.get(index).getDetailInfo().getBlockletInfo(), dimensionLens,
+          blockInfos.get(index).getDetailInfo().getBlockletInfo(),
           blockInfos.get(index).getFilePath(), false);
     }
   }

@@ -97,8 +97,6 @@ case class CarbonLoadDataCommand(
 
   var currPartitions: util.List[PartitionSpec] = _
 
-  var parentTablePath: String = _
-
   var finalPartition : Map[String, Option[String]] = Map.empty
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
@@ -217,7 +215,6 @@ case class CarbonLoadDataCommand(
     } else {
       FileUtils.getPaths(factPathFromUser, hadoopConf)
     }
-    carbonLoadModel.setParentTablePath(parentTablePath)
     carbonLoadModel.setFactFilePath(factPath)
     carbonLoadModel.setCarbonTransactionalTable(table.getTableInfo.isTransactionalTable)
     carbonLoadModel.setAggLoadRequest(

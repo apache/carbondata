@@ -24,7 +24,6 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 
 /**
  * Wrapper of abstract index
@@ -37,12 +36,7 @@ public class IndexWrapper extends AbstractIndex {
   public IndexWrapper(List<TableBlockInfo> blockInfos, SegmentProperties segmentProperties) {
     this.blockInfos = blockInfos;
     this.segmentProperties = segmentProperties;
-    dataRefNode = new BlockletDataRefNode(blockInfos, 0,
-        this.segmentProperties.getDimensionColumnsValueSize());
-  }
-
-  @Override
-  public void buildIndex(List<DataFileFooter> footerList) {
+    dataRefNode = new BlockletDataRefNode(blockInfos, 0);
   }
 
   @Override

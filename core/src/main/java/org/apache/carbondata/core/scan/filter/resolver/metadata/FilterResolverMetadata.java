@@ -17,24 +17,14 @@
 
 package org.apache.carbondata.core.scan.filter.resolver.metadata;
 
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 
 public class FilterResolverMetadata {
-  private AbsoluteTableIdentifier tableIdentifier;
   private Expression expression;
   private ColumnExpression columnExpression;
 
   private boolean isIncludeFilter;
-
-  public AbsoluteTableIdentifier getTableIdentifier() {
-    return tableIdentifier;
-  }
-
-  public void setTableIdentifier(AbsoluteTableIdentifier tableIdentifier) {
-    this.tableIdentifier = tableIdentifier;
-  }
 
   public Expression getExpression() {
     return expression;

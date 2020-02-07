@@ -36,9 +36,7 @@ import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionColum
 import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
-import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -550,26 +548,6 @@ public class CarbonUtilTest {
         new CarbonDimension(column1Schema, 1, 1, 1));
   }
 
-  @Test public void testToGetFormattedCardinality() {
-    ColumnSchema column1Schema = new ColumnSchema();
-    ColumnSchema column2Schema = new ColumnSchema();
-    List<Encoding> encoding = new ArrayList<>();
-    encoding.add(Encoding.DICTIONARY);
-    List<Encoding> encoding2 = new ArrayList<>();
-    encoding2.add(Encoding.DIRECT_DICTIONARY);
-    column1Schema.setEncodingList(encoding);
-    column2Schema.setEncodingList(encoding2);
-    List<ColumnSchema> columnSchemas = new ArrayList<>();
-    columnSchemas.add(column1Schema);
-    columnSchemas.add(column2Schema);
-    int[] columnCardinality = { 1, 5 };
-    int[] result = CarbonUtil.getFormattedCardinality(columnCardinality, columnSchemas);
-    int[] expectedResult = { 1, 5 };
-    for (int i = 0; i < result.length; i++) {
-      assertEquals(result[i], expectedResult[i]);
-    }
-  }
-
   @Test public void testToGetColumnSchemaList() {
     ColumnSchema column1Schema = new ColumnSchema();
     ColumnSchema column2Schema = new ColumnSchema();
@@ -650,27 +628,6 @@ public class CarbonUtilTest {
     ByteBuffer byteBuffer = ByteBuffer.allocate(8);
     int a = CarbonUtil.getSurrogateKey(data, byteBuffer);
     assertEquals(a, 257);
-  }
-
-  @Test public void testToGetValueCompressionModel() {
-    List<DataChunk> dataChunkList = new ArrayList<>();
-    DataChunk dataChunk = new DataChunk();
-
-    List<Encoding> encodingList = new ArrayList<>();
-    encodingList.add(Encoding.DELTA);
-    dataChunk.setEncodingList(encodingList);
-
-    List<ValueEncoderMeta> valueEncoderMetas = new ArrayList<>();
-    ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
-    valueEncoderMeta.setMaxValue(5.0);
-    valueEncoderMeta.setMinValue(1.0);
-    valueEncoderMeta.setUniqueValue(2.0);
-    valueEncoderMeta.setType('n');
-    valueEncoderMeta.setDataTypeSelected((byte) 'v');
-    valueEncoderMetas.add(valueEncoderMeta);
-    dataChunk.setValueEncoderMeta(valueEncoderMetas);
-    dataChunkList.add(dataChunk);
-    assertEquals(1, dataChunkList.get(0).getValueEncoderMeta().size());
   }
 
   @Test public void testToGetDictionaryChunkSize() {

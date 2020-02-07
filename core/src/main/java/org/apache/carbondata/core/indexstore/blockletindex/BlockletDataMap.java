@@ -66,28 +66,17 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
   protected DataMapRowImpl loadMetadata(CarbonRowSchema[] taskSummarySchema,
       SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
       List<DataFileFooter> indexInfo) {
-    if (isLegacyStore) {
-      return loadBlockInfoForOldStore(taskSummarySchema, segmentProperties, blockletDataMapInfo,
-          indexInfo);
-    } else {
-      return loadBlockletMetaInfo(taskSummarySchema, segmentProperties, blockletDataMapInfo,
-          indexInfo);
-    }
+    return loadBlockletMetaInfo(taskSummarySchema, segmentProperties, blockletDataMapInfo,
+        indexInfo);
   }
 
   @Override
   protected CarbonRowSchema[] getTaskSummarySchema() {
-    if (isLegacyStore) {
-      return super.getTaskSummarySchema();
-    }
     return segmentPropertiesWrapper.getTaskSummarySchemaForBlocklet(false, isFilePathStored);
   }
 
   @Override
   protected CarbonRowSchema[] getFileFooterEntrySchema() {
-    if (isLegacyStore) {
-      return super.getFileFooterEntrySchema();
-    }
     return segmentPropertiesWrapper.getBlockletFileFooterEntrySchema();
   }
 
@@ -103,14 +92,14 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     String tempFilePath = null;
     DataMapRowImpl summaryRow = null;
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
-    boolean[] summaryRowMinMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
+    boolean[] summaryRowMinMaxFlag = new boolean[segmentProperties.getNumberOfColumns()];
     Arrays.fill(summaryRowMinMaxFlag, true);
     // Relative blocklet ID is the id assigned to a blocklet within a part file
     int relativeBlockletId = 0;
     for (DataFileFooter fileFooter : indexInfo) {
       // update the min max flag for summary row
       updateMinMaxFlag(fileFooter, summaryRowMinMaxFlag);
-      TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
+      TableBlockInfo blockInfo = fileFooter.getBlockInfo();
       BlockMetaInfo blockMetaInfo =
           blockletDataMapInfo.getBlockMetaInfoMap().get(blockInfo.getFilePath());
       // Here it loads info about all blocklets of index
@@ -188,7 +177,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
       byte[] serializedData;
       try {
         // Add block footer offset, it is used if we need to read footer of block
-        row.setLong(fileFooter.getBlockInfo().getTableBlockInfo().getBlockOffset(), ordinal++);
+        row.setLong(fileFooter.getBlockInfo().getBlockOffset(), ordinal++);
         setLocations(blockMetaInfo.getLocationInfo(), row, ordinal++);
         // Store block size
         row.setLong(blockMetaInfo.getSize(), ordinal++);
@@ -215,9 +204,6 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
 
   @Override
   public ExtendedBlocklet getDetailedBlocklet(String blockletId) {
-    if (isLegacyStore) {
-      return super.getDetailedBlocklet(blockletId);
-    }
     int absoluteBlockletId = Integer.parseInt(blockletId);
     DataMapRow row = memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), absoluteBlockletId);
     short relativeBlockletId = row.getShort(BLOCKLET_ID_INDEX);
@@ -228,16 +214,10 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
 
   @Override
   protected short getBlockletId(DataMapRow dataMapRow) {
-    if (isLegacyStore) {
-      return super.getBlockletId(dataMapRow);
-    }
     return dataMapRow.getShort(BLOCKLET_ID_INDEX);
   }
 
   protected boolean useMinMaxForExecutorPruning(FilterResolverIntf filterResolverIntf) {
-    if (isLegacyStore) {
-      return super.useMinMaxForExecutorPruning(filterResolverIntf);
-    }
     return BlockletDataMapUtil
         .useMinMaxForBlockletPruning(filterResolverIntf, getMinMaxCacheColumns());
   }
@@ -245,47 +225,30 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
   @Override
   protected ExtendedBlocklet createBlocklet(DataMapRow row, String fileName, short blockletId,
       boolean useMinMaxForPruning) {
-    if (isLegacyStore) {
-      return super.createBlocklet(row, fileName, blockletId, useMinMaxForPruning);
-    }
     short versionNumber = row.getShort(VERSION_INDEX);
     ExtendedBlocklet blocklet = new ExtendedBlocklet(fileName, blockletId + "",
         ColumnarFormatVersion.valueOf(versionNumber));
     blocklet.setColumnSchema(getColumnSchema());
     blocklet.setUseMinMaxForPruning(useMinMaxForPruning);
     blocklet.setIsBlockCache(false);
-    blocklet.setColumnCardinality(getColumnCardinality());
-    blocklet.setLegacyStore(isLegacyStore);
     blocklet.setDataMapRow(row);
     return blocklet;
   }
 
   @Override
   protected short getBlockletNumOfEntry(int index) {
-    if (isLegacyStore) {
-      return super.getBlockletNumOfEntry(index);
-    } else {
-      //in blocklet datamap, each entry contains info of one blocklet
-      return 1;
-    }
+    //in blocklet datamap, each entry contains info of one blocklet
+    return 1;
   }
 
   @Override
   public int getTotalBlocks() {
-    if (isLegacyStore) {
-      return super.getTotalBlocklets();
-    } else {
-      return blockNum;
-    }
+    return blockNum;
   }
 
   @Override
   protected int getTotalBlocklets() {
-    if (isLegacyStore) {
-      return super.getTotalBlocklets();
-    } else {
-      return memoryDMStore.getRowCount();
-    }
+    return memoryDMStore.getRowCount();
   }
 
 }

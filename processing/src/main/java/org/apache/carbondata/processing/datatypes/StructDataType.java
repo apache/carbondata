@@ -26,7 +26,7 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.complexobjects.StructObject;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
@@ -160,14 +160,6 @@ public class StructDataType implements GenericDataType<StructObject> {
   }
 
   /*
-   * get surrogate index
-   */
-  @Override
-  public int getSurrogateIndex() {
-    return 0;
-  }
-
-  /*
    * set surrogate index
    */
   @Override
@@ -201,39 +193,26 @@ public class StructDataType implements GenericDataType<StructObject> {
     }
   }
 
-  @Override
-  public void fillCardinality(List<Integer> dimCardWithComplex) {
-    if (this.getIsColumnDictionary()) {
-      dimCardWithComplex.add(0);
-      for (int i = 0; i < children.size(); i++) {
-        children.get(i).fillCardinality(dimCardWithComplex);
-      }
-    }
-  }
-
   /**
    *
    * @param byteArrayInput
    * @param dataOutputStream
-   * @param generator
    * @return
    * @throws IOException
    * @throws KeyGenException
    */
   @Override
-  public void parseComplexValue(ByteBuffer byteArrayInput,
-      DataOutputStream dataOutputStream, KeyGenerator[] generator)
+  public void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream)
       throws IOException, KeyGenException {
     short childElement = byteArrayInput.getShort();
     dataOutputStream.writeShort(childElement);
     for (int i = 0; i < childElement; i++) {
       if (children.get(i) instanceof PrimitiveDataType) {
         if (children.get(i).getIsColumnDictionary()) {
-          dataOutputStream
-              .writeInt(generator[children.get(i).getSurrogateIndex()].getKeySizeInBytes());
+          dataOutputStream.writeInt(ByteUtil.dateBytesSize());
         }
       }
-      children.get(i).parseComplexValue(byteArrayInput, dataOutputStream, generator);
+      children.get(i).parseComplexValue(byteArrayInput, dataOutputStream);
     }
   }
 
@@ -308,40 +287,6 @@ public class StructDataType implements GenericDataType<StructObject> {
   @Override
   public int getDataCounter() {
     return this.dataCounter;
-  }
-
-  /*
-   * fill agg block
-   */
-  @Override
-  public void fillAggKeyBlock(List<Boolean> aggKeyBlockWithComplex, boolean[] aggKeyBlock) {
-    aggKeyBlockWithComplex.add(false);
-    for (int i = 0; i < children.size(); i++) {
-      children.get(i).fillAggKeyBlock(aggKeyBlockWithComplex, aggKeyBlock);
-    }
-  }
-
-  /*
-   * fill keysize
-   */
-  @Override
-  public void fillBlockKeySize(List<Integer> blockKeySizeWithComplex, int[] primitiveBlockKeySize) {
-    blockKeySizeWithComplex.add(2);
-    for (int i = 0; i < children.size(); i++) {
-      children.get(i).fillBlockKeySize(blockKeySizeWithComplex, primitiveBlockKeySize);
-    }
-  }
-
-  /*
-   * fill cardinality
-   */
-  @Override
-  public void fillCardinalityAfterDataLoad(List<Integer> dimCardWithComplex,
-      int[] maxSurrogateKeyArray) {
-    dimCardWithComplex.add(0);
-    for (int i = 0; i < children.size(); i++) {
-      children.get(i).fillCardinalityAfterDataLoad(dimCardWithComplex, maxSurrogateKeyArray);
-    }
   }
 
   @Override

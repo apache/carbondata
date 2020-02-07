@@ -2063,8 +2063,6 @@ public final class CarbonCommonConstants {
   public static final String MINOR = "minor";
   public static final String MAJOR = "major";
 
-  public static final int DICTIONARY_DEFAULT_CARDINALITY = 1;
-
   /**
    * this will be used to provide comment for table
    */

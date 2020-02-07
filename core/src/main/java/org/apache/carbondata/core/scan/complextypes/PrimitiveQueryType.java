@@ -27,7 +27,6 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
-import org.apache.carbondata.core.keygenerator.mdkey.Bits;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -41,17 +40,14 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
   private String name;
   private String parentName;
 
-  private int keySize;
-
   private org.apache.carbondata.core.metadata.datatype.DataType dataType;
 
   private boolean isDirectDictionary;
 
-  public PrimitiveQueryType(String name, String parentName, int blockIndex, DataType dataType,
-      int keySize, boolean isDirectDictionary) {
-    super(name, parentName, blockIndex);
+  public PrimitiveQueryType(String name, String parentName, int columnIndex, DataType dataType,
+      boolean isDirectDictionary) {
+    super(name, parentName, columnIndex);
     this.dataType = dataType;
-    this.keySize = keySize;
     this.name = name;
     this.parentName = parentName;
     this.isDirectDictionary = isDirectDictionary;
@@ -140,14 +136,10 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
   private Object getDataObject(ByteBuffer dataBuffer, int size) {
     Object actualData;
     if (isDirectDictionary) {
-      // Direct Dictionary Column
-      byte[] data = new byte[keySize];
+      // Direct Dictionary Column, only for DATE type
+      byte[] data = new byte[4];
       dataBuffer.get(data);
-      Bits bit = new Bits(new int[] { keySize * 8 });
-      int surrgateValue = (int) bit.getKeyArray(data, 0)[0];
-      DirectDictionaryGenerator directDictionaryGenerator =
-          DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(dataType);
-      actualData = directDictionaryGenerator.getValueFromSurrogate(surrgateValue);
+      actualData = ByteUtil.convertBytesToInt(data);
     } else {
       if (size == -1) {
         if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
@@ -155,7 +147,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
         } else {
           size = dataBuffer.getShort();
         }
-
       }
       byte[] value = new byte[size];
       dataBuffer.get(value, 0, size);

@@ -36,7 +36,6 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
-import org.apache.carbondata.core.datastore.page.key.TablePageKey;
 import org.apache.carbondata.core.datastore.page.statistics.KeyPageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.LVLongStringStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.LVShortStringStatsCollector;
@@ -47,6 +46,7 @@ import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 
@@ -76,8 +76,6 @@ public class TablePage {
 
   private CarbonFactDataHandlerModel model;
 
-  private TablePageKey key;
-
   private EncodedTablePage encodedTablePage;
 
   private EncodingFactory encodingFactory = DefaultEncodingFactory.getInstance();
@@ -94,11 +92,10 @@ public class TablePage {
   TablePage(CarbonFactDataHandlerModel model, int pageSize) {
     this.model = model;
     this.pageSize = pageSize;
-    int numDictDimension = model.getMDKeyGenerator().getDimCount();
     TableSpec tableSpec = model.getTableSpec();
     this.columnCompressor = model.getColumnCompressor();
 
-    dictDimensionPages = new ColumnPage[numDictDimension];
+    dictDimensionPages = new ColumnPage[model.getDictDimensionCount()];
     noDictDimensionPages = new ColumnPage[model.getNoDictionaryCount()];
     int tmpNumDictDimIdx = 0;
     int tmpNumNoDictDimIdx = 0;
@@ -182,9 +179,6 @@ public class TablePage {
       measurePages[i] = page;
     }
 
-    boolean hasNoDictionary = noDictDimensionPages.length > 0;
-    this.key = new TablePageKey(pageSize, model.getSegmentProperties(), hasNoDictionary);
-
     // for complex type, `complexIndexMap` is used in multithread (in multiple Producer),
     // we need to clone the index map to make it thread safe
     this.complexIndexMap = new HashMap<>();
@@ -201,15 +195,17 @@ public class TablePage {
    */
   public void addRow(int rowId, CarbonRow row) {
     // convert each column category, update key and stats
-    byte[] mdk = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
-    convertToColumnarAndAddToPages(rowId, row, mdk);
-    key.update(rowId, row, mdk);
+    convertToColumnarAndAddToPages(rowId, row);
   }
 
   // convert the input row object to columnar data and add to column pages
-  private void convertToColumnarAndAddToPages(int rowId, CarbonRow row, byte[] mdk) {
+  private void convertToColumnarAndAddToPages(int rowId, CarbonRow row) {
     // 1. convert dictionary columns
-    byte[][] keys = model.getSegmentProperties().getFixedLengthKeySplitter().splitKey(mdk);
+    int[] dictDimensions = WriteStepRowUtil.getDictDimension(row);
+    byte[][] keys = new byte[dictDimensions.length][];
+    for (int i = 0; i < dictDimensions.length; i++) {
+      keys[i] = ByteUtil.toBytes(dictDimensions[i]);
+    }
     for (int i = 0; i < dictDimensionPages.length; i++) {
       dictDimensionPages[i].putData(rowId, keys[i]);
     }
@@ -280,7 +276,7 @@ public class TablePage {
   private void addComplexColumn(int index, int rowId,
       List<ArrayList<byte[]>> encodedComplexColumnar) {
     GenericDataType complexDataType = complexIndexMap.get(
-        index + model.getPrimitiveDimLens().length);
+        index + model.getSegmentProperties().getNumberOfPrimitiveDimensions());
     // initialize the page if first row
     if (rowId == 0) {
       List<ComplexColumnInfo> complexColumnInfoList = new ArrayList<>();
@@ -338,7 +334,7 @@ public class TablePage {
     // encode dimensions and measure
     EncodedColumnPage[] dimensions = encodeAndCompressDimensions();
     EncodedColumnPage[] measures = encodeAndCompressMeasures();
-    this.encodedTablePage = EncodedTablePage.newInstance(pageSize, dimensions, measures, key);
+    this.encodedTablePage = EncodedTablePage.newInstance(pageSize, dimensions, measures);
   }
 
   public EncodedTablePage getEncodedTablePage() {

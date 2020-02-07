@@ -247,26 +247,6 @@ public class RestructureUtil {
   }
 
   /**
-   * Method for computing default value for dictionary column
-   *
-   * @param defaultValue
-   * @return
-   */
-  private static Object getDictionaryDefaultValue(byte[] defaultValue) {
-    Object dictionaryDefaultValue = null;
-    // dictionary has 2 cases:
-    // 1. If default value is specified then its surrogate key will be 2
-    // 2.  If default value is not specified then its surrogate key will be
-    // 1 which is for member default value null
-    if (isDefaultValueNull(defaultValue)) {
-      dictionaryDefaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
-    } else {
-      dictionaryDefaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY + 1;
-    }
-    return dictionaryDefaultValue;
-  }
-
-  /**
    * Method for computing default value for direct dictionary
    *
    * @param dataType

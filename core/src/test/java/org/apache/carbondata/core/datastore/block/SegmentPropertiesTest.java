@@ -52,32 +52,15 @@ public class SegmentPropertiesTest extends TestCase {
     columnSchema.add(getDimensionColumn7());
     columnSchema.add(getMeasureColumn());
     columnSchema.add(getMeasureColumn1());
-    int[] cardinality = new int[columnSchema.size()];
-    int x = 100;
-    for (int i = 0; i < columnSchema.size(); i++) {
-      cardinality[i] = x;
-      x++;
-    }
-    blockMetadataInfos = new SegmentProperties(columnSchema, cardinality);
+    blockMetadataInfos = new SegmentProperties(columnSchema);
   }
 
   @Test public void testBlockMetadataHasProperDimensionCardinality() {
-    int[] cardinality = { 100, 102, 103, 105, 106, 107 };
+    int[] cardinality = {-1, -1, -1, -1, -1, -1, -1, -1};
     boolean isProper = true;
+    int[] result = blockMetadataInfos.createDimColumnValueLength();
     for (int i = 0; i < cardinality.length; i++) {
-      isProper = cardinality[i] == blockMetadataInfos.getDimColumnsCardinality()[i];
-      if (!isProper) {
-        assertTrue(false);
-      }
-    }
-    assertTrue(true);
-  }
-
-  @Test public void testBlockMetadataHasProperComplesDimensionCardinality() {
-    int[] cardinality = { 108, 109 };
-    boolean isProper = true;
-    for (int i = 0; i < cardinality.length; i++) {
-      isProper = cardinality[i] == blockMetadataInfos.getComplexDimColumnCardinality()[i];
+      isProper = cardinality[i] == result[i];
       if (!isProper) {
         assertTrue(false);
       }
@@ -144,21 +127,8 @@ public class SegmentPropertiesTest extends TestCase {
   }
 
   @Test public void testEachColumnValueSizeHasProperValue() {
-    int[] size = { 1, -1, 1, 1, -1, 1, 1, 1 };
-    int[] eachDimColumnValueSize = blockMetadataInfos.getEachDimColumnValueSize();
-    boolean isEqual = false;
-    for (int i = 0; i < size.length; i++) {
-      isEqual = size[i] == eachDimColumnValueSize[i];
-      if (!isEqual) {
-        assertTrue(false);
-      }
-    }
-    assertTrue(true);
-  }
-
-  @Test public void testEachComplexColumnValueSizeHasProperValue() {
-    int[] size = { 1, 1 };
-    int[] eachDimColumnValueSize = blockMetadataInfos.getEachComplexDimColumnValueSize();
+    int[] size = {-1, -1, -1, -1, -1, -1, -1, -1};
+    int[] eachDimColumnValueSize = blockMetadataInfos.createDimColumnValueLength();
     boolean isEqual = false;
     for (int i = 0; i < size.length; i++) {
       isEqual = size[i] == eachDimColumnValueSize[i];

@@ -153,18 +153,6 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
   }
 
   /**
-   * This method will fill the dictionary column data
-   *
-   * @param vector
-   * @param columnVectorInfo
-   * @param defaultValue
-   */
-  private void fillDictionaryData(CarbonColumnVector vector, ColumnVectorInfo columnVectorInfo,
-      Object defaultValue) {
-    vector.putInts(columnVectorInfo.vectorOffset, columnVectorInfo.size, (int) defaultValue);
-  }
-
-  /**
    * This method will fill the direct dictionary column data
    *
    * @param vector

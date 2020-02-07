@@ -18,22 +18,16 @@
 package org.apache.carbondata.datamap.bloom;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
-
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.Predicate;
 
 /**
  * BloomDataMap is constructed in CG level (blocklet level).
@@ -44,10 +38,6 @@ import org.apache.commons.collections.Predicate;
  */
 @InterfaceAudience.Internal
 public class BloomDataMapWriter extends AbstractBloomDataMapWriter {
-  private ColumnarSplitter columnarSplitter;
-  // for the dict/sort/date column, they are encoded in MDK,
-  // this maps the index column name to the index in MDK
-  private Map<String, Integer> indexCol2MdkIdx;
 
   BloomDataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName, SegmentProperties segmentProperties,
@@ -55,25 +45,6 @@ public class BloomDataMapWriter extends AbstractBloomDataMapWriter {
       throws IOException {
     super(tablePath, dataMapName, indexColumns, segment, shardName, segmentProperties,
         bloomFilterSize, bloomFilterFpp, compressBloom);
-
-    columnarSplitter = segmentProperties.getFixedLengthKeySplitter();
-    this.indexCol2MdkIdx = new HashMap<>();
-    int idx = 0;
-    for (final CarbonDimension dimension : segmentProperties.getDimensions()) {
-      if (dimension.getDataType() != DataTypes.DATE) {
-        continue;
-      }
-      boolean isExistInIndex = CollectionUtils.exists(indexColumns, new Predicate() {
-        @Override
-        public boolean evaluate(Object object) {
-          return ((CarbonColumn) object).getColName().equalsIgnoreCase(dimension.getColName());
-        }
-      });
-      if (isExistInIndex) {
-        this.indexCol2MdkIdx.put(dimension.getColName(), idx);
-      }
-      idx++;
-    }
   }
 
   protected byte[] convertNonDictionaryValue(int indexColIdx, Object value) {
@@ -92,9 +63,8 @@ public class BloomDataMapWriter extends AbstractBloomDataMapWriter {
     // input value from onPageAdded in load process is byte[]
 
     // for dict columns including dictionary and date columns decode value to get the surrogate key
-    int thisKeyIdx = indexCol2MdkIdx.get(indexColumns.get(indexColIdx).getColName());
     int surrogateKey = CarbonUtil.getSurrogateInternal((byte[]) value, 0,
-        columnarSplitter.getBlockKeySize()[thisKeyIdx]);
+        ByteUtil.dateBytesSize());
     // store the dictionary key in bloom
     return CarbonUtil.getValueAsBytes(DataTypes.INT, surrogateKey);
   }

@@ -46,8 +46,7 @@ import org.apache.carbondata.format.DataChunk3;
  * <Column4 Data ChunkV3><Column4<Page1><Page2><Page3><Page4>>
  * <File Footer>
  */
-public class MeasureChunkPageReaderV3
-    extends MeasureChunkReaderV3 {
+public class MeasureChunkPageReaderV3 extends MeasureChunkReaderV3 {
 
   /**
    * end position of last measure in carbon data file

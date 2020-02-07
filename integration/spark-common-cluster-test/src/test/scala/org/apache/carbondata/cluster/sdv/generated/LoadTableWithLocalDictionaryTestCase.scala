@@ -276,7 +276,6 @@ class LoadTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAfter
           .getInstance
           .getDimensionColumnChunkReader(ColumnarFormatVersion.V3,
             blockletInfo,
-            dataFileFooter.getSegmentInfo.getColumnCardinality,
             carbonDataFiles.getAbsolutePath,
             false).asInstanceOf[DimensionChunkReaderV3]
       dimensionRawColumnChunks

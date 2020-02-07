@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.carbondata.common.Strings;
-import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
@@ -166,13 +165,11 @@ class ScanBenchmark implements Command {
   }
 
   private DataFileFooter readAndConvertFooter(DataFile file) throws IOException {
-    int numBlocklets = file.getNumBlocklet();
-    BlockletInfos blockletInfos = new BlockletInfos(numBlocklets, 0, numBlocklets);
     String segmentId = CarbonTablePath.DataFileUtil.getSegmentNo(file.getFilePath());
     TableBlockInfo blockInfo =
         new TableBlockInfo(file.getFilePath(), file.getFooterOffset(),
             segmentId, new String[]{"localhost"}, file.getFileSizeInBytes(),
-            blockletInfos, ColumnarFormatVersion.V3, new String[0]);
+            ColumnarFormatVersion.V3, new String[0]);
 
     DataFileFooterConverterV3 converter = new DataFileFooterConverterV3();
     return converter.readDataFileFooter(blockInfo);
@@ -193,7 +190,7 @@ class ScanBenchmark implements Command {
     if (dimension) {
       dimensionColumnChunkReader = CarbonDataReaderFactory.getInstance()
           .getDimensionColumnChunkReader(ColumnarFormatVersion.V3, blockletInfo,
-              footer.getSegmentInfo().getColumnCardinality(), file.getFilePath(), false);
+              file.getFilePath(), false);
       return dimensionColumnChunkReader.readRawDimensionChunk(file.getFileReader(), columnIndex);
     } else {
       columnIndex = columnIndex - file.numDimensions();

@@ -756,4 +756,45 @@ public final class ByteUtil {
         ((long) bytes[offset + 3] & 0xff) << 24) | (((long) bytes[offset + 2] & 0xff) << 16) | (
         ((long) bytes[offset + 1] & 0xff) << 8) | (((long) bytes[offset] & 0xff)));
   }
+
+  public static byte[] convertIntToBytes(int date) {
+    return ByteUtil.toBytes(date);
+  }
+
+  public static byte[] convertLongArrayToBytes(long[] date) {
+    byte[] output = new byte[date.length * 4];
+    for (int i = 0; i < date.length; i++) {
+      System.arraycopy(ByteUtil.toBytes(date[i]), 0, output, i * 4, 4);
+    }
+    return output;
+  }
+
+  public static int convertBytesToInt(byte[] date) {
+    return ByteUtil.toInt(date, 0);
+  }
+
+  public static int convertBytesToInt(byte[] date, int offset) {
+    return ByteUtil.toInt(date, offset);
+  }
+
+  public static int dateBytesSize() {
+    return 4;
+  }
+
+  public static int[] convertBytesToIntArray(byte[] input) {
+    int[] output = new int[input.length / 4];
+    for (int i = 0; i < output.length; i++) {
+      output[i] = convertBytesToInt(input, i * 4);
+    }
+    return output;
+  }
+
+  public static long[] convertBytesToLongArray(byte[] input) {
+    long[] output = new long[input.length / 4];
+    for (int i = 0; i < output.length; i++) {
+      output[i] = convertBytesToInt(input, i * 4);
+    }
+    return output;
+  }
+
 }

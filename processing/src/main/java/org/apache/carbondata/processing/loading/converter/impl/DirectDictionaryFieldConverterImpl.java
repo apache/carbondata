@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.processing.loading.converter.impl;
 
-import java.util.List;
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
@@ -27,9 +25,10 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
+import org.apache.carbondata.processing.loading.converter.FieldConverter;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
-public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldConverterImpl {
+public class DirectDictionaryFieldConverterImpl implements FieldConverter {
 
   private DirectDictionaryGenerator directDictionaryGenerator;
 
@@ -110,8 +109,4 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
   public void clear() {
   }
 
-  @Override
-  public void fillColumnCardinality(List<Integer> cardinality) {
-    cardinality.add(Integer.MAX_VALUE);
-  }
 }

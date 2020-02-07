@@ -39,7 +39,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val HIGH_CARDINALITY_DIMS = carbonKeyWord("NO_DICTIONARY")
   protected val BEFORE = carbonKeyWord("BEFORE")
   protected val BY = carbonKeyWord("BY")
-  protected val CARDINALITY = carbonKeyWord("CARDINALITY")
   protected val CASCADE = carbonKeyWord("CASCADE")
   protected val CLASS = carbonKeyWord("CLASS")
   protected val CLEAN = carbonKeyWord("CLEAN")

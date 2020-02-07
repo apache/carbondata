@@ -37,15 +37,6 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
   }
 
   /**
-   * @return dictionary key array for all the dictionary dimension
-   * selected in query
-   */
-  @Override
-  public byte[] getDictionaryKeyArray() {
-    return getDictionaryKeyArray(pageFilteredRowId[pageCounter][currentRow]);
-  }
-
-  /**
    * @return dictionary key integer array for all the dictionary dimension
    * selected in query
    */

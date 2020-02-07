@@ -63,8 +63,7 @@ public class DataMapWriterListener {
   public void registerAllWriter(CarbonTable carbonTable, String segmentId,
       String taskNo, SegmentProperties segmentProperties) {
     // clear cache in executor side
-    DataMapStoreManager.getInstance()
-        .clearDataMaps(carbonTable.getTableId());
+    DataMapStoreManager.getInstance().clearDataMaps(carbonTable.getTableId());
     List<TableDataMap> tableIndices;
     try {
       tableIndices = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
@@ -72,15 +71,13 @@ public class DataMapWriterListener {
       LOG.error("Error while retrieving datamaps", e);
       throw new RuntimeException(e);
     }
-    if (tableIndices != null) {
-      tblIdentifier = carbonTable.getCarbonTableIdentifier();
-      for (TableDataMap tableDataMap : tableIndices) {
-        // register it only if it is not lazy datamap, for lazy datamap, user
-        // will rebuild the datamap manually
-        if (!tableDataMap.getDataMapSchema().isLazy()) {
-          DataMapFactory factory = tableDataMap.getDataMapFactory();
-          register(factory, segmentId, taskNo, segmentProperties);
-        }
+    tblIdentifier = carbonTable.getCarbonTableIdentifier();
+    for (TableDataMap tableDataMap : tableIndices) {
+      // register it only if it is not lazy datamap, for lazy datamap, user
+      // will rebuild the datamap manually
+      if (!tableDataMap.getDataMapSchema().isLazy()) {
+        DataMapFactory factory = tableDataMap.getDataMapFactory();
+        register(factory, segmentId, taskNo, segmentProperties);
       }
     }
   }

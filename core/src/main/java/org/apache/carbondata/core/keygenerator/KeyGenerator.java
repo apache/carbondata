@@ -26,13 +26,6 @@ import java.util.Comparator;
  * key(dimensional key) out of combined key.
  */
 public interface KeyGenerator extends Serializable, Comparator<byte[]> {
-  /**
-   * It generates the single key aka byte array from multiple keys.
-   *
-   * @param keys
-   * @return byte array
-   */
-  byte[] generateKey(long[] keys);
 
   /**
    * It generates the single key aka byte array from multiple keys.
@@ -46,50 +39,10 @@ public interface KeyGenerator extends Serializable, Comparator<byte[]> {
    * It gets array of keys out of single key aka byte array
    *
    * @param key
-   * @return array of keys.
-   */
-  long[] getKeyArray(byte[] key);
-
-  /**
-   * It gets array of keys out of single key aka byte array
-   *
-   * @param key
    * @param offset
    * @return array of keys.
    */
   long[] getKeyArray(byte[] key, int offset);
-
-  /**
-   * It gets array of keys out of single key aka byte array
-   *
-   * @param key
-   * @param maskedByteRanges
-   * @return array of keys
-   */
-  long[] getKeyArray(byte[] key, int[] maskedByteRanges);
-
-  /**
-   * It gets the key in the specified index from the single key aka byte array
-   *
-   * @param key
-   * @param index of key.
-   * @return key
-   */
-  long getKey(byte[] key, int index);
-
-  /**
-   * Gives the key size in number of bytes.
-   */
-  int getKeySizeInBytes();
-
-
-  /**
-   * returns key bytes offset
-   *
-   * @param index
-   * @return
-   */
-  int[] getKeyByteOffsets(int index);
 
   /**
    * returns the dimension count

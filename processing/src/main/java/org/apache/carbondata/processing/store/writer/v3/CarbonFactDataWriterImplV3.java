@@ -105,7 +105,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       long footerOffset = currentOffsetInFile;
       // get thrift file footer instance
       FileFooter3 convertFileMeta = CarbonMetadataUtil
-          .convertFileFooterVersion3(blockletMetadata, blockletIndex, localCardinality,
+          .convertFileFooterVersion3(blockletMetadata, blockletIndex,
               thriftColumnSchemaList.size());
       convertFileMeta.setIs_sort(isSorted);
       String appName = CarbonProperties.getInstance()

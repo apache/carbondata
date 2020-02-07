@@ -256,7 +256,7 @@ public class SchemaGenerator {
    */
   private static void addMinMaxFlagSchema(SegmentProperties segmentProperties,
       List<CarbonRowSchema> indexSchemas, List<CarbonColumn> minMaxCacheColumns) {
-    int minMaxFlagLength = segmentProperties.getColumnsValueSize().length;
+    int minMaxFlagLength = segmentProperties.getNumberOfColumns();
     if (null != minMaxCacheColumns) {
       minMaxFlagLength = minMaxCacheColumns.size();
     }
@@ -285,11 +285,11 @@ public class SchemaGenerator {
       minMaxLen = new int[minMaxCacheColumns.size()];
       int counter = 0;
       for (CarbonColumn column : minMaxCacheColumns) {
-        minMaxLen[counter++] = segmentProperties.getColumnsValueSize()[BlockletDataMapUtil
+        minMaxLen[counter++] = segmentProperties.createColumnValueLength()[BlockletDataMapUtil
             .getColumnOrdinal(segmentProperties, column)];
       }
     } else {
-      minMaxLen = segmentProperties.getColumnsValueSize();
+      minMaxLen = segmentProperties.createColumnValueLength();
     }
     return minMaxLen;
   }
@@ -314,7 +314,7 @@ public class SchemaGenerator {
     } else {
       // when columns to cache is not specified then column access order will be same as the array
       // index of min max length
-      columnOrdinalsTOAccess = new int[segmentProperties.getColumnsValueSize().length];
+      columnOrdinalsTOAccess = new int[segmentProperties.getNumberOfColumns()];
       for (int i = 0; i < columnOrdinalsTOAccess.length; i++) {
         columnOrdinalsTOAccess[i] = i;
       }

@@ -51,7 +51,7 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
    * Method which will resolve the filter expression by converting the filter member
    * to its assigned dictionary values.
    */
-  public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
+  public void resolve() {
     DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = null;
     MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo = null;
     int index = 0;

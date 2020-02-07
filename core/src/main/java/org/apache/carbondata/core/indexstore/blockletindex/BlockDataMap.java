@@ -50,7 +50,6 @@ import org.apache.carbondata.core.indexstore.row.DataMapRowImpl;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -100,10 +99,6 @@ public class BlockDataMap extends CoarseGrainDataMap
   protected transient SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper
       segmentPropertiesWrapper;
   /**
-   * flag to check for store from 1.1 or any prior version
-   */
-  protected boolean isLegacyStore;
-  /**
    * flag to be used for forming the complete file path from file name. It will be true in case of
    * partition table and non transactional table
    */
@@ -148,8 +143,6 @@ public class BlockDataMap extends CoarseGrainDataMap
         blockletDataMapInfo.getSegmentId().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
     if (!indexInfo.isEmpty()) {
       DataFileFooter fileFooter = indexInfo.get(0);
-      // store for 1.1 or any prior version will not have any blocklet information in file footer
-      isLegacyStore = fileFooter.getBlockletList() == null;
       // init segment properties and create schema
       SegmentProperties segmentProperties = initSegmentProperties(blockletDataMapInfo, fileFooter);
       createMemorySchema(blockletDataMapInfo);
@@ -189,13 +182,7 @@ public class BlockDataMap extends CoarseGrainDataMap
   protected DataMapRowImpl loadMetadata(CarbonRowSchema[] taskSummarySchema,
       SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
       List<DataFileFooter> indexInfo) {
-    if (isLegacyStore) {
-      return loadBlockInfoForOldStore(taskSummarySchema, segmentProperties, blockletDataMapInfo,
-          indexInfo);
-    } else {
-      return loadBlockMetaInfo(taskSummarySchema, segmentProperties, blockletDataMapInfo,
-          indexInfo);
-    }
+    return loadBlockMetaInfo(taskSummarySchema, segmentProperties, blockletDataMapInfo, indexInfo);
   }
 
   /**
@@ -207,53 +194,10 @@ public class BlockDataMap extends CoarseGrainDataMap
   private SegmentProperties initSegmentProperties(BlockletDataMapModel blockletDataMapInfo,
       DataFileFooter fileFooter) {
     List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
-    int[] columnCardinality = fileFooter.getSegmentInfo().getColumnCardinality();
     segmentPropertiesWrapper = SegmentPropertiesAndSchemaHolder.getInstance()
         .addSegmentProperties(blockletDataMapInfo.getCarbonTable(),
-            columnInTable, columnCardinality, blockletDataMapInfo.getSegmentId());
+            columnInTable, blockletDataMapInfo.getSegmentId());
     return segmentPropertiesWrapper.getSegmentProperties();
-  }
-
-  /**
-   * This is old store scenario, here blocklet information is not available in index
-   * file so load only block info. Old store refers to store in 1.1 or prior to 1.1 version
-   *
-   * @param blockletDataMapInfo
-   * @param indexInfo
-   */
-  protected DataMapRowImpl loadBlockInfoForOldStore(CarbonRowSchema[] taskSummarySchema,
-      SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
-      List<DataFileFooter> indexInfo) {
-    DataMapRowImpl summaryRow = null;
-    CarbonRowSchema[] schema = getFileFooterEntrySchema();
-    boolean[] minMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
-    FilterUtil.setMinMaxFlagForLegacyStore(minMaxFlag, segmentProperties);
-    long totalRowCount = 0;
-    for (DataFileFooter fileFooter : indexInfo) {
-      TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
-      BlockMetaInfo blockMetaInfo =
-          blockletDataMapInfo.getBlockMetaInfoMap().get(blockInfo.getFilePath());
-      // Here it loads info about all blocklets of index
-      // Only add if the file exists physically. There are scenarios which index file exists inside
-      // merge index but related carbondata files are deleted. In that case we first check whether
-      // the file exists physically or not
-      if (null != blockMetaInfo) {
-        BlockletIndex blockletIndex = fileFooter.getBlockletIndex();
-        BlockletMinMaxIndex minMaxIndex = blockletIndex.getMinMaxIndex();
-        summaryRow = loadToUnsafeBlock(schema, taskSummarySchema, fileFooter, segmentProperties,
-            getMinMaxCacheColumns(), blockInfo.getFilePath(), summaryRow,
-            blockMetaInfo, minMaxIndex.getMinValues(), minMaxIndex.getMaxValues(), minMaxFlag);
-        totalRowCount += fileFooter.getNumberOfRows();
-      }
-    }
-    List<Short> blockletCountList = new ArrayList<>();
-    blockletCountList.add((short) 0);
-    byte[] blockletCount = convertRowCountFromShortToByteArray(blockletCountList);
-    // set the total row count
-    summaryRow.setLong(totalRowCount, TASK_ROW_COUNT);
-    summaryRow.setByteArray(blockletCount, taskSummarySchema.length - 1);
-    setMinMaxFlagForTaskSummary(summaryRow, taskSummarySchema, segmentProperties, minMaxFlag);
-    return summaryRow;
   }
 
   protected void setMinMaxFlagForTaskSummary(DataMapRow summaryRow,
@@ -287,14 +231,14 @@ public class BlockDataMap extends CoarseGrainDataMap
     boolean isLastFileFooterEntryNeedToBeAdded = false;
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     // flag for each block entry
-    boolean[] minMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
+    boolean[] minMaxFlag = new boolean[segmentProperties.getNumberOfColumns()];
     Arrays.fill(minMaxFlag, true);
     // min max flag for task summary
-    boolean[] taskSummaryMinMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
+    boolean[] taskSummaryMinMaxFlag = new boolean[segmentProperties.getNumberOfColumns()];
     Arrays.fill(taskSummaryMinMaxFlag, true);
     long totalRowCount = 0;
     for (DataFileFooter fileFooter : indexInfo) {
-      TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
+      TableBlockInfo blockInfo = fileFooter.getBlockInfo();
       BlockMetaInfo blockMetaInfo =
           blockletDataMapInfo.getBlockMetaInfoMap().get(blockInfo.getFilePath());
       footerCounter++;
@@ -328,15 +272,14 @@ public class BlockDataMap extends CoarseGrainDataMap
         // with unique file path because each unique path will correspond to one
         // block in the task. OR condition is to handle the loading of last file footer
         if (!blockInfo.getFilePath().equals(tempFilePath) || footerCounter == indexInfo.size()) {
-          TableBlockInfo previousBlockInfo =
-              previousDataFileFooter.getBlockInfo().getTableBlockInfo();
+          TableBlockInfo previousBlockInfo = previousDataFileFooter.getBlockInfo();
           summaryRow = loadToUnsafeBlock(schema, taskSummarySchema, previousDataFileFooter,
               segmentProperties, getMinMaxCacheColumns(), previousBlockInfo.getFilePath(),
               summaryRow,
               blockletDataMapInfo.getBlockMetaInfoMap().get(previousBlockInfo.getFilePath()),
               blockMinValues, blockMaxValues, minMaxFlag);
           totalRowCount += previousDataFileFooter.getNumberOfRows();
-          minMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
+          minMaxFlag = new boolean[segmentProperties.getNumberOfColumns()];
           Arrays.fill(minMaxFlag, true);
           // flag to check whether last file footer entry is different from previous entry.
           // If yes then it need to be added at last
@@ -362,9 +305,9 @@ public class BlockDataMap extends CoarseGrainDataMap
       summaryRow =
           loadToUnsafeBlock(schema, taskSummarySchema, previousDataFileFooter, segmentProperties,
               getMinMaxCacheColumns(),
-              previousDataFileFooter.getBlockInfo().getTableBlockInfo().getFilePath(), summaryRow,
+              previousDataFileFooter.getBlockInfo().getFilePath(), summaryRow,
               blockletDataMapInfo.getBlockMetaInfoMap()
-                  .get(previousDataFileFooter.getBlockInfo().getTableBlockInfo().getFilePath()),
+                  .get(previousDataFileFooter.getBlockInfo().getFilePath()),
               blockMinValues, blockMaxValues, minMaxFlag);
       totalRowCount += previousDataFileFooter.getNumberOfRows();
       blockletCountInEachBlock.add(totalBlockletsInOneBlock);
@@ -425,7 +368,8 @@ public class BlockDataMap extends CoarseGrainDataMap
         .getMinMaxForColumnsToBeCached(segmentProperties, minMaxCacheColumns, maxValues);
     boolean[] minMaxFlagValuesForColumnsToBeCached = BlockletDataMapUtil
         .getMinMaxFlagValuesForColumnsToBeCached(segmentProperties, minMaxCacheColumns, minMaxFlag);
-    row.setRow(addMinMax(schema[ordinal], minValuesForColumnsToBeCached), ordinal);
+    DataMapRow dataMapRow = addMinMax(schema[ordinal], minValuesForColumnsToBeCached);
+    row.setRow(dataMapRow, ordinal);
     // compute and set task level min values
     addTaskMinMaxValues(summaryRow, taskSummarySchema, taskMinMaxOrdinal,
         minValuesForColumnsToBeCached, TASK_MIN_VALUES_INDEX, true);
@@ -447,7 +391,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     // add schema updated time
     row.setLong(fileFooter.getSchemaUpdatedTimeStamp(), ordinal++);
     // add block offset
-    row.setLong(fileFooter.getBlockInfo().getTableBlockInfo().getBlockOffset(), ordinal++);
+    row.setLong(fileFooter.getBlockInfo().getBlockOffset(), ordinal++);
     try {
       setLocations(blockMetaInfo.getLocationInfo(), row, ordinal++);
       // store block size
@@ -625,29 +569,19 @@ public class BlockDataMap extends CoarseGrainDataMap
    * if data is not legacy store, we can get blocklet count from taskSummaryDMStore
    */
   protected short getBlockletNumOfEntry(int index) {
-    if (isLegacyStore) {
-      // dummy value
+    final byte[] bytes = getBlockletRowCountForEachBlock();
+    // if the segment data is written in tablepath
+    // then the reuslt of getBlockletRowCountForEachBlock will be empty.
+    if (bytes.length == 0) {
       return 0;
     } else {
-      final byte[] bytes = getBlockletRowCountForEachBlock();
-      // if the segment data is written in tablepath
-      // then the reuslt of getBlockletRowCountForEachBlock will be empty.
-      if (bytes.length == 0) {
-        return 0;
-      } else {
-        return ByteBuffer.wrap(bytes).getShort(index * CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
-      }
+      return ByteBuffer.wrap(bytes).getShort(index * CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
     }
   }
 
   // get total block number in this datamap
   public int getTotalBlocks() {
-    if (isLegacyStore) {
-      // dummy value
-      return 0;
-    } else {
-      return memoryDMStore.getRowCount();
-    }
+    return memoryDMStore.getRowCount();
   }
 
   // get total blocklet number in this datamap
@@ -756,14 +690,10 @@ public class BlockDataMap extends CoarseGrainDataMap
       }
     }
     if (ExplainCollector.enabled()) {
-      if (isLegacyStore) {
-        ExplainCollector.setShowPruningInfo(false);
-      } else {
-        ExplainCollector.setShowPruningInfo(true);
-        ExplainCollector.addTotalBlocklets(totalBlocklets);
-        ExplainCollector.addTotalBlocks(getTotalBlocks());
-        ExplainCollector.addDefaultDataMapPruningHit(hitBlocklets);
-      }
+      ExplainCollector.setShowPruningInfo(true);
+      ExplainCollector.addTotalBlocklets(totalBlocklets);
+      ExplainCollector.addTotalBlocks(getTotalBlocks());
+      ExplainCollector.addDefaultDataMapPruningHit(hitBlocklets);
     }
     return blocklets;
   }
@@ -868,10 +798,6 @@ public class BlockDataMap extends CoarseGrainDataMap
   }
 
   public ExtendedBlocklet getDetailedBlocklet(String blockletId) {
-    if (isLegacyStore) {
-      throw new UnsupportedOperationException("With legacy store only BlockletDataMap is allowed."
-          + " In order to use other dataMaps upgrade to new store.");
-    }
     int absoluteBlockletId = Integer.parseInt(blockletId);
     return createBlockletFromRelativeBlockletId(absoluteBlockletId);
   }
@@ -970,8 +896,6 @@ public class BlockDataMap extends CoarseGrainDataMap
     ExtendedBlocklet blocklet = new ExtendedBlocklet(fileName, blockletId + "", false,
         ColumnarFormatVersion.valueOf(versionNumber));
     blocklet.setDataMapRow(row);
-    blocklet.setColumnCardinality(getColumnCardinality());
-    blocklet.setLegacyStore(isLegacyStore);
     blocklet.setUseMinMaxForPruning(useMinMaxForPruning);
     return blocklet;
   }
@@ -1018,10 +942,6 @@ public class BlockDataMap extends CoarseGrainDataMap
     return segmentPropertiesWrapper.getSegmentProperties();
   }
 
-  public int[] getColumnCardinality() {
-    return segmentPropertiesWrapper.getColumnCardinality();
-  }
-
   public List<ColumnSchema> getColumnSchema() {
     return segmentPropertiesWrapper.getColumnsInTable();
   }
@@ -1047,7 +967,6 @@ public class BlockDataMap extends CoarseGrainDataMap
   /**
    * This method will ocnvert safe to unsafe memory DM store
    *
-   * @throws MemoryException
    */
   public void convertToUnsafeDMStore() {
     if (memoryDMStore instanceof SafeMemoryDMStore) {

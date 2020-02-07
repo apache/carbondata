@@ -56,21 +56,17 @@ public class CarbonDataReaderFactory {
    *
    * @param version             reader version
    * @param blockletInfo        blocklet info
-   * @param eachColumnValueSize size of each dimension column
    * @param filePath            carbon data file path
    * @return dimension column data reader based on version number
    */
   public DimensionColumnChunkReader getDimensionColumnChunkReader(ColumnarFormatVersion version,
-      BlockletInfo blockletInfo, int[] eachColumnValueSize, String filePath,
-      boolean readPagebyPage) {
+      BlockletInfo blockletInfo, String filePath, boolean readPagebyPage) {
     switch (version) {
       case V3:
         if (readPagebyPage) {
-          return new DimensionChunkPageReaderV3(blockletInfo, eachColumnValueSize,
-              filePath);
+          return new DimensionChunkPageReaderV3(blockletInfo, filePath);
         } else {
-          return new DimensionChunkReaderV3(blockletInfo, eachColumnValueSize,
-              filePath);
+          return new DimensionChunkReaderV3(blockletInfo, filePath);
         }
       default:
         throw new UnsupportedOperationException("Unsupported columnar format version: " + version);

@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
@@ -127,11 +126,9 @@ public class CarbonHiveInputSplit extends FileSplit
   public static List<TableBlockInfo> createBlocks(List<CarbonHiveInputSplit> splitList) {
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
     for (CarbonHiveInputSplit split : splitList) {
-      BlockletInfos blockletInfos =
-          new BlockletInfos(split.getNumberOfBlocklets(), 0, split.getNumberOfBlocklets());
       try {
         TableBlockInfo blockInfo = new TableBlockInfo(split.getPath().toString(), split.getStart(),
-                split.getSegmentId(), split.getLocations(), split.getLength(), blockletInfos,
+                split.getSegmentId(), split.getLocations(), split.getLength(),
                 split.getVersion(), null);
         blockInfo.setDetailInfo(split.getDetailInfo());
         blockInfo.setBlockOffset(split.getDetailInfo().getBlockFooterOffset());
@@ -141,22 +138,6 @@ public class CarbonHiveInputSplit extends FileSplit
       }
     }
     return tableBlockInfoList;
-  }
-
-  public static TableBlockInfo getTableBlockInfo(CarbonHiveInputSplit inputSplit) {
-    BlockletInfos blockletInfos =
-        new BlockletInfos(inputSplit.getNumberOfBlocklets(), 0, inputSplit.getNumberOfBlocklets());
-    try {
-      TableBlockInfo blockInfo =
-              new TableBlockInfo(inputSplit.getPath().toString(), inputSplit.getStart(),
-          inputSplit.getSegmentId(), inputSplit.getLocations(), inputSplit.getLength(),
-          blockletInfos, inputSplit.getVersion(), null);
-      blockInfo.setDetailInfo(inputSplit.getDetailInfo());
-      blockInfo.setBlockOffset(inputSplit.getDetailInfo().getBlockFooterOffset());
-      return blockInfo;
-    } catch (IOException e) {
-      throw new RuntimeException("fail to get location of split: " + inputSplit, e);
-    }
   }
 
   public String getSegmentId() {

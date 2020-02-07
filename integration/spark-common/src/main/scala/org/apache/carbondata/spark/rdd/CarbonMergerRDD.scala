@@ -146,8 +146,6 @@ class CarbonMergerRDD[K, V](
           }
           // target load name will be same as source load name in case of update data compaction
           carbonMergerMapping.mergedLoadName = tableBlockInfoList.get(0).getSegmentId
-          carbonMergerMapping.maxSegmentColCardinality = dataFileFooter.getSegmentInfo
-            .getColumnCardinality
           carbonMergerMapping.maxSegmentColumnSchemaList = dataFileFooter.getColumnInTable.asScala
             .toList
         }
@@ -173,8 +171,7 @@ class CarbonMergerRDD[K, V](
 
         // get destination segment properties as sent from driver which is of last segment.
         val segmentProperties = new SegmentProperties(
-          carbonMergerMapping.maxSegmentColumnSchemaList.asJava,
-          carbonMergerMapping.maxSegmentColCardinality)
+          carbonMergerMapping.maxSegmentColumnSchemaList.asJava)
 
         val segmentMapping: java.util.Map[String, TaskBlockInfo] =
           CarbonCompactionUtil.createMappingForSegments(tableBlockInfoList)
@@ -456,7 +453,6 @@ class CarbonMergerRDD[K, V](
       }
     }
 
-    val columnToCardinalityMap = new util.HashMap[java.lang.String, Integer]()
     val partitionTaskMap = new util.HashMap[PartitionSpec, String]()
     val counter = new AtomicInteger()
     var indexOfRangeColumn = -1
@@ -481,12 +477,6 @@ class CarbonMergerRDD[K, V](
             logError("Exception in preparing the data file footer for compaction " + e.getMessage)
             throw e
         }
-        // add all the column and cardinality to the map
-        CarbonCompactionUtil
-          .addColumnCardinalityToMap(columnToCardinalityMap,
-            dataFileFooter.getColumnInTable,
-            dataFileFooter.getSegmentInfo.getColumnCardinality)
-
         var splitList = taskIdMapping.get(taskCount.toString)
         if (null != splitList && splitList.size == noOfSplitsPerTask) {
           taskCount = taskCount + 1
@@ -503,7 +493,6 @@ class CarbonMergerRDD[K, V](
         var dataFileFooter: DataFileFooter = null
         if (null == rangeColumn) {
           val taskNo = getTaskNo(split, partitionTaskMap, counter)
-          var sizeOfSplit = split.getLength
           val splitList = taskIdMapping.get(taskNo)
           noOfBlocks += 1
           if (null == splitList) {
@@ -523,11 +512,6 @@ class CarbonMergerRDD[K, V](
             logError("Exception in preparing the data file footer for compaction " + e.getMessage)
             throw e
         }
-        // add all the column and cardinality to the map
-        CarbonCompactionUtil
-          .addColumnCardinalityToMap(columnToCardinalityMap,
-            dataFileFooter.getColumnInTable,
-            dataFileFooter.getSegmentInfo.getColumnCardinality)
 
         // Create taskIdMapping here for range column by reading min/max values.
         if (null != rangeColumn) {
@@ -578,15 +562,11 @@ class CarbonMergerRDD[K, V](
       }
     }
     val updatedMaxSegmentColumnList = new util.ArrayList[ColumnSchema]()
-    // update cardinality and column schema list according to master schema
-    val cardinality = CarbonCompactionUtil
-      .updateColumnSchemaAndGetCardinality(columnToCardinalityMap,
-        carbonTable,
-        updatedMaxSegmentColumnList)
+    // update the column schema list according to master schema
+    CarbonCompactionUtil.updateColumnSchema(
+      carbonTable,
+      updatedMaxSegmentColumnList)
     carbonMergerMapping.maxSegmentColumnSchemaList = updatedMaxSegmentColumnList.asScala.toList
-    // Set cardinality for new segment.
-    carbonMergerMapping.maxSegmentColCardinality = cardinality
-
     taskIdMapping.asScala.foreach(
       entry =>
         taskInfoList

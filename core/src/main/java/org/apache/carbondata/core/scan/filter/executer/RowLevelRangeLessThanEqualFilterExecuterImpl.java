@@ -428,7 +428,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     byte[] defaultValue = null;
     if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.DATE) {
       defaultValue = FilterUtil
-          .getDefaultNullValue(dimColEvaluatorInfoList.get(0).getDimension(), segmentProperties);
+          .getDefaultNullValue(dimColEvaluatorInfoList.get(0).getDimension());
     } else if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() != DataTypes.STRING) {
       defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
     }
