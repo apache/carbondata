@@ -403,22 +403,17 @@ public class SegmentProperties {
 
   /**
    * Return column value length in byte for all dimension columns in the table
-   * for String, Decimal, it is -1, Date is 4, others are 8
+   * for dimension it is -1 (for DATE it is 4),
    */
   public int[] createDimColumnValueLength() {
     int[] length = new int[dimensions.size()];
     int index = 0;
     for (CarbonDimension dimension : dimensions) {
       DataType dataType = dimension.getDataType();
-      if (dataType == DataTypes.STRING ||
-          dataType == DataTypes.VARCHAR ||
-          dataType == DataTypes.BINARY ||
-          dimension.isComplex()) {
-        length[index] = -1;
-      } else if (dataType == DataTypes.DATE) {
+      if (dataType == DataTypes.DATE) {
         length[index] = 4;
       } else {
-        length[index] = 8;
+        length[index] = -1;
       }
       index++;
     }
@@ -427,22 +422,18 @@ public class SegmentProperties {
 
   /**
    * Return column value length in byte for all columns in the table
-   * for String, Decimal and complex type, it is -1, Date is 4, others are 8
+   * for dimension and complex column it is -1 (for DATE it is 4),
+   * for measure is 8 (for decimal is -1)
    */
   public int[] createColumnValueLength() {
     int[] length = new int[numberOfColumnsAfterFlatten];
     int index = 0;
     for (CarbonDimension dimension : dimensions) {
       DataType dataType = dimension.getDataType();
-      if (dataType == DataTypes.STRING ||
-          dataType == DataTypes.VARCHAR ||
-          dataType == DataTypes.BINARY ||
-          dimension.isComplex()) {
-        length[index] = -1;
-      } else if (dataType == DataTypes.DATE) {
+      if (dataType == DataTypes.DATE) {
         length[index] = 4;
       } else {
-        length[index] = 8;
+        length[index] = -1;
       }
       index++;
     }
