@@ -774,27 +774,9 @@ public final class ByteUtil {
     return 4;
   }
 
-  public static byte[] convertDateToBytes(int[] input) {
-    byte[] output = new byte[input.length * 4];
-    for (int i = 0; i < input.length; i++) {
-      byte[] temp = convertDateToBytes(input[i]);
-      System.arraycopy(temp, 0, output, i * 4, 4);
-    }
-    return output;
-  }
-
-  public static byte[] convertDateToBytes(List<Integer> input) {
-    byte[] output = new byte[input.size() * 4];
-    for (int i = 0; i < input.size(); i++) {
-      byte[] temp = convertDateToBytes(input.get(i));
-      System.arraycopy(temp, 0, output, i * 4, 4);
-    }
-    return output;
-  }
-
   public static int[] convertBytesToDateArray(byte[] input) {
     int[] output = new int[input.length / 4];
-    for (int i = 0; i < input.length; i++) {
+    for (int i = 0; i < output.length; i++) {
       output[i] = convertBytesToDate(input, i * 4);
     }
     return output;

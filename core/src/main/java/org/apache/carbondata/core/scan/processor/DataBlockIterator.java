@@ -217,7 +217,8 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
             nextRead.set(true);
             futureIo = readNextBlockletAsync();
           }
-          return blockletScanner.scanBlocklet(rawBlockletColumnChunks);
+          BlockletScannedResult result = blockletScanner.scanBlocklet(rawBlockletColumnChunks);
+          return result;
         }
         return null;
       }
