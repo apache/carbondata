@@ -373,7 +373,7 @@ object DataLoadProcessorStepOnSpark {
     } finally {
       // close the dataWriter once the write in done success or fail. if not closed then thread to
       // to prints the rows processed in each step for every 10 seconds will never exit.
-      if(null != dataWriter) {
+      if (null != dataWriter) {
         dataWriter.close()
       }
       // clean up the folders and files created locally for data load operation
@@ -431,7 +431,7 @@ object DataLoadProcessorStepOnSpark {
     } finally {
       // close the dataWriter once the write in done success or fail. if not closed then thread to
       // to prints the rows processed in each step for every 10 seconds will never exit.
-      if(null != dataWriter) {
+      if (null != dataWriter) {
         dataWriter.close()
       }
       // clean up the folders and files created locally for data load operation
