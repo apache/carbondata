@@ -107,6 +107,15 @@ public class LocalDictColumnPage extends ColumnPage {
     }
   }
 
+  @Override
+  public ByteBuffer[] getByteBufferArrayPage(boolean isFlattened) {
+    if (null != pageLevelDictionary) {
+      return encodedDataColumnPage.getByteBufferArrayPage(isFlattened);
+    } else {
+      return actualDataColumnPage.getByteBufferArrayPage(isFlattened);
+    }
+  }
+
   /**
    * Below method will be used to check whether page is local dictionary
    * generated or not. This will be used for while enoding the the page

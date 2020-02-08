@@ -27,6 +27,9 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * This test will test the functionality of the Byte Util
@@ -267,4 +270,34 @@ public class ByteUtilTest extends TestCase {
         ByteUtil.toXorDouble(ByteUtil.toXorBytes(Double.MIN_VALUE), 0, 8));
   }
 
+  @Test
+  public void testFlatten() {
+    prepareBuffers();
+
+    buff1.rewind();
+    buff2.rewind();
+    byte[][] arraysInArray = new byte[][]{buff1.array(), buff2.array()};
+    List<byte[]> arraysInList = Arrays.asList(arraysInArray);
+    ByteBuffer[] nonDirectBuffers = new ByteBuffer[]{buff1, buff2};
+
+    assertEquals(0, ByteUtil.compare(ByteUtil.flatten(nonDirectBuffers).array(),
+        ByteUtil.flatten(arraysInArray)));
+    assertEquals(0, ByteUtil.compare(ByteUtil.flatten(nonDirectBuffers).array(),
+        ByteUtil.flatten(arraysInList)));
+
+    ByteBuffer[] directBuffers = Arrays
+        .stream(nonDirectBuffers)
+        .map(x -> {
+          ByteBuffer directBuffer = ByteBuffer.allocateDirect(x.remaining());
+          directBuffer.put(x);
+          x.rewind();
+          directBuffer.flip();
+          return directBuffer;
+        }).toArray(ByteBuffer[]::new);
+
+    assertEquals(0, ByteUtil.compare(ByteUtil.byteBufferToBytes(ByteUtil.flatten(directBuffers)),
+        ByteUtil.flatten(arraysInArray)));
+    assertEquals(0, ByteUtil.compare(ByteUtil.byteBufferToBytes(ByteUtil.flatten(directBuffers)),
+        ByteUtil.flatten(arraysInList)));
+  }
 }

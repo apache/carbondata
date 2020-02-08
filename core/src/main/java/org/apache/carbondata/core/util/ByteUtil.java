@@ -23,6 +23,7 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
@@ -672,6 +673,47 @@ public final class ByteUtil {
   }
 
   /**
+   * flatten input List<byte[]> to byte[] and return
+   */
+  public static byte[] flatten(List<byte[]> input) {
+    int totalSize = 0;
+    for (byte[] arr : input) {
+      totalSize += arr.length;
+    }
+    byte[] flattenedData = new byte[totalSize];
+    int pos = 0;
+    for (byte[] arr : input) {
+      System.arraycopy(arr, 0, flattenedData, pos, arr.length);
+      pos += arr.length;
+    }
+    return flattenedData;
+  }
+
+  /**
+   * flatten input bytebuffer[] to bytebuffer and return
+   */
+  public static ByteBuffer flatten(ByteBuffer[] input) {
+    // validate the length of input
+    if (input.length == 0) {
+      return ByteBuffer.allocate(0);
+    }
+    int totalSize = 0;
+    for (int i = 0; i < input.length; i++) {
+      input[i].rewind();
+      totalSize += input[i].remaining();
+    }
+    // the flattened data is stored in directbytebuffer or bytebuffer depends on the input
+    ByteBuffer buffer = input[0].isDirect() ? ByteBuffer.allocateDirect(totalSize)
+        : ByteBuffer.allocate(totalSize);
+    for (int i = 0; i < input.length; i++) {
+      buffer.put(input[i]);
+      input[i].rewind();
+    }
+    buffer.flip();
+    return buffer;
+  }
+
+  /**
    * flatten input byte[][] to byte[] and return
    */
   public static byte[] flatten(byte[][] input) {
@@ -789,6 +831,7 @@ public final class ByteUtil {
     if (buffer.isDirect()) {
       byte[] arr = new byte[buffer.remaining()];
       buffer.get(arr);
+      buffer.rewind();
       return arr;
     } else {
       return buffer.array();

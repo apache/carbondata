@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -88,6 +89,12 @@ public abstract class DecimalColumnPage extends VarLengthColumnPageBase {
 
   @Override
   public byte[][] getByteArrayPage() {
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
+  }
+
+  @Override
+  public ByteBuffer[] getByteBufferArrayPage(boolean isFlattened) {
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }

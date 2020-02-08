@@ -17,7 +17,9 @@
 
 package org.apache.carbondata.core.datastore.columnar;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -26,29 +28,27 @@ import org.apache.carbondata.core.util.ByteUtil;
 /**
  * Below class will be used to for no inverted index
  */
-public class BlockIndexerStorageForNoInvertedIndexForShort extends BlockIndexerStorage<byte[][]> {
+public class BlockIndexerStorageForNoInvertedIndexForShort
+    extends BlockIndexerStorage<ByteBuffer[]> {
 
   /**
    * column data
    */
-  private byte[][] dataPage;
+  private ByteBuffer[] dataPage;
 
   private short[] dataRlePage;
 
-  public BlockIndexerStorageForNoInvertedIndexForShort(byte[][] dataPage, boolean applyRLE) {
+  public BlockIndexerStorageForNoInvertedIndexForShort(ByteBuffer[] dataPage, boolean applyRLE) {
     this.dataPage = dataPage;
     if (applyRLE) {
-      List<byte[]> actualDataList = new ArrayList<>();
-      for (int i = 0; i < dataPage.length; i++) {
-        actualDataList.add(dataPage[i]);
-      }
+      List<ByteBuffer> actualDataList = Arrays.asList(dataPage);
       rleEncodeOnData(actualDataList);
     }
   }
 
-  private void rleEncodeOnData(List<byte[]> actualDataList) {
-    byte[] prvKey = actualDataList.get(0);
-    List<byte[]> list = new ArrayList<>(actualDataList.size() / 2);
+  private void rleEncodeOnData(List<ByteBuffer> actualDataList) {
+    ByteBuffer prvKey = actualDataList.get(0);
+    List<ByteBuffer> list = new ArrayList<>(actualDataList.size() / 2);
     list.add(actualDataList.get(0));
     short counter = 1;
     short start = 0;
@@ -79,12 +79,8 @@ public class BlockIndexerStorageForNoInvertedIndexForShort extends BlockIndexerS
     }
   }
 
-  private byte[][] convertToDataPage(List<byte[]> list) {
-    byte[][] shortArray = new byte[list.size()][];
-    for (int i = 0; i < shortArray.length; i++) {
-      shortArray[i] = list.get(i);
-    }
-    return shortArray;
+  private ByteBuffer[] convertToDataPage(List<ByteBuffer> list) {
+    return list.toArray(new ByteBuffer[0]);
   }
 
   public short[] getDataRlePage() {
@@ -128,8 +124,7 @@ public class BlockIndexerStorageForNoInvertedIndexForShort extends BlockIndexerS
   /**
    * @return the dataPage
    */
-  public byte[][] getDataPage() {
+  public ByteBuffer[] getDataPage() {
     return dataPage;
   }
-
 }

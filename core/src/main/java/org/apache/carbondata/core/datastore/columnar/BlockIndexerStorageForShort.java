@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.columnar;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +26,7 @@ import java.util.Map;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.ByteUtil;
 
-public class BlockIndexerStorageForShort extends BlockIndexerStorage<byte[][]> {
+public class BlockIndexerStorageForShort extends BlockIndexerStorage<ByteBuffer[]> {
 
   private boolean alreadySorted;
 
@@ -33,11 +34,11 @@ public class BlockIndexerStorageForShort extends BlockIndexerStorage<byte[][]> {
 
   private short[] rowIdRlePage;
 
-  private byte[][] dataPage;
+  private ByteBuffer[] dataPage;
 
   private short[] dataRlePage;
 
-  public BlockIndexerStorageForShort(byte[][] dataPage, boolean rleOnData,
+  public BlockIndexerStorageForShort(ByteBuffer[] dataPage, boolean rleOnData,
       boolean isNoDictionary, boolean isSortRequired) {
     ColumnWithRowId<Short>[] dataWithRowId = createColumnWithRowId(dataPage, isNoDictionary);
     if (isSortRequired) {
@@ -57,7 +58,7 @@ public class BlockIndexerStorageForShort extends BlockIndexerStorage<byte[][]> {
    *
    * @return
    */
-  private ColumnWithRowId<Short>[] createColumnWithRowId(byte[][] dataPage,
+  private ColumnWithRowId<Short>[] createColumnWithRowId(ByteBuffer[] dataPage,
       boolean isNoDictionary) {
     ColumnWithRowId<Short>[] columnWithIndexs = new ColumnWithRowId[dataPage.length];
     if (isNoDictionary) {
@@ -73,7 +74,7 @@ public class BlockIndexerStorageForShort extends BlockIndexerStorage<byte[][]> {
   }
 
   private short[] extractDataAndReturnRowId(ColumnWithRowId<Short>[] dataWithRowId,
-      byte[][] dataPage) {
+      ByteBuffer[] dataPage) {
     short[] indexes = new short[dataWithRowId.length];
     for (int i = 0; i < indexes.length; i++) {
       indexes[i] = dataWithRowId[i].getIndex();
@@ -123,12 +124,12 @@ public class BlockIndexerStorageForShort extends BlockIndexerStorage<byte[][]> {
   /**
    * @return the dataPage
    */
-  public byte[][] getDataPage() {
+  public ByteBuffer[] getDataPage() {
     return dataPage;
   }
 
   private void rleEncodeOnData(ColumnWithRowId<Short>[] dataWithRowId) {
-    byte[] prvKey = dataWithRowId[0].getColumn();
+    ByteBuffer prvKey = dataWithRowId[0].getColumn();
     List<ColumnWithRowId> list = new ArrayList<>(dataWithRowId.length / 2);
     list.add(dataWithRowId[0]);
     short counter = 1;
@@ -160,16 +161,16 @@ public class BlockIndexerStorageForShort extends BlockIndexerStorage<byte[][]> {
     }
   }
 
-  private byte[][] convertToDataPage(ColumnWithRowId[] indexes) {
-    byte[][] shortArray = new byte[indexes.length][];
+  private ByteBuffer[] convertToDataPage(ColumnWithRowId[] indexes) {
+    ByteBuffer[] shortArray = new ByteBuffer[indexes.length];
     for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = indexes[i].getColumn();
     }
     return shortArray;
   }
 
-  private byte[][] convertToDataPage(List<ColumnWithRowId> list) {
-    byte[][] shortArray = new byte[list.size()][];
+  private ByteBuffer[] convertToDataPage(List<ColumnWithRowId> list) {
+    ByteBuffer[] shortArray = new ByteBuffer[list.size()];
     for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = list.get(i).getColumn();
     }

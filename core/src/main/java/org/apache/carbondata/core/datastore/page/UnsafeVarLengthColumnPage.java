@@ -18,12 +18,14 @@
 package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.ByteUtil;
 
 /**
  * This extension uses unsafe memory to store page data, for variable length data type (string)
@@ -114,6 +116,25 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
       bytes[rowId] = rowData;
     }
     return bytes;
+  }
+
+  @Override
+  public ByteBuffer[] getByteBufferArrayPage(boolean isFlattened) {
+    if (isFlattened) {
+      return new ByteBuffer[]{getPage()};
+    }
+    ByteBuffer[] byteBuffers = new ByteBuffer[rowOffset.getActualRowCount() - 1];
+    for (int rowId = 0; rowId < rowOffset.getActualRowCount() - 1; rowId++) {
+      int length = rowOffset.getInt(rowId + 1) - rowOffset.getInt(rowId);
+      byteBuffers[rowId] = ByteUtil.wrapAddress(baseOffset + rowOffset.getInt(rowId),
+          length, true);
+    }
+    return byteBuffers;
+  }
+
+  @Override
+  public ByteBuffer getPage() {
+    return ByteUtil.wrapAddress(baseOffset, totalLength, true);
   }
 
   @Override

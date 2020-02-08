@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.page.encoding.dimension.legacy;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -46,18 +47,33 @@ public class DictDimensionIndexCodec extends IndexStorageCodec {
   public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
     return new IndexStorageEncoder() {
       @Override
-      void encodeIndexStorage(ColumnPage inputPage) {
-        BlockIndexerStorage<byte[][]> indexStorage;
-        byte[][] data = inputPage.getByteArrayPage();
+      void encodeIndexStorage(ColumnPage input) {
+        BlockIndexerStorage<ByteBuffer[]> indexStorage;
+        boolean isDictionary = input.isLocalDictGeneratedPage();
+
+        // if need to build invertIndex or RLE, the columnpage should to be organized in Row,
+        // in the other words, we get the data of columnpage as an array, in which each element
+        // presenets a row. But if no need to build both invertIndex and RLE, it will increase
+        // extra overhead, considering data in columnpage was already stored as flattened data,
+        // and the compression is also on flattened  data, to organized data in ROW is actually
+        // increase the overheadof "Expand" and "Flatten" with on invertIndex and RLE.
+        // Overall, isFlatted presents do we flatten the data? if need to build invertIndex or RLE,
+        // isFlattened is set to ture, otherwise, isFlattened is set to false.
+        boolean isFlattened = !isInvertedIndex && !isDictionary;
+
+        // when isFlattened is true, data[0] is the flattened data of the columnpage.
+        // when isFlattened is false, data[i] is the ith row of the columnpage.
+        ByteBuffer[] data = input.getByteBufferArrayPage(isFlattened);
         if (isInvertedIndex) {
-          indexStorage = new BlockIndexerStorageForShort(data, true, false, isSort);
+          indexStorage = new BlockIndexerStorageForShort(data, isDictionary, !isDictionary, isSort);
         } else {
-          indexStorage = new BlockIndexerStorageForNoInvertedIndexForShort(data, false);
+          indexStorage = new BlockIndexerStorageForNoInvertedIndexForShort(data, isDictionary);
         }
-        byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
         Compressor compressor = CompressorFactory.getInstance().getCompressor(
-            inputPage.getColumnCompressorName());
-        super.compressedDataPage = compressor.compressByte(flattened);
+            input.getColumnCompressorName());
+        ByteBuffer flattened = isFlattened ? data[0] : ByteUtil.flatten(indexStorage.getDataPage());
+        ByteBuffer compressed = compressor.compressByte(flattened);
+        super.compressedDataPage = ByteUtil.byteBufferToBytes(compressed);
         super.indexStorage = indexStorage;
       }
 

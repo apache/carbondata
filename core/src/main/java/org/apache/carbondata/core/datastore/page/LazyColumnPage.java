@@ -165,6 +165,11 @@ public class LazyColumnPage extends ColumnPage {
   }
 
   @Override
+  public ByteBuffer[] getByteBufferArrayPage(boolean isFlattened) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
   public byte[][] getByteArrayPage() {
     throw new UnsupportedOperationException("internal error");
   }

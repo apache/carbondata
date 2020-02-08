@@ -17,21 +17,21 @@
 
 package org.apache.carbondata.core.datastore.columnar;
 
-import java.util.Arrays;
+import java.nio.ByteBuffer;
 
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 
 public class ColumnWithRowIdForHighCard<T> extends ColumnWithRowId<T>
     implements Comparable<ColumnWithRowId<T>> {
 
-  ColumnWithRowIdForHighCard(byte[] column, T index) {
+  ColumnWithRowIdForHighCard(ByteBuffer column, T index) {
     super(column, index);
   }
 
   @Override
   public int compareTo(ColumnWithRowId o) {
-    return UnsafeComparer.INSTANCE
-        .compareTo(column, 2, column.length - 2, o.column, 2, o.column.length - 2);
+    return UnsafeComparer.INSTANCE.compareTo(column, o.column);
   }
 
   @Override
@@ -40,11 +40,12 @@ public class ColumnWithRowIdForHighCard<T> extends ColumnWithRowId<T>
       return false;
     }
     ColumnWithRowIdForHighCard o = (ColumnWithRowIdForHighCard)obj;
-    return Arrays.equals(column, o.column) && getIndex() == o.getIndex();
+    return ByteUtil.UnsafeComparer.INSTANCE.compareTo(column, o.column) == 0
+        && getIndex() == o.getIndex();
   }
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(column) + getIndex().hashCode();
+    return column.hashCode() + getIndex().hashCode();
   }
 }

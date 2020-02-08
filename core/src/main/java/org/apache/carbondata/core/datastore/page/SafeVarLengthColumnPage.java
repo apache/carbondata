@@ -21,11 +21,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
@@ -120,8 +122,21 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
   }
 
   @Override
+  public ByteBuffer[] getByteBufferArrayPage(boolean isFlattened) {
+    if (isFlattened) {
+      return new ByteBuffer[]{getPage()};
+    }
+    return byteArrayData.stream().map(x -> ByteBuffer.wrap(x))
+        .toArray(ByteBuffer[]::new);
+  }
+
+  @Override
+  public ByteBuffer getPage() {
+    return ByteBuffer.wrap(ByteUtil.flatten(byteArrayData));
+  }
+
+  @Override
   void copyBytes(int rowId, byte[] dest, int destOffset, int length) {
     System.arraycopy(byteArrayData.get(rowId), 0, dest, destOffset, length);
   }
-
 }

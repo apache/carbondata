@@ -397,6 +397,22 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override
+  public ByteBuffer[] getByteBufferArrayPage(boolean isFlattened) {
+    if (isFlattened) {
+      return new ByteBuffer[]{getPage()};
+    }
+    ByteBuffer[] data = new ByteBuffer[getEndLoop()];
+    long offset = baseOffset;
+    for (int i = 0; i < data.length; i++) {
+      //copy the row from memory block based on offset
+      // offset position will be index * each column value length
+      data[i] = ByteUtil.wrapAddress(offset, eachRowSize, true);
+      offset += eachRowSize;
+    }
+    return data;
+  }
+
+  @Override
   public byte[] getLVFlattenedBytePage() {
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());

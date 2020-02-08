@@ -299,6 +299,15 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override
+  public ByteBuffer[] getByteBufferArrayPage(boolean isFlattened) {
+    ByteBuffer[] data = new ByteBuffer[arrayElementCount];
+    for (int i = 0; i < arrayElementCount; i++) {
+      data[i] = ByteBuffer.wrap(fixedLengthdata[i]);
+    }
+    return data;
+  }
+
+  @Override
   public byte[] getLVFlattenedBytePage() throws IOException {
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());

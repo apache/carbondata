@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.page.encoding.dimension.legacy;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -54,19 +55,21 @@ public class HighCardDictDimensionIndexCodec extends IndexStorageCodec {
 
       @Override
       protected void encodeIndexStorage(ColumnPage input) {
-        BlockIndexerStorage<byte[][]> indexStorage;
-        byte[][] data = input.getByteArrayPage();
+        BlockIndexerStorage<ByteBuffer[]> indexStorage;
         boolean isDictionary = input.isLocalDictGeneratedPage();
+        boolean isFlattened = !isInvertedIndex && !isDictionary;
+        ByteBuffer[] data = input.getByteBufferArrayPage(isFlattened);
         if (isInvertedIndex) {
           indexStorage = new BlockIndexerStorageForShort(data, isDictionary, !isDictionary, isSort);
         } else {
-          indexStorage =
-              new BlockIndexerStorageForNoInvertedIndexForShort(data, isDictionary);
+          indexStorage = new BlockIndexerStorageForNoInvertedIndexForShort(data, isDictionary);
         }
-        byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
         Compressor compressor = CompressorFactory.getInstance().getCompressor(
             input.getColumnCompressorName());
-        super.compressedDataPage = compressor.compressByte(flattened);
+        ByteBuffer flattened = isFlattened ? data[0] : ByteUtil.flatten(indexStorage.getDataPage());
+        ByteBuffer compressed = compressor.compressByte(flattened);
+        compressed.rewind();
+        super.compressedDataPage = ByteUtil.byteBufferToBytes(compressed);
         super.indexStorage = indexStorage;
       }
 

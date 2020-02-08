@@ -28,6 +28,8 @@ import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.UnsafeDecimalColumnPage;
 import org.apache.carbondata.core.datastore.page.UnsafeFixLengthColumnPage;
+import org.apache.carbondata.core.datastore.page.UnsafeVarLengthColumnPage;
+import org.apache.carbondata.core.datastore.page.statistics.LVShortStringStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -156,6 +158,26 @@ public class GetPageInUnsafeFixLengthColumnPageTest<T> {
         DataTypes.createDecimalType(19,2), ColumnType.MEASURE);
   }
 
+  private static void testGetPageForFixLengthString(TestData testData, Compressor compressor, Class clazz) throws Exception {
+    ColumnPage inputBytePage = testData.inputBytePage;
+    // 1. Make Sure that the columnpage is in type of specified COLUMNPAGE class
+    assertTrue(clazz.isInstance(inputBytePage));
+
+    // 2. Try to compress bytearray in the columnpage
+    byte[][] originPageByteArray = inputBytePage.getByteArrayPage();
+
+    // 3. Try to compress bytebuffer in the columnpage
+    ByteBuffer[] newPageByteBuffer = inputBytePage.getByteBufferArrayPage(false);
+    assertEquals(originPageByteArray.length, newPageByteBuffer.length);
+    byte[][] newPageByteArray = new byte[newPageByteBuffer.length][];
+    for (int i = 0 ; i < originPageByteArray.length; i++) {
+      assertEquals(originPageByteArray[i].length, newPageByteBuffer[i].remaining());
+      newPageByteArray[i] = ByteUtil.byteBufferToBytes(newPageByteBuffer[i]);
+      assertEquals(0, ByteUtil.compare(originPageByteArray[i], newPageByteArray[i]));
+    }
+    // 4. Make Sure that the compared results are same.
+  }
+
   @Test
   public void testGetPage() throws Exception {
     Compressor snappyCompressor = CompressorFactory.getInstance().getCompressor("SNAPPY");
@@ -200,5 +222,6 @@ public class GetPageInUnsafeFixLengthColumnPageTest<T> {
   }
 
   @AfterClass public static void tearDown() {
+    CarbonProperties.getInstance().removeProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE);
   }
 }

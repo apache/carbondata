@@ -691,9 +691,14 @@ public abstract class ColumnPage {
   public abstract double[] getDoublePage();
 
   /**
-   * Get variable length page data
+   * Get variable length page data as two-dimension bytearray
    */
   public abstract byte[][] getByteArrayPage();
+
+  /**
+   * Get variable length page data as bytebuffer array
+   */
+  public abstract ByteBuffer[] getByteBufferArrayPage(boolean isFlattened);
 
   /**
    * For variable length page, get the flattened data
@@ -937,7 +942,7 @@ public abstract class ColumnPage {
    * unsafe flow as we don't store the data in memory for long time.
    * @return boolean Whether unsafe enabled or not
    */
-  private boolean isUnsafeEnabled() {
+  protected boolean isUnsafeEnabled() {
     return unsafe && !getColumnPageEncoderMeta().isFillCompleteVector();
   }
 

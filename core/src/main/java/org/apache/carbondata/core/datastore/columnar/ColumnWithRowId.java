@@ -17,16 +17,16 @@
 
 package org.apache.carbondata.core.datastore.columnar;
 
-import java.util.Arrays;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.util.ByteUtil;
 
 public class ColumnWithRowId<T> implements Comparable<ColumnWithRowId<T>> {
-  protected byte[] column;
+  protected ByteBuffer column;
 
   private T index;
 
-  ColumnWithRowId(byte[] column, T index) {
+  ColumnWithRowId(ByteBuffer column, T index) {
     this.column = column;
     this.index = index;
   }
@@ -34,7 +34,7 @@ public class ColumnWithRowId<T> implements Comparable<ColumnWithRowId<T>> {
   /**
    * @return the column
    */
-  public byte[] getColumn() {
+  public ByteBuffer getColumn() {
     return column;
   }
 
@@ -56,11 +56,11 @@ public class ColumnWithRowId<T> implements Comparable<ColumnWithRowId<T>> {
       return false;
     }
     ColumnWithRowId o = (ColumnWithRowId)obj;
-    return Arrays.equals(column, o.column) && index == o.index;
+    return ByteUtil.UnsafeComparer.INSTANCE.compareTo(column, o.column) == 0 && index == o.index;
   }
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(column) + index.hashCode();
+    return column.hashCode() + index.hashCode();
   }
 }

@@ -90,6 +90,7 @@ public class SnappyCompressor extends AbstractCompressor {
               + "the compressed output's remaining is " + compOutput.limit()
               + ", the compressSize is" + compressSize);
         }
+        compOutput.rewind();
         return compOutput;
       } else {
         return ByteBuffer.wrap(compressByte(unCompInput.array()));
