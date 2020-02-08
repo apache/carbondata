@@ -20,7 +20,6 @@ package org.apache.carbondata.core.scan.filter.resolver;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -65,10 +64,9 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    * @throws FilterUnsupportedException
    */
   @Override
-  public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
+  public void resolve()
       throws FilterUnsupportedException {
     FilterResolverMetadata metadata = new FilterResolverMetadata();
-    metadata.setTableIdentifier(absoluteTableIdentifier);
     if ((!isExpressionResolve) && exp instanceof BinaryConditionalExpression) {
       BinaryConditionalExpression binaryConditionalExpression = (BinaryConditionalExpression) exp;
       Expression leftExp = binaryConditionalExpression.getLeft();

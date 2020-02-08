@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.filter.resolver;
 
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.expression.BinaryExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
@@ -51,10 +50,9 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
    * Logical filter resolver will return the left and right filter expresison
    * node for filter evaluation, so in this instance no implementation is required.
    *
-   * @param absoluteTableIdentifier
    */
   @Override
-  public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
+  public void resolve() {
 
   }
 

@@ -40,11 +40,6 @@ public class CarbonDimension extends CarbonColumn {
   private int keyOrdinal;
 
   /**
-   * to store complex type dimension ordinal
-   */
-  private int complexTypeOrdinal;
-
-  /**
    * Save the Parent Dimension of the complex Parent Column.
    */
   private CarbonDimension complexParentDimension = null;
@@ -58,7 +53,6 @@ public class CarbonDimension extends CarbonColumn {
       int complexTypeOrdinal) {
     super(columnSchema, ordinal, schemaOrdinal);
     this.keyOrdinal = keyOrdinal;
-    this.complexTypeOrdinal = complexTypeOrdinal;
   }
 
   /**
@@ -93,15 +87,7 @@ public class CarbonDimension extends CarbonColumn {
     return keyOrdinal;
   }
 
-  /**
-   * @return the complexTypeOrdinal
-   */
-  public int getComplexTypeOrdinal() {
-    return complexTypeOrdinal;
-  }
-
   public void setComplexTypeOridnal(int complexTypeOrdinal) {
-    this.complexTypeOrdinal = complexTypeOrdinal;
   }
 
   /**

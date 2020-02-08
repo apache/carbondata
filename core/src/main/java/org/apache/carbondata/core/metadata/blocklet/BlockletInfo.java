@@ -24,7 +24,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 
 import org.apache.hadoop.io.Writable;

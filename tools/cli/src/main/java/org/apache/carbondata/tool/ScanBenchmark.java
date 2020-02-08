@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.carbondata.common.Strings;
-import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
@@ -166,13 +165,11 @@ class ScanBenchmark implements Command {
   }
 
   private DataFileFooter readAndConvertFooter(DataFile file) throws IOException {
-    int numBlocklets = file.getNumBlocklet();
-    BlockletInfos blockletInfos = new BlockletInfos(0);
     String segmentId = CarbonTablePath.DataFileUtil.getSegmentNo(file.getFilePath());
     TableBlockInfo blockInfo =
         new TableBlockInfo(file.getFilePath(), file.getFooterOffset(),
             segmentId, new String[]{"localhost"}, file.getFileSizeInBytes(),
-            blockletInfos, ColumnarFormatVersion.V3, new String[0]);
+            ColumnarFormatVersion.V3, new String[0]);
 
     DataFileFooterConverterV3 converter = new DataFileFooterConverterV3();
     return converter.readDataFileFooter(blockInfo);

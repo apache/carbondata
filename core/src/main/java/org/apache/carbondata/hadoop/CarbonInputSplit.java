@@ -33,7 +33,6 @@ import java.util.Set;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
@@ -295,13 +294,11 @@ public class CarbonInputSplit extends FileSplit
   public static List<TableBlockInfo> createBlocks(List<CarbonInputSplit> splitList) {
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
     for (CarbonInputSplit split : splitList) {
-      BlockletInfos blockletInfos =
-          new BlockletInfos(0);
       try {
         TableBlockInfo blockInfo =
-            new TableBlockInfo(split.getFilePath(), split.blockletId, split.getStart(),
+            new TableBlockInfo(split.getFilePath(), split.getStart(),
                 split.getSegment().toString(), split.getLocations(), split.getLength(),
-                blockletInfos, split.getVersion(), split.getDeleteDeltaFiles());
+                split.getVersion(), split.getDeleteDeltaFiles());
         blockInfo.setDetailInfo(split.getDetailInfo());
         blockInfo.setDataMapWriterPath(split.dataMapWritePath);
         if (split.getDetailInfo() != null) {
@@ -316,13 +313,11 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public static TableBlockInfo getTableBlockInfo(CarbonInputSplit inputSplit) {
-    BlockletInfos blockletInfos =
-        new BlockletInfos(0);
     try {
       TableBlockInfo blockInfo =
-          new TableBlockInfo(inputSplit.getFilePath(), inputSplit.blockletId,
+          new TableBlockInfo(inputSplit.getFilePath(),
               inputSplit.getStart(), inputSplit.getSegment().toString(), inputSplit.getLocations(),
-              inputSplit.getLength(), blockletInfos, inputSplit.getVersion(),
+              inputSplit.getLength(), inputSplit.getVersion(),
               inputSplit.getDeleteDeltaFiles());
       blockInfo.setDetailInfo(inputSplit.getDetailInfo());
       if (null != inputSplit.getDetailInfo()) {

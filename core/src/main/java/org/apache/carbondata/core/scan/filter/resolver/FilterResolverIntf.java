@@ -19,7 +19,6 @@ package org.apache.carbondata.core.scan.filter.resolver;
 
 import java.io.Serializable;
 
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
@@ -35,7 +34,7 @@ public interface FilterResolverIntf extends Serializable {
    *
    * @throws FilterUnsupportedException
    */
-  void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) throws FilterUnsupportedException;
+  void resolve() throws FilterUnsupportedException;
 
   /**
    * This API will provide the left column filter expression
