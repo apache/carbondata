@@ -774,8 +774,16 @@ public final class ByteUtil {
     return 4;
   }
 
-  public static int[] convertBytesToDateArray(byte[] input) {
+  public static int[] convertBytesToDateIntArray(byte[] input) {
     int[] output = new int[input.length / 4];
+    for (int i = 0; i < output.length; i++) {
+      output[i] = convertBytesToDate(input, i * 4);
+    }
+    return output;
+  }
+
+  public static long[] convertBytesToDateLongArray(byte[] input) {
+    long[] output = new long[input.length / 4];
     for (int i = 0; i < output.length; i++) {
       output[i] = convertBytesToDate(input, i * 4);
     }

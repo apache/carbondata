@@ -312,7 +312,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     ByteArrayWrapper wrapper = (ByteArrayWrapper) row[0];
     Object[] preparedRow = new Object[dimensions.size() + measureCount];
     byte[] dictionaryKey = wrapper.getDictionaryKey();
-    int[] keyArray = ByteUtil.convertBytesToDateArray(dictionaryKey);
+    int[] keyArray = ByteUtil.convertBytesToDateIntArray(dictionaryKey);
     Object[] dictionaryValues = new Object[dimensionColumnCount + measureCount];
     for (int i = 0; i < keyArray.length; i++) {
       dictionaryValues[i] = keyArray[i];

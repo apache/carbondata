@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.keygenerator.mdkey;
 
-import java.util.Arrays;
-
 public class MultiDimKeyVarLengthGenerator extends AbstractKeyGenerator {
 
   private static final long serialVersionUID = 9134778127271586515L;
@@ -29,17 +27,6 @@ public class MultiDimKeyVarLengthGenerator extends AbstractKeyGenerator {
   private Bits bits;
 
   public MultiDimKeyVarLengthGenerator(int[] lens) {
-    bits = new Bits(lens);
-    byteRangesForKeys = new int[lens.length][];
-    int keys = lens.length;
-    for (int i = 0; i < keys; i++) {
-      byteRangesForKeys[i] = bits.getKeyByteOffsets(i);
-    }
-  }
-
-  public MultiDimKeyVarLengthGenerator(int numDictDimensions) {
-    int[] lens = new int[numDictDimensions];
-    Arrays.fill(lens, 4);
     bits = new Bits(lens);
     byteRangesForKeys = new int[lens.length][];
     int keys = lens.length;

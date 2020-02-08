@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.datamap
 
-import java.io.{File, IOException}
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util
 
@@ -25,8 +25,6 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import org.apache.commons.lang3.ArrayUtils
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.{Job, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
@@ -37,7 +35,6 @@ import org.apache.spark.sql.types.Decimal
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder
 import org.apache.carbondata.core.datastore.block.SegmentProperties
@@ -47,12 +44,11 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher
 import org.apache.carbondata.core.keygenerator.KeyGenerator
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
-import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil, TaskMetricsMap}
+import org.apache.carbondata.core.util.{ByteUtil, DataTypeUtil, TaskMetricsMap}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.datamap.bloom.DataConvertUtil
 import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
@@ -162,7 +158,6 @@ class OriginalReadSupport(dataTypes: Array[DataType]) extends CarbonReadSupport[
  */
 class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Array[CarbonColumn])
   extends CarbonReadSupport[Array[Object]] {
-  var dimensionKeyGenerator: KeyGenerator = _
   // for the dictionary dimensions
   var indexCol2IdxInDictArray: Map[String, Int] = Map()
   // for the non dictionary dimensions
@@ -193,9 +188,6 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
       }
     }
 
-    if (dictIndexColumns.nonEmpty) {
-      this.dimensionKeyGenerator = new MultiDimKeyVarLengthGenerator(dictIndexColumns.size)
-    }
   }
 
   /**
@@ -205,10 +197,11 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
    */
   override def readRow(data: Array[Object]): Array[Object] = {
 
-    var surrogatKeys = new Array[Long](0)
-    if(null != dimensionKeyGenerator) {
-        surrogatKeys = dimensionKeyGenerator.getKeyArray(
-          data(0).asInstanceOf[ByteArrayWrapper].getDictionaryKey)
+    val surrogatKeys = if (segmentProperties.getNumberOfDictDimensions > 0) {
+      ByteUtil.convertBytesToDateLongArray(
+        data(0).asInstanceOf[ByteArrayWrapper].getDictionaryKey)
+    } else {
+      new Array[Long](0)
     }
 
     // fill return row from data
