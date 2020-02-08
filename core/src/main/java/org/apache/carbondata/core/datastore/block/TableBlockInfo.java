@@ -84,11 +84,6 @@ public class TableBlockInfo implements Distributable, Serializable {
   private ColumnarFormatVersion version;
 
   /**
-   * flag to determine whether the data block is from old store (version 1.1)
-   * or current store
-   */
-  private boolean isDataBlockFromOldStore;
-  /**
    * The class holds the blockletsinfo
    */
   private BlockletInfos blockletInfos = new BlockletInfos();
@@ -151,7 +146,6 @@ public class TableBlockInfo implements Distributable, Serializable {
       String[] deletedDeltaFilePath) {
     this(filePath, blockOffset, segmentId, locations, blockLength, version,
         deletedDeltaFilePath);
-    this.blockletInfos = blockletInfos;
   }
 
   /**
@@ -173,26 +167,6 @@ public class TableBlockInfo implements Distributable, Serializable {
   }
 
   /**
-   * constructor to initialize the TableBlockInfo with blockStorageIdMap
-   *
-   * @param filePath
-   * @param blockOffset
-   * @param segmentId
-   * @param locations
-   * @param blockLength
-   * @param blockletInfos
-   * @param version
-   * @param blockStorageIdMap
-   */
-  public TableBlockInfo(String filePath, String blockletId, long blockOffset, String segmentId,
-      String[] locations, long blockLength, BlockletInfos blockletInfos,
-      ColumnarFormatVersion version, Map<String, String> blockStorageIdMap,
-      String[] deletedDeltaFilePath) {
-    this(filePath, blockletId, blockOffset, segmentId, locations, blockLength, blockletInfos,
-        version, deletedDeltaFilePath);
-  }
-
-  /**
    * Create copy of TableBlockInfo object
    */
   public TableBlockInfo copy() {
@@ -204,8 +178,6 @@ public class TableBlockInfo implements Distributable, Serializable {
     info.blockletId = blockletId;
     info.locations = locations;
     info.version = version;
-    info.isDataBlockFromOldStore = isDataBlockFromOldStore;
-    info.blockletInfos = blockletInfos;
     info.deletedDeltaFilePath = deletedDeltaFilePath;
     info.detailInfo = detailInfo.copy();
     info.dataMapWriterPath = dataMapWriterPath;
@@ -371,15 +343,6 @@ public class TableBlockInfo implements Distributable, Serializable {
     return locations;
   }
 
-  /**
-   * returns BlockletInfos
-   *
-   * @return
-   */
-  public BlockletInfos getBlockletInfos() {
-    return blockletInfos;
-  }
-
   public ColumnarFormatVersion getVersion() {
     return version;
   }
@@ -418,10 +381,6 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   public void setBlockletId(String blockletId) {
     this.blockletId = blockletId;
-  }
-
-  public boolean isDataBlockFromOldStore() {
-    return isDataBlockFromOldStore;
   }
 
   public String getDataMapWriterPath() {

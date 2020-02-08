@@ -118,8 +118,6 @@ public abstract class AbstractDataFileFooterConverter {
           tableBlockInfo.setBlockOffset(readBlockIndexInfo.getOffset());
           tableBlockInfo.setVersion(
               ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion()));
-          int blockletSize = getBlockletSize(readBlockIndexInfo);
-          tableBlockInfo.getBlockletInfos().setNoOfBlockLets(blockletSize);
           dataFileFooter.setBlockletIndex(blockletIndex);
           dataFileFooter.setColumnInTable(columnSchemaList);
           dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
@@ -230,8 +228,6 @@ public abstract class AbstractDataFileFooterConverter {
     ColumnarFormatVersion version =
         ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion());
     tableBlockInfo.setVersion(version);
-    int blockletSize = getBlockletSize(readBlockIndexInfo);
-    tableBlockInfo.getBlockletInfos().setNoOfBlockLets(blockletSize);
     String fileName = readBlockIndexInfo.file_name;
     // Take only name of file.
     if (fileName.lastIndexOf("/") > 0) {
@@ -243,27 +239,6 @@ public abstract class AbstractDataFileFooterConverter {
       tableBlockInfo.setFileSize(readBlockIndexInfo.getFile_size());
     }
     return tableBlockInfo;
-  }
-
-  /**
-   * the methods returns the number of blocklets in a block
-   *
-   * @param readBlockIndexInfo
-   * @return
-   */
-  protected int getBlockletSize(BlockIndex readBlockIndexInfo) {
-    long num_rows = readBlockIndexInfo.getNum_rows();
-    int blockletSize = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
-    int remainder = (int) (num_rows % blockletSize);
-    int noOfBlockLet = (int) (num_rows / blockletSize);
-    // there could be some blocklets which will not
-    // contain the total records equal to the blockletSize
-    if (remainder > 0) {
-      noOfBlockLet = noOfBlockLet + 1;
-    }
-    return noOfBlockLet;
   }
 
   /**

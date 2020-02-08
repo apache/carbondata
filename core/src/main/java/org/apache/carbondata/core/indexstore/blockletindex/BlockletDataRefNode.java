@@ -152,7 +152,6 @@ public class BlockletDataRefNode implements DataRefNode {
     MeasureColumnChunkReader measureColumnChunkReader = getMeasureColumnChunkReader(fileReader);
     MeasureRawColumnChunk[] measureRawColumnChunks =
         measureColumnChunkReader.readRawMeasureChunks(fileReader, columnIndexRange);
-    updateMeasureRawColumnChunkMinMaxValues(measureRawColumnChunks);
     return measureRawColumnChunks;
   }
 
@@ -162,37 +161,7 @@ public class BlockletDataRefNode implements DataRefNode {
     MeasureColumnChunkReader measureColumnChunkReader = getMeasureColumnChunkReader(fileReader);
     MeasureRawColumnChunk measureRawColumnChunk =
         measureColumnChunkReader.readRawMeasureChunk(fileReader, columnIndex);
-    updateMeasureRawColumnChunkMinMaxValues(measureRawColumnChunk);
     return measureRawColumnChunk;
-  }
-
-  /**
-   * This method is written specifically for old store wherein the measure min and max values
-   * are written opposite (i.e min in place of max and amx in place of min). Due to this computing
-   * f measure filter with current code is impacted. In order to sync with current min and
-   * max values only in case old store and measures is reversed
-   *
-   * @param measureRawColumnChunk
-   */
-  private void updateMeasureRawColumnChunkMinMaxValues(
-      MeasureRawColumnChunk measureRawColumnChunk) {
-    if (blockInfos.get(index).isDataBlockFromOldStore()) {
-      byte[][] maxValues = measureRawColumnChunk.getMaxValues();
-      byte[][] minValues = measureRawColumnChunk.getMinValues();
-      measureRawColumnChunk.setMaxValues(minValues);
-      measureRawColumnChunk.setMinValues(maxValues);
-    }
-  }
-
-  private void updateMeasureRawColumnChunkMinMaxValues(
-      MeasureRawColumnChunk[] measureRawColumnChunks) {
-    if (blockInfos.get(index).isDataBlockFromOldStore()) {
-      for (int i = 0; i < measureRawColumnChunks.length; i++) {
-        if (null != measureRawColumnChunks[i]) {
-          updateMeasureRawColumnChunkMinMaxValues(measureRawColumnChunks[i]);
-        }
-      }
-    }
   }
 
   private DimensionColumnChunkReader getDimensionColumnChunkReader(FileReader fileReader) {
