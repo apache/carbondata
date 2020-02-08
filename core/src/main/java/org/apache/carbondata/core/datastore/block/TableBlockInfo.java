@@ -94,12 +94,6 @@ public class TableBlockInfo implements Distributable, Serializable {
   private BlockletInfos blockletInfos = new BlockletInfos();
 
   /**
-   * map of block location and storage id
-   */
-  private Map<String, String> blockStorageIdMap =
-      new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
-  /**
    * delete delta files path for this block
    */
   private String[] deletedDeltaFilePath;
@@ -196,7 +190,6 @@ public class TableBlockInfo implements Distributable, Serializable {
       String[] deletedDeltaFilePath) {
     this(filePath, blockletId, blockOffset, segmentId, locations, blockLength, blockletInfos,
         version, deletedDeltaFilePath);
-    this.blockStorageIdMap = blockStorageIdMap;
   }
 
   /**
@@ -213,7 +206,6 @@ public class TableBlockInfo implements Distributable, Serializable {
     info.version = version;
     info.isDataBlockFromOldStore = isDataBlockFromOldStore;
     info.blockletInfos = blockletInfos;
-    info.blockStorageIdMap = blockStorageIdMap;
     info.deletedDeltaFilePath = deletedDeltaFilePath;
     info.detailInfo = detailInfo.copy();
     info.dataMapWriterPath = dataMapWriterPath;
@@ -304,9 +296,6 @@ public class TableBlockInfo implements Distributable, Serializable {
       return false;
     }
 
-    if (blockletInfos.getStartBlockletNumber() != other.blockletInfos.getStartBlockletNumber()) {
-      return false;
-    }
     return true;
   }
 
@@ -364,16 +353,6 @@ public class TableBlockInfo implements Distributable, Serializable {
         > ((TableBlockInfo) other).blockOffset + ((TableBlockInfo) other).blockLength) {
       return 1;
     }
-    //compare the startBlockLetNumber
-    int diffStartBlockLetNumber =
-        blockletInfos.getStartBlockletNumber() - ((TableBlockInfo) other).blockletInfos
-            .getStartBlockletNumber();
-    if (diffStartBlockLetNumber < 0) {
-      return -1;
-    }
-    if (diffStartBlockLetNumber > 0) {
-      return 1;
-    }
     return 0;
   }
 
@@ -383,7 +362,7 @@ public class TableBlockInfo implements Distributable, Serializable {
     result = 31 * result + (int) (blockOffset ^ (blockOffset >>> 32));
     result = 31 * result + (int) (blockLength ^ (blockLength >>> 32));
     result = 31 * result + segment.hashCode();
-    result = 31 * result + blockletInfos.getStartBlockletNumber();
+    result = 31 * result;
     return result;
   }
 
@@ -401,39 +380,12 @@ public class TableBlockInfo implements Distributable, Serializable {
     return blockletInfos;
   }
 
-  /**
-   * set the blocklestinfos
-   *
-   * @param blockletInfos
-   */
-  public void setBlockletInfos(BlockletInfos blockletInfos) {
-    this.blockletInfos = blockletInfos;
-  }
-
   public ColumnarFormatVersion getVersion() {
     return version;
   }
 
   public void setVersion(ColumnarFormatVersion version) {
     this.version = version;
-  }
-
-  /**
-   * returns the storage location vs storage id map
-   *
-   * @return
-   */
-  public Map<String, String> getBlockStorageIdMap() {
-    return this.blockStorageIdMap;
-  }
-
-  /**
-   * method to storage location vs storage id map
-   *
-   * @param blockStorageIdMap
-   */
-  public void setBlockStorageIdMap(Map<String, String> blockStorageIdMap) {
-    this.blockStorageIdMap = blockStorageIdMap;
   }
 
   public String[] getDeletedDeltaFilePath() {
@@ -470,10 +422,6 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   public boolean isDataBlockFromOldStore() {
     return isDataBlockFromOldStore;
-  }
-
-  public void setDataBlockFromOldStore(boolean dataBlockFromOldStore) {
-    isDataBlockFromOldStore = dataBlockFromOldStore;
   }
 
   public String getDataMapWriterPath() {

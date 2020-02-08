@@ -374,9 +374,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       BlockletDataRefNode dataRefNode =
           (BlockletDataRefNode) abstractIndex.getDataRefNode();
       final BlockExecutionInfo blockExecutionInfoForBlock =
-          getBlockExecutionInfoForBlock(queryModel, abstractIndex,
-              dataRefNode.getBlockInfos().get(0).getBlockletInfos().getStartBlockletNumber(),
-              dataRefNode.numberOfNodes(), dataRefNode.getBlockInfos().get(0).getFilePath(),
+          getBlockExecutionInfoForBlock(
+              queryModel,
+              abstractIndex,
+              dataRefNode.numberOfNodes(),
+              dataRefNode.getBlockInfos().get(0).getFilePath(),
               dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath(),
               dataRefNode.getBlockInfos().get(0).getSegment());
       if (null == dimensionReusableDataBuffers || null == measureReusableDataBuffers) {
@@ -412,7 +414,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @return block execution info
    */
   private BlockExecutionInfo getBlockExecutionInfoForBlock(QueryModel queryModel,
-      AbstractIndex blockIndex, int startBlockletIndex, int numberOfBlockletToScan, String filePath,
+      AbstractIndex blockIndex, int numberOfBlockletToScan, String filePath,
       String[] deleteDeltaFiles, Segment segment) {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
@@ -437,10 +439,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       blockExecutionInfo.setBlockId(CarbonTablePath.getShortBlockId(blockId));
     }
     blockExecutionInfo.setDeleteDeltaFilePath(deleteDeltaFiles);
-    blockExecutionInfo.setStartBlockletIndex(startBlockletIndex);
+    blockExecutionInfo.setStartBlockletIndex(0);
     blockExecutionInfo.setNumberOfBlockletToScan(numberOfBlockletToScan);
     blockExecutionInfo.setProjectionDimensions(projectDimensions
-        .toArray(new ProjectionDimension[projectDimensions.size()]));
+        .toArray(new ProjectionDimension[0]));
     // get measures present in the current block
     List<ProjectionMeasure> projectionMeasures = RestructureUtil
         .createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo,

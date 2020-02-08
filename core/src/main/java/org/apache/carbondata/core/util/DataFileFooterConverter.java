@@ -111,24 +111,6 @@ public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
   private BlockletInfo getBlockletInfo(
       org.apache.carbondata.format.BlockletInfo blockletInfoThrift) {
     BlockletInfo blockletInfo = new BlockletInfo();
-    List<DataChunk> dimensionColumnChunk = new ArrayList<DataChunk>();
-    List<DataChunk> measureChunk = new ArrayList<DataChunk>();
-    Iterator<org.apache.carbondata.format.DataChunk> column_data_chunksIterator =
-        blockletInfoThrift.getColumn_data_chunksIterator();
-    if (null != column_data_chunksIterator) {
-      while (column_data_chunksIterator.hasNext()) {
-        org.apache.carbondata.format.DataChunk next = column_data_chunksIterator.next();
-        if (next.isRowMajor()) {
-          dimensionColumnChunk.add(getDataChunk(next, false));
-        } else if (next.getEncoders().contains(org.apache.carbondata.format.Encoding.DELTA)) {
-          measureChunk.add(getDataChunk(next, true));
-        } else {
-          dimensionColumnChunk.add(getDataChunk(next, false));
-        }
-      }
-    }
-    blockletInfo.setDimensionColumnChunk(dimensionColumnChunk);
-    blockletInfo.setMeasureColumnChunk(measureChunk);
     blockletInfo.setNumberOfRows(blockletInfoThrift.getNum_rows());
     return blockletInfo;
   }
