@@ -44,13 +44,12 @@ public class CarbonDimension extends CarbonColumn {
    */
   private CarbonDimension complexParentDimension = null;
 
-  public CarbonDimension(ColumnSchema columnSchema, int ordinal, int keyOrdinal,
-          int complexTypeOrdinal) {
-       this(columnSchema, ordinal, 0, keyOrdinal, complexTypeOrdinal);
+  public CarbonDimension(ColumnSchema columnSchema, int ordinal, int keyOrdinal) {
+       this(columnSchema, ordinal, keyOrdinal, 0);
   }
 
-  public CarbonDimension(ColumnSchema columnSchema, int ordinal, int schemaOrdinal, int keyOrdinal,
-      int complexTypeOrdinal) {
+  public CarbonDimension(ColumnSchema columnSchema, int ordinal, int keyOrdinal,
+      int schemaOrdinal) {
     super(columnSchema, ordinal, schemaOrdinal);
     this.keyOrdinal = keyOrdinal;
   }

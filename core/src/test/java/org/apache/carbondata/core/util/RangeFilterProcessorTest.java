@@ -17,13 +17,10 @@
 
 package org.apache.carbondata.core.util;
 
-import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -43,11 +40,7 @@ import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
 import mockit.Deencapsulation;
-import mockit.Mock;
 import mockit.MockUp;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -98,7 +91,7 @@ public class RangeFilterProcessorTest {
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
     empColumnSchema.setDataType(DataTypes.STRING);
-    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0);
+    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0);
     cola.setDimension(empDimension);
 
     Expression greaterThan =
@@ -139,7 +132,7 @@ public class RangeFilterProcessorTest {
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
     empColumnSchema.setDataType(DataTypes.STRING);
-    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0);
+    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0);
     cola.setDimension(empDimension);
 
     Expression greaterThan =
@@ -178,7 +171,7 @@ public class RangeFilterProcessorTest {
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
     empColumnSchema.setDataType(DataTypes.STRING);
-    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0);
+    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0);
 
     ColumnExpression cola1 = new ColumnExpression("a", DataTypes.STRING);
     cola1.setDimension(true);
@@ -253,7 +246,7 @@ public class RangeFilterProcessorTest {
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
     empColumnSchema.setDataType(DataTypes.STRING);
-    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0);
+    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0);
 
     ColumnExpression cola1 = new ColumnExpression("a", DataTypes.STRING);
     cola1.setDimension(true);

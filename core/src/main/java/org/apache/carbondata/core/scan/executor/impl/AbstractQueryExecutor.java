@@ -286,8 +286,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       if (index > -1) {
         if (columnsInTable.get(index).isDimensionColumn()) {
           ProjectionDimension dimension = new ProjectionDimension(
-              new CarbonDimension(columnsInTable.get(index), measure.getMeasure().getOrdinal(),
-                  measure.getMeasure().getSchemaOrdinal(), -1, -1));
+              new CarbonDimension(columnsInTable.get(index), measure.getMeasure().getOrdinal(), -1,
+                  measure.getMeasure().getSchemaOrdinal()));
           dimension.setOrdinal(measure.getOrdinal());
           updatedDims.add(dimension);
         } else {
