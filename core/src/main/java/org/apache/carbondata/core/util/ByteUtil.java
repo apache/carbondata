@@ -762,6 +762,14 @@ public final class ByteUtil {
     return ByteUtil.toBytes(date);
   }
 
+  public static byte[] convertDateToBytes(long[] date) {
+    byte[] output = new byte[date.length * 4];
+    for (int i = 0; i < date.length; i++) {
+      System.arraycopy(ByteUtil.toBytes(date[i]), 0, output, i * 4, 4);
+    }
+    return output;
+  }
+
   public static int convertBytesToDate(byte[] date) {
     return ByteUtil.toInt(date, 0);
   }

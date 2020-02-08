@@ -21,12 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
-import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
@@ -34,99 +30,16 @@ import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
-import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
-
-import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * It is not a collector it is just a scanned result holder.
  */
 public class RestructureBasedRawResultCollector extends RawBasedResultCollector {
 
-  /**
-   * Key generator which will form the mdKey according to latest schema
-   */
-  private KeyGenerator restructuredKeyGenerator;
-
-  /**
-   * Key generator for uncompressing current block values
-   */
-  private KeyGenerator updatedCurrentBlockKeyGenerator;
-
   public RestructureBasedRawResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
-    initRestructuredKeyGenerator();
-    initCurrentBlockKeyGenerator();
-  }
-
-  /**
-   * This method will create a new key generator for generating mdKey according to latest schema
-   */
-  private void initRestructuredKeyGenerator() {
-    SegmentProperties segmentProperties =
-        executionInfo.getDataBlock().getSegmentProperties();
-    ProjectionDimension[] queryDimensions = executionInfo.getActualQueryDimensions();
-    List<Integer> updatedColumnCardinality = new ArrayList<>(queryDimensions.length);
-    List<Integer> updatedDimensionPartitioner = new ArrayList<>(queryDimensions.length);
-    int[] dictionaryColumnBlockIndex = executionInfo.getDictionaryColumnChunkIndex();
-    int dimCounterInCurrentBlock = 0;
-    for (int i = 0; i < queryDimensions.length; i++) {
-      if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
-        if (executionInfo.getDimensionInfo().getDimensionExists()[i]) {
-          // get the dictionary key ordinal as column cardinality in segment properties
-          // will only be for dictionary encoded columns
-          CarbonDimension currentBlockDimension = segmentProperties.getDimensions()
-              .get(dictionaryColumnBlockIndex[dimCounterInCurrentBlock]);
-          updatedColumnCardinality.add(
-              segmentProperties.createColumnValueLength()[currentBlockDimension.getKeyOrdinal()]);
-          updatedDimensionPartitioner.add(
-              segmentProperties.createColumnValueLength()[currentBlockDimension.getKeyOrdinal()]);
-          dimCounterInCurrentBlock++;
-        } else {
-          // partitioner index will be 1 every column will be in columnar format
-          updatedDimensionPartitioner.add(1);
-          // for direct dictionary 4 bytes need to be allocated
-          updatedColumnCardinality.add(Integer.MAX_VALUE);
-        }
-      }
-    }
-    if (!updatedColumnCardinality.isEmpty()) {
-      int[] latestColumnCardinality = ArrayUtils.toPrimitive(
-          updatedColumnCardinality.toArray(new Integer[0]));
-      int[] latestColumnPartitioner = ArrayUtils.toPrimitive(
-          updatedDimensionPartitioner.toArray(new Integer[0]));
-      int[] dimensionBitLength =
-          CarbonUtil.getDimensionBitLength(latestColumnCardinality, latestColumnPartitioner);
-      restructuredKeyGenerator = new MultiDimKeyVarLengthGenerator(dimensionBitLength);
-    }
-  }
-
-  /**
-   * This method will initialize the block key generator for the current block based on the
-   * dictionary columns present in the current block
-   */
-  private void initCurrentBlockKeyGenerator() {
-    SegmentProperties segmentProperties =
-        executionInfo.getDataBlock().getSegmentProperties();
-    int[] dictionaryColumnBlockIndex = executionInfo.getDictionaryColumnChunkIndex();
-    int[] updatedColumnCardinality = new int[dictionaryColumnBlockIndex.length];
-    int[] updatedDimensionPartitioner = new int[dictionaryColumnBlockIndex.length];
-    for (int i = 0; i < dictionaryColumnBlockIndex.length; i++) {
-      // get the dictionary key ordinal as column cardinality in segment properties
-      // will only be for dictionary encoded columns
-      CarbonDimension currentBlockDimension =
-          segmentProperties.getDimensions().get(dictionaryColumnBlockIndex[i]);
-      updatedColumnCardinality[i] =
-          segmentProperties.createColumnValueLength()[currentBlockDimension.getKeyOrdinal()];
-      updatedDimensionPartitioner[i] =
-          segmentProperties.createColumnValueLength()[currentBlockDimension.getKeyOrdinal()];
-    }
-    if (dictionaryColumnBlockIndex.length > 0) {
-      int[] dimensionBitLength =
-          CarbonUtil.getDimensionBitLength(updatedColumnCardinality, updatedDimensionPartitioner);
-      updatedCurrentBlockKeyGenerator = new MultiDimKeyVarLengthGenerator(dimensionBitLength);
-    }
   }
 
   /**
@@ -167,8 +80,8 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
       ProjectionDimension[] actualQueryDimensions = executionInfo.getActualQueryDimensions();
       int newKeyArrayLength = dimensionInfo.getNewDictionaryColumnCount();
       long[] keyArray = null;
-      if (null != updatedCurrentBlockKeyGenerator) {
-        keyArray = updatedCurrentBlockKeyGenerator.getKeyArray(dictKeyArray);
+      if (executionInfo.getDataBlock().getSegmentProperties().getNumberOfDictDimensions() > 0) {
+        keyArray = ByteUtil.convertBytesToDateLongArray(dictKeyArray);
         newKeyArrayLength += keyArray.length;
       }
       long[] keyArrayWithNewAddedColumns = new long[newKeyArrayLength];
@@ -192,7 +105,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
           }
         }
       }
-      dictKeyArray = restructuredKeyGenerator.generateKey(keyArrayWithNewAddedColumns);
+      dictKeyArray = ByteUtil.convertDateToBytes(keyArrayWithNewAddedColumns);
       byteArrayWrapper.setDictionaryKey(dictKeyArray);
     }
   }

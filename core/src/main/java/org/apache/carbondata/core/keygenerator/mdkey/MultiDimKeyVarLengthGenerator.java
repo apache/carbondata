@@ -36,21 +36,9 @@ public class MultiDimKeyVarLengthGenerator extends AbstractKeyGenerator {
   }
 
   @Override
-  public byte[] generateKey(long[] keys) {
-
-    return bits.getBytes(keys);
-  }
-
-  @Override
   public byte[] generateKey(int[] keys) {
 
     return bits.getBytes(keys);
-  }
-
-  @Override
-  public long[] getKeyArray(byte[] key) {
-
-    return bits.getKeyArray(key, 0);
   }
 
   @Override
