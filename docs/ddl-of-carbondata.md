@@ -104,8 +104,8 @@ CarbonData DDL statements are documented here,which includes:
 | [CACHE_LEVEL](#caching-at-block-or-blocklet-level)           | Column metadata caching level. Whether to cache column metadata of block or blocklet |
 | [FLAT_FOLDER](#support-flat-folder-same-as-hiveparquet)      | Whether to write all the carbondata files in a single folder.Not writing segments folder during incremental load |
 | [LONG_STRING_COLUMNS](#string-longer-than-32000-characters)  | Columns which are greater than 32K characters                |
-| [BUCKETNUMBER](#bucketing)                                   | Number of buckets to be created                              |
-| [BUCKETCOLUMNS](#bucketing)                                  | Columns which are to be placed in buckets                    |
+| [BUCKET_NUMBER](#bucketing)                                   | Number of buckets to be created                              |
+| [BUCKET_COLUMNS](#bucketing)                                  | Columns which are to be placed in buckets                    |
 | [LOAD_MIN_SIZE_INMB](#load-minimum-data-size)                | Minimum input data size per node for data loading          |
 | [Range Column](#range-column)                                | partition input data by range                              |
 
@@ -991,8 +991,8 @@ Users can specify which columns to include and exclude for local dictionary gene
   CREATE TABLE [IF NOT EXISTS] [db_name.]table_name
                     [(col_name data_type, ...)]
   STORED AS carbondata
-  TBLPROPERTIES('BUCKETNUMBER'='noOfBuckets',
-  'BUCKETCOLUMNS'='columnname')
+  TBLPROPERTIES('BUCKET_NUMBER'='noOfBuckets',
+  'BUCKET_COLUMNS'='columnname')
   ```
 
   **NOTE:**
@@ -1011,7 +1011,7 @@ Users can specify which columns to include and exclude for local dictionary gene
     productBatch STRING,
     revenue INT)
   STORED AS carbondata
-  TBLPROPERTIES ('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='productName')
+  TBLPROPERTIES ('BUCKET_NUMBER'='4', 'BUCKET_COLUMNS'='productName')
   ```
 
 ## CACHE

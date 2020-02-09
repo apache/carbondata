@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.processing.loading.partition.impl;
 
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -27,7 +28,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.processing.loading.partition.Partitioner;
 
 /**
- * Hash partitioner implementation
+ * Hash partitioner implementation, not consistent with spark.
  */
 @InterfaceAudience.Internal
 public class HashPartitionerImpl implements Partitioner<CarbonRow> {
@@ -102,7 +103,12 @@ public class HashPartitionerImpl implements Partitioner<CarbonRow> {
 
     @Override
     public int getHash(Object[] value) {
-      return value[index] != null ? value[index].hashCode() : 0;
+      try {
+        String valueStr = new String((byte[]) value[index], "utf-8");
+        return value[index] != null ? valueStr.hashCode() : 0;
+      } catch (UnsupportedEncodingException e) {
+        return 0;
+      }
     }
   }
 }

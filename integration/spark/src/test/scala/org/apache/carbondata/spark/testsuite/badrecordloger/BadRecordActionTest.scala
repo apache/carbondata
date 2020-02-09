@@ -233,10 +233,10 @@ class BadRecordActionTest extends QueryTest {
         " the detail reason"))
   }
 
-  test("test bad record with IGNORE option and sort scope as NO_SORT for bucketed table") {
+  test("test bad record with IGNORE option for bucketed table") {
     sql("drop table if exists sales_bucket")
     sql("CREATE TABLE IF NOT EXISTS sales_bucket(ID BigInt, date Timestamp, country String," +
-          "actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata TBLPROPERTIES ('BUCKETNUMBER'='2', 'BUCKETCOLUMNS'='country','sort_scope'='NO_SORT')")
+          "actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata TBLPROPERTIES ('BUCKET_NUMBER'='2', 'BUCKET_COLUMNS'='country')")
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales_bucket OPTIONS" +
         "('bad_records_action'='IGNORE', 'DELIMITER'=" +
         " ',', 'QUOTECHAR'= '\"','timestampformat'='yyyy/MM/dd')")
@@ -244,10 +244,10 @@ class BadRecordActionTest extends QueryTest {
       Seq(Row(2)))
   }
 
-  test("test bad record with REDIRECT option and sort scope as NO_SORT for bucketed table") {
+  test("test bad record with REDIRECT option for bucketed table") {
     sql("drop table if exists sales_bucket")
     sql("CREATE TABLE IF NOT EXISTS sales_bucket(ID BigInt, date Timestamp, country String," +
-        "actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata TBLPROPERTIES ('BUCKETNUMBER'='2', 'BUCKETCOLUMNS'='country', 'sort_scope'='NO_SORT')")
+        "actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED AS carbondata TBLPROPERTIES ('BUCKET_NUMBER'='2', 'BUCKET_COLUMNS'='country')")
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales_bucket OPTIONS" +
         "('bad_records_action'='REDIRECT', 'DELIMITER'=" +
         " ',', 'QUOTECHAR'= '\"', 'BAD_RECORD_PATH'='" + { badRecordFilePath.getCanonicalPath } +

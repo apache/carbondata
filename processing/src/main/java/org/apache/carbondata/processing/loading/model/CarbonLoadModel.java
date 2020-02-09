@@ -219,6 +219,11 @@ public class CarbonLoadModel implements Serializable {
    */
   private int scaleFactor;
 
+  /**
+   * bucket id
+   */
+  private int bucketId;
+
   private OutputFilesInfoHolder outputFilesInfoHolder;
 
   public boolean isAggLoadRequest() {
@@ -351,6 +356,14 @@ public class CarbonLoadModel implements Serializable {
 
   public void setLoadMinSize(String loadMinSize) {
     this.loadMinSize = loadMinSize;
+  }
+
+  public int getBucketId() {
+    return bucketId;
+  }
+
+  public void setBucketId(int bucketId) {
+    this.bucketId = bucketId;
   }
 
   /**

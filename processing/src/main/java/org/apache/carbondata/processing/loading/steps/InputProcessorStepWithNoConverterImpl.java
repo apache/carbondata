@@ -20,6 +20,7 @@ package org.apache.carbondata.processing.loading.steps;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -27,11 +28,14 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.BucketingInfo;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
@@ -45,6 +49,9 @@ import org.apache.carbondata.processing.loading.converter.impl.FieldEncoderFacto
 import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl;
 import org.apache.carbondata.processing.loading.exception.BadRecordFoundException;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
+import org.apache.carbondata.processing.loading.partition.Partitioner;
+import org.apache.carbondata.processing.loading.partition.impl.HashPartitionerImpl;
+import org.apache.carbondata.processing.loading.partition.impl.SparkHashExpressionPartitionerImpl;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
@@ -70,6 +77,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
   // set to true when there is no need to reArrange the data
   private boolean withoutReArrange;
+  private boolean isBucketColumnEnabled = false;
+  private Partitioner<CarbonRow> partitioner;
 
   public InputProcessorStepWithNoConverterImpl(CarbonDataLoadConfiguration configuration,
       CarbonIterator<Object[]>[] inputIterators, boolean withoutReArrange) {
@@ -109,6 +118,50 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     if (!withoutReArrange) {
       orderOfData = arrangeData(configuration.getDataFields(), configuration.getHeader());
     }
+    if (null != configuration.getBucketingInfo()) {
+      this.isBucketColumnEnabled = true;
+      initializeBucketColumnPartitioner();
+    }
+  }
+
+  /**
+   * initialize partitioner for bucket column
+   */
+  private void initializeBucketColumnPartitioner() {
+    List<Integer> indexes = new ArrayList<>();
+    List<ColumnSchema> columnSchemas = new ArrayList<>();
+    DataField[] inputDataFields = getOutput();
+    BucketingInfo bucketingInfo = configuration.getBucketingInfo();
+    for (int i = 0; i < inputDataFields.length; i++) {
+      for (int j = 0; j < bucketingInfo.getListOfColumns().size(); j++) {
+        if (inputDataFields[i].getColumn().getColName()
+                .equals(bucketingInfo.getListOfColumns().get(j).getColumnName())) {
+          indexes.add(i);
+          columnSchemas.add(inputDataFields[i].getColumn().getColumnSchema());
+          break;
+        }
+      }
+    }
+
+    // hash partitioner to dispatch rows by bucket column
+    if (CarbonCommonConstants.BUCKET_HASH_METHOD_DEFAULT.equals(
+            configuration.getBucketHashMethod())) {
+      // keep consistent with both carbon and spark tables.
+      this.partitioner = new SparkHashExpressionPartitionerImpl(
+              indexes, columnSchemas, bucketingInfo.getNumOfRanges());
+    } else if (CarbonCommonConstants.BUCKET_HASH_METHOD_NATIVE.equals(
+            configuration.getBucketHashMethod())) {
+      // native does not keep consistent with spark, it just use java hash method directly such as
+      // Long, String, etc. May have better performance during convert process.
+      // But, do not use it when the table need to join with spark bucket tables!
+      this.partitioner = new HashPartitionerImpl(
+              indexes, columnSchemas, bucketingInfo.getNumOfRanges());
+    } else {
+      // by default we use SparkHashExpressionPartitionerImpl hash.
+      this.partitioner = new SparkHashExpressionPartitionerImpl(
+              indexes, columnSchemas, bucketingInfo.getNumOfRanges());
+    }
+
   }
 
   private void convertComplexDataType(Map<Integer, GenericDataType> dataFieldsWithComplexDataType) {
@@ -148,7 +201,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       outIterators[i] =
           new InputProcessorIterator(readerIterators[i], batchSize,
               rowCounter, orderOfData, noDictionaryMapping, dataTypes, configuration,
-              dataFieldsWithComplexDataType, rowConverter, withoutReArrange);
+              dataFieldsWithComplexDataType, rowConverter, withoutReArrange, isBucketColumnEnabled,
+                  partitioner);
     }
     return outIterators;
   }
@@ -208,14 +262,15 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     RowConverter converter;
     CarbonDataLoadConfiguration configuration;
-
+    private boolean isBucketColumnEnabled = false;
+    private Partitioner<CarbonRow> partitioner;
     private boolean withoutReArrange;
 
     public InputProcessorIterator(List<CarbonIterator<Object[]>> inputIterators, int batchSize,
         AtomicLong rowCounter, int[] orderOfData, boolean[] noDictionaryMapping,
         DataType[] dataTypes, CarbonDataLoadConfiguration configuration,
         Map<Integer, GenericDataType> dataFieldsWithComplexDataType, RowConverter converter,
-        boolean withoutReArrange) {
+        boolean withoutReArrange, boolean bucketColumnEnabled, Partitioner<CarbonRow> partitioner) {
       this.inputIterators = inputIterators;
       this.batchSize = batchSize;
       this.counter = 0;
@@ -234,6 +289,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       this.configuration = configuration;
       this.converter = converter;
       this.withoutReArrange = withoutReArrange;
+      this.isBucketColumnEnabled = bucketColumnEnabled;
+      this.partitioner = partitioner;
     }
 
     @Override
@@ -278,6 +335,10 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
           if (configuration.isIndexColumnsPresent()) {
             carbonRow = converter.convert(carbonRow);
           }
+          if (isBucketColumnEnabled) {
+            short rangeNumber = (short) partitioner.getPartition(carbonRow);
+            carbonRow.setRangeId(rangeNumber);
+          }
           carbonRowBatch.addRow(carbonRow);
           count++;
         }
@@ -287,6 +348,10 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
               convertToNoDictionaryToBytesWithoutReArrange(currentIterator.next(), dataFields));
           if (configuration.isIndexColumnsPresent()) {
             carbonRow = converter.convert(carbonRow);
+          }
+          if (isBucketColumnEnabled) {
+            short rangeNumber = (short) partitioner.getPartition(carbonRow);
+            carbonRow.setRangeId(rangeNumber);
           }
           carbonRowBatch.addRow(carbonRow);
           count++;

@@ -717,6 +717,20 @@ public class CarbonTable implements Serializable, Writable {
     }
   }
 
+  public String getBucketHashMethod() {
+    String configuredMethod = tableInfo.getFactTable().getTableProperties()
+        .get(CarbonCommonConstants.BUCKET_HASH_METHOD);
+    if (configuredMethod == null) {
+      return CarbonCommonConstants.BUCKET_HASH_METHOD_DEFAULT;
+    } else {
+      if (CarbonCommonConstants.BUCKET_HASH_METHOD_NATIVE.equals(configuredMethod)) {
+        return CarbonCommonConstants.BUCKET_HASH_METHOD_NATIVE;
+      }
+      // by default we use spark_hash_expression hash method
+      return CarbonCommonConstants.BUCKET_HASH_METHOD_DEFAULT;
+    }
+  }
+
   /**
    * to get the normal dimension or the primitive dimension of the complex type
    *

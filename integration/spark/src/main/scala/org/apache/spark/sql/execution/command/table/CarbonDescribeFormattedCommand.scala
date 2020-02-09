@@ -242,6 +242,21 @@ private[sql] case class CarbonDescribeFormattedCommand(
     }
 
     //////////////////////////////////////////////////////////////////////////////
+    // Bucket Information
+    //////////////////////////////////////////////////////////////////////////////
+    val bucketInfo = carbonTable.getBucketingInfo()
+    if (bucketInfo != null) {
+      results ++= Seq(
+        ("", "", ""),
+        ("## Bucket Information", "", ""),
+        ("Bucket Columns",
+          bucketInfo.getListOfColumns.asScala.map {
+            col => s"${col.getColumnName}:${col.getDataType.getName}"}.mkString(", "), ""),
+        ("Number of Buckets", bucketInfo.getNumOfRanges.toString, "")
+      )
+    }
+
+    //////////////////////////////////////////////////////////////////////////////
     // Dynamic Information
     //////////////////////////////////////////////////////////////////////////////
 

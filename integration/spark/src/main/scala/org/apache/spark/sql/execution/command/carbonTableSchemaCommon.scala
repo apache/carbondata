@@ -806,16 +806,14 @@ class TableNewProcessor(cm: TableModel) {
         val col = allColumns.find(_.getColumnName.equalsIgnoreCase(b))
         col match {
           case Some(colSchema: ColumnSchema) =>
-            if (colSchema.isDimensionColumn && !colSchema.getDataType.isComplexType) {
+            if (!colSchema.getDataType.isComplexType &&
+              !DataTypes.isDecimal(colSchema.getDataType)) {
               colSchema
             } else {
-              LOGGER.error(s"Bucket field must be dimension column and " +
-                           s"should not be measure or complex column: ${ colSchema.getColumnName }")
-              CarbonException.analysisException(s"Bucket field must be dimension column and " +
-                                                s"should not be measure or complex column: ${
-                                                  colSchema
-                                                    .getColumnName
-                                                }")
+              LOGGER.error(s"Bucket field should not be complex column or decimal" +
+                s"data type: ${colSchema.getColumnName}")
+              CarbonException.analysisException(s"Bucket field should not be complex column or" +
+                s" decimal data type: ${colSchema.getColumnName}")
             }
           case _ =>
             LOGGER.error(s"Bucket field is not present in table columns")

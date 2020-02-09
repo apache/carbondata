@@ -47,6 +47,8 @@ public class CarbonDataLoadConfiguration {
 
   private BucketingInfo bucketingInfo;
 
+  private String bucketHashMethod;
+
   private String segmentPath;
 
   private Map<String, Object> dataLoadProperties = new HashMap<>();
@@ -363,5 +365,13 @@ public class CarbonDataLoadConfiguration {
 
   public void setIndexColumnsPresent(boolean indexColumnsPresent) {
     isIndexColumnsPresent = indexColumnsPresent;
+  }
+
+  public String getBucketHashMethod() {
+    return bucketHashMethod;
+  }
+
+  public void setBucketHashMethod(String bucketHashMethod) {
+    this.bucketHashMethod = bucketHashMethod;
   }
 }

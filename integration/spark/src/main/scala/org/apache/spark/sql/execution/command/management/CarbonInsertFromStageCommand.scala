@@ -47,6 +47,7 @@ import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
+import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
 
 /**
  * Collect stage input files and trigger a loading into carbon table.
@@ -269,13 +270,17 @@ case class CarbonInsertFromStageCommand(
                   s"${table.getDatabaseName}.${table.getTableName}")
       val start = System.currentTimeMillis()
       val dataFrame = DataLoadProcessBuilderOnSpark.createInputDataFrame(spark, table, splits)
-      DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
-        spark,
-        Option(dataFrame),
-        loadModel,
-        SparkSQLUtil.sessionState(spark).newHadoopConf()
-      ).map { row =>
-        (row._1, FailureCauses.NONE == row._2._2.failureCauses)
+      if (table.getBucketingInfo == null) {
+        DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
+          spark,
+          Option(dataFrame),
+          loadModel,
+          SparkSQLUtil.sessionState(spark).newHadoopConf()
+        ).map { row =>
+          (row._1, FailureCauses.NONE == row._2._2.failureCauses)
+        }
+      } else {
+        CarbonDataRDDFactory.loadDataFrame(spark.sqlContext, Option(dataFrame), None, loadModel)
       }
       LOGGER.info(s"finish data loading, time taken ${System.currentTimeMillis() - start}ms")
 

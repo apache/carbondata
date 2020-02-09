@@ -535,7 +535,7 @@ public class CarbonFactDataHandlerModel {
     return bucketId;
   }
 
-  public void setBucketId(Integer bucketId) {
+  public void setBucketId(int bucketId) {
     this.bucketId = bucketId;
   }
 

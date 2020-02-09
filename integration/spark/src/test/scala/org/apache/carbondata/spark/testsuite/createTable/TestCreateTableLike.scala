@@ -169,7 +169,7 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
         | CREATE TABLE IF NOT EXISTS bkt_tbl (
         |   a int, b string
         | ) STORED AS carbondata
-        | TBLPROPERTIES ('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='b')
+        | TBLPROPERTIES ('BUCKET_NUMBER'='4', 'BUCKET_COLUMNS'='b')
         | """.stripMargin)
 
     sql("create table targetTable like bkt_tbl")

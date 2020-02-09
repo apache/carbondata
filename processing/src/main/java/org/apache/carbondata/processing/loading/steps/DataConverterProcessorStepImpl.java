@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.SortColumnRangeInfo;
@@ -42,6 +43,7 @@ import org.apache.carbondata.processing.loading.partition.Partitioner;
 import org.apache.carbondata.processing.loading.partition.impl.HashPartitionerImpl;
 import org.apache.carbondata.processing.loading.partition.impl.RangePartitionerImpl;
 import org.apache.carbondata.processing.loading.partition.impl.RawRowComparator;
+import org.apache.carbondata.processing.loading.partition.impl.SparkHashExpressionPartitionerImpl;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
 import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
@@ -105,8 +107,24 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     }
 
     // hash partitioner to dispatch rows by bucket column
-    this.partitioner =
-        new HashPartitionerImpl(indexes, columnSchemas, bucketingInfo.getNumOfRanges());
+    if (CarbonCommonConstants.BUCKET_HASH_METHOD_DEFAULT.equals(
+        configuration.getBucketHashMethod())) {
+      // keep consistent with both carbon and spark tables.
+      this.partitioner = new SparkHashExpressionPartitionerImpl(
+              indexes, columnSchemas, bucketingInfo.getNumOfRanges());
+    } else if (CarbonCommonConstants.BUCKET_HASH_METHOD_NATIVE.equals(
+        configuration.getBucketHashMethod())) {
+      // native does not keep consistent with spark, it just use java hash method directly such as
+      // Long, String, etc. May have better performance during convert process.
+      // But, do not use it when the table need to join with spark bucket tables!
+      this.partitioner = new HashPartitionerImpl(
+              indexes, columnSchemas, bucketingInfo.getNumOfRanges());
+    } else {
+      // by default we use SparkHashExpressionPartitionerImpl to hash.
+      this.partitioner = new SparkHashExpressionPartitionerImpl(
+              indexes, columnSchemas, bucketingInfo.getNumOfRanges());
+    }
+
   }
 
   /**
