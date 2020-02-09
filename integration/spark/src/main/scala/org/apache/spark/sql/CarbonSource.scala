@@ -25,7 +25,7 @@ import scala.collection.mutable
 import scala.language.implicitConversions
 
 import org.apache.commons.lang.StringUtils
-import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType}
+import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogTable, CatalogTableType}
 import org.apache.spark.sql.execution.streaming.Sink
 import org.apache.spark.sql.hive.CarbonMetaStore
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
@@ -364,13 +364,24 @@ object CarbonSource {
       table: CatalogTable,
       metaStore: CarbonMetaStore
   ): (TableInfo, CatalogTable) = {
-    val properties = CarbonSparkSqlParserUtil.getProperties(table)
+    val updatedProperties = new java.util.HashMap[String, String]()
+    CarbonSparkSqlParserUtil
+      .normalizeProperties(table.properties)
+      .foreach(e => updatedProperties.put(e._1, e._2))
+    if (table.bucketSpec.isDefined) {
+      val bucketSpec = table.bucketSpec.get
+      updatedProperties.put("bucket_columns", bucketSpec.bucketColumnNames.mkString)
+      updatedProperties.put("bucket_number", bucketSpec.numBuckets.toString)
+    }
+    val updateTable: CatalogTable = table.copy(
+      properties = updatedProperties.asScala.toMap, bucketSpec = None)
+    val properties = CarbonSparkSqlParserUtil.getProperties(updateTable)
     if (isCreatedByCarbonExtension(properties)) {
       // Table is created by SparkSession with CarbonExtension,
       // There is no TableInfo yet, so create it from CatalogTable
-      val tableInfo = createTableInfo(sparkSession, table)
+      val tableInfo = createTableInfo(sparkSession, updateTable)
       val catalogTable = createCatalogTableForCarbonExtension(
-        table, tableInfo, properties, metaStore)
+        updateTable, tableInfo, properties, metaStore)
       (tableInfo, catalogTable)
     } else {
       // Legacy code path (table is created by CarbonSession)
@@ -378,7 +389,8 @@ object CarbonSource {
       val tableInfo = CarbonUtil.convertGsonToTableInfo(properties.asJava)
       val isTransactionalTable = properties.getOrElse("isTransactional", "true").contains("true")
       tableInfo.setTransactionalTable(isTransactionalTable)
-      val catalogTable = createCatalogTableForCarbonSession(table, tableInfo, properties, metaStore)
+      val catalogTable =
+        createCatalogTableForCarbonSession(updateTable, tableInfo, properties, metaStore)
       (tableInfo, catalogTable)
     }
   }

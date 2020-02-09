@@ -88,6 +88,19 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
             "partition columns")
         }
       }
+      val bucketInfo = carbonTable.getBucketingInfo
+      if (bucketInfo != null) {
+        val bucketColumnSchemaList = bucketInfo.getListOfColumns.asScala
+          .map(_.getColumnName)
+        // check each column existence in the table
+        val bucketColumns = alterTableDropColumnModel.columns.filter {
+          tableColumn => bucketColumnSchemaList.contains(tableColumn)
+        }
+        if (bucketColumns.nonEmpty) {
+          throwMetadataException(dbName, tableName, "Bucket columns cannot be dropped: " +
+            s"$bucketColumns")
+        }
+      }
 
       var dictionaryColumns = Seq[org.apache.carbondata.core.metadata.schema.table.column
       .ColumnSchema]()

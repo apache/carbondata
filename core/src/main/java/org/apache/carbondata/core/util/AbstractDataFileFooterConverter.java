@@ -137,7 +137,8 @@ public abstract class AbstractDataFileFooterConverter {
       boolean isTransactionalTable) throws IOException {
     CarbonIndexFileReader indexReader = new CarbonIndexFileReader(configuration);
     List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
-    String parentPath = filePath.substring(0, filePath.lastIndexOf("/"));
+    String formattedPath = filePath.replace("\\", "/");
+    String parentPath = formattedPath.substring(0, formattedPath.lastIndexOf("/"));
     try {
       // open the reader
       if (fileData != null) {

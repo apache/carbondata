@@ -227,24 +227,17 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS create_source_test2")
   }
 
-  test("test to create bucket columns with int field") {
-    sql("drop table if exists create_source")
-    intercept[Exception] {
-      sql("create table create_source(intField int, stringField string, complexField array<string>) USING carbondata OPTIONS('bucketnumber'='1', 'bucketcolumns'='intField')")
-    }
-  }
-
   test("test to create bucket columns with complex data type field") {
     sql("drop table if exists create_source")
     intercept[Exception] {
-      sql("create table create_source(intField int, stringField string, complexField array<string>) USING carbondata OPTIONS('bucketnumber'='1', 'bucketcolumns'='complexField')")
+      sql("create table create_source(intField int, stringField string, complexField array<string>) USING carbondata OPTIONS('bucket_number'='1', 'bucket_columns'='complexField')")
     }
   }
 
   test("test check results of table with complex data type and bucketing") {
     sql("drop table if exists create_source")
     sql("create table create_source(intField int, stringField string, complexField array<int>) " +
-        "USING carbondata OPTIONS('bucketnumber'='1', 'bucketcolumns'='stringField')")
+        "USING carbondata OPTIONS('bucket_number'='1', 'BUCKET_COLUMNS'='stringField')")
     sql("insert into create_source values(1,'source',array(1,2,3))")
     checkAnswer(sql("select * from create_source"), Row(1,"source", mutable.WrappedArray.newBuilder[Int].+=(1,2,3)))
     sql("drop table if exists create_source")

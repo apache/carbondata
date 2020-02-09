@@ -58,12 +58,12 @@ class CarbonOption(options: Map[String, String]) {
 
   lazy val tablePageSizeInMb: Option[String] = options.get("table_page_size_inmb")
 
-  lazy val bucketNumber: Int = options.getOrElse("bucketnumber", "0").toInt
+  lazy val bucketNumber: Int = options.getOrElse("bucket_number", "0").toInt
 
-  lazy val bucketColumns: String = options.getOrElse("bucketcolumns", "")
+  lazy val bucketColumns: String = options.getOrElse("bucket_columns", "")
 
-  lazy val isBucketingEnabled: Boolean = options.contains("bucketcolumns") &&
-                                    options.contains("bucketnumber")
+  lazy val isBucketingEnabled: Boolean = options.contains("bucket_columns") &&
+                                    options.contains("bucket_number")
 
   lazy val isStreaming: Boolean = {
     var stream = options.getOrElse("streaming", "false")

@@ -63,17 +63,22 @@ public final class DataLoadProcessBuilder {
       CarbonIterator[] inputIterators) {
     CarbonDataLoadConfiguration configuration = createConfiguration(loadModel, storeLocation);
     SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
-    if (loadModel.isLoadWithoutConverterStep()) {
+    if (configuration.getBucketingInfo() != null &&
+            CarbonProperties.isBadRecordHandlingEnabledForInsert()) {
+      // if use old flow, both load and insert of bucket table use same. Otherwise, load of bucket
+      // will use buildInternalForBucketing but insert will use buildInternalWithNoConverter.
+      return buildInternalForBucketing(inputIterators, configuration);
+    } else if (loadModel.isLoadWithoutConverterStep()) {
       return buildInternalWithNoConverter(inputIterators, configuration, sortScope, false);
     } else if (loadModel.isLoadWithoutConverterWithoutReArrangeStep()) {
       return buildInternalWithNoConverter(inputIterators, configuration, sortScope, true);
     } else if (loadModel.isJsonFileLoad()) {
       return buildInternalWithJsonInputProcessor(inputIterators, configuration, sortScope);
-    } else if (!configuration.isSortTable() || sortScope.equals(
-        SortScopeOptions.SortScope.NO_SORT)) {
-      return buildInternalForNoSort(inputIterators, configuration);
     } else if (configuration.getBucketingInfo() != null) {
       return buildInternalForBucketing(inputIterators, configuration);
+    } else if (!configuration.isSortTable() || sortScope.equals(
+            SortScopeOptions.SortScope.NO_SORT)) {
+      return buildInternalForNoSort(inputIterators, configuration);
     } else {
       return buildInternal(inputIterators, configuration);
     }
@@ -117,7 +122,8 @@ public final class DataLoadProcessBuilder {
     // Wraps with dummy processor.
     AbstractDataLoadProcessorStep inputProcessorStep =
         new InputProcessorStepWithNoConverterImpl(configuration, inputIterators, withoutReArrange);
-    if (sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT)) {
+    if (sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT) ||
+            configuration.getBucketingInfo() != null) {
       AbstractDataLoadProcessorStep sortProcessorStep =
           new SortProcessorStepImpl(configuration, inputProcessorStep);
       //  Writes the sorted data in carbondata format.
@@ -250,6 +256,7 @@ public final class DataLoadProcessBuilder {
     configuration.setDataFields(
         updateDataFieldsBasedOnSortColumns(dataFields).toArray(new DataField[dataFields.size()]));
     configuration.setBucketingInfo(carbonTable.getBucketingInfo());
+    configuration.setBucketHashMethod(carbonTable.getBucketHashMethod());
     configuration.setPreFetch(loadModel.isPreFetch());
     configuration.setNumberOfSortColumns(carbonTable.getNumberOfSortColumns());
     configuration.setNumberOfNoDictSortColumns(carbonTable.getNumberOfNoDictSortColumns());
@@ -469,4 +476,5 @@ public final class DataLoadProcessBuilder {
     updatedDataFields.addAll(nonSortFields);
     return updatedDataFields;
   }
+
 }

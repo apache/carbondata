@@ -633,6 +633,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         }
       }
       if (bucketColumns.size == cols.size) {
+        // use HashPartitioning will not shuffle
         HashPartitioning(bucketColumns, numBuckets)
       } else {
         UnknownPartitioning(0)

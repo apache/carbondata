@@ -20,20 +20,23 @@ package org.apache.carbon.flink
 import java.util.Properties
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.core.fs.Path
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
-
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.spark.sql.execution.exchange.Exchange
 
 class TestCarbonWriter extends QueryTest {
 
   val tableName = "test_flink"
+  val bucketTableName = "insert_bucket_table"
+
 
   test("Writing flink data to local carbon table") {
     sql(s"DROP TABLE IF EXISTS $tableName").collect()
@@ -190,6 +193,117 @@ class TestCarbonWriter extends QueryTest {
       checkAnswer(sql(s"SELECT count(1) FROM $tableName"), Seq(Row(1000)))
     } finally {
       sql(s"DROP TABLE IF EXISTS $tableName").collect()
+    }
+  }
+
+  test("test carbon writer of bucket table") {
+    sql(s"DROP TABLE IF EXISTS $tableName").collect()
+    sql(s"DROP TABLE IF EXISTS $bucketTableName").collect()
+    sql(
+      s"""
+         | CREATE TABLE $tableName (stringField string, intField int, shortField short)
+         | STORED AS carbondata TBLPROPERTIES ('BUCKET_NUMBER'='10', 'BUCKET_COLUMNS'='stringField')
+      """.stripMargin
+    ).collect()
+    sql(
+      s"""
+         | CREATE TABLE $bucketTableName (stringField string, intField int, shortField short)
+         | STORED AS carbondata TBLPROPERTIES ('BUCKET_NUMBER'='10', 'BUCKET_COLUMNS'='stringField')
+      """.stripMargin
+    ).collect()
+
+    val rootPath = System.getProperty("user.dir") + "/target/test-classes"
+
+    val dataTempPath = rootPath + "/data/temp/"
+
+    try {
+      val flinkTablePath = storeLocation + "/" + tableName + "/"
+
+      val writerProperties = newWriterProperties(dataTempPath, storeLocation)
+      val carbonProperties = newCarbonProperties(storeLocation)
+
+      writerProperties.put(CarbonLocalProperty.COMMIT_THRESHOLD, "100")
+
+      val environment = StreamExecutionEnvironment.getExecutionEnvironment
+      environment.setParallelism(1)
+      environment.setRestartStrategy(RestartStrategies.noRestart)
+
+      val dataCount = 1000
+      val source = new TestSource(dataCount) {
+        @throws[InterruptedException]
+        override def get(index: Int): Array[AnyRef] = {
+          val data = new Array[AnyRef](3)
+          data(0) = "test" + index
+          data(1) = index.asInstanceOf[AnyRef]
+          data(2) = 12345.asInstanceOf[AnyRef]
+          data
+        }
+
+        @throws[InterruptedException]
+        override def onFinish(): Unit = {
+          Thread.sleep(5000L)
+        }
+      }
+      val stream = environment.addSource(source)
+      val factory = CarbonWriterFactory.builder("Local").build(
+        "default",
+        tableName,
+        flinkTablePath,
+        new Properties,
+        writerProperties,
+        carbonProperties
+      )
+      val streamSink = StreamingFileSink.forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory).build
+
+      stream.addSink(streamSink)
+
+      try environment.execute
+      catch {
+        case exception: Exception =>
+          throw new UnsupportedOperationException(exception)
+      }
+      sql(s"INSERT INTO $tableName STAGE OPTIONS ('batch_file_count' = '5')")
+      val table = CarbonEnv.getCarbonTable(Option("default"), s"$tableName")(sqlContext.sparkSession)
+      val segmentDir = FileFactory.getCarbonFile(table.getTablePath + "/Fact/Part0/Segment_0")
+      val dataFiles = segmentDir.listFiles(new CarbonFileFilter {
+        override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".carbondata")
+      })
+      assert(dataFiles.length == 10)
+      checkAnswer(sql(s"SELECT count(1) FROM $tableName"), Seq(Row(500)))
+      sql(s"INSERT INTO $tableName STAGE OPTIONS ('batch_file_count' = '5')")
+      val segmentDir2 = FileFactory.getCarbonFile(table.getTablePath + "/Fact/Part0/Segment_1")
+      val dataFiles2 = segmentDir2.listFiles(new CarbonFileFilter {
+        override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".carbondata")
+      })
+      assert(dataFiles2.length == 10)
+      checkAnswer(sql(s"SELECT count(*) FROM $tableName where stringField != 'AAA'"), Seq(Row(1000)))
+      sql(s"insert into $bucketTableName select * from $tableName").collect()
+
+      val plan = sql(
+        s"""
+          |select t1.*, t2.*
+          |from $tableName t1, $bucketTableName t2
+          |where t1.stringField = t2.stringField
+      """.stripMargin).queryExecution.executedPlan
+      var shuffleExists = false
+      plan.collect {
+        case s: Exchange if (s.getClass.getName.equals
+        ("org.apache.spark.sql.execution.exchange.ShuffleExchange") ||
+          s.getClass.getName.equals
+          ("org.apache.spark.sql.execution.exchange.ShuffleExchangeExec"))
+        => shuffleExists = true
+      }
+      assert(!shuffleExists, "shuffle should not exist on bucket tables")
+
+      checkAnswer(sql(
+        s"""select count(*) from
+          |(select t1.*, t2.*
+          |from $tableName t1, $bucketTableName t2
+          |where t1.stringField = t2.stringField) temp
+      """.stripMargin), Row(1000))
+    } finally {
+      sql(s"DROP TABLE IF EXISTS $tableName").collect()
+      sql(s"DROP TABLE IF EXISTS $bucketTableName").collect()
     }
   }
 

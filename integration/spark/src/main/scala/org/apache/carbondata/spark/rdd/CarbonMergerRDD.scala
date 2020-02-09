@@ -48,6 +48,7 @@ import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.schema.BucketingInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension, ColumnSchema}
 import org.apache.carbondata.core.mutate.UpdateVO
@@ -91,6 +92,7 @@ class CarbonMergerRDD[K, V](
   var singleRange = false
   var expressionMapForRangeCol: util.Map[Integer, Expression] = null
   var broadCastSplits: Broadcast[CarbonInputSplitWrapper] = null
+  val bucketInfo = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getBucketingInfo
 
   def makeBroadCast(splits: util.List[CarbonInputSplit]): Unit = {
     broadCastSplits = sparkContext.broadcast(new CarbonInputSplitWrapper(splits))
@@ -108,6 +110,12 @@ class CarbonMergerRDD[K, V](
       } else {
         null
       }
+      val bucketId: Int = if (bucketInfo != null) {
+        carbonSparkPartition.idx
+      } else {
+        0
+      }
+      carbonLoadModel.setBucketId(bucketId);
 
       var mergeStatus = false
       var mergeNumber = ""
@@ -584,36 +592,40 @@ class CarbonMergerRDD[K, V](
     logInfo("no.of.nodes where data present=" + nodeBlockMap.size())
     defaultParallelism = sparkContext.defaultParallelism
 
-    // Create Spark Partition for each task and assign blocks
-    nodeBlockMap.asScala.foreach { case (nodeName, splitList) =>
-      val taskSplitList = new java.util.ArrayList[NodeInfo](0)
-      nodeTaskBlocksMap.put(nodeName, taskSplitList)
-      var blockletCount = 0
-      splitList.asScala.foreach { splitInfo =>
-        val splitsPerNode = splitInfo.asInstanceOf[CarbonInputSplitTaskInfo]
-        blockletCount = blockletCount + splitsPerNode.getCarbonInputSplitList.size()
-        taskSplitList.add(
-          NodeInfo(splitsPerNode.getTaskId, splitsPerNode.getCarbonInputSplitList.size()))
+    if (bucketInfo != null) {
+      distributeBucketPartitions(result, splits, bucketInfo)
+    } else {
+      // Create Spark Partition for each task and assign blocks
+      nodeBlockMap.asScala.foreach { case (nodeName, splitList) =>
+        val taskSplitList = new java.util.ArrayList[NodeInfo](0)
+        nodeTaskBlocksMap.put(nodeName, taskSplitList)
+        var blockletCount = 0
+        splitList.asScala.foreach { splitInfo =>
+          val splitsPerNode = splitInfo.asInstanceOf[CarbonInputSplitTaskInfo]
+          blockletCount = blockletCount + splitsPerNode.getCarbonInputSplitList.size()
+          taskSplitList.add(
+            NodeInfo(splitsPerNode.getTaskId, splitsPerNode.getCarbonInputSplitList.size()))
 
-        if (blockletCount != 0) {
-          val taskInfo = splitInfo.asInstanceOf[CarbonInputSplitTaskInfo]
-          val multiBlockSplit = if (null == rangeColumn || singleRange) {
-            new CarbonMultiBlockSplit(
-              taskInfo.getCarbonInputSplitList,
-              Array(nodeName))
-          } else {
-            var splitListForRange = new util.ArrayList[CarbonInputSplit]()
-            new CarbonMultiBlockSplit(
-              splitListForRange,
-              Array(nodeName))
+          if (blockletCount != 0) {
+            val taskInfo = splitInfo.asInstanceOf[CarbonInputSplitTaskInfo]
+            val multiBlockSplit = if (null == rangeColumn || singleRange) {
+              new CarbonMultiBlockSplit(
+                taskInfo.getCarbonInputSplitList,
+                Array(nodeName))
+            } else {
+              var splitListForRange = new util.ArrayList[CarbonInputSplit]()
+              new CarbonMultiBlockSplit(
+                splitListForRange,
+                Array(nodeName))
+            }
+            result.add(
+              new CarbonSparkPartition(
+                id,
+                taskPartitionNo,
+                multiBlockSplit,
+                getPartitionNamesFromTask(taskInfo.getTaskId, partitionTaskMap)))
+            taskPartitionNo += 1
           }
-          result.add(
-            new CarbonSparkPartition(
-              id,
-              taskPartitionNo,
-              multiBlockSplit,
-              getPartitionNamesFromTask(taskInfo.getTaskId, partitionTaskMap)))
-          taskPartitionNo += 1
         }
       }
     }
@@ -640,6 +652,24 @@ class CarbonMergerRDD[K, V](
       }
     }
     result.toArray(new Array[Partition](result.size))
+  }
+
+  private def distributeBucketPartitions(result: util.ArrayList[Partition],
+      splits: util.List[InputSplit], bucketInfo: BucketingInfo): Unit = {
+    // distribute the files based on bucket id
+    var i = 0
+    val bucketed =
+      splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).groupBy(f => f.getBucketId)
+    (0 until bucketInfo.getNumOfRanges).map { bucketId =>
+      val bucketPartitions = bucketed.getOrElse(bucketId.toString, Nil)
+      val multiBlockSplit =
+        new CarbonMultiBlockSplit(
+          bucketPartitions.asJava,
+          bucketPartitions.flatMap(_.getLocations).toArray)
+      val partition = new CarbonSparkPartition(id, i, multiBlockSplit)
+      i += 1
+      result.add(partition)
+    }
   }
 
   private def getRangesFromRDD(rangeColumn: CarbonColumn,

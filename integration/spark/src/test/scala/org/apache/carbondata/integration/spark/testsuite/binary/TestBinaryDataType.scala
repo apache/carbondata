@@ -17,13 +17,16 @@
 package org.apache.carbondata.integration.spark.testsuite.binary
 
 import java.util.Arrays
+
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 import org.apache.commons.codec.binary.{Base64, Hex}
 import org.apache.spark.SparkException
+import org.apache.spark.sql.execution.exchange.Exchange
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil
@@ -398,34 +401,26 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
         checkAnswer(sql("SELECT COUNT(*) FROM binaryTable where binaryField =cast('hello' as binary)"), Seq(Row(1)))
     }
 
-    test("Test create table with buckets unsafe") {
-        CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "true")
+    test("Test create table with binary datatype in bucket table") {
         sql("DROP TABLE IF EXISTS binaryTable")
+        sql("DROP TABLE IF EXISTS binaryTable2")
+        val exception = intercept[ProcessMetaDataException] {
         sql(
-            s"""
-               | CREATE TABLE IF NOT EXISTS binaryTable (
-               |    id INT,
-               |    label boolean,
-               |    name STRING,
-               |    binaryField BINARY,
-               |    autoLabel boolean)
-               | STORED AS carbondata
-               | TBLPROPERTIES('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='binaryField')
-             """.stripMargin)
-        sql(
-            s"""
-               | LOAD DATA LOCAL INPATH '$resourcesPath/binaryDataHex.csv'
-               | INTO TABLE binaryTable
-               | OPTIONS('header'='false')
-             """.stripMargin)
-
-        CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
-        val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "binaryTable")
-        if (table != null && table.getBucketingInfo() != null) {
-            assert(true)
-        } else {
-            assert(false, "Bucketing info does not exist")
+              s"""
+                 | CREATE TABLE IF NOT EXISTS binaryTable (
+                 |    id INT,
+                 |    label boolean,
+                 |    name STRING,
+                 |    binaryField BINARY,
+                 |    autoLabel boolean)
+                 | STORED AS carbondata
+                 | TBLPROPERTIES('BUCKET_NUMBER'='4', 'BUCKET_COLUMNS'='binaryField')
+               """.stripMargin)
         }
+        assert(exception.getMessage.contains("bucket table do not support binary"))
+
+        sql("DROP TABLE IF EXISTS binaryTable")
+        sql("DROP TABLE IF EXISTS binaryTable2")
     }
 
     test("insert into for hive and carbon") {

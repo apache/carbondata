@@ -192,8 +192,8 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL")
       sql("create table data_tbm(name String, dob long, weight int) " +
-          "STORED AS carbondata tblproperties('bucketnumber'='4', " +
-          "'bucketcolumns'='name', 'tableName'='data_tbm')")
+          "STORED AS carbondata tblproperties('bucket_number'='4', " +
+          "'BUCKET_COLUMNS'='name', 'tableName'='data_tbm')")
       val testData = s"$resourcesPath/badrecords/dummy.csv"
       sql(s"""LOAD DATA LOCAL INPATH '$testData' INTO table data_tbm""")
     } catch {

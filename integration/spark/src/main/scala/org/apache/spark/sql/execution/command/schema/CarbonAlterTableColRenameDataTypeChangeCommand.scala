@@ -71,6 +71,20 @@ abstract class CarbonAlterTableColumnRenameCommand(oldColumnName: String, newCol
       }
     }
 
+    // if column rename operation is on bucket column, then fail the rename operation
+    if (null != carbonTable.getBucketingInfo) {
+      val bucketColumns = carbonTable.getBucketingInfo.getListOfColumns
+      bucketColumns.asScala.foreach {
+        col =>
+          if (col.getColumnName.equalsIgnoreCase(oldColumnName)) {
+            throw new MalformedCarbonCommandException(
+              s"Column Rename Operation failed. Renaming " +
+                s"the bucket column $oldColumnName is not " +
+                s"allowed")
+          }
+      }
+    }
+
   }
 }
 

@@ -990,7 +990,7 @@ object CarbonDataRDDFactory {
    * @param carbonLoadModel load model
    * @return Return an array that contains all of the elements in NewDataFrameLoaderRDD.
    */
-  private def loadDataFrame(
+   def loadDataFrame(
       sqlContext: SQLContext,
       dataFrame: Option[DataFrame],
       scanResultRDD: Option[RDD[InternalRow]],

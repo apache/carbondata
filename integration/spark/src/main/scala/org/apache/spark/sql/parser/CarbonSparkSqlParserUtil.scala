@@ -33,9 +33,7 @@ import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterT
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableColRenameDataTypeChangeCommand}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
-import org.apache.spark.sql.hive.CarbonMVRules
 import org.apache.spark.sql.types.StructField
-import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -78,6 +76,24 @@ object CarbonSparkSqlParserUtil {
     val streaming = tableInfo.getFactTable.getTableProperties.get("streaming")
     if (streaming != null && streaming.equalsIgnoreCase("true") && tablePath.startsWith("s3")) {
       throw new UnsupportedOperationException("streaming is not supported with s3 store")
+    }
+    // bucket table should not set sort scope because the data can only sort inside bucket itself
+    val bucketColumnsProp = tableInfo.getFactTable.getTableProperties.get("bucket_columns")
+    val sortScopeProp = tableInfo.getFactTable.getTableProperties.get("sort_scope")
+    if (bucketColumnsProp != null) {
+      if (sortScopeProp != null) {
+        // bucket table can only sort inside bucket, can not set sort_scope for table.
+        throw new ProcessMetaDataException(tableInfo.getDatabaseName,
+          tableInfo.getFactTable.getTableName, "Bucket table only sort inside buckets," +
+            " can not set sort scope but can set sort columns.");
+      } else {
+        tableInfo.getFactTable.getListOfColumns.asScala.foreach(column =>
+          if (column.getDataType == DataTypes.BINARY) {
+            throw new ProcessMetaDataException(tableInfo.getDatabaseName,
+              tableInfo.getFactTable.getTableName, "bucket table do not support binary.");
+          }
+        )
+      }
     }
     // Add validation for sort scope when create table
     val sortScope = tableInfo.getFactTable.getTableProperties.asScala
@@ -311,7 +327,7 @@ object CarbonSparkSqlParserUtil {
       sparkSession: SparkSession,
       selectQuery: Option[LogicalPlan] = None): TableInfo = {
     val tableProperties = normalizeProperties(getProperties(table))
-    val options = new CarbonOption(tableProperties)
+    val options = new CarbonOption(Map(tableProperties.toSeq: _*))
     // validate streaming property
     validateStreamingProperty(options)
     val parser = new CarbonSpark2SqlParser()
