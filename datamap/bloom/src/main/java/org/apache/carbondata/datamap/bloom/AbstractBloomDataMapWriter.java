@@ -31,7 +31,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonUtil;
 
@@ -65,11 +64,11 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
   }
 
   @Override
-  public void onBlockStart(String blockId) throws IOException {
+  public void onBlockStart(String blockId) {
   }
 
   @Override
-  public void onBlockEnd(String blockId) throws IOException {
+  public void onBlockEnd(String blockId) {
   }
 
   @Override
@@ -110,8 +109,7 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
   }
 
   @Override
-  public void onPageAdded(int blockletId, int pageId, int pageSize, ColumnPage[] pages)
-      throws IOException {
+  public void onPageAdded(int blockletId, int pageId, int pageSize, ColumnPage[] pages) {
     for (int rowId = 0; rowId < pageSize; rowId++) {
       // for each indexed column, add the data to index
       for (int i = 0; i < indexColumns.size(); i++) {
@@ -136,8 +134,7 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
       }
       indexValue = CarbonUtil.getValueAsBytes(indexColumns.get(indexColIdx).getDataType(), value);
     } else {
-      if (indexColumns.get(indexColIdx).hasEncoding(Encoding.DICTIONARY)
-          || indexColumns.get(indexColIdx).hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      if (indexColumns.get(indexColIdx).getDataType() == DataTypes.DATE) {
         indexValue = convertDictionaryValue(indexColIdx, value);
       } else {
         indexValue = convertNonDictionaryValue(indexColIdx, value);
@@ -197,7 +194,7 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
   }
 
   @Override
-  public void finish() throws IOException {
+  public void finish() {
     if (!isWritingFinished()) {
       releaseResouce();
       setWritingFinished(true);

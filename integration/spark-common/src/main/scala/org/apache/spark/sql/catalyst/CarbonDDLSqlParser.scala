@@ -218,7 +218,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         }
     }
 
-  protected lazy val loadOptions: Parser[(String, String)] =
+  protected lazy val options: Parser[(String, String)] =
     (stringLit <~ "=") ~ stringLit ^^ {
       case opt ~ optvalue => (opt.trim.toLowerCase(), optvalue)
       case _ => ("", "")

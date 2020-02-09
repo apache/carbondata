@@ -27,7 +27,6 @@ import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
@@ -140,7 +139,7 @@ public class MeasureChunkPageReaderV3
   @Override
   public ColumnPage decodeColumnPage(
       MeasureRawColumnChunk rawColumnPage, int pageNumber, ReusableDataBuffer reusableDataBuffer)
-      throws IOException, MemoryException {
+      throws IOException {
     // data chunk of blocklet column
     DataChunk3 dataChunk3 = rawColumnPage.getDataChunkV3();
     // data chunk of page

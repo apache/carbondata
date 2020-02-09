@@ -56,14 +56,11 @@ class TestCarbonPartitionWriter extends QueryTest {
     val rootPath = System.getProperty("user.dir") + "/target/test-classes"
 
     val dataTempPath = rootPath + "/data/temp/"
-    val dataPath = rootPath + "/data/"
-    delDir(new File(dataPath))
-    new File(dataPath).mkdir()
 
     try {
       val tablePath = storeLocation + "/" + tableName + "/"
 
-      val writerProperties = newWriterProperties(dataTempPath, dataPath, storeLocation)
+      val writerProperties = newWriterProperties(dataTempPath, storeLocation)
       val carbonProperties = newCarbonProperties(storeLocation)
 
       val environment = StreamExecutionEnvironment.getExecutionEnvironment
@@ -110,11 +107,6 @@ class TestCarbonPartitionWriter extends QueryTest {
           // TODO
           throw new UnsupportedOperationException(exception)
       }
-
-      val dataLocation = dataPath + "default" + CarbonCommonConstants.FILE_SEPARATOR +
-        tableName + CarbonCommonConstants.FILE_SEPARATOR
-
-      assertResult(true)(FileFactory.isFileExist(dataLocation))
       assertResult(false)(FileFactory
         .getCarbonFile(CarbonTablePath.getStageDir(tablePath)).listFiles().isEmpty)
 
@@ -124,7 +116,6 @@ class TestCarbonPartitionWriter extends QueryTest {
 
     } finally {
       sql(s"DROP TABLE IF EXISTS $tableName").collect()
-      delDir(new File(dataPath))
     }
   }
 
@@ -143,14 +134,11 @@ class TestCarbonPartitionWriter extends QueryTest {
     val rootPath = System.getProperty("user.dir") + "/target/test-classes"
 
     val dataTempPath = rootPath + "/data/temp/"
-    val dataPath = rootPath + "/data/"
-    delDir(new File(dataPath))
-    new File(dataPath).mkdir()
 
     try {
       val tablePath = storeLocation + "/" + tableName + "/"
 
-      val writerProperties = newWriterProperties(dataTempPath, dataPath, storeLocation)
+      val writerProperties = newWriterProperties(dataTempPath, storeLocation)
       val carbonProperties = newCarbonProperties(storeLocation)
 
       val environment = StreamExecutionEnvironment.getExecutionEnvironment
@@ -199,11 +187,6 @@ class TestCarbonPartitionWriter extends QueryTest {
           // TODO
           throw new UnsupportedOperationException(exception)
       }
-
-      val dataLocation = dataPath + "default" + CarbonCommonConstants.FILE_SEPARATOR +
-                         tableName + CarbonCommonConstants.FILE_SEPARATOR
-
-      assertResult(true)(FileFactory.isFileExist(dataLocation))
       assertResult(false)(FileFactory
         .getCarbonFile(CarbonTablePath.getStageDir(tablePath)).listFiles().isEmpty)
 
@@ -217,17 +200,14 @@ class TestCarbonPartitionWriter extends QueryTest {
 
     } finally {
       sql(s"DROP TABLE IF EXISTS $tableName").collect()
-      delDir(new File(dataPath))
     }
   }
 
   private def newWriterProperties(
      dataTempPath: String,
-     dataPath: String,
      storeLocation: String) = {
     val properties = new Properties
     properties.setProperty(CarbonLocalProperty.DATA_TEMP_PATH, dataTempPath)
-    properties.setProperty(CarbonLocalProperty.DATA_PATH, dataPath)
     properties
   }
 

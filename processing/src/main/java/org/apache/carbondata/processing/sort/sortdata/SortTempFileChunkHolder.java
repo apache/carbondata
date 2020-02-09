@@ -345,7 +345,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     }
 
     @Override
-    public Void call() throws Exception {
+    public Void call() {
       try {
         if (isBackUpFilling) {
           backupBuffer = prefetchRecordsFromFile(numberOfRecords);

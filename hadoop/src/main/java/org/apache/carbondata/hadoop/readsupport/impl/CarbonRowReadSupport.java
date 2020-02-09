@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.hadoop.readsupport.impl;
 
-import java.io.IOException;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.Calendar;
@@ -37,8 +36,7 @@ public class CarbonRowReadSupport implements CarbonReadSupport<CarbonRow> {
   private CarbonColumn[] carbonColumns;
 
   @Override
-  public void initialize(CarbonColumn[] carbonColumns, CarbonTable carbonTable)
-      throws IOException {
+  public void initialize(CarbonColumn[] carbonColumns, CarbonTable carbonTable) {
     this.carbonColumns = carbonColumns;
   }
 

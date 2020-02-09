@@ -428,7 +428,7 @@ case class CarbonLoadDataCommand(
     // input data from csv files. Convert to logical plan
     val allCols = new ArrayBuffer[String]()
     // get only the visible dimensions from table
-    allCols ++= table.getVisibleDimensions.asScala.map(_.getColName)
+    allCols ++= table.getVisibleDimensions().asScala.filterNot(_.isIndexColumn).map(_.getColName)
     allCols ++= table.getVisibleMeasures.asScala.map(_.getColName)
     var attributes =
       StructType(
@@ -678,7 +678,8 @@ case class CarbonLoadDataCommand(
       // Update attribute datatypes in case of dictionary columns, in case of dictionary columns
       // datatype is always int
       val column = table.getColumnByName(attr.name)
-      val updatedDataType = if (column.hasEncoding(Encoding.DICTIONARY)) {
+      val updatedDataType = if (column.getDataType ==
+                                org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
         IntegerType
       } else {
         attr.dataType match {
@@ -852,7 +853,8 @@ case class CarbonLoadDataCommand(
     val table = loadModel.getCarbonDataLoadSchema.getCarbonTable
     val metastoreSchema = StructType(catalogTable.schema.fields.map{f =>
       val column = table.getColumnByName(f.name)
-      val updatedDataType = if (column.hasEncoding(Encoding.DICTIONARY)) {
+      val updatedDataType = if (column.getDataType ==
+                                org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
         IntegerType
       } else {
         f.dataType match {

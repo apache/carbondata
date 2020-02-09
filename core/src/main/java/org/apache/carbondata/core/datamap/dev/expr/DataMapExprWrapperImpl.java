@@ -63,8 +63,7 @@ public class DataMapExprWrapperImpl implements DataMapExprWrapper {
   }
 
   @Override
-  public List<ExtendedBlocklet> pruneBlocklets(List<ExtendedBlocklet> blocklets)
-      throws IOException {
+  public List<ExtendedBlocklet> pruneBlocklets(List<ExtendedBlocklet> blocklets) {
     List<ExtendedBlocklet> blockletList = new ArrayList<>();
     for (ExtendedBlocklet blocklet: blocklets) {
       if (blocklet.getDataMapUniqueId().equals(uniqueId)) {
@@ -88,8 +87,7 @@ public class DataMapExprWrapperImpl implements DataMapExprWrapper {
   }
 
   @Override
-  public List<DataMapDistributableWrapper> toDistributable(List<Segment> segments)
-      throws IOException {
+  public List<DataMapDistributableWrapper> toDistributable(List<Segment> segments) {
     List<DataMapDistributable> dataMapDistributables = dataMap.toDistributable(segments);
     List<DataMapDistributableWrapper> wrappers = new ArrayList<>();
     for (DataMapDistributable distributable : dataMapDistributables) {

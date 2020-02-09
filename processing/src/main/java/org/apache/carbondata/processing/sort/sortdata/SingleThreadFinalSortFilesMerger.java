@@ -123,12 +123,10 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    * @param sortedRawResultMergerList
    * @param segmentProperties
    * @param noDicAndComplexColumns
-   * @throws CarbonSortKeyAndGroupByException
    */
   public void addInMemoryRawResultIterator(List<RawResultIterator> sortedRawResultMergerList,
       SegmentProperties segmentProperties, CarbonColumn[] noDicAndComplexColumns,
-      DataType[] measureDataType)
-      throws CarbonSortKeyAndGroupByException {
+      DataType[] measureDataType) {
     for (RawResultIterator rawResultIterator : sortedRawResultMergerList) {
       InMemorySortTempChunkHolder inMemorySortTempChunkHolder =
           new InMemorySortTempChunkHolder(rawResultIterator, segmentProperties,
@@ -189,7 +187,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
 
       Callable<Void> callable = new Callable<Void>() {
         @Override
-        public Void call() throws CarbonSortKeyAndGroupByException {
+        public Void call() {
             // create chunk holder
             SortTempFileChunkHolder sortTempFileChunkHolder =
                 new SortTempFileChunkHolder(tempFile, sortParameters, tableName, true);

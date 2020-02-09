@@ -74,6 +74,11 @@ public class BinaryFieldConverterImpl implements FieldConverter {
   }
 
   @Override
+  public DataField getDataField() {
+    return dataField;
+  }
+
+  @Override
   public void clear() {
   }
 }

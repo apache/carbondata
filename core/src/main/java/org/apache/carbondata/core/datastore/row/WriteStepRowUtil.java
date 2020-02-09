@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.datastore.row;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -107,7 +106,7 @@ public class WriteStepRowUtil {
     return (int[]) row.getData()[DICTIONARY_DIMENSION];
   }
 
-  public static byte[] getMdk(CarbonRow row, KeyGenerator keyGenerator) throws KeyGenException {
+  public static byte[] getMdk(CarbonRow row, KeyGenerator keyGenerator) {
     return keyGenerator.generateKey(getDictDimension(row));
   }
 

@@ -126,7 +126,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
   }
 
   @Override
-  public Map<String, String> getCommittedIndexFile(Segment segment) throws IOException {
+  public Map<String, String> getCommittedIndexFile(Segment segment) {
     Map<String, String> indexFileStore = new HashMap<>();
     Map<String, List<String>> snapShot = readCommittedIndexFileSnapShot.getSegmentIndexFileMap();
     String segName;
@@ -150,8 +150,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
   }
 
   @Override
-  public SegmentRefreshInfo getCommittedSegmentRefreshInfo(Segment segment, UpdateVO updateVo)
-      throws IOException {
+  public SegmentRefreshInfo getCommittedSegmentRefreshInfo(Segment segment, UpdateVO updateVo) {
     Map<String, SegmentRefreshInfo> snapShot =
         readCommittedIndexFileSnapShot.getSegmentTimestampUpdaterMap();
     String segName;

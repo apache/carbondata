@@ -368,7 +368,7 @@ public final class TableDataMap extends OperationEventListener {
    *
    * @return
    */
-  public List<DataMapDistributable> toDistributable(List<Segment> allsegments) throws IOException {
+  public List<DataMapDistributable> toDistributable(List<Segment> allsegments) {
     List<DataMapDistributable> distributables = new ArrayList<>();
     List<Segment> segments = getCarbonSegments(allsegments);
     for (Segment segment : segments) {
@@ -479,7 +479,7 @@ public final class TableDataMap extends OperationEventListener {
   }
 
   @Override
-  public void onEvent(Event event, OperationContext opContext) throws Exception {
+  public void onEvent(Event event, OperationContext opContext) {
     dataMapFactory.fireEvent(event);
   }
 

@@ -21,7 +21,6 @@ import java.io.Serializable;
 
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 /**
@@ -33,8 +32,7 @@ public abstract class AbstractMemoryDMStore implements Serializable {
 
   protected final String taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
-  public abstract void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow)
-      throws MemoryException;
+  public abstract void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow);
 
   public abstract DataMapRow getDataMapRow(CarbonRowSchema[] schema, int index);
 
@@ -44,12 +42,11 @@ public abstract class AbstractMemoryDMStore implements Serializable {
 
   public abstract int getRowCount();
 
-  public void finishWriting() throws MemoryException {
+  public void finishWriting() {
     // do nothing in default implementation
   }
 
-  public UnsafeMemoryDMStore convertToUnsafeDMStore(CarbonRowSchema[] schema)
-      throws MemoryException {
+  public UnsafeMemoryDMStore convertToUnsafeDMStore(CarbonRowSchema[] schema) {
     throw new UnsupportedOperationException("Operation not allowed");
   }
 }

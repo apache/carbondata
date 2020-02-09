@@ -17,14 +17,12 @@
 
 package org.apache.carbondata.core.scan.filter.resolver;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.SortedMap;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.conditional.BinaryConditionalExpression;
@@ -69,7 +67,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    */
   @Override
   public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
-      throws FilterUnsupportedException, IOException {
+      throws FilterUnsupportedException {
     FilterResolverMetadata metadata = new FilterResolverMetadata();
     metadata.setTableIdentifier(absoluteTableIdentifier);
     if ((!isExpressionResolve) && exp instanceof BinaryConditionalExpression) {
@@ -87,11 +85,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
         // column expression.
         // we need to check if the other expression contains column
         // expression or not in depth.
-        if (FilterUtil.checkIfExpressionContainsColumn(rightExp)
-            || FilterUtil.isExpressionNeedsToResolved(rightExp, isIncludeFilter) && ((
-            (null != columnExpression.getDimension()) && (columnExpression.getDimension()
-                .hasEncoding(Encoding.DICTIONARY) && !columnExpression.getDimension()
-                .hasEncoding(Encoding.DIRECT_DICTIONARY))))) {
+        if (FilterUtil.checkIfExpressionContainsColumn(rightExp)) {
           isExpressionResolve = true;
         } else {
           //Visitor pattern is been used in this scenario inorder to populate the
@@ -151,10 +145,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
       metadata.setColumnExpression(columnList.get(0));
       metadata.setExpression(exp);
       metadata.setIncludeFilter(isIncludeFilter);
-      if ((null != columnList.get(0).getDimension()) &&
-          (!columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY) ||
-              columnList.get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY))
-          || (exp instanceof RangeExpression)) {
+      if ((null != columnList.get(0).getDimension()) || (exp instanceof RangeExpression)) {
         dimColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
             FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnList.get(0), exp),
             metadata);
@@ -254,29 +245,11 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
       case NOT_IN:
         return FilterExecuterType.EXCLUDE;
       case RANGE:
-        if (isColDictionary()) {
-          return FilterExecuterType.INCLUDE;
-        } else {
-          return FilterExecuterType.RANGE;
-        }
+        return FilterExecuterType.RANGE;
       default:
         return FilterExecuterType.INCLUDE;
     }
 
-  }
-
-  private boolean isColDictionary() {
-    RangeExpression condExp = (RangeExpression) exp;
-    List<ColumnExpression> columnList = condExp.getColumnList();
-    if (columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
-      if (columnList.get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-        return false;
-      } else {
-        return true;
-      }
-    } else {
-      return false;
-    }
   }
 
   /**
@@ -287,13 +260,13 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    */
   public byte[][]  getFilterRangeValues(SegmentProperties segmentProperties) {
 
-    if (null != dimColResolvedFilterInfo.getFilterValues() && !dimColResolvedFilterInfo
-        .getDimension().hasEncoding(Encoding.DICTIONARY)) {
+    if (null != dimColResolvedFilterInfo.getFilterValues() &&
+        dimColResolvedFilterInfo.getDimension().getDataType() != DataTypes.DATE) {
       List<byte[]> noDictFilterValuesList =
           dimColResolvedFilterInfo.getFilterValues().getNoDictionaryFilterValuesList();
       return noDictFilterValuesList.toArray((new byte[noDictFilterValuesList.size()][]));
-    } else if (null != dimColResolvedFilterInfo.getFilterValues() && dimColResolvedFilterInfo
-        .getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+    } else if (null != dimColResolvedFilterInfo.getFilterValues() &&
+        dimColResolvedFilterInfo.getDimension().getDataType() == DataTypes.DATE) {
       return FilterUtil.getKeyArray(this.dimColResolvedFilterInfo.getFilterValues(),
           this.dimColResolvedFilterInfo.getDimension(), segmentProperties, false, false);
     }

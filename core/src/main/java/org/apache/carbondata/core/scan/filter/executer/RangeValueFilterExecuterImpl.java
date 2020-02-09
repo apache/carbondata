@@ -25,14 +25,12 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.conditional.GreaterThanEqualToExpression;
 import org.apache.carbondata.core.scan.expression.conditional.GreaterThanExpression;
 import org.apache.carbondata.core.scan.expression.conditional.LessThanEqualToExpression;
 import org.apache.carbondata.core.scan.expression.conditional.LessThanExpression;
-import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -130,17 +128,16 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
    * Method to apply the filter.
    * @param rawBlockletColumnChunks
    * @return
-   * @throws FilterUnsupportedException
    * @throws IOException
    */
   public BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
-      boolean useBitsetPipeLine) throws FilterUnsupportedException, IOException {
+      boolean useBitsetPipeLine) throws IOException {
     return applyNoAndDirectFilter(rawBlockletColumnChunks, useBitsetPipeLine);
   }
 
   @Override
   public BitSet prunePages(RawBlockletColumnChunks blockChunkHolder)
-      throws FilterUnsupportedException, IOException {
+      throws IOException {
     // In case of Alter Table Add and Delete Columns the isDimensionPresentInCurrentBlock can be
     // false, in that scenario the default values of the column should be shown.
     // select all rows if dimension does not exists in the current block
@@ -179,8 +176,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
   /**
    * apply range filter on a row
    */
-  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
-      throws FilterUnsupportedException, IOException {
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
 
     byte[] col = (byte[]) value.getVal(dimColEvaluatorInfo.getDimension().getOrdinal());
     byte[][] filterValues = this.filterRangesValues;
@@ -645,16 +641,15 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
       }
     } else {
       byte[] defaultValue = null;
-      if (dimColEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      if (dimColEvaluatorInfo.getDimension().getDataType() == DataTypes.DATE) {
         defaultValue =
             FilterUtil.getDefaultNullValue(dimColEvaluatorInfo.getDimension(), segmentProperties);
-      } else {
-        if (dimColEvaluatorInfo.getDimension().getDataType() == DataTypes.STRING) {
-          defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
-        } else if (!dimensionColumnPage.isAdaptiveEncoded()) {
-          defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
-        }
+      } else if (dimColEvaluatorInfo.getDimension().getDataType() == DataTypes.STRING) {
+        defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+      } else if (!dimensionColumnPage.isAdaptiveEncoded()) {
+        defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
       }
+
       // evaluate result for lower range value first and then perform and operation in the
       // upper range value in order to compute the final result
       bitSet = evaluateGreaterThanFilterForUnsortedColumn(dimensionColumnPage, filterValues[0],

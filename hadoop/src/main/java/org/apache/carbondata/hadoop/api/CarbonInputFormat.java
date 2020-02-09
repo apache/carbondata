@@ -394,7 +394,7 @@ m filterExpression
    * get the count.
    */
   Long getDistributedCount(CarbonTable table,
-      List<PartitionSpec> partitionNames, List<Segment> validSegments) throws IOException {
+      List<PartitionSpec> partitionNames, List<Segment> validSegments) {
     DistributableDataMapFormat dataMapFormat =
         new DistributableDataMapFormat(table, null, validSegments, new ArrayList<String>(),
             partitionNames, false, null, false, false);
@@ -415,7 +415,7 @@ m filterExpression
 
   List<ExtendedBlocklet> getDistributedBlockRowCount(CarbonTable table,
       List<PartitionSpec> partitionNames, List<Segment> validSegments,
-      List<Segment> invalidSegments, List<String> segmentsToBeRefreshed) throws IOException {
+      List<Segment> invalidSegments, List<String> segmentsToBeRefreshed) {
     return getDistributedSplit(table, null, partitionNames, validSegments, invalidSegments,
         segmentsToBeRefreshed, true);
   }
@@ -423,7 +423,7 @@ m filterExpression
   private List<ExtendedBlocklet> getDistributedSplit(CarbonTable table,
       FilterResolverIntf filterResolverIntf, List<PartitionSpec> partitionNames,
       List<Segment> validSegments, List<Segment> invalidSegments,
-      List<String> segmentsToBeRefreshed, boolean isCountJob) throws IOException {
+      List<String> segmentsToBeRefreshed, boolean isCountJob) {
     try {
       DataMapJob dataMapJob =
           (DataMapJob) DataMapUtil.createDataMapJob(DataMapUtil.DISTRIBUTED_JOB_NAME);
@@ -652,7 +652,7 @@ m filterExpression
 
   @Override
   public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
-      TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
+      TaskAttemptContext taskAttemptContext) throws IOException {
     Configuration configuration = taskAttemptContext.getConfiguration();
     QueryModel queryModel = createQueryModel(inputSplit, taskAttemptContext,
         getFilterPredicates(taskAttemptContext.getConfiguration()));

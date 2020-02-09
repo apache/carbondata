@@ -26,7 +26,6 @@ import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -145,7 +144,7 @@ public class DimensionChunkPageReaderV3
   public DimensionColumnPage decodeColumnPage(
       DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber,
       ReusableDataBuffer reusableDataBuffer)
-      throws IOException, MemoryException {
+      throws IOException {
     // data chunk of page
     DataChunk2 pageMetadata = null;
     // data chunk of blocklet column

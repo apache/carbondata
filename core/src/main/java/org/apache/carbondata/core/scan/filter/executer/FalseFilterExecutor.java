@@ -17,25 +17,16 @@
 
 package org.apache.carbondata.core.scan.filter.executer;
 
-import java.io.IOException;
 import java.util.BitSet;
 
-import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.BitSetGroup;
 
-/**
- * API will apply filter based on resolver instance
- *
- * @return
- * @throws FilterUnsupportedException
- */
 public class FalseFilterExecutor implements FilterExecuter {
 
   @Override
-  public BitSetGroup applyFilter(RawBlockletColumnChunks rawChunks, boolean useBitsetPipeline)
-      throws FilterUnsupportedException, IOException {
+  public BitSetGroup applyFilter(RawBlockletColumnChunks rawChunks, boolean useBitsetPipeline) {
     int numberOfPages = rawChunks.getDataBlock().numberOfPages();
     BitSetGroup group = new BitSetGroup(numberOfPages);
     for (int i = 0; i < numberOfPages; i++) {
@@ -46,16 +37,14 @@ public class FalseFilterExecutor implements FilterExecuter {
   }
 
   @Override
-  public BitSet prunePages(RawBlockletColumnChunks rawChunks)
-      throws FilterUnsupportedException, IOException {
+  public BitSet prunePages(RawBlockletColumnChunks rawChunks) {
     int numberOfPages = rawChunks.getDataBlock().numberOfPages();
     BitSet set = new BitSet(numberOfPages);
     return set;
   }
 
   @Override
-  public boolean applyFilter(RowIntf value, int dimOrdinalMax)
-      throws FilterUnsupportedException, IOException {
+  public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
     return false;
   }
 

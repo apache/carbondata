@@ -26,7 +26,6 @@ import org.apache.carbondata.core.datastore.page.statistics.DummyStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -65,15 +64,11 @@ public class ComplexColumnPage {
 
   /**
    * below method will be used to initlize the column page of complex type
-   * @param columnToDictMap
-   * dictionary map
-   * @param pageSize
-   * number of records
-   * @throws MemoryException
-   * if memory is not sufficient
+   * @param columnToDictMap dictionary map
+   * @param pageSize number of records
    */
   public void initialize(Map<String, LocalDictionaryGenerator> columnToDictMap, int pageSize,
-      String columnCompressor) throws MemoryException {
+      String columnCompressor) {
     DataType dataType;
     for (int i = 0; i < this.columnPages.length; i++) {
       LocalDictionaryGenerator localDictionaryGenerator =

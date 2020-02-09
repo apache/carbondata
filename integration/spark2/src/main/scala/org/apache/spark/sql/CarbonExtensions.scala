@@ -17,14 +17,11 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.catalyst.catalog.SessionCatalog
-import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
-import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonMVRules, CarbonPreInsertionCasts}
-import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule}
+import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonPreInsertionCasts}
 import org.apache.spark.sql.parser.CarbonExtensionSqlParser
 
 class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {

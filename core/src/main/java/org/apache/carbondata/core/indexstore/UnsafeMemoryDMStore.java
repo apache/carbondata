@@ -22,7 +22,6 @@ import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.UnsafeDataMapRow;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.memory.MemoryBlock;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.MemoryType;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -50,7 +49,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
 
   private int rowCount;
 
-  public UnsafeMemoryDMStore() throws MemoryException {
+  public UnsafeMemoryDMStore() {
     this.allocatedSize = capacity;
     this.memoryBlock =
         UnsafeMemoryManager.allocateMemoryWithRetry(MemoryType.ONHEAP, taskId, allocatedSize);
@@ -63,7 +62,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
    *
    * @param rowSize
    */
-  private void ensureSize(int rowSize) throws MemoryException {
+  private void ensureSize(int rowSize) {
     if (runningLength + rowSize >= allocatedSize) {
       increaseMemory(runningLength + rowSize);
     }
@@ -74,7 +73,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
     }
   }
 
-  private void increaseMemory(int requiredMemory) throws MemoryException {
+  private void increaseMemory(int requiredMemory) {
     MemoryBlock newMemoryBlock = UnsafeMemoryManager
         .allocateMemoryWithRetry(MemoryType.ONHEAP, taskId, allocatedSize + requiredMemory);
     getUnsafe().copyMemory(this.memoryBlock.getBaseObject(), this.memoryBlock.getBaseOffset(),
@@ -114,7 +113,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
    *
    * @param indexRow
    */
-  public void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow) throws MemoryException {
+  public void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow) {
     // First calculate the required memory to keep the row in unsafe
     int rowSize = indexRow.getTotalSizeInBytes();
     // Check whether allocated memory is sufficient or not.
@@ -249,7 +248,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
     return new UnsafeDataMapRow(schema, memoryBlock, pointers[index]);
   }
 
-  public void finishWriting() throws MemoryException {
+  public void finishWriting() {
     if (runningLength < allocatedSize) {
       MemoryBlock allocate =
           UnsafeMemoryManager.allocateMemoryWithRetry(MemoryType.ONHEAP, taskId, runningLength);

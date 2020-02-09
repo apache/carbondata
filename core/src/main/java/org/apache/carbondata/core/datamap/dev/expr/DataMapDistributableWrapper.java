@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.datamap.dev.expr;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 import org.apache.carbondata.core.datamap.DataMapDistributable;
@@ -44,12 +43,12 @@ public class DataMapDistributableWrapper extends InputSplit implements Serializa
   }
 
   @Override
-  public long getLength() throws IOException, InterruptedException {
+  public long getLength() {
     return distributable.getLength();
   }
 
   @Override
-  public String[] getLocations() throws IOException, InterruptedException {
+  public String[] getLocations() {
     return distributable.getLocations();
   }
 }

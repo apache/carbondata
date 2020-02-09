@@ -22,9 +22,7 @@ import java.io.IOException;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.examples.util.ExampleUtils;
 
-import org.apache.spark.sql.CarbonSession;
 import org.apache.spark.sql.SparkSession;
 
 public class JavaCarbonSessionExample {

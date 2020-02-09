@@ -17,14 +17,12 @@
 
 package org.apache.carbondata.datamap.bloom;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
-import org.apache.carbondata.core.memory.MemoryException;
 
 import org.apache.hadoop.util.bloom.CarbonBloomFilter;
 
@@ -48,8 +46,7 @@ public class BloomDataMapCache
   }
 
   @Override
-  public BloomCacheKeyValue.CacheValue get(BloomCacheKeyValue.CacheKey key)
-      throws IOException {
+  public BloomCacheKeyValue.CacheValue get(BloomCacheKeyValue.CacheKey key) {
     BloomCacheKeyValue.CacheValue cacheValue = getIfPresent(key);
     if (cacheValue == null) {
       List<CarbonBloomFilter> bloomFilters =
@@ -61,8 +58,7 @@ public class BloomDataMapCache
   }
 
   @Override
-  public List<BloomCacheKeyValue.CacheValue> getAll(List<BloomCacheKeyValue.CacheKey> keys)
-      throws IOException {
+  public List<BloomCacheKeyValue.CacheValue> getAll(List<BloomCacheKeyValue.CacheKey> keys) {
     List<BloomCacheKeyValue.CacheValue> cacheValues = new ArrayList<>();
     for (BloomCacheKeyValue.CacheKey key : keys) {
       BloomCacheKeyValue.CacheValue cacheValue = get(key);
@@ -82,8 +78,7 @@ public class BloomDataMapCache
   }
 
   @Override
-  public void put(BloomCacheKeyValue.CacheKey key, BloomCacheKeyValue.CacheValue value)
-      throws IOException, MemoryException {
+  public void put(BloomCacheKeyValue.CacheKey key, BloomCacheKeyValue.CacheValue value) {
     // No impl required.
   }
 

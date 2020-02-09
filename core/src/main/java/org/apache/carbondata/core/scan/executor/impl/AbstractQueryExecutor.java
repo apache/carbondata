@@ -44,11 +44,10 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataRefNode;
 import org.apache.carbondata.core.indexstore.blockletindex.IndexWrapper;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -380,7 +379,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   }
 
   protected List<BlockExecutionInfo> getBlockExecutionInfos(QueryModel queryModel)
-      throws IOException, QueryExecutionException {
+      throws IOException {
     initQuery(queryModel);
     List<BlockExecutionInfo> blockExecutionInfoList = new ArrayList<BlockExecutionInfo>();
     // fill all the block execution infos for all the blocks selected in
@@ -430,12 +429,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @param queryModel query model from user query
    * @param blockIndex block index
    * @return block execution info
-   * @throws QueryExecutionException any failure during block info creation
    */
   private BlockExecutionInfo getBlockExecutionInfoForBlock(QueryModel queryModel,
       AbstractIndex blockIndex, int startBlockletIndex, int numberOfBlockletToScan, String filePath,
-      String[] deleteDeltaFiles, Segment segment)
-      throws QueryExecutionException {
+      String[] deleteDeltaFiles, Segment segment) {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
     // set actual query dimensions and measures. It may differ in case of restructure scenarios
@@ -515,12 +512,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           FilterUtil.getFilterExecuterTree(filterResolverIntf, segmentProperties,
               blockExecutionInfo.getComlexDimensionInfoMap(), false));
     }
-    try {
-      startIndexKey = FilterUtil.prepareDefaultStartIndexKey(segmentProperties);
-      endIndexKey = FilterUtil.prepareDefaultEndIndexKey(segmentProperties);
-    } catch (KeyGenException e) {
-      throw new QueryExecutionException(e);
-    }
+    startIndexKey = FilterUtil.prepareDefaultStartIndexKey(segmentProperties);
+    endIndexKey = FilterUtil.prepareDefaultEndIndexKey(segmentProperties);
     //setting the start index key of the block node
     blockExecutionInfo.setStartKey(startIndexKey);
     //setting the end index key of the block node
@@ -648,8 +641,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     while (counter < queryDimension.size()) {
       if (queryDimension.get(counter).getDimension().getNumberOfChild() > 0) {
         counter += queryDimension.get(counter).getDimension().getNumberOfChild();
-      } else if (!CarbonUtil.hasEncoding(queryDimension.get(counter).getDimension().getEncoder(),
-          Encoding.DICTIONARY)) {
+      } else if (queryDimension.get(counter).getDimension().getDataType() != DataTypes.DATE) {
         counter++;
       } else {
         fixedLengthDimensionOrdinal.add(blockMetadataInfo.getDimensionOrdinalToChunkMapping()

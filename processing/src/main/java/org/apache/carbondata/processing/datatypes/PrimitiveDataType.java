@@ -31,7 +31,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.devapi.BiDictionary;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -439,7 +438,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   @Override
   public void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
       KeyGenerator[] generator)
-      throws IOException, KeyGenException {
+      throws IOException {
     if (!this.isDictionary) {
       int sizeOfData;
       if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {

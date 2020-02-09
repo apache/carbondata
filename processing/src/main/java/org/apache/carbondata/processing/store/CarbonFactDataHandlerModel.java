@@ -33,7 +33,7 @@ import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGener
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -257,7 +257,7 @@ public class CarbonFactDataHandlerModel {
     }
     List<DataType> noDictDataTypesList = new ArrayList<>();
     for (DataField dataField : configuration.getDataFields()) {
-      if (!dataField.hasDictionaryEncoding() && dataField.getColumn().isDimension()) {
+      if (!dataField.isDateDataType() && dataField.getColumn().isDimension()) {
         noDictDataTypesList.add(dataField.getColumn().getDataType());
       }
     }
@@ -337,7 +337,7 @@ public class CarbonFactDataHandlerModel {
     int noDicAndComp = 0;
     List<DataType> noDictDataTypesList = new ArrayList<>();
     for (CarbonDimension dim : allDimensions) {
-      if (!dim.hasEncoding(Encoding.DICTIONARY)) {
+      if (dim.getDataType() != DataTypes.DATE) {
         noDicAndComplexColumns[noDicAndComp++] =
             new CarbonColumn(dim.getColumnSchema(), dim.getOrdinal(), dim.getSchemaOrdinal());
         noDictDataTypesList.add(dim.getDataType());

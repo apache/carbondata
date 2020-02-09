@@ -60,7 +60,7 @@ public class BloomDataMapWriter extends AbstractBloomDataMapWriter {
     this.indexCol2MdkIdx = new HashMap<>();
     int idx = 0;
     for (final CarbonDimension dimension : segmentProperties.getDimensions()) {
-      if (!dimension.isGlobalDictionaryEncoding() && !dimension.isDirectDictionaryEncoding()) {
+      if (dimension.getDataType() != DataTypes.DATE) {
         continue;
       }
       boolean isExistInIndex = CollectionUtils.exists(indexColumns, new Predicate() {

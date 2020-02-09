@@ -43,7 +43,6 @@ import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -385,7 +384,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * generate the EncodedTablePage from the input rows (one page in case of V3 format)
    */
   private TablePage processDataRows(List<CarbonRow> dataRows)
-      throws CarbonDataWriterException, KeyGenException, MemoryException, IOException {
+      throws CarbonDataWriterException, IOException {
     if (dataRows.size() == 0) {
       return new TablePage(model, 0);
     }
@@ -663,10 +662,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
      * Computes a result, or throws an exception if unable to do so.
      *
      * @return computed result
-     * @throws Exception if unable to compute a result
      */
     @Override
-    public Void call() throws Exception {
+    public Void call() {
       try {
         TablePage tablePage = processDataRows(dataRows);
         dataRows = null;
@@ -699,10 +697,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
      * Computes a result, or throws an exception if unable to do so.
      *
      * @return computed result
-     * @throws Exception if unable to compute a result
      */
     @Override
-    public Void call() throws Exception {
+    public Void call() {
       while (!processingComplete || blockletProcessingCount.get() > 0) {
         TablePage tablePage = null;
         try {

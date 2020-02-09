@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
+import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 
@@ -31,10 +32,13 @@ public class ComplexFieldConverterImpl extends AbstractDictionaryFieldConverterI
   private GenericDataType genericDataType;
 
   private int index;
+  private DataField dataField;
 
-  public ComplexFieldConverterImpl(GenericDataType genericDataType, int index) {
+  public ComplexFieldConverterImpl(DataField dataField, GenericDataType genericDataType,
+      int index) {
     this.genericDataType = genericDataType;
     this.index = index;
+    this.dataField = dataField;
   }
 
   @Override
@@ -55,6 +59,11 @@ public class ComplexFieldConverterImpl extends AbstractDictionaryFieldConverterI
     } catch (Exception e) {
       throw new CarbonDataLoadingException(value + "", e);
     }
+  }
+
+  @Override
+  public DataField getDataField() {
+    return dataField;
   }
 
   /**

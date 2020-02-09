@@ -36,7 +36,6 @@ import org.apache.carbondata.core.indexstore.blockletindex.BlockDataMap;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapModel;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
@@ -76,13 +75,12 @@ public class BlockletDataMapIndexStore
   }
 
   @Override
-  public BlockletDataMapIndexWrapper get(TableBlockIndexUniqueIdentifierWrapper identifierWrapper)
-      throws IOException {
+  public BlockletDataMapIndexWrapper get(TableBlockIndexUniqueIdentifierWrapper identifierWrapper) {
     return get(identifierWrapper, null);
   }
 
   public BlockletDataMapIndexWrapper get(TableBlockIndexUniqueIdentifierWrapper identifierWrapper,
-      Map<String, Map<String, BlockMetaInfo>> segInfoCache) throws IOException {
+      Map<String, Map<String, BlockMetaInfo>> segInfoCache) {
     TableBlockIndexUniqueIdentifier identifier =
         identifierWrapper.getTableBlockIndexUniqueIdentifier();
     String lruCacheKey = identifier.getUniqueTableSegmentIdentifier();
@@ -244,7 +242,7 @@ public class BlockletDataMapIndexStore
 
   @Override
   public void put(TableBlockIndexUniqueIdentifierWrapper tableBlockIndexUniqueIdentifierWrapper,
-      BlockletDataMapIndexWrapper wrapper) throws IOException, MemoryException {
+      BlockletDataMapIndexWrapper wrapper) throws IOException {
     // As dataMap will use unsafe memory, it is not recommended to overwrite an existing entry
     // as in that case clearing unsafe memory need to be taken card. If at all datamap entry
     // in the cache need to be overwritten then use the invalidate interface
@@ -281,8 +279,7 @@ public class BlockletDataMapIndexStore
   private BlockDataMap loadAndGetDataMap(TableBlockIndexUniqueIdentifier identifier,
       SegmentIndexFileStore indexFileStore, Map<String, BlockMetaInfo> blockMetaInfoMap,
       CarbonTable carbonTable, boolean addTableBlockToUnsafe, Configuration configuration,
-      List<DataFileFooter> indexInfos)
-      throws IOException, MemoryException {
+      List<DataFileFooter> indexInfos) throws IOException {
     String uniqueTableSegmentIdentifier =
         identifier.getUniqueTableSegmentIdentifier();
     Object lock = segmentLockMap.get(uniqueTableSegmentIdentifier);

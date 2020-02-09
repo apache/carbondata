@@ -96,6 +96,24 @@ abstract class ModularPlan
     _rewritten
   }
 
+  private var rolledUp: Boolean = false
+
+  /**
+   * Marks this plan as rolledup plan
+   */
+  private[mv] def setRolledUp(): ModularPlan = {
+    rolledUp = true
+    children.foreach(_.setRolledUp())
+    this
+  }
+
+  /**
+   * Returns true if plan is rolledup
+   */
+  def isRolledUp: Boolean = {
+    rolledUp
+  }
+
   private var _skip: Boolean = false
 
   private[mv] def setSkip(): ModularPlan = {

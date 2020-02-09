@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.processing.loading.converter.impl;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,7 +73,7 @@ public class RowConverterImpl implements RowConverter {
   }
 
   @Override
-  public void initialize() throws IOException {
+  public void initialize() {
     String nullFormat =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
             .toString();
@@ -82,15 +81,22 @@ public class RowConverterImpl implements RowConverter {
         configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
             .toString());
     List<FieldConverter> fieldConverterList = new ArrayList<>();
+    List<FieldConverter> nonSchemaFieldConverterList = new ArrayList<>();
     long lruCacheStartTime = System.currentTimeMillis();
 
     for (int i = 0; i < fields.length; i++) {
       FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
           .createFieldEncoder(fields[i], i, nullFormat, isEmptyBadRecord, isConvertToBinary,
               (String) configuration.getDataLoadProperty(
-                  CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER));
-      fieldConverterList.add(fieldConverter);
+                  CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER),
+              configuration);
+      if (fields[i].getColumn().isIndexColumn()) {
+        nonSchemaFieldConverterList.add(fieldConverter);
+      } else {
+        fieldConverterList.add(fieldConverter);
+      }
     }
+    fieldConverterList.addAll(nonSchemaFieldConverterList);
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
         .recordLruCacheLoadTime((System.currentTimeMillis() - lruCacheStartTime) / 1000.0);
     fieldConverters = fieldConverterList.toArray(new FieldConverter[0]);
@@ -102,6 +108,12 @@ public class RowConverterImpl implements RowConverter {
     logHolder.setLogged(false);
     logHolder.clear();
     for (int i = 0; i < fieldConverters.length; i++) {
+      if (configuration.isIndexColumnsPresent() && !fieldConverters[i].getDataField().getColumn()
+          .isIndexColumn()) {
+        // Skip the conversion for schema columns if the conversion is required only for index
+        // columns
+        continue;
+      }
       fieldConverters[i].convert(row, logHolder);
       if (!logHolder.isLogged() && logHolder.isBadRecordNotAdded()) {
         badRecordLogger.addBadRecordsToBuilder(row.getRawData(), logHolder.getReason());
@@ -137,6 +149,7 @@ public class RowConverterImpl implements RowConverter {
         new RowConverterImpl(this.fields, this.configuration, this.badRecordLogger,
             this.isConvertToBinary);
     List<FieldConverter> fieldConverterList = new ArrayList<>();
+    List<FieldConverter> nonSchemaFieldConverterList = new ArrayList<>();
     String nullFormat =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
             .toString();
@@ -147,9 +160,15 @@ public class RowConverterImpl implements RowConverter {
       FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
           .createFieldEncoder(fields[i], i, nullFormat, isEmptyBadRecord, isConvertToBinary,
               (String) configuration.getDataLoadProperty(
-                  CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER));
-      fieldConverterList.add(fieldConverter);
+                  CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER),
+              configuration);
+      if (fields[i].getColumn().isIndexColumn()) {
+        nonSchemaFieldConverterList.add(fieldConverter);
+      } else {
+        fieldConverterList.add(fieldConverter);
+      }
     }
+    fieldConverterList.addAll(nonSchemaFieldConverterList);
     converter.fieldConverters = fieldConverterList.toArray(new FieldConverter[0]);
     converter.logHolder = new BadRecordLogHolder();
     return converter;

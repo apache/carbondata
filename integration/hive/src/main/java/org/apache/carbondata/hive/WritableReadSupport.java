@@ -66,7 +66,7 @@ public class WritableReadSupport<T> implements CarbonReadSupport<T> {
    */
   @Override
   public void initialize(CarbonColumn[] carbonColumns,
-      CarbonTable carbonTable) throws IOException {
+      CarbonTable carbonTable) {
     this.carbonColumns = carbonColumns;
   }
 

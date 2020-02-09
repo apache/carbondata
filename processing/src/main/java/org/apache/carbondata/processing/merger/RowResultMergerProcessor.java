@@ -31,7 +31,6 @@ import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
@@ -240,15 +239,8 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
 
     @Override
     public int compare(RawResultIterator o1, RawResultIterator o2) {
-
-      Object[] row1 = new Object[0];
-      Object[] row2 = new Object[0];
-      try {
-        row1 = o1.fetchConverted();
-        row2 = o2.fetchConverted();
-      } catch (KeyGenException e) {
-        LOGGER.error(e.getMessage(), e);
-      }
+      Object[] row1 = o1.fetchConverted();
+      Object[] row2 = o2.fetchConverted();
       if (null == row1 || null == row2) {
         return 0;
       }

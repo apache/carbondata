@@ -34,6 +34,7 @@ import org.apache.spark.sql.execution.command.timeseries.{TimeSeriesFunction, Ti
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.sql.types.{ArrayType, DateType, MapType, StructType}
+import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.{DataMapUtil, PartitionUtils}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -830,15 +831,170 @@ object MVHelper {
    */
   def rewriteWithMVTable(rewrittenPlan: ModularPlan, rewrite: QueryRewrite): ModularPlan = {
     if (rewrittenPlan.find(_.rewritten).isDefined) {
-      val updatedDataMapTablePlan = rewrittenPlan transform {
+      var updatedMVTablePlan = rewrittenPlan transform {
         case s: Select =>
           MVHelper.updateDataMap(s, rewrite)
         case g: GroupBy =>
           MVHelper.updateDataMap(g, rewrite)
       }
-      updatedDataMapTablePlan
+      if (rewrittenPlan.isRolledUp) {
+        // If the rewritten query is rolled up, then rewrite the query based on the original modular
+        // plan. Make a new outputList based on original modular plan and wrap rewritten plan with
+        // select & group-by nodes with new outputList.
+
+        // For example:
+        // Given User query:
+        // SELECT timeseries(col,'day') from maintable group by timeseries(col,'day')
+        // If plan is rewritten as per 'hour' granularity of datamap1,
+        // then rewritten query will be like,
+        // SELECT datamap1_table.`UDF:timeseries_projectjoindate_hour` AS `UDF:timeseries
+        // (projectjoindate, hour)`
+        // FROM
+        // default.datamap1_table
+        // GROUP BY datamap1_table.`UDF:timeseries_projectjoindate_hour`
+        //
+        // Now, rewrite the rewritten plan as per the 'day' granularity
+        // SELECT timeseries(gen_subsumer_0.`UDF:timeseries(projectjoindate, hour)`,'day' ) AS
+        // `UDF:timeseries(projectjoindate, day)`
+        //  FROM
+        //  (SELECT datamap2_table.`UDF:timeseries_projectjoindate_hour` AS `UDF:timeseries
+        //  (projectjoindate, hour)`
+        //  FROM
+        //    default.datamap2_table
+        //  GROUP BY datamap2_table.`UDF:timeseries_projectjoindate_hour`) gen_subsumer_0
+        // GROUP BY timeseries(gen_subsumer_0.`UDF:timeseries(projectjoindate, hour)`,'day' )
+        rewrite.modularPlan match {
+          case select: Select =>
+            val outputList = select.outputList
+            val rolledUpOutputList = updatedMVTablePlan.asInstanceOf[Select].outputList
+            var finalOutputList: Seq[NamedExpression] = Seq.empty
+            val mapping = outputList zip rolledUpOutputList
+            val newSubsume = rewrite.newSubsumerName()
+
+            mapping.foreach { outputLists =>
+              val name: String = getAliasName(outputLists._2)
+              outputLists._1 match {
+                case a@Alias(scalaUdf: ScalaUDF, aliasName) =>
+                  if (scalaUdf.function.isInstanceOf[TimeSeriesFunction]) {
+                    val newName = newSubsume + ".`" + name + "`"
+                    val transformedUdf = transformTimeSeriesUdf(scalaUdf, newName)
+                    finalOutputList = finalOutputList.:+(Alias(transformedUdf, aliasName)(a.exprId,
+                      a.qualifier).asInstanceOf[NamedExpression])
+                  }
+                case Alias(attr: AttributeReference, _) =>
+                  finalOutputList = finalOutputList.:+(
+                    CarbonToSparkAdapter.createAttributeReference(attr, name, newSubsume))
+                case attr: AttributeReference =>
+                  finalOutputList = finalOutputList.:+(
+                    CarbonToSparkAdapter.createAttributeReference(attr, name, newSubsume))
+              }
+            }
+            val newChildren = new collection.mutable.ArrayBuffer[ModularPlan]()
+            val newAliasMap = new collection.mutable.HashMap[Int, String]()
+
+            val sel_plan = select.copy(outputList = finalOutputList,
+              inputList = finalOutputList,
+              predicateList = Seq.empty)
+            newChildren += sel_plan
+            newAliasMap += (newChildren.indexOf(sel_plan) -> newSubsume)
+            updatedMVTablePlan = select.copy(outputList = finalOutputList,
+              inputList = finalOutputList,
+              aliasMap = newAliasMap.toMap,
+              predicateList = Seq.empty,
+              children = Seq(updatedMVTablePlan)).setRewritten()
+
+          case groupBy: GroupBy =>
+            updatedMVTablePlan match {
+              case select: Select =>
+                val selectOutputList = groupBy.outputList
+                val rolledUpOutputList = updatedMVTablePlan.asInstanceOf[Select].outputList
+                var finalOutputList: Seq[NamedExpression] = Seq.empty
+                var predicateList: Seq[Expression] = Seq.empty
+                val mapping = selectOutputList zip rolledUpOutputList
+                val newSubsume = rewrite.newSubsumerName()
+
+                mapping.foreach { outputLists =>
+                  val aliasName: String = getAliasName(outputLists._2)
+                  outputLists._1 match {
+                    case a@Alias(scalaUdf: ScalaUDF, _) =>
+                      if (scalaUdf.function.isInstanceOf[TimeSeriesFunction]) {
+                        val newName = newSubsume + ".`" + aliasName + "`"
+                        val transformedUdf = transformTimeSeriesUdf(scalaUdf, newName)
+                        groupBy.predicateList.foreach {
+                          case udf: ScalaUDF if udf.isInstanceOf[ScalaUDF] =>
+                            predicateList = predicateList.:+(transformedUdf)
+                          case attr: AttributeReference =>
+                            predicateList = predicateList.:+(
+                              CarbonToSparkAdapter.createAttributeReference(attr,
+                                attr.name,
+                                newSubsume))
+                        }
+                        finalOutputList = finalOutputList.:+(Alias(transformedUdf, a.name)(a
+                          .exprId, a.qualifier).asInstanceOf[NamedExpression])
+                      }
+                    case attr: AttributeReference =>
+                      finalOutputList = finalOutputList.:+(
+                        CarbonToSparkAdapter.createAttributeReference(attr, aliasName, newSubsume))
+                    case Alias(attr: AttributeReference, _) =>
+                      finalOutputList = finalOutputList.:+(
+                        CarbonToSparkAdapter.createAttributeReference(attr, aliasName, newSubsume))
+                    case a@Alias(agg: AggregateExpression, name) =>
+                      val newAgg = agg.transform {
+                        case attr: AttributeReference =>
+                          CarbonToSparkAdapter.createAttributeReference(attr, name, newSubsume)
+                      }
+                      finalOutputList = finalOutputList.:+(Alias(newAgg, name)(a.exprId,
+                        a.qualifier).asInstanceOf[NamedExpression])
+                    case other => other
+                  }
+                }
+                val newChildren = new collection.mutable.ArrayBuffer[ModularPlan]()
+                val newAliasMap = new collection.mutable.HashMap[Int, String]()
+
+                val sel_plan = select.copy(outputList = finalOutputList,
+                  inputList = finalOutputList,
+                  predicateList = Seq.empty)
+                newChildren += sel_plan
+                newAliasMap += (newChildren.indexOf(sel_plan) -> newSubsume)
+                updatedMVTablePlan = select.copy(outputList = finalOutputList,
+                  inputList = finalOutputList,
+                  aliasMap = newAliasMap.toMap,
+                  children = Seq(updatedMVTablePlan)).setRewritten()
+                updatedMVTablePlan = groupBy.copy(outputList = finalOutputList,
+                  inputList = finalOutputList,
+                  predicateList = predicateList,
+                  alias = Some(newAliasMap.mkString),
+                  child = updatedMVTablePlan).setRewritten()
+                updatedMVTablePlan = select.copy(outputList = finalOutputList,
+                  inputList = finalOutputList,
+                  children = Seq(updatedMVTablePlan)).setRewritten()
+            }
+        }
+      }
+      updatedMVTablePlan
     } else {
       rewrittenPlan
+    }
+  }
+
+  def getAliasName(exp: NamedExpression): String = {
+    exp match {
+      case Alias(_, name) =>
+        name
+      case attr: AttributeReference =>
+        attr.name
+    }
+  }
+
+  private def transformTimeSeriesUdf(scalaUdf: ScalaUDF, newName: String): Expression = {
+    scalaUdf.transformDown {
+      case attr: AttributeReference =>
+        AttributeReference(newName, attr.dataType)(
+          exprId = attr.exprId,
+          qualifier = attr.qualifier)
+      case l: Literal =>
+        Literal(UTF8String.fromString("'" + l.toString() + "'"),
+          org.apache.spark.sql.types.DataTypes.StringType)
     }
   }
 

@@ -32,7 +32,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.indexstore.schema.SchemaGenerator;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -400,7 +399,7 @@ public class SegmentPropertiesAndSchemaHolder {
     }
 
     public CarbonRowSchema[] getTaskSummarySchemaForBlock(boolean storeBlockletCount,
-        boolean filePathToBeStored) throws MemoryException {
+        boolean filePathToBeStored) {
       if (null == taskSummarySchemaForBlock && filePathToBeStored) {
         synchronized (taskSchemaLock) {
           if (null == taskSummarySchemaForBlock) {
@@ -427,7 +426,7 @@ public class SegmentPropertiesAndSchemaHolder {
     }
 
     public CarbonRowSchema[] getTaskSummarySchemaForBlocklet(boolean storeBlockletCount,
-        boolean filePathToBeStored) throws MemoryException {
+        boolean filePathToBeStored) {
       if (null == taskSummarySchemaForBlocklet && filePathToBeStored) {
         synchronized (taskSchemaLock) {
           if (null == taskSummarySchemaForBlocklet) {

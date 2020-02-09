@@ -39,7 +39,6 @@ import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.DatabaseLocationProvider;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -179,7 +178,7 @@ public final class CarbonDataProcessorUtil {
         break;
       }
 
-      if (!field.hasDictionaryEncoding() && field.getColumn().isDimension()) {
+      if (!field.isDateDataType() && field.getColumn().isDimension()) {
         noDictionaryMapping.add(true);
       } else if (field.getColumn().isDimension()) {
         noDictionaryMapping.add(false);
@@ -216,7 +215,7 @@ public final class CarbonDataProcessorUtil {
       if (column.isComplex()) {
         break;
       }
-      if (!column.hasEncoding(Encoding.DICTIONARY) && column.isDimension()) {
+      if (column.getDataType() != DataTypes.DATE && column.isDimension()) {
         noDictionaryMapping.add(true);
       } else if (column.isDimension()) {
         noDictionaryMapping.add(false);
@@ -238,11 +237,11 @@ public final class CarbonDataProcessorUtil {
   }
 
   private static String isDictionaryType(CarbonDimension dimension) {
-    Boolean isDictionary = true;
-    if (!(dimension.hasEncoding(Encoding.DICTIONARY))) {
+    boolean isDictionary = true;
+    if (dimension.getDataType() != DataTypes.DATE) {
       isDictionary = false;
     }
-    return isDictionary.toString();
+    return String.valueOf(isDictionary);
   }
 
   /**
@@ -337,7 +336,10 @@ public final class CarbonDataProcessorUtil {
     List<CarbonDimension> dimensions =
         schema.getCarbonTable().getVisibleDimensions();
     for (CarbonDimension dimension : dimensions) {
-      columnNames.add(dimension.getColName());
+      if (!dimension.isIndexColumn()) {
+        // skip the non-schema index column
+        columnNames.add(dimension.getColName());
+      }
     }
     List<CarbonMeasure> measures = schema.getCarbonTable().getVisibleMeasures();
     for (CarbonMeasure msr : measures) {
@@ -368,7 +370,7 @@ public final class CarbonDataProcessorUtil {
     List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
     List<DataType> type = new ArrayList<>();
     for (int i = 0; i < dimensions.size(); i++) {
-      if (dimensions.get(i).isSortColumn() && !dimensions.get(i).hasEncoding(Encoding.DICTIONARY)) {
+      if (dimensions.get(i).isSortColumn() && dimensions.get(i).getDataType() != DataTypes.DATE) {
         type.add(dimensions.get(i).getDataType());
       }
     }
@@ -386,7 +388,7 @@ public final class CarbonDataProcessorUtil {
     List<Boolean> noDicSortColMap = new ArrayList<>();
     for (int i = 0; i < dimensions.size(); i++) {
       if (dimensions.get(i).isSortColumn()) {
-        if (!dimensions.get(i).hasEncoding(Encoding.DICTIONARY)) {
+        if (dimensions.get(i).getDataType() != DataTypes.DATE) {
           noDicSortColMap.add(true);
         } else {
           noDicSortColMap.add(false);
@@ -414,7 +416,7 @@ public final class CarbonDataProcessorUtil {
     List<Integer> noDicSortColMap = new ArrayList<>();
     int counter = 0;
     for (CarbonDimension dimension : dimensions) {
-      if (dimension.hasEncoding(Encoding.DICTIONARY)) {
+      if (dimension.getDataType() == DataTypes.DATE) {
         continue;
       }
       if (dimension.isSortColumn() && DataTypeUtil.isPrimitiveColumn(dimension.getDataType())) {
@@ -441,7 +443,7 @@ public final class CarbonDataProcessorUtil {
     List<DataType> noDictSortType = new ArrayList<>();
     List<DataType> noDictNoSortType = new ArrayList<>();
     for (int i = 0; i < dimensions.size(); i++) {
-      if (!dimensions.get(i).hasEncoding(Encoding.DICTIONARY)) {
+      if (dimensions.get(i).getDataType() != DataTypes.DATE) {
         if (dimensions.get(i).isSortColumn()) {
           noDictSortType.add(dimensions.get(i).getDataType());
         } else {

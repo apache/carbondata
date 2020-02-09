@@ -23,7 +23,6 @@ import java.util.List;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
@@ -140,13 +139,9 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
         int queryOrder = executionInfo.getActualQueryDimensions()[i].getOrdinal();
         CarbonDimension dimension =
             executionInfo.getActualQueryDimensions()[i].getDimension();
-        if (dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        if (dimension.getDataType() == DataTypes.DATE) {
           // fill direct dictionary column data
           fillDirectDictionaryData(allColumnInfo[queryOrder].vector, allColumnInfo[queryOrder],
-              dimensionInfo.getDefaultValues()[i]);
-        } else if (dimension.hasEncoding(Encoding.DICTIONARY)) {
-          // fill dictionary column data
-          fillDictionaryData(allColumnInfo[queryOrder].vector, allColumnInfo[queryOrder],
               dimensionInfo.getDefaultValues()[i]);
         } else {
           // fill no dictionary data

@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.datamap.bloom;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -38,7 +37,6 @@ import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -85,7 +83,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   private BadRecordLogHolder badRecordLogHolder;
 
   @Override
-  public void init(DataMapModel dataMapModel) throws IOException {
+  public void init(DataMapModel dataMapModel) {
     this.indexPath = FileFactory.getPath(dataMapModel.getFilePath());
     this.shardName = indexPath.getName();
     if (dataMapModel instanceof BloomDataMapModel) {
@@ -125,7 +123,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       dataField.setTimestampFormat(tsFormat);
       FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
           .createFieldEncoder(dataField, i, nullFormat, false,
-              false, carbonTable.getTablePath());
+              false, carbonTable.getTablePath(), null);
       this.name2Converters.put(indexedColumn.get(i).getColName(), fieldConverter);
     }
     this.badRecordLogHolder = new BadRecordLogHolder();
@@ -134,7 +132,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
 
   @Override
   public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions) throws IOException {
+      List<PartitionSpec> partitions) {
     Set<Blocklet> hitBlocklets = null;
     if (filterExp == null) {
       // null is different from empty here. Empty means after pruning, no blocklet need to scan.
@@ -307,8 +305,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         convertedValue = BooleanConvert.boolean2Byte((Boolean)convertedValue);
       }
       internalFilterValue = CarbonUtil.getValueAsBytes(carbonColumn.getDataType(), convertedValue);
-    } else if (carbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY) ||
-        carbonColumn.hasEncoding(Encoding.DICTIONARY)) {
+    } else if (carbonColumn.getDataType() == DataTypes.DATE) {
       // for dictionary/date columns, convert the surrogate key to bytes
       internalFilterValue = CarbonUtil.getValueAsBytes(DataTypes.INT, convertedValue);
     } else {

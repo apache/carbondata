@@ -62,8 +62,7 @@ public interface CarbonStore extends Closeable {
    * SQL query, table should be created before calling this function
    * @param sqlString SQL statement
    * @return rows
-   * @throws IOException if unable to read files in table path
    */
-  Iterator<CarbonRow> sql(String sqlString) throws IOException;
+  Iterator<CarbonRow> sql(String sqlString);
 
 }

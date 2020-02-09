@@ -48,6 +48,7 @@ import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.{TextMatch, TextMatchLimit, TextMatchMaxDocUDF, TextMatchUDF}
+import org.apache.carbondata.geo.{InPolygon, InPolygonUDF}
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 /**
@@ -286,6 +287,15 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     }
 
     var vectorPushRowFilters = CarbonProperties.getInstance().isPushRowFiltersForVector
+
+    // Spark cannot filter the rows from the pages in case of polygon query. So, we do the row
+    // level filter at carbon and return the rows directly.
+    if (candidatePredicates
+      .exists(exp => exp.isInstanceOf[ScalaUDF] &&
+                     exp.asInstanceOf[ScalaUDF].function.isInstanceOf[InPolygonUDF])) {
+      vectorPushRowFilters = true
+    }
+
     // In case of mixed format, make the vectorPushRowFilters always false as other formats
     // filtering happens in spark layer.
     if (vectorPushRowFilters && extraRdd.isDefined) {
@@ -551,6 +561,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           predicate match {
             case u: ScalaUDF if u.function.isInstanceOf[TextMatchUDF] ||
                                 u.function.isInstanceOf[TextMatchMaxDocUDF] => count = count + 1
+            case _ =>
           }
         }
         if (count > 1) {
@@ -617,6 +628,12 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
             "TEXT_MATCH UDF syntax: TEXT_MATCH_LIMIT('luceneQuerySyntax')")
         }
         Some(TextMatchLimit(u.children.head.toString(), u.children.last.toString()))
+
+      case u: ScalaUDF if u.function.isInstanceOf[InPolygonUDF] =>
+        if (u.children.size > 1) {
+          throw new MalformedCarbonCommandException("Expect one string in polygon")
+        }
+        Some(InPolygon(u.children.head.toString()))
 
       case or@Or(left, right) =>
 

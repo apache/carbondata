@@ -32,7 +32,6 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
@@ -41,6 +40,7 @@ import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
+import org.apache.carbondata.processing.loading.converter.RowConverter;
 import org.apache.carbondata.processing.loading.converter.impl.FieldEncoderFactory;
 import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl;
 import org.apache.carbondata.processing.loading.exception.BadRecordFoundException;
@@ -63,6 +63,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
   private Map<Integer, GenericDataType> dataFieldsWithComplexDataType;
 
+  private RowConverterImpl rowConverter;
+
   // cores used in SDK writer, set by the user
   private short sdkWriterCores;
 
@@ -82,7 +84,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
   public void initialize() throws IOException {
     super.initialize();
     // if logger is enabled then raw data will be required.
-    RowConverterImpl rowConverter =
+    rowConverter =
         new RowConverterImpl(configuration.getDataFields(), configuration, null);
     rowConverter.initialize();
     configuration.setCardinalityFinder(rowConverter);
@@ -94,7 +96,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     dataTypes = new DataType[configuration.getDataFields().length];
     for (int i = 0; i < dataTypes.length; i++) {
-      if (configuration.getDataFields()[i].getColumn().hasEncoding(Encoding.DICTIONARY)) {
+      if (configuration.getDataFields()[i].getColumn().getDataType() == DataTypes.DATE) {
         dataTypes[i] = DataTypes.INT;
       } else {
         dataTypes[i] = configuration.getDataFields()[i].getColumn().getDataType();
@@ -140,7 +142,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       outIterators[i] =
           new InputProcessorIterator(readerIterators[i], batchSize, configuration.isPreFetch(),
               rowCounter, orderOfData, noDictionaryMapping, dataTypes, configuration,
-              dataFieldsWithComplexDataType);
+              dataFieldsWithComplexDataType, rowConverter);
     }
     return outIterators;
   }
@@ -198,10 +200,13 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     private boolean isHivePartitionTable = false;
 
+    RowConverter converter;
+    CarbonDataLoadConfiguration configuration;
+
     public InputProcessorIterator(List<CarbonIterator<Object[]>> inputIterators, int batchSize,
         boolean preFetch, AtomicLong rowCounter, int[] orderOfData, boolean[] noDictionaryMapping,
         DataType[] dataTypes, CarbonDataLoadConfiguration configuration,
-        Map<Integer, GenericDataType> dataFieldsWithComplexDataType) {
+        Map<Integer, GenericDataType> dataFieldsWithComplexDataType, RowConverter converter) {
       this.inputIterators = inputIterators;
       this.batchSize = batchSize;
       this.counter = 0;
@@ -217,6 +222,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       this.dataFieldsWithComplexDataType = dataFieldsWithComplexDataType;
       this.isHivePartitionTable =
           configuration.getTableSpec().getCarbonTable().isHivePartitionTable();
+      this.configuration = configuration;
+      this.converter = converter;
     }
 
     @Override
@@ -256,8 +263,12 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       int count = 0;
 
       while (internalHasNext() && count < batchSize) {
-        carbonRowBatch.addRow(
-            new CarbonRow(convertToNoDictionaryToBytes(currentIterator.next(), dataFields)));
+        CarbonRow carbonRow =
+            new CarbonRow(convertToNoDictionaryToBytes(currentIterator.next(), dataFields));
+        if (configuration.isIndexColumnsPresent()) {
+          carbonRow = converter.convert(carbonRow);
+        }
+        carbonRowBatch.addRow(carbonRow);
         count++;
       }
       rowCounter.getAndAdd(carbonRowBatch.getSize());
@@ -268,8 +279,11 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     }
 
     private Object[] convertToNoDictionaryToBytes(Object[] data, DataField[] dataFields) {
-      Object[] newData = new Object[data.length];
-      for (int i = 0; i < data.length; i++) {
+      Object[] newData = new Object[dataFields.length];
+      for (int i = 0; i < dataFields.length; i++) {
+        if (dataFields[i].getColumn().isIndexColumn()) {
+          continue;
+        }
         if (i < noDictionaryMapping.length && noDictionaryMapping[i]) {
           if (DataTypeUtil.isPrimitiveColumn(dataTypes[i])) {
             // keep the no dictionary measure column as original data

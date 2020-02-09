@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.datastore.page;
 
-import java.io.IOException;
-
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.key.TablePageKey;
 
@@ -44,13 +42,13 @@ public class EncodedTablePage {
 
   public static EncodedTablePage newInstance(int pageSize,
       EncodedColumnPage[] dimensionPages, EncodedColumnPage[] measurePages,
-      TablePageKey tablePageKey) throws IOException {
+      TablePageKey tablePageKey) {
     return new EncodedTablePage(pageSize, dimensionPages, measurePages, tablePageKey);
   }
 
   private EncodedTablePage(int pageSize,
       EncodedColumnPage[] dimensionPages, EncodedColumnPage[] measurePages,
-      TablePageKey tablePageKey) throws IOException {
+      TablePageKey tablePageKey) {
     this.dimensionPages = dimensionPages;
     this.measurePages = measurePages;
     this.pageSize = pageSize;
@@ -60,7 +58,7 @@ public class EncodedTablePage {
 
   // return size in bytes of this encoded page
   private int calculatePageSize(EncodedColumnPage[] dimensionPages,
-      EncodedColumnPage[] measurePages) throws IOException {
+      EncodedColumnPage[] measurePages) {
     int size = 0;
     for (EncodedColumnPage dimensionPage : dimensionPages) {
       size += dimensionPage.getTotalSerializedSize();

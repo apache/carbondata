@@ -22,7 +22,6 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -32,19 +31,17 @@ import org.apache.carbondata.core.util.ByteUtil;
  */
 public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
-  UnsafeDecimalColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize)
-      throws MemoryException {
+  UnsafeDecimalColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     this(columnPageEncoderMeta, pageSize, (int) (pageSize * DEFAULT_ROW_SIZE * FACTOR));
   }
 
-  UnsafeDecimalColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize, int capacity)
-      throws MemoryException {
+  UnsafeDecimalColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize, int capacity) {
     super(columnPageEncoderMeta, pageSize);
     this.capacity = capacity;
     initMemory();
   }
 
-  private void initMemory() throws MemoryException {
+  private void initMemory() {
     if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE ||
         columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT ||
         columnPageEncoderMeta.getStoreDataType() == DataTypes.INT ||
@@ -162,11 +159,7 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   public void putBytes(int rowId, byte[] bytes, int offset, int length) {
-    try {
-      ensureMemory(length);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
+    ensureMemory(length);
     CarbonUnsafe.getUnsafe().copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET + offset, baseAddress,
         baseOffset + rowOffset.getInt(rowId), length);
   }

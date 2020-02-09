@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.datamap;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -70,7 +69,7 @@ public abstract class DataMapDistributable extends InputSplit
   }
 
   @Override
-  public String[] getLocations() throws IOException {
+  public String[] getLocations() {
     return locations;
   }
 
@@ -80,7 +79,7 @@ public abstract class DataMapDistributable extends InputSplit
   }
 
   @Override
-  public long getLength() throws IOException, InterruptedException {
+  public long getLength() {
     return 0;
   }
 }

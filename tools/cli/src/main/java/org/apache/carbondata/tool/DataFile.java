@@ -30,10 +30,8 @@ import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonFooterReaderV3;
 import org.apache.carbondata.core.reader.CarbonHeaderReader;
@@ -278,7 +276,7 @@ class DataFile {
     return columnSize.get(columnIndex);
   }
 
-  void initAllBlockletStats(String columnName) throws IOException, MemoryException {
+  void initAllBlockletStats(String columnName) throws IOException {
     int columnIndex = -1;
     ColumnSchema column = null;
     for (int i = 0; i < schema.size(); i++) {
@@ -339,7 +337,7 @@ class DataFile {
      * @param columnIndex column index of this column chunk
      */
     ColumnChunk(BlockletInfo3 blockletInfo, BlockletIndex index, ColumnSchema column,
-        int columnIndex) throws IOException, MemoryException {
+        int columnIndex) throws IOException {
       this.column = column;
       min = index.min_max_index.min_values.get(columnIndex).array();
       max = index.min_max_index.max_values.get(columnIndex).array();
@@ -414,7 +412,7 @@ class DataFile {
     ColumnChunk columnChunk;
 
     Blocklet(DataFile file, int blockletId, ColumnSchema column, int columnIndex,
-        FileFooter3 footer) throws IOException, MemoryException {
+        FileFooter3 footer) throws IOException {
       this.file = file;
       this.id = blockletId;
       BlockletIndex index = footer.blocklet_index_list.get(blockletId);
@@ -448,7 +446,7 @@ class DataFile {
      */
     private double computePercentage(byte[] data, byte[] min, byte[] max, ColumnSchema column) {
       if (column.getDataType() == DataTypes.STRING || column.getDataType() == DataTypes.BOOLEAN
-          || column.hasEncoding(Encoding.DICTIONARY) || column.getDataType().isComplexType()) {
+          || column.getDataType() == DataTypes.DATE || column.getDataType().isComplexType()) {
         // for string, we do not calculate
         return 0;
       } else if (DataTypes.isDecimal(column.getDataType())) {

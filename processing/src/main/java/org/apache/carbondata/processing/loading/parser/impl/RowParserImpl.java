@@ -71,6 +71,14 @@ public class RowParserImpl implements RowParser {
     inputMapping = new int[input.length];
     int k = 0;
     for (int i = 0; i < fields.length; i++) {
+      if (fields[i].getColumn().isIndexColumn()) {
+        // Index handler columns are non-schema fields. They are not present in the header. So set
+        // the input mapping as -1 for the field and continue
+        input[k] = fields[i];
+        inputMapping[k] = -1;
+        k++;
+        continue;
+      }
       for (int j = 0; j < numberOfColumns; j++) {
         if (header[j].equalsIgnoreCase(fields[i].getColumn().getColName())) {
           input[k] = fields[i];
@@ -96,6 +104,10 @@ public class RowParserImpl implements RowParser {
     }
     Object[] out = new Object[genericParsers.length];
     for (int i = 0; i < genericParsers.length; i++) {
+      if (inputMapping[i] == -1) {
+        // Skip non-schema columns. They are not present the input row
+        continue;
+      }
       Object obj = row[inputMapping[i]];
       out[outputMapping[i]] = genericParsers[i].parse(obj);
     }

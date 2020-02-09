@@ -30,6 +30,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.events.{AlterTableDropColumnPostEvent, AlterTableDropColumnPreEvent, OperationContext, OperationListenerBus}
@@ -61,6 +62,8 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
         throw new MalformedCarbonCommandException(
           "alter table drop column is not supported for index datamap")
       }
+      // Do not allow index handler's source columns to be dropped.
+      AlterTableUtil.validateForIndexHandlerSources(carbonTable, alterTableDropColumnModel.columns)
       val partitionInfo = carbonTable.getPartitionInfo()
       val tableColumns = carbonTable.getCreateOrderColumn().asScala
       if (partitionInfo != null) {
@@ -95,7 +98,7 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
           // column should not be already deleted and should exist in the table
           if (!tableColumn.isInvisible && column.equalsIgnoreCase(tableColumn.getColName)) {
             if (tableColumn.isDimension) {
-              if (tableColumn.hasEncoding(Encoding.DICTIONARY)) {
+              if (tableColumn.getDataType == DataTypes.DATE) {
                 dictionaryColumns ++= Seq(tableColumn.getColumnSchema)
               }
             }

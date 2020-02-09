@@ -36,7 +36,6 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -892,7 +891,7 @@ public final class DataTypeUtil {
         return String.valueOf(value)
             .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
       } else if (dataType == DataTypes.TIMESTAMP) {
-        if (columnSchema.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        if (columnSchema.getDataType() == DataTypes.DATE) {
           DirectDictionaryGenerator directDictionaryGenerator1 = DirectDictionaryKeyGeneratorFactory
               .getDirectDictionaryGenerator(columnSchema.getDataType());
           int value1 = directDictionaryGenerator1.generateDirectSurrogateKey(data);

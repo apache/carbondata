@@ -143,12 +143,7 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   public boolean delete() {
-    try {
-      return deleteFile();
-    } catch (IOException e) {
-      LOGGER.error("Exception occurred:" + e.getMessage(), e);
-      return false;
-    }
+    return deleteFile();
   }
 
   @Override
@@ -168,6 +163,13 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   @Override
+  public CarbonFile[] listFiles(boolean recursive, int maxCount)
+      throws IOException {
+    // ignore the maxCount for local filesystem
+    return listFiles();
+  }
+
+  @Override
   public List<CarbonFile> listFiles(Boolean recursive) {
     if (!isDirectory()) {
       return new ArrayList<>();
@@ -181,8 +183,7 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   @Override
-  public List<CarbonFile> listFiles(boolean recursive, CarbonFileFilter fileFilter)
-      throws IOException {
+  public List<CarbonFile> listFiles(boolean recursive, CarbonFileFilter fileFilter) {
     if (!file.isDirectory()) {
       return new ArrayList<>();
     }
@@ -403,7 +404,7 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   @Override
-  public boolean isFileExist(boolean performFileCheck) throws IOException {
+  public boolean isFileExist(boolean performFileCheck) {
     if (performFileCheck) {
       return file.exists() && file.isFile();
     } else {
@@ -412,7 +413,7 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   @Override
-  public boolean isFileExist() throws IOException {
+  public boolean isFileExist() {
     return file.exists();
   }
 
@@ -422,12 +423,12 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   @Override
-  public boolean deleteFile() throws IOException {
+  public boolean deleteFile() {
     return FileFactory.deleteAllFilesOfDir(file);
   }
 
   @Override
-  public boolean mkdirs() throws IOException {
+  public boolean mkdirs() {
     return file.mkdirs();
   }
 
@@ -443,17 +444,17 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   @Override
-  public CarbonFile[] locationAwareListFiles(PathFilter pathFilter) throws IOException {
+  public CarbonFile[] locationAwareListFiles(PathFilter pathFilter) {
     return listFiles();
   }
 
   @Override
-  public String[] getLocations() throws IOException {
+  public String[] getLocations() {
     return new String[]{"localhost"};
   }
 
   @Override
-  public boolean setReplication(short replication) throws IOException {
+  public boolean setReplication(short replication) {
     // local carbon file does not need replication
     return true;
   }

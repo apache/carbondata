@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.filter.resolver;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.SortedMap;
@@ -37,11 +36,9 @@ public interface FilterResolverIntf extends Serializable {
    * dictionaries for executing/evaluating the filter expressions in the
    * executer layer.
    *
-   * @throws IOException
    * @throws FilterUnsupportedException
    */
-  void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
-      throws IOException, FilterUnsupportedException;
+  void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) throws FilterUnsupportedException;
 
   /**
    * This API will provide the left column filter expression

@@ -31,6 +31,6 @@ public abstract class ProxyFileWriter<OUT> implements BulkWriter<OUT> {
 
   public abstract void commit() throws IOException;
 
-  public abstract void close() throws IOException;
+  public abstract void close();
 
 }

@@ -197,7 +197,7 @@ public class CarbonReader<T> {
    * @param maxSplits: Int
    * @return list of {@link CarbonReader} objects
    */
-  public List<CarbonReader> split(int maxSplits) throws IOException {
+  public List<CarbonReader> split(int maxSplits) {
     validateReader();
     if (maxSplits < 1) {
       throw new RuntimeException(

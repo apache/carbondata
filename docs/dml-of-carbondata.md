@@ -331,7 +331,7 @@ CarbonData DML statements are documented here,which includes:
     The number of stage files per processing.
 
     ``` 
-    OPTIONS('batch_file_count'=',')
+    OPTIONS('batch_file_count'='5')
     ```
 
   Examples:
@@ -445,6 +445,37 @@ CarbonData DML statements are documented here,which includes:
 
   ```
   DELETE FROM carbontable WHERE column1 IN (SELECT column11 FROM sourceTable2 WHERE column1 = 'USA')
+  ```
+    
+### DELETE STAGE
+
+  This command allows us to delete the data files (stage data) which is already loaded into the table.
+  ```
+  DELETE FROM TABLE [db_name.]table_name STAGE OPTIONS(property_name=property_value, ...)
+  ```  
+  **Supported Properties:**
+
+| Property                                                | Description                                                 |
+| ------------------------------------------------------- | ----------------------------------------------------------- |
+| [retain_hour](#retain_hour)                             | Data file retain time in hours                              |
+
+-
+  You can use the following options to delete data:
+  - ##### retain_hour: 
+    Data file retain time in second, the command just delete overdue files only.
+
+    ``` 
+    OPTIONS('retain_hour'='1')
+    ```
+
+  Examples:
+
+  ```
+  DELETE FROM TABLE carbontable STAGE
+  ```
+
+  ```
+  DELETE FROM TABLE carbontable STAGE OPTIONS ('retain_hour'='1')
   ```
 
 ## COMPACTION

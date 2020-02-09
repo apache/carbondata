@@ -26,7 +26,6 @@ import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryBlock;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -70,13 +69,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     super(columnPageEncoderMeta, pageSize);
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec.newInstance(
         columnPageEncoderMeta.getColumnSpec().getFieldName(), DataTypes.INT, ColumnType.MEASURE);
-    try {
-      rowOffset = ColumnPage.newPage(
-          new ColumnPageEncoderMeta(spec, DataTypes.INT, columnPageEncoderMeta.getCompressorName()),
-          pageSize + 1);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
+    rowOffset = ColumnPage.newPage(
+        new ColumnPageEncoderMeta(spec, DataTypes.INT, columnPageEncoderMeta.getCompressorName()),
+        pageSize + 1);
     totalLength = 0;
   }
 
@@ -126,7 +121,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
    * Create a new column page for decimal page
    */
   public static ColumnPage newDecimalColumnPage(ColumnPageEncoderMeta meta,
-      byte[] lvEncodedBytes, int actualDataLength) throws MemoryException {
+      byte[] lvEncodedBytes, int actualDataLength) {
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
     DecimalConverterFactory.DecimalConverter decimalConverter =
         DecimalConverterFactory.INSTANCE.getDecimalConverter(columnSpec.getPrecision(),
@@ -146,7 +141,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
    * Create a new column page based on the LV (Length Value) encoded bytes
    */
   static ColumnPage newLVBytesColumnPage(TableSpec.ColumnSpec columnSpec, byte[] lvEncodedBytes,
-      int lvLength, String compressorName) throws MemoryException {
+      int lvLength, String compressorName) {
     return getLVBytesColumnPage(columnSpec, lvEncodedBytes, DataTypes.BYTE_ARRAY,
         lvLength, compressorName);
   }
@@ -155,13 +150,13 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
    * Create a new column page based on the LV (Length Value) encoded bytes
    */
   static ColumnPage newComplexLVBytesColumnPage(TableSpec.ColumnSpec columnSpec,
-      byte[] lvEncodedBytes, int lvLength, String compressorName) throws MemoryException {
+      byte[] lvEncodedBytes, int lvLength, String compressorName) {
     return getComplexLVBytesColumnPage(columnSpec, lvEncodedBytes, DataTypes.BYTE_ARRAY,
         lvLength, compressorName);
   }
 
   private static ColumnPage getDecimalColumnPage(ColumnPageEncoderMeta meta,
-      byte[] lvEncodedBytes, int size, int actualDataLength) throws MemoryException {
+      byte[] lvEncodedBytes, int size, int actualDataLength) {
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
     String compressorName = meta.getCompressorName();
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
@@ -201,8 +196,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   }
 
   private static ColumnPage getLVBytesColumnPage(TableSpec.ColumnSpec columnSpec,
-      byte[] lvEncodedBytes, DataType dataType, int lvLength, String compressorName)
-      throws MemoryException {
+      byte[] lvEncodedBytes, DataType dataType, int lvLength, String compressorName) {
     // extract length and data, set them to rowOffset and unsafe memory correspondingly
     int rowId = 0;
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
@@ -228,8 +222,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   }
 
   private static ColumnPage getComplexLVBytesColumnPage(TableSpec.ColumnSpec columnSpec,
-      byte[] lvEncodedBytes, DataType dataType, int lvLength, String compressorName)
-      throws MemoryException {
+      byte[] lvEncodedBytes, DataType dataType, int lvLength, String compressorName) {
     // extract length and data, set them to rowOffset and unsafe memory correspondingly
     int rowId = 0;
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
@@ -263,7 +256,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   private static VarLengthColumnPageBase getVarLengthColumnPage(TableSpec.ColumnSpec columnSpec,
       byte[] lvEncodedBytes, DataType dataType, int lvLength, int rowId, ColumnPage rowOffset,
-      int offset, String compressorName) throws MemoryException {
+      int offset, String compressorName) {
     int lvEncodedOffset;
     int length;
     int numRows = rowId;
@@ -521,7 +514,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   /**
    * reallocate memory if capacity length than current size + request size
    */
-  protected void ensureMemory(int requestSize) throws MemoryException {
+  protected void ensureMemory(int requestSize) {
     if (totalLength + requestSize > capacity) {
       int newSize = Math.max(2 * capacity, totalLength + requestSize);
       MemoryBlock newBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, newSize);
@@ -546,7 +539,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   }
 
   @Override
-  public long getPageLengthInBytes() throws IOException {
+  public long getPageLengthInBytes() {
     return totalLength;
   }
 }

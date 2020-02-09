@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.filter.executer;
 
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.BitSet;
 import java.util.List;
@@ -26,7 +25,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
@@ -57,7 +55,7 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
     ColumnFilterInfo filterValues = dimColumnEvaluatorInfo.getFilterValues();
     CarbonDimension dimension = dimColumnEvaluatorInfo.getDimension();
     byte[] defaultValue = dimension.getDefaultValue();
-    if (!dimension.hasEncoding(Encoding.DICTIONARY)) {
+    if (dimension.getDataType() != DataTypes.DATE) {
       // for no dictionary cases
       // 3 cases: is NUll, is Not Null and filter on default value of newly added column
       if (null == defaultValue && dimension.getDataType() == DataTypes.STRING) {
@@ -80,7 +78,7 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
       // 3 cases: is NUll, is Not Null and filter on default value of newly added column
       int defaultSurrogateValueToCompare = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
       if (null != defaultValue) {
-        if (dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        if (dimension.getDataType() == DataTypes.DATE) {
           DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
               .getDirectDictionaryGenerator(dimension.getDataType());
           if (directDictionaryGenerator != null) {
@@ -110,7 +108,7 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
 
   @Override
   public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
-      throws FilterUnsupportedException, IOException {
+      throws FilterUnsupportedException {
     throw new FilterUnsupportedException("Unsupported RestructureEvaluatorImpl on pune pages");
   }
 

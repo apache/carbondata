@@ -21,7 +21,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -43,7 +42,6 @@ import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.iterator.AbstractDetailQueryResultIterator;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.AbstractRecordReader;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
@@ -142,13 +140,6 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       queryExecutor =
           QueryExecutorFactory.getQueryExecutor(queryModel, taskAttemptContext.getConfiguration());
       iterator = (AbstractDetailQueryResultIterator) queryExecutor.execute(queryModel);
-    } catch (QueryExecutionException e) {
-      if (ExceptionUtils.indexOfThrowable(e, FileNotFoundException.class) > 0) {
-        LOGGER.error(e.getMessage(), e);
-        throw new InterruptedException(
-            "Insert overwrite may be in progress.Please check " + e.getMessage());
-      }
-      throw new InterruptedException(e.getMessage());
     } catch (Exception e) {
       if (ExceptionUtils.indexOfThrowable(e, FileNotFoundException.class) > 0) {
         LOGGER.error(e.getMessage(), e);
@@ -174,7 +165,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
   }
 
   @Override
-  public boolean nextKeyValue() throws IOException, InterruptedException {
+  public boolean nextKeyValue() {
     resultBatch();
 
     if (returnColumnarBatch) {
@@ -189,7 +180,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
   }
 
   @Override
-  public Object getCurrentValue() throws IOException, InterruptedException {
+  public Object getCurrentValue() {
     if (returnColumnarBatch) {
       int value = carbonColumnarBatch.getActualSize();
       rowCount += value;
@@ -203,12 +194,12 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
   }
 
   @Override
-  public Void getCurrentKey() throws IOException, InterruptedException {
+  public Void getCurrentKey() {
     return null;
   }
 
   @Override
-  public float getProgress() throws IOException, InterruptedException {
+  public float getProgress() {
     // TODO : Implement it based on total number of rows it is going to retrieve.
     return 0;
   }
@@ -227,12 +218,12 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
     this.isNoDictStringField = new boolean[queryDimension.size() + queryMeasures.size()];
     for (int i = 0; i < queryDimension.size(); i++) {
       ProjectionDimension dim = queryDimension.get(i);
-      if (dim.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      if (dim.getDimension().getDataType() == DataTypes.DATE) {
         DirectDictionaryGenerator generator = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(dim.getDimension().getDataType());
         fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
             CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(generator.getReturnType()), true, null);
-      } else if (!dim.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+      } else {
         if (dim.getDimension().getDataType() == DataTypes.STRING
             || dim.getDimension().getDataType() == DataTypes.VARCHAR || dim.getDimension()
             .getColumnSchema().isLocalDictColumn()) {
@@ -241,13 +232,6 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
         fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
             CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(dim.getDimension().getDataType()), true,
             null);
-      } else if (dim.getDimension().isComplex()) {
-        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
-            CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(dim.getDimension().getDataType()), true,
-            null);
-      } else {
-        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
-            CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(DataTypes.INT), true, null);
       }
     }
 

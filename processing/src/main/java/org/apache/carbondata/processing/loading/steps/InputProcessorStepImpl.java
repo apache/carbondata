@@ -217,7 +217,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     private Future<CarbonRowBatch> getCarbonRowBatch() {
       return executorService.submit(new Callable<CarbonRowBatch>() {
         @Override
-        public CarbonRowBatch call() throws Exception {
+        public CarbonRowBatch call() {
           return getBatch();
 
         }

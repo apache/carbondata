@@ -23,9 +23,8 @@ import java.util.List;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
@@ -68,7 +67,7 @@ public class ColumnDriftRawResultIterator extends RawResultIterator {
         new ArrayList<>(destinationSegProperties.getDimensions().size());
     for (CarbonDimension dimension : destinationSegProperties.getDimensions()) {
       if (dimension.getNumberOfChild() == 0) {
-        if (!dimension.hasEncoding(Encoding.DICTIONARY)) {
+        if (dimension.getDataType() != DataTypes.DATE) {
           noDictDims.add(dimension);
         }
       }
@@ -102,7 +101,7 @@ public class ColumnDriftRawResultIterator extends RawResultIterator {
   }
 
   @Override
-  protected Object[] convertRow(Object[] rawRow) throws KeyGenException {
+  protected Object[] convertRow(Object[] rawRow) {
     super.convertRow(rawRow);
     ByteArrayWrapper dimObject = (ByteArrayWrapper) rawRow[0];
     // need move measure to dimension and return new row by current schema

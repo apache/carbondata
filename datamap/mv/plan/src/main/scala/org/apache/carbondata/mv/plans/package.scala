@@ -18,7 +18,7 @@
 package org.apache.carbondata.mv
 
 import org.apache.spark.annotation.DeveloperApi
-import org.apache.spark.sql.catalyst.expressions.{AttributeSet, Expression, PredicateHelper}
+import org.apache.spark.sql.catalyst.expressions.{AttributeSet, Expression, PredicateHelper, ScalaUDF}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 import org.apache.carbondata.mv.plans.modular.ModularPlan
@@ -42,8 +42,36 @@ package object plans {
       expr.references.subsetOf(plan.outputSet)
     }
 
+
+    /**
+     * If exp is a ScalaUDF, then for each of it's children, we have to check if
+     * children can be derived from another scala UDF children from exprList
+     * @param exp scalaUDF
+     * @param exprList predicate and rejoin output list
+     * @return if udf can be derived from another udf
+     */
+    def canEvaluate(exp: ScalaUDF, exprList: Seq[Expression]): Boolean = {
+      var canBeDerived = false
+      exprList.forall {
+        case udf: ScalaUDF =>
+          if (udf.children.length == exp.children.length) {
+            if (udf.children.zip(exp.children).forall(e => e._1.sql.equalsIgnoreCase(e._2.sql))) {
+              canBeDerived = true
+            }
+          }
+          canBeDerived
+        case _ =>
+          canBeDerived
+      }
+    }
+
     def canEvaluate(expr: Expression, exprList: Seq[Expression]): Boolean = {
-      expr.references.subsetOf(AttributeSet(exprList))
+      expr match {
+        case exp: ScalaUDF =>
+          canEvaluate(exp, exprList)
+        case _ =>
+          expr.references.subsetOf(AttributeSet(exprList))
+      }
     }
   }
 

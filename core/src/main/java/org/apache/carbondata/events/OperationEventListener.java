@@ -28,7 +28,7 @@ public abstract class OperationEventListener {
    * @param event
    * @param operationContext
    */
-  protected abstract void onEvent(Event event, OperationContext operationContext) throws Exception;
+  protected abstract void onEvent(Event event, OperationContext operationContext);
 
   @Override
   public boolean equals(Object obj) {

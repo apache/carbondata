@@ -36,7 +36,7 @@ public class DataTypeAdapter extends TypeAdapter<Object> {
   private Gson fallBack_original = new Gson();
 
   @Override
-  public void write(JsonWriter jsonWriter, Object o) throws IOException {
+  public void write(JsonWriter jsonWriter, Object o) {
   }
 
   @Override

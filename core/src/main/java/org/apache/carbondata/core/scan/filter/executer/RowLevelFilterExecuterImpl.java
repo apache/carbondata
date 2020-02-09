@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -42,7 +41,6 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
@@ -289,7 +287,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
   @Override
   public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
-      throws FilterUnsupportedException, IOException {
+      throws IOException {
     readColumnChunks(rawBlockletColumnChunks);
     int pages = rawBlockletColumnChunks.getDataBlock().numberOfPages();
     BitSet bitSet = new BitSet();
@@ -299,7 +297,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
   @Override
   public boolean applyFilter(RowIntf value, int dimOrdinalMax)
-      throws FilterUnsupportedException, IOException {
+      throws FilterUnsupportedException {
     try {
       Boolean result = exp.evaluate(convertRow(value, dimOrdinalMax)).getBoolean();
       return result == null ? false : result;
@@ -313,9 +311,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    * @param value this row will be converted to actual value
    * @param dimOrdinalMax for measure column, its index in row = dimOrdinalMax + its ordinal
    * @return actual value row
-   * @throws IOException
    */
-  private RowIntf convertRow(RowIntf value, int dimOrdinalMax) throws IOException {
+  private RowIntf convertRow(RowIntf value, int dimOrdinalMax) {
     Object[] record = new Object[value.size()];
     String memberString;
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
@@ -375,10 +372,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    * @param blockChunkHolder
    * @param row
    * @param index
-   * @throws IOException
    */
   private void createRow(RawBlockletColumnChunks blockChunkHolder, RowIntf row, int pageIndex,
-      int index) throws IOException {
+      int index) {
     Object[] record = new Object[dimColEvaluatorInfoList.size() + msrColEvalutorInfoList.size()];
     String memberString;
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
@@ -398,7 +394,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         DimensionColumnPage columnDataChunk =
             blockChunkHolder.getDimensionRawColumnChunks()[dimensionChunkIndex[i]]
                 .decodeColumnPage(pageIndex);
-        if (!dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY) &&
+        if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.DATE &&
             (columnDataChunk instanceof VariableLengthDimensionColumnPage ||
                 columnDataChunk instanceof ColumnPageWrapper)) {
 
@@ -496,38 +492,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    * @return
    */
   private Object getDimensionDefaultValue(DimColumnResolvedFilterInfo dimColumnEvaluatorInfo) {
-    Object dimensionDefaultValue = null;
     CarbonDimension dimension = dimColumnEvaluatorInfo.getDimension();
-    if (dimension.hasEncoding(Encoding.DICTIONARY) && !dimension
-        .hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-      byte[] defaultValue = dimension.getDefaultValue();
-      if (null != defaultValue) {
-        dimensionDefaultValue =
-            new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-      }
-    } else {
-      dimensionDefaultValue = RestructureUtil.validateAndGetDefaultValue(dimension);
-    }
-    return dimensionDefaultValue;
-  }
-
-  /**
-   * method will read the actual data from the direct dictionary generator
-   * by passing direct dictionary value.
-   *
-   * @param dimColumnEvaluatorInfo
-   * @param dictionaryValue
-   * @return
-   */
-  private Object getFilterActualValueFromDirectDictionaryValue(
-      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo, int dictionaryValue) {
-    if (dimColumnEvaluatorInfo.getDimension().getDataType() == DataTypes.DATE) {
-      return dateDictionaryGenerator.getValueFromSurrogate(dictionaryValue);
-    } else if (dimColumnEvaluatorInfo.getDimension().getDataType() == DataTypes.TIMESTAMP) {
-      return timestampDictionaryGenerator.getValueFromSurrogate(dictionaryValue);
-    } else {
-      throw new RuntimeException("Invalid data type for dierct dictionary");
-    }
+    return RestructureUtil.validateAndGetDefaultValue(dimension);
   }
 
   @Override

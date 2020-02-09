@@ -96,18 +96,6 @@ case class CarbonCreateTableCommand(
           val partitionString =
             if (partitionInfo != null &&
                 partitionInfo.getPartitionType == PartitionType.NATIVE_HIVE) {
-              // Restrict dictionary encoding on partition columns.
-              // TODO Need to decide whether it is required
-              val dictionaryOnPartitionColumn =
-              partitionInfo.getColumnSchemaList.asScala.exists{p =>
-                p.hasEncoding(Encoding.DICTIONARY) && !p.hasEncoding(Encoding.DIRECT_DICTIONARY)
-              }
-              if (dictionaryOnPartitionColumn) {
-                throwMetadataException(
-                  dbName,
-                  tableName,
-                  s"Dictionary include cannot be applied on partition columns")
-              }
               s" PARTITIONED BY (${partitionInfo.getColumnSchemaList.asScala.map(
                 _.getColumnName.toLowerCase).mkString(",")})"
             } else {

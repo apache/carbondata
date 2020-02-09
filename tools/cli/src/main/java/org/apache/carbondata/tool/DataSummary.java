@@ -33,9 +33,7 @@ import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonHeaderReader;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
@@ -69,7 +67,7 @@ class DataSummary implements Command {
   }
 
   @Override
-  public void run(CommandLine line) throws IOException, MemoryException {
+  public void run(CommandLine line) throws IOException {
     FileCollector collector = new FileCollector(outPuts);
     collector.collectFiles(dataFolder);
     collector.printBasicStats();
@@ -292,7 +290,7 @@ class DataSummary implements Command {
   // true if blockled stats are collected
   private boolean collected = false;
 
-  private void printColumnStats(String columnName) throws IOException, MemoryException {
+  private void printColumnStats(String columnName) throws IOException {
     outPuts.add("");
     outPuts.add("## Column Statistics for '" + columnName + "'");
     collectStats(columnName);
@@ -313,7 +311,7 @@ class DataSummary implements Command {
           maxPercent = "NA";
           // for complex types min max can be given as NA and for varchar where min max is not
           // written, can give NA
-          if (blocklet.getColumnChunk().column.hasEncoding(Encoding.DICTIONARY) ||
+          if (blocklet.getColumnChunk().column.getDataType() == DataTypes.DATE ||
               blocklet.getColumnChunk().column.isComplexColumn() ||
               !blocklet.getColumnChunk().isMinMaxPresent) {
             min = "NA";
@@ -325,7 +323,7 @@ class DataSummary implements Command {
         } else {
           // for column has global dictionary and for complex columns,min and max percentage can be
           // NA
-          if (blocklet.getColumnChunk().column.hasEncoding(Encoding.DICTIONARY) ||
+          if (blocklet.getColumnChunk().column.getDataType() == DataTypes.DATE ||
               blocklet.getColumnChunk().column.isComplexColumn() ||
               blocklet.getColumnChunk().column.getDataType().isComplexType()) {
             minPercent = "NA";
@@ -338,7 +336,7 @@ class DataSummary implements Command {
           }
           DataFile.ColumnChunk columnChunk = blocklet.columnChunk;
           // need to consider dictionary and complex columns
-          if (columnChunk.column.hasEncoding(Encoding.DICTIONARY) ||
+          if (columnChunk.column.getDataType() == DataTypes.DATE ||
               blocklet.getColumnChunk().column.isComplexColumn() ||
               blocklet.getColumnChunk().column.getDataType().isComplexType()) {
             min = "NA";
@@ -407,7 +405,7 @@ class DataSummary implements Command {
     }
   }
 
-  private void collectStats(String columnName) throws IOException, MemoryException {
+  private void collectStats(String columnName) throws IOException {
     if (!collected) {
       for (DataFile dataFile : dataFiles.values()) {
         dataFile.initAllBlockletStats(columnName);
@@ -417,7 +415,7 @@ class DataSummary implements Command {
     }
   }
 
-  private void collectColumnChunkMeta(String columnName) throws IOException, MemoryException {
+  private void collectColumnChunkMeta(String columnName) throws IOException {
     for (Map.Entry<String, DataFile> entry : dataFiles.entrySet()) {
       DataFile file = entry.getValue();
       outPuts.add("");

@@ -18,6 +18,7 @@
 package org.apache.carbondata.processing.loading.converter;
 
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 
 /**
@@ -38,6 +39,12 @@ public interface FieldConverter {
    * It convert the literal value to carbon internal value
    */
   Object convert(Object value, BadRecordLogHolder logHolder) throws RuntimeException;
+
+  /**
+   * This method gets data field for the field.
+   * @return
+   */
+  DataField getDataField();
 
   /**
    * This method clears all the dictionary caches being acquired.

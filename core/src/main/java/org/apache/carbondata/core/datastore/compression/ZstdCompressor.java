@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.datastore.compression;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import com.github.luben.zstd.Zstd;
@@ -70,7 +69,7 @@ public class ZstdCompressor extends AbstractCompressor {
   }
 
   @Override
-  public long rawUncompress(byte[] input, byte[] output) throws IOException {
+  public long rawUncompress(byte[] input, byte[] output) {
     return Zstd.decompress(output, input);
   }
 

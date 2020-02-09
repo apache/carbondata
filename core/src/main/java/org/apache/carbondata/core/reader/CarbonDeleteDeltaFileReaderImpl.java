@@ -79,10 +79,9 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
   /**
    * Reads delete delta file (json file) and returns DeleteDeltaBlockDetails
    * @return DeleteDeltaBlockDetails
-   * @throws IOException
    */
   @Override
-  public DeleteDeltaBlockDetails readJson() throws IOException {
+  public DeleteDeltaBlockDetails readJson() {
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;

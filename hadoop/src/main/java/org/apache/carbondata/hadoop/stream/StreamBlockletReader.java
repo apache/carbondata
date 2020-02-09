@@ -160,7 +160,7 @@ public class StreamBlockletReader {
     return pos < limitEnd;
   }
 
-  public boolean hasNext() throws IOException {
+  public boolean hasNext() {
     return rowIndex < rowNums;
   }
 

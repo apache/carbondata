@@ -55,7 +55,7 @@ public class CarbonStreamOutputFormat extends FileOutputFormat<Void, Object> {
 
   @Override
   public RecordWriter<Void, Object> getRecordWriter(TaskAttemptContext job)
-      throws IOException, InterruptedException {
+      throws IOException {
     return new CarbonStreamRecordWriter(job);
   }
 
@@ -75,13 +75,13 @@ public class CarbonStreamOutputFormat extends FileOutputFormat<Void, Object> {
     }
   }
 
-  public static void setSegmentId(Configuration hadoopConf, String segmentId) throws IOException {
+  public static void setSegmentId(Configuration hadoopConf, String segmentId) {
     if (segmentId != null) {
       hadoopConf.set(SEGMENT_ID, segmentId);
     }
   }
 
-  public static String getSegmentId(Configuration hadoopConf) throws IOException {
+  public static String getSegmentId(Configuration hadoopConf) {
     return hadoopConf.get(SEGMENT_ID);
   }
 

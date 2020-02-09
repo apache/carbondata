@@ -89,11 +89,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
       throws CarbonDataLoadingException {
     SortDataRows sortDataRow = new SortDataRows(sortParameters, intermediateFileMerger);
     final int batchSize = CarbonProperties.getInstance().getBatchSize();
-    try {
-      sortDataRow.initialize();
-    } catch (CarbonSortKeyAndGroupByException e) {
-      throw new CarbonDataLoadingException(e);
-    }
+    sortDataRow.initialize();
     this.executorService = Executors.newFixedThreadPool(iterators.length,
         new CarbonThreadFactory("SafeParallelSorterPool:" + sortParameters.getTableName(),
                 true));

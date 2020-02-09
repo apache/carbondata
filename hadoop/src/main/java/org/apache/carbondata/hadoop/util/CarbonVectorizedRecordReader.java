@@ -80,7 +80,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
 
   @Override
   public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
-      throws IOException, InterruptedException {
+      throws IOException {
     List<CarbonInputSplit> splitList;
     if (inputSplit instanceof CarbonInputSplit) {
       // Read the footer offset and set.
@@ -115,9 +115,6 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
           QueryExecutorFactory.getQueryExecutor(queryModel, taskAttemptContext.getConfiguration());
       iterator = (AbstractDetailQueryResultIterator) queryExecutor.execute(queryModel);
       initBatch();
-    } catch (QueryExecutionException e) {
-      LOGGER.error(e);
-      throw new InterruptedException(e.getMessage());
     } catch (Exception e) {
       LOGGER.error(e);
       throw e;
@@ -125,7 +122,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   }
 
   @Override
-  public boolean nextKeyValue() throws IOException, InterruptedException {
+  public boolean nextKeyValue() {
     if (batchIdx >= numBatched) {
       if (!nextBatch()) return false;
     }
@@ -194,7 +191,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   // Ex. project cols=C1,C2,C3,C2 , projectionMapping holds[0,1,2,1]
   // Row will be formed based on projectionMapping.
   @Override
-  public Object getCurrentValue() throws IOException, InterruptedException {
+  public Object getCurrentValue() {
     rowCount += 1;
     Object[] row = new Object[projectionMapping.size()];
     for (int i = 0; i < projectionMapping.size(); i++) {
@@ -227,12 +224,12 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   }
 
   @Override
-  public Void getCurrentKey() throws IOException, InterruptedException {
+  public Void getCurrentKey() {
     throw new UnsupportedOperationException("Operation not allowed on CarbonVectorizedReader");
   }
 
   @Override
-  public float getProgress() throws IOException, InterruptedException {
+  public float getProgress() {
     // TODO : Implement it based on total number of rows it is going to retrieve.
     return 0;
   }

@@ -37,6 +37,6 @@ public interface CarbonDeleteDeltaFileReader {
    */
   String read() throws IOException;
 
-  DeleteDeltaBlockDetails readJson() throws IOException;
+  DeleteDeltaBlockDetails readJson();
 
 }
