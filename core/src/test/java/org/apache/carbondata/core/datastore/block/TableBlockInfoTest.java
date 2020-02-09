@@ -148,20 +148,6 @@ public class TableBlockInfoTest {
     assertEquals(res2, expectedResult2);
   }
 
-  @Test public void compareToTestWithStartBlockletNo() {
-    TableBlockInfo tableBlockInfo =
-        new TableBlockInfo("filepath", 6, "5", null, 6, ColumnarFormatVersion.V1, null);
-    int res = tableBlockInfos.compareTo(tableBlockInfo);
-    int expectedresult =-1;
-    assertEquals(res, expectedresult);
-
-    TableBlockInfo tableBlockInfo1 =
-        new TableBlockInfo("filepath", 6, "5", null, 6, ColumnarFormatVersion.V1, null);
-    int res1 = tableBlockInfos.compareTo(tableBlockInfo1);
-    int expectedresult1 = 1;
-    assertEquals(res1, expectedresult1);
-  }
-
   @Test public void compareToTest() {
     int res = tableBlockInfos.compareTo(tableBlockInfos);
     int expectedResult = 0;

@@ -930,7 +930,7 @@ public final class CarbonUtil {
 
     // find the footer of the input data file (tableBlockInfo)
     for (DataFileFooter footer : footers) {
-      if (footer.getBlockInfo().getTableBlockInfo().getFilePath().equals(dataFilePath)) {
+      if (footer.getBlockInfo().getFilePath().equals(dataFilePath)) {
         return footer;
       }
     }

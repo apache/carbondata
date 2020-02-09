@@ -121,10 +121,10 @@ public class BlockletDataMapUtil {
         carbonTable.getTableInfo().getFactTable().setListOfColumns(footer.getColumnInTable());
         CarbonTable.updateTableByTableInfo(carbonTable, carbonTable.getTableInfo());
       }
-      String blockPath = footer.getBlockInfo().getTableBlockInfo().getFilePath();
+      String blockPath = footer.getBlockInfo().getFilePath();
       if (null == blockMetaInfoMap.get(blockPath)) {
         BlockMetaInfo blockMetaInfo = createBlockMetaInfo(
-            fileNameToMetaInfoMapping, footer.getBlockInfo().getTableBlockInfo());
+            fileNameToMetaInfoMapping, footer.getBlockInfo());
         // if blockMetaInfo is null that means the file has been deleted from the file system.
         // This can happen in case IUD scenarios where after deleting or updating the data the
         // complete block is deleted but the entry still exists in index or merge index file

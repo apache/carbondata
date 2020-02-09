@@ -99,7 +99,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     for (DataFileFooter fileFooter : indexInfo) {
       // update the min max flag for summary row
       updateMinMaxFlag(fileFooter, summaryRowMinMaxFlag);
-      TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
+      TableBlockInfo blockInfo = fileFooter.getBlockInfo();
       BlockMetaInfo blockMetaInfo =
           blockletDataMapInfo.getBlockMetaInfoMap().get(blockInfo.getFilePath());
       // Here it loads info about all blocklets of index
@@ -177,7 +177,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
       byte[] serializedData;
       try {
         // Add block footer offset, it is used if we need to read footer of block
-        row.setLong(fileFooter.getBlockInfo().getTableBlockInfo().getBlockOffset(), ordinal++);
+        row.setLong(fileFooter.getBlockInfo().getBlockOffset(), ordinal++);
         setLocations(blockMetaInfo.getLocationInfo(), row, ordinal++);
         // Store block size
         row.setLong(blockMetaInfo.getSize(), ordinal++);

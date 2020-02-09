@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.block.BlockInfo;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
@@ -100,7 +99,7 @@ public abstract class AbstractDataFileFooterConverter {
           dataFileFooter.setBlockletIndex(blockletIndex);
           dataFileFooter.setColumnInTable(columnSchemaList);
           dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
-          dataFileFooter.setBlockInfo(new BlockInfo(tableBlockInfo));
+          dataFileFooter.setBlockInfo(tableBlockInfo);
           if (readIndexHeader.isSetIs_sort()) {
             dataFileFooter.setSorted(readIndexHeader.isIs_sort());
           } else {
@@ -169,7 +168,7 @@ public abstract class AbstractDataFileFooterConverter {
         dataFileFooter.setBlockletIndex(blockletIndex);
         dataFileFooter.setColumnInTable(columnSchemaList);
         dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
-        dataFileFooter.setBlockInfo(new BlockInfo(tableBlockInfo));
+        dataFileFooter.setBlockInfo(tableBlockInfo);
         dataFileFooter.setVersionId(tableBlockInfo.getVersion());
         // In case of old schema time stamp will not be found in the index header
         if (readIndexHeader.isSetSchema_time_stamp()) {
