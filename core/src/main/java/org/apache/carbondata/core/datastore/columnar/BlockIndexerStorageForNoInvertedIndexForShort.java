@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.ByteUtil;
 
 /**
  * Below class will be used to for no inverted index
@@ -54,15 +53,19 @@ public class BlockIndexerStorageForNoInvertedIndexForShort
     short start = 0;
     List<Short> map = new ArrayList<>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     for (int i = 1; i < actualDataList.size(); i++) {
-      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(prvKey, actualDataList.get(i)) != 0) {
+      if (!prvKey.equals(actualDataList.get(i))) {
         prvKey = actualDataList.get(i);
         list.add(actualDataList.get(i));
         map.add(start);
         map.add(counter);
         start += counter;
         counter = 1;
+        prvKey.rewind();
+        actualDataList.get(i).rewind();
         continue;
       }
+      prvKey.rewind();
+      actualDataList.get(i).rewind();
       counter++;
     }
     map.add(start);
