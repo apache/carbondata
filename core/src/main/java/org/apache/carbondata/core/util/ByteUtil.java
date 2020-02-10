@@ -757,11 +757,11 @@ public final class ByteUtil {
         ((long) bytes[offset + 1] & 0xff) << 8) | (((long) bytes[offset] & 0xff)));
   }
 
-  public static byte[] convertDateToBytes(int date) {
+  public static byte[] convertIntToBytes(int date) {
     return ByteUtil.toBytes(date);
   }
 
-  public static byte[] convertDateToBytes(long[] date) {
+  public static byte[] convertLongArrayToBytes(long[] date) {
     byte[] output = new byte[date.length * 4];
     for (int i = 0; i < date.length; i++) {
       System.arraycopy(ByteUtil.toBytes(date[i]), 0, output, i * 4, 4);
@@ -769,11 +769,11 @@ public final class ByteUtil {
     return output;
   }
 
-  public static int convertBytesToDate(byte[] date) {
+  public static int convertBytesToInt(byte[] date) {
     return ByteUtil.toInt(date, 0);
   }
 
-  public static int convertBytesToDate(byte[] date, int offset) {
+  public static int convertBytesToInt(byte[] date, int offset) {
     return ByteUtil.toInt(date, offset);
   }
 
@@ -781,18 +781,18 @@ public final class ByteUtil {
     return 4;
   }
 
-  public static int[] convertBytesToDateIntArray(byte[] input) {
+  public static int[] convertBytesToIntArray(byte[] input) {
     int[] output = new int[input.length / 4];
     for (int i = 0; i < output.length; i++) {
-      output[i] = convertBytesToDate(input, i * 4);
+      output[i] = convertBytesToInt(input, i * 4);
     }
     return output;
   }
 
-  public static long[] convertBytesToDateLongArray(byte[] input) {
+  public static long[] convertBytesToLongArray(byte[] input) {
     long[] output = new long[input.length / 4];
     for (int i = 0; i < output.length; i++) {
-      output[i] = convertBytesToDate(input, i * 4);
+      output[i] = convertBytesToInt(input, i * 4);
     }
     return output;
   }

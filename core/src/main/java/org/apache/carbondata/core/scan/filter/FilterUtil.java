@@ -667,7 +667,7 @@ public final class FilterUtil {
       if (null != listOfsurrogates) {
         for (Integer surrogate : listOfsurrogates) {
           keys[keyOrdinalOfDimensionFromCurrentBlock] = surrogate;
-          filterValuesList.add(ByteUtil.convertDateToBytes(surrogate));
+          filterValuesList.add(ByteUtil.convertIntToBytes(surrogate));
         }
       }
     }
@@ -686,7 +686,7 @@ public final class FilterUtil {
       }
       // Here we only get the first column as there can be only one range column.
       keys[keyOrdinalOfDimensionFromCurrentBlock] = listOfsurrogates.get(0);
-      filterValuesList.add(ByteUtil.convertDateToBytes(listOfsurrogates.get(0)));
+      filterValuesList.add(ByteUtil.convertIntToBytes(listOfsurrogates.get(0)));
     }
     return filterValuesList.toArray(new byte[filterValuesList.size()][]);
   }
@@ -1288,7 +1288,7 @@ public final class FilterUtil {
     DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
         .getDirectDictionaryGenerator(currentBlockDimension.getDataType());
     int key = directDictionaryGenerator.generateDirectSurrogateKey(null);
-    return ByteUtil.convertDateToBytes(key);
+    return ByteUtil.convertIntToBytes(key);
   }
 
 }

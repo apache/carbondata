@@ -180,7 +180,7 @@ public class CarbonFactDataHandlerModel {
 
     int complexDimensionCount = segmentProperties.getNumberOfComplexDimensions();
 
-    int simpleDimsCount = segmentProperties.getNumberOfSimpleDimensions();
+    int simpleDimsCount = segmentProperties.getNumberOfPrimitiveDimensions();
     int surrIndex = simpleDimsCount;
     Iterator<Map.Entry<String, GenericDataType>> complexMap = CarbonDataProcessorUtil
         .getComplexTypesMap(configuration.getDataFields(),
@@ -335,7 +335,7 @@ public class CarbonFactDataHandlerModel {
   private static Map<Integer, GenericDataType> convertComplexDimensionToComplexIndexMap(
       SegmentProperties segmentProperties, String nullFormat) {
     List<CarbonDimension> complexDimensions = segmentProperties.getComplexDimensions();
-    int simpleDimsCount = segmentProperties.getNumberOfSimpleDimensions();
+    int simpleDimsCount = segmentProperties.getNumberOfPrimitiveDimensions();
     DataField[] dataFields = new DataField[complexDimensions.size()];
     int i = 0;
     for (CarbonColumn complexDimension : complexDimensions) {

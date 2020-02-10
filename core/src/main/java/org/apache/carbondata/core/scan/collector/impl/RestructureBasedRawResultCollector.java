@@ -81,7 +81,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
       int newKeyArrayLength = dimensionInfo.getNewDictionaryColumnCount();
       long[] keyArray = null;
       if (executionInfo.getDataBlock().getSegmentProperties().getNumberOfDictDimensions() > 0) {
-        keyArray = ByteUtil.convertBytesToDateLongArray(dictKeyArray);
+        keyArray = ByteUtil.convertBytesToLongArray(dictKeyArray);
         newKeyArrayLength += keyArray.length;
       }
       long[] keyArrayWithNewAddedColumns = new long[newKeyArrayLength];
@@ -105,7 +105,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
           }
         }
       }
-      dictKeyArray = ByteUtil.convertDateToBytes(keyArrayWithNewAddedColumns);
+      dictKeyArray = ByteUtil.convertLongArrayToBytes(keyArrayWithNewAddedColumns);
       byteArrayWrapper.setDictionaryKey(dictKeyArray);
     }
   }

@@ -389,7 +389,7 @@ public class SegmentProperties {
     return numberOfDictDimensions;
   }
 
-  public int getNumberOfSimpleDimensions() {
+  public int getNumberOfPrimitiveDimensions() {
     return numberOfDictDimensions + numberOfNoDictionaryDimension;
   }
 

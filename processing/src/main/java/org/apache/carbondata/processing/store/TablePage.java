@@ -276,7 +276,7 @@ public class TablePage {
   private void addComplexColumn(int index, int rowId,
       List<ArrayList<byte[]>> encodedComplexColumnar) {
     GenericDataType complexDataType = complexIndexMap.get(
-        index + model.getSegmentProperties().getNumberOfSimpleDimensions());
+        index + model.getSegmentProperties().getNumberOfPrimitiveDimensions());
     // initialize the page if first row
     if (rowId == 0) {
       List<ComplexColumnInfo> complexColumnInfoList = new ArrayList<>();

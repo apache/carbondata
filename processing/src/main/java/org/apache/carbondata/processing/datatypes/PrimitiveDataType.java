@@ -435,7 +435,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       dataOutputStream.write(bb);
     } else {
       int data = byteArrayInput.getInt();
-      byte[] v = ByteUtil.convertDateToBytes(data);
+      byte[] v = ByteUtil.convertIntToBytes(data);
       dataOutputStream.write(v);
     }
   }

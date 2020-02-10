@@ -54,7 +54,7 @@ public class WriteStepRowUtil {
     int numDict = mdk.length / ByteUtil.dateBytesSize();
     int[] dictDimensions = new int[numDict];
     for (int i = 0; i < numDict; i++) {
-      dictDimensions[i] = ByteUtil.convertBytesToDate(mdk, i * ByteUtil.dateBytesSize());
+      dictDimensions[i] = ByteUtil.convertBytesToInt(mdk, i * ByteUtil.dateBytesSize());
     }
     converted[DICTIONARY_DIMENSION] = dictDimensions;
 

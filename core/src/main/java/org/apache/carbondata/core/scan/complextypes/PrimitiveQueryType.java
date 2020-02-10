@@ -139,7 +139,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       // Direct Dictionary Column, only for DATE type
       byte[] data = new byte[4];
       dataBuffer.get(data);
-      actualData = ByteUtil.convertBytesToDate(data);
+      actualData = ByteUtil.convertBytesToInt(data);
     } else {
       if (size == -1) {
         if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {

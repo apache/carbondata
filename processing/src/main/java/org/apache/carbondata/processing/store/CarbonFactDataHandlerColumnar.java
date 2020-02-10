@@ -309,7 +309,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           // this is for depth of each complex column, model is having only total depth.
           GenericDataType genericDataType = complexIndexMapCopy
               .get(i - model.getNoDictionaryCount() +
-                  model.getSegmentProperties().getNumberOfSimpleDimensions());
+                  model.getSegmentProperties().getNumberOfPrimitiveDimensions());
           int depth = genericDataType.getDepth();
           List<ArrayList<byte[]>> flatComplexColumnList = (List<ArrayList<byte[]>>) nonDictArray[i];
           for (int k = 0; k < depth; k++) {
@@ -347,7 +347,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         // this is for depth of each complex column, model is having only total depth.
         GenericDataType genericDataType = complexIndexMapCopy.get(
             i - model.getNoDictionaryCount() +
-                model.getSegmentProperties().getNumberOfSimpleDimensions());
+                model.getSegmentProperties().getNumberOfPrimitiveDimensions());
         int depth = genericDataType.getDepth();
         // initialize flatComplexColumnList
         List<ArrayList<byte[]>> flatComplexColumnList = new ArrayList<>(depth);

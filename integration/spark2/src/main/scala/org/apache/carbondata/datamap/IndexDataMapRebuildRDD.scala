@@ -198,7 +198,7 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
   override def readRow(data: Array[Object]): Array[Object] = {
 
     val surrogatKeys = if (segmentProperties.getNumberOfDictDimensions > 0) {
-      ByteUtil.convertBytesToDateLongArray(
+      ByteUtil.convertBytesToLongArray(
         data(0).asInstanceOf[ByteArrayWrapper].getDictionaryKey)
     } else {
       new Array[Long](0)
