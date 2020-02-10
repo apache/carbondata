@@ -33,7 +33,7 @@ import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
-public class DataMapExprWrapperImpl implements DataMapExprWrapper {
+public class DataMapExprWrapperImpl extends DataMapExprWrapper {
 
   private static final long serialVersionUID = -6240385328696074171L;
 
@@ -113,5 +113,13 @@ public class DataMapExprWrapperImpl implements DataMapExprWrapper {
   @Override
   public DataMapExprWrapper getRightDataMapWrapprt() {
     return null;
+  }
+
+  /**
+   * Convert segment to distributable object.
+   */
+  public DataMapDistributableWrapper toDistributableSegment(Segment segment)
+      throws IOException {
+    return dataMap.toDistributableSegment(segment, uniqueId);
   }
 }

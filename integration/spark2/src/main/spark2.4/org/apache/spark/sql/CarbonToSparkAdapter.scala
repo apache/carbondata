@@ -31,6 +31,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.ExplainCommand
 import org.apache.spark.sql.hive.{CarbonMVRules, HiveExternalCatalog}
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule}
+import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
 import org.apache.spark.sql.types.{DataType, Metadata}
 
 object CarbonToSparkAdapter {
@@ -161,8 +162,11 @@ class OptimizerProxy(
   private lazy val LastBatchRules = Batch("Last Batch Optimizers", fixedPoint,
     Seq(new CarbonIUDRule(), new CarbonUDFTransformRule()): _*)
 
+  private lazy val secondaryIndexRule = Batch("Last Batch Optimizers", Once,
+    Seq(new CarbonSITransformationRule(session)): _*)
+
   override def defaultBatches: Seq[Batch] = {
-    firstBatchRules ++ convertedBatch() :+ LastBatchRules
+    firstBatchRules ++ convertedBatch() :+ LastBatchRules :+ secondaryIndexRule
   }
 
   def convertedBatch(): Seq[Batch] = {

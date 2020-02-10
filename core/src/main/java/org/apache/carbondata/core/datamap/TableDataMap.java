@@ -37,6 +37,7 @@ import org.apache.carbondata.core.datamap.dev.BlockletSerializer;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
+import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainBlocklet;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -377,6 +378,11 @@ public final class TableDataMap extends OperationEventListener {
     return distributables;
   }
 
+  public DataMapDistributableWrapper toDistributableSegment(Segment segment, String uniqueId)
+      throws IOException {
+    return dataMapFactory.toDistributableSegment(segment, dataMapSchema, identifier, uniqueId);
+  }
+
   /**
    * This method returns all the datamaps corresponding to the distributable object
    *
@@ -524,6 +530,27 @@ public final class TableDataMap extends OperationEventListener {
       }
     }
     return totalRowCount;
+  }
+
+  /**
+   * Method to prune the segments based on task min/max values
+   *
+   */
+  public List<Segment> pruneSegments(List<Segment> segments, FilterResolverIntf filterExp)
+      throws IOException {
+    List<Segment> prunedSegments = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    for (Segment segment : segments) {
+      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segment);
+      for (DataMap dataMap : dataMaps) {
+        if (dataMap.isScanRequired(filterExp)) {
+          // If any one task in a given segment contains the data that means the segment need to
+          // be scanned and we need to validate further data maps in the same segment
+          prunedSegments.add(segment);
+          break;
+        }
+      }
+    }
+    return prunedSegments;
   }
 
 }

@@ -224,7 +224,7 @@ object AlterTableUtil {
    * @param schemaJsonString
    * @return
    */
-  private def prepareSchemaJsonForAlterTable(sparkConf: SparkConf,
+  def prepareSchemaJsonForAlterTable(sparkConf: SparkConf,
       schemaJsonString: String): String = {
     val threshold = sparkConf
       .getInt(CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD,

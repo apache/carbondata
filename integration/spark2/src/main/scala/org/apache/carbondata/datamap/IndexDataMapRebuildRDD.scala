@@ -46,6 +46,7 @@ import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerat
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{ByteUtil, DataTypeUtil, TaskMetricsMap}
@@ -271,6 +272,8 @@ class IndexDataMapRebuildRDD[K, V](
     formatter.format(new util.Date())
   }
 
+  private var readCommittedScope: ReadCommittedScope = _
+
   override def internalCompute(split: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val carbonTable = CarbonTable.buildFromTableInfo(getTableInfo)
@@ -288,7 +291,7 @@ class IndexDataMapRebuildRDD[K, V](
       val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
       val attemptContext = new TaskAttemptContextImpl(FileFactory.getConfiguration, attemptId)
       val format = createInputFormat(segment.get, attemptContext)
-
+      segment.get.setReadCommittedScope(readCommittedScope)
       val model = format.createQueryModel(inputSplit, attemptContext)
       // one query id per table
       model.setQueryId(queryId)
@@ -436,9 +439,9 @@ class IndexDataMapRebuildRDD[K, V](
 
     // make the partitions based on block path so that all the CarbonInputSplits in a
     // MultiBlockSplit are used for bloom reading. This means 1 task for 1 shard(unique block path).
-    format
-      .getSplits(job)
-      .asScala
+    val splits = format.getSplits(job)
+    readCommittedScope = format.getReadCommitted(job, null)
+    splits.asScala
       .map(_.asInstanceOf[CarbonInputSplit])
       .groupBy(p => (p.getSegmentId, p.taskId, p.getBlockPath))
       .map { group =>

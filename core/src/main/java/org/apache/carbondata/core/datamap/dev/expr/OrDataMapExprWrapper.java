@@ -33,7 +33,7 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 /**
  * Or expression for datamaps
  */
-public class OrDataMapExprWrapper implements DataMapExprWrapper {
+public class OrDataMapExprWrapper extends DataMapExprWrapper {
 
   private DataMapExprWrapper left;
 

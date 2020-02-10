@@ -48,7 +48,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.ThriftWriter
-import org.apache.carbondata.events.{LookupRelationPostEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{CreateCarbonRelationPostEvent, LookupRelationPostEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
@@ -126,7 +126,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       case Some(t) =>
         if (t.getTablePath.equals(absIdentifier.getTablePath)) {
           if (isSchemaRefreshed(t.getAbsoluteTableIdentifier, sparkSession)) {
-            readCarbonSchema(t.getAbsoluteTableIdentifier, parameters)
+            readCarbonSchema(t.getAbsoluteTableIdentifier, parameters, sparkSession, false)
           } else {
             CarbonRelation(database, tableName, t)
           }
@@ -134,22 +134,31 @@ class CarbonFileMetastore extends CarbonMetaStore {
           DataMapStoreManager.getInstance().clearDataMaps(absIdentifier)
           CarbonMetadata.getInstance().removeTable(
             absIdentifier.getCarbonTableIdentifier.getTableUniqueName)
-          readCarbonSchema(absIdentifier, parameters)
+          readCarbonSchema(absIdentifier, parameters, sparkSession)
         }
       case None =>
-        readCarbonSchema(absIdentifier, parameters)
+        readCarbonSchema(absIdentifier, parameters, sparkSession)
     }
   }
 
   private def readCarbonSchema(absIdentifier: AbsoluteTableIdentifier,
-      parameters: Map[String, String]): CarbonRelation = {
-    readCarbonSchema(absIdentifier, parameters,
+      parameters: Map[String, String],
+      sparkSession: SparkSession,
+      needLock: Boolean = true): CarbonRelation = {
+    val relation = readCarbonSchema(absIdentifier, parameters,
       !parameters.getOrElse("isTransactional", "true").toBoolean) match {
       case Some(meta) =>
         CarbonRelation(absIdentifier.getDatabaseName, absIdentifier.getTableName, meta)
       case None =>
         throw new NoSuchTableException(absIdentifier.getDatabaseName, absIdentifier.getTableName)
     }
+    // fire post event after lookup relation
+    val operationContext = new OperationContext
+    val createCarbonRelationPostEvent: CreateCarbonRelationPostEvent =
+      CreateCarbonRelationPostEvent(
+        sparkSession, relation.carbonTable, needLock)
+    OperationListenerBus.getInstance.fireEvent(createCarbonRelationPostEvent, operationContext)
+    relation
   }
 
   /**

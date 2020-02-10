@@ -30,7 +30,9 @@ import org.apache.spark.sql.execution.command.table.{CarbonCreateTableLikeComman
 import org.apache.spark.sql.execution.datasources.{InsertIntoHadoopFsRelationCommand, RefreshResource, RefreshTable}
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand, MatchResetCommand}
+import org.apache.spark.sql.secondaryindex.command.{CreateIndexTable, DropIndexCommand, RegisterIndexTableCommand, ShowIndexesCommand}
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 
 /**
@@ -196,6 +198,51 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         DDLHelper.explain(explain, sparkSession)
       case showTables: ShowTablesCommand =>
         DDLHelper.showTables(showTables, sparkSession)
+      case CreateIndexTable(indexModel, tableProperties, isCreateSIndex) =>
+        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
+          .tableExists(TableIdentifier(indexModel.tableName, indexModel.databaseName))(
+            sparkSession)
+        if (isCarbonTable) {
+          ExecutedCommandExec(CreateIndexTable(indexModel, tableProperties,
+            isCreateSIndex)) :: Nil
+        } else {
+          sys.error("Operation not allowed on non-carbon table")
+        }
+      case showIndex@ShowIndexesCommand(_, _) =>
+        try {
+          ExecutedCommandExec(showIndex) ::
+          Nil
+        } catch {
+          case c: Exception =>
+            sys.error("Operation not allowed on non-carbon table")
+        }
+      case dropIndex@DropIndexCommand(ifExistsSet, databaseNameOp,
+      tableName, parentTableName) =>
+        val tableIdentifier = TableIdentifier(parentTableName, databaseNameOp)
+        val isParentTableExists = sparkSession.sessionState.catalog.tableExists(tableIdentifier)
+        if (!isParentTableExists) {
+          if (!ifExistsSet) {
+            sys.error("Table does not exist on non-carbon table")
+          } else {
+            Nil
+          }
+        } else {
+          val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
+            .tableExists(tableIdentifier)(sparkSession)
+          if (isCarbonTable) {
+            val isIndexTableExist = CarbonEnv.getInstance(sparkSession).carbonMetaStore
+              .tableExists(TableIdentifier(tableName, databaseNameOp))(sparkSession)
+            if (!isIndexTableExist && !ifExistsSet) {
+              val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
+              throw new MalformedCarbonCommandException(
+                s"Index table [$dbName.$tableName] does not exist on " +
+                s"parent table [$dbName.$parentTableName]")
+            }
+            ExecutedCommandExec(dropIndex) :: Nil
+          } else {
+            sys.error("Operation not allowed on non-carbon table")
+          }
+        }
       case _ => Nil
     }
   }

@@ -408,7 +408,8 @@ object CarbonSource {
 
   def isCarbonDataSource(catalogTable: CatalogTable): Boolean = {
     catalogTable.provider match {
-      case Some(x) => x.equalsIgnoreCase("carbondata")
+      case Some(x) => x.equalsIgnoreCase("carbondata") ||
+                      x.equals("org.apache.spark.sql.CarbonSource")
       case None => false
     }
   }

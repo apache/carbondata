@@ -125,7 +125,11 @@ public class UnsafeSortDataRows {
    * This method will be used to initialize
    */
   public void initialize() {
-    this.rowPage = createUnsafeRowPage();
+    MemoryBlock baseBlock =
+        UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
+    boolean isMemoryAvailable =
+        UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(baseBlock.size());
+    this.rowPage = new UnsafeCarbonRowPage(tableFieldStat, baseBlock, taskId, isMemoryAvailable);
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
 
@@ -141,12 +145,13 @@ public class UnsafeSortDataRows {
   private UnsafeCarbonRowPage createUnsafeRowPage() {
     MemoryBlock baseBlock =
         UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
-    boolean isMemoryAvailable =
+    boolean isSaveToDisk =
         UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(baseBlock.size());
-    if (!isMemoryAvailable) {
+    if (!isSaveToDisk) {
+      // merge and spill in-memory pages to disk if memory is not enough
       unsafeInMemoryIntermediateFileMerger.tryTriggerInMemoryMerging(true);
     }
-    return new UnsafeCarbonRowPage(tableFieldStat, baseBlock, taskId);
+    return new UnsafeCarbonRowPage(tableFieldStat, baseBlock, taskId, true);
   }
 
   public boolean canAdd() {
@@ -258,7 +263,16 @@ public class UnsafeSortDataRows {
   public void startSorting() throws InterruptedException {
     LOGGER.info("Unsafe based sorting will be used");
     if (this.rowPage.getUsedSize() > 0) {
-      handlePreviousPage();
+      TimSort<UnsafeCarbonRow, IntPointerBuffer> timSort = new TimSort<>(
+          new UnsafeIntSortDataFormat(rowPage));
+      if (parameters.getNumberOfNoDictSortColumns() > 0) {
+        timSort.sort(rowPage.getBuffer(), 0, rowPage.getBuffer().getActualSize(),
+            new UnsafeRowComparator(rowPage));
+      } else {
+        timSort.sort(rowPage.getBuffer(), 0, rowPage.getBuffer().getActualSize(),
+            new UnsafeRowComparatorForNormalDims(rowPage));
+      }
+      unsafeInMemoryIntermediateFileMerger.addDataChunkToMerge(rowPage);
     } else {
       rowPage.freeMemory();
     }
@@ -374,9 +388,12 @@ public class UnsafeSortDataRows {
         // get sort storage memory block if memory is available in sort storage manager
         // if space is available then store it in memory, if memory is not available
         // then spill to disk
-        MemoryBlock sortStorageMemoryBlock =
-            UnsafeSortMemoryManager.INSTANCE.allocateMemory(taskId, page.getDataBlock().size());
-        if (null == sortStorageMemoryBlock) {
+        MemoryBlock sortStorageMemoryBlock = null;
+        if (!page.isSaveToDisk()) {
+          sortStorageMemoryBlock =
+              UnsafeSortMemoryManager.INSTANCE.allocateMemory(taskId, page.getDataBlock().size());
+        }
+        if (null == sortStorageMemoryBlock || page.isSaveToDisk()) {
           // create a new file every time
           // create a new file and pick a temp directory randomly every time
           String tmpDir = parameters.getTempFileLocation()[

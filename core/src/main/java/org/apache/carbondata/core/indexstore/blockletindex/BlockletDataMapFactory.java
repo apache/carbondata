@@ -40,6 +40,7 @@ import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMapFactory;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
+import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -529,4 +530,61 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     }
     return distributablesToBeLoaded;
   }
+
+  private Set<TableBlockIndexUniqueIdentifier> getTableSegmentUniqueIdentifiers(Segment segment)
+      throws IOException {
+    Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
+        segmentMap.get(segment.getSegmentNo());
+    if (tableBlockIndexUniqueIdentifiers == null) {
+      tableBlockIndexUniqueIdentifiers = BlockletDataMapUtil.getSegmentUniqueIdentifiers(segment);
+    }
+    return tableBlockIndexUniqueIdentifiers;
+  }
+
+  public void updateSegmentDataMap(
+      Map<String, Set<TableBlockIndexUniqueIdentifier>> indexUniqueIdentifiers) {
+    for (Map.Entry<String, Set<TableBlockIndexUniqueIdentifier>> identifier : indexUniqueIdentifiers
+        .entrySet()) {
+      segmentMap.put(identifier.getKey(), identifier.getValue());
+    }
+  }
+
+  @Override
+  public List<DataMapDistributable> getAllUncachedDistributables(List<Segment> validSegments,
+      DataMapExprWrapper dataMapExprWrapper) throws IOException {
+    List<DataMapDistributable> distributablesToBeLoaded = new ArrayList<>();
+    for (Segment segment : validSegments) {
+      DataMapDistributableWrapper dataMapDistributableWrappers =
+          dataMapExprWrapper.toDistributableSegment(segment);
+      Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
+          getTableSegmentUniqueIdentifiers(segment);
+      for (TableBlockIndexUniqueIdentifier identifier : tableBlockIndexUniqueIdentifiers) {
+        BlockletDataMapIndexWrapper blockletDataMapIndexWrapper = cache.getIfPresent(
+            new TableBlockIndexUniqueIdentifierWrapper(identifier, this.getCarbonTable()));
+        if (identifier.getIndexFilePath() == null || blockletDataMapIndexWrapper == null) {
+          ((BlockletDataMapDistributable) dataMapDistributableWrappers.getDistributable())
+              .setTableBlockIndexUniqueIdentifier(identifier);
+          distributablesToBeLoaded.add(dataMapDistributableWrappers.getDistributable());
+        }
+      }
+    }
+    return distributablesToBeLoaded;
+  }
+
+  @Override
+  public DataMapDistributableWrapper toDistributableSegment(Segment segment,
+      DataMapSchema schema, AbsoluteTableIdentifier identifier, String uniqueId) {
+    try {
+      BlockletDataMapDistributable distributable = new BlockletDataMapDistributable();
+      distributable.setDataMapSchema(schema);
+      distributable.setSegment(segment);
+      distributable.setSegmentPath(
+          CarbonTablePath.getSegmentPath(identifier.getTablePath(), segment.getSegmentNo()));
+      distributable.setTablePath(identifier.getTablePath());
+      return new DataMapDistributableWrapper(uniqueId, distributable);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
 }

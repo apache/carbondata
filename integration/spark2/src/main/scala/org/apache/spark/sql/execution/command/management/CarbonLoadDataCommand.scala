@@ -247,10 +247,19 @@ case class CarbonLoadDataCommand(
     val uuid = ""
     try {
       operationContext.setProperty("uuid", uuid)
+      if (updateModel.isDefined && updateModel.get.isUpdate) {
+        operationContext.setProperty("isLoadOrCompaction", false)
+      }
       val loadTablePreExecutionEvent: LoadTablePreExecutionEvent =
         new LoadTablePreExecutionEvent(
           table.getCarbonTableIdentifier,
-          carbonLoadModel)
+          carbonLoadModel,
+          factPath,
+          dataFrame.isDefined,
+          optionsFinal,
+          options.asJava,
+          isOverwriteTable,
+          sparkSession)
       operationContext.setProperty("isOverwrite", isOverwriteTable)
       OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
       // Add pre event listener for index datamap

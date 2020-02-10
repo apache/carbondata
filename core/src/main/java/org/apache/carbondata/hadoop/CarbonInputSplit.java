@@ -393,7 +393,6 @@ public class CarbonInputSplit extends FileSplit
       out.writeInt(rowCount);
       writeDeleteDeltaFile(out);
       out.writeUTF(bucketId);
-      out.writeUTF(blockletId);
       out.write(serializeData, offset, actualLen);
       return;
     }

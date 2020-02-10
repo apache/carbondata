@@ -24,7 +24,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapreduce.{JobID, TaskAttemptID, TaskID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.spark.sql.{AnalysisException, CarbonDatasourceHadoopRelation, Column, DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, CarbonDatasourceHadoopRelation, CarbonUtils, Column, DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression, GenericRowWithSchema}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{DataCommand, ExecutionErrors}
@@ -71,7 +71,7 @@ case class CarbonMergeDataSetCommand(
    *
    */
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    val rltn = collectCarbonRelation(targetDsOri.logicalPlan)
+    val rltn = CarbonUtils.collectCarbonRelation(targetDsOri.logicalPlan)
     // Target dataset must be backed by carbondata table.
     if (rltn.length != 1) {
       throw new UnsupportedOperationException(
@@ -476,13 +476,6 @@ case class CarbonMergeDataSetCommand(
           null
         }
     }.filter(_ != null)
-  }
-
-  private def collectCarbonRelation(plan: LogicalPlan): Seq[CarbonDatasourceHadoopRelation] = {
-    plan collect {
-      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-    }
   }
 
   private def getInsertHistoryStatus(mergeMatches: MergeDataSetMatches) = {

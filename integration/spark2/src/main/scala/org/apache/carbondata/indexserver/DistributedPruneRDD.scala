@@ -70,6 +70,9 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
       id, TaskType.MAP, split.index, 0)
     val attemptContext = new TaskAttemptContextImpl(FileFactory.getConfiguration, attemptId)
     val inputSplits = split.asInstanceOf[DataMapRDDPartition].inputSplit
+    val executorIP = s"${ SparkEnv.get.blockManager.blockManagerId.host }_${
+      SparkEnv.get.blockManager.blockManagerId.executorId
+    }"
     if (dataMapFormat.isJobToClearDataMaps) {
       // if job is to clear datamaps just clear datamaps from cache and pass empty iterator
       DataMapStoreManager.getInstance().clearInvalidDataMaps(dataMapFormat.getCarbonTable,

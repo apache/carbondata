@@ -48,6 +48,10 @@ public class TableBlockIndexUniqueIdentifier implements Serializable {
     this.uniqueName = indexFilePath + CarbonCommonConstants.FILE_SEPARATOR + indexFileName;
   }
 
+  public TableBlockIndexUniqueIdentifier(String segmentId) {
+    this.segmentId = segmentId;
+  }
+
   /**
    * method returns the id to uniquely identify a key
    *

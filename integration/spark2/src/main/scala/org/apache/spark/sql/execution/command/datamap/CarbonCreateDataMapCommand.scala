@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.secondaryindex.command.ErrorMessage
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -126,6 +127,10 @@ case class CarbonCreateDataMapCommand(
     // If it is index datamap, check whether the column has datamap created already
     dataMapProvider match {
       case provider: IndexDataMapProvider =>
+        if (mainTable.isIndexTable) {
+          throw new ErrorMessage(
+            "Datamap creation on Secondary Index table is not supported")
+        }
         val isBloomFilter = DataMapClassProvider.BLOOMFILTER.getShortName
           .equalsIgnoreCase(dmProviderName)
         val datamaps = DataMapStoreManager.getInstance.getAllDataMap(mainTable).asScala

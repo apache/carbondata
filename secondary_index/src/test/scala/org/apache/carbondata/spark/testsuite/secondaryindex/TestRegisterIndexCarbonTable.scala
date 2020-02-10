@@ -77,7 +77,7 @@ class TestRegisterIndexCarbonTable extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(*) from carbontable"), Row(1))
     checkAnswer(sql("select c1 from carbontable"), Seq(Row("a")))
     sql("REGISTER INDEX TABLE index_on_c3 ON carbontable")
-    assert(sql("show indexes on carbontable in carbon").collect().nonEmpty)
+    assert(sql("show indexes on carbontable").collect().nonEmpty)
   }
   override def afterAll {
     sql("drop database if exists carbon cascade")

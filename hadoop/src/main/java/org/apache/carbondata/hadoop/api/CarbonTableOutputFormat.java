@@ -272,8 +272,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     Future future = executorService.submit(new Thread() {
       @Override
       public void run() {
-        ThreadLocalSessionInfo.setConfigurationToCurrentThread(taskAttemptContext
-            .getConfiguration());
+        ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo()
+            .put("carbonConf", taskAttemptContext.getConfiguration());
         try {
           dataLoadExecutor
               .execute(loadModel, tempStoreLocations, iterators);

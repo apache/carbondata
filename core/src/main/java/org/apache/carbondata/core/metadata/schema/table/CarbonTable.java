@@ -47,6 +47,8 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
+import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata;
+import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo;
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -132,6 +134,8 @@ public class CarbonTable implements Serializable, Writable {
 
   // Cardinality threshold for local dictionary, below which dictionary will be generated
   private int localDictionaryThreshold;
+
+  private IndexMetadata indexMetadata;
 
   public CarbonTable() {
     this.visibleDimensions = new LinkedList<>();
@@ -1150,4 +1154,62 @@ public class CarbonTable implements Serializable, Writable {
     tableInfo.readFields(in);
     updateTableByTableInfo(this, tableInfo);
   }
+
+  private void deserializeIndexMetadata() throws IOException {
+    if (indexMetadata == null) {
+      String indexMeta = tableInfo.getFactTable().getTableProperties().get(getTableId());
+      if (null != indexMeta) {
+        indexMetadata = IndexMetadata.deserialize(indexMeta);
+      }
+    }
+  }
+
+  public boolean isIndexTable() throws IOException {
+    deserializeIndexMetadata();
+    return indexMetadata != null && indexMetadata.isIndexTable();
+  }
+
+  public List<String> getIndexTableNames() throws IOException {
+    deserializeIndexMetadata();
+    if (null != indexMetadata) {
+      return indexMetadata.getIndexTables();
+    } else {
+      return new ArrayList<>();
+    }
+  }
+
+  public String getIndexInfo() throws IOException {
+    deserializeIndexMetadata();
+    if (null != indexMetadata) {
+      IndexTableInfo[] indexTableInfos =
+          new IndexTableInfo[indexMetadata.getIndexesMap().entrySet().size()];
+      int index = 0;
+      if (!isIndexTable()) {
+        for (Map.Entry<String, List<String>> entry : indexMetadata.getIndexesMap().entrySet()) {
+          indexTableInfos[index] =
+              new IndexTableInfo(getDatabaseName(), entry.getKey(), entry.getValue());
+          index++;
+        }
+        return IndexTableInfo.toGson(indexTableInfos);
+      } else {
+        return IndexTableInfo.toGson(new IndexTableInfo[] {});
+      }
+    } else {
+      return null;
+    }
+  }
+
+  public String getParentTableName() {
+    String parentTableName = "";
+    try {
+      deserializeIndexMetadata();
+    } catch (IOException e) {
+      LOGGER.error("Error deserializing index metadata");
+    }
+    if (null != indexMetadata) {
+      parentTableName = indexMetadata.getParentTableName();
+    }
+    return parentTableName;
+  }
+
 }

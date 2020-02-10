@@ -1122,7 +1122,7 @@ public class SegmentFileStore {
       }
       return partitionSpecs;
     }
-    return null;
+    return new ArrayList<>();
   }
 
   /**

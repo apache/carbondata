@@ -99,6 +99,13 @@ public class SegmentUpdateDetails implements Serializable {
     deltaFileStamps.add(deltaFileStamp);
   }
 
+  public void setDeltaFileStamp(String deltaFileStamp) {
+    if (deltaFileStamps == null) {
+      deltaFileStamps = new LinkedHashSet<>();
+    }
+    deltaFileStamps.add(deltaFileStamp);
+  }
+
   public void setDeltaFileStamps(Set<String> deltaFileStamps) {
     this.deltaFileStamps = deltaFileStamps;
   }

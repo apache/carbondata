@@ -32,14 +32,14 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
  * It is the wrapper around datamap and related filter expression. By using it user can apply
  * datamaps in expression style.
  */
-public interface DataMapExprWrapper extends Serializable {
+public abstract class DataMapExprWrapper implements Serializable {
 
   /**
    * It get the blocklets from each leaf node datamap and apply expressions on the blocklets
    * using list of segments, it is used in case on non distributable datamap.
    */
-  List<ExtendedBlocklet> prune(List<Segment> segments, List<PartitionSpec> partitionsToPrune)
-      throws IOException;
+  public abstract List<ExtendedBlocklet> prune(List<Segment> segments,
+      List<PartitionSpec> partitionsToPrune) throws IOException;
 
   /**
    * prune blocklet according distributable
@@ -49,24 +49,25 @@ public interface DataMapExprWrapper extends Serializable {
    * @return the pruned ExtendedBlocklet list
    * @throws IOException
    */
-  List<ExtendedBlocklet> prune(DataMapDistributable distributable,
-      List<PartitionSpec> partitionsToPrune)
-          throws IOException;
+  public abstract List<ExtendedBlocklet> prune(DataMapDistributable distributable,
+      List<PartitionSpec> partitionsToPrune) throws IOException;
 
   /**
    * It is used in case on distributable datamap. First using job it gets all blockets from all
    * related datamaps. These blocklets are passed to this method to apply expression.
+   *
    * @param blocklets
    * @return
    * @throws IOException
    */
-  List<ExtendedBlocklet> pruneBlocklets(List<ExtendedBlocklet> blocklets) throws IOException;
+  public abstract List<ExtendedBlocklet> pruneBlocklets(List<ExtendedBlocklet> blocklets)
+      throws IOException;
 
   /**
    * Get the underlying filter expression.
    * @return
    */
-  FilterResolverIntf getFilterResolverIntf();
+  public abstract FilterResolverIntf getFilterResolverIntf();
 
   /**
    * Convert to distributable objects for executing job.
@@ -74,7 +75,8 @@ public interface DataMapExprWrapper extends Serializable {
    * @return
    * @throws IOException
    */
-  List<DataMapDistributableWrapper> toDistributable(List<Segment> segments) throws IOException;
+  public abstract List<DataMapDistributableWrapper> toDistributable(List<Segment> segments)
+      throws IOException;
 
   /**
    * Each leaf node is identified by uniqueid, so if user wants the underlying filter expression for
@@ -82,20 +84,28 @@ public interface DataMapExprWrapper extends Serializable {
    * @param uniqueId
    * @return
    */
-  FilterResolverIntf getFilterResolverIntf(String uniqueId);
+  public abstract FilterResolverIntf getFilterResolverIntf(String uniqueId);
 
   /**
    * Get the datamap level.
    */
-  DataMapLevel getDataMapLevel();
+  public abstract DataMapLevel getDataMapLevel();
 
   /**
    * get the left datamap wrapper
    */
-  DataMapExprWrapper getLeftDataMapWrapper();
+  public abstract DataMapExprWrapper getLeftDataMapWrapper();
 
   /**
    * get the right datamap wrapper
    */
-  DataMapExprWrapper getRightDataMapWrapprt();
+  public abstract DataMapExprWrapper getRightDataMapWrapprt();
+
+  /**
+   * Convert segment to distributable object.
+   */
+  public DataMapDistributableWrapper toDistributableSegment(Segment segment)
+      throws IOException {
+    return null;
+  }
 }

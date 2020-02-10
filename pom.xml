@@ -113,6 +113,7 @@
     <module>datamap/mv/core</module>
     <module>examples/spark2</module>
     <module>integration/hive</module>
+    <module>secondary_index</module>
     <module>integration/flink</module>
     <module>integration/flink-build</module>
     <module>integration/flink-proxy</module>
@@ -547,6 +548,8 @@
                 <sourceDirectory>${basedir}/store/sdk/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/bloom/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/lucene/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/secondary_index/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/secondary_index/src/main/java</sourceDirectory>
               </sourceDirectories>
             </configuration>
           </plugin>
@@ -597,6 +600,8 @@
                 <sourceDirectory>${basedir}/store/sdk/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/bloom/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/lucene/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/secondary_index/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/secondary_index/src/main/java</sourceDirectory>
               </sourceDirectories>
             </configuration>
           </plugin>

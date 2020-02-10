@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datamap;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -38,10 +39,13 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.util.BlockletDataMapUtil;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.log4j.Logger;
 
 public class DataMapUtil {
@@ -174,6 +178,48 @@ public class DataMapUtil {
     segments.clear();
     // add the new segments to the segments list.
     segments.addAll(validSegments.keySet());
+  }
+
+  /**
+
+   Loads the datamaps in parallel by utilizing executor
+   *
+   @param carbonTable
+   @param dataMapExprWrapper
+   @param validSegments
+   @param partitionsToPrune
+   @throws IOException
+   */
+  public static void loadDataMaps(CarbonTable carbonTable, DataMapExprWrapper dataMapExprWrapper,
+      List<Segment> validSegments, List<PartitionSpec> partitionsToPrune) throws IOException {
+    if (!CarbonProperties.getInstance()
+        .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName())
+        && BlockletDataMapUtil.loadDataMapsParallel(carbonTable)) {
+      String clsName = "org.apache.carbondata.spark.rdd.SparkBlockletDataMapLoaderJob";
+      DataMapJob dataMapJob = (DataMapJob) createDataMapJob(clsName);
+      String className = "org.apache.carbondata.hadoop.DistributableBlockletDataMapLoader";
+      SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
+          getValidAndInvalidSegments(carbonTable, FileFactory.getConfiguration());
+      List<Segment> invalidSegments = validAndInvalidSegmentsInfo.getInvalidSegments();
+      FileInputFormat dataMapFormat =
+          createDataMapJob(carbonTable, dataMapExprWrapper, validSegments, invalidSegments,
+              partitionsToPrune, className, false);
+      dataMapJob.execute(carbonTable, dataMapFormat);
+    }
+  }
+
+  private static FileInputFormat createDataMapJob(CarbonTable carbonTable,
+      DataMapExprWrapper dataMapExprWrapper, List<Segment> validsegments,
+      List<Segment> invalidSegments, List<PartitionSpec> partitionsToPrune, String clsName,
+      boolean isJobToClearDataMaps) {
+    try {
+      Constructor<?> cons = Class.forName(clsName).getDeclaredConstructors()[0];
+      return (FileInputFormat) cons
+          .newInstance(carbonTable, dataMapExprWrapper, validsegments, invalidSegments,
+              partitionsToPrune, isJobToClearDataMaps);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   static List<ExtendedBlocklet> pruneDataMaps(CarbonTable table,

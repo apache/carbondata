@@ -183,6 +183,14 @@ trait SessionEventInfo {
 }
 
 /**
+ * Event for lookup
+ */
+trait CreateCarbonRelationEventInfo {
+  val sparkSession: SparkSession
+  val carbonTable: CarbonTable
+}
+
+/**
  * Event info for create datamap
  */
 trait CreateDataMapEventsInfo {

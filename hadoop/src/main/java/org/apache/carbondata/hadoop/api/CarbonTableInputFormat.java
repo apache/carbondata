@@ -30,10 +30,13 @@ import org.apache.carbondata.common.exceptions.DeprecatedFeatureException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
+import org.apache.carbondata.core.datamap.DataMapChooser;
 import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
+import org.apache.carbondata.core.datamap.DataMapUtil;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
+import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
@@ -133,32 +136,39 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         .getValidAndInvalidSegments(carbonTable.isChildTableForMV(), loadMetadataDetails,
             this.readCommittedScope);
 
-    List<Segment> validSegments = segments.getValidSegments();
-    streamSegments = segments.getStreamSegments();
-    streamSegments = getFilteredSegment(job, streamSegments, readCommittedScope);
-    if (validSegments.size() == 0) {
-      return getSplitsOfStreaming(job, streamSegments, carbonTable);
-    }
-    List<Segment> filteredSegmentToAccess =
-        getFilteredSegment(job, segments.getValidSegments(), readCommittedScope);
-    if (filteredSegmentToAccess.size() == 0) {
-      return getSplitsOfStreaming(job, streamSegments, carbonTable);
-    } else {
-      setSegmentsToAccess(job.getConfiguration(), filteredSegmentToAccess);
+    if (getValidateSegmentsToAccess(job.getConfiguration())) {
+      List<Segment> validSegments = segments.getValidSegments();
+      streamSegments = segments.getStreamSegments();
+      streamSegments = getFilteredSegment(job, streamSegments, true, readCommittedScope);
+      if (validSegments.size() == 0) {
+        return getSplitsOfStreaming(job, streamSegments, carbonTable);
+      }
+      List<Segment> filteredSegmentToAccess =
+          getFilteredSegment(job, segments.getValidSegments(), true, readCommittedScope);
+      if (filteredSegmentToAccess.size() == 0) {
+        return getSplitsOfStreaming(job, streamSegments, carbonTable);
+      } else {
+        setSegmentsToAccess(job.getConfiguration(), filteredSegmentToAccess);
+      }
+
+      // remove entry in the segment index if there are invalid segments
+      for (Segment segment : segments.getInvalidSegments()) {
+        invalidSegmentIds.add(segment.getSegmentNo());
+      }
+      if (invalidSegmentIds.size() > 0) {
+        DataMapStoreManager.getInstance()
+            .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()),
+                invalidSegmentIds);
+      }
     }
 
-    // remove entry in the segment index if there are invalid segments
-    for (Segment segment : segments.getInvalidSegments()) {
-      invalidSegmentIds.add(segment.getSegmentNo());
-    }
-    if (invalidSegmentIds.size() > 0) {
-      DataMapStoreManager.getInstance()
-          .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()),
-              invalidSegmentIds);
-    }
+    List<Segment> validAndInProgressSegments = new ArrayList<>(segments.getValidSegments());
+    // Add in progress segments also to filter it as in case of Secondary Index table load it loads
+    // data from in progress table.
+    validAndInProgressSegments.addAll(segments.getListOfInProgressSegments());
 
     List<Segment> segmentToAccess =
-        getFilteredSegment(job, segments.getValidSegments(), readCommittedScope);
+        getFilteredSegment(job, validAndInProgressSegments, false, readCommittedScope);
 
     // process and resolve the expression
     DataMapFilter dataMapFilter = getFilterPredicates(job.getConfiguration());
@@ -195,7 +205,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    * `INPUT_SEGMENT_NUMBERS` in job configuration
    */
   private List<Segment> getFilteredSegment(JobContext job, List<Segment> validSegments,
-      ReadCommittedScope readCommittedScope) {
+      boolean validationRequired, ReadCommittedScope readCommittedScope) {
     Segment[] segmentsToAccess = getSegmentsToAccess(job, readCommittedScope);
     List<Segment> segmentToAccessSet =
         new ArrayList<>(new HashSet<>(Arrays.asList(segmentsToAccess)));
@@ -212,6 +222,21 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
             filteredSegmentToAccess.add(segmentToAccessSet.get(index));
           } else {
             filteredSegmentToAccess.add(validSegment);
+          }
+        }
+      }
+      if (filteredSegmentToAccess.size() != segmentToAccessSet.size() && !validationRequired) {
+        for (Segment segment : segmentToAccessSet) {
+          if (!filteredSegmentToAccess.contains(segment)) {
+            filteredSegmentToAccess.add(segment);
+          }
+        }
+      }
+      // TODO: add validation for set segments access based on valid segments in table status
+      if (filteredSegmentToAccess.size() != segmentToAccessSet.size() && !validationRequired) {
+        for (Segment segment : segmentToAccessSet) {
+          if (!filteredSegmentToAccess.contains(segment)) {
+            filteredSegmentToAccess.add(segment);
           }
         }
       }
@@ -400,7 +425,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
     // TODO: currently only batch segment is supported, add support for streaming table
     List<Segment> filteredSegment =
-        getFilteredSegment(job, allSegments.getValidSegments(), readCommittedScope);
+        getFilteredSegment(job, allSegments.getValidSegments(), false, readCommittedScope);
     boolean isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
     /* In the select * flow, getSplits() method was clearing the segmentMap if,
     segment needs refreshing. same thing need for select count(*) flow also.
@@ -426,6 +451,9 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()),
               toBeCleanedSegments);
     }
+    DataMapExprWrapper dataMapExprWrapper =
+        DataMapChooser.getDefaultDataMap(getOrCreateCarbonTable(job.getConfiguration()), null);
+    DataMapUtil.loadDataMaps(table, dataMapExprWrapper, filteredSegment, partitions);
     if (isIUDTable || isUpdateFlow) {
       Map<String, Long> blockletToRowCountMap = new HashMap<>();
       if (CarbonProperties.getInstance()
