@@ -62,7 +62,7 @@ class DropTableTest extends QueryTest with BeforeAndAfterAll {
     sql("drop index i2 on cd.t1")
     assert(sql("show tables in cd").collect()
       .forall(row => !row.getString(1).equals("i1") && !row.getString(1).equals("i2") && row.getString(1).equals("t1")))
-    assert(sql("show indexes on t1 in cd").collect().isEmpty)
+    assert(sql("show indexes on cd.t1").collect().isEmpty)
   }
 
   test("test drop index command") {

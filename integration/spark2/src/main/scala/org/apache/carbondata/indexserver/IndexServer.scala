@@ -18,8 +18,8 @@ package org.apache.carbondata.indexserver
 
 import java.net.InetSocketAddress
 import java.security.PrivilegedAction
-import java.util.UUID
 import java.util.concurrent.{Executors, ExecutorService}
+import java.util.UUID
 
 import scala.collection.JavaConverters._
 
@@ -37,9 +37,7 @@ import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DistributableDataMapFormat
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.indexstore.ExtendedBlockletWrapperContainer
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.indexstore.{ExtendedBlockletWrapperContainer, SegmentWrapperContainer}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{IndexServerEvent, OperationContext, OperationListenerBus}
@@ -66,6 +64,8 @@ trait ServerInterface {
   segmentIds: Array[String], jobGroupId: String = "", isFallBack: Boolean = false): Unit
 
   def getCount(request: DistributableDataMapFormat): LongWritable
+
+  def getPrunedSegments(request: DistributableDataMapFormat): SegmentWrapperContainer
 
 }
 
@@ -223,6 +223,17 @@ object IndexServer extends ServerInterface {
       new DistributedShowCacheRDD(sparkSession, tableId, executorCache).collect()
     }
   }
+
+  override def getPrunedSegments(request: DistributableDataMapFormat): SegmentWrapperContainer =
+    doAs {
+      val sparkSession = SparkSQLUtil.getSparkSession
+      sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)
+      sparkSession.sparkContext.setLocalProperty("spark.job.description", request.getTaskGroupDesc)
+      val splits = new SegmentPruneRDD(sparkSession, request).collect()
+      DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
+      val segmentWrappers = splits.map(_._2)
+      new SegmentWrapperContainer(segmentWrappers)
+    }
 
   def main(args: Array[String]): Unit = {
     if (serverIp.isEmpty) {

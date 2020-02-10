@@ -31,7 +31,7 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 /**
  * And expression for datamaps
  */
-public class AndDataMapExprWrapper implements DataMapExprWrapper {
+public class AndDataMapExprWrapper extends DataMapExprWrapper {
 
   private DataMapExprWrapper left;
 

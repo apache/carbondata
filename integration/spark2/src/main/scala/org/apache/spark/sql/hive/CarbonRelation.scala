@@ -27,6 +27,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.{CarbonMetastoreTypes, SparkTypeConverter}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -101,6 +102,20 @@ case class CarbonRelation(
     }
     val otherColumns = columns.filterNot(a => partitionColumnSchemas.contains(a.getColumnSchema))
     val partitionColumns = columns.filter(a => partitionColumnSchemas.contains(a.getColumnSchema))
+
+    // get column Metadata
+    def getColumnMetaData(column: CarbonColumn) = {
+      val columnMetaData =
+        if (null != column.getColumnProperties && !column.getColumnProperties.isEmpty &&
+            null != column.getColumnProperties.get(CarbonCommonConstants.COLUMN_COMMENT)) {
+        new MetadataBuilder().putString(CarbonCommonConstants.COLUMN_COMMENT,
+          column.getColumnProperties.get(CarbonCommonConstants.COLUMN_COMMENT)).build()
+      } else {
+        Metadata.empty
+      }
+      columnMetaData
+    }
+
     // convert each column to Attribute
     (otherColumns ++= partitionColumns).filter(!_.isInvisible).map { column: CarbonColumn =>
       if (column.isDimension()) {
@@ -119,8 +134,8 @@ case class CarbonRelation(
             CarbonMetastoreTypes.toDataType(dataType)
         }
         CarbonToSparkAdapter.createAttributeReference(
-          column.getColName, output, nullable = true, Metadata.empty, NamedExpression.newExprId,
-          qualifier = Option(tableName + "." + column.getColName))
+          column.getColName, output, nullable = true, getColumnMetaData(column),
+          NamedExpression.newExprId, qualifier = Option(tableName + "." + column.getColName))
       } else {
         val output = CarbonMetastoreTypes.toDataType {
           column.getDataType.getName.toLowerCase match {
@@ -130,8 +145,8 @@ case class CarbonRelation(
           }
         }
         CarbonToSparkAdapter.createAttributeReference(
-          column.getColName, output, nullable = true, Metadata.empty, NamedExpression.newExprId,
-          qualifier = Option(tableName + "." + column.getColName))
+          column.getColName, output, nullable = true, getColumnMetaData(column),
+          NamedExpression.newExprId, qualifier = Option(tableName + "." + column.getColName))
       }
     }
   }

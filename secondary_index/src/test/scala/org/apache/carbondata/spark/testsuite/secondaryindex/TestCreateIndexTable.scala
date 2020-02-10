@@ -415,29 +415,6 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test to check if dictionary column is updated to no_dictionary in secondary index") {
-    sql("drop index if exists index1 on table1")
-    sql("drop table if exists table1")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD,
-        CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_MIN.toString)
-    sql("create table table1(a string, b string) stored as carbondata")
-    sql("create index index1 on table table1(b) AS 'carbondata'")
-    sql(s"load data local inpath '$resourcesPath/secindex/data_10000.csv' into table table1 options" +
-        s"('fileheader' = 'a,b', 'delimiter' = ',')")
-    assert(!sql("describe formatted table1").collect()(0).get(2).toString.contains("DICTIONARY"))
-    assert(!sql("describe formatted index1").collect()(0).get(2).toString.contains("DICTIONARY"))
-    sql("describe formatted index1").show(100, false)
-    val tableInfo: org.apache.carbondata.format.TableInfo = CarbonMetastore
-      .readSchemaFileToThriftTable(s"$storeLocation/index1/Metadata/schema")
-    val column = tableInfo.getFact_table.getTable_columns.asScala.filter(_.getColumn_name == "b").head
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD,
-        CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT)
-    assert(!column.encoders.contains(org.apache.carbondata.format.Encoding.DICTIONARY))
-    sql("drop table if exists table1")
-  }
-
   test("test creation of index table 2 times with same name, on error drop and create with same name again") {
     sql("DROP TABLE IF EXISTS carbon_si_same_name_test")
     sql("DROP INDEX IF EXISTS si_drop_i1 on carbon_si_same_name_test")

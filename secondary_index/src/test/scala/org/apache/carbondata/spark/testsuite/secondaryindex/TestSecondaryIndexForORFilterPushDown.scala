@@ -241,7 +241,7 @@ class TestSecondaryIndexForORFilterPushDown extends QueryTest with BeforeAndAfte
    * @param sparkPlan
    * @return
    */
-  private def isFilterPushedDownToSI(sparkPlan: SparkPlan): Boolean = {
+  def isFilterPushedDownToSI(sparkPlan: SparkPlan): Boolean = {
     var isValidPlan = false
     sparkPlan.transform {
       case broadCastSIFilterPushDown: BroadCastSIFilterPushJoin =>

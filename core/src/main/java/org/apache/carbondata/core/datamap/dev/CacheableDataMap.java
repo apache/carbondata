@@ -19,9 +19,14 @@ package org.apache.carbondata.core.datamap.dev;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.carbondata.core.datamap.DataMapDistributable;
+import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper;
+import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifierWrapper;
 
 /**
@@ -47,4 +52,9 @@ public interface CacheableDataMap {
   List<DataMapDistributable> getAllUncachedDistributables(List<DataMapDistributable> distributables)
       throws IOException;
 
+  List<DataMapDistributable> getAllUncachedDistributables(
+      List<Segment> segments, DataMapExprWrapper dataMapExprWrapper) throws IOException;
+
+  void updateSegmentDataMap(
+      Map<String, Set<TableBlockIndexUniqueIdentifier>> indexUniqueIdentifier);
 }

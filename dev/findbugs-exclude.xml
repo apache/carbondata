@@ -63,6 +63,10 @@
     <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
   </Match>
   <Match>
+    <Class name="org.apache.carbondata.core.indexstore.UnsafeMemoryDMStore"/>
+    <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
+  </Match>
+  <Match>
     <!--
     Returning a reference to a mutable object value stored in one of the object's fields exposes
     the internal representation of the object.  If instances are accessed by untrusted code,
@@ -122,4 +126,6 @@
     <Class name="org.apache.carbondata.events.OperationContext"/>
     <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
   </Match>
+  <Match> <Class name="~org.apache.spark.sql.secondaryindex.Jobs.DistributableBlockletDataMapLoader"/> <Field name="dataMapExprWrapper"/> <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/> </Match>
+  <Match> <Class name="~org.apache.spark.sql.secondaryindex.Jobs.DistributableBlockletDataMapLoader"/> <Field name="validSegments"/> <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/> </Match>
 </FindBugsFilter>

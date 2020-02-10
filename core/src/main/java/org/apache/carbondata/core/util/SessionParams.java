@@ -36,6 +36,7 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_OFFHEAP_SORT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_SI_LOOKUP_PARTIALSTRING;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_SORT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_VECTOR_READER;
@@ -140,6 +141,7 @@ public class SessionParams implements Serializable, Cloneable {
   private boolean validateKeyValue(String key, String value) throws InvalidConfigurationException {
     boolean isValid = false;
     switch (key) {
+      case ENABLE_SI_LOOKUP_PARTIALSTRING:
       case ENABLE_UNSAFE_SORT:
       case ENABLE_OFFHEAP_SORT:
       case CARBON_CUSTOM_BLOCK_DISTRIBUTION:

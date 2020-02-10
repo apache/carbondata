@@ -1590,8 +1590,10 @@ public final class CarbonUtil {
             .getCarbonDataExtension())) {
       return true;
     }
-
-    if (null != invalidBlockVOForSegmentId) {
+    // in case of compaction over si table the factTimeStamp will be null for the
+    // main table's compacted segments in that case no need to validate the block
+    if (null != invalidBlockVOForSegmentId &&
+        null != invalidBlockVOForSegmentId.getFactTimestamp()) {
       Long blockTimeStamp = Long.parseLong(filePath
           .substring(filePath.lastIndexOf('-') + 1,
               filePath.lastIndexOf('.')));

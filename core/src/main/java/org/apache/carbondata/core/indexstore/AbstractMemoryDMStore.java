@@ -30,6 +30,8 @@ public abstract class AbstractMemoryDMStore implements Serializable {
 
   protected boolean isMemoryFreed;
 
+  protected boolean isSerialized;
+
   protected final String taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
   public abstract void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow);
@@ -46,7 +48,17 @@ public abstract class AbstractMemoryDMStore implements Serializable {
     // do nothing in default implementation
   }
 
+  public void serializeMemoryBlock() {
+  }
+
+  public void copyToMemoryBlock() {
+  }
+
   public UnsafeMemoryDMStore convertToUnsafeDMStore(CarbonRowSchema[] schema) {
     throw new UnsupportedOperationException("Operation not allowed");
+  }
+
+  public boolean isSerialized() {
+    return isSerialized;
   }
 }

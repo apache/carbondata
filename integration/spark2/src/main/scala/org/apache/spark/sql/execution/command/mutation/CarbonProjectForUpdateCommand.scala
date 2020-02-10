@@ -102,6 +102,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
     val operationContext = new OperationContext
     val updateTablePreEvent: UpdateTablePreEvent =
       UpdateTablePreEvent(sparkSession, carbonTable)
+    operationContext.setProperty("isLoadOrCompaction", false)
     OperationListenerBus.getInstance.fireEvent(updateTablePreEvent, operationContext)
     val metadataLock = CarbonLockFactory
       .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,

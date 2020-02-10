@@ -390,7 +390,12 @@ public class CarbonTablePath {
     public static String getTimeStampFromFileName(String carbonDataFileName) {
       // Get the timestamp portion of the file.
       String fileName = getFileName(carbonDataFileName);
-      int startIndex = fileName.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1;
+      int startIndex;
+      if (carbonDataFileName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        startIndex = fileName.lastIndexOf(CarbonCommonConstants.UNDERSCORE) + 1;
+      } else {
+        startIndex = fileName.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1;
+      }
       int endIndex = fileName.indexOf(".", startIndex);
       return fileName.substring(startIndex, endIndex);
     }

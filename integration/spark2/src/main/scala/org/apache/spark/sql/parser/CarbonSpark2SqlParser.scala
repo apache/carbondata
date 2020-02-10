@@ -22,23 +22,27 @@ import scala.language.implicitConversions
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{CarbonToSparkAdapter, Dataset, DeleteRecords, SparkSession, UpdateTable}
+import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
 import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, CarbonParserUtil, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
+import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.execution.command.cache.{CarbonDropCacheCommand, CarbonShowCacheCommand}
 import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDataMapRebuildCommand, CarbonDataMapShowCommand, CarbonDropDataMapCommand}
 import org.apache.spark.sql.execution.command.management._
 import org.apache.spark.sql.execution.command.schema.CarbonAlterTableDropColumnCommand
-import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
-import org.apache.spark.sql.types.StructField
-import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
-import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation}
-import org.apache.spark.sql.execution.command.cache.{CarbonDropCacheCommand, CarbonShowCacheCommand}
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
+import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
+import org.apache.spark.sql.secondaryindex.command._
+import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.compression.CompressorFactory
+import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
 
@@ -77,7 +81,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
     datamapManagement | alterTableFinishStreaming | stream | cli |
-    cacheManagement | alterDataMap | insertStageData
+    cacheManagement | alterDataMap | insertStageData | indexCommands
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | deleteStage | cleanFiles | addLoad
@@ -95,7 +99,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val extendedSparkSyntax: Parser[LogicalPlan] =
     loadDataNew | explainPlan | alterTableColumnRenameAndModifyDataType |
-    alterTableAddColumns | explainPlan
+    alterTableAddColumns
 
   protected lazy val alterTable: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (COMPACT ~ stringLit) ~
@@ -607,6 +611,135 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           table.toLowerCase,
           values.map(_.toLowerCase))
         CarbonAlterTableDropColumnCommand(alterTableDropColumnModel)
+    }
+
+  protected lazy val indexCommands: Parser[LogicalPlan] =
+    showIndexes | createIndexTable | dropIndexTable | registerIndexes | rebuildIndex
+
+  protected lazy val createIndexTable: Parser[LogicalPlan] =
+    CREATE ~> INDEX ~> ident ~ (ON ~> TABLE ~> (ident <~ ".").? ~ ident) ~
+    ("(" ~> repsep(ident, ",") <~ ")") ~ (AS ~> stringLit) ~
+    (TBLPROPERTIES ~> "(" ~> repsep(options, ",") <~ ")").? <~ opt(";") ^^ {
+      case indexTableName ~ table ~ cols ~ indexStoreType ~ tblProp =>
+
+        if (!("carbondata".equalsIgnoreCase(indexStoreType))) {
+          sys.error("Not a carbon format request")
+        }
+
+        val (dbName, tableName) = table match {
+          case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
+        }
+
+        val tableProperties = if (tblProp.isDefined) {
+          val tblProps = tblProp.get.map(f => f._1 -> f._2)
+          scala.collection.mutable.Map(tblProps: _*)
+        } else {
+          scala.collection.mutable.Map.empty[String, String]
+        }
+        // validate the tableBlockSize from table properties
+        CommonUtil.validateSize(tableProperties, CarbonCommonConstants.TABLE_BLOCKSIZE)
+        // validate for supported table properties
+        validateTableProperties(tableProperties)
+        // validate column_meta_cache proeperty if defined
+        val tableColumns: List[String] = cols.map(f => f.toLowerCase)
+        validateColumnMetaCacheAndCacheLevelProeprties(dbName,
+          indexTableName.toLowerCase,
+          tableColumns,
+          tableProperties)
+        validateColumnCompressorProperty(tableProperties
+          .getOrElse(CarbonCommonConstants.COMPRESSOR, null))
+        val indexTableModel = SecondaryIndex(dbName,
+          tableName.toLowerCase,
+          tableColumns,
+          indexTableName.toLowerCase)
+        CreateIndexTable(indexTableModel, tableProperties)
+    }
+
+  private def validateColumnMetaCacheAndCacheLevelProeprties(dbName: Option[String],
+      tableName: String,
+      tableColumns: Seq[String],
+      tableProperties: scala.collection.mutable.Map[String, String]): Unit = {
+    // validate column_meta_cache property
+    if (tableProperties.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
+      CommonUtil.validateColumnMetaCacheFields(
+        dbName.getOrElse(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+        tableName,
+        tableColumns,
+        tableProperties.get(CarbonCommonConstants.COLUMN_META_CACHE).get,
+        tableProperties)
+    }
+    // validate cache_level property
+    if (tableProperties.get(CarbonCommonConstants.CACHE_LEVEL).isDefined) {
+      CommonUtil.validateCacheLevel(
+        tableProperties.get(CarbonCommonConstants.CACHE_LEVEL).get,
+        tableProperties)
+    }
+  }
+
+  private def validateColumnCompressorProperty(columnCompressor: String): Unit = {
+    // Add validatation for column compressor when creating index table
+    try {
+      if (null != columnCompressor) {
+        CompressorFactory.getInstance().getCompressor(columnCompressor)
+      }
+    } catch {
+      case ex: UnsupportedOperationException =>
+        throw new InvalidConfigurationException(ex.getMessage)
+    }
+  }
+
+  /**
+   * this method validates if index table properties contains other than supported ones
+   *
+   * @param tableProperties
+   */
+  private def validateTableProperties(tableProperties: scala.collection.mutable.Map[String,
+    String]) = {
+    val supportedPropertiesForIndexTable = Seq("TABLE_BLOCKSIZE",
+      "COLUMN_META_CACHE",
+      "CACHE_LEVEL",
+      CarbonCommonConstants.COMPRESSOR.toUpperCase)
+    tableProperties.foreach { property =>
+      if (!supportedPropertiesForIndexTable.contains(property._1.toUpperCase)) {
+        val errorMessage = "Unsupported Table property in index creation: " + property._1.toString
+        throw new MalformedCarbonCommandException(errorMessage)
+      }
+    }
+  }
+
+  protected lazy val dropIndexTable: Parser[LogicalPlan] =
+    DROP ~> INDEX ~> opt(IF ~> EXISTS) ~ ident ~ (ON ~> (ident <~ ".").? ~ ident) <~ opt(";") ^^ {
+      case ifexist ~ indexTableName ~ table =>
+        val (dbName, tableName) = table match {
+          case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
+        }
+        DropIndexCommand(ifexist.isDefined, dbName, indexTableName.toLowerCase, tableName)
+    }
+
+  protected lazy val showIndexes: Parser[LogicalPlan] =
+    SHOW ~> INDEXES ~> ON ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
+      case databaseName ~ tableName =>
+        ShowIndexesCommand(databaseName, tableName)
+    }
+
+  protected lazy val registerIndexes: Parser[LogicalPlan] =
+    REGISTER ~> INDEX ~> TABLE ~> ident ~ (ON ~> (ident <~ ".").? ~ ident) <~ opt(";") ^^ {
+      case indexTable ~ table =>
+        val (dbName, tableName) = table match {
+          case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
+        }
+        RegisterIndexTableCommand(dbName, indexTable, tableName)
+    }
+
+  protected lazy val rebuildIndex: Parser[LogicalPlan] =
+    REBUILD ~> INDEX ~> (ident <~ ".").? ~ ident ~
+    (WHERE ~> (SEGMENT ~ "." ~ ID) ~> IN ~> "(" ~> repsep(segmentId, ",") <~ ")").? <~
+    opt(";") ^^ {
+      case dbName ~ table ~ segs =>
+        val alterTableModel =
+          AlterTableModel(CarbonParserUtil.convertDbNameToLowerCase(dbName), table, None, null,
+            Some(System.currentTimeMillis()), null, segs)
+        SIRebuildSegmentCommand(alterTableModel)
     }
 
   def getFields(schema: Seq[StructField], isExternal: Boolean = false): Seq[Field] = {

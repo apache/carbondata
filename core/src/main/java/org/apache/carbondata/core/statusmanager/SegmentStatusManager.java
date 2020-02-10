@@ -1246,4 +1246,24 @@ public class SegmentStatusManager {
     }
     return newList;
   }
+
+  /*
+   * This method reads the load metadata file and returns Carbon segments only
+   */
+  public static LoadMetadataDetails[] readCarbonMetaData(String metadataFolderPath) {
+    String metadataFileName = metadataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+        + CarbonTablePath.TABLE_STATUS_FILE;
+    try {
+      LoadMetadataDetails[] allSegments = readTableStatusFile(metadataFileName);
+      List<LoadMetadataDetails> carbonSegments = new ArrayList<>();
+      for (LoadMetadataDetails currSegment : allSegments) {
+        if (currSegment.isCarbonFormat()) {
+          carbonSegments.add(currSegment);
+        }
+      }
+      return carbonSegments.toArray(new LoadMetadataDetails[carbonSegments.size()]);
+    } catch (IOException e) {
+      return new LoadMetadataDetails[0];
+    }
+  }
 }

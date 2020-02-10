@@ -44,13 +44,15 @@ import org.apache.spark.util.TaskCompletionListener
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapFilter
+import org.apache.carbondata.core.datamap.{DataMapFilter, Segment}
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
+import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.conditional.ImplicitExpression
+import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.core.scan.filter.FilterUtil
 import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants}
@@ -96,6 +98,8 @@ class CarbonScanRDD[T: ClassTag](
 
   private val bucketedTable = tableInfo.getFactTable.getBucketingInfo
 
+  private var segmentsToAccess: Array[Segment] = _
+
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def internalGetPartitions: Array[Partition] = {
@@ -124,6 +128,10 @@ class CarbonScanRDD[T: ClassTag](
       // initialise query_id for job
       job.getConfiguration.set("query.id", queryId)
 
+      if (null != segmentsToAccess) {
+        CarbonInputFormat
+          .setSegmentsToAccess(job.getConfiguration, segmentsToAccess.toList.asJava)
+      }
       // get splits
       getSplitsStartTime = System.currentTimeMillis()
       if (null == splits) {
@@ -218,6 +226,10 @@ class CarbonScanRDD[T: ClassTag](
         }
       }
     }
+  }
+
+  def setSegmentsToAccess(segments: Array[Segment]): Unit = {
+    segmentsToAccess = segments
   }
 
   private def distributeColumnarSplits(splits: List[InputSplit]): mutable.Buffer[Partition] = {
@@ -763,5 +775,11 @@ class CarbonScanRDD[T: ClassTag](
   // TODO find the better way set it.
   def setDirectScanSupport(isDirectScan: Boolean): Unit = {
     directFill = isDirectScan
+  }
+
+  def setFilterExpression(expressionVal: Expression): Unit = {
+    if (null != dataMapFilter) {
+      dataMapFilter.setExpression(new AndExpression(dataMapFilter.getExpression, expressionVal))
+    }
   }
 }

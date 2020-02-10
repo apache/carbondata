@@ -572,6 +572,9 @@ public class CarbonUpdateUtil {
             segmentFilesToBeUpdated.add(Segment.toSegment(segment.getLoadName(), null));
           }
         }
+        // handle cleanup of merge index files and data files after small files merge happened for
+        // SI table
+        cleanUpDataFilesAfterSmallFilesMergeForSI(table, segment);
       }
     }
     String UUID = String.valueOf(System.currentTimeMillis());
@@ -617,6 +620,52 @@ public class CarbonUpdateUtil {
       for (CarbonFile invalidFile : invalidUpdateStatusFiles) {
 
         compareTimestampsAndDelete(invalidFile, forceDelete, true);
+      }
+    }
+  }
+
+  /**
+   * this is the clean up added specifically for SI table, because after we merge the data files
+   * inside the secondary index table, we need to delete the stale carbondata files.
+   * refer {@link org.apache.spark.sql.secondaryindex.rdd.CarbonSIRebuildRDD}
+   */
+  private static void cleanUpDataFilesAfterSmallFilesMergeForSI(CarbonTable table,
+      LoadMetadataDetails segment) throws IOException {
+    if (table.isIndexTable()) {
+      String segmentPath = CarbonTablePath
+          .getSegmentPath(table.getAbsoluteTableIdentifier().getTablePath(),
+              segment.getLoadName());
+      CarbonFile segmentDirPath =
+          FileFactory.getCarbonFile(segmentPath);
+      CarbonFile[] allFilesOfSegment = segmentDirPath.listFiles();
+      long startTimeStampFinal = segment.getLoadStartTime();
+      long endTimeStampFinal = segment.getLoadEndTime();
+      boolean deleteFile;
+      for (CarbonFile file : allFilesOfSegment) {
+        deleteFile = false;
+        String fileTimestamp =
+            CarbonTablePath.DataFileUtil.getTimeStampFromFileName(file.getName());
+        // check for old files before load start time and the aborted files after end time
+        if ((file.getName().endsWith(CarbonTablePath.CARBON_DATA_EXT) || file.getName()
+            .endsWith(CarbonTablePath.INDEX_FILE_EXT)) && (
+            Long.parseLong(fileTimestamp) < startTimeStampFinal
+                || Long.parseLong(fileTimestamp) > endTimeStampFinal)) {
+          deleteFile = true;
+        } else if (file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)
+            && Long.parseLong(fileTimestamp) < startTimeStampFinal) {
+          deleteFile = true;
+        }
+        if (deleteFile) {
+          // delete the files and folders.
+          try {
+            LOGGER.info("Deleting the invalid file : " + file.getName());
+            CarbonUtil.deleteFoldersAndFiles(file);
+          } catch (IOException e) {
+            LOGGER.error("Error in clean up of merged files." + e.getMessage(), e);
+          } catch (InterruptedException e) {
+            LOGGER.error("Error in clean up of merged files." + e.getMessage(), e);
+          }
+        }
       }
     }
   }

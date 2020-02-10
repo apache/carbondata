@@ -35,7 +35,7 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
 
   override def beforeAll {
     sql("drop table if exists index_test")
-    sql("CREATE TABLE index_test (integer_column1 string,date1 timestamp,date2 timestamp,ID String,string_column1 string,string_column2 string)STORED AS CARBONDATA")
+    sql("CREATE TABLE index_test (integer_column1 string,date1 timestamp,date2 timestamp,ID String,string_column1 string,string_column2 string) STORED AS CARBONDATA")
     val currentFormat = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
     sql(s"LOAD DATA INPATH '$resourcesPath/secindex/index.csv' into table index_test OPTIONS('DELIMITER'=',' ,'FILEHEADER'='ID,integer_column1,date1,date2,string_column1,string_column2')")
@@ -241,10 +241,27 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
     assert(ex.getMessage.contains("Index table creation is not permitted on table with flat folder structure"))
   }
 
+  test("test SI for select after delete records from compacted table") {
+    sql("drop table if exists table1")
+    sql("create table table1(c1 int,c2 string,c3 string) stored as carbondata")
+    sql("insert into table1 values(1,'a1','b1')")
+    sql("insert into table1 values(1,'a1','b3')")
+    sql("create index idx1 on table table1(c3) as 'carbondata'")
+    sql("insert into table1 values(2,'a2','b2')")
+    sql("alter table table1 compact 'major'")
+    sql("insert into table1 values(3,'a3','b3')")
+    sql("delete from table1 where c3='b3'")
+    checkAnswer(sql("select * from table1 where c3 = 'b2' or c3 = 'b3'"),
+      Seq(Row(2, "a2", "b2")))
+    sql("select * from table1 where c3 = 'b2' or c3 = 'b3'")
+    sql("drop table if exists table1")
+  }
+
   override def afterAll: Unit = {
     sql("drop table if exists index_test")
     sql("drop table if exists seccust1")
     sql("drop table if exists table_with_flat")
+    sql("drop table if exists table1")
   }
 
 }

@@ -63,7 +63,7 @@ class CarbonIndexFileMergeTestCaseWithSI
       .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
         CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE,
-        CarbonCommonConstants.DEFAULT_CARBON_SI_SEGMENT_MERGE)
+        CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE_DEFAULT)
   }
 
   test("Verify correctness of index merge") {

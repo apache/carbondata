@@ -103,6 +103,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   // comma separated list of input segment numbers
   public static final String INPUT_SEGMENT_NUMBERS =
       "mapreduce.input.carboninputformat.segmentnumbers";
+  private static final String VALIDATE_INPUT_SEGMENT_IDs =
+      "mapreduce.input.carboninputformat.validsegments";
   private static final String FILTER_PREDICATE =
       "mapreduce.input.carboninputformat.filter.predicate";
   private static final String COLUMN_PROJECTION = "mapreduce.input.carboninputformat.projection";
@@ -342,6 +344,21 @@ m filterExpression
     return null;
   }
 
+  /**
+   * set list of segment to access
+   */
+  public static void setValidateSegmentsToAccess(Configuration configuration, Boolean validate) {
+    configuration.set(CarbonInputFormat.VALIDATE_INPUT_SEGMENT_IDs, validate.toString());
+  }
+
+  /**
+   * get list of segment to access
+   */
+  public static boolean getValidateSegmentsToAccess(Configuration configuration) {
+    return configuration.get(CarbonInputFormat.VALIDATE_INPUT_SEGMENT_IDs, "true")
+        .equalsIgnoreCase("true");
+  }
+
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
       throws IOException {
     String tablePath = configuration.get(INPUT_DIR, "");
@@ -446,7 +463,7 @@ m filterExpression
     }
   }
 
-  protected DataMapFilter getFilterPredicates(Configuration configuration) {
+  public DataMapFilter getFilterPredicates(Configuration configuration) {
     try {
       String filterExprString = configuration.get(FILTER_PREDICATE);
       if (filterExprString == null) {
@@ -545,6 +562,11 @@ m filterExpression
         prunedBlocklets = defaultDataMap.prune(segmentIds, filter, partitionsToPrune);
       }
     } else {
+      if (carbonTable.isTransactionalTable()) {
+        DataMapExprWrapper dataMapExprWrapper =
+            DataMapChooser.getDefaultDataMap(getOrCreateCarbonTable(job.getConfiguration()), null);
+        DataMapUtil.loadDataMaps(carbonTable, dataMapExprWrapper, segmentIds, partitionsToPrune);
+      }
       prunedBlocklets = defaultDataMap.prune(segmentIds, filter, partitionsToPrune);
 
       if (ExplainCollector.enabled()) {
@@ -863,6 +885,12 @@ m filterExpression
    */
   public static void setQuerySegment(Configuration conf, CarbonTable carbonTable) {
     String tableName = carbonTable.getTableName();
+    // The below change is for Secondary Index table. If CARBON_INPUT_SEGMENTS is set to main table,
+    // then the same has to be reflected for index tables.
+    String parentTableName = carbonTable.getParentTableName();
+    if (!parentTableName.isEmpty()) {
+      tableName = parentTableName;
+    }
     setQuerySegmentToAccess(conf, carbonTable.getDatabaseName(), tableName);
   }
 

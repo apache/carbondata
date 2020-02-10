@@ -19,22 +19,25 @@ package org.apache.spark.sql.hive.execution.command
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
+import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonCommonConstantsInternal, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.exception.InvalidConfigurationException
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, SessionParams}
+import org.apache.carbondata.core.util.{BlockletDataMapUtil, CarbonProperties, CarbonUtil, SessionParams}
 
 case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
   extends RunnableCommand {
 
   override val output: Seq[Attribute] = command.output
+
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     var rows: Seq[Row] = Seq()
@@ -42,6 +45,15 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
     var tablesInDB: Seq[TableIdentifier] = null
     if (sparkSession.sessionState.catalog.listDatabases().exists(_.equalsIgnoreCase(dbName))) {
       tablesInDB = sparkSession.sessionState.catalog.listTables(dbName)
+      .filterNot(table => try {
+        CarbonEnv.getCarbonTable(table.database, table.table)(sparkSession).isIndexTable
+      } catch {
+        case ex: NoSuchTableException =>
+          LOGGER.info("Masking error: " + ex.getLocalizedMessage, ex)
+          // ignore the exception here as the CarbonDropTableCommand will
+          // handle the exception for that table. So consider the table to the list.
+          true
+      })
     }
     var databaseLocation = ""
     try {
@@ -101,7 +113,7 @@ object CarbonSetCommand {
         sessionParams.addProperty(key.toLowerCase, value)
       }
     } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL)) {
-      if (key.split("\\.").length == 6) {
+      if (key.split("\\.").length == 6 || key.split("\\.").length == 4) {
         sessionParams.addProperty(key.toLowerCase(), value)
       }
       else {

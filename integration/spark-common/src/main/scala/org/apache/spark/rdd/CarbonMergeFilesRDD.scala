@@ -104,7 +104,7 @@ object CarbonMergeFilesRDD {
             currPartitionSpec
           )
           if (carbonTable.isHivePartitionTable &&
-              !partitionInfo.isEmpty &&
+              null != partitionInfo && !partitionInfo.isEmpty &&
               !StringUtils.isEmpty(tempFolderPath)) {
             // Async, distribute.
             val rows = mergeFilesRDD.collect()

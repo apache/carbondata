@@ -88,7 +88,6 @@ case class CreateCarbonSourceTableAsSelectCommand(
                                      sparkSession.sqlContext.conf.manageFilesourcePartitions =>
           // Need to recover partitions into the metastore so our saved data is visible.
           sessionState.executePlan(AlterTableRecoverPartitionsCommand(table.identifier)).toRdd
-        case _ =>
       }
     }
 

@@ -49,7 +49,7 @@ object TestQueryExecutor {
     val path = new File(this.getClass.getResource("/").getPath)
       .getCanonicalPath.replaceAll("\\\\", "/")
     // Check whether it is integration module
-    val isIntegrationModule = path.indexOf("/integration/") > -1
+    var isIntegrationModule = path.indexOf("/integration/") > -1
     // Get the local target folder path
     val targetPath = path.substring(0, path.lastIndexOf("/target/") + 8)
     // Get the relative project path
@@ -61,6 +61,9 @@ object TestQueryExecutor {
       path.substring(0, path.indexOf("/tools/"))
     } else if (path.indexOf("/examples/") > -1) {
       path.substring(0, path.indexOf("/examples/"))
+    } else if (path.indexOf("/secondary_index/") > -1) {
+      isIntegrationModule = true
+      path.substring(0, path.indexOf("/secondary_index/"))
     } else {
       path
     }

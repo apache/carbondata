@@ -35,7 +35,7 @@ public class DFSFileReaderImpl implements FileReader {
   /**
    * cache to hold filename and its stream
    */
-  private Map<String, FSDataInputStream> fileNameAndStreamCache;
+  protected Map<String, FSDataInputStream> fileNameAndStreamCache;
 
   private boolean readPageByPage;
 
@@ -62,7 +62,7 @@ public class DFSFileReaderImpl implements FileReader {
    * @param filePath fully qualified file path
    * @return channel
    */
-  private FSDataInputStream updateCache(String filePath) throws IOException {
+  public FSDataInputStream updateCache(String filePath) throws IOException {
     FSDataInputStream fileChannel = fileNameAndStreamCache.get(filePath);
     if (null == fileChannel) {
       Path pt = new Path(filePath);

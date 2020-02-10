@@ -70,6 +70,13 @@ public class BlockletDataMapUtil {
   private static final Logger LOG =
       LogServiceFactory.getLogService(BlockletDataMapUtil.class.getName());
 
+  public static Set<TableBlockIndexUniqueIdentifier> getSegmentUniqueIdentifiers(Segment segment)
+      throws IOException {
+    Set<TableBlockIndexUniqueIdentifier> set = new HashSet<>();
+    set.add(new TableBlockIndexUniqueIdentifier(segment.getSegmentNo()));
+    return set;
+  }
+
   public static Map<String, BlockMetaInfo> getBlockMetaInfoMap(
       TableBlockIndexUniqueIdentifierWrapper identifierWrapper,
       SegmentIndexFileStore indexFileStore, Set<String> filesRead,
@@ -480,5 +487,27 @@ public class BlockletDataMapUtil {
         }
       }
     }
+  }
+
+  /**
+   * Validate whether load datamaps parallel is SET or not
+   *
+   * @param carbonTable
+   * @return
+   */
+  public static boolean loadDataMapsParallel(CarbonTable carbonTable) {
+    String parentTableName = carbonTable.getParentTableName();
+    String tableName;
+    String dbName;
+    if (!parentTableName.isEmpty()) {
+      // if the table is index table, then check the property on parent table name
+      // as index table is a child of the main table
+      tableName = parentTableName;
+    } else {
+      // if it is a normal carbon table, then check on the table name
+      tableName = carbonTable.getTableName();
+    }
+    dbName = carbonTable.getDatabaseName();
+    return CarbonProperties.getInstance().isDataMapParallelLoadingEnabled(dbName, tableName);
   }
 }
