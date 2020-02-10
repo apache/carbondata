@@ -202,7 +202,7 @@ public class TableSchemaBuilder {
     // keep column ID as same as column name.
     // Anyhow Alter table is not supported for NonTransactionalTable.
     // SO, this will not have any impact.
-    newColumn.setColumnUniqueId(UUID.randomUUID().toString());
+    newColumn.setColumnUniqueId(field.getFieldName());
     newColumn.setColumnReferenceId(newColumn.getColumnUniqueId());
     newColumn
         .setEncodingList(createEncoding(field.getDataType(), isInvertedIdxColumn, isComplexChild));

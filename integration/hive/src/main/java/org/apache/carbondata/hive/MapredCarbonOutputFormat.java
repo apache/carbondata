@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.metadata.datatype.StructField;
@@ -40,7 +39,6 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
 import org.apache.carbondata.hive.util.DataTypeUtil;
@@ -187,14 +185,7 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
     }
     CarbonTable carbonTable;
     try {
-      String carbonDataFile =
-          CarbonUtil.getFilePathExternalFilePath(tablePath, FileFactory.getConfiguration());
-      if (carbonDataFile == null) {
-        carbonTable = CarbonTable.buildFromTableInfo(getTableInfo(tableProperties));
-      } else {
-        carbonTable =
-            CarbonTable.buildTable(carbonDataFile, tableName, FileFactory.getConfiguration());
-      }
+      carbonTable = CarbonTable.buildFromTableInfo(getTableInfo(tableProperties));
     } catch (SQLException e) {
       throw new RuntimeException("Unable to fetch schema for the table: " + tableName, e);
     }
