@@ -19,16 +19,17 @@ package org.apache.carbondata.spark.testsuite.dataload
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.BeforeAndAfterEach
 
 /**
  * Test Class for data loading with hive syntax and old syntax
  *
  */
-class MultiFilesDataLoagdingTestCase extends QueryTest with BeforeAndAfterAll {
+class MultiFilesDataLoagdingTestCase extends QueryTest with BeforeAndAfterEach {
 
-  override def beforeAll {
-    sql("create table multifile(empno int, empname String, designation string, doj String," +
+  override def beforeEach {
+    sql("DROP TABLE IF EXISTS multifile")
+    sql("CREATE TABLE multifile(empno int, empname String, designation string, doj String," +
       "workgroupcategory int, workgroupcategoryname String,deptno int, deptname String," +
       "projectcode int, projectjoindate String,projectenddate String, attendance double," +
       "utilization double,salary double) STORED AS carbondata")
@@ -43,7 +44,16 @@ class MultiFilesDataLoagdingTestCase extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  override def afterAll {
-    sql("drop table multifile")
+  test("test data loading multiple files") {
+    val testData = s"$resourcesPath/loadMultiFiles/data.csv, $resourcesPath/loadMultiFiles/non-csv"
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table multifile")
+    checkAnswer(
+      sql("select count(empno) from multifile"),
+      Seq(Row(5))
+    )
+  }
+
+  override def afterEach {
+    sql("DROP TABLE IF EXISTS multifile")
   }
 }
