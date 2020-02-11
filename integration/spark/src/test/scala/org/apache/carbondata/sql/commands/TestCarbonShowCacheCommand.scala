@@ -25,6 +25,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -172,6 +173,7 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS empTable")
     sql("DROP TABLE IF EXISTS employeeTable")
     sql("DROP TABLE IF EXISTS extTable")
+    sql("drop table if exists carbonTable")
   }
 
   test("show cache") {
@@ -288,4 +290,97 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     assert(showCache(0).get(2).toString.equalsIgnoreCase("5/5 index files cached"))
     sql("drop table if exists partitionTable")
   }
+
+  test("test cache expiration using expiringMap") {
+    sql("drop table if exists carbonTable")
+    sql("create table carbonTable(col1 int, col2 string,col3 string) stored as carbondata tblproperties('index_cache_expiration_seconds'='1')")
+    sql("insert into carbonTable select 1, 'ab', 'vf'")
+    checkAnswer(sql("select count(*) from carbonTable"), Seq(Row(1)))
+    var showCache = sql("show metacache on table carbonTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("1/1 index files cached"))
+    Thread.sleep(1000)
+    showCache = sql("show metacache on table carbonTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("0/1 index files cached"))
+    sql("drop table if exists carbonTable")
+  }
+
+  test("test cache expiration using expiringMap with bloom") {
+    sql("drop table if exists carbonTable")
+    sql("create table carbonTable(col1 int, col2 string,col3 string) stored as carbondata " +
+        "tblproperties('index_cache_expiration_seconds'='1')")
+    sql("insert into carbonTable select 1, 'ab', 'vf'")
+    sql("drop datamap if exists cache_2_bloom")
+    sql("CREATE DATAMAP IF NOT EXISTS cache_2_bloom ON TABLE carbonTable USING 'bloomfilter' " +
+        "DMPROPERTIES('INDEX_COLUMNS'='col3')")
+    checkAnswer(sql("select count(*) from carbonTable where col3='vf'"), Seq(Row(1)))
+    var showCache = sql("show metacache on table carbonTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("1/1 index files cached"))
+    assertResult("bloomfilter")(showCache(1).getString(2))
+    Thread.sleep(1000)
+    showCache = sql("show metacache on table carbonTable").collect()
+    assert(showCache.length == 1)
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("0/1 index files cached"))
+    sql("drop table if exists carbonTable")
+  }
+
+  test("test cache expiration using expiringMap with invalid cache expiration time") {
+    sql("drop table if exists carbonTable")
+    intercept[MalformedCarbonCommandException] {
+      sql("create table carbonTable(col1 int, col2 string,col3 string) stored as carbondata " +
+        "tblproperties('index_cache_expiration_seconds'='ab')")
+    }.getMessage.contains("Invalid cache_expiration_time value found: ab")
+  }
+
+  test("test cache expiration using expiringMap with alter set and unset tblproperties") {
+    sql("drop table if exists carbonTable")
+    sql("create table carbonTable(col1 int, col2 string,col3 string) stored as carbondata " +
+        "tblproperties('index_cache_expiration_seconds'='5')")
+    sql("insert into carbonTable select 1, 'ab', 'vf'")
+    // check cache expiration with 10 seconds
+    checkAnswer(sql("select count(*) from carbonTable"), Seq(Row(1)))
+    var showCache = sql("show metacache on table carbonTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("1/1 index files cached"))
+    Thread.sleep(10000)
+    showCache = sql("show metacache on table carbonTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("0/1 index files cached"))
+    // check cache expiration with 3 seconds with alter set
+    sql("alter table carbontable set tblproperties('index_cache_expiration_seconds'='3')")
+    sql("insert into carbonTable select 1, 'ab', 'vf'")
+    checkAnswer(sql("select count(*) from carbonTable"), Seq(Row(2)))
+    showCache = sql("show metacache on table carbonTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("2/2 index files cached"))
+    Thread.sleep(3000)
+    showCache = sql("show metacache on table carbonTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("0/2 index files cached"))
+    // revert cache expiration property
+    sql("ALTER TABLE carbonTable UNSET TBLPROPERTIES('index_cache_expiration_seconds')")
+    checkAnswer(sql("select count(*) from carbonTable"), Seq(Row(2)))
+    showCache = sql("show metacache on table carbonTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("2/2 index files cached"))
+    Thread.sleep(3000)
+    showCache = sql("show metacache on table carbonTable").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("2/2 index files cached"))
+    sql("drop table if exists carbonTable")
+  }
+
+  test("test cache expiration using expiringMap more than one table") {
+    sql("drop table if exists carbonTable1")
+    sql("create table carbonTable1(col1 int, col2 string,col3 string) stored as carbondata " +
+        "tblproperties('index_cache_expiration_seconds'='60')")
+    sql("drop table if exists carbonTable2")
+    sql("create table carbonTable2(col1 int, col2 string,col3 string) stored as carbondata " +
+        "tblproperties('index_cache_expiration_seconds'='5')")
+    sql("insert into carbonTable1 select 1, 'ab', 'vf'")
+    sql("insert into carbonTable2 select 1, 'ab', 'vf'")
+    checkAnswer(sql("select count(*) from carbonTable1"), Seq(Row(1)))
+    checkAnswer(sql("select count(*) from carbonTable2"), Seq(Row(1)))
+    Thread.sleep(5000)
+    var showCache = sql("show metacache on table carbonTable2").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("0/1 index files cached"))
+    showCache = sql("show metacache on table carbonTable1").collect()
+    assert(showCache(0).get(2).toString.equalsIgnoreCase("1/1 index files cached"))
+    sql("drop table if exists carbonTable1")
+    sql("drop table if exists carbonTable2")
+  }
+
 }

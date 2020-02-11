@@ -36,6 +36,7 @@ CarbonData DDL statements are documented here,which includes:
   * [Bad Records Path](#bad-records-path) 
   * [Load Minimum Input File Size](#load-minimum-data-size)
   * [Range Column](#range-column)
+  * [Index Cache Expiration Time In Seconds](#index-cache-expiration-time-in-seconds)
 
 * [CREATE TABLE AS SELECT](#create-table-as-select)
 * [CREATE EXTERNAL TABLE](#create-external-table)
@@ -108,6 +109,7 @@ CarbonData DDL statements are documented here,which includes:
 | [BUCKET_COLUMNS](#bucketing)                                  | Columns which are to be placed in buckets                    |
 | [LOAD_MIN_SIZE_INMB](#load-minimum-data-size)                | Minimum input data size per node for data loading          |
 | [Range Column](#range-column)                                | partition input data by range                              |
+| [INDEX_CACHE_EXPIRATION_TIME_IN_SECONDS](#index-cache-expiration-time-in-seconds)| Table level time-based cache expiration in seconds |
 
  Following are the guidelines for TBLPROPERTIES, CarbonData's additional table options can be set via carbon.properties.
 
@@ -503,6 +505,18 @@ CarbonData DDL statements are documented here,which includes:
      ```
      TBLPROPERTIES('RANGE_COLUMN'='col1')
      ```
+   - ##### Index Cache Expiration Time In Seconds
+     Carbon maintains index cache in driver side and the cache will be expired after seconds indicated by this table property.
+     
+     ```
+     TBLPROPERTIES('index_cache_expiration_seconds'='1')
+     ```
+     After creation of table or on already created tables use the alter table command to configure the cache expiration time.
+     
+     Syntax:
+     
+     ```
+      ALTER TABLE [dbName].tableName SET TBLPROPERTIES ('index_cache_expiration_seconds'='3')
 
 ## CREATE TABLE AS SELECT
   This function allows user to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.

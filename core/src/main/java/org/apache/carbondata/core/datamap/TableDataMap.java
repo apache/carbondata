@@ -203,7 +203,8 @@ public final class TableDataMap extends OperationEventListener {
                 false);
         for (DataMap dataMap : dataMaps.get(segment)) {
           pruneBlocklets.addAll(
-              dataMap.prune(filter.getResolver(), segmentProperties, partitions, filterExecuter));
+              dataMap.prune(filter.getResolver(), segmentProperties, partitions, filterExecuter,
+                  this.table));
         }
       } else {
         Expression expression = filter.getExpression();
@@ -332,7 +333,7 @@ public final class TableDataMap extends OperationEventListener {
               for (int i = segmentDataMapGroup.getFromIndex();
                    i <= segmentDataMapGroup.getToIndex(); i++) {
                 List<Blocklet> dmPruneBlocklets = dataMapList.get(i).prune(
-                    filter.getResolver(), segmentProperties, partitions, filterExecuter);
+                    filter.getResolver(), segmentProperties, partitions, filterExecuter, table);
                 pruneBlocklets.addAll(addSegmentId(
                     blockletDetailsFetcher.getExtendedBlocklets(dmPruneBlocklets, segment),
                     segment));
@@ -447,7 +448,8 @@ public final class TableDataMap extends OperationEventListener {
             null, table.getMinMaxCacheColumns(segmentProperties),
             false);
     for (DataMap dataMap : dataMaps) {
-      blocklets.addAll(dataMap.prune(filterExp, segmentProperties, partitions, filterExecuter));
+      blocklets
+          .addAll(dataMap.prune(filterExp, segmentProperties, partitions, filterExecuter, table));
     }
     BlockletSerializer serializer = new BlockletSerializer();
     String writePath =

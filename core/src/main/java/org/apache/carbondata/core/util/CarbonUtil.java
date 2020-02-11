@@ -3363,4 +3363,16 @@ public final class CarbonUtil {
     sortColumns.addAll(nonVarCharDims);
     return sortColumns;
   }
+
+  /**
+   * get cache expiration time from carbonTable table properties
+   */
+  public static long getExpiration_time(CarbonTable carbonTable) {
+    String cacheExpirationTime = carbonTable.getTableInfo().getFactTable().getTableProperties()
+        .get(CarbonCommonConstants.INDEX_CACHE_EXPIRATION_TIME_IN_SECONDS);
+    if (null == cacheExpirationTime) {
+      return CarbonCommonConstants.INDEX_CACHE_EXPIRATION_TIME_IN_SECONDS_DEFAULT;
+    }
+    return Integer.parseInt(cacheExpirationTime);
+  }
 }

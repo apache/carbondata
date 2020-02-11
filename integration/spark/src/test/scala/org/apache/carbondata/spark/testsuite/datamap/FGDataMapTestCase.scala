@@ -195,7 +195,8 @@ class FGDataMap extends FineGrainDataMap {
       filterExp: FilterResolverIntf,
       segmentProperties: SegmentProperties,
       partitions: java.util.List[PartitionSpec],
-      filterExecuter: FilterExecuter): java.util.List[FineGrainBlocklet] = {
+      filterExecuter: FilterExecuter,
+      carbonTable: CarbonTable): java.util.List[FineGrainBlocklet] = {
     val buffer: ArrayBuffer[Expression] = new ArrayBuffer[Expression]()
     val expression = filterExp.getFilterExpression
     getEqualToExpression(expression, buffer)

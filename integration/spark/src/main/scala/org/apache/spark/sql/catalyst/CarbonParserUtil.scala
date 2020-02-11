@@ -402,6 +402,9 @@ object CarbonParserUtil {
     // validate load_min_size_inmb property
     CommonUtil.validateLoadMinSize(tableProperties,
       CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB)
+    // validate cache expiration time
+    CommonUtil.validateCacheExpiration(tableProperties,
+      CarbonCommonConstants.INDEX_CACHE_EXPIRATION_TIME_IN_SECONDS)
 
     TableModel(
       ifNotExistPresent,

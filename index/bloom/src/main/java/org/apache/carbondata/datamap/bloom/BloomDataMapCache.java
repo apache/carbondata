@@ -47,12 +47,15 @@ public class BloomDataMapCache
 
   @Override
   public BloomCacheKeyValue.CacheValue get(BloomCacheKeyValue.CacheKey key) {
-    BloomCacheKeyValue.CacheValue cacheValue = getIfPresent(key);
+    BloomCacheKeyValue.CacheKey cacheKey =
+        new BloomCacheKeyValue.CacheKey(key.getShardPath(), key.getIndexColumn());
+    BloomCacheKeyValue.CacheValue cacheValue = getIfPresent(cacheKey);
     if (cacheValue == null) {
       List<CarbonBloomFilter> bloomFilters =
               BloomIndexFileStore.loadBloomFilterFromFile(key.getShardPath(), key.getIndexColumn());
       cacheValue = new BloomCacheKeyValue.CacheValue(bloomFilters);
-      lruCache.put(key.toString(), cacheValue, cacheValue.getMemorySize());
+      lruCache.put(cacheKey.toString(), cacheValue, cacheValue.getMemorySize(),
+          key.getExpirationTime());
     }
     return cacheValue;
   }

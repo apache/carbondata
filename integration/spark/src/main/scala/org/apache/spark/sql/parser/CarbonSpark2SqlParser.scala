@@ -638,6 +638,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         }
         // validate the tableBlockSize from table properties
         CommonUtil.validateSize(tableProperties, CarbonCommonConstants.TABLE_BLOCKSIZE)
+        // validate cache expiration time
+        CommonUtil.validateCacheExpiration(tableProperties,
+          CarbonCommonConstants.INDEX_CACHE_EXPIRATION_TIME_IN_SECONDS)
         // validate for supported table properties
         validateTableProperties(tableProperties)
         // validate column_meta_cache proeperty if defined

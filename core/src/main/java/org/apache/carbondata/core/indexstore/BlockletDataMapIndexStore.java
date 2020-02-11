@@ -39,6 +39,7 @@ import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
@@ -146,8 +147,9 @@ public class BlockletDataMapIndexStore
               new BlockletDataMapIndexWrapper(identifier.getSegmentId(), dataMaps);
         }
         if (identifierWrapper.isAddTableBlockToUnsafeAndLRUCache()) {
+          long expiration_time = CarbonUtil.getExpiration_time(identifierWrapper.getCarbonTable());
           lruCache.put(identifier.getUniqueTableSegmentIdentifier(), blockletDataMapIndexWrapper,
-              blockletDataMapIndexWrapper.getMemorySize());
+              blockletDataMapIndexWrapper.getMemorySize(), expiration_time);
         }
       } catch (Throwable e) {
         // clear all the memory used by datamaps loaded
@@ -257,10 +259,13 @@ public class BlockletDataMapIndexStore
         for (BlockDataMap blockletDataMap : dataMaps) {
           blockletDataMap.convertToUnsafeDMStore();
         }
+        // get cacheExpirationTime for table from tableProperties
+        long expiration_time =
+            CarbonUtil.getExpiration_time(tableBlockIndexUniqueIdentifierWrapper.getCarbonTable());
         // Locking is not required here because in LRU cache map add method is synchronized to add
         // only one entry at a time and if a key already exists it will not overwrite the entry
         lruCache.put(tableBlockIndexUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()
-            .getUniqueTableSegmentIdentifier(), wrapper, wrapper.getMemorySize());
+            .getUniqueTableSegmentIdentifier(), wrapper, wrapper.getMemorySize(), expiration_time);
       } catch (Throwable e) {
         // clear all the memory acquired by data map in case of any failure
         for (DataMap blockletDataMap : dataMaps) {

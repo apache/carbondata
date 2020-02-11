@@ -133,7 +133,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
 
   @Override
   public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions, FilterExecuter filterExecuter) {
+      List<PartitionSpec> partitions, FilterExecuter filterExecuter, CarbonTable carbonTable) {
     Set<Blocklet> hitBlocklets = null;
     if (filterExp == null) {
       // null is different from empty here. Empty means after pruning, no blocklet need to scan.
@@ -151,8 +151,10 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("prune blocklet for query: " + bloomQueryModel);
       }
-      BloomCacheKeyValue.CacheKey cacheKey = new BloomCacheKeyValue.CacheKey(
-          this.indexPath.toString(), bloomQueryModel.columnName);
+      Long expiration_time = CarbonUtil.getExpiration_time(carbonTable);
+      BloomCacheKeyValue.CacheKey cacheKey =
+          new BloomCacheKeyValue.CacheKey(this.indexPath.toString(), bloomQueryModel.columnName,
+              expiration_time);
       BloomCacheKeyValue.CacheValue cacheValue = cache.get(cacheKey);
       List<CarbonBloomFilter> bloomIndexList = cacheValue.getBloomFilters();
       for (CarbonBloomFilter bloomFilter : bloomIndexList) {

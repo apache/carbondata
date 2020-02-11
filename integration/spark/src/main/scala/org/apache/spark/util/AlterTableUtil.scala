@@ -457,6 +457,13 @@ object AlterTableUtil {
       // validate the Compaction Level Threshold
       validateCompactionLevelThresholdProperties(carbonTable, lowerCasePropertiesMap)
 
+      val cacheExpiration = lowerCasePropertiesMap.get(CarbonCommonConstants
+        .INDEX_CACHE_EXPIRATION_TIME_IN_SECONDS)
+      if (cacheExpiration.isDefined) {
+        CommonUtil.validateCacheExpiration(lowerCasePropertiesMap, CarbonCommonConstants
+          .INDEX_CACHE_EXPIRATION_TIME_IN_SECONDS)
+      }
+
       // if SORT_COLUMN is changed, it will move them to the head of column list
       // Make an schemaEvolution entry as we changed the schema with different column order with
       // alter set sort columns
@@ -562,7 +569,8 @@ object AlterTableUtil {
       "SORT_SCOPE",
       "SORT_COLUMNS",
       "GLOBAL_SORT_PARTITIONS",
-      "LONG_STRING_COLUMNS")
+      "LONG_STRING_COLUMNS",
+      "INDEX_CACHE_EXPIRATION_SECONDS")
     supportedOptions.contains(propKey.toUpperCase)
   }
 
