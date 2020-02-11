@@ -88,7 +88,7 @@ private object CarbonFileMetastore {
         localTimeStamp != newTime
       }
     } else {
-      false
+      true
     }
   }
 
