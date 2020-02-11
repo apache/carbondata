@@ -290,7 +290,7 @@ case class CarbonLoadDataCommand(
           FileFactory.mkdirs(metadataDirectoryPath)
         }
       } else {
-        carbonLoadModel.setSegmentId(System.currentTimeMillis().toString)
+        carbonLoadModel.setSegmentId(System.nanoTime().toString)
       }
       val partitionStatus = SegmentStatus.SUCCESS
       val columnar = sparkSession.conf.get("carbon.is.columnar.storage", "true").toBoolean
