@@ -115,9 +115,6 @@ public class TestCarbonSerDe {
     }
 
     private static boolean arrayWritableEquals(final Object[] a1, final Object[] a2) {
-//        final Writable[] a1Arr = a1.get();
-//        final Object[] a2Arr = a2.get();
-
         if (a1.length != a2.length) {
             return false;
         }

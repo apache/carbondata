@@ -55,11 +55,6 @@ public interface GenericDataType<T> extends Serializable {
   void getAllPrimitiveChildren(List<GenericDataType> primitiveChild);
 
   /**
-   * @return surrogateIndex for primitive column in complex type
-   */
-  int getSurrogateIndex();
-
-  /**
    * writes to byte stream
    * @param dataOutputStream
    * @throws IOException

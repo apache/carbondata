@@ -90,6 +90,12 @@
             <version>${hive.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.tez</groupId>
+            <artifactId>tez-dag</artifactId>
+            <version>0.9.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
           <groupId>org.apache.spark</groupId>
           <artifactId>spark-catalyst_${scala.binary.version}</artifactId>
         </dependency>

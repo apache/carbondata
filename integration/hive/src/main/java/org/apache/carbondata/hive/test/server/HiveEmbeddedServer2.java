@@ -57,6 +57,8 @@ public class HiveEmbeddedServer2 {
     log.info("Starting Hive Local/Embedded Server...");
     SCRATCH_DIR = storePath;
     if (hiveServer == null) {
+      System.setProperty("datanucleus.schema.autoCreateAll", "true");
+      System.setProperty("hive.metastore.schema.verification", "false");
       config = configure();
       hiveServer = new HiveServer2();
       port = MetaStoreUtils.findFreePort();
@@ -152,7 +154,7 @@ public class HiveEmbeddedServer2 {
     // intercept SessionState to clean the threadlocal
     Field tss = SessionState.class.getDeclaredField("tss");
     tss.setAccessible(true);
-    return new HiveConf(conf);
+    return conf;
   }
 
   public void stop() {

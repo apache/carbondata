@@ -758,8 +758,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val writer = CarbonWriter.builder
       .outputPath(externalSegmentPath)
       .writtenBy("AddSegmentTestCase")
-      .withSchemaFile(CarbonTablePath.getSchemaFilePath(CarbonEnv
-        .getCarbonTable(None, tableName)(sqlContext.sparkSession).getTablePath))
+      .withSchemaFile(CarbonTablePath.getSchemaFilePath(CarbonEnv.getCarbonTable(None,
+        tableName)(sqlContext.sparkSession).getTablePath))
       .withCsvInput()
       .build()
     val source = Source.fromFile(s"$resourcesPath/data.csv")

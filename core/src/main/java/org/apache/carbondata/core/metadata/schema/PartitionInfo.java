@@ -88,10 +88,6 @@ public class PartitionInfo implements Serializable, Writable {
     this.columnSchemaList = columnSchemaList;
   }
 
-  public void addColumnSchema(ColumnSchema columnSchema) {
-    columnSchemaList.add(columnSchema);
-  }
-
   public PartitionType getPartitionType() {
     return partitionType;
   }

@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.carbondata.hive;
 
 import java.io.File;
@@ -8,9 +24,6 @@ import java.sql.SQLException;
 
 import org.apache.carbondata.hive.test.server.HiveEmbeddedServer2;
 
-import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.ql.metadata.Hive;
-import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.junit.Assert;
 
 /**
@@ -18,59 +31,32 @@ import org.junit.Assert;
  */
 public abstract class HiveTestUtils {
 
-  private static Connection connection;
+  protected static Connection connection;
 
-  private static HiveEmbeddedServer2 hiveEmbeddedServer2;
+  protected static HiveEmbeddedServer2 hiveEmbeddedServer2;
 
   public HiveTestUtils() {
   }
 
-  private static void setup() {
+  static {
     try {
       File rootPath = new File(HiveTestUtils.class.getResource("/").getPath() + "../../../..");
-      String targetLoc = rootPath.getAbsolutePath() + "/integration/hive/target";
+      String targetLoc = rootPath.getAbsolutePath() + "/integration/hive/target/warehouse";
       hiveEmbeddedServer2 = new HiveEmbeddedServer2();
       hiveEmbeddedServer2.start(targetLoc);
       int port = hiveEmbeddedServer2.getFreePort();
       connection = DriverManager.getConnection("jdbc:hive2://localhost:" + port + "/default", "", "");
     } catch (Exception e) {
-      throw new RuntimeException("Problem while starting the Hive server: ", e);
+      throw new RuntimeException(e);
     }
-  }
-
-  static Connection getConnection() {
-    if (connection == null) {
-      setup();
-      tearDown();
-    }
-    return connection;
-  }
-
-  public static void tearDown() {
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      try {
-        connection.close();
-        hiveEmbeddedServer2.stop();
-      } catch (SQLException e) {
-        throw new RuntimeException("Unable to close Hive Embedded Server", e);
-      }
-    }));
-  }
-
-  public String getFieldValue(ResultSet rs, String field) throws Exception {
-    while (rs.next()) {
-      System.out.println(rs.getString(1));
-      System.out.println("-- " + rs.getString(2));
-      if (rs.getString(1).toLowerCase().contains(field.toLowerCase())) {
-        return rs.getString(2);
-      }
-    }
-    return "";
   }
 
   public boolean checkAnswer(ResultSet actual, ResultSet expected) throws SQLException {
     Assert.assertEquals("Row Count Mismatch: ", expected.getFetchSize(), actual.getFetchSize());
-    while(expected.next() && actual.next()) {
+    while (expected.next()) {
+      if (!actual.next()) {
+        return false;
+      }
       int numOfColumns = expected.getMetaData().getColumnCount();
       for (int i = 1; i <= numOfColumns; i++) {
         Assert.assertEquals(actual.getString(i), actual.getString(i));

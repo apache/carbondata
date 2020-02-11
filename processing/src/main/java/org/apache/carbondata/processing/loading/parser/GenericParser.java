@@ -32,6 +32,13 @@ public interface GenericParser<E> {
    */
   E parse(Object data);
 
+  /**
+   * This is used in case of hive where the object is already parsed to Object.
+   * So this method will just return the corresponding complex object without parsing the data.
+   *
+   * @param data The data to be parsed.
+   * @return rawData
+   */
   E parseRaw(Object data);
 
 }

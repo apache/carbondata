@@ -156,8 +156,6 @@ public abstract class AbstractDataFileFooterConverter {
       if (!isTransactionalTable) {
         QueryUtil.updateColumnUniqueIdForNonTransactionTable(columnSchemaList);
       }
-      // get the segment info
-      SegmentInfo segmentInfo = getSegmentInfo(readIndexHeader.getSegment_info());
       BlockletIndex blockletIndex = null;
       DataFileFooter dataFileFooter = null;
       // read the block info from file
