@@ -200,7 +200,8 @@ class CGDataMap extends CoarseGrainDataMap {
       filterExp: FilterResolverIntf,
       segmentProperties: SegmentProperties,
       partitions: java.util.List[PartitionSpec],
-      filterExecuter: FilterExecuter): java.util.List[Blocklet] = {
+      filterExecuter: FilterExecuter,
+      carbonTable: CarbonTable): java.util.List[Blocklet] = {
     val buffer: ArrayBuffer[Expression] = new ArrayBuffer[Expression]()
     val expression = filterExp.getFilterExpression
     getEqualToExpression(expression, buffer)

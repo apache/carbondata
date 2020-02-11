@@ -417,6 +417,31 @@ object CommonUtil {
   }
 
   /**
+   * This method will validate the cache expiration time specified by the user
+   *
+   * @param tableProperties table property specified by user
+   * @param propertyName property name
+   */
+  def validateCacheExpiration(tableProperties: Map[String, String], propertyName: String): Unit = {
+    var expirationTime: java.lang.Integer = 0
+    if (tableProperties.get(propertyName).isDefined) {
+      val value = tableProperties(propertyName)
+      val exceptionMsg = s"Invalid $propertyName value found: " +
+                         s"$value, only duration from 1 second to INT_MAX_VALUE is supported."
+      try {
+        expirationTime = java.lang.Integer.parseInt(value)
+      } catch {
+        case n: NumberFormatException =>
+          throw new MalformedCarbonCommandException(exceptionMsg)
+      }
+      if (expirationTime == 0L) {
+        throw new MalformedCarbonCommandException(exceptionMsg)
+      }
+      tableProperties.put(propertyName, value)
+    }
+  }
+
+  /**
    * This method will validate the table page size
    *
    * @param tableProperties table property specified by user

@@ -2406,4 +2406,20 @@ public final class CarbonCommonConstants {
   public static final String BUCKET_COLUMNS = "bucket_columns";
   public static final String BUCKET_NUMBER = "bucket_number";
 
+  /**
+   * Table property name for table level cache expiration. Carbon maintains index cache in driver
+   * side and the cache will be expired after seconds indicated by this table property.
+   * Cache entries can have individual variable expiration times and policies by providing
+   * variableExpiration policy to ExpirationMap
+   */
+  public static final String INDEX_CACHE_EXPIRATION_TIME_IN_SECONDS =
+      "index_cache_expiration_seconds";
+
+  /**
+   * By default, the index cache is not expired by time, thus the cache size is controlled by
+   * setting the maximum size to 'INDEX_CACHE_EXPIRATION_TIME_IN_SECONDS'
+   */
+  public static final int INDEX_CACHE_EXPIRATION_TIME_IN_SECONDS_DEFAULT = Integer.MAX_VALUE;
+
+
 }

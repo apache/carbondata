@@ -40,6 +40,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
+import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
 
 import mockit.Deencapsulation;
@@ -65,10 +66,13 @@ public class TestBlockletDataMapFactory {
 
   private Cache<TableBlockIndexUniqueIdentifierWrapper, BlockletDataMapIndexWrapper> cache;
 
+  private TableSchema factTable;
+
   @Before public void setUp()
       throws ClassNotFoundException, IllegalAccessException, InvocationTargetException,
       InstantiationException {
     tableInfo = new TableInfo();
+    factTable = new TableSchema();
     Constructor<?> constructor =
         Class.forName("org.apache.carbondata.core.metadata.schema.table.CarbonTable")
             .getDeclaredConstructors()[0];
@@ -78,6 +82,7 @@ public class TestBlockletDataMapFactory {
         .from("/opt/store/default/carbon_table/", "default", "carbon_table",
             UUID.randomUUID().toString());
     Deencapsulation.setField(tableInfo, "identifier", absoluteTableIdentifier);
+    Deencapsulation.setField(tableInfo, "factTable", factTable);
     Deencapsulation.setField(carbonTable, "tableInfo", tableInfo);
     new MockUp<CarbonTable>() {
       @Mock

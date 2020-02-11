@@ -498,7 +498,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     for (CoarseGrainDataMap dataMap : dataMaps) {
       blocklets.addAll(dataMap
           .prune((FilterResolverIntf) null, getSegmentProperties(segment, partitions), partitions,
-              null));
+              null, this.getCarbonTable()));
     }
     return blocklets;
   }

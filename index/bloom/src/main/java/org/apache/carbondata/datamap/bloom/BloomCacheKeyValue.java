@@ -35,10 +35,17 @@ public class BloomCacheKeyValue {
     private static final long serialVersionUID = -1478238084352505372L;
     private String shardPath;
     private String indexColumn;
+    private long expirationTime;
 
     public CacheKey(String shardPath, String indexColumn) {
       this.shardPath = shardPath;
       this.indexColumn = indexColumn;
+    }
+
+    public CacheKey(String shardPath, String indexColumn, long expirationTime) {
+      this.shardPath = shardPath;
+      this.indexColumn = indexColumn;
+      this.expirationTime = expirationTime;
     }
 
     public String getShardPath() {
@@ -71,6 +78,11 @@ public class BloomCacheKeyValue {
     public int hashCode() {
       return Objects.hash(shardPath, indexColumn);
     }
+
+    public long getExpirationTime() {
+      return expirationTime;
+    }
+
   }
 
   public static class CacheValue implements Cacheable {

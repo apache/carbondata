@@ -42,17 +42,17 @@ public class CarbonLRUCacheTest {
   }
 
   @Test public void testPut() {
-    boolean result = carbonLRUCache.put("Column1", cacheable, 10L);
+    boolean result = carbonLRUCache.put("Column1", cacheable, 10L, 5);
     assertTrue(result);
   }
 
   @Test public void testPutWhenSizeIsNotAvailable() {
-    boolean result = carbonLRUCache.put("Column2", cacheable, 11111110L);
+    boolean result = carbonLRUCache.put("Column2", cacheable, 11111110L, 5);
     assertFalse(result);
   }
 
   @Test public void testPutWhenKeysHaveToBeRemoved() {
-    boolean result = carbonLRUCache.put("Column3", cacheable, 2097153L);
+    boolean result = carbonLRUCache.put("Column3", cacheable, 2097153L, 5);
     assertTrue(result);
   }
 
@@ -64,8 +64,8 @@ public class CarbonLRUCacheTest {
   @Test public void testBiggerThanMaxSizeConfiguration() {
     CarbonLRUCache carbonLRUCacheForConfig =
             new CarbonLRUCache("prop2", "200000");//200GB
-    assertTrue(carbonLRUCacheForConfig.put("Column1", cacheable, 10L));
-    assertFalse(carbonLRUCacheForConfig.put("Column2", cacheable, 107374182400L));//100GB
+    assertTrue(carbonLRUCacheForConfig.put("Column1", cacheable, 10L, 5));
+    assertFalse(carbonLRUCacheForConfig.put("Column2", cacheable, 107374182400L, 5));//100GB
   }
 
   @AfterClass public static void cleanUp() {
