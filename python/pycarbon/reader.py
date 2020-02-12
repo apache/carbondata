@@ -17,6 +17,7 @@
 from obs import ObsClient
 
 from pycarbon.core.carbon_reader import make_carbon_reader, make_batch_carbon_reader
+from pycarbon.integration.pytorch import decimal_friendly_collate, DataLoader
 from pycarbon.integration.tensorflow import TensorFlow
 
 
@@ -200,3 +201,16 @@ def make_tensor(reader, shuffling_queue_capacity=0, min_after_dequeue=0):
   """
   tensorflow = TensorFlow()
   return tensorflow.make_tensor(reader, shuffling_queue_capacity, min_after_dequeue)
+
+
+def make_data_loader(reader, batch_size=1, collate_fn=decimal_friendly_collate):
+  """
+  Initializes a data loader object, with a default collate.
+
+  Number of epochs is defined by the configuration of the reader argument.
+
+  :param reader: PyCarbon Reader instance
+  :param batch_size: the number of items to return per batch; factored into the len() of this reader
+  :param collate_fn: an optional callable to merge a list of samples to form a mini-batch.
+  """
+  return DataLoader(reader, batch_size=batch_size, collate_fn=collate_fn)
