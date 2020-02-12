@@ -36,8 +36,8 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, DatabaseLoc
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier, TableInfo, TableSchema}
-import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema, ParentColumnTableRelation}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
@@ -62,9 +62,7 @@ case class TableModel(
     colProps: Option[util.Map[String, util.List[ColumnProperty]]] = None,
     bucketFields: Option[BucketFields],
     partitionInfo: Option[PartitionInfo],
-    tableComment: Option[String] = None,
-    var parentTable: Option[CarbonTable] = None,
-    var dataMapRelation: Option[scala.collection.mutable.LinkedHashMap[Field, DataMapField]] = None)
+    tableComment: Option[String] = None)
 
 case class Field(column: String, var dataType: Option[String], name: Option[String],
     children: Option[List[Field]], parent: String = null,
@@ -612,7 +610,6 @@ class TableNewProcessor(cm: TableModel) {
           encoders,
           true,
           field,
-          cm.dataMapRelation,
           useDictionaryEncoding = useDictionaryEncoding)
         allColumns ++= Seq(columnSchema)
         if (field.children.get != null) {
@@ -635,24 +632,20 @@ class TableNewProcessor(cm: TableModel) {
       encoders: java.util.List[Encoding],
       isDimensionCol: Boolean,
       field: Field,
-      map: Option[scala.collection.mutable.LinkedHashMap[Field, DataMapField]],
       useDictionaryEncoding: Boolean = true) : ColumnSchema = {
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
-    val isParentColumnRelation = map.isDefined && map.get.get(field).isDefined
-    if (!isParentColumnRelation) {
-      val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
-      if (highCardinalityDims.contains(colName)) {
-        encoders.remove(Encoding.DICTIONARY)
-      }
+    val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
+    if (highCardinalityDims.contains(colName)) {
+      encoders.remove(Encoding.DICTIONARY)
+    }
     if (dataType == DataTypes.DATE && useDictionaryEncoding) {
-        encoders.add(Encoding.DIRECT_DICTIONARY)
-      }
-      if (dataType == DataTypes.TIMESTAMP &&
-          !highCardinalityDims.contains(colName) && useDictionaryEncoding) {
-        encoders.add(Encoding.DIRECT_DICTIONARY)
-      }
+      encoders.add(Encoding.DIRECT_DICTIONARY)
+    }
+    if (dataType == DataTypes.TIMESTAMP &&
+        !highCardinalityDims.contains(colName) && useDictionaryEncoding) {
+      encoders.add(Encoding.DIRECT_DICTIONARY)
     }
     columnSchema.setEncodingList(encoders)
     val colUniqueIdGenerator = ColumnUniqueIdGenerator.getInstance
@@ -667,28 +660,6 @@ class TableNewProcessor(cm: TableModel) {
     columnSchema.setIndexColumn(field.index)
     if (isVarcharColumn(colName)) {
       columnSchema.setDataType(DataTypes.VARCHAR)
-    }
-    if (isParentColumnRelation) {
-      val dataMapField = map.get.get(field).get
-      columnSchema.setFunction(dataMapField.aggregateFunction)
-      val columnRelationList = dataMapField.columnTableRelationList.get
-      val parentColumnTableRelationList = new util.ArrayList[ParentColumnTableRelation]
-      columnRelationList.foreach {
-        columnRelation =>
-          val relationIdentifier = new RelationIdentifier(
-            columnRelation.parentDatabaseName,
-            columnRelation.parentTableName,
-            columnRelation.parentTableId)
-          if (cm.parentTable.isDefined) {
-            relationIdentifier.setTablePath(cm.parentTable.get.getTablePath)
-          }
-          val parentColumnTableRelation = new ParentColumnTableRelation(
-            relationIdentifier,
-            columnRelation.parentColumnId,
-            columnRelation.parentColumnName)
-          parentColumnTableRelationList.add(parentColumnTableRelation)
-      }
-      columnSchema.setParentColumnTableRelations(parentColumnTableRelationList)
     }
     // TODO: Need to fill RowGroupID, converted type
     // & Number of Children after DDL finalization
@@ -713,22 +684,14 @@ class TableNewProcessor(cm: TableModel) {
     // Sort columns should be at the begin of all columns
     cm.sortKeyDims.get.foreach { keyDim =>
       val field = cm.dimCols.find(keyDim equals _.column).get
-      val encoders = if (getEncoderFromParent(field)) {
-        cm.parentTable.get.getColumnByName(
-          cm.dataMapRelation.get(field).columnTableRelationList.get.head.parentColumnName
-        ).getEncoder
-      } else {
-        val encoders = new java.util.ArrayList[Encoding]()
-        encoders.add(Encoding.DICTIONARY)
-        encoders
-      }
+      val encoders = new java.util.ArrayList[Encoding]()
+      encoders.add(Encoding.DICTIONARY)
       val columnSchema = getColumnSchema(
         DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
         field.name.getOrElse(field.column),
         encoders,
         true,
-        field,
-        cm.dataMapRelation)
+        field)
       columnSchema.setSortColumn(true)
       allColumns :+= columnSchema
       index = index + 1
@@ -737,22 +700,14 @@ class TableNewProcessor(cm: TableModel) {
     def addDimensionCol(field: Field): Unit = {
       val sortField = cm.sortKeyDims.get.find(field.column equals _)
       if (sortField.isEmpty) {
-        val encoders = if (getEncoderFromParent(field)) {
-          cm.parentTable.get.getColumnByName(
-            cm.dataMapRelation.get(field).columnTableRelationList.get.head.parentColumnName
-          ).getEncoder
-        } else {
-          val encoders = new java.util.ArrayList[Encoding]()
-          encoders.add(Encoding.DICTIONARY)
-          encoders
-        }
+        val encoders = new java.util.ArrayList[Encoding]()
+        encoders.add(Encoding.DICTIONARY)
         val columnSchema = getColumnSchema(
           DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
           field.name.getOrElse(field.column),
           encoders,
           true,
-          field,
-          cm.dataMapRelation)
+          field)
         allColumns :+= columnSchema
         index = index + 1
         if (field.children.isDefined && field.children.get != null) {
@@ -778,21 +733,8 @@ class TableNewProcessor(cm: TableModel) {
       var isAggFunPresent = false
       // getting the encoder from maintable so whatever encoding is applied in maintable
       // same encoder can be applied on aggregate table
-      val encoders = if (getEncoderFromParent(field)) {
-        isAggFunPresent =
-          cm.dataMapRelation.get(field).aggregateFunction.equalsIgnoreCase("sum") ||
-          cm.dataMapRelation.get(field).aggregateFunction.equals("avg") ||
-          cm.dataMapRelation.get(field).aggregateFunction.equals("count")
-        if (!isAggFunPresent) {
-          cm.parentTable.get.getColumnByName(
-            cm.dataMapRelation.get(field).columnTableRelationList.get.head.parentColumnName
-          ).getEncoder
-        } else {
-          new java.util.ArrayList[Encoding]()
-        }
-      } else {
-        new java.util.ArrayList[Encoding]()
-      }
+      val encoders = new java.util.ArrayList[Encoding]()
+
       // check if it can be dimension column
       val isDimColumn = !encoders.isEmpty && !isAggFunPresent
       val columnSchema = getColumnSchema(
@@ -800,8 +742,7 @@ class TableNewProcessor(cm: TableModel) {
         field.name.getOrElse(field.column),
         encoders,
         isDimColumn,
-        field,
-        cm.dataMapRelation)
+        field)
       allColumns :+= columnSchema
       index = index + 1
       if (!isDimColumn) {
@@ -818,22 +759,18 @@ class TableNewProcessor(cm: TableModel) {
       }
     }
 
-    // Setting the boolean value of useInvertedIndex in column schema, if Parent table is defined
-    // Encoding is already decided above
-    if (cm.parentTable.isEmpty) {
-      val noInvertedIndexCols = cm.noInvertedIdxCols.getOrElse(Seq())
-      val invertedIndexCols = cm.innvertedIdxCols.getOrElse(Seq())
-      for (column <- allColumns) {
-        // When the column is measure or the specified no inverted index column in DDL,
-        // set useInvertedIndex to false, otherwise true.
-        if (invertedIndexCols.contains(column.getColumnName) &&
-            !cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
-          column.setUseInvertedIndex(true)
-        } else {
-          column.setUseInvertedIndex(false)
-        }
+    val invertedIndexCols = cm.innvertedIdxCols.getOrElse(Seq())
+    for (column <- allColumns) {
+      // When the column is measure or the specified no inverted index column in DDL,
+      // set useInvertedIndex to false, otherwise true.
+      if (invertedIndexCols.contains(column.getColumnName) &&
+          !cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
+        column.setUseInvertedIndex(true)
+      } else {
+        column.setUseInvertedIndex(false)
       }
     }
+
     // Adding dummy measure if no measure is provided
     if (measureCount == 0) {
       val encoders = new java.util.ArrayList[Encoding]()
@@ -848,8 +785,7 @@ class TableNewProcessor(cm: TableModel) {
         CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
         encoders,
         false,
-        field,
-        cm.dataMapRelation)
+        field)
       columnSchema.setInvisible(true)
       allColumns :+= columnSchema
     }
@@ -935,18 +871,6 @@ class TableNewProcessor(cm: TableModel) {
       DatabaseLocationProvider.get().provide(databaseName) +
       CarbonCommonConstants.FILE_SEPARATOR + s"${tableName}_$tableId"
     }
-  }
-
-  /**
-   * Method to check to get the encoder from parent or not
-   *
-   * @param field column field
-   * @return get encoder from parent
-   */
-  private def getEncoderFromParent(field: Field): Boolean = {
-    cm.parentTable.isDefined &&
-    cm.dataMapRelation.get.get(field).isDefined &&
-    cm.dataMapRelation.get(field).columnTableRelationList.size == 1
   }
 
   //  For checking if the specified col group columns are specified in fields list.
