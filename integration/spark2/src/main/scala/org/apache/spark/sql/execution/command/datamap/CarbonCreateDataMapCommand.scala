@@ -71,14 +71,6 @@ case class CarbonCreateDataMapCommand(
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
-    if (mainTable != null && mainTable.getDataMapSchema(dataMapName) != null) {
-      if (!ifNotExistsSet) {
-        throw new MalformedDataMapCommandException(s"DataMap name '$dataMapName' already exist")
-      } else {
-        return Seq.empty
-      }
-    }
-
     if (mainTable != null && CarbonUtil.getFormatVersion(mainTable) != ColumnarFormatVersion.V3) {
       throw new MalformedCarbonCommandException(s"Unsupported operation on table with " +
                                                 s"V1 or V2 format data")

@@ -88,24 +88,7 @@ case class RefreshCarbonTableCommand(
         // refresh the column schema in case of store before V3
         refreshColumnSchema(tableInfo)
 
-        // 2.2 register the table with the hive check if the table being registered has
-        // aggregate table then do the below steps
-        // 2.2.1 validate that all the aggregate tables are copied at the store location.
-        val dataMapSchemaList = tableInfo.getDataMapSchemaList
-        if (null != dataMapSchemaList && dataMapSchemaList.size() != 0) {
-          // validate all the aggregate tables are copied at the storeLocation
-          val allExists = validateAllAggregateTablePresent(databaseName,
-            dataMapSchemaList, sparkSession)
-          if (!allExists) {
-            // fail the register operation
-            val msg = s"Table registration with Database name [$databaseName] and Table name " +
-                      s"[$tableName] failed. All the aggregate Tables for table [$tableName] is" +
-                      s" not copied under database [$databaseName]"
-            throwMetadataException(databaseName, tableName, msg)
-          }
-          // 2.2.1 Register the aggregate tables to hive
-          registerAggregates(databaseName, dataMapSchemaList)(sparkSession)
-        }
+        // 2.2 register the table with the hive
         registerTableWithHive(databaseName, tableName, tableInfo, tablePath)(sparkSession)
         // Register partitions to hive metastore in case of hive partitioning carbon table
         if (tableInfo.getFactTable.getPartitionInfo != null &&

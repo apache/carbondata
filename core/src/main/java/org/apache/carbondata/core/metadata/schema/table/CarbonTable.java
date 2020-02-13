@@ -124,9 +124,6 @@ public class CarbonTable implements Serializable, Writable {
   // The last index of the dimension column in all columns
   private int dimensionOrdinalMax;
 
-  // True if this table has datamap
-  private boolean hasDataMapSchema;
-
   // True if local dictionary is enabled for this table
   private boolean isLocalDictionaryEnabled;
 
@@ -147,31 +144,10 @@ public class CarbonTable implements Serializable, Writable {
    * This method will cast the same to the appropriate classes
    */
   private static void updateTableInfo(TableInfo tableInfo) {
-    List<DataMapSchema> dataMapSchemas = new ArrayList<>();
-    for (DataMapSchema dataMapSchema : tableInfo.getDataMapSchemaList()) {
-      DataMapSchema newDataMapSchema = DataMapSchemaFactory.INSTANCE
-          .getDataMapSchema(dataMapSchema.getDataMapName(), dataMapSchema.getProviderName());
-      newDataMapSchema.setChildSchema(dataMapSchema.getChildSchema());
-      newDataMapSchema.setProperties(dataMapSchema.getProperties());
-      newDataMapSchema.setRelationIdentifier(dataMapSchema.getRelationIdentifier());
-      dataMapSchemas.add(newDataMapSchema);
-    }
-    tableInfo.setDataMapSchemaList(dataMapSchemas);
     for (ColumnSchema columnSchema : tableInfo.getFactTable().getListOfColumns()) {
       columnSchema.setDataType(DataTypeUtil
           .valueOf(columnSchema.getDataType(), columnSchema.getPrecision(),
               columnSchema.getScale()));
-    }
-    List<DataMapSchema> childSchema = tableInfo.getDataMapSchemaList();
-    for (DataMapSchema dataMapSchema : childSchema) {
-      if (dataMapSchema.childSchema != null
-          && dataMapSchema.childSchema.getListOfColumns().size() > 0) {
-        for (ColumnSchema columnSchema : dataMapSchema.childSchema.getListOfColumns()) {
-          columnSchema.setDataType(DataTypeUtil
-              .valueOf(columnSchema.getDataType(), columnSchema.getPrecision(),
-                  columnSchema.getScale()));
-        }
-      }
     }
     if (tableInfo.getFactTable().getBucketingInfo() != null) {
       for (ColumnSchema columnSchema : tableInfo.getFactTable().getBucketingInfo()
@@ -283,8 +259,6 @@ public class CarbonTable implements Serializable, Writable {
     if (tableInfo.getFactTable().getPartitionInfo() != null) {
       table.partition = tableInfo.getFactTable().getPartitionInfo();
     }
-    table.hasDataMapSchema =
-        null != tableInfo.getDataMapSchemaList() && tableInfo.getDataMapSchemaList().size() > 0;
     setLocalDictInfo(table, tableInfo);
   }
 
@@ -865,20 +839,6 @@ public class CarbonTable implements Serializable, Writable {
 
   public int getDimensionOrdinalMax() {
     return dimensionOrdinalMax;
-  }
-
-  public boolean hasDataMapSchema() {
-    return hasDataMapSchema;
-  }
-
-  public DataMapSchema getDataMapSchema(String dataMapName) {
-    List<DataMapSchema> dataMaps = tableInfo.getDataMapSchemaList();
-    for (DataMapSchema dataMap : dataMaps) {
-      if (dataMap.getDataMapName().equalsIgnoreCase(dataMapName)) {
-        return dataMap;
-      }
-    }
-    return null;
   }
 
   public boolean isChildTableForMV() {

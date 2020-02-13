@@ -87,19 +87,6 @@ case class CarbonDropTableCommand(
         // streaming table should acquire streaming.lock
         carbonLocks += CarbonLockUtil.getLockObject(identifier, LockUsage.STREAMING_LOCK)
       }
-      val relationIdentifiers = carbonTable.getTableInfo.getParentRelationIdentifiers
-      if (relationIdentifiers != null && !relationIdentifiers.isEmpty) {
-        var ignoreParentTableCheck = false
-        if (!ignoreParentTableCheck && !dropChildTable) {
-          if (!ifExistsSet) {
-            throwMetadataException(dbName, tableName,
-              "Child table which is associated with datamap cannot be dropped, " +
-              "use DROP DATAMAP command to drop")
-          } else {
-            return Seq.empty
-          }
-        }
-      }
       val operationContext = new OperationContext
       val dropTablePreEvent: DropTablePreEvent =
         DropTablePreEvent(
@@ -110,28 +97,6 @@ case class CarbonDropTableCommand(
 
       CarbonEnv.getInstance(sparkSession).carbonMetaStore.dropTable(identifier)(sparkSession)
 
-      if (carbonTable.hasDataMapSchema) {
-        // drop all child tables
-       val childSchemas = carbonTable.getTableInfo.getDataMapSchemaList
-
-        childDropCommands = childSchemas.asScala
-          .filter(_.getRelationIdentifier != null)
-          .map { childSchema =>
-            val childTable =
-              CarbonEnv.getCarbonTable(
-                TableIdentifier(childSchema.getRelationIdentifier.getTableName,
-                  Some(childSchema.getRelationIdentifier.getDatabaseName)))(sparkSession)
-            val dropCommand = CarbonDropTableCommand(
-              ifExistsSet = true,
-              Some(childSchema.getRelationIdentifier.getDatabaseName),
-              childSchema.getRelationIdentifier.getTableName,
-              dropChildTable = true
-            )
-            dropCommand.carbonTable = childTable
-            dropCommand
-          }
-        childDropCommands.foreach(_.processMetadata(sparkSession))
-      }
       val indexDatamapSchemas =
         DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
       LOGGER.info(s"Dropping DataMaps in table $tableName, size: ${indexDatamapSchemas.size()}")
@@ -213,10 +178,6 @@ case class CarbonDropTableCommand(
           .getLockpath(carbonTable.getCarbonTableIdentifier.getTableId)
         val file = FileFactory.getCarbonFile(tableLockPath)
         CarbonUtil.deleteFoldersAndFilesSilent(file)
-      }
-      if (carbonTable.hasDataMapSchema && childDropCommands.nonEmpty) {
-        // drop all child tables
-        childDropCommands.foreach(_.processData(sparkSession))
       }
       childDropDataMapCommands.foreach(_.processData(sparkSession))
     }

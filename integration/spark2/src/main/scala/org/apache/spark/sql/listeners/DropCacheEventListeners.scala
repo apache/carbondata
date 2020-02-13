@@ -52,11 +52,6 @@ object DropCacheDataMapEventListener extends OperationEventListener {
           throw new UnsupportedOperationException("Operation not allowed on child table.")
         }
 
-        if (carbonTable.hasDataMapSchema) {
-          val childrenSchemas = carbonTable.getTableInfo.getDataMapSchemaList.asScala
-            .filter(_.getRelationIdentifier != null)
-          dropCacheForChildTables(sparkSession, childrenSchemas)
-        }
         if (DataMapUtil.hasMVDataMap(carbonTable)) {
           val childrenSchemas = DataMapStoreManager.getInstance
             .getDataMapSchemasOfTable(carbonTable).asScala

@@ -43,20 +43,6 @@ object ShowCachePreMVEventListener extends OperationEventListener {
         if (carbonTable.isChildTableForMV && !internalCall) {
           throw new UnsupportedOperationException("Operation not allowed on child table.")
         }
-
-        val childTables = operationContext.getProperty(carbonTable.getTableUniqueName)
-          .asInstanceOf[List[(String, String)]]
-
-        if (carbonTable.hasDataMapSchema) {
-          val childrenSchemas = carbonTable.getTableInfo.getDataMapSchemaList.asScala
-            .filter(_.getRelationIdentifier != null)
-          operationContext.setProperty(carbonTable.getTableUniqueName, childrenSchemas.collect {
-            case childSchema if childSchema.getRelationIdentifier != null =>
-              (s"${ childSchema.getRelationIdentifier.getDatabaseName }-${
-                childSchema.getRelationIdentifier.getTableName
-              }", childSchema.getProviderName, childSchema.getRelationIdentifier.getTableId)
-          }.toList ++ childTables)
-        }
     }
   }
 }
