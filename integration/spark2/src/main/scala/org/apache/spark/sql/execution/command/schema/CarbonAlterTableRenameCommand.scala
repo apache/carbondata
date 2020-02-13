@@ -101,9 +101,6 @@ private[sql] case class CarbonAlterTableRenameCommand(
       }
       // get the old table all data map schema
       val dataMapSchemaList: util.List[DataMapSchema] = new util.ArrayList[DataMapSchema]()
-      if (carbonTable.hasDataMapSchema) {
-        dataMapSchemaList.addAll(carbonTable.getTableInfo.getDataMapSchemaList)
-      }
       val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
       if (!indexSchemas.isEmpty) {
         dataMapSchemaList.addAll(indexSchemas)

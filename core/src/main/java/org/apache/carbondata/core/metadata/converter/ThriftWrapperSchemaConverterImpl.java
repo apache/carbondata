@@ -312,16 +312,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       TableInfo wrapperTableInfo, String dbName, String tableName) {
     org.apache.carbondata.format.TableSchema thriftFactTable =
         fromWrapperToExternalTableSchema(wrapperTableInfo.getFactTable());
-    org.apache.carbondata.format.TableInfo tableInfo =
-        new org.apache.carbondata.format.TableInfo(thriftFactTable,
-            new ArrayList<org.apache.carbondata.format.TableSchema>());
-    List<DataMapSchema> wrapperChildSchemaList = wrapperTableInfo.getDataMapSchemaList();
-    if (null != wrapperChildSchemaList) {
-      List<org.apache.carbondata.format.DataMapSchema> thriftChildSchemas =
-          fromWrapperToExternalChildSchemaList(wrapperChildSchemaList);
-      tableInfo.setDataMapSchemas(thriftChildSchemas);
-    }
-    return tableInfo;
+    return new org.apache.carbondata.format.TableInfo(thriftFactTable, new ArrayList<>());
   }
 
   private List<org.apache.carbondata.format.RelationIdentifier> fromWrapperToExternalRI(
@@ -657,10 +648,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperTableInfo.setTableUniqueName(CarbonTable.buildUniqueName(dbName, tableName));
     wrapperTableInfo.setFactTable(
         fromExternalToWrapperTableSchema(externalTableInfo.getFact_table(), tableName));
-    if (null != externalTableInfo.getDataMapSchemas()) {
-      wrapperTableInfo.setDataMapSchemaList(
-          fromExternalToWrapperChildSchemaList(externalTableInfo.getDataMapSchemas()));
-    }
     wrapperTableInfo.setTablePath(tablePath);
     return wrapperTableInfo;
   }

@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import java.util
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
@@ -37,7 +35,7 @@ import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.SchemaReader
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
-import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, TableInfo}
+import org.apache.carbondata.core.metadata.schema.table. TableInfo
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -88,24 +86,7 @@ case class RefreshCarbonTableCommand(
         // refresh the column schema in case of store before V3
         refreshColumnSchema(tableInfo)
 
-        // 2.2 register the table with the hive check if the table being registered has
-        // aggregate table then do the below steps
-        // 2.2.1 validate that all the aggregate tables are copied at the store location.
-        val dataMapSchemaList = tableInfo.getDataMapSchemaList
-        if (null != dataMapSchemaList && dataMapSchemaList.size() != 0) {
-          // validate all the aggregate tables are copied at the storeLocation
-          val allExists = validateAllAggregateTablePresent(databaseName,
-            dataMapSchemaList, sparkSession)
-          if (!allExists) {
-            // fail the register operation
-            val msg = s"Table registration with Database name [$databaseName] and Table name " +
-                      s"[$tableName] failed. All the aggregate Tables for table [$tableName] is" +
-                      s" not copied under database [$databaseName]"
-            throwMetadataException(databaseName, tableName, msg)
-          }
-          // 2.2.1 Register the aggregate tables to hive
-          registerAggregates(databaseName, dataMapSchemaList)(sparkSession)
-        }
+        // 2.2 register the table with the hive
         registerTableWithHive(databaseName, tableName, tableInfo, tablePath)(sparkSession)
         // Register partitions to hive metastore in case of hive partitioning carbon table
         if (tableInfo.getFactTable.getPartitionInfo != null &&
@@ -189,53 +170,6 @@ case class RefreshCarbonTableCommand(
       new RefreshTablePostExecutionEvent(sparkSession,
         tableInfo.getOrCreateAbsoluteTableIdentifier())
     OperationListenerBus.getInstance.fireEvent(refreshTablePostExecutionEvent, operationContext)
-  }
-
-  /**
-   * The method validate that all the aggregate table are physically present
-   *
-   * @param dataMapSchemaList
-   * @param sparkSession
-   */
-  def validateAllAggregateTablePresent(dbName: String, dataMapSchemaList: util.List[DataMapSchema],
-      sparkSession: SparkSession): Boolean = {
-    var fileExist = false
-    dataMapSchemaList.asScala.foreach(dataMap => {
-      val tableName = dataMap.getChildSchema.getTableName
-      val tablePath = CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession)
-      val schemaFilePath = CarbonTablePath.getSchemaFilePath(tablePath)
-      try {
-        fileExist = FileFactory.isFileExist(schemaFilePath)
-      } catch {
-        case e: Exception =>
-          fileExist = false
-      }
-      if (!fileExist) {
-        return fileExist;
-      }
-    })
-    true
-  }
-
-  /**
-   * The method iterates over all the aggregate tables and register them to hive
-   *
-   * @param dataMapSchemaList
-   * @return
-   */
-  def registerAggregates(dbName: String,
-      dataMapSchemaList: util.List[DataMapSchema])(sparkSession: SparkSession): Any = {
-    dataMapSchemaList.asScala.foreach(dataMap => {
-      val tableName = dataMap.getChildSchema.getTableName
-      if (!sparkSession.sessionState.catalog.listTables(dbName)
-        .exists(_.table.equalsIgnoreCase(tableName))) {
-        val tablePath = CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession)
-        val absoluteTableIdentifier = AbsoluteTableIdentifier
-          .from(tablePath, dbName, tableName)
-        val tableInfo = SchemaReader.getTableInfo(absoluteTableIdentifier)
-        registerTableWithHive(dbName, tableName, tableInfo, tablePath)(sparkSession)
-      }
-    })
   }
 
   /**

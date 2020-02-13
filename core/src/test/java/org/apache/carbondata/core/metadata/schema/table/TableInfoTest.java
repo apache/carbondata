@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.metadata.schema.table;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
@@ -87,8 +86,7 @@ public class TableInfoTest extends TestCase {
         + "\"tableProperties\":{\"sort_columns\":\"c1\",\"comment\":\"\","
         + "\"local_dictionary_enable\":\"true\"}},\"lastUpdatedTime\":1530534235537,"
         + "\"tablePath\":\"/store/carbonversion_1_1/testinttype1\","
-        + "\"isTransactionalTable\":true,\"dataMapSchemaList\":[],"
-        + "\"parentRelationIdentifiers\":[],\"isSchemaModified\":false}");
+        + "\"isTransactionalTable\":true,\"isSchemaModified\":false}");
     TableInfo tableInfo = CarbonUtil.convertGsonToTableInfo(properties);
     // the schema evolution should not be null
     assertTrue(null != tableInfo.getFactTable().getSchemaEvolution());
@@ -204,11 +202,8 @@ public class TableInfoTest extends TestCase {
         + "\"parentRelationIdentifiers\":[],\"isSchemaModified\":false}");
     TableInfo tableInfo = CarbonUtil.convertGsonToTableInfo(properties);
     // the schema evolution should not be null
-    assertTrue(null != tableInfo.getDataMapSchemaList());
-    List<DataMapSchema> dataMapSchemaList = tableInfo.getDataMapSchemaList();
-    for (DataMapSchema dataMapSchema : dataMapSchemaList) {
-      String providerName = dataMapSchema.getProviderName();
-      assertTrue("org.apache.carbondata.core.datamap.AggregateDataMap".equals(providerName));
-    }
+    assertTrue(null != tableInfo.getFactTable());
+    assertTrue(null != tableInfo.getFactTable().getListOfColumns());
+    assertTrue(null != tableInfo.getFactTable().getTableProperties());
   }
 }

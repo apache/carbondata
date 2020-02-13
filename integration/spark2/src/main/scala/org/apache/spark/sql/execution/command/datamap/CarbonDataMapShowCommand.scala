@@ -32,7 +32,7 @@ import org.apache.spark.sql.types.StringType
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, DataMapUtil}
 import org.apache.carbondata.core.datamap.status.{DataMapSegmentStatusUtil, DataMapStatus, DataMapStatusManager}
-import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -68,9 +68,6 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
         val carbonTable = CarbonEnv.getCarbonTable(table)(sparkSession)
         setAuditTable(carbonTable)
         Checker.validateTableExists(table.database, table.table, sparkSession)
-        if (carbonTable.hasDataMapSchema) {
-          dataMapSchemaList.addAll(carbonTable.getTableInfo.getDataMapSchemaList)
-        }
         val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
         if (!indexSchemas.isEmpty) {
           dataMapSchemaList.addAll(indexSchemas)
