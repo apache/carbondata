@@ -62,8 +62,8 @@ case class CarbonCreateTableCommand(
     tableInfo.setDatabaseName(dbName)
     tableInfo.setTableUniqueName(CarbonTable.buildUniqueName(dbName, tableName))
     val isTransactionalTable = tableInfo.isTransactionalTable
-    if (sparkSession.sessionState.catalog.listTables(dbName)
-      .exists(_.table.equalsIgnoreCase(tableName))) {
+    if (sparkSession.sessionState.catalog
+      .tableExists(TableIdentifier(tableName, Some(dbName)))) {
       if (!ifNotExistsSet) {
         throw new TableAlreadyExistsException(dbName, tableName)
       }

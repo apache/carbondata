@@ -54,8 +54,8 @@ case class CarbonCreateTableAsSelectCommand(
     setAuditTable(dbName, tableName)
     setAuditInfo(Map("query" -> query.simpleString))
     // check if table already exists
-    if (sparkSession.sessionState.catalog.listTables(dbName)
-      .exists(_.table.equalsIgnoreCase(tableName))) {
+    if (sparkSession.sessionState.catalog
+      .tableExists(TableIdentifier(tableName, Some(dbName)))) {
       if (!ifNotExistsSet) {
         throw new TableAlreadyExistsException(dbName, tableName)
       }
