@@ -20,12 +20,10 @@ import java.io.{ByteArrayInputStream, DataOutputStream, ObjectInputStream, Objec
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapModel, DataMapWriter}
@@ -42,6 +40,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSch
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression
+import org.apache.carbondata.core.scan.filter.executer.FilterExecuter
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
@@ -195,7 +194,8 @@ class FGDataMap extends FineGrainDataMap {
   override def prune(
       filterExp: FilterResolverIntf,
       segmentProperties: SegmentProperties,
-      partitions: java.util.List[PartitionSpec]): java.util.List[FineGrainBlocklet] = {
+      partitions: java.util.List[PartitionSpec],
+      filterExecuter: FilterExecuter): java.util.List[FineGrainBlocklet] = {
     val buffer: ArrayBuffer[Expression] = new ArrayBuffer[Expression]()
     val expression = filterExp.getFilterExpression
     getEqualToExpression(expression, buffer)

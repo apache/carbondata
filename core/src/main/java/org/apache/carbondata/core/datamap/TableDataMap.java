@@ -49,6 +49,9 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.events.Event;
@@ -117,10 +120,14 @@ public final class TableDataMap extends OperationEventListener {
     final List<ExtendedBlocklet> blocklets = new ArrayList<>();
     List<Segment> segments = getCarbonSegments(allsegments);
     final Map<Segment, List<DataMap>> dataMaps;
-    if (filter == null || filter.isEmpty() || partitions == null || partitions.isEmpty()) {
-      dataMaps = dataMapFactory.getDataMaps(segments);
-    } else {
+    if (table.isHivePartitionTable() && filter != null && !filter.isEmpty() && partitions != null) {
       dataMaps = dataMapFactory.getDataMaps(segments, partitions);
+    } else {
+      dataMaps = dataMapFactory.getDataMaps(segments);
+    }
+
+    if (dataMaps.isEmpty()) {
+      return blocklets;
     }
     // for non-filter queries
     // for filter queries
@@ -138,8 +145,10 @@ public final class TableDataMap extends OperationEventListener {
       }
     }
     int numOfThreadsForPruning = CarbonProperties.getNumOfThreadsForPruning();
+    int carbonDriverPruningMultiThreadEnableFilesCount =
+        CarbonProperties.getDriverPruningMultiThreadEnableFilesCount();
     if (numOfThreadsForPruning == 1 || datamapsCount < numOfThreadsForPruning || totalFiles
-        < CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT) {
+            < carbonDriverPruningMultiThreadEnableFilesCount) {
       // use multi-thread, only if the files are more than 0.1 million.
       // As 0.1 million files block pruning can take only 1 second.
       // Doing multi-thread for smaller values is not recommended as
@@ -181,18 +190,32 @@ public final class TableDataMap extends OperationEventListener {
       List<PartitionSpec> partitions, List<ExtendedBlocklet> blocklets,
       Map<Segment, List<DataMap>> dataMaps) throws IOException {
     for (Segment segment : segments) {
+      if (dataMaps.get(segment).isEmpty() || dataMaps.get(segment) == null) {
+        continue;
+      }
       List<Blocklet> pruneBlocklets = new ArrayList<>();
       SegmentProperties segmentProperties =
           segmentPropertiesFetcher.getSegmentProperties(segment, partitions);
       if (filter.isResolvedOnSegment(segmentProperties)) {
+        FilterExecuter filterExecuter = FilterUtil
+            .getFilterExecuterTree(filter.getResolver(), segmentProperties,
+                null, table.getMinMaxCacheColumns(segmentProperties),
+                false);
         for (DataMap dataMap : dataMaps.get(segment)) {
           pruneBlocklets.addAll(
-              dataMap.prune(filter.getResolver(), segmentProperties, partitions));
+              dataMap.prune(filter.getResolver(), segmentProperties, partitions, filterExecuter));
         }
       } else {
+        Expression expression = filter.getExpression();
+        FilterExecuter filterExecuter = FilterUtil
+            .getFilterExecuterTree(new DataMapFilter(segmentProperties, table,
+                            expression).getResolver(), segmentProperties,
+                null, table.getMinMaxCacheColumns(segmentProperties),
+                false);
         for (DataMap dataMap : dataMaps.get(segment)) {
           pruneBlocklets.addAll(
-              dataMap.prune(filter.getExpression(), segmentProperties, partitions, table));
+              dataMap.prune(filter.getExpression(), segmentProperties,
+                  partitions, table, filterExecuter));
         }
       }
       blocklets.addAll(
@@ -302,19 +325,30 @@ public final class TableDataMap extends OperationEventListener {
                 segmentPropertiesFetcher.getSegmentPropertiesFromDataMap(dataMapList.get(0));
             Segment segment = segmentDataMapGroup.getSegment();
             if (filter.isResolvedOnSegment(segmentProperties)) {
+              FilterExecuter filterExecuter = FilterUtil
+                  .getFilterExecuterTree(filter.getResolver(), segmentProperties,
+                      null, table.getMinMaxCacheColumns(segmentProperties),
+                      false);
               for (int i = segmentDataMapGroup.getFromIndex();
                    i <= segmentDataMapGroup.getToIndex(); i++) {
                 List<Blocklet> dmPruneBlocklets = dataMapList.get(i).prune(
-                    filter.getResolver(), segmentProperties, partitions);
+                    filter.getResolver(), segmentProperties, partitions, filterExecuter);
                 pruneBlocklets.addAll(addSegmentId(
                     blockletDetailsFetcher.getExtendedBlocklets(dmPruneBlocklets, segment),
                     segment));
               }
             } else {
+              Expression filterExpression = filter.getNewCopyOfExpression();
+              FilterExecuter filterExecuter = FilterUtil
+                  .getFilterExecuterTree(new DataMapFilter(segmentProperties, table,
+                                  filterExpression).getResolver(), segmentProperties,
+                      null, table.getMinMaxCacheColumns(segmentProperties),
+                      false);
               for (int i = segmentDataMapGroup.getFromIndex();
                    i <= segmentDataMapGroup.getToIndex(); i++) {
                 List<Blocklet> dmPruneBlocklets = dataMapList.get(i).prune(
-                    filter.getNewCopyOfExpression(), segmentProperties, partitions, table);
+                        filterExpression, segmentProperties, partitions, table,
+                    filterExecuter);
                 pruneBlocklets.addAll(addSegmentId(
                     blockletDetailsFetcher.getExtendedBlocklets(dmPruneBlocklets, segment),
                     segment));
@@ -406,10 +440,14 @@ public final class TableDataMap extends OperationEventListener {
       FilterResolverIntf filterExp, List<PartitionSpec> partitions) throws IOException {
     List<ExtendedBlocklet> detailedBlocklets = new ArrayList<>();
     List<Blocklet> blocklets = new ArrayList<>();
+    SegmentProperties segmentProperties =
+        segmentPropertiesFetcher.getSegmentProperties(distributable.getSegment(), partitions);
+    FilterExecuter filterExecuter = FilterUtil
+        .getFilterExecuterTree(filterExp, segmentProperties,
+            null, table.getMinMaxCacheColumns(segmentProperties),
+            false);
     for (DataMap dataMap : dataMaps) {
-      blocklets.addAll(dataMap.prune(filterExp,
-          segmentPropertiesFetcher.getSegmentProperties(distributable.getSegment(), partitions),
-          partitions));
+      blocklets.addAll(dataMap.prune(filterExp, segmentProperties, partitions, filterExecuter));
     }
     BlockletSerializer serializer = new BlockletSerializer();
     String writePath =

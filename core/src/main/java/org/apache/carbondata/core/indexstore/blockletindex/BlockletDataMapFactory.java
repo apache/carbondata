@@ -166,7 +166,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers,
       Set<TableBlockIndexUniqueIdentifier> identifiers) {
     for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier : identifiers) {
-      if (null != partitionsToPrune && !partitionsToPrune.isEmpty()) {
+      if (null != partitionsToPrune) {
         // add only tableBlockUniqueIdentifier that matches the partition
         // get the indexFile Parent path and compare with the PartitionPath, if matches, then add
         // the corresponding tableBlockIndexUniqueIdentifier for pruning
@@ -232,6 +232,10 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   public List<ExtendedBlocklet> getExtendedBlocklets(List<Blocklet> blocklets, Segment segment)
       throws IOException {
     List<ExtendedBlocklet> detailedBlocklets = new ArrayList<>(blocklets.size() + 1);
+    // if the blocklets is empty, return the empty detailed blocklets list directly.
+    if (blocklets.size() == 0) {
+      return detailedBlocklets;
+    }
     // If it is already detailed blocklet then type cast and return same
     if (blocklets.size() > 0 && blocklets.get(0) instanceof ExtendedBlocklet) {
       for (Blocklet blocklet : blocklets) {
@@ -493,7 +497,8 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     List<CoarseGrainDataMap> dataMaps = getDataMaps(segment, partitions);
     for (CoarseGrainDataMap dataMap : dataMaps) {
       blocklets.addAll(dataMap
-          .prune((FilterResolverIntf) null, getSegmentProperties(segment, partitions), partitions));
+          .prune((FilterResolverIntf) null, getSegmentProperties(segment, partitions), partitions,
+              null));
     }
     return blocklets;
   }

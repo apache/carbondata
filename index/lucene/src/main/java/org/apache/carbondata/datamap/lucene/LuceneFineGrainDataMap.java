@@ -36,6 +36,7 @@ import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.MatchExpression;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
@@ -201,7 +202,8 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
    */
   @Override
   public List<FineGrainBlocklet> prune(FilterResolverIntf filterExp,
-      SegmentProperties segmentProperties, List<PartitionSpec> partitions) throws IOException {
+      SegmentProperties segmentProperties, List<PartitionSpec> partitions,
+      FilterExecuter filterExecuter) throws IOException {
 
     // convert filter expr into lucene list query
     List<String> fields = new ArrayList<String>();

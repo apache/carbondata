@@ -652,7 +652,8 @@ public class BlockDataMap extends CoarseGrainDataMap
     return blockletToRowCountMap;
   }
 
-  private List<Blocklet> prune(FilterResolverIntf filterExp) {
+  private List<Blocklet> prune(FilterResolverIntf filterExp, FilterExecuter filterExecuter,
+      SegmentProperties segmentProperties) {
     if (memoryDMStore.getRowCount() == 0) {
       return new ArrayList<>();
     }
@@ -676,10 +677,13 @@ public class BlockDataMap extends CoarseGrainDataMap
       // Remove B-tree jump logic as start and end key prepared is not
       // correct for old store scenarios
       int entryIndex = 0;
-      FilterExecuter filterExecuter = FilterUtil.getFilterExecuterTree(
-          filterExp, getSegmentProperties(), null, getMinMaxCacheColumns(), false);
       // flag to be used for deciding whether use min/max in executor pruning for BlockletDataMap
       boolean useMinMaxForPruning = useMinMaxForExecutorPruning(filterExp);
+      if (!validateSegmentProperties(segmentProperties)) {
+        filterExecuter = FilterUtil
+                .getFilterExecuterTree(filterExp, getSegmentProperties(),
+                        null, getMinMaxCacheColumns(), false);
+      }
       // min and max for executor pruning
       while (entryIndex < numEntries) {
         DataMapRow row = memoryDMStore.getDataMapRow(schema, entryIndex);
@@ -713,30 +717,23 @@ public class BlockDataMap extends CoarseGrainDataMap
 
   @Override
   public List<Blocklet> prune(Expression expression, SegmentProperties properties,
-      List<PartitionSpec> partitions, CarbonTable carbonTable) {
+      List<PartitionSpec> partitions, CarbonTable carbonTable, FilterExecuter filterExecuter) {
     return prune(new DataMapFilter(properties, carbonTable, expression).getResolver(), properties,
-        partitions);
+        partitions, filterExecuter);
   }
 
   @Override
   public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions) {
+      List<PartitionSpec> partitions, FilterExecuter filterExecuter) {
     if (memoryDMStore.getRowCount() == 0) {
       return new ArrayList<>();
-    }
-    // if it has partitioned datamap but there is no partitioned information stored, it means
-    // partitions are dropped so return empty list.
-    if (partitions != null) {
-      if (!validatePartitionInfo(partitions)) {
-        return new ArrayList<>();
-      }
     }
     // Prune with filters if the partitions are existed in this datamap
     // changed segmentProperties to this.segmentProperties to make sure the pruning with its own
     // segmentProperties.
     // Its a temporary fix. The Interface DataMap.prune(FilterResolverIntf filterExp,
     // SegmentProperties segmentProperties, List<PartitionSpec> partitions) should be corrected
-    return prune(filterExp);
+    return prune(filterExp, filterExecuter, segmentProperties);
   }
 
   private boolean validatePartitionInfo(List<PartitionSpec> partitions) {
@@ -945,6 +942,10 @@ public class BlockDataMap extends CoarseGrainDataMap
       memoryUsed += taskSummaryDMStore.getMemoryUsed();
     }
     return memoryUsed;
+  }
+
+  protected boolean validateSegmentProperties(SegmentProperties tableSegmentProperties) {
+    return tableSegmentProperties.equals(getSegmentProperties());
   }
 
   protected SegmentProperties getSegmentProperties() {
