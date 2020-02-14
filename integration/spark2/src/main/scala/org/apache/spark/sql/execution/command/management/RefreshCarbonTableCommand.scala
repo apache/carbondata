@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import java.util
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
@@ -37,7 +35,7 @@ import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.SchemaReader
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
-import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, TableInfo}
+import org.apache.carbondata.core.metadata.schema.table. TableInfo
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -172,53 +170,6 @@ case class RefreshCarbonTableCommand(
       new RefreshTablePostExecutionEvent(sparkSession,
         tableInfo.getOrCreateAbsoluteTableIdentifier())
     OperationListenerBus.getInstance.fireEvent(refreshTablePostExecutionEvent, operationContext)
-  }
-
-  /**
-   * The method validate that all the aggregate table are physically present
-   *
-   * @param dataMapSchemaList
-   * @param sparkSession
-   */
-  def validateAllAggregateTablePresent(dbName: String, dataMapSchemaList: util.List[DataMapSchema],
-      sparkSession: SparkSession): Boolean = {
-    var fileExist = false
-    dataMapSchemaList.asScala.foreach(dataMap => {
-      val tableName = dataMap.getChildSchema.getTableName
-      val tablePath = CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession)
-      val schemaFilePath = CarbonTablePath.getSchemaFilePath(tablePath)
-      try {
-        fileExist = FileFactory.isFileExist(schemaFilePath)
-      } catch {
-        case e: Exception =>
-          fileExist = false
-      }
-      if (!fileExist) {
-        return fileExist;
-      }
-    })
-    true
-  }
-
-  /**
-   * The method iterates over all the aggregate tables and register them to hive
-   *
-   * @param dataMapSchemaList
-   * @return
-   */
-  def registerAggregates(dbName: String,
-      dataMapSchemaList: util.List[DataMapSchema])(sparkSession: SparkSession): Any = {
-    dataMapSchemaList.asScala.foreach(dataMap => {
-      val tableName = dataMap.getChildSchema.getTableName
-      if (!sparkSession.sessionState.catalog.listTables(dbName)
-        .exists(_.table.equalsIgnoreCase(tableName))) {
-        val tablePath = CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession)
-        val absoluteTableIdentifier = AbsoluteTableIdentifier
-          .from(tablePath, dbName, tableName)
-        val tableInfo = SchemaReader.getTableInfo(absoluteTableIdentifier)
-        registerTableWithHive(dbName, tableName, tableInfo, tablePath)(sparkSession)
-      }
-    })
   }
 
   /**

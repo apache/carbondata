@@ -97,11 +97,10 @@ case class CarbonDropTableCommand(
 
       CarbonEnv.getInstance(sparkSession).carbonMetaStore.dropTable(identifier)(sparkSession)
 
-      val indexDatamapSchemas =
-        DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
-      LOGGER.info(s"Dropping DataMaps in table $tableName, size: ${indexDatamapSchemas.size()}")
-      if (!indexDatamapSchemas.isEmpty) {
-        childDropDataMapCommands = indexDatamapSchemas.asScala.map { schema =>
+      val dataMapSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+      LOGGER.info(s"Dropping DataMaps in table $tableName, size: ${dataMapSchemas.size()}")
+      if (!dataMapSchemas.isEmpty) {
+        childDropDataMapCommands = dataMapSchemas.asScala.map { schema =>
           val command = CarbonDropDataMapCommand(schema.getDataMapName,
             ifExistsSet,
             Some(TableIdentifier(tableName, Some(dbName))),
