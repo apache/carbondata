@@ -54,7 +54,7 @@ class TestMVTimeSeriesCreateDataMapCommand extends QueryTest with BeforeAndAfter
       " as select timeseries(projectjoindate,'second'), sum(projectcode) from maintable group by timeseries(projectjoindate,'second')")
     val result = sql("show materialized views on table maintable").collectAsList()
     assert(result.get(0).get(0).toString.equalsIgnoreCase("datamap1"))
-    assert(result.get(0).get(4).toString.equalsIgnoreCase("ENABLED"))
+    assert(result.get(0).get(5).toString.equalsIgnoreCase("ENABLED"))
     val df = sql("select timeseries(projectjoindate,'second'), sum(projectcode) from maintable group by timeseries(projectjoindate,'second')")
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
     sql("drop materialized view if exists datamap1")
@@ -88,7 +88,7 @@ class TestMVTimeSeriesCreateDataMapCommand extends QueryTest with BeforeAndAfter
       "select timeseries(projectjoindate,'day') from maintable_new")
     val result = sql("show materialized views on table maintable_new").collectAsList()
     assert(result.get(0).get(0).toString.equalsIgnoreCase("datamap1"))
-    assert(result.get(0).get(4).toString.equalsIgnoreCase("ENABLED"))
+    assert(result.get(0).get(5).toString.equalsIgnoreCase("ENABLED"))
     sql("drop table IF EXISTS maintable_new")
   }
 

@@ -30,4 +30,9 @@ public class DataMapProperty {
    * property internally
    */
   public static final String DEFERRED_REBUILD = "_internal.deferred.rebuild";
+
+  /**
+   * internal property, true if it needs full refresh, thus it does not support incremental load
+   */
+  public static final String FULL_REFRESH = "full_refresh";
 }

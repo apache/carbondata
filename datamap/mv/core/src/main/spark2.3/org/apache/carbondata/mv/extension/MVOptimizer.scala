@@ -22,7 +22,7 @@ import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.hive.CarbonMVRules
 
-class MVRules(
+class MVOptimizer(
     session: SparkSession,
     catalog: SessionCatalog,
     optimizer: Optimizer) extends Optimizer(catalog) {

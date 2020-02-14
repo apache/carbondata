@@ -533,7 +533,6 @@ object CarbonScalaUtil {
       schema: DataMapSchema): Object = {
     CarbonReflectionUtils.createObject(
       className,
-      table,
       sparkSession,
       schema)._1.asInstanceOf[Object]
   }

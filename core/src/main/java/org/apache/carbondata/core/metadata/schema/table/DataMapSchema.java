@@ -27,9 +27,20 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.DataMapUtil;
+import org.apache.carbondata.core.datamap.status.DataMapSegmentStatusUtil;
+import org.apache.carbondata.core.datamap.status.DataMapStatus;
+import org.apache.carbondata.core.datamap.status.DataMapStatusDetail;
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatus;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_COLUMNS;
 
@@ -49,7 +60,7 @@ public class DataMapSchema implements Serializable, Writable {
   /**
    * There are two kind of DataMaps:
    * 1. Index DataMap: provider name is class name of implementation class of DataMapFactory
-   * 2. OLAP DataMap: provider name is one of the {@link DataMapClassProvider#shortName}
+   * 2. MV DataMap: provider name is class name of {@code MVDataMapProvider}
    */
   // the old version the field name for providerName was className, so to de-serialization
   // old schema provided the old field name in the alternate filed using annotation
@@ -57,22 +68,23 @@ public class DataMapSchema implements Serializable, Writable {
   protected String providerName;
 
   /**
-   * identifiers of the mapped table
+   * For MV, this is the identifier of the MV table.
+   * For Index, this is the identifier of the main table.
    */
   protected RelationIdentifier relationIdentifier;
 
   /**
-   * Query which is used to create a datamap. This is optional in case of index datamap.
+   * SQL query string used to create MV
    */
   protected String ctasQuery;
 
   /**
-   * relation properties
+   * Properties provided by user
    */
   protected Map<String, String> properties;
 
   /**
-   * Identifiers of parent tables
+   * Identifiers of parent tables of the MV
    */
   protected List<RelationIdentifier> parentTables;
 
@@ -289,5 +301,74 @@ public class DataMapSchema implements Serializable, Writable {
 
   public void setTimeSeries(boolean timeSeries) {
     isTimeSeries = timeSeries;
+  }
+
+  /**
+   * Return true if this DataMap can support incremental build
+   */
+  public boolean canBeIncrementalBuild() {
+    String prop = getProperties().get(DataMapProperty.FULL_REFRESH);
+    return prop == null || prop.equalsIgnoreCase("false");
+  }
+
+  public String getPropertiesAsString() {
+    String[] properties = getProperties().entrySet().stream()
+        // ignore internal used property
+        .filter(p ->
+            !p.getKey().equalsIgnoreCase(DataMapProperty.DEFERRED_REBUILD) &&
+            !p.getKey().equalsIgnoreCase(DataMapProperty.FULL_REFRESH))
+        .map(p -> "'" + p.getKey() + "'='" + p.getValue() + "'")
+        .sorted()
+        .toArray(String[]::new);
+    return Strings.mkString(properties, ",");
+  }
+
+  public String getUniqueTableName() {
+    return relationIdentifier.getDatabaseName() + CarbonCommonConstants.POINT +
+        relationIdentifier.getTableName();
+  }
+
+  public DataMapStatus getStatus() throws IOException {
+    DataMapStatusDetail[] details = DataMapStatusManager.getEnabledDataMapStatusDetails();
+    for (DataMapStatusDetail detail : details) {
+      if (detail.getDataMapName().equalsIgnoreCase(this.getDataMapName())) {
+        return DataMapStatus.ENABLED;
+      }
+    }
+    return DataMapStatus.DISABLED;
+  }
+
+  public String getSyncStatus() {
+    LoadMetadataDetails[] loads =
+        SegmentStatusManager.readLoadMetadata(
+            CarbonTablePath.getMetadataPath(this.getRelationIdentifier().getTablePath()));
+    if (!isIndexDataMap() && loads.length > 0) {
+      for (int i = loads.length - 1; i >= 0; i--) {
+        LoadMetadataDetails load = loads[i];
+        if (load.getSegmentStatus().equals(SegmentStatus.SUCCESS)) {
+          Map<String, List<String>> segmentMaps =
+              DataMapSegmentStatusUtil.getSegmentMap(load.getExtraInfo());
+          Map<String, String> syncInfoMap = new HashMap<>();
+          for (Map.Entry<String, List<String>> entry : segmentMaps.entrySet()) {
+            // when in join scenario, one table is loaded and one more is not loaded,
+            // then put value as NA
+            if (entry.getValue().isEmpty()) {
+              syncInfoMap.put(entry.getKey(), "NA");
+            } else {
+              syncInfoMap.put(entry.getKey(), DataMapUtil.getMaxSegmentID(entry.getValue()));
+            }
+          }
+          String loadEndTime;
+          if (load.getLoadEndTime() == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
+            loadEndTime = "NA";
+          } else {
+            loadEndTime = new java.sql.Timestamp(load.getLoadEndTime()).toString();
+          }
+          syncInfoMap.put(CarbonCommonConstants.LOAD_SYNC_TIME, loadEndTime);
+          return new Gson().toJson(syncInfoMap);
+        }
+      }
+    }
+    return "NA";
   }
 }

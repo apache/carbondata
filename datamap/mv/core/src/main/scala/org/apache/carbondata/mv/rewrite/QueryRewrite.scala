@@ -29,6 +29,7 @@ import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.unsafe.types.UTF8String
 
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty
 import org.apache.carbondata.mv.plans.modular.{GroupBy, Matchable, ModularPlan, Select}
 import org.apache.carbondata.mv.session.MVSession
 import org.apache.carbondata.mv.timeseries.TimeSeriesFunction
@@ -534,9 +535,9 @@ class QueryRewrite private (
    * aggregation function or group by functions on the mv table.
    */
   private def isFullRefresh(mvPlanWrapper: MVPlanWrapper): Boolean = {
-    val fullRefesh = mvPlanWrapper.dataMapSchema.getProperties.get("full_refresh")
-    if (fullRefesh != null) {
-      fullRefesh.toBoolean
+    val fullRefresh = mvPlanWrapper.dataMapSchema.getProperties.get(DataMapProperty.FULL_REFRESH)
+    if (fullRefresh != null) {
+      fullRefresh.toBoolean
     } else {
       false
     }

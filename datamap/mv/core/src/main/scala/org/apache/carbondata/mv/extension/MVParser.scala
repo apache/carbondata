@@ -25,11 +25,11 @@ import scala.util.parsing.combinator.syntactical.StandardTokenParsers
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.catalyst.{SqlLexical, TableIdentifier}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDataMapRebuildCommand, CarbonDataMapShowCommand, CarbonDropDataMapCommand}
 import org.apache.spark.sql.hive.CarbonMVRules
 import org.apache.spark.sql.util.{CarbonException, SparkSQLUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.mv.extension.command.{CreateMaterializedViewCommand, DropMaterializedViewCommand, RefreshMaterializedViewCommand, ShowMaterializedViewCommand}
 import org.apache.carbondata.mv.rewrite.MVUdf
 
 class MVParser extends StandardTokenParsers with PackratParsers {
@@ -52,12 +52,6 @@ class MVParser extends StandardTokenParsers with PackratParsers {
   protected val REFRESH: Regex = carbonKeyWord("REFRESH")
   protected val ON: Regex = carbonKeyWord("ON")
   protected val TABLE: Regex = carbonKeyWord("TABLE")
-  protected val ALTER: Regex = carbonKeyWord("ALTER")
-  protected val COMPACT: Regex = carbonKeyWord("COMPACT")
-  protected val IN: Regex = carbonKeyWord("IN")
-  protected val SEGMENT: Regex = carbonKeyWord("SEGMENT")
-  protected val ID: Regex = carbonKeyWord("ID")
-  protected val WHERE: Regex = carbonKeyWord("WHERE")
 
   /**
    * This will convert key word to regular expression.
@@ -107,12 +101,12 @@ class MVParser extends StandardTokenParsers with PackratParsers {
   private lazy val start: Parser[LogicalPlan] = mvCommand
 
   private lazy val mvCommand: Parser[LogicalPlan] =
-    createMV | dropMV | showMV | rebuildMV
+    createMV | dropMV | showMV | refreshMV
 
   /**
    * CREATE MATERIALIZED VIEW [IF NOT EXISTS] mv_name
    * [WITH DEFERRED REFRESH]
-   * PROPERTIES('KEY'='VALUE')
+   * [PROPERTIES('KEY'='VALUE')]
    * AS mv_query_statement
    */
   private lazy val createMV: Parser[LogicalPlan] =
@@ -120,9 +114,9 @@ class MVParser extends StandardTokenParsers with PackratParsers {
     opt(WITH ~> DEFERRED ~> REFRESH) ~
     (PROPERTIES ~> "(" ~> repsep(options, ",") <~ ")").? ~
     (AS ~> restInput).? <~ opt(";") ^^ {
-      case ifNotExists ~ mvName ~ deferredRebuild ~ mvProperties ~ query =>
-        val map = mvProperties.getOrElse(List[(String, String)]()).toMap[String, String]
-        CarbonCreateDataMapCommand(mvName, None, "mv", map, query,
+      case ifNotExists ~ mvName ~ deferredRebuild ~ properties ~ query =>
+        val map = properties.getOrElse(List[(String, String)]()).toMap[String, String]
+        CreateMaterializedViewCommand(mvName, map, query,
           ifNotExists.isDefined, deferredRebuild.isDefined)
     }
 
@@ -132,7 +126,7 @@ class MVParser extends StandardTokenParsers with PackratParsers {
   private lazy val dropMV: Parser[LogicalPlan] =
     DROP ~> MATERIALIZED ~> VIEW ~> opt(IF ~> EXISTS) ~ ident <~ opt(";") ^^ {
       case ifExits ~ mvName =>
-        CarbonDropDataMapCommand(mvName, ifExits.isDefined, None)
+        DropMaterializedViewCommand(mvName, ifExits.isDefined)
     }
 
   /**
@@ -141,16 +135,16 @@ class MVParser extends StandardTokenParsers with PackratParsers {
   private lazy val showMV: Parser[LogicalPlan] =
     SHOW ~> MATERIALIZED ~> VIEWS ~> opt(onTable) <~ opt(";") ^^ {
       case tableIdent =>
-        CarbonDataMapShowCommand(tableIdent)
+        ShowMaterializedViewCommand(tableIdent)
     }
 
   /**
    * REFRESH MATERIALIZED VIEW mv_name
    */
-  private lazy val rebuildMV: Parser[LogicalPlan] =
+  private lazy val refreshMV: Parser[LogicalPlan] =
     REFRESH ~> MATERIALIZED ~> VIEW ~> ident <~ opt(";") ^^ {
       case mvName =>
-        CarbonDataMapRebuildCommand(mvName, None)
+        RefreshMaterializedViewCommand(mvName)
     }
 
   // Returns the rest of the input string that are not parsed yet

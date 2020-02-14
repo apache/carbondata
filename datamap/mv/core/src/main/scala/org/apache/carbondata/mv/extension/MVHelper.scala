@@ -39,7 +39,7 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
+import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, RelationIdentifier}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.datamap.DataMapManager
@@ -67,11 +67,11 @@ case class ColumnTableRelation(
  */
 object MVHelper {
 
-  def createMVDataMap(sparkSession: SparkSession,
+  def createMVDataMap(
+      sparkSession: SparkSession,
       dataMapSchema: DataMapSchema,
       queryString: String,
-      ifNotExistsSet: Boolean = false,
-      mainTable: CarbonTable): Unit = {
+      ifNotExistsSet: Boolean = false): Unit = {
     val dmProperties = dataMapSchema.getProperties.asScala
     if (dmProperties.contains("streaming") && dmProperties("streaming").equalsIgnoreCase("true")) {
       throw new MalformedCarbonCommandException(
@@ -142,17 +142,17 @@ object MVHelper {
         // Exception handling if it's not a CarbonTable
         case ex: Exception =>
           throw new MalformedCarbonCommandException(
-            s"Non-Carbon table does not support creating MV datamap")
+            s"Non-Carbon table does not support creating MV")
       }
       if (!mainCarbonTable.get.getTableInfo.isTransactionalTable) {
         throw new MalformedCarbonCommandException("Unsupported operation on NonTransactional table")
       }
       if (mainCarbonTable.get.isChildTableForMV) {
         throw new MalformedCarbonCommandException(
-          "Cannot create Datamap on child table " + mainCarbonTable.get.getTableUniqueName)
+          "Cannot create MV on child table " + mainCarbonTable.get.getTableUniqueName)
       }
       parentTables.add(mainCarbonTable.get.getTableName)
-      if (mainCarbonTable.isDefined && mainCarbonTable.get.isStreamingSink) {
+      if (!mainCarbonTable.isEmpty && mainCarbonTable.get.isStreamingSink) {
         throw new MalformedCarbonCommandException(
           s"Streaming table does not support creating materialized view")
       }
@@ -164,7 +164,7 @@ object MVHelper {
       parentTable =>
         if (SegmentStatusManager.isLoadInProgressInTable(parentTable)) {
           throw new UnsupportedOperationException(
-            "Cannot create mv datamap table when insert is in progress on parent table: " +
+            "Cannot create MV table when insert is in progress on parent table: " +
             parentTable.getTableName)
         }
     }
@@ -185,12 +185,6 @@ object MVHelper {
         fieldRelationMap,
         tableProperties)
       if (granularity != null) {
-        if (null != mainTable) {
-          if (!mainTable.getTableName.equalsIgnoreCase(parentTablesList.get(0).getTableName)) {
-            throw new MalformedCarbonCommandException(
-              "Parent table name is different in Create and Select Statement")
-          }
-        }
         val timeSeriesDataType = parentTablesList
           .get(0)
           .getTableInfo
@@ -298,7 +292,7 @@ object MVHelper {
     }
     dataMapSchema.getRelationIdentifier.setTablePath(tablePath)
     dataMapSchema.setParentTables(new util.ArrayList[RelationIdentifier](parentIdents.asJava))
-    dataMapSchema.getProperties.put("full_refresh", fullRebuild.toString)
+    dataMapSchema.getProperties.put(DataMapProperty.FULL_REFRESH, fullRebuild.toString)
     try {
       DataMapStoreManager.getInstance().saveDataMapSchema(dataMapSchema)
     } catch {
@@ -312,7 +306,8 @@ object MVHelper {
     }
   }
 
-  private def validateMVQuery(sparkSession: SparkSession,
+  private def validateMVQuery(
+      sparkSession: SparkSession,
       logicalPlan: LogicalPlan): ModularPlan = {
     val dataMapProvider = DataMapManager.get().getDataMapProvider(null,
       new DataMapSchema("", DataMapClassProvider.MV.getShortName), sparkSession)

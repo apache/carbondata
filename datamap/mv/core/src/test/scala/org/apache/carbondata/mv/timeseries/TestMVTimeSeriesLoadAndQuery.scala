@@ -105,27 +105,27 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     checkPlan("datamap6", df6)
     val result = sql("show materialized views on table maintable").collect()
     result.find(_.get(0).toString.contains("datamap1")) match {
-      case Some(row) => assert(row.get(4).toString.contains("ENABLED"))
+      case Some(row) => assert(row.get(5).toString.contains("ENABLED"))
       case None => assert(false)
     }
     result.find(_.get(0).toString.contains("datamap2")) match {
-      case Some(row) => assert(row.get(4).toString.contains("ENABLED"))
+      case Some(row) => assert(row.get(5).toString.contains("ENABLED"))
       case None => assert(false)
     }
     result.find(_.get(0).toString.contains("datamap3")) match {
-      case Some(row) => assert(row.get(4).toString.contains("ENABLED"))
+      case Some(row) => assert(row.get(5).toString.contains("ENABLED"))
       case None => assert(false)
     }
     result.find(_.get(0).toString.contains("datamap4")) match {
-      case Some(row) => assert(row.get(4).toString.contains("ENABLED"))
+      case Some(row) => assert(row.get(5).toString.contains("ENABLED"))
       case None => assert(false)
     }
     result.find(_.get(0).toString.contains("datamap5")) match {
-      case Some(row) => assert(row.get(4).toString.contains("ENABLED"))
+      case Some(row) => assert(row.get(5).toString.contains("ENABLED"))
       case None => assert(false)
     }
     result.find(_.get(0).toString.contains("datamap6")) match {
-      case Some(row) => assert(row.get(4).toString.contains("ENABLED"))
+      case Some(row) => assert(row.get(5).toString.contains("ENABLED"))
       case None => assert(false)
     }
     dropDataMap("datamap1")

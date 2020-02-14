@@ -15,8 +15,28 @@
  * limitations under the License.
  */
 
-package org.apache.spark
+package org.apache.carbondata.common.exceptions.sql;
 
-trait Logging extends org.apache.spark.internal.Logging{
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 
+/**
+ * This exception will be thrown when MV related SQL statement is invalid
+ */
+@InterfaceAudience.User
+@InterfaceStability.Stable
+public class MalformedMaterializedViewException extends MalformedCarbonCommandException {
+
+  /**
+   * default serial version ID.
+   */
+  private static final long serialVersionUID = 1L;
+
+  public MalformedMaterializedViewException(String msg) {
+    super(msg);
+  }
+
+  public MalformedMaterializedViewException(String msg, Throwable e) {
+    super(msg, e);
+  }
 }

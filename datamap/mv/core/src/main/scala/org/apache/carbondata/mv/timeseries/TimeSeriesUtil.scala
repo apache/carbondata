@@ -17,10 +17,9 @@
 
 package org.apache.carbondata.mv.timeseries
 
-import scala.collection.mutable
 import scala.util.control.Breaks.{break, breakable}
 
-import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException, MalformedMaterializedViewException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -71,7 +70,7 @@ object TimeSeriesUtil {
     for (granularity <- Granularity.values()) {
       if (dmProperties.containsKey(granularity.getName)) {
         if (isFound) {
-          throw new MalformedDataMapCommandException(
+          throw new MalformedMaterializedViewException(
             s"Only one granularity level can be defined")
         } else {
           isFound = true
@@ -103,7 +102,7 @@ object TimeSeriesUtil {
       }
     }
 
-    throw new MalformedDataMapCommandException(
+    throw new MalformedMaterializedViewException(
       s"Granularity only support $defaultValue")
   }
 

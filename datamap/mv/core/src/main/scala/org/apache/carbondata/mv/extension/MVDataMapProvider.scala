@@ -27,40 +27,40 @@ import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
+import org.apache.carbondata.common.exceptions.sql.MalformedMaterializedViewException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapCatalog, DataMapProvider, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.dev.{DataMap, DataMapFactory}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.indexstore.Blocklet
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.mv.rewrite.{SummaryDataset, SummaryDatasetCatalog}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 
 @InterfaceAudience.Internal
 class MVDataMapProvider(
-    mainTable: CarbonTable,
     sparkSession: SparkSession,
     dataMapSchema: DataMapSchema)
-  extends DataMapProvider(mainTable, dataMapSchema) {
+  extends DataMapProvider(null, dataMapSchema) {
+
   protected var dropTableCommand: CarbonDropTableCommand = null
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  @throws[MalformedDataMapCommandException]
+  @throws[MalformedMaterializedViewException]
   @throws[IOException]
   override def initMeta(ctasSqlStatement: String): Unit = {
     if (ctasSqlStatement == null) {
-      throw new MalformedDataMapCommandException(
+      throw new MalformedMaterializedViewException(
         "select statement is mandatory")
     }
     MVHelper.createMVDataMap(
       sparkSession,
       dataMapSchema,
       ctasSqlStatement,
-      true,
-      mainTable)
+      true)
     try {
       DataMapStoreManager.getInstance.registerDataMapCatalog(this, dataMapSchema)
       if (dataMapSchema.isLazy) {
@@ -122,8 +122,8 @@ class MVDataMapProvider(
       val updatedQuery = MVParser.getMVQuery(ctasQuery, sparkSession)
       var isOverwriteTable = false
       val isFullRefresh =
-        if (null != dataMapSchema.getProperties.get("full_refresh")) {
-          dataMapSchema.getProperties.get("full_refresh").toBoolean
+        if (null != dataMapSchema.getProperties.get(DataMapProperty.FULL_REFRESH)) {
+          dataMapSchema.getProperties.get(DataMapProperty.FULL_REFRESH).toBoolean
         } else {
           false
         }

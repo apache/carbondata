@@ -44,7 +44,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("drop materialized view if exists datamap1")
   }
 
-  test("test Incremental Loading on rebuild MV") {
+  test("test Incremental Loading on refresh MV") {
     //create table and load data
     createTableFactTable("test_table")
     loadDataToFactTable("test_table")
@@ -307,7 +307,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  test("test set segments with main table having mv before rebuild") {
+  test("test set segments with main table having mv before refresh") {
     sql("drop table IF EXISTS main_table")
     sql("create table main_table(a string,b string,c int) STORED AS carbondata")
     sql("insert into main_table values('a','abc',1)")
@@ -354,7 +354,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test sum(a) + sum(b)") {
-    // Full rebuild will happen in this case
+    // Full refresh will happen in this case
     sql("drop table IF EXISTS main_table")
     sql("create table main_table(a int,b int,c int) STORED AS carbondata")
     sql("insert into main_table values(1,2,3)")
@@ -526,7 +526,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS main_table")
   }
 
-  test("test compaction on main table and rebuild") {
+  test("test compaction on main table and refresh") {
     createTableFactTable("test_table")
     loadDataToFactTable("test_table")
     sql("drop materialized view if exists datamap1")
@@ -572,7 +572,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select empname, designation from test_table"),
       sql("select empname, designation from test_table1"))
     val result = sql("show materialized views on table test_table").collectAsList()
-    assert(result.get(0).get(5).toString.contains("\"default.test_table\":\"12.1\""))
+    assert(result.get(0).get(6).toString.contains("\"default.test_table\":\"12.1\""))
     val df = sql(s""" select empname, designation from test_table""".stripMargin)
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_com"))
   }

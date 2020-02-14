@@ -58,12 +58,11 @@ class MVExtensionSqlParser(
           case mce: MalformedCarbonCommandException =>
             throw mce
           case e: Throwable =>
-            e.printStackTrace(System.err)
             CarbonScalaUtil.cleanParserThreadLocals
             CarbonException.analysisException(
-              s"""== Parser1: ${parser.getClass.getName} ==
+              s"""== Parser1: ${parser.getClass.getSimpleName} ==
                  |${ex.getMessage}
-                 |== Parser2: ${initialParser.getClass.getName} ==
+                 |== Parser2: ${initialParser.getClass.getSimpleName} ==
                  |${e.getMessage}
                """.stripMargin.trim)
         }

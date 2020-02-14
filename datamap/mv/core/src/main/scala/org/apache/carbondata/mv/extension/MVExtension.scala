@@ -25,18 +25,19 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.carbondata.mv.rewrite.MVUdf
 import org.apache.carbondata.mv.timeseries.TimeSeriesFunction
 
-// Materialized View extension for Apache Spark
-//
-// Following SQL command are added:
-//   1. CREATE MATERIALIZED VIEW
-//   2. DROP MATERIALIZED VIEW
-//   3. SHOW MATERIALIZED VIEW
-//   4. REFRESH MATERIALIZED VIEW
-//
-// Following optimizer rules are added:
-//   1. Rewrite SQL statement by matching existing MV and
-//      select the lowest cost MV
-//
+/**
+ * Materialized View extension for Apache Spark
+ *
+ * Following SQL command are added:
+ *   1. CREATE MATERIALIZED VIEW
+ *   2. DROP MATERIALIZED VIEW
+ *   3. SHOW MATERIALIZED VIEW
+ *   4. REFRESH MATERIALIZED VIEW
+ *
+ * Following optimizer rules are added:
+ *   1. Rewrite SQL statement by matching existing MV and
+ *      select the lowest cost MV
+ */
 class MVExtension extends (SparkSessionExtensions => Unit) {
 
   override def apply(extensions: SparkSessionExtensions): Unit = {
@@ -47,11 +48,11 @@ class MVExtension extends (SparkSessionExtensions => Unit) {
 
     // MV optimizer rules
     extensions.injectPostHocResolutionRule(
-      (session: SparkSession) => OptimizerRule(session) )
+      (session: SparkSession) => MVOptimizerRule(session) )
   }
 }
 
-case class OptimizerRule(session: SparkSession) extends Rule[LogicalPlan] {
+case class MVOptimizerRule(session: SparkSession) extends Rule[LogicalPlan] {
   self =>
 
   var initialized = false
@@ -68,7 +69,7 @@ case class OptimizerRule(session: SparkSession) extends Rule[LogicalPlan] {
           val field = sessionState.getClass.getDeclaredField("optimizer")
           field.setAccessible(true)
           field.set(sessionState,
-            new MVRules(session, sessionState.catalog, sessionState.optimizer))
+            new MVOptimizer(session, sessionState.catalog, sessionState.optimizer))
         }
       }
     }
@@ -77,7 +78,7 @@ case class OptimizerRule(session: SparkSession) extends Rule[LogicalPlan] {
 
   private def addMVUdf(sparkSession: SparkSession) = {
     // added for handling MV table creation. when user will fire create ddl for
-    // create table we are adding a udf so no need to apply PreAggregate rules.
+    // create table we are adding a udf so no need to apply MV rules.
     sparkSession.udf.register(MVUdf.MV_SKIP_RULE_UDF, () => "")
 
     // added for handling timeseries function like hour, minute, day , month , year

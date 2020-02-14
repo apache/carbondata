@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException, MalformedMaterializedViewException}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -35,11 +35,11 @@ class MVExceptionTestCase  extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test mv reduplicate mv table") {
-    val ex = intercept[MalformedDataMapCommandException] {
+    val ex = intercept[MalformedMaterializedViewException] {
       sql("create materialized view main_table_mv1 as select sum(age),name from main_table group by name")
       sql("create materialized view main_table_mv1 as select sum(age),name from main_table group by name")
     }
-    assertResult("Materialized view with name main_table_mv1 already exists in storage")(ex.getMessage)
+    assertResult("Materialized view with name main_table_mv1 already exists")(ex.getMessage)
   }
 
   test("test mv creation with limit in query") {
