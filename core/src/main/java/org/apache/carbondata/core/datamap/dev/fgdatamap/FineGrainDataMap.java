@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 
 /**
  * DataMap for Fine Grain level, see {@link org.apache.carbondata.core.datamap.DataMapLevel#FG}
@@ -38,7 +39,7 @@ public abstract class FineGrainDataMap implements DataMap<FineGrainBlocklet> {
 
   @Override
   public List<FineGrainBlocklet> prune(Expression filter, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions, CarbonTable carbonTable) {
+      List<PartitionSpec> partitions, CarbonTable carbonTable, FilterExecuter filterExecuter) {
     throw new UnsupportedOperationException("Filter expression not supported");
   }
 

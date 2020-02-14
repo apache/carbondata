@@ -1499,8 +1499,14 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT = "4";
 
-  // block prune in multi-thread if files size more than 100K files.
-  public static final int CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT = 100000;
+  // block prune in multi-thread if files count more than specify threshold.
+  @CarbonProperty
+  public static final String CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT =
+      "carbon.driver.pruning.multi.thread.enable.files.count";
+
+  // the default value of file count to trigger block prune in multi-thread is 100K files.
+  public static final String CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT_DEFAULT =
+      "100000";
 
   /**
    * max executor threads used for block pruning [1 to 4 threads]

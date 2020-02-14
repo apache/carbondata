@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -38,8 +39,9 @@ public class SegmentPropertiesTest extends TestCase {
 
   private SegmentProperties blockMetadataInfos;
 
+  private List<ColumnSchema> columnSchema = new ArrayList<ColumnSchema>();
+
   @BeforeClass public void setUp() {
-    List<ColumnSchema> columnSchema = new ArrayList<ColumnSchema>();
     columnSchema.add(getDimensionColumn1());
     columnSchema.add(getDimensionColumn2());
     columnSchema.add(getDimensionColumn3());
@@ -53,6 +55,25 @@ public class SegmentPropertiesTest extends TestCase {
     columnSchema.add(getMeasureColumn());
     columnSchema.add(getMeasureColumn1());
     blockMetadataInfos = new SegmentProperties(columnSchema);
+  }
+
+  @Test public void testTwoSegmentPropertiesAreEqualsWithEachOther() {
+    List<ColumnSchema> columnSchemasClone = columnSchema.stream()
+            .map(t -> deepCopy(t))  // or .map(Suggestion::new)
+            .collect(Collectors.toList());
+
+    SegmentProperties segmentPropertiesWithSameColumnAndSameOrder = new SegmentProperties(columnSchemasClone);
+    assertTrue(blockMetadataInfos.equals(segmentPropertiesWithSameColumnAndSameOrder));
+
+    columnSchemasClone.add(columnSchemasClone.remove(5));
+    columnSchemasClone.add(columnSchemasClone.remove(1));
+    SegmentProperties segmentPropertiesWithSameColumnButDifferentOrder = new SegmentProperties(columnSchemasClone);
+    assertFalse(blockMetadataInfos.equals(segmentPropertiesWithSameColumnButDifferentOrder));
+
+    columnSchemasClone.remove(2);
+    SegmentProperties segmentPropertiesWithDifferentColumn = new SegmentProperties(columnSchemasClone);
+
+    assertFalse(blockMetadataInfos.equals(segmentPropertiesWithDifferentColumn));
   }
 
   @Test public void testBlockMetadataHasProperDimensionCardinality() {
@@ -137,6 +158,19 @@ public class SegmentPropertiesTest extends TestCase {
       }
     }
     assertTrue(true);
+  }
+
+  private ColumnSchema deepCopy(ColumnSchema scr) {
+    ColumnSchema dest = new ColumnSchema();
+    dest.setColumnName(scr.getColumnName());
+    dest.setColumnUniqueId(scr.getColumnUniqueId());
+    dest.setDataType(scr.getDataType());
+    if (scr.isDimensionColumn()) {
+      dest.setDimensionColumn(scr.isDimensionColumn());
+      dest.setNumberOfChild(scr.getNumberOfChild());
+    }
+    dest.setEncodingList(scr.getEncodingList());
+    return dest;
   }
 
   private ColumnSchema getDimensionColumn1() {

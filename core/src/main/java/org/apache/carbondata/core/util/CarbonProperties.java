@@ -1827,6 +1827,9 @@ public final class CarbonProperties {
     }
   }
 
+  /**
+   * This method validates the numOfThreadsForPruning
+   */
   public static int getNumOfThreadsForPruning() {
     int numOfThreadsForPruning = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING,
@@ -1841,6 +1844,34 @@ public final class CarbonProperties {
           .parseInt(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT);
     }
     return numOfThreadsForPruning;
+  }
+
+  /**
+   * This method validates the driverPruningMultiThreadEnableFilesCount
+   */
+  public static int getDriverPruningMultiThreadEnableFilesCount() {
+    int driverPruningMultiThreadEnableFilesCount = 0;
+    try {
+      driverPruningMultiThreadEnableFilesCount = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(
+              CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT,
+              CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT_DEFAULT));
+      if (driverPruningMultiThreadEnableFilesCount <= 0) {
+        LOGGER.info("The driver prunning multithread enable files count value \""
+            + driverPruningMultiThreadEnableFilesCount
+            + "\" is invalid. Using the default value \""
+            + CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT_DEFAULT);
+        driverPruningMultiThreadEnableFilesCount = Integer.parseInt(CarbonCommonConstants
+            .CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT_DEFAULT);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info("The driver prunning multithread enable files count value " +
+              "is invalid. Using the default value \""
+          + CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT_DEFAULT);
+      driverPruningMultiThreadEnableFilesCount = Integer.parseInt(CarbonCommonConstants
+          .CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT_DEFAULT);
+    }
+    return driverPruningMultiThreadEnableFilesCount;
   }
 
   /**

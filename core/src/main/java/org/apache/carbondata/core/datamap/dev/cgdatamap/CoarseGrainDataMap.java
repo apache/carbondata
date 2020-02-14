@@ -29,6 +29,7 @@ import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 
 /**
  * DataMap for Coarse Grain level, see {@link org.apache.carbondata.core.datamap.DataMapLevel#CG}
@@ -39,7 +40,7 @@ public abstract class CoarseGrainDataMap implements DataMap<Blocklet> {
 
   @Override
   public List<Blocklet> prune(Expression expression, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions, CarbonTable carbonTable) {
+      List<PartitionSpec> partitions, CarbonTable carbonTable, FilterExecuter filterExecuter) {
     throw new UnsupportedOperationException("Filter expression not supported");
   }
 

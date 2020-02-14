@@ -25,7 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -35,12 +38,32 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import org.apache.log4j.Logger;
+
 /**
  * This class contains all the details about the restructuring information of
  * the block. This will be used during query execution to handle restructure
  * information
  */
 public class SegmentProperties {
+
+  private static final Logger LOG =
+        LogServiceFactory.getLogService(SegmentProperties.class.getName());
+
+  // When calcuting the fingerpinter of all columns. In order to
+  // identify dimension columns with other column. The fingerprinter
+  // of dimensions will leftshift 1 bit
+  private static final int DIMENSIONS_FINGER_PRINTER_SHIFT = 1;
+
+  // When calcuting the fingerpinter of all columns. In order to
+  // identify measure columns with other column. The fingerprinter
+  // of measures will leftshift 2 bit
+  private static final int MEASURES_FINGER_PRINTER_SHIFT = 2;
+
+  // When calcuting the fingerpinter of all columns. In order to
+  // identify complex columns with other column. The fingerprinter
+  // of complex columns will leftshift 3 bit
+  private static final int COMPLEX_FINGER_PRINTER_SHIFT = 3;
 
   /**
    * list of dimension present in the block
@@ -89,6 +112,25 @@ public class SegmentProperties {
 
   private int lastDimensionColOrdinal;
 
+  /**
+   * The fingerprinter is the xor result of all the columns in table.
+   * Besides, in the case of two segmentproperties have same columns
+   * but different sortcolumn, n like there is a column exists in both
+   * segmentproperties, but is dimension in one segmentproperties,
+   * but is a measure in the other. In order to identify the difference
+   * of these two segmentproperties. The xor result of all dimension
+   * will leftshift 1 bit, the xor results of all measures will leftshift
+   * 2bit, and the xor results of all complex columns will leftshift 3 bits
+   * Sum up, the Formula of generate fingerprinter is
+   *
+   * fingerprinter = (dimensionfingerprinter >> 1)
+   * ^ (measurefingerprinter >> 1) ^ (complexfingerprinter >> 1)
+   * dimensionsfingerprinter = dimension1 ^ dimension2 ^ ...
+   * measuresfingerprinter = measure1 ^ measure2 ^ measure3 ...
+   * complexfingerprinter = complex1 ^ complex2 ^ complex3 ...
+   */
+  private long fingerprinter = Long.MAX_VALUE;
+
   public SegmentProperties(List<ColumnSchema> columnsInTable) {
     dimensions = new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     complexDimensions =
@@ -130,9 +172,6 @@ public class SegmentProperties {
     fillBlockToDimensionOrdinalMapping();
   }
 
-  /**
-   *
-   */
   private void fillBlockToDimensionOrdinalMapping() {
     Set<Entry<Integer, Integer>> blocks = dimensionOrdinalToChunkMapping.entrySet();
     Iterator<Entry<Integer, Integer>> blockItr = blocks.iterator();
@@ -145,6 +184,31 @@ public class SegmentProperties {
       }
       dimensionOrdinals.add(block.getKey());
     }
+  }
+
+  /**
+   * compare the segmentproperties based on fingerprinter
+   */
+  @Override
+  public boolean equals(Object obj) {
+    if (!(obj instanceof SegmentProperties)) {
+      return false;
+    }
+    // If these two segmentproperties have different number of columns
+    // Return false directly
+    SegmentProperties segmentProperties = (SegmentProperties) obj;
+    if (this.getNumberOfColumns() != segmentProperties.getNumberOfColumns()) {
+      return false;
+    }
+    // Compare the fingerprinter
+    return getFingerprinter() != Long.MIN_VALUE &&
+            segmentProperties.getFingerprinter() != Long.MIN_VALUE &&
+            (getFingerprinter() == segmentProperties.getFingerprinter());
+  }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
   }
 
   /**
@@ -181,6 +245,48 @@ public class SegmentProperties {
       blockOrdinal++;
       index++;
     }
+  }
+
+  /**
+   * fingerprinter = (dimensionfingerprinter >> 1)
+   *   ^ (measurefingerprinter >> 1) ^ (complexfingerprinter >> 1)
+   * dimensionsfingerprinter = dimension1 ^ dimension2 ^ ...
+   * measuresfingerprinter = measure1 ^ measure2 ^ measure3 ...
+   * complexfingerprinter = complex1 ^ complex2 ^ complex3 ...
+   */
+  protected long getFingerprinter() {
+    if (this.fingerprinter == Long.MAX_VALUE) {
+      long dimensionsFingerPrinter = getFingerprinter(this.dimensions.stream()
+              .map(t -> t.getColumnSchema()).collect(Collectors.toList()));
+      long measuresFingerPrinter = getFingerprinter(this.measures.stream()
+              .map(t -> t.getColumnSchema()).collect(Collectors.toList()));
+      long complexFingerPrinter = getFingerprinter(this.complexDimensions.stream()
+              .map(t -> t.getColumnSchema()).collect(Collectors.toList()));
+      this.fingerprinter = (dimensionsFingerPrinter >> DIMENSIONS_FINGER_PRINTER_SHIFT)
+              ^ (measuresFingerPrinter >> MEASURES_FINGER_PRINTER_SHIFT)
+              ^ (complexFingerPrinter >> COMPLEX_FINGER_PRINTER_SHIFT);
+    }
+    return this.fingerprinter;
+  }
+
+  private long getFingerprinter(List<ColumnSchema> columns) {
+    int counter = 0;
+    ColumnSchema columnSchema = null;
+    long fingerprint = Long.MAX_VALUE;
+    while (counter < columns.size()) {
+      columnSchema = columns.get(counter);
+      UUID columnUUID = null;
+      try {
+        columnUUID = UUID.fromString(columnSchema.getColumnUniqueId());
+      } catch (Exception e) {
+        LOG.error("Invalid UUID string: " + columnSchema.getColumnUniqueId());
+        return Long.MIN_VALUE;
+      }
+      long columnUUIDToBits = columnUUID.getMostSignificantBits();
+      fingerprint = fingerprint ^ columnUUIDToBits;
+      counter++;
+    }
+    return fingerprint;
   }
 
   /**

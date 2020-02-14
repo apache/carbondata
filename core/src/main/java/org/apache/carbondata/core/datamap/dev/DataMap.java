@@ -28,6 +28,7 @@ import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
@@ -46,14 +47,14 @@ public interface DataMap<T extends Blocklet> {
    * It returns the list of blocklets where these filters can exist.
    */
   List<T> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions) throws IOException;
+      List<PartitionSpec> partitions, FilterExecuter filterExecuter) throws IOException;
 
   /**
    * Prune the datamap with filter expression and partition information. It returns the list of
    * blocklets where these filters can exist.
    */
   List<T> prune(Expression filter, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions, CarbonTable carbonTable);
+      List<PartitionSpec> partitions, CarbonTable carbonTable, FilterExecuter filterExecuter);
 
   /**
    * Prune the data maps for finding the row count. It returns a Map of
