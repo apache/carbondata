@@ -41,6 +41,7 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICar
 import org.apache.carbondata.core.metadata.{ColumnarFormatVersion, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager, StageInput}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.processing.loading.FailureCauses
@@ -502,13 +503,23 @@ case class CarbonInsertFromStageCommand(
   ): Array[(CarbonFile, CarbonFile)] = {
     val dir = FileFactory.getCarbonFile(loadDetailsDir, hadoopConf)
     if (dir.exists()) {
-      // Only HDFS/OBS/S3 server side can guarantee the files got from iterator are sorted
-      // based on file name so that we can use iterator to get the A and A.success together
-      // without loop all files which can improve performance compared with list all files.
-      // One file and another with '.success', so we need *2 as total and this value is just
-      // an approximate value. For local files, as can it can we not guarantee the order, we
-      // just list all.
-      val allFiles = dir.listFiles(false, batchSize * 2)
+      // It is possible that the filename of stage files is not in order of time,
+      // A switch is used here to judge whether to list files with specify batch size
+      val CARBON_STAGE_FILENAME_IS_IN_ORDER_OF_TIME = CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.CARBON_STAGE_FILENAME_IS_INORDEROF_TIME,
+        CarbonCommonConstants.CARBON_STAGE_FILENAME_IS_INORDEROF_TIME_DEFAULT
+      ).toBoolean
+      val allFiles = if (CARBON_STAGE_FILENAME_IS_IN_ORDER_OF_TIME) {
+        // Only HDFS/OBS/S3 server side can guarantee the files got from iterator are sorted
+        // based on file name so that we can use iterator to get the A and A.success together
+        // without loop all files which can improve performance compared with list all files.
+        // One file and another with '.success', so we need *2 as total and this value is just
+        // an approximate value. For local files, as can it can we not guarantee the order, we
+        // just list all.
+        dir.listFiles(false, batchSize * 2)
+      } else {
+        dir.listFiles()
+      }
       val successFiles = allFiles.filter { file =>
         file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUBFIX)
       }.map { file =>

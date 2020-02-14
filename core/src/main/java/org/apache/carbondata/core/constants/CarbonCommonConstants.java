@@ -1593,6 +1593,14 @@ public final class CarbonCommonConstants {
 
   public static final String SUPPORT_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE = "false";
 
+  // Whether the filename of stage files is in order of time
+  @CarbonProperty
+  public static final String CARBON_STAGE_FILENAME_IS_INORDEROF_TIME =
+      "carbon.stage.filename.is.inorderof.time";
+
+  // The filename of stage files is in order of time by default
+  public static final String CARBON_STAGE_FILENAME_IS_INORDEROF_TIME_DEFAULT = "true";
+
   @CarbonProperty
   public static final String CARBON_SHOW_DATAMAPS = "carbon.query.show.datamaps";
 
