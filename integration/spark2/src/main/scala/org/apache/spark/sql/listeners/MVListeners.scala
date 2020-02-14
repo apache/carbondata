@@ -25,7 +25,6 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.AlterTableModel
 import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompactionCommand
 import org.apache.spark.sql.execution.command.partition.CarbonAlterTableDropHivePartitionCommand
-import org.apache.spark.util.DataMapUtil
 
 import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.core.datamap.DataMapStoreManager
@@ -185,7 +184,7 @@ object DataMapDeleteSegmentPreListener extends OperationEventListener {
         e.asInstanceOf[DeleteSegmentByDatePreEvent].carbonTable
     }
     if (null != carbonTable) {
-      if (DataMapUtil.hasMVDataMap(carbonTable)) {
+      if (carbonTable.hasMVCreated) {
         throw new UnsupportedOperationException(
           "Delete segment operation is not supported on tables having child datamap")
       }
@@ -228,7 +227,7 @@ object DataMapDropColumnPreListener extends OperationEventListener {
     val carbonTable = dropColumnChangePreListener.carbonTable
     val alterTableDropColumnModel = dropColumnChangePreListener.alterTableDropColumnModel
     val columnsToBeDropped = alterTableDropColumnModel.columns
-    if (DataMapUtil.hasMVDataMap(carbonTable)) {
+    if (carbonTable.hasMVCreated) {
       val dataMapSchemaList = DataMapStoreManager.getInstance
         .getDataMapSchemasOfTable(carbonTable).asScala
       for (dataMapSchema <- dataMapSchemaList) {
@@ -270,7 +269,7 @@ object DataMapChangeDataTypeorRenameColumnPreListener
     val alterTableDataTypeChangeModel = colRenameDataTypeChangePreListener
       .alterTableDataTypeChangeModel
     val columnToBeAltered: String = alterTableDataTypeChangeModel.columnName
-    if (DataMapUtil.hasMVDataMap(carbonTable)) {
+    if (carbonTable.hasMVCreated) {
       val dataMapSchemaList = DataMapStoreManager.getInstance
         .getDataMapSchemasOfTable(carbonTable).asScala
       for (dataMapSchema <- dataMapSchemaList) {
@@ -303,7 +302,7 @@ object DataMapAlterTableDropPartitionMetaListener extends OperationEventListener
     val dropPartitionEvent = event.asInstanceOf[AlterTableDropPartitionMetaEvent]
     val parentCarbonTable = dropPartitionEvent.parentCarbonTable
     val partitionsToBeDropped = dropPartitionEvent.specs.flatMap(_.keys)
-    if (DataMapUtil.hasMVDataMap(parentCarbonTable)) {
+    if (parentCarbonTable.hasMVCreated) {
       // used as a flag to block direct drop partition on datamap tables fired by the user
       operationContext.setProperty("isInternalDropCall", "true")
       // Filter out all the tables which don't have the partition being dropped.
@@ -388,7 +387,8 @@ object DataMapAlterTableDropPartitionPreStatusListener extends OperationEventLis
     val preStatusListener = event.asInstanceOf[AlterTableDropPartitionPreStatusEvent]
     val carbonTable = preStatusListener.carbonTable
     val childDropPartitionCommands = operationContext.getProperty("dropPartitionCommands")
-    if (childDropPartitionCommands != null && DataMapUtil.hasMVDataMap(carbonTable)) {
+    if (childDropPartitionCommands != null &&
+        carbonTable.hasMVCreated) {
       val childCommands =
         childDropPartitionCommands.asInstanceOf[Seq[CarbonAlterTableDropHivePartitionCommand]]
       childCommands.foreach(_.processData(SparkSession.getActiveSession.get))

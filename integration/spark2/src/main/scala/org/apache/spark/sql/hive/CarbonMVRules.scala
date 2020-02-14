@@ -26,7 +26,7 @@ case class CarbonMVRules(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
   val mvPlan = try {
     CarbonReflectionUtils.createObject(
-      "org.apache.carbondata.mv.datamap.MVAnalyzerRule",
+      "org.apache.carbondata.mv.extension.MVAnalyzerRule",
       sparkSession)._1.asInstanceOf[Rule[LogicalPlan]]
   } catch {
     case e: Exception =>

@@ -104,513 +104,522 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table6 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
   }
 
-  test("test create datamap with simple and same projection") {
-    sql("drop datamap if exists datamap1")
-    sql("create datamap datamap1 using 'mv' as select empname, designation from fact_table1")
+  test("test create mv with simple and same projection") {
+    sql("drop materialized view if exists mv1")
+    sql("create materialized view mv1 as select empname, designation from fact_table1")
+    val df = sql("select empname, designation from fact_table1")
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, sql("select empname, designation from fact_table2"))
+    sql(s"drop materialized view mv1")
+  }
+
+  test("test create materialized view with simple and same projection") {
+    sql("drop materialized view if exists mv1")
+    sql("create materialized view mv1 as select empname, designation from fact_table1")
     val df = sql("select empname,designation from fact_table1")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname,designation from fact_table2"))
-    sql(s"drop datamap datamap1")
+    sql(s"drop materialized view mv1")
   }
 
-  test("test create datamap with simple and sub projection") {
-    sql("drop datamap if exists datamap2")
-    sql("create datamap datamap2 using 'mv' as select empname, designation from fact_table1")
+  test("test create materialized view with simple and sub projection") {
+    sql("drop materialized view if exists mv2")
+    sql("create materialized view mv2 as select empname, designation from fact_table1")
     val df = sql("select empname from fact_table1")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap2"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv2"))
     checkAnswer(df, sql("select empname from fact_table2"))
-    sql(s"drop datamap datamap2")
+    sql(s"drop materialized view mv2")
   }
 
-  test("test create datamap with simple and same projection with projection filter") {
-    sql("drop datamap if exists datamap3")
-    sql("create datamap datamap3 using 'mv' as select empname, designation from fact_table1")
+  test("test create materialized view with simple and same projection with projection filter") {
+    sql("drop materialized view if exists mv3")
+    sql("create materialized view mv3 as select empname, designation from fact_table1")
     val frame = sql("select empname, designation from fact_table1 where empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap3"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv3"))
 
     checkAnswer(frame, sql("select empname, designation from fact_table2 where empname='shivani'"))
-    sql(s"drop datamap datamap3")
+    sql(s"drop materialized view mv3")
   }
 
-  test("test create datamap with simple and sub projection with non projection filter") {
-    sql("create datamap datamap4 using 'mv' as select empname, designation from fact_table1")
+  test("test create materialized view with simple and sub projection with non projection filter") {
+    sql("create materialized view mv4 as select empname, designation from fact_table1")
     val frame = sql("select designation from fact_table1 where empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap4"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv4"))
     checkAnswer(frame, sql("select designation from fact_table2 where empname='shivani'"))
-    sql(s"drop datamap datamap4")
+    sql(s"drop materialized view mv4")
   }
 
-  test("test create datamap with simple and sub projection with datamap filter") {
-    sql("create datamap datamap5 using 'mv' as select empname, designation from fact_table1 where empname='shivani'")
+  test("test create materialized view with simple and sub projection with filter") {
+    sql("create materialized view mv5 as select empname, designation from fact_table1 where empname='shivani'")
     val frame = sql("select designation from fact_table1 where empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap5"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv5"))
     checkAnswer(frame, sql("select designation from fact_table2 where empname='shivani'"))
-    sql(s"drop datamap datamap5")
+    sql(s"drop materialized view mv5")
   }
 
-  test("test create datamap with simple and same projection with datamap filter ") {
-    sql("create datamap datamap6 using 'mv' as select empname, designation from fact_table1 where empname='shivani'")
+  test("test create materialized view with simple and same projection with filter ") {
+    sql("create materialized view mv6 as select empname, designation from fact_table1 where empname='shivani'")
     val frame = sql("select empname,designation from fact_table1 where empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap6"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv6"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where empname='shivani'"))
-    sql(s"drop datamap datamap6")
+    sql(s"drop materialized view mv6")
   }
 
-  test("test create datamap with simple and same projection with datamap filter and extra query column filter") {
-    sql("create datamap datamap7 using 'mv' as select empname, designation from fact_table1 where empname='shivani'")
+  test("test create materialized view with simple and same projection with filter and extra query column filter") {
+    sql("create materialized view mv7 as select empname, designation from fact_table1 where empname='shivani'")
     val frame = sql(
       "select empname,designation from fact_table1 where empname='shivani' and designation='SA'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap7"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv7"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where empname='shivani' and designation='SA'"))
-    sql(s"drop datamap datamap7")
+    sql(s"drop materialized view mv7")
   }
 
-  test("test create datamap with simple and same projection with datamap filter and different column filter") {
-    sql("create datamap datamap8 using 'mv' as select empname, designation from fact_table1 where empname='shivani'")
+  test("test create materialized view with simple and same projection with filter and different column filter") {
+    sql("create materialized view mv8 as select empname, designation from fact_table1 where empname='shivani'")
     val frame = sql("select empname,designation from fact_table1 where designation='SA'")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap8"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv8"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where designation='SA'"))
-    sql(s"drop datamap datamap8")
+    sql(s"drop materialized view mv8")
   }
 
-  test("test create datamap with simple and same projection with datamap filter on non projection column and extra column filter") {
-    sql("create datamap datamap9 using 'mv' as select empname, designation,deptname  from fact_table1 where deptname='cloud'")
+  test("test create materialized view with simple and same projection with filter on non projection column and extra column filter") {
+    sql("create materialized view mv9 as select empname, designation,deptname  from fact_table1 where deptname='cloud'")
     val frame = sql("select empname,designation from fact_table1 where deptname='cloud'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap9"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv9"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where deptname='cloud'"))
-    sql(s"drop datamap datamap9")
+    sql(s"drop materialized view mv9")
   }
 
-  test("test create datamap with simple and same projection with datamap filter on non projection column and no column filter") {
-    sql("create datamap datamap10 using 'mv' as select empname, designation,deptname from fact_table1 where deptname='cloud'")
+  test("test create materialized view with simple and same projection with filter on non projection column and no column filter") {
+    sql("create materialized view mv10 as select empname, designation,deptname from fact_table1 where deptname='cloud'")
     val frame = sql("select empname,designation from fact_table1")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap10"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv10"))
     checkAnswer(frame, sql("select empname,designation from fact_table2"))
-    sql(s"drop datamap datamap10")
+    sql(s"drop materialized view mv10")
   }
 
-  test("test create datamap with simple and same projection with datamap filter on non projection column and different column filter") {
-    sql("create datamap datamap11 using 'mv' as select empname, designation,deptname from fact_table1 where deptname='cloud'")
+  test("test create materialized view with simple and same projection with filter on non projection column and different column filter") {
+    sql("create materialized view mv11 as select empname, designation,deptname from fact_table1 where deptname='cloud'")
     val frame = sql("select empname,designation from fact_table1 where designation='SA'")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap11"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv11"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where designation='SA'"))
-    sql(s"drop datamap datamap11")
+    sql(s"drop materialized view mv11")
   }
 
-  test("test create datamap with simple and same group by query") {
-    sql("drop datamap if exists datamap12")
-    sql("create datamap datamap12 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
+  test("test create materialized view with simple and same group by query") {
+    sql("drop materialized view if exists mv12")
+    sql("create materialized view mv12 as select empname, sum(utilization) from fact_table1 group by empname")
     val frame = sql("select empname, sum(utilization) from fact_table1 group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap12"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv12"))
     checkAnswer(frame, sql("select empname, sum(utilization) from fact_table2 group by empname"))
-    sql(s"drop datamap datamap12")
+    sql(s"drop materialized view mv12")
   }
 
-  test("test create datamap with simple and sub group by query") {
-    sql("drop datamap if exists datamap13")
-    sql("create datamap datamap13 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
+  test("test create materialized view with simple and sub group by query") {
+    sql("drop materialized view if exists mv13")
+    sql("create materialized view mv13 as select empname, sum(utilization) from fact_table1 group by empname")
     val frame = sql("select sum(utilization) from fact_table1 group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap13"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv13"))
     checkAnswer(frame, sql("select sum(utilization) from fact_table2 group by empname"))
-    sql(s"drop datamap datamap13")
+    sql(s"drop materialized view mv13")
   }
 
-  test("test create datamap with simple and sub group by query with filter on query") {
-    sql("drop datamap if exists datamap14")
-    sql("create datamap datamap14 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
+  test("test create materialized view with simple and sub group by query with filter on query") {
+    sql("drop materialized view if exists mv14")
+    sql("create materialized view mv14 as select empname, sum(utilization) from fact_table1 group by empname")
     val frame = sql(
       "select empname,sum(utilization) from fact_table1 group by empname having empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap14"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv14"))
     checkAnswer(frame, sql("select empname,sum(utilization) from fact_table2 where empname='shivani' group by empname"))
-    sql(s"drop datamap datamap14")
+    sql(s"drop materialized view mv14")
   }
 
-  test("test create datamap with simple and sub group and sub projection by query with filter on query") {
-    sql("drop datamap if exists datamap32")
-    sql("create datamap datamap32 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
+  test("test create materialized view with simple and sub group and sub projection by query with filter on query") {
+    sql("drop materialized view if exists mv32")
+    sql("create materialized view mv32 as select empname, sum(utilization) from fact_table1 group by empname")
     val frame = sql(
       "select empname, sum(utilization) from fact_table1 group by empname having empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap32"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv32"))
     checkAnswer(frame, sql( "select empname, sum(utilization) from fact_table2 group by empname having empname='shivani'"))
-    sql(s"drop datamap datamap32")
+    sql(s"drop materialized view mv32")
   }
 
-  test("test create datamap with simple and sub group by query with filter on datamap") {
-    sql("create datamap datamap15 using 'mv' as select empname, sum(utilization) from fact_table1 where empname='shivani' group by empname")
+  test("test create materialized view with simple and sub group by query with filter on materialized view") {
+    sql("create materialized view mv15 as select empname, sum(utilization) from fact_table1 where empname='shivani' group by empname")
     val frame = sql(
       "select empname,sum(utilization) from fact_table1 where empname='shivani' group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap15"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv15"))
     checkAnswer(frame, sql("select empname,sum(utilization) from fact_table2 where empname='shivani' group by empname"))
-    sql(s"drop datamap datamap15")
+    sql(s"drop materialized view mv15")
   }
 
-  test("test create datamap with simple and sub group by query with filter on datamap and no filter on query") {
-    sql("create datamap datamap16 using 'mv' as select empname, sum(utilization) from fact_table1 where empname='shivani' group by empname")
+  test("test create materialized view with simple and sub group by query with filter on materialized view and no filter on query") {
+    sql("create materialized view mv16 as select empname, sum(utilization) from fact_table1 where empname='shivani' group by empname")
     val frame = sql("select empname,sum(utilization) from fact_table1 group by empname")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap16"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv16"))
     checkAnswer(frame, sql("select empname,sum(utilization) from fact_table2 group by empname"))
-    sql(s"drop datamap datamap16")
+    sql(s"drop materialized view mv16")
   }
 
-  test("test create datamap with simple and same group by with expression") {
-    sql("create datamap datamap17 using 'mv' as select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
+  test("test create materialized view with simple and same group by with expression") {
+    sql("create materialized view mv17 as select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
     val frame = sql(
       "select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group" +
       " by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap17"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv17"))
     checkAnswer(frame, sql("select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 group" +
                            " by empname"))
-    sql(s"drop datamap datamap17")
+    sql(s"drop materialized view mv17")
   }
 
-  test("test create datamap with simple and sub group by with expression") {
-    sql("drop datamap if exists datamap18")
-    sql("create datamap datamap18 using 'mv' as select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
+  test("test create materialized view with simple and sub group by with expression") {
+    sql("drop materialized view if exists mv18")
+    sql("create materialized view mv18 as select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
     val frame = sql(
       "select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap18"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv18"))
     checkAnswer(frame, sql("select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 group by empname"))
-    sql(s"drop datamap datamap18")
+    sql(s"drop materialized view mv18")
   }
 
-  test("test create datamap with simple and sub count group by with expression") {
-    sql("drop datamap if exists datamap19")
-    sql("create datamap datamap19 using 'mv' as select empname, count(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
+  test("test create materialized view with simple and sub count group by with expression") {
+    sql("drop materialized view if exists mv19")
+    sql("create materialized view mv19 as select empname, count(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
     val frame = sql(
       "select count(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap19"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv19"))
     checkAnswer(frame, sql("select count(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 group by empname"))
-    sql(s"drop datamap datamap19")
+    sql(s"drop materialized view mv19")
   }
 
-  test("test create datamap with simple and sub group by with expression and filter on query") {
-    sql("drop datamap if exists datamap20")
-    sql("create datamap datamap20 using 'mv' as select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
+  test("test create materialized view with simple and sub group by with expression and filter on query") {
+    sql("drop materialized view if exists mv20")
+    sql("create materialized view mv20 as select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
     val frame = sql(
       "select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 where " +
       "empname='shivani' group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap20"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv20"))
     checkAnswer(frame, sql("select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 where " +
                            "empname='shivani' group by empname"))
-    sql(s"drop datamap datamap20")
+    sql(s"drop materialized view mv20")
   }
 
-  test("test create datamap with simple join") {
-    sql("drop datamap if exists datamap21")
-    sql("create datamap datamap21 using 'mv' as select t1.empname as c1, t2.designation, t2.empname as c2 from fact_table1 t1 inner join fact_table2 t2  on (t1.empname = t2.empname)")
+  test("test create materialized view with simple join") {
+    sql("drop materialized view if exists mv21")
+    sql("create materialized view mv21 as select t1.empname as c1, t2.designation, t2.empname as c2 from fact_table1 t1 inner join fact_table2 t2  on (t1.empname = t2.empname)")
     val frame = sql(
       "select t1.empname as c1, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = t2.empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap21"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv21"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = t2.empname"))
-    sql(s"drop datamap datamap21")
+    sql(s"drop materialized view mv21")
   }
 
-  test("test create datamap with simple join and filter on query") {
-    sql("drop datamap if exists datamap22")
-    sql("create datamap datamap22 using 'mv' as select t1.empname, t2.designation,t2.empname from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname)")
+  test("test create materialized view with simple join and filter on query") {
+    sql("drop materialized view if exists mv22")
+    sql("create materialized view mv22 as select t1.empname, t2.designation,t2.empname from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname)")
     val frame = sql(
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = " +
       "t2.empname and t1.empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap22"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv22"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = " +
                            "t2.empname and t1.empname='shivani'"))
-    sql(s"drop datamap datamap22")
+    sql(s"drop materialized view mv22")
   }
 
 
-  test("test create datamap with simple join and filter on query and datamap") {
-    sql("drop datamap if exists datamap23")
-    sql("create datamap datamap23 using 'mv' as select t1.empname, t2.designation, t2.empname from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) where t1.empname='shivani'")
+  test("test create materialized view with simple join and filter on query and materialized view") {
+    sql("drop materialized view if exists mv23")
+    sql("create materialized view mv23 as select t1.empname, t2.designation, t2.empname from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) where t1.empname='shivani'")
     val frame = sql(
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = " +
       "t2.empname and t1.empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap23"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv23"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = " +
                            "t2.empname and t1.empname='shivani'"))
-    sql(s"drop datamap datamap23")
+    sql(s"drop materialized view mv23")
   }
 
-  test("test create datamap with simple join and filter on datamap and no filter on query") {
-    sql("drop datamap if exists datamap24")
-    sql("create datamap datamap24 using 'mv' as select t1.empname, t2.designation, t2.empname from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) where t1.empname='shivani'")
+  test("test create materialized view with simple join and filter on materialized view and no filter on query") {
+    sql("drop materialized view if exists mv24")
+    sql("create materialized view mv24 as select t1.empname, t2.designation, t2.empname from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) where t1.empname='shivani'")
     val frame = sql(
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = t2.empname")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap24"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv24"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = t2.empname"))
-    sql(s"drop datamap datamap24")
+    sql(s"drop materialized view mv24")
   }
 
-  test("test create datamap with multiple join") {
-    sql("drop datamap if exists datamap25")
-    sql("create datamap datamap25 using 'mv' as select t1.empname as c1, t2.designation, t2.empname, t3.empname from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) inner join fact_table3 t3  on (t1.empname=t3.empname)")
+  test("test create materialized view with multiple join") {
+    sql("drop materialized view if exists mv25")
+    sql("create materialized view mv25 as select t1.empname as c1, t2.designation, t2.empname, t3.empname from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) inner join fact_table3 t3  on (t1.empname=t3.empname)")
     val frame = sql(
       "select t1.empname as c1, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = t2.empname")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap25"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv25"))
     val frame1 = sql(
       "select t1.empname as c1, t2.designation from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) inner join fact_table3 t3  on (t1.empname=t3.empname)")
-    assert(TestUtil.verifyMVDataMap(frame1.queryExecution.optimizedPlan, "datamap25"))
+    assert(TestUtil.verifyMVDataMap(frame1.queryExecution.optimizedPlan, "mv25"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = t2.empname"))
-    sql(s"drop datamap datamap25")
+    sql(s"drop materialized view mv25")
   }
 
-  ignore("test create datamap with simple join on datamap and multi join on query") {
-    sql("create datamap datamap26 using 'mv' as select t1.empname, t2.designation, t2.empname from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname)")
+  ignore("test create materialized view with simple join on materialized view and multi join on query") {
+    sql("create materialized view mv26 as select t1.empname, t2.designation, t2.empname from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname)")
     val frame = sql(
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2,fact_table3 " +
       "t3  where t1.empname = t2.empname and t1.empname=t3.empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap26"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv26"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2,fact_table6 " +
                            "t3  where t1.empname = t2.empname and t1.empname=t3.empname"))
-    sql(s"drop datamap datamap26")
+    sql(s"drop materialized view mv26")
   }
 
-  test("test create datamap with join with group by") {
-    sql("create datamap datamap27 using 'mv' as select  t1.empname , t2.designation, sum(t1.utilization), sum(t2.empname) from fact_table1 t1 inner join fact_table2 t2  on (t1.empname = t2.empname) group by t1.empname, t2.designation")
+  test("test create materialized view with join with group by") {
+    sql("create materialized view mv27 as select  t1.empname , t2.designation, sum(t1.utilization), sum(t2.empname) from fact_table1 t1 inner join fact_table2 t2  on (t1.empname = t2.empname) group by t1.empname, t2.designation")
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname group by t1.empname, t2.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap27"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv27"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  " +
                            "where t1.empname = t2.empname group by t1.empname, t2.designation"))
-    sql(s"drop datamap datamap27")
+    sql(s"drop materialized view mv27")
   }
 
-  test("test create datamap with join with group by and sub projection") {
-    sql("drop datamap if exists datamap28")
-    sql("create datamap datamap28 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization),sum(t2.empname) from fact_table1 t1 inner join fact_table2 t2  on (t1.empname = t2.empname) group by t1.empname, t2.designation")
+  test("test create materialized view with join with group by and sub projection") {
+    sql("drop materialized view if exists mv28")
+    sql("create materialized view mv28 as select t1.empname, t2.designation, sum(t1.utilization),sum(t2.empname) from fact_table1 t1 inner join fact_table2 t2  on (t1.empname = t2.empname) group by t1.empname, t2.designation")
     val frame = sql(
       "select t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  where " +
       "t1.empname = t2.empname group by t2.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap28"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv28"))
     checkAnswer(frame, sql("select t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  where " +
                            "t1.empname = t2.empname group by t2.designation"))
-    sql(s"drop datamap datamap28")
+    sql(s"drop materialized view mv28")
   }
 
-  test("test create datamap with join with group by and sub projection with filter") {
-    sql("drop datamap if exists datamap29")
-    sql("create datamap datamap29 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization),sum(t2.empname) from fact_table1 t1 inner join fact_table2 t2  on (t1.empname = t2.empname) group by t1.empname, t2.designation")
+  test("test create materialized view with join with group by and sub projection with filter") {
+    sql("drop materialized view if exists mv29")
+    sql("create materialized view mv29 as select t1.empname, t2.designation, sum(t1.utilization),sum(t2.empname) from fact_table1 t1 inner join fact_table2 t2  on (t1.empname = t2.empname) group by t1.empname, t2.designation")
     val frame = sql(
       "select t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  where " +
       "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap29"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv29"))
     checkAnswer(frame, sql("select t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  where " +
                            "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation"))
-    sql(s"drop datamap datamap29")
+    sql(s"drop materialized view mv29")
   }
 
-  test("test create datamap with join with group by and projection with filter") {
-    sql("drop datamap if exists datamap29")
-    sql("create datamap datamap29 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization),sum(t2.empname) from fact_table1 t1 inner join fact_table2 t2  on (t1.empname = t2.empname) group by t1.empname, t2.designation")
+  test("test create materialized view with join with group by and projection with filter") {
+    sql("drop materialized view if exists mv29")
+    sql("create materialized view mv29 as select t1.empname, t2.designation, sum(t1.utilization),sum(t2.empname) from fact_table1 t1 inner join fact_table2 t2  on (t1.empname = t2.empname) group by t1.empname, t2.designation")
     val frame = sql(
       "select t1.empname ,t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  where " +
       "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation,t1.empname ")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap29"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv29"))
     checkAnswer(frame, sql("select t1.empname ,t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  where " +
                            "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation,t1.empname "))
-    sql(s"drop datamap datamap29")
+    sql(s"drop materialized view mv29")
   }
 
-  test("test create datamap with join with group by and sub projection with filter with alias") {
-    sql("drop datamap if exists datamap29")
-    sql("create datamap datamap29 using 'mv' as select t1.empname as a, t2.designation as b, sum(t1.utilization),sum(t2.empname) from fact_table1 t1 inner join fact_table2 t2  on (t1.empname = t2.empname) group by t1.empname, t2.designation")
+  test("test create materialized view with join with group by and sub projection with filter with alias") {
+    sql("drop materialized view if exists mv29")
+    sql("create materialized view mv29 as select t1.empname as a, t2.designation as b, sum(t1.utilization),sum(t2.empname) from fact_table1 t1 inner join fact_table2 t2  on (t1.empname = t2.empname) group by t1.empname, t2.designation")
     val frame = sql(
       "select t1.empname ,t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  where " +
       "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation,t1.empname ")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap29"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv29"))
     checkAnswer(frame, sql("select t1.empname ,t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  where " +
                            "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation,t1.empname "))
-    sql(s"drop datamap datamap29")
+    sql(s"drop materialized view mv29")
   }
 
-  test("test create datamap with join with group by with filter") {
-    sql("drop datamap if exists datamap30")
-    sql("create datamap datamap30 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) group by t1.empname, t2.designation")
+  test("test create materialized view with join with group by with filter") {
+    sql("drop materialized view if exists mv30")
+    sql("create materialized view mv30 as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) group by t1.empname, t2.designation")
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname and t2.designation='SA' group by t1.empname, t2.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap30"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv30"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  " +
                            "where t1.empname = t2.empname and t2.designation='SA' group by t1.empname, t2.designation"))
-    sql(s"drop datamap datamap30")
+    sql(s"drop materialized view mv30")
   }
 
-  ignore("test create datamap with expression on projection") {
-    sql(s"drop datamap if exists datamap31")
-    sql("create datamap datamap31 using 'mv' as select empname, designation, utilization, projectcode from fact_table1 ")
+  ignore("test create materialized view with expression on projection") {
+    sql(s"drop materialized view if exists mv31")
+    sql("create materialized view mv31 as select empname, designation, utilization, projectcode from fact_table1 ")
     val frame = sql(
       "select empname, designation, utilization+projectcode from fact_table1")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap31"))
+    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv31"))
     checkAnswer(frame, sql("select empname, designation, utilization+projectcode from fact_table2"))
-    sql(s"drop datamap datamap31")
+    sql(s"drop materialized view mv31")
   }
 
-  test("test create datamap with simple and sub group by query and count agg") {
-    sql(s"drop datamap if exists datamap32")
-    sql("create datamap datamap32 using 'mv' as select empname, count(utilization) from fact_table1 group by empname")
+  test("test create materialized view with simple and sub group by query and count agg") {
+    sql(s"drop materialized view if exists mv32")
+    sql("create materialized view mv32 as select empname, count(utilization) from fact_table1 group by empname")
     val frame = sql("select empname,count(utilization) from fact_table1 where empname='shivani' group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap32"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv32"))
     checkAnswer(frame, sql("select empname,count(utilization) from fact_table2 where empname='shivani' group by empname"))
-    sql(s"drop datamap datamap32")
+    sql(s"drop materialized view mv32")
   }
 
-  test("test create datamap with simple and sub group by query and avg agg") {
-    sql(s"drop datamap if exists datamap33")
-    sql("create datamap datamap33 using 'mv' as select empname, avg(utilization) from fact_table1 group by empname")
+  test("test create materialized view with simple and sub group by query and avg agg") {
+    sql(s"drop materialized view if exists mv33")
+    sql("create materialized view mv33 as select empname, avg(utilization) from fact_table1 group by empname")
     val frame = sql("select empname,avg(utilization) from fact_table1 where empname='shivani' group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap33"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv33"))
     checkAnswer(frame, sql("select empname,avg(utilization) from fact_table2 where empname='shivani' group by empname"))
-    sql(s"drop datamap datamap33")
+    sql(s"drop materialized view mv33")
   }
 
-  ignore("test create datamap with left join with group by") {
-    sql("drop datamap if exists datamap34")
-    sql("create datamap datamap34 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  on t1.empname = t2.empname group by t1.empname, t2.designation")
+  ignore("test create materialized view with left join with group by") {
+    sql("drop materialized view if exists mv34")
+    sql("create materialized view mv34 as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  on t1.empname = t2.empname group by t1.empname, t2.designation")
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname group by t1.empname, t2.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap34"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv34"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname group by t1.empname, t2.designation"))
-    sql(s"drop datamap datamap34")
+    sql(s"drop materialized view mv34")
   }
 
-  test("test create datamap with simple and group by query with filter on datamap but not on projection") {
-    sql("create datamap datamap35 using 'mv' as select designation, sum(utilization) from fact_table1 where empname='shivani' group by designation")
+  test("test create materialized view with simple and group by query with filter on materialized view but not on projection") {
+    sql("create materialized view mv35 as select designation, sum(utilization) from fact_table1 where empname='shivani' group by designation")
     val frame = sql(
       "select designation, sum(utilization) from fact_table1 where empname='shivani' group by designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap35"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv35"))
     checkAnswer(frame, sql("select designation, sum(utilization) from fact_table2 where empname='shivani' group by designation"))
-    sql(s"drop datamap datamap35")
+    sql(s"drop materialized view mv35")
   }
 
-  test("test create datamap with simple and sub group by query with filter on datamap but not on projection") {
-    sql("create datamap datamap36 using 'mv' as select designation, sum(utilization) from fact_table1 where empname='shivani' group by designation")
+  test("test create materialized view with simple and sub group by query with filter on materialized view but not on projection") {
+    sql("create materialized view mv36 as select designation, sum(utilization) from fact_table1 where empname='shivani' group by designation")
     val frame = sql(
       "select sum(utilization) from fact_table1 where empname='shivani' group by designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap36"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv36"))
     checkAnswer(frame, sql("select sum(utilization) from fact_table2 where empname='shivani' group by designation"))
-    sql(s"drop datamap datamap36")
+    sql(s"drop materialized view mv36")
   }
 
-  test("test create datamap with agg push join with sub group by ") {
-    sql("drop datamap if exists datamap37")
-    sql("create datamap datamap37 using 'mv' as select empname, designation, sum(utilization) from fact_table1 group by empname, designation")
+  test("test create materialized view with agg push join with sub group by ") {
+    sql("drop materialized view if exists mv37")
+    sql("create materialized view mv37 as select empname, designation, sum(utilization) from fact_table1 group by empname, designation")
     val frame = sql(
       "select t1.empname, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname group by t1.empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap37"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv37"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname group by t1.empname, t1.designation"))
-    sql(s"drop datamap datamap37")
+    sql(s"drop materialized view mv37")
   }
 
-  test("test create datamap with agg push join with group by ") {
-    sql("drop datamap if exists datamap38")
-    sql("create datamap datamap38 using 'mv' as select empname, designation, sum(utilization) from fact_table1 group by empname, designation")
+  test("test create materialized view with agg push join with group by ") {
+    sql("drop materialized view if exists mv38")
+    sql("create materialized view mv38 as select empname, designation, sum(utilization) from fact_table1 group by empname, designation")
     val frame = sql(
       "select t1.empname, t1.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname group by t1.empname,t1.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap38"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv38"))
     checkAnswer(frame, sql("select t1.empname,t1.designation, sum(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname group by t1.empname, t1.designation"))
-    sql(s"drop datamap datamap38")
+    sql(s"drop materialized view mv38")
   }
 
-  test("test create datamap with agg push join with group by with filter") {
-    sql("drop datamap if exists datamap39")
-    sql("create datamap datamap39 using 'mv' as select empname, designation, sum(utilization) from fact_table1 group by empname, designation ")
+  test("test create materialized view with agg push join with group by with filter") {
+    sql("drop materialized view if exists mv39")
+    sql("create materialized view mv39 as select empname, designation, sum(utilization) from fact_table1 group by empname, designation ")
     val frame = sql(
       "select t1.empname, t1.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname,t1.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap39"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv39"))
     checkAnswer(frame, sql("select t1.empname,t1.designation, sum(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname, t1.designation"))
-    sql(s"drop datamap datamap39")
+    sql(s"drop materialized view mv39")
   }
 
-  test("test create datamap with more agg push join with group by with filter") {
-    sql("drop datamap if exists datamap40")
-    sql("create datamap datamap40 using 'mv' as select empname, designation, sum(utilization), count(utilization) from fact_table1 group by empname, designation ")
+  test("test create materialized view with more agg push join with group by with filter") {
+    sql("drop materialized view if exists mv40")
+    sql("create materialized view mv40 as select empname, designation, sum(utilization), count(utilization) from fact_table1 group by empname, designation ")
     val frame = sql(
       "select t1.empname, t1.designation, sum(t1.utilization),count(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname,t1.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap40"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv40"))
     checkAnswer(frame, sql("select t1.empname, t1.designation, sum(t1.utilization),count(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname,t1.designation"))
-    sql(s"drop datamap datamap40")
+    sql(s"drop materialized view mv40")
   }
 
-  test("test create datamap with left join with group by with filter") {
-    sql("drop datamap if exists datamap41")
-    sql("create datamap datamap41 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  on t1.empname = t2.empname group by t1.empname, t2.designation")
+  test("test create materialized view with left join with group by with filter") {
+    sql("drop materialized view if exists mv41")
+    sql("create materialized view mv41 as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  on t1.empname = t2.empname group by t1.empname, t2.designation")
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname, t2.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap41"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv41"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname, t2.designation"))
-    sql(s"drop datamap datamap41")
+    sql(s"drop materialized view mv41")
   }
 
-  test("test create datamap with left join with sub group by") {
-    sql("drop datamap if exists datamap42")
-    sql("create datamap datamap42 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  on t1.empname = t2.empname group by t1.empname, t2.designation")
+  test("test create materialized view with left join with sub group by") {
+    sql("drop materialized view if exists mv42")
+    sql("create materialized view mv42 as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  on t1.empname = t2.empname group by t1.empname, t2.designation")
     val frame = sql(
       "select t1.empname, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname group by t1.empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap42"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv42"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname group by t1.empname"))
-    sql(s"drop datamap datamap42")
+    sql(s"drop materialized view mv42")
   }
 
-  test("test create datamap with left join with sub group by with filter") {
-    sql("drop datamap if exists datamap43")
-    sql("create datamap datamap43 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  on t1.empname = t2.empname group by t1.empname, t2.designation")
+  test("test create materialized view with left join with sub group by with filter") {
+    sql("drop materialized view if exists mv43")
+    sql("create materialized view mv43 as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  on t1.empname = t2.empname group by t1.empname, t2.designation")
     val frame = sql(
       "select t1.empname, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap43"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv43"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname"))
-    sql(s"drop datamap datamap43")
+    sql(s"drop materialized view mv43")
   }
 
-  test("test create datamap with left join with sub group by with filter on mv") {
-    sql("drop datamap if exists datamap44")
-    sql("create datamap datamap44 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname, t2.designation")
+  test("test create materialized view with left join with sub group by with filter on mv") {
+    sql("drop materialized view if exists mv44")
+    sql("create materialized view mv44 as select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname, t2.designation")
     val frame = sql(
       "select t1.empname, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap44"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv44"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname"))
-    sql(s"drop datamap datamap44")
+    sql(s"drop materialized view mv44")
   }
 
-  test("test create datamap with left join on query and equi join on mv with group by with filter") {
-    sql("drop datamap if exists datamap45")
+  test("test create materialized view with left join on query and equi join on mv with group by with filter") {
+    sql("drop materialized view if exists mv45")
 
-    sql("create datamap datamap45 using 'mv' as select t1.empname, t2.designation, sum(t1.utilization),sum(t2.empname) from fact_table1 t1 join fact_table2 t2  on t1.empname = t2.empname group by t1.empname, t2.designation")
+    sql("create materialized view mv45 as select t1.empname, t2.designation, sum(t1.utilization),sum(t2.empname) from fact_table1 t1 join fact_table2 t2  on t1.empname = t2.empname group by t1.empname, t2.designation")
     // During spark optimizer it converts the left outer join queries with equi join if any filter present on right side table
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t2.designation='SA' group by t1.empname, t2.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap45"))
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv45"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t2.designation='SA' group by t1.empname, t2.designation"))
-    sql(s"drop datamap datamap45")
+    sql(s"drop materialized view mv45")
   }
 
   test("jira carbondata-2523") {
 
-    sql("drop datamap if exists mv13")
+    sql("drop materialized view if exists mv13")
     sql("drop table if exists test4")
     sql("create table test4 ( name string,age int,salary int) STORED AS carbondata")
 
     sql(" insert into test4 select 'babu',12,12").show()
-    sql("create datamap mv13 using 'mv' as select name,sum(salary) from test4 group by name")
+    sql("create materialized view mv13 as select name,sum(salary) from test4 group by name")
     val frame = sql(
       "select name,sum(salary) from test4 group by name")
     assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv13"))
@@ -618,17 +627,17 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("jira carbondata-2528-1") {
 
-    sql("drop datamap if exists MV_order")
-    sql("create datamap MV_order using 'mv' as select empname,sum(salary) as total from fact_table1 group by empname")
+    sql("drop materialized view if exists MV_order")
+    sql("create materialized view MV_order as select empname,sum(salary) as total from fact_table1 group by empname")
     val frame = sql(
       "select empname,sum(salary) as total from fact_table1 group by empname order by empname")
     assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_order"))
   }
 
   test("jira carbondata-2528-2") {
-    sql("drop datamap if exists MV_order")
-    sql("drop datamap if exists MV_desc_order")
-    sql("create datamap MV_order using 'mv' as select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname")
+    sql("drop materialized view if exists MV_order")
+    sql("drop materialized view if exists MV_desc_order")
+    sql("create materialized view MV_order as select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname")
     val frame = sql(
       "select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname")
     assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_order"))
@@ -636,48 +645,48 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("jira carbondata-2528-3") {
 
-    sql("drop datamap if exists MV_order")
-    sql("create datamap MV_order using 'mv' as select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname DESC")
+    sql("drop materialized view if exists MV_order")
+    sql("create materialized view MV_order as select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname DESC")
     val frame = sql(
       "select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname DESC")
     assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_order"))
-    sql("drop datamap if exists MV_order")
+    sql("drop materialized view if exists MV_order")
   }
 
   test("jira carbondata-2528-4") {
 
-    sql("drop datamap if exists MV_order")
-    sql("create datamap MV_order using 'mv' as select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname DESC")
+    sql("drop materialized view if exists MV_order")
+    sql("create materialized view MV_order as select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname DESC")
     val frame = sql(
       "select empname,sum(salary)+sum(utilization) as total from fact_table1 where empname = 'ravi' group by empname order by empname DESC")
     assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_order"))
-    sql("drop datamap if exists MV_order")
+    sql("drop materialized view if exists MV_order")
   }
 
   test("jira carbondata-2530") {
 
     sql("drop table if exists test1")
-    sql("drop datamap if exists datamv2")
+    sql("drop materialized view if exists datamv2")
     sql("create table test1( name string,country string,age int,salary int) STORED AS carbondata")
     sql("insert into test1 select 'name1','USA',12,23")
-    sql("create datamap datamv2 using 'mv' as select country,sum(salary) from test1 group by country")
+    sql("create materialized view datamv2 as select country,sum(salary) from test1 group by country")
     val frame = sql("select country,sum(salary) from test1 where country='USA' group by country")
     assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamv2"))
     sql("insert into test1 select 'name1','USA',12,23")
     val frame1 = sql("select country,sum(salary) from test1 where country='USA' group by country")
     assert(TestUtil.verifyMVDataMap(frame1.queryExecution.optimizedPlan, "datamv2"))
-    sql("drop datamap if exists datamv2")
+    sql("drop materialized view if exists datamv2")
     sql("drop table if exists test1")
   }
 
   test("jira carbondata-2534") {
 
-    sql("drop datamap if exists MV_exp")
-    sql("create datamap MV_exp using 'mv' as select sum(salary),substring(empname,2,5),designation from fact_table1 group by substring(empname,2,5),designation")
+    sql("drop materialized view if exists MV_exp")
+    sql("create materialized view MV_exp as select sum(salary),substring(empname,2,5),designation from fact_table1 group by substring(empname,2,5),designation")
     val frame = sql(
       "select sum(salary),substring(empname,2,5),designation from fact_table1 group by substring(empname,2,5),designation")
     assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_exp"))
-    sql("drop datamap if exists MV_exp")
+    sql("drop materialized view if exists MV_exp")
   }
 
   test("jira carbondata-2542") {
@@ -691,111 +700,111 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
         |  utilization int,salary int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists MV_exp")
-    sql("create datamap MV_exp using 'mv' as select doj,sum(salary) from xy.fact_tablexy group by doj")
+    sql("drop materialized view if exists MV_exp")
+    sql("create materialized view MV_exp as select doj,sum(salary) from xy.fact_tablexy group by doj")
     val frame = sql(
       "select doj,sum(salary) from xy.fact_tablexy group by doj")
     assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_exp"))
-    sql("drop datamap if exists MV_exp")
+    sql("drop materialized view if exists MV_exp")
     sql("""drop database if exists xy cascade""")
   }
 
   test("jira carbondata-2550") {
 
     sql("drop table if exists mvtable1")
-    sql("drop datamap if exists map1")
+    sql("drop materialized view if exists map1")
     sql("create table mvtable1(name string,age int,salary int) STORED AS carbondata")
     sql(" insert into mvtable1 select 'n1',12,12")
     sql("  insert into mvtable1 select 'n1',12,12")
     sql(" insert into mvtable1 select 'n3',12,12")
     sql(" insert into mvtable1 select 'n4',12,12")
-    sql("create datamap map1 using 'mv' as select name,sum(salary) from mvtable1 group by name")
+    sql("create materialized view map1 as select name,sum(salary) from mvtable1 group by name")
     val frame = sql("select name,sum(salary) from mvtable1 group by name limit 1")
     assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "map1"))
-    sql("drop datamap if exists map1")
+    sql("drop materialized view if exists map1")
     sql("drop table if exists mvtable1")
   }
 
   test("jira carbondata-2576") {
 
-    sql("drop datamap if exists datamap_comp_maxsumminavg")
-    sql("create datamap datamap_comp_maxsumminavg using 'mv' as select empname,max(projectenddate),sum(salary),min(projectjoindate),avg(attendance) from fact_table1 group by empname")
+    sql("drop materialized view if exists  comp_maxsumminavg")
+    sql("create materialized view comp_maxsumminavg as select empname,max(projectenddate),sum(salary),min(projectjoindate),avg(attendance) from fact_table1 group by empname")
     val frame = sql(
       "select empname,max(projectenddate),sum(salary),min(projectjoindate),avg(attendance) from fact_table1 group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap_comp_maxsumminavg"))
-    sql("drop datamap if exists datamap_comp_maxsumminavg")
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "comp_maxsumminavg"))
+    sql("drop materialized view if exists comp_maxsumminavg")
   }
 
   test("jira carbondata-2540") {
 
-    sql("drop datamap if exists mv_unional")
+    sql("drop materialized view if exists mv_unional")
     intercept[UnsupportedOperationException] {
       sql(
-        "create datamap mv_unional using 'mv' as Select Z.deptname From (Select deptname,empname From fact_table1 Union All Select deptname,empname from fact_table2) Z")
+        "create materialized view mv_unional as Select Z.deptname From (Select deptname,empname From fact_table1 Union All Select deptname,empname from fact_table2) Z")
     }
-    sql("drop datamap if exists mv_unional")
+    sql("drop materialized view if exists mv_unional")
   }
 
   test("jira carbondata-2533") {
 
-    sql("drop datamap if exists MV_exp")
+    sql("drop materialized view if exists MV_exp")
     intercept[UnsupportedOperationException] {
       sql(
-        "create datamap MV_exp using 'mv' as select sum(case when deptno=11 and (utilization=92) then salary else 0 end) as t from fact_table1 group by empname")
+        "create materialized view MV_exp as select sum(case when deptno=11 and (utilization=92) then salary else 0 end) as t from fact_table1 group by empname")
 
       val frame = sql(
         "select sum(case when deptno=11 and (utilization=92) then salary else 0 end) as t from fact_table1 group by empname")
       assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_exp"))
     }
-    sql("drop datamap if exists MV_exp")
+    sql("drop materialized view if exists MV_exp")
   }
 
   test("jira carbondata-2560") {
 
-    sql("drop datamap if exists MV_exp2")
-    sql("create datamap MV_exp1 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
+    sql("drop materialized view if exists MV_exp2")
+    sql("create materialized view MV_exp1 as select empname, sum(utilization) from fact_table1 group by empname")
     intercept[UnsupportedOperationException] {
       sql(
-        "create datamap MV_exp2 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
+        "create materialized view MV_exp2 as select empname, sum(utilization) from fact_table1 group by empname")
 
     }
-    sql("show datamap").show()
+    sql("show materialized views").show()
     val frame = sql(
       "select empname, sum(utilization) from fact_table1 group by empname")
     assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_exp1"))
-    sql("drop datamap if exists MV_exp1")
-    sql("drop datamap if exists MV_exp2")
+    sql("drop materialized view if exists MV_exp1")
+    sql("drop materialized view if exists MV_exp2")
   }
 
   test("jira carbondata-2531") {
 
-    sql("drop datamap if exists datamap46")
-    sql("create datamap datamap46 using 'mv' as select deptname, sum(salary) from fact_table1 group by deptname")
+    sql("drop materialized view if exists mv46")
+    sql("create materialized view mv46 as select deptname, sum(salary) from fact_table1 group by deptname")
     val frame = sql(
       "select deptname as babu, sum(salary) from fact_table1 as tt group by deptname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap46"))
-    sql("drop datamap if exists datamap46")
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv46"))
+    sql("drop materialized view if exists mv46")
   }
 
   test("jira carbondata-2539") {
 
-    sql("drop datamap if exists datamap_subqry")
-    sql("create datamap datamap_subqry using 'mv' as select empname, min(salary) from fact_table1 group by empname")
+    sql("drop materialized view if exists subqry")
+    sql("create materialized view subqry as select empname, min(salary) from fact_table1 group by empname")
     val frame = sql(
       "SELECT max(utilization) FROM fact_table1 WHERE salary IN (select min(salary) from fact_table1 group by empname ) group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap_subqry"))
-    sql("drop datamap if exists datamap_subqry")
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "subqry"))
+    sql("drop materialized view if exists subqry")
   }
 
   test("jira carbondata-2539-1") {
-    sql("drop datamap if exists datamap_comp_maxsumminavg")
-    sql("create datamap datamap_comp_maxsumminavg using 'mv' as select empname,max(projectenddate),sum(salary),min(projectjoindate),avg(attendance) from fact_table1 group by empname")
-    sql("drop datamap if exists datamap_subqry")
-    sql("create datamap datamap_subqry using 'mv' as select min(salary) from fact_table1")
+    sql("drop materialized view if exists subqry")
+    sql("create materialized view subqry as select empname,max(projectenddate),sum(salary),min(projectjoindate),avg(attendance) from fact_table1 group by empname")
+    sql("drop materialized view if exists subqry")
+    sql("create materialized view subqry as select min(salary) from fact_table1")
     val frame = sql(
       "SELECT max(utilization) FROM fact_table1 WHERE salary IN (select min(salary) from fact_table1) group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamap_subqry"))
-    sql("drop datamap if exists datamap_subqry")
+    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "subqry"))
+    sql("drop materialized view if exists subqry")
   }
 
   test("basic scenario") {
@@ -804,7 +813,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists mvtable2")
     sql("create table mvtable1(name string,age int,salary int) STORED AS carbondata")
     sql("create table mvtable2(name string,age int,salary int) STORED AS carbondata")
-    sql("create datamap MV11 using 'mv' as select name from mvtable2")
+    sql("create materialized view MV11 as select name from mvtable2")
     sql(" insert into mvtable1 select 'n1',12,12")
     sql("  insert into mvtable1 select 'n1',12,12")
     sql(" insert into mvtable1 select 'n3',12,12")
@@ -815,9 +824,9 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists mvtable2")
   }
 
-  test("test create datamap with streaming table")  {
-    sql("drop datamap if exists dm_stream_test1")
-    sql("drop datamap if exists dm_stream_bloom")
+  test("test create materialized view with streaming table")  {
+    sql("drop materialized view if exists dm_stream_test1")
+    sql("drop materialized view if exists dm_stream_bloom")
     sql("drop table if exists fact_streaming_table1")
     sql(
       """
@@ -836,15 +845,15 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     val exception_tb_mv: Exception = intercept[Exception] {
-      sql("create datamap dm_stream_test1 using 'mv' as select empname, sum(utilization) from " +
+      sql("create materialized view dm_stream_test1 as select empname, sum(utilization) from " +
           "fact_streaming_table1 group by empname")
     }
     assert(exception_tb_mv.getMessage
-      .contains("Streaming table does not support creating MV datamap"))
+      .contains("Streaming table does not support creating materialized view"))
   }
 
-  test("test create datamap with streaming table join carbon table and join non-carbon table ")  {
-    sql("drop datamap if exists dm_stream_test2")
+  test("test create materialized view with streaming table join carbon table and join non-carbon table ")  {
+    sql("drop materialized view if exists dm_stream_test2")
     sql("drop table if exists fact_streaming_table2")
     sql("drop table if exists fact_table_parquet")
     sql(
@@ -866,32 +875,32 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     
     val exception_tb_mv2: Exception = intercept[Exception] {
-      sql("create datamap dm_stream_test2 using 'mv' as select t1.empname as c1, t2.designation, " +
+      sql("create materialized view dm_stream_test2 as select t1.empname as c1, t2.designation, " +
           "t2.empname as c2,t3.empname from (fact_table1 t1 inner join fact_streaming_table2 t2  " +
           "on (t1.empname = t2.empname)) inner join fact_table_parquet t3 " +
           "on (t1.empname = t3.empname)")
     }
     assert(exception_tb_mv2.getMessage
-      .contains("Streaming table does not support creating MV datamap"))
+      .contains("Streaming table does not support creating materialized view"))
   }
 
-  test("test set streaming property of the table which has MV datamap")  {
-    sql("drop datamap if exists dm_stream_test3")
-    sql("create datamap dm_stream_test3 using 'mv' as select empname, sum(utilization) from " +
+  test("test set streaming property of the table which has MV materialized view")  {
+    sql("drop materialized view if exists dm_stream_test3")
+    sql("create materialized view dm_stream_test3 as select empname, sum(utilization) from " +
         "fact_table1 group by empname")
     val exception_tb_mv3: Exception = intercept[Exception] {
       sql("alter table fact_table1 set tblproperties('streaming'='true')")
     }
     assert(exception_tb_mv3.getMessage
-      .contains("The table which has MV datamap does not support set streaming property"))
-    sql("drop datamap if exists dm_stream_test3")
+      .contains("The table which has materialized view does not support set streaming property"))
+    sql("drop materialized view if exists dm_stream_test3")
   }
 
   test("select mv stack exception") {
     val querySQL = "select sum(x12) as y1, sum(x13) as y2, sum(x14) as y3,sum(x15) " +
       "as y4,X8,x9,x1 from all_table group by X8,x9,x1"
 
-    sql("drop datamap if exists all_table_mv")
+    sql("drop materialized view if exists all_table_mv")
     sql("drop table if exists all_table")
 
     sql("""
@@ -901,7 +910,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
        | x17 bigint,x18 bigint,x19 bigint) STORED AS carbondata""".stripMargin)
     sql("insert into all_table select 1,1,null,1,1,1,null,1,1,1,1,1,1,1,1,1,1,1,1")
 
-    sql("create datamap all_table_mv on table all_table using 'mv' as " + querySQL)
+    sql("create materialized view all_table_mv as " + querySQL)
 
     val frame = sql(querySQL)
     assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "all_table_mv"))
@@ -915,7 +924,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("CREATE TABLE limit_fail (empname String, designation String, doj Timestamp,workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)STORED AS carbondata")
     sql(s"LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE limit_fail  OPTIONS" +
         "('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
-    sql("create datamap limit_fail_dm1 using 'mv' as select empname,designation from limit_fail")
+    sql("create materialized view limit_fail_dm1 as select empname,designation from limit_fail")
     try {
       val df = sql("select distinct(empname) from limit_fail limit 10")
       sql("select * from limit_fail limit 10").show()
@@ -930,7 +939,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val querySQL = "select x19,x20,sum(x18) from all_table group by x19, x20"
     val querySQL2 = "select x19,x20,sum(x18) from all_table where x20=cast('binary2' as binary ) group by x19, x20"
 
-    sql("drop datamap if exists all_table_mv")
+    sql("drop materialized view if exists all_table_mv")
     sql("drop table if exists all_table")
 
     sql(
@@ -943,8 +952,8 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into all_table select 1,1,null,1,1,1,null,1,1,1,1,1,1,1,1,1,1,12,2,'binary2'")
     sql("insert into all_table select 1,1,null,1,1,1,null,1,1,1,1,1,1,1,1,1,1,1,2,'binary2'")
 
-    sql("create datamap all_table_mv on table all_table using 'mv' as " + querySQL)
-    sql("rebuild datamap all_table_mv")
+    sql("create materialized view all_table_mv as " + querySQL)
+    sql("refresh materialized view all_table_mv")
 
     var frame = sql(querySQL)
     assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "all_table_mv"))
@@ -981,9 +990,9 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table mv_like(name string, age int, address string, Country string, id int) STORED AS carbondata")
     sql(
-      "create datamap mvlikedm1 using 'mv' as select name,address from mv_like where Country NOT LIKE 'US' group by name,address")
+      "create materialized view mvlikedm1 as select name,address from mv_like where Country NOT LIKE 'US' group by name,address")
     sql(
-      "create datamap mvlikedm2 using 'mv' as select name,address,Country from mv_like where Country = 'US' or Country = 'China' group by name,address,Country")
+      "create materialized view mvlikedm2 as select name,address,Country from mv_like where Country = 'US' or Country = 'China' group by name,address,Country")
     sql("insert into mv_like select 'chandler', 32, 'newYork', 'US', 5")
     val df1 = sql(
       "select name,address from mv_like where Country NOT LIKE 'US' group by name,address")
@@ -996,7 +1005,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   test("test distinct, count, sum on MV with single projection column") {
     sql("drop table if exists maintable")
     sql("create table maintable(name string, age int, add string) STORED AS carbondata")
-    sql("create datamap single_mv using 'mv' as select age from maintable")
+    sql("create materialized view single_mv as select age from maintable")
     sql("insert into maintable select 'pheobe',31,'NY'")
     sql("insert into maintable select 'rachel',32,'NY'")
     val df1 = sql("select distinct(age) from maintable")
@@ -1014,9 +1023,9 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql("drop table if exists mvtable1")
     sql("create table mvtable1(name string,age int,salary int) STORED AS carbondata")
-    sql("create datamap MV11 using 'mv' as select name from mvtable1")
+    sql("create materialized view MV11 as select name from mvtable1")
     sql("insert into mvtable1 select 'n1',12,12")
-    sql("rebuild datamap MV11")
+    sql("refresh materialized view MV11")
     val frame = sql("select count(*) from mvtable1")
     assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV11"))
     checkAnswer(frame,Seq(Row(1)))
@@ -1026,9 +1035,9 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   test("test mv with duplicate columns in query and constant column") {
     sql("drop table if exists maintable")
     sql("create table maintable(name string, age int, add string) STORED AS carbondata")
-    sql("create datamap dupli_mv using 'mv' as select name, sum(age),sum(age) from maintable group by name")
-    sql("create datamap dupli_projection using 'mv' as select age, age,add from maintable")
-    sql("create datamap constant_mv using 'mv' as select name, sum(1) ex1 from maintable group by name")
+    sql("create materialized view dupli_mv as select name, sum(age),sum(age) from maintable group by name")
+    sql("create materialized view dupli_projection as select age, age,add from maintable")
+    sql("create materialized view constant_mv as select name, sum(1) ex1 from maintable group by name")
     sql("insert into maintable select 'pheobe',31,'NY'")
     val df1 = sql("select sum(age),name from maintable group by name")
     val df2 = sql("select sum(age),sum(age),name from maintable group by name")
@@ -1049,18 +1058,18 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS quality")
     sql("create table price(product string,price int) STORED AS carbondata")
     sql("create table quality(product string,quality string) STORED AS carbondata")
-    sql("create datamap same_mv using 'mv' as select price.product,price.price,quality.product,quality.quality from price,quality where price.product = quality.product")
+    sql("create materialized view same_mv as select price.product,price.price,quality.product,quality.quality from price,quality where price.product = quality.product")
     val df1 = sql("select price.product from price,quality where price.product = quality.product")
     assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "same_mv"))
   }
 
-  test("test datamap column having more than 128 characters") {
+  test("test materialized view column having more than 128 characters") {
     sql("drop table IF EXISTS maintable")
     sql("create table maintable (m_month smallint, c_code string, " +
         "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) STORED AS carbondata")
     sql("insert into maintable select 10, 'xxx', 123, 456, 45, 5, 23, 1, 2000")
-    sql("drop datamap if exists da_agg")
-    sql("create datamap da_agg using 'mv' as select u_unit, y_year, m_month, c_country, b_country, sum(case when i_id=1 and (y_year=2000 and m_month=10)" +
+    sql("drop materialized view if exists da_agg")
+    sql("create materialized view da_agg as select u_unit, y_year, m_month, c_country, b_country, sum(case when i_id=1 and (y_year=2000 and m_month=10)" +
         "then d_dollar_value else 0 end), sum(case when i_id=1 and (y_year=2000 and m_month=10) then q_quantity else 0 end) ex, sum(case when i_id=1 and (y_year=2011 and " +
         "(m_month>=7 and m_month <=12)) then q_quantity else 0 end) from maintable group by u_unit, y_year, m_month, c_country, b_country")
     val df = sql("select u_unit, y_year, m_month, c_country, b_country, sum(case when i_id=1 and (y_year=2000 and m_month=10) then d_dollar_value else 0 end), " +
@@ -1075,9 +1084,9 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table maintable (m_month bigint, c_code string, " +
         "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) STORED AS carbondata")
     sql("insert into maintable select 10, 'xxx', 123, 456, 45, 5, 23, 1, 2000")
-    sql("drop datamap if exists da_cast")
+    sql("drop materialized view if exists da_cast")
     sql(
-      "create datamap da_cast using 'mv' as select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT) as a, c_code as abc,m_month from maintable")
+      "create materialized view da_cast as select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT) as a, c_code as abc,m_month from maintable")
     val df1 = sql(
       " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT) as a ,c_code as abc  from maintable")
     val df2 = sql(
@@ -1090,9 +1099,9 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table maintable (m_month bigint, c_code string, " +
         "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) STORED AS carbondata")
     sql("insert into maintable select 10, 'xxx', 123, 456, 45, 5, 23, 1, 2000")
-    sql("drop datamap if exists da_cast")
+    sql("drop materialized view if exists da_cast")
     sql(
-      "create datamap da_cast using 'mv' as select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT) as a, c_code as abc from maintable")
+      "create materialized view da_cast as select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT) as a, c_code as abc from maintable")
     val df1 = sql(
       " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT) as a ,c_code as abc  from maintable")
     val df2 = sql(
@@ -1105,15 +1114,15 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table maintable (m_month bigint, c_code string, " +
         "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) STORED AS carbondata")
     sql("insert into maintable select 10, 'xxx', 123, 456, 45, 5, 23, 1, 2000")
-    sql("drop datamap if exists da_cast")
+    sql("drop materialized view if exists da_cast")
     sql(
-      "create datamap da_cast using 'mv' as select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable")
+      "create materialized view da_cast as select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable")
     checkAnswer(sql("select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable"), Seq(Row(1010, "xxx")))
     var df1 = sql("select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable")
     assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
-    sql("drop datamap if exists da_cast")
+    sql("drop materialized view if exists da_cast")
     sql(
-      "create datamap da_cast using 'mv' as select cast(m_month + 1000 AS INT), c_code from maintable")
+      "create materialized view da_cast as select cast(m_month + 1000 AS INT), c_code from maintable")
     df1 = sql("select cast(m_month + 1000 AS INT), c_code from maintable")
     assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
     checkAnswer(sql("select cast(m_month + 1000 AS INT), c_code from maintable"), Seq(Row(1010, "xxx")))
@@ -1124,15 +1133,15 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table maintable (m_month bigint, c_code string, " +
         "c_country smallint, d_dollar_value double, q_quantity double, u_unit smallint, b_country smallint, i_id int, y_year smallint) STORED AS carbondata")
     sql("insert into maintable select 10, 'xxx', 123, 456, 45, 5, 23, 1, 2000")
-    sql("drop datamap if exists da_floor")
+    sql("drop materialized view if exists da_floor")
     sql(
-      "create datamap da_floor using 'mv' as select floor(m_month) as a, c_code as abc from maintable")
+      "create materialized view da_floor as select floor(m_month) as a, c_code as abc from maintable")
     checkAnswer(sql("select floor(m_month) as a, c_code as abc from maintable"), Seq(Row(10, "xxx")))
     val df1 = sql("select floor(m_month) as a, c_code as abc from maintable")
     assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_floor"))
-    sql("drop datamap if exists da_ceil")
+    sql("drop materialized view if exists da_ceil")
     sql(
-      "create datamap da_ceil using 'mv' as select ceil(m_month) as a, c_code as abc from maintable")
+      "create materialized view da_ceil as select ceil(m_month) as a, c_code as abc from maintable")
     checkAnswer(sql("select ceil(m_month) as a, c_code as abc from maintable"), Seq(Row(10, "xxx")))
     val df2 = sql("select ceil(m_month) as a, c_code as abc from maintable")
     assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "da_ceil"))
@@ -1153,7 +1162,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS maintable")
   }
 
-  test("test create datamap with add segment") {
+  test("test create materialized view with add segment") {
     sql("drop table if exists fact_table_addseg")
     sql("drop table if exists fact_table_addseg1")
     sql(
@@ -1176,10 +1185,10 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table_addseg1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    sql("drop datamap if exists datamap_addseg")
-    sql("create datamap datamap_addseg using 'mv' as select empname, designation from fact_table_addseg")
+    sql("drop materialized view if exists addseg")
+    sql("create materialized view addseg as select empname, designation from fact_table_addseg")
     val df = sql("select empname,designation from fact_table_addseg")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_addseg"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "addseg"))
     assert(df.collect().length == 90)
     val table = CarbonEnv.getCarbonTable(None, "fact_table_addseg1") (sqlContext.sparkSession)
     val path = CarbonTablePath.getSegmentPath(table.getTablePath, "0")
@@ -1189,15 +1198,15 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"alter table fact_table_addseg add segment options('path'='$newPath', 'format'='carbon')").show()
     sql("select empname,designation from fact_table_addseg").show()
     val df1 = sql("select empname,designation from fact_table_addseg")
-    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap_addseg"))
+    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "addseg"))
     assert(df1.collect().length == 180)
-    sql(s"drop datamap datamap_addseg")
+    sql(s"drop materialized view addseg")
     FileFactory.deleteAllFilesOfDir(new File(newPath))
     sql("drop table if exists fact_table_addseg")
     sql("drop table if exists fact_table_addseg1")
   }
 
-  test("test create datamap with add segment with deffered rebuild") {
+  test("test create materialized view with add segment with deffered rebuild") {
     sql("drop table if exists fact_table_addseg")
     sql("drop table if exists fact_table_addseg1")
     sql(
@@ -1220,11 +1229,11 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table_addseg1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    sql("drop datamap if exists datamap_addseg")
-    sql("create datamap datamap_addseg using 'mv' WITH DEFERRED REBUILD as select empname, designation from fact_table_addseg")
-    sql("rebuild datamap datamap_addseg")
+    sql("drop materialized view if exists addseg")
+    sql("create materialized view addseg with deferred refresh as select empname, designation from fact_table_addseg")
+    sql("refresh materialized view addseg")
     val df = sql("select empname,designation from fact_table_addseg")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_addseg"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "addseg"))
     assert(df.collect().length == 90)
     val table = CarbonEnv.getCarbonTable(None, "fact_table_addseg1") (sqlContext.sparkSession)
     val path = CarbonTablePath.getSegmentPath(table.getTablePath, "0")
@@ -1233,16 +1242,16 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(s"alter table fact_table_addseg add segment options('path'='$newPath', 'format'='carbon')").show()
     val df1 = sql("select empname,designation from fact_table_addseg")
-    assert(!TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap_addseg"))
+    assert(!TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "addseg"))
     assert(df1.collect().length == 180)
 
-    sql("rebuild datamap datamap_addseg")
+    sql("refresh materialized view addseg")
 
     val df2 = sql("select empname,designation from fact_table_addseg")
-    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "datamap_addseg"))
+    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "addseg"))
     assert(df2.collect().length == 180)
 
-    sql(s"drop datamap datamap_addseg")
+    sql("drop materialized view addseg")
     sql("drop table if exists fact_table_addseg")
     sql("drop table if exists fact_table_addseg1")
     FileFactory.deleteAllFilesOfDir(new File(newPath))
@@ -1251,19 +1260,19 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   test("test join query with & without filter columns in projection") {
     sql("drop table if exists t1")
     sql("drop table if exists t2")
-    sql("drop datamap if exists mv1")
+    sql("drop materialized view if exists mv1")
     sql("create table t1(userId string,score int) STORED AS carbondata")
     sql("create table t2(userId string,age int,sex string) STORED AS carbondata")
     sql("insert into t1 values(1,100),(2,500)")
     sql("insert into t2 values(1,20,'f'),(2,30,'m')")
     val result  = sql("select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
-    sql("create datamap mv1 using 'mv' as select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
+    sql("create materialized view mv1 as select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
     val df = sql("select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
     TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1")
     checkAnswer(df, result)
     intercept[ProcessMetaDataException] {
       sql("alter table t1 drop columns(userId)")
-    }.getMessage.contains("Column name cannot be dropped because it exists in mv datamap: mv1")
+    }.getMessage.contains("Column name cannot be dropped because it exists in mv materialized view: mv1")
     sql("drop table if exists t1")
     sql("drop table if exists t2")
   }

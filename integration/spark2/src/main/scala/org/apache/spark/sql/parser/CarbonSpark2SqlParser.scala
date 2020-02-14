@@ -791,14 +791,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
   }
 
-  def addMVSkipFunction(sql: String): String = {
-    addMVSkipUDF(new lexical.Scanner(sql)) match {
-      case Success(query, _) => query
-      case _ =>
-        throw new MalformedCarbonCommandException(s"Unsupported query")
-    }
-  }
-
   def getBucketFields(
       properties: mutable.Map[String, String],
       fields: Seq[Field],

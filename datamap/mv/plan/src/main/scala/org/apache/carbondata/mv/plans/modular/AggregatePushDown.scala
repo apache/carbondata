@@ -19,9 +19,9 @@ package org.apache.carbondata.mv.plans.modular
 
 import scala.collection._
 
-import org.apache.spark.sql.CarbonExpressions.MatchCast
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, Divide, ExprId, Literal, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, Cast, Divide, Expression, ExprId, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
+import org.apache.spark.sql.types.DataType
 
 trait AggregatePushDown { // self: ModularPlan =>
 
@@ -165,6 +165,32 @@ trait AggregatePushDown { // self: ModularPlan =>
           Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
         }
       case _ => Map.empty[Int, (NamedExpression, Seq[NamedExpression])]
+    }
+  }
+}
+
+/**
+ * unapply method of Cast class.
+ */
+object MatchCast {
+  def unapply(expr: Expression): Option[(Attribute, DataType)] = {
+    expr match {
+      case a: Cast if a.child.isInstanceOf[Attribute] =>
+        Some((a.child.asInstanceOf[Attribute], a.dataType))
+      case _ => None
+    }
+  }
+}
+
+/**
+ * unapply method of Cast class with expression.
+ */
+object MatchCastExpression {
+  def unapply(expr: Expression): Option[(Expression, DataType)] = {
+    expr match {
+      case a: Cast if a.child.isInstanceOf[Expression] =>
+        Some((a.child.asInstanceOf[Expression], a.dataType))
+      case _ => None
     }
   }
 }

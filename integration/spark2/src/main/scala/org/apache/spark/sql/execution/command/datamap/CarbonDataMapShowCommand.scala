@@ -88,9 +88,7 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
           val dmPropertieStr =
             s.getProperties.asScala
               // ignore internal used property
-              .filter(p => !p._1.equalsIgnoreCase(DataMapProperty.DEFERRED_REBUILD) &&
-                           !p._1.equalsIgnoreCase(DataMapProperty.CHILD_SELECT_QUERY) &&
-                           !p._1.equalsIgnoreCase(DataMapProperty.QUERY_TYPE))
+              .filter(p => !p._1.equalsIgnoreCase(DataMapProperty.DEFERRED_REBUILD))
               .map(p => s"'${ p._1 }'='${ p._2 }'").toSeq
               .sorted.mkString(", ")
 

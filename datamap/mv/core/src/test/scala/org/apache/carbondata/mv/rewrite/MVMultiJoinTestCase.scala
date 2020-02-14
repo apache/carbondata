@@ -46,7 +46,7 @@ class MVMultiJoinTestCase extends QueryTest with BeforeAndAfterAll {
          |inner join areas as c on c.pid=p.aid
          |where p.title = 'hebei'
        """.stripMargin
-    sql("create datamap table_mv using 'mv' as " +
+    sql("create materialized view table_mv as " +
         "select p.title,c.title,c.pid,p.aid from areas as p inner join areas as c on " +
         "c.pid=p.aid where p.title = 'hebei'")
     val frame = sql(mvSQL)
@@ -55,7 +55,7 @@ class MVMultiJoinTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test mv two join tables are same") {
-    sql("drop datamap if exists table_mv")
+    sql("drop materialized view if exists table_mv")
 
     sql("insert into dim_table select 'tom',20,170")
     sql("insert into dim_table select 'lily',30,160")
@@ -69,7 +69,7 @@ class MVMultiJoinTestCase extends QueryTest with BeforeAndAfterAll {
          | left join dim_table dim_other on sdr.name = dim_other.name
          | group by sdr.name,dim.age,dim_other.height
        """.stripMargin
-    sql("create datamap table_mv using 'mv' as " + "select sdr.name,sum(sdr.score),dim.age,dim_other.height,count(dim.name) as c1, count(dim_other.name) as c2 from sdr_table sdr left join dim_table dim on sdr.name = dim.name left join dim_table dim_other on sdr.name = dim_other.name group by sdr.name,dim.age,dim_other.height")
+    sql("create materialized view table_mv as select sdr.name,sum(sdr.score),dim.age,dim_other.height,count(dim.name) as c1, count(dim_other.name) as c2 from sdr_table sdr left join dim_table dim on sdr.name = dim.name left join dim_table dim_other on sdr.name = dim_other.name group by sdr.name,dim.age,dim_other.height")
     val frame = sql(mvSQL)
     assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "table_mv"))
     checkAnswer(frame, Seq(Row("lily",80,30,160),Row("tom",120,20,170)))
@@ -79,7 +79,7 @@ class MVMultiJoinTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists areas")
     sql("drop table if exists dim_table")
     sql("drop table if exists sdr_table")
-    sql("drop datamap if exists table_mv")
+    sql("drop materialized view if exists table_mv")
   }
 
 }

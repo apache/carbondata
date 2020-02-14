@@ -23,8 +23,7 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.optimizer._
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, _}
 import org.apache.spark.sql.catalyst.rules.{RuleExecutor, _}
-import org.apache.spark.sql.SQLConf
-import org.apache.spark.sql.util.SparkSQLUtil
+import org.apache.spark.sql.internal.SQLConf
 
 object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
 
@@ -40,7 +39,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
     Batch(
       "Finish Analysis", Once,
       EliminateSubqueryAliases,
-      SparkSQLUtil.getEliminateViewObj(),
+      EliminateView,
       ReplaceExpressions,
       ComputeCurrentTime,
       //      GetCurrentDatabase(sessionCatalog),
@@ -59,7 +58,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
       CombineUnions) ::
     Batch(
       "Pullup Correlated Expressions", Once,
-      SparkSQLUtil.getPullupCorrelatedPredicatesObj()) ::
+      PullupCorrelatedPredicates) ::
     Batch(
       "Subquery", Once,
       OptimizeSubqueries) ::
@@ -76,8 +75,8 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
       "Operator Optimizations", fixedPoint, Seq(
         // Operator push down
         PushProjectionThroughUnion,
-        SparkSQLUtil.getReorderJoinObj(conf),
-        SparkSQLUtil.getEliminateOuterJoinObj(conf),
+        ReorderJoin,
+        EliminateOuterJoin,
         PushPredicateThroughJoin,
         PushDownPredicate,
         //      LimitPushDown(conf),
@@ -91,7 +90,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
         CombineLimits,
         CombineUnions,
         // Constant folding and strength reduction
-        SparkSQLUtil.getNullPropagationObj(conf),
+        NullPropagation,
         FoldablePropagation,
         //      OptimizeIn(conf),
         ConstantFolding,
@@ -109,12 +108,11 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
         SimplifyCaseConversionExpressions,
         RewriteCorrelatedScalarSubquery,
         EliminateSerialization,
-        SparkSQLUtil.getRemoveRedundantAliasesObj(),
-        RemoveRedundantProject) ++
-                                            extendedOperatorOptimizationRules: _*) ::
+        RemoveRedundantAliases,
+        RemoveRedundantProject) ++ extendedOperatorOptimizationRules: _*) ::
     Batch(
       "Check Cartesian Products", Once,
-      SparkSQLUtil.getCheckCartesianProductsObj(conf)) ::
+      CheckCartesianProducts) ::
     //    Batch("Join Reorder", Once,
     //      CostBasedJoinReorder(conf)) ::
     //    Batch("Decimal Optimizations", fixedPoint,
@@ -127,7 +125,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
     //      ConvertToLocalRelation,
     //      PropagateEmptyRelation) ::
     Batch(
-      "OptimizeCodegen", Once, CarbonToSparkAdapter.getOptimizeCodegenRule(conf): _*) ::
+      "OptimizeCodegen", Once, CarbonToSparkAdapter.getOptimizeCodegenRule(): _*) ::
     Batch(
       "RewriteSubquery", Once,
       RewritePredicateSubquery,

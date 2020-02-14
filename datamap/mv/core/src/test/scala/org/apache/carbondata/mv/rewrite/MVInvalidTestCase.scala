@@ -27,7 +27,7 @@ class MVInvalidTestCase  extends QueryTest with BeforeAndAfterAll {
   }
 
   def drop {
-    sql("drop datamap if exists main_table_mv")
+    sql("drop materialized view if exists main_table_mv")
     sql("drop table if exists main_table")
   }
 
@@ -35,8 +35,8 @@ class MVInvalidTestCase  extends QueryTest with BeforeAndAfterAll {
     val querySQL = "select age,name from main_table where name = 'lily' order by name limit 10"
     sql("insert into main_table select 'tom',20,170")
     sql("insert into main_table select 'lily',30,160")
-    sql("create datamap main_table_mv on table main_table using 'mv' as select age,name,height from main_table where name = 'tom'")
-    sql("rebuild datamap main_table_mv")
+    sql("create materialized view main_table_mv as select age,name,height from main_table where name = 'tom'")
+    sql("refresh materialized view main_table_mv")
 
     assert(!TestUtil.verifyMVDataMap(sql(querySQL).queryExecution.optimizedPlan, "main_table_mv"))
   }

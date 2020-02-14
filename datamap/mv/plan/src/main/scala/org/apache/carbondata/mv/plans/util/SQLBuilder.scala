@@ -25,7 +25,6 @@ import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSet, Cast, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.rules.{Rule, RuleExecutor}
 import org.apache.spark.sql.types.Metadata
-import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.mv.expressions.modular._
 import org.apache.carbondata.mv.plans._

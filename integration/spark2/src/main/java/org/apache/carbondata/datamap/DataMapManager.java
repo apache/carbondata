@@ -48,7 +48,7 @@ public class DataMapManager {
     DataMapProvider provider;
     if (dataMapSchema.getProviderName().equalsIgnoreCase(MV.toString())) {
       provider = (DataMapProvider) CarbonScalaUtil.createDataMapProvider(
-          "org.apache.carbondata.mv.datamap.MVDataMapProvider",
+          "org.apache.carbondata.mv.extension.MVDataMapProvider",
               sparkSession,
               mainTable,
               dataMapSchema);

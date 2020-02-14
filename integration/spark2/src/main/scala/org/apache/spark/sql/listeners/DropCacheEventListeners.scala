@@ -23,7 +23,6 @@ import scala.collection.mutable
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.cache.{CacheUtil, CarbonDropCacheCommand}
-import org.apache.spark.util.DataMapUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
@@ -52,7 +51,7 @@ object DropCacheDataMapEventListener extends OperationEventListener {
           throw new UnsupportedOperationException("Operation not allowed on child table.")
         }
 
-        if (DataMapUtil.hasMVDataMap(carbonTable)) {
+        if (carbonTable.hasMVCreated) {
           val childrenSchemas = DataMapStoreManager.getInstance
             .getDataMapSchemasOfTable(carbonTable).asScala
             .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&

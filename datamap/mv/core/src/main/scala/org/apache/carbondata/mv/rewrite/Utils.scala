@@ -17,12 +17,13 @@
 
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, Cast, Divide, Expression, Literal, Multiply, PredicateHelper, ScalaUDF}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, Cast, Divide, Expression, Literal, Multiply, NamedExpression, PredicateHelper, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
-import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
+import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan, Project}
 
 import org.apache.carbondata.mv.plans.modular
 import org.apache.carbondata.mv.plans.modular.{ModularPlan, Select}
+import org.apache.carbondata.mv.timeseries.TimeSeriesFunction
 
 /**
  * Utility functions used by mqo matcher to convert our plan to new aggregation code path

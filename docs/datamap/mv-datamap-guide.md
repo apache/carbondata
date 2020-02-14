@@ -105,7 +105,7 @@ EXPLAIN SELECT a, sum(b) from maintable group by a;
    property is inherited from parent table, which allows user to provide different tableproperties
    for child table
  * MV creation with limit or union all ctas queries is unsupported
- * MV datamap does not support Streaming
+ * MV does not support Streaming
 
 #### How MV tables are selected
 

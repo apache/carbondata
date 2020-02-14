@@ -20,21 +20,18 @@ package org.apache.carbondata.mv.rewrite
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks._
 
-import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, Expression, Literal, NamedExpression, ScalaUDF}
-import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join, LogicalPlan}
-import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, Join}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.DataTypes
 import org.apache.spark.unsafe.types.UTF8String
 
-import org.apache.carbondata.core.metadata.schema.datamap.Granularity
 import org.apache.carbondata.core.preagg.TimeSeriesFunctionEnum
-import org.apache.carbondata.mv.datamap.MVUtil
 import org.apache.carbondata.mv.expressions.modular._
 import org.apache.carbondata.mv.plans.modular
 import org.apache.carbondata.mv.plans.modular._
 import org.apache.carbondata.mv.session.MVSession
+import org.apache.carbondata.mv.timeseries.{Granularity, TimeSeriesFunction}
 
 private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) {
 
@@ -242,18 +239,17 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
       subsumee: ModularPlan,
       dataMapRelation: ModularPlan): ModularPlan = {
     // Update datamap table relation to the subsumer modular plan
-    val mVUtil = new MVUtil
     val updatedSubsumer = subsumer match {
       // In case of order by it adds extra select but that can be ignored while doing selection.
       case s@Select(_, _, _, _, _, Seq(g: GroupBy), _, _, _, _) =>
         s.copy(children = Seq(g.copy(dataMapTableRelation = Some(dataMapRelation))),
-          outputList = mVUtil.updateDuplicateColumns(s.outputList))
+          outputList = updateDuplicateColumns(s.outputList))
       case s: Select => s
         .copy(dataMapTableRelation = Some(dataMapRelation),
-          outputList = mVUtil.updateDuplicateColumns(s.outputList))
+          outputList = updateDuplicateColumns(s.outputList))
       case g: GroupBy => g
         .copy(dataMapTableRelation = Some(dataMapRelation),
-          outputList = mVUtil.updateDuplicateColumns(g.outputList))
+          outputList = updateDuplicateColumns(g.outputList))
       case other => other
     }
     (updatedSubsumer, subsumee) match {
@@ -268,6 +264,47 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
           r.flagSpec, Seq.empty).setSkip()
       case _ => updatedSubsumer.setSkip()
     }
+  }
+
+  private def updateDuplicateColumns(outputList: Seq[NamedExpression]): Seq[NamedExpression] = {
+    val duplicateNameCols = outputList.groupBy(_.name).filter(_._2.length > 1).flatMap(_._2)
+      .toList
+    val updatedOutList = outputList.map { col =>
+      val duplicateColumn = duplicateNameCols
+        .find(a => a.semanticEquals(col))
+      val qualifiedName = col.qualifier.headOption.getOrElse(s"${ col.exprId.id }") + "_" + col.name
+      if (duplicateColumn.isDefined) {
+        val attributesOfDuplicateCol = duplicateColumn.get.collect {
+          case a: AttributeReference => a
+        }
+        val attributeOfCol = col.collect { case a: AttributeReference => a }
+        // here need to check the whether the duplicate columns is of same tables,
+        // since query with duplicate columns is valid, we need to make sure, not to change their
+        // names with above defined qualifier name, for example in case of some expression like
+        // cast((FLOOR((cast(col_name) as double))).., upper layer even exprid will be same,
+        // we need to find the attribute ref(col_name) at lower level and check where expid is same
+        // or of same tables, so doin the semantic equals
+        val isStrictDuplicate = attributesOfDuplicateCol.forall(expr =>
+          attributeOfCol.exists(a => a.semanticEquals(expr)))
+        if (!isStrictDuplicate) {
+          Alias(col, qualifiedName)(exprId = col.exprId)
+        } else if (col.qualifier.nonEmpty) {
+          Alias(col, qualifiedName)(exprId = col.exprId)
+          // this check is added in scenario where the column is direct Attribute reference and
+          // since duplicate columns select is allowed, we should just put alias for those columns
+          // and update, for this also above isStrictDuplicate will be true so, it will not be
+          // updated above
+        } else if (duplicateColumn.get.isInstanceOf[AttributeReference] &&
+                   col.isInstanceOf[AttributeReference]) {
+          Alias(col, qualifiedName)(exprId = col.exprId)
+        } else {
+          col
+        }
+      } else {
+        col
+      }
+    }
+    updatedOutList
   }
 
   def unifySubsumer2(subsumer: ModularPlan, subsumee: ModularPlan): ModularPlan = {

@@ -78,14 +78,6 @@ case class Field(column: String, var dataType: Option[String], name: Option[Stri
   override def hashCode : Int = column.hashCode
 }
 
-case class DataMapField(var aggregateFunction: String = "",
-    columnTableRelationList: Option[Seq[ColumnTableRelation]] = None) {
-}
-
-case class ColumnTableRelation(parentColumnName: String, parentColumnId: String,
-    parentTableName: String, parentDatabaseName: String, parentTableId: String) {
-}
-
 case class ColumnProperty(key: String, value: String)
 
 case class ComplexField(complexType: String, primitiveField: Option[Field],

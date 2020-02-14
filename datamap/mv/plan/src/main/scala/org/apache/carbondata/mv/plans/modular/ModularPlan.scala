@@ -20,14 +20,12 @@ package org.apache.carbondata.mv.plans.modular
 import scala.collection._
 import scala.collection.mutable.{HashMap, MultiMap}
 
-import org.apache.spark.Logging
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Expression, PredicateHelper}
 import org.apache.spark.sql.catalyst.plans.{JoinType, QueryPlan}
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.catalyst.trees.TreeNode
-import org.apache.spark.sql.SQLConf
-import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.mv.plans._
 import org.apache.carbondata.mv.plans.util.{Printers, Signature, SQLBuilder}
@@ -53,9 +51,9 @@ abstract class ModularPlan
 
   private var statsCache: Option[Statistics] = None
 
-  final def stats(spark: SparkSession, conf: SQLConf): Statistics = {
+  final def stats(spark: SparkSession): Statistics = {
     statsCache.getOrElse {
-      statsCache = Some(computeStats(spark, conf))
+      statsCache = Some(computeStats(spark))
       statsCache.get
     }
   }
@@ -65,11 +63,11 @@ abstract class ModularPlan
     children.foreach(_.invalidateStatsCache())
   }
 
-  protected def computeStats(spark: SparkSession, conf: SQLConf): Statistics = {
+  protected def computeStats(spark: SparkSession): Statistics = {
     //    spark.conf.set("spark.sql.cbo.enabled", true)
     val sqlStmt = asOneLineSQL
     val plan = spark.sql(sqlStmt).queryExecution.optimizedPlan
-    SparkSQLUtil.invokeStatsMethod(plan, conf)
+    plan.stats
   }
 
   override def fastEquals(other: TreeNode[_]): Boolean = {

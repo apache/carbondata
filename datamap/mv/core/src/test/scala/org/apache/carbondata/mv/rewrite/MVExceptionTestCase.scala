@@ -29,31 +29,31 @@ class MVExceptionTestCase  extends QueryTest with BeforeAndAfterAll {
 
   test("test mv no base table") {
     val ex = intercept[NoSuchTableException] {
-      sql("create datamap main_table_mv on table main_table_error using 'mv' as select sum(age),name from main_table group by name")
+      sql("create datamap main_table_mv on table main_table_error using 'mv' as select sum(age),name from main_table_error group by name")
     }
     assertResult("Table or view 'main_table_error' not found in database 'default';")(ex.getMessage())
   }
 
   test("test mv reduplicate mv table") {
     val ex = intercept[MalformedDataMapCommandException] {
-      sql("create datamap main_table_mv1 on table main_table using 'mv' as select sum(age),name from main_table group by name")
-      sql("create datamap main_table_mv1 on table main_table using 'mv' as select sum(age),name from main_table group by name")
+      sql("create materialized view main_table_mv1 as select sum(age),name from main_table group by name")
+      sql("create materialized view main_table_mv1 as select sum(age),name from main_table group by name")
     }
-    assertResult("DataMap with name main_table_mv1 already exists in storage")(ex.getMessage)
+    assertResult("Materialized view with name main_table_mv1 already exists in storage")(ex.getMessage)
   }
 
   test("test mv creation with limit in query") {
     val ex = intercept[MalformedCarbonCommandException] {
-      sql("create datamap maintable_mv2 on table main_table using 'mv' as select sum(age),name from main_table group by name limit 10")
+      sql("create materialized view maintable_mv2 as select sum(age),name from main_table group by name limit 10")
     }
-    assertResult("MV datamap does not support the query with limit")(ex.getMessage)
+    assertResult("Materialized view does not support the query with limit")(ex.getMessage)
   }
 
   def drop(): Unit = {
     sql("drop table IF EXISTS main_table")
     sql("drop table if exists main_table_error")
-    sql("drop datamap if exists main_table_mv")
-    sql("drop datamap if exists main_table_mv1")
+    sql("drop materialized view if exists main_table_mv")
+    sql("drop materialized view if exists main_table_mv1")
   }
 
   override def afterAll(): Unit = {

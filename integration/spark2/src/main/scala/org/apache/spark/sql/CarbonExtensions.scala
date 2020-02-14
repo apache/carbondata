@@ -27,6 +27,18 @@ import org.apache.spark.sql.parser.CarbonExtensionSqlParser
 class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
 
   override def apply(extensions: SparkSessionExtensions): Unit = {
+    // Try to initialize MV extension before carbon extension
+    // It may fail if MVExtension class is not in class path
+    try {
+      val clazz = Class.forName("org.apache.carbondata.mv.extension.MVExtension")
+      val method = clazz.getMethod("apply", classOf[SparkSessionExtensions])
+      val mvExtension = clazz.newInstance()
+      method.invoke(mvExtension, extensions)
+    } catch {
+      case _: Throwable =>
+        // If MVExtension initialization failed, ignore it
+    }
+
     // Carbon internal parser
     extensions
       .injectParser((sparkSession: SparkSession, parser: ParserInterface) =>
@@ -39,7 +51,7 @@ class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
       .injectResolutionRule((session: SparkSession) => CarbonPreInsertionCasts(session))
 
     // carbon optimizer rules
-    extensions.injectPostHocResolutionRule((session: SparkSession) => OptimizerRule(session) )
+    extensions.injectPostHocResolutionRule((session: SparkSession) => CarbonOptimizerRule(session))
 
     // carbon planner strategies
     extensions
@@ -54,7 +66,7 @@ class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
   }
 }
 
-case class OptimizerRule(session: SparkSession) extends Rule[LogicalPlan] {
+case class CarbonOptimizerRule(session: SparkSession) extends Rule[LogicalPlan] {
   self =>
 
   var notAdded = true
@@ -68,7 +80,7 @@ case class OptimizerRule(session: SparkSession) extends Rule[LogicalPlan] {
           val field = sessionState.getClass.getDeclaredField("optimizer")
           field.setAccessible(true)
           field.set(sessionState,
-            new OptimizerProxy(session, sessionState.catalog, sessionState.optimizer))
+            new CarbonOptimizer(session, sessionState.catalog, sessionState.optimizer))
         }
       }
     }

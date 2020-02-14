@@ -623,18 +623,6 @@ object CarbonSparkSqlParserUtil {
     }
   }
 
-  def getMVQuery(query: String, sparkSession: SparkSession): DataFrame = {
-    SparkSQLUtil
-      .execute(getMVPlan(query, sparkSession), sparkSession)
-      .drop(CarbonEnv.MV_SKIP_RULE_UDF)
-  }
-
-  def getMVPlan(query: String, sparkSession: SparkSession): LogicalPlan = {
-    val updatedQuery = new CarbonSpark2SqlParser().addMVSkipFunction(query)
-    val analyzed = sparkSession.sql(updatedQuery).queryExecution.analyzed
-    CarbonMVRules(sparkSession).apply(analyzed)
-  }
-
   def copyTablePartition(source: TablePartitionSpec): TablePartitionSpec = {
     val target: TablePartitionSpec = source.map(entry => (entry._1.toLowerCase, entry._2))
     target

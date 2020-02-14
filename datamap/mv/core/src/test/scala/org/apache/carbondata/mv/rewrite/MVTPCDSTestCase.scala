@@ -46,76 +46,76 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  ignore("test create datamap with tpcds_1_4_testCases case_1") {
-    sql(s"drop datamap if exists datamap_tpcds1")
-    sql(s"create datamap datamap_tpcds1 using 'mv' as ${tpcds_1_4_testCases(0)._2}")
+  ignore("test create materialized view with tpcds_1_4_testCases case_1") {
+    sql(s"drop materialized view if exists datamap_tpcds1")
+    sql(s"create materialized view datamap_tpcds1  as ${tpcds_1_4_testCases(0)._2}")
     val df = sql(tpcds_1_4_testCases(0)._3)
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds1"))
-    sql(s"drop datamap datamap_tpcds1")
+    sql(s"drop materialized view datamap_tpcds1")
   }
 
-  ignore("test create datamap with tpcds_1_4_testCases case_3") {
-    sql(s"drop datamap if exists datamap_tpcds3")
-    sql(s"create datamap datamap_tpcds3 using 'mv' as ${tpcds_1_4_testCases(2)._2}")
+  ignore("test create materialized view with tpcds_1_4_testCases case_3") {
+    sql(s"drop materialized view if exists datamap_tpcds3")
+    sql(s"create materialized view datamap_tpcds3  as ${tpcds_1_4_testCases(2)._2}")
     val df = sql(tpcds_1_4_testCases(2)._3)
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds3"))
-    sql(s"drop datamap datamap_tpcds3")
+    sql(s"drop materialized view datamap_tpcds3")
   }
 
-  ignore("test create datamap with tpcds_1_4_testCases case_4") {
-    sql(s"drop datamap if exists datamap_tpcds4")
-    sql(s"create datamap datamap_tpcds4 using 'mv' as ${tpcds_1_4_testCases(3)._2}")
+  ignore("test create materialized view with tpcds_1_4_testCases case_4") {
+    sql(s"drop materialized view if exists datamap_tpcds4")
+    sql(s"create materialized view datamap_tpcds4  as ${tpcds_1_4_testCases(3)._2}")
     val df = sql(tpcds_1_4_testCases(3)._3)
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds4"))
-    sql(s"drop datamap datamap_tpcds4")
+    sql(s"drop materialized view datamap_tpcds4")
   }
 
-  ignore("test create datamap with tpcds_1_4_testCases case_5") {
-    sql(s"drop datamap if exists datamap_tpcds5")
-    sql(s"create datamap datamap_tpcds5 using 'mv' as ${tpcds_1_4_testCases(4)._2}")
+  ignore("test create materialized view with tpcds_1_4_testCases case_5") {
+    sql(s"drop materialized view if exists datamap_tpcds5")
+    sql(s"create materialized view datamap_tpcds5  as ${tpcds_1_4_testCases(4)._2}")
     val df = sql(tpcds_1_4_testCases(4)._3)
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds5"))
-    sql(s"drop datamap datamap_tpcds5")
+    sql(s"drop materialized view datamap_tpcds5")
   }
 
-  ignore("test create datamap with tpcds_1_4_testCases case_6") {
-    sql(s"drop datamap if exists datamap_tpcds6")
-    sql(s"create datamap datamap_tpcds6 using 'mv' as ${tpcds_1_4_testCases(5)._2}")
+  ignore("test create materialized view with tpcds_1_4_testCases case_6") {
+    sql(s"drop materialized view if exists datamap_tpcds6")
+    sql(s"create materialized view datamap_tpcds6  as ${tpcds_1_4_testCases(5)._2}")
     val df = sql(tpcds_1_4_testCases(5)._3)
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds6"))
-    sql(s"drop datamap datamap_tpcds6")
+    sql(s"drop materialized view datamap_tpcds6")
   }
 
-  ignore("test create datamap with tpcds_1_4_testCases case_8") {
-    sql(s"drop datamap if exists datamap_tpcds8")
-    sql(s"create datamap datamap_tpcds8 using 'mv' as ${tpcds_1_4_testCases(7)._2}")
+  ignore("test create materialized view with tpcds_1_4_testCases case_8") {
+    sql(s"drop materialized view if exists datamap_tpcds8")
+    sql(s"create materialized view datamap_tpcds8  as ${tpcds_1_4_testCases(7)._2}")
     val df = sql(tpcds_1_4_testCases(7)._3)
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds8"))
-    sql(s"drop datamap datamap_tpcds8")
+    sql(s"drop materialized view datamap_tpcds8")
   }
 
-  ignore("test create datamap with tpcds_1_4_testCases case_11") {
-    sql(s"drop datamap if exists datamap_tpcds11")
-    sql(s"create datamap datamap_tpcds11 using 'mv' as ${tpcds_1_4_testCases(10)._2}")
+  ignore("test create materialized view with tpcds_1_4_testCases case_11") {
+    sql(s"drop materialized view if exists datamap_tpcds11")
+    sql(s"create materialized view datamap_tpcds11  as ${tpcds_1_4_testCases(10)._2}")
     val df = sql(tpcds_1_4_testCases(10)._3)
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds11"))
-    sql(s"drop datamap datamap_tpcds11")
+    sql(s"drop materialized view datamap_tpcds11")
   }
 
-  ignore("test create datamap with tpcds_1_4_testCases case_15") {
-    sql(s"drop datamap if exists datamap_tpcds15")
-    sql(s"create datamap datamap_tpcds15 using 'mv' as ${tpcds_1_4_testCases(14)._2}")
+  ignore("test create materialized view with tpcds_1_4_testCases case_15") {
+    sql(s"drop materialized view if exists datamap_tpcds15")
+    sql(s"create materialized view datamap_tpcds15  as ${tpcds_1_4_testCases(14)._2}")
     val df = sql(tpcds_1_4_testCases(14)._3)
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds15"))
-    sql(s"drop datamap datamap_tpcds15")
+    sql(s"drop materialized view datamap_tpcds15")
   }
 
-  ignore("test create datamap with tpcds_1_4_testCases case_16") {
-    sql(s"drop datamap if exists datamap_tpcds16")
-    sql(s"create datamap datamap_tpcds16 using 'mv' as ${tpcds_1_4_testCases(15)._2}")
+  ignore("test create materialized view with tpcds_1_4_testCases case_16") {
+    sql(s"drop materialized view if exists datamap_tpcds16")
+    sql(s"create materialized view datamap_tpcds16  as ${tpcds_1_4_testCases(15)._2}")
     val df = sql(tpcds_1_4_testCases(15)._3)
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds16"))
-    sql(s"drop datamap datamap_tpcds16")
+    sql(s"drop materialized view datamap_tpcds16")
   }
 
   def drop(): Unit = {

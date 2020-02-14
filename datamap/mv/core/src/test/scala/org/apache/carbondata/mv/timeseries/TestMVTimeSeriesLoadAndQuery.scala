@@ -30,18 +30,18 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     createTable()
   }
 
-  test("create MV timeseries datamap with simple projection and aggregation and filter") {
-    sql("drop datamap if exists datamap1")
-    sql("drop datamap if exists datamap2")
+  test("create MV timeseries materialized view with simple projection and aggregation and filter") {
+    sql("drop materialized view if exists datamap1")
+    sql("drop materialized view if exists datamap2")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'minute'), sum(projectcode) from maintable group by timeseries(projectjoindate,'minute')")
     loadData("maintable")
     val df = sql("select timeseries(projectjoindate,'minute'), sum(projectcode) from maintable group by timeseries(projectjoindate,'minute')")
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
     dropDataMap("datamap1")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'minute'), sum(projectcode) from maintable where timeseries(projectjoindate,'minute') = '2016-02-23 09:17:00' group by timeseries(projectjoindate,'minute')")
 
     sql("select * from datamap1_table").show(false)
@@ -56,7 +56,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   test("test mv timeseries with ctas and filter in actual query") {
     dropDataMap("datamap1")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'hour'), sum(projectcode) from maintable group by timeseries(projectjoindate,'hour')")
     loadData("maintable")
     val df = sql("select timeseries(projectjoindate,'hour'), sum(projectcode) from maintable where timeseries(projectjoindate,'hour') = '2016-02-23 09:00:00' " +
@@ -74,22 +74,22 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     dropDataMap("datamap6")
     loadData("maintable")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'minute'), sum(salary) from maintable group by timeseries(projectjoindate,'minute')")
     sql(
-      "create datamap datamap2 on table maintable using 'mv' as " +
+      "create materialized view datamap2 as " +
       "select timeseries(projectjoindate,'hour'), sum(salary) from maintable group by timeseries(projectjoindate,'hour')")
     sql(
-      "create datamap datamap3 on table maintable using 'mv' as " +
+      "create materialized view datamap3 as " +
       "select timeseries(projectjoindate,'fifteen_minute'), sum(salary) from maintable group by timeseries(projectjoindate,'fifteen_minute')")
     sql(
-      "create datamap datamap4 on table maintable using 'mv' as " +
+      "create materialized view datamap4 as " +
       "select timeseries(projectjoindate,'five_minute'), sum(salary) from maintable group by timeseries(projectjoindate,'five_minute')")
     sql(
-      "create datamap datamap5 on table maintable using 'mv' as " +
+      "create materialized view datamap5 as " +
       "select timeseries(projectjoindate,'week'), sum(salary) from maintable group by timeseries(projectjoindate,'week')")
     sql(
-      "create datamap datamap6 on table maintable using 'mv' as " +
+      "create materialized view datamap6 as " +
       "select timeseries(projectjoindate,'year'), sum(salary) from maintable group by timeseries(projectjoindate,'year')")
     val df1 = sql("select timeseries(projectjoindate,'minute'), sum(salary) from maintable group by timeseries(projectjoindate,'minute')")
     checkPlan("datamap1", df1)
@@ -103,7 +103,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     checkPlan("datamap5", df5)
     val df6 = sql("select timeseries(projectjoindate,'year'), sum(salary) from maintable group by timeseries(projectjoindate,'year')")
     checkPlan("datamap6", df6)
-    val result = sql("show datamap on table maintable").collect()
+    val result = sql("show materialized views on table maintable").collect()
     result.find(_.get(0).toString.contains("datamap1")) match {
       case Some(row) => assert(row.get(4).toString.contains("ENABLED"))
       case None => assert(false)
@@ -140,7 +140,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     dropDataMap("datamap1")
     loadData("maintable")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'week'), sum(salary) from maintable group by timeseries(projectjoindate,'week')")
 /*
     +-----------------------------------+----------+
@@ -162,10 +162,10 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     dropDataMap("datamap2")
     loadData("maintable")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'hour'), avg(salary), max(salary) from maintable group by timeseries(projectjoindate,'hour')")
     sql(
-      "create datamap datamap2 on table maintable using 'mv' as " +
+      "create materialized view datamap2 as " +
       "select timeseries(projectjoindate,'day'), count(projectcode), min(salary) from maintable group by timeseries(projectjoindate,'day')")
     val df1 = sql("select timeseries(projectjoindate,'hour'), avg(salary), max(salary) from maintable group by timeseries(projectjoindate,'hour')")
     checkPlan("datamap1", df1)
@@ -180,7 +180,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     dropDataMap("datamap2")
     dropDataMap("datamap3")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'month'), max(salary) from maintable where timeseries(projectjoindate,'month') = '2016-03-01 00:00:00' or  timeseries(projectjoindate,'month') = '2016-02-01 00:00:00' group by timeseries(projectjoindate,'month')")
     loadData("maintable")
     var df1 = sql("select timeseries(projectjoindate,'month'), max(salary) from maintable where timeseries(projectjoindate,'month') = '2016-03-01 00:00:00' or  timeseries(projectjoindate,'month') = '2016-02-01 00:00:00' group by timeseries(projectjoindate,'month')")
@@ -188,12 +188,12 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     df1 = sql("select timeseries(projectjoindate,'MONth'), max(salary) from maintable where timeseries(projectjoindate,'MoNtH') = '2016-03-01 00:00:00' or  timeseries(projectjoinDATE,'MONth') = '2016-02-01 00:00:00' group by timeseries(projectjoindate,'MONth')")
     TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap1")
     sql(
-      "create datamap datamap2 on table maintable using 'mv' as " +
+      "create materialized view datamap2 as " +
       "select timeseries(projectjoindate,'month'), max(salary) from maintable where timeseries(projectjoindate,'month') = '2016-03-01 00:00:00' and  timeseries(projectjoindate,'month') = '2016-02-01 00:00:00' group by timeseries(projectjoindate,'month')")
     val df2 = sql("select timeseries(projectjoindate,'month'), max(salary) from maintable where timeseries(projectjoindate,'month') = '2016-03-01 00:00:00' and  timeseries(projectjoindate,'month') = '2016-02-01 00:00:00' group by timeseries(projectjoindate,'month')")
     checkPlan("datamap2", df2)
     sql(
-      "create datamap datamap3 on table maintable using 'mv' as " +
+      "create materialized view datamap3 as " +
       "select timeseries(projectjoindate,'month'), max(salary) from maintable where timeseries(projectjoindate,'month') = '2016-03-01 00:00:00' and  timeseries(projectjoindate,'month') = '2016-02-01 00:00:00' or  timeseries(projectjoindate,'month') = '2016-04-01 00:00:00'  group by timeseries(projectjoindate,'month')")
     val df3 = sql("select timeseries(projectjoindate,'month'), max(salary) from maintable where timeseries(projectjoindate,'month') = '2016-03-01 00:00:00' and  timeseries(projectjoindate,'month') = '2016-02-01 00:00:00' or  timeseries(projectjoindate,'month') = '2016-04-01 00:00:00' group by timeseries(projectjoindate,'month')")
     checkPlan("datamap3", df3)
@@ -206,7 +206,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     dropDataMap("datamap1")
     loadData("maintable")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'month') from maintable group by timeseries(projectjoindate,'month')")
     val df1 = sql("select timeseries(projectjoindate,'month') from maintable group by timeseries(projectjoindate,'month')")
     checkPlan("datamap1", df1)
@@ -220,7 +220,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   test("test mv timeseries with dictinct, cast") {
     dropDataMap("datamap1")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'month'),projectcode from maintable group by timeseries(projectjoindate,'month'),projectcode")
     loadData("maintable")
     val df1 = sql("select distinct(projectcode) from maintable")
@@ -229,7 +229,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     checkPlan("datamap1", df2)
     // TODO: cast expression and group by not allowing to create datamap, check later
 //    sql(
-//      "create datamap datamap2 on table maintable using 'mv' as " +
+//      "create materialized view datamap2 as " +
 //      "select timeseries(projectjoindate,'month'),cast(floor((projectcode + 1000) / 900) * 900 - 2000 AS INT) from maintable group by timeseries(projectjoindate,'month'),projectcode")
 //    val df3 = sql("select timeseries(projectjoindate,'month'),cast(floor((projectcode + 1000) / 900) * 900 - 2000 AS INT) from maintable group by timeseries(projectjoindate,'month'),projectcode")
 //    checkPlan("datamap2", df3)
@@ -239,7 +239,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   test("test mvtimeseries with alias") {
     dropDataMap("datamap1")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'month') as t,projectcode as y from maintable group by timeseries(projectjoindate,'month'),projectcode")
     loadData("maintable")
     val df1 = sql("select timeseries(projectjoindate,'month') as t,projectcode as y from maintable group by timeseries(projectjoindate,'month'),projectcode")
@@ -249,7 +249,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     //   checkPlan("datamap1", df2)
     dropDataMap("datamap1")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'month'),projectcode from maintable group by timeseries(projectjoindate,'month'),projectcode")
     val df3 = sql("select timeseries(projectjoindate,'month') as t,projectcode as y from maintable group by timeseries(projectjoindate,'month'),projectcode")
     checkPlan("datamap1", df3)
@@ -259,13 +259,13 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   test("test mv timeseries with case when and Sum + Sum") {
     dropDataMap("datamap1")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'month') ,sum(CASE WHEN projectcode=5 THEN salary ELSE 0 END)  from maintable group by timeseries(projectjoindate,'month')")
     val df = sql("select timeseries(projectjoindate,'month') ,sum(CASE WHEN projectcode=5 THEN salary ELSE 0 END)  from maintable group by timeseries(projectjoindate,'month')")
     checkPlan("datamap1", df)
     dropDataMap("datamap1")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'hour') ,sum(projectcode) + sum(salary)  from maintable group by timeseries(projectjoindate,'hour')")
     loadData("maintable")
     val df1 = sql("select timeseries(projectjoindate,'hour') ,sum(projectcode) + sum(salary)  from maintable group by timeseries(projectjoindate,'hour')")
@@ -276,7 +276,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   test("test mv timeseries with IN filter subquery") {
     dropDataMap("datamap1")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'hour') ,sum(projectcode)  from maintable group by timeseries(projectjoindate,'hour')")
     val df = sql("select max(salary) from maintable where projectcode IN (select sum(projectcode)  from maintable group by timeseries(projectjoindate,'hour')) ")
     checkPlan("datamap1", df)
@@ -286,7 +286,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   test("test mv timeseries duplicate columns and constant columns") {
     dropDataMap("datamap1")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'month') ,sum(projectcode),sum(projectcode)  from maintable group by timeseries(projectjoindate,'month')")
     loadData("maintable")
     val df1 = sql("select timeseries(projectjoindate,'month') ,sum(projectcode)  from maintable group by timeseries(projectjoindate,'month')")
@@ -295,7 +295,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     checkPlan("datamap1", df2)
     dropDataMap("datamap1")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'month') ,sum(1) ex  from maintable group by timeseries(projectjoindate,'month')")
     val df3 = sql("select timeseries(projectjoindate,'month') ,sum(1)  ex from maintable group by timeseries(projectjoindate,'month')")
     checkPlan("datamap1", df3)
@@ -305,7 +305,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   test("test mv timeseries with like filters") {
     dropDataMap("datamap1")
     sql(
-      "create datamap datamap1 on table maintable using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'month') ,sum(salary) from maintable  where salary NOT LIKE '6%' group by timeseries(projectjoindate,'month')")
     val df1 = sql("select timeseries(projectjoindate,'month') ,sum(salary) from maintable  where salary NOT LIKE '6%' group by timeseries(projectjoindate,'month')")
     checkPlan("datamap1", df1)
@@ -319,7 +319,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       "Timestamp,salary double) STORED AS carbondata")
     loadData("secondtable")
     sql(
-      "create datamap datamap1 using 'mv' as " +
+      "create materialized view datamap1 as " +
       "select timeseries(t1.projectjoindate,'month'), sum(t1.projectcode), sum(t2.projectcode) " +
       " from maintable t1 inner join secondtable t2 where" +
       " t2.projectcode = t1.projectcode group by timeseries(t1.projectjoindate,'month')")
@@ -330,17 +330,17 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     checkPlan("datamap1", df)
   }
 
-  test("test create datamap with group by columns not present in projection") {
-    sql("drop datamap if exists dm ")
+  test("test create materialized view with group by columns not present in projection") {
+    sql("drop materialized view if exists dm ")
     intercept[UnsupportedOperationException] {
-      sql("create datamap dm using 'mv' as select timeseries(projectjoindate,'day') from maintable where empname='chandler' group by timeseries(projectjoindate,'day'),empname")
+      sql("create materialized view dm as select timeseries(projectjoindate,'day') from maintable where empname='chandler' group by timeseries(projectjoindate,'day'),empname")
     }.getMessage.contains("Group by columns must be present in project columns")
-    sql("create datamap dm using 'mv' as select timeseries(projectjoindate,'day'),empname from maintable where empname='chandler' group by timeseries(projectjoindate,'day'),empname")
+    sql("create materialized view dm as select timeseries(projectjoindate,'day'),empname from maintable where empname='chandler' group by timeseries(projectjoindate,'day'),empname")
     var df = sql("select timeseries(projectjoindate,'day'),empname from maintable where empname='chandler' group by timeseries(projectjoindate,'day'),empname")
     checkPlan("dm", df)
     df = sql("select timeseries(projectjoindate,'day') from maintable where empname='chandler' group by timeseries(projectjoindate,'day'),empname")
     checkPlan("dm", df)
-    sql("drop datamap if exists dm ")
+    sql("drop materialized view if exists dm ")
   }
 
   override def afterAll(): Unit = {
@@ -352,7 +352,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   }
 
   def dropDataMap(datamapName: String): Unit = {
-    sql(s"drop datamap if exists $datamapName")
+    sql(s"drop materialized view if exists $datamapName")
   }
 
   def createTable(): Unit = {

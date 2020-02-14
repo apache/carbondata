@@ -17,10 +17,11 @@
 
 package org.apache.carbondata.mv.plans.modular
 
-import org.apache.spark.sql.{CarbonToSparkAdapter, SQLConf}
+import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.rules._
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.Metadata
 
 import org.apache.carbondata.mv.plans

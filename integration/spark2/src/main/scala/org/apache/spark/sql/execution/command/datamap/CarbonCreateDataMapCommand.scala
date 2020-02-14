@@ -106,7 +106,8 @@ case class CarbonCreateDataMapCommand(
         .exists(_.getDataMapName.equalsIgnoreCase(dataMapSchema.getDataMapName))) {
         if (!ifNotExistsSet) {
           throw new MalformedDataMapCommandException(
-            "DataMap with name " + dataMapSchema.getDataMapName + " already exists in storage")
+            "Materialized view with name " + dataMapSchema.getDataMapName +
+            " already exists in storage")
         } else {
           return Seq.empty
         }
