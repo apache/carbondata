@@ -89,7 +89,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
        """.stripMargin)
     var result = sql(s"show datamap on table $tableName").cache()
     checkAnswer(sql(s"show datamap on table $tableName"),
-      Seq(Row(datamapName, "bloomfilter", s"default.$tableName", "'bloom_fpp'='0.001', 'bloom_size'='32000', 'index_columns'='a'", "ENABLED", "NA"),
+      Seq(Row(datamapName, "bloomfilter", s"default.$tableName", "'bloom_fpp'='0.001','bloom_size'='32000','index_columns'='a'", "ENABLED", "NA"),
         Row(datamapName2, "bloomfilter", s"default.$tableName", "'index_columns'='b'","ENABLED", "NA"),
         Row(datamapName3, "bloomfilter", s"default.$tableName", "'index_columns'='c'", "ENABLED", "NA")))
     result.unpersist()

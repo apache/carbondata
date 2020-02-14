@@ -17,14 +17,13 @@
 
 package org.apache.carbondata.mv.plans.util
 
-import org.apache.spark.sql.CarbonExpressions.MatchCastExpression
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSet, BitwiseAnd, Cast, Expression, Grouping, GroupingID, Literal, NamedExpression, ShiftRight}
 import org.apache.spark.sql.catalyst.plans.JoinType
 import org.apache.spark.sql.types.{ByteType, IntegerType}
 
+import org.apache.carbondata.mv.plans.modular.{MatchCastExpression, ModularPlan}
 import org.apache.carbondata.mv.plans.modular
 import org.apache.carbondata.mv.plans.modular.Flags._
-import org.apache.carbondata.mv.plans.modular.ModularPlan
 
 trait SQLBuildDSL {
 

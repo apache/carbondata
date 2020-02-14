@@ -47,6 +47,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata;
 import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo;
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
@@ -845,6 +846,18 @@ public class CarbonTable implements Serializable, Writable {
     return dimensionOrdinalMax;
   }
 
+  /**
+   * Return true if MV created on this table
+   */
+  public boolean hasMVCreated() throws IOException {
+    List<DataMapSchema> schemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(this);
+    return schemas.stream().anyMatch(schema ->
+        schema.getProviderName().equalsIgnoreCase(DataMapClassProvider.MV.toString()));
+  }
+
+  /**
+   * Return true if this table is a MV table (child table of other table)
+   */
   public boolean isChildTableForMV() {
     return null != tableInfo.getFactTable().getTableProperties()
         .get(CarbonCommonConstants.PARENT_TABLES) && !tableInfo.getFactTable().getTableProperties()

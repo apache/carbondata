@@ -22,13 +22,13 @@ import org.apache.spark.sql.test.util.QueryTest
 class SelectAllColumnsSuite extends QueryTest {
 
   test ("table select all columns mv") {
-    sql("drop datamap if exists all_table_mv")
+    sql("drop materialized view if exists all_table_mv")
     sql("drop table if exists all_table")
     sql("create table all_table(name string, age int, height int) STORED AS carbondata")
     sql("insert into all_table select 'tom',20,175")
     sql("insert into all_table select 'tom',32,180")
-    sql("create datamap all_table_mv on table all_table using 'mv' as select avg(age),avg(height),name from all_table group by name")
-    sql("rebuild datamap all_table_mv")
+    sql("create materialized view all_table_mv as select avg(age),avg(height),name from all_table group by name")
+    sql("refresh materialized view all_table_mv")
     checkAnswer(
       sql("select avg(age),avg(height),name from all_table group by name"),
       Seq(Row(26.0, 177.5, "tom")))

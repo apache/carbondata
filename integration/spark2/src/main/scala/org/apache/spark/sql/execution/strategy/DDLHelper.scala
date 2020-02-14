@@ -32,7 +32,7 @@ import org.apache.spark.sql.execution.datasources.{LogicalRelation, RefreshResou
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.parser.{CarbonSpark2SqlParser, CarbonSparkSqlParserUtil}
-import org.apache.spark.util.{CarbonReflectionUtils, DataMapUtil, FileUtils}
+import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -372,9 +372,9 @@ object DDLHelper {
           throw new MalformedCarbonCommandException(
             "Streaming property value is incorrect")
         }
-        if (DataMapUtil.hasMVDataMap(carbonTable)) {
+        if (carbonTable.hasMVCreated) {
           throw new MalformedCarbonCommandException(
-            "The table which has MV datamap does not support set streaming property")
+            "The table which has materialized view does not support set streaming property")
         }
         if (carbonTable.isChildTableForMV) {
           throw new MalformedCarbonCommandException(

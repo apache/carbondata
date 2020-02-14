@@ -28,15 +28,14 @@ import org.apache.spark.sql.catalyst.plans.Inner
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules._
 import org.apache.spark.sql.execution.command.mutation.CarbonProjectForDeleteCommand
-import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, FileFormat, HadoopFsRelation, LogicalRelation, SparkCarbonTableFormat}
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.strategy.CarbonPlanHelper
 import org.apache.spark.sql.util.CarbonException
-import org.apache.spark.util.{CarbonReflectionUtils, DataMapUtil, SparkUtil}
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
-import org.apache.carbondata.core.util.CarbonUtil
 
 case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
@@ -67,7 +66,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
       val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
       if (carbonTable != null) {
         val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
-        if (DataMapUtil.hasMVDataMap(carbonTable)) {
+        if (carbonTable.hasMVCreated) {
           val allDataMapSchemas = DataMapStoreManager.getInstance
             .getDataMapSchemasOfTable(carbonTable).asScala
             .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
@@ -213,7 +212,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
               "Delete operation is not supported for datamap table")
           }
           val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
-          if (DataMapUtil.hasMVDataMap(carbonTable)) {
+          if (carbonTable.hasMVCreated) {
             val allDataMapSchemas = DataMapStoreManager.getInstance
               .getDataMapSchemasOfTable(carbonTable).asScala
               .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&

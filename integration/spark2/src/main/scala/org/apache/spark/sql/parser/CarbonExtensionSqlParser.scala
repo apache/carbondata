@@ -61,9 +61,9 @@ class CarbonExtensionSqlParser(
             e.printStackTrace(System.err)
             CarbonScalaUtil.cleanParserThreadLocals
             CarbonException.analysisException(
-              s"""== Parse1 ==
+              s"""== Parser1: ${parser.getClass.getName} ==
                  |${ex.getMessage}
-                 |== Parse2 ==
+                 |== Parser2: ${initialParser.getClass.getName} ==
                  |${e.getMessage}
                """.stripMargin.trim)
         }

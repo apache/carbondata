@@ -37,8 +37,8 @@ class MVCountAndCaseTestCase  extends QueryTest with BeforeAndAfterAll{
   }
 
   test("test mv count and case when expression") {
-    sql("drop datamap if exists data_table_mv")
-    sql(s"""create datamap data_table_mv using 'mv' as
+    sql("drop materialized view if exists data_table_mv")
+    sql(s"""create materialized view data_table_mv as
            | SELECT STARTTIME,LAYER4ID,
            | SUM(seq) AS seq_c,
            | SUM(succ) AS succ_c

@@ -293,12 +293,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         Field(e1, e2.dataType, Some(e1), e2.children, null, e3)
     }
 
-  lazy val addMVSkipUDF: Parser[String] =
-    SELECT ~> restInput <~ opt(";") ^^ {
-      case query =>
-        "select mv() as mv, " + query
-    }
-
   protected lazy val primitiveFieldType: Parser[Field] =
     primitiveTypes ^^ {
       case e1 =>

@@ -38,6 +38,7 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaFactory;
@@ -50,8 +51,6 @@ import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonSessionInfo;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
-
-import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -200,7 +199,7 @@ public final class DataMapStoreManager {
       String tableId = relationIdentifier.getTableId();
       String providerName = dataMapSchema.getProviderName();
       // if the mv datamap,not be modified the relationIdentifier
-      if (!providerName.equalsIgnoreCase(MV.toString())) {
+      if (!providerName.equalsIgnoreCase(DataMapClassProvider.MV.toString())) {
         RelationIdentifier newRelationIdentifier = new RelationIdentifier(dataBaseName,
             newTableName, tableId);
         dataMapSchema.setRelationIdentifier(newRelationIdentifier);
@@ -270,7 +269,8 @@ public final class DataMapStoreManager {
    * @param providerName
    * @return
    */
-  public synchronized DataMapCatalog getDataMapCatalog(DataMapProvider dataMapProvider,
+  public synchronized DataMapCatalog getDataMapCatalog(
+      DataMapProvider dataMapProvider,
       String providerName) throws IOException {
     initializeDataMapCatalogs(dataMapProvider);
     return dataMapCatalogs.get(providerName.toLowerCase());

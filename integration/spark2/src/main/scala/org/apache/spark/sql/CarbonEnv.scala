@@ -27,7 +27,6 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.events.{MergeBloomIndexEventListener, MergeIndexEventListener}
-import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.listeners._
 import org.apache.spark.sql.profiler.Profiler
@@ -80,9 +79,6 @@ class CarbonEnv {
     sparkSession.udf.register("getTupleId", () => "")
     sparkSession.udf.register("getPositionId", () => "")
     sparkSession.udf.register("NI", (anyRef: AnyRef) => true)
-    // added for handling MV table creation. when user will fire create ddl for
-    // create table we are adding a udf so no need to apply PreAggregate rules.
-    sparkSession.udf.register(CarbonEnv.MV_SKIP_RULE_UDF, () => "")
 
     // register for lucene datamap
     // TODO: move it to proper place, it should be registered by datamap implementation
@@ -90,8 +86,6 @@ class CarbonEnv {
     sparkSession.udf.register("text_match_with_limit", new TextMatchMaxDocUDF)
     sparkSession.udf.register("in_polygon", new InPolygonUDF)
 
-    // added for handling timeseries function like hour, minute, day , month , year
-    sparkSession.udf.register("timeseries", new TimeSeriesFunction)
     // acquiring global level lock so global configuration will be updated by only one thread
     CarbonEnv.carbonEnvMap.synchronized {
       if (!initialized) {
@@ -178,8 +172,6 @@ class CarbonEnv {
  * @Deprecated
  */
 object CarbonEnv {
-
-  lazy val MV_SKIP_RULE_UDF = "mv"
 
   val carbonEnvMap = new ConcurrentHashMap[SparkSession, CarbonEnv]
 

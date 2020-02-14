@@ -19,16 +19,10 @@ package org.apache.spark.sql.hive
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.{CarbonToSparkAdapter, SparkSession}
-import org.apache.spark.sql.catalyst.analysis.Analyzer
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.parser.ParserInterface
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
-import org.apache.spark.sql.hive.client.HiveClient
-import org.apache.spark.sql.internal.SessionState
-import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule}
-import org.apache.spark.sql.parser.{CarbonSparkSqlParser, CarbonSparkSqlParserUtil}
+import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 

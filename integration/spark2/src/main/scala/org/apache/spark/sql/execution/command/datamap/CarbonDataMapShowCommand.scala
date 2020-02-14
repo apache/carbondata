@@ -20,27 +20,18 @@ package org.apache.spark.sql.execution.command.datamap
 import java.util
 
 import scala.collection.JavaConverters._
-import scala.util.control.Breaks._
 
-import com.google.gson.Gson
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.StringType
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, DataMapUtil}
-import org.apache.carbondata.core.datamap.status.{DataMapSegmentStatusUtil, DataMapStatus, DataMapStatusManager}
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
-import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.path.CarbonTablePath
 
 /**
  * Show the datamaps on the table
- *
- * @param tableIdentifier
  */
 case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
   extends DataCommand {
@@ -81,64 +72,15 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
   private def convertToRow(schemaList: util.List[DataMapSchema]) = {
     if (schemaList != null && schemaList.size() > 0) {
       schemaList.asScala
-        .map { s =>
-          val relationIdentifier = s.getRelationIdentifier
-          val table = relationIdentifier.getDatabaseName + "." + relationIdentifier.getTableName
-          // preaggregate datamap does not support user specified property, therefor we return empty
-          val dmPropertieStr =
-            s.getProperties.asScala
-              // ignore internal used property
-              .filter(p => !p._1.equalsIgnoreCase(DataMapProperty.DEFERRED_REBUILD) &&
-                           !p._1.equalsIgnoreCase(DataMapProperty.CHILD_SELECT_QUERY) &&
-                           !p._1.equalsIgnoreCase(DataMapProperty.QUERY_TYPE))
-              .map(p => s"'${ p._1 }'='${ p._2 }'").toSeq
-              .sorted.mkString(", ")
-
-          // Get datamap status and sync information details
-          var dataMapStatus = "NA"
-          var syncInfo: String = "NA"
-          if (DataMapStatusManager.getEnabledDataMapStatusDetails
-            .exists(_.getDataMapName.equalsIgnoreCase(s.getDataMapName))) {
-            dataMapStatus = DataMapStatus.ENABLED.name()
-          } else {
-            dataMapStatus = DataMapStatus.DISABLED.name()
-          }
-          val loadMetadataDetails = SegmentStatusManager
-            .readLoadMetadata(CarbonTablePath
-              .getMetadataPath(s.getRelationIdentifier.getTablePath))
-          if (!s.isIndexDataMap && loadMetadataDetails.nonEmpty) {
-            breakable({
-              for (i <- loadMetadataDetails.length - 1 to 0 by -1) {
-                if (loadMetadataDetails(i).getSegmentStatus.equals(SegmentStatus.SUCCESS)) {
-                  val segmentMaps =
-                    DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(i).getExtraInfo)
-                  val syncInfoMap = new util.HashMap[String, String]()
-                  val iterator = segmentMaps.entrySet().iterator()
-                  while (iterator.hasNext) {
-                    val entry = iterator.next()
-                    // when in join scenario, one table is loaded and one more is not loaded,
-                    // then put value as NA
-                    if (entry.getValue.isEmpty) {
-                      syncInfoMap.put(entry.getKey, "NA")
-                    } else {
-                      syncInfoMap.put(entry.getKey, DataMapUtil.getMaxSegmentID(entry.getValue))
-                    }
-                  }
-                  val loadEndTime =
-                    if (loadMetadataDetails(i).getLoadEndTime ==
-                        CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
-                      "NA"
-                    } else {
-                      new java.sql.Timestamp(loadMetadataDetails(i).getLoadEndTime).toString
-                    }
-                  syncInfoMap.put(CarbonCommonConstants.LOAD_SYNC_TIME, loadEndTime)
-                  syncInfo = new Gson().toJson(syncInfoMap)
-                  break()
-                }
-              }
-            })
-          }
-          Row(s.getDataMapName, s.getProviderName, table, dmPropertieStr, dataMapStatus, syncInfo)
+        .map { schema =>
+          Row(
+            schema.getDataMapName,
+            schema.getProviderName,
+            schema.getUniqueTableName,
+            schema.getPropertiesAsString,
+            schema.getStatus.name(),
+            schema.getSyncStatus
+          )
       }
     } else {
       Seq.empty

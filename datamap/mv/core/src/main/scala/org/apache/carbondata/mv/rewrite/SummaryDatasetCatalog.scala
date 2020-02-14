@@ -19,25 +19,24 @@ package org.apache.carbondata.mv.rewrite
 
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-import org.apache.spark.sql.{CarbonSession, DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.FindDataSourceTable
-import org.apache.spark.sql.parser.{CarbonSpark2SqlParser, CarbonSparkSqlParserUtil}
-import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.core.datamap.DataMapCatalog
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
-import org.apache.carbondata.mv.datamap.MVHelper
+import org.apache.carbondata.mv.extension.{MVHelper, MVParser}
 import org.apache.carbondata.mv.plans.modular.{Flags, ModularPlan, ModularRelation, Select}
 import org.apache.carbondata.mv.plans.util.Signature
 import org.apache.carbondata.mv.session.MVSession
 
 
 /** Holds a summary logical plan */
-private[mv] case class SummaryDataset(signature: Option[Signature],
+private[mv] case class SummaryDataset(
+    signature: Option[Signature],
     plan: LogicalPlan,
     dataMapSchema: DataMapSchema,
     relation: ModularPlan)
@@ -61,11 +60,6 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
 
   @transient
   private val registerLock = new ReentrantReadWriteLock
-
-  /**
-   * parser
-   */
-  lazy val parser = new CarbonSpark2SqlParser
 
 
   /** Acquires a read lock on the catalog for the duration of `f`. */
@@ -107,30 +101,26 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
    */
   private[mv] def registerSchema(dataMapSchema: DataMapSchema): Unit = {
     writeLock {
-      val currentDatabase = sparkSession match {
-        case carbonSession: CarbonSession =>
-          carbonSession.sessionState.catalog.getCurrentDatabase
-        case _ =>
-          sparkSession.catalog.currentDatabase
-      }
+      val currentDatabase = sparkSession.catalog.currentDatabase
+
       // This is required because datamap schemas are across databases, so while loading the
       // catalog, if the datamap is in database other than sparkSession.currentDataBase(), then it
       // fails to register, so set the database present in the dataMapSchema Object
       setCurrentDataBase(dataMapSchema.getRelationIdentifier.getDatabaseName)
-      val mvPlan = CarbonSparkSqlParserUtil.getMVPlan(dataMapSchema.getCtasQuery, sparkSession)
+      val mvPlan = MVParser.getMVPlan(dataMapSchema.getCtasQuery, sparkSession)
       // here setting back to current database of current session, because if the actual query
       // contains db name in query like, select db1.column1 from table and current database is
       // default and if we drop the db1, still the session has current db as db1.
       // So setting back to current database.
       setCurrentDataBase(currentDatabase)
-      val planToRegister = MVHelper.dropDummFuc(mvPlan)
+      val planToRegister = MVHelper.dropDummyFunc(mvPlan)
       val modularPlan =
         mvSession.sessionState.modularizer.modularize(
           mvSession.sessionState.optimizer.execute(planToRegister)).next().semiHarmonized
       val signature = modularPlan.signature
       val identifier = dataMapSchema.getRelationIdentifier
       val output = new FindDataSourceTable(sparkSession)
-        .apply(SparkSQLUtil.sessionState(sparkSession).catalog
+        .apply(sparkSession.sessionState.catalog
         .lookupRelation(TableIdentifier(identifier.getTableName, Some(identifier.getDatabaseName))))
         .output
       val relation = ModularRelation(identifier.getDatabaseName,
@@ -158,12 +148,7 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
   }
 
   private def setCurrentDataBase(dataBaseName: String): Unit = {
-    sparkSession match {
-      case carbonSession: CarbonSession =>
-        carbonSession.sessionState.catalog.setCurrentDatabase(dataBaseName)
-      case _ =>
-        sparkSession.catalog.setCurrentDatabase(dataBaseName)
-    }
+    sparkSession.catalog.setCurrentDatabase(dataBaseName)
   }
 
   /** Removes the given [[DataFrame]] from the catalog */

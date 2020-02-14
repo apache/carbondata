@@ -23,14 +23,13 @@ import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode}
 import org.apache.spark.sql.catalyst.plans.{FullOuter, Inner, LeftOuter}
-import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.types.{DataType, Metadata}
 
-import org.apache.carbondata.mv.datamap.MVHelper
 import org.apache.carbondata.mv.plans.modular.{JoinEdge, Matchable, ModularPlan, _}
 import org.apache.carbondata.mv.plans.modular
 import org.apache.carbondata.mv.plans.modular.Flags._
 import org.apache.carbondata.mv.plans.util.SQLBuilder
+import org.apache.carbondata.mv.timeseries.TimeSeriesFunction
 
 
 abstract class DefaultMatchMaker extends MatchMaker[ModularPlan]
@@ -822,7 +821,7 @@ object SelectSelectGroupbyChildDelta extends DefaultMatchPattern with PredicateH
                 }.getOrElse(gb_2c.outputList(index)))
               }
 
-              val oList = MVHelper.createAliases(mappings)
+              val oList = CarbonToSparkAdapter.createAliases(mappings)
 
               val wip = sel_3q_exp.copy(outputList = oList, children = Seq(gb_3c2))
               val sel_3c3 = Some(factorOutSubsumer(wip, sel_3a, s.aliasMap))

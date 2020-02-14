@@ -183,15 +183,11 @@ public abstract class DataMapProvider {
             }
           }
         }
-        boolean isFullRefresh = false;
-        if (null != dataMapSchema.getProperties().get("full_refresh")) {
-          isFullRefresh = Boolean.valueOf(dataMapSchema.getProperties().get("full_refresh"));
-        }
-        if (!isFullRefresh) {
+        boolean incrementalBuild = dataMapSchema.canBeIncrementalBuild();
+        if (incrementalBuild) {
           if (!getSpecificSegmentsTobeLoaded(segmentMapping, listOfLoadFolderDetails)) {
             return false;
           }
-          segmentMap = new Gson().toJson(segmentMapping);
         } else {
           List<RelationIdentifier> relationIdentifiers = dataMapSchema.getParentTables();
           for (RelationIdentifier relationIdentifier : relationIdentifiers) {
@@ -203,8 +199,8 @@ public abstract class DataMapProvider {
             segmentMapping.put(relationIdentifier.getDatabaseName() + CarbonCommonConstants.POINT
                 + relationIdentifier.getTableName(), mainTableSegmentList);
           }
-          segmentMap = new Gson().toJson(segmentMapping);
         }
+        segmentMap = new Gson().toJson(segmentMapping);
 
         // To handle concurrent dataloading to datamap, create new loadMetaEntry and
         // set segmentMap to new loadMetaEntry and pass new segmentId with load command

@@ -56,27 +56,27 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
 
   // Create mv table on partition with partition column in aggregation only.
   test("test mv table creation on partition table with partition col as aggregation") {
-    sql("create datamap p1 on table par using 'mv' as select id, sum(city) from par group by id")
+    sql("create materialized view p1 as select id, sum(city) from par group by id")
     assert(!CarbonEnv.getCarbonTable(Some("partition_mv"), "p1_table")(sqlContext.sparkSession).isHivePartitionTable)
   }
 
   // Create mv table on partition with partition column in projection and aggregation only.
   test("test mv table creation on partition table with partition col as projection") {
-    sql("create datamap p2 on table par using 'mv' as select id, city, min(city) from par group by id,city ")
+    sql("create materialized view p2 as select id, city, min(city) from par group by id,city ")
     assert(CarbonEnv.getCarbonTable(Some("partition_mv"), "p2_table")(sqlContext.sparkSession).isHivePartitionTable)
   }
 
   // Create mv table on partition with partition column as group by.
   test("test mv table creation on partition table with partition col as group by") {
-    sql("create datamap p3 on table par using 'mv' as select id, city, max(city) from par group by id,city ")
+    sql("create materialized view p3 as select id, city, max(city) from par group by id,city ")
     assert(CarbonEnv.getCarbonTable(Some("partition_mv"), "p3_table")(sqlContext.sparkSession).isHivePartitionTable)
   }
 
   // Create mv table on partition without partition column.
   test("test mv table creation on partition table without partition column") {
-    sql("create datamap p4 on table par using 'mv' as select name, count(id) from par group by name ")
+    sql("create materialized view p4 as select name, count(id) from par group by name ")
     assert(!CarbonEnv.getCarbonTable(Some("partition_mv"), "p4_table")(sqlContext.sparkSession).isHivePartitionTable)
-    sql("drop datamap if exists p4")
+    sql("drop materialized view if exists p4")
   }
 
   test("test data correction with insert overwrite") {
@@ -87,8 +87,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("create datamap p1 on table partitionone using 'mv' as select empname, year, sum(year),month,day from partitionone group by empname, year, month,day")
+    sql("drop materialized view if exists p1")
+    sql("create materialized view p1   as select empname, year, sum(year),month,day from partitionone group by empname, year, month,day")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert overwrite table partitionone values('v',2,2014,1,1)")
     checkAnswer(sql("select * from partitionone"), Seq(Row("v",2,2014,1,1)))
@@ -107,8 +107,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("create datamap p1 on table partitionone using 'mv' as select empname, year, sum(year),month,day from partitionone group by empname, year, month,day")
+    sql("drop materialized view if exists p1")
+    sql("create materialized view p1   as select empname, year, sum(year),month,day from partitionone group by empname, year, month,day")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert overwrite table partitionone values('v',2,2015,1,1)")
     checkAnswer(sql("select * from partitionone"), Seq(Row("k",2,2014,1,1), Row("v",2,2015,1,1)))
@@ -125,8 +125,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("create datamap p1 on table partitionone using 'mv' as select empname,  year, sum(year),month,day from partitionone group by empname, month, year,day")
+    sql("drop materialized view if exists p1")
+    sql("create materialized view p1   as select empname,  year, sum(year),month,day from partitionone group by empname, month, year,day")
     val parentTable = CarbonEnv.getCarbonTable(Some("partition_mv"), "partitionone")(sqlContext.sparkSession)
     val childTable = CarbonEnv.getCarbonTable(Some("partition_mv"), "p1_table")(sqlContext.sparkSession)
     val parentPartitionColumns = parentTable.getPartitionInfo.getColumnSchemaList
@@ -147,8 +147,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("create datamap p1 on table partitionone using 'mv' as select empname,  year, sum(year),month,day from partitionone group by empname, year, month,day")
+    sql("drop materialized view if exists p1")
+    sql("create materialized view p1   as select empname,  year, sum(year),month,day from partitionone group by empname, year, month,day")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert into partitionone values('k',2,2014,1,2)")
     sql("insert into partitionone values('k',2,2014,1,1)")
@@ -168,8 +168,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("create datamap p1 on table partitionone using 'mv' as select empname,  year, sum(year),month,day from partitionone group by empname, year, month,day")
+    sql("drop materialized view if exists p1")
+    sql("create materialized view p1   as select empname,  year, sum(year),month,day from partitionone group by empname, year, month,day")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert into partitionone values('k',2,2014,1,2)")
     sql("insert into partitionone values('k',2,2014,1,1)")
@@ -189,8 +189,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("create datamap p1 on table partitionone using 'mv' as select empname,  year, sum(year),month,day from partitionone group by empname, year, month, day")
+    sql("drop materialized view if exists p1")
+    sql("create materialized view p1   as select empname,  year, sum(year),month,day from partitionone group by empname, year, month, day")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert into partitionone values('k',2,2014,1,2)")
     sql("insert into partitionone values('k',2,2014,1,1)")
@@ -209,8 +209,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("create datamap p1 on table partitionone using 'mv' as select empname,  year, sum(year),month,day from partitionone group by empname, year, month, day")
+    sql("drop materialized view if exists p1")
+    sql("create materialized view p1   as select empname,  year, sum(year),month,day from partitionone group by empname, year, month, day")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert into partitionone values('k',2,2014,1,2)")
     sql("insert into partitionone values('k',2,2014,1,1)")
@@ -229,8 +229,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("create datamap p1 using 'mv' as select empname,  year, sum(year),month,day from droppartition group by empname, year, month, day")
+    sql("drop materialized view if exists p1")
+    sql("create materialized view p1  as select empname,  year, sum(year),month,day from droppartition group by empname, year, month, day")
     sql("insert into droppartition values('k',2,2014,1,1)")
     sql("insert into droppartition values('k',2,2015,2,3)")
     sql("alter table droppartition drop partition(year=2015,month=2,day=3)")
@@ -257,8 +257,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("create datamap p1 on table partitionone using 'mv' as select empname,  year, sum(year),month,day from partitionone group by empname, year, month, day")
+    sql("drop materialized view if exists p1")
+    sql("create materialized view p1   as select empname,  year, sum(year),month,day from partitionone group by empname, year, month, day")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert into partitionone values('k',2,2014,1,2)")
     sql("insert into partitionone values('k',2,2014,1,1)")
@@ -277,8 +277,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("create datamap p1 on table partitionone using 'mv' as select empname,  year, sum(year),month,day from partitionone group by empname, year, month, day")
+    sql("drop materialized view if exists p1")
+    sql("create materialized view p1   as select empname,  year, sum(year),month,day from partitionone group by empname, year, month, day")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert into partitionone values('k',2,2014,1,2)")
     sql("insert into partitionone values('k',2,2014,1,1)")
@@ -297,8 +297,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("create datamap p1 on table partitionone using 'mv' as select empname,  year, sum(year),month,day from partitionone group by empname, year, month, day")
+    sql("drop materialized view if exists p1")
+    sql("create materialized view p1   as select empname,  year, sum(year),month,day from partitionone group by empname, year, month, day")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert into partitionone values('k',2,2014,1,2)")
     sql("insert into partitionone values('k',2,2014,1,1)")
@@ -317,8 +317,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("create datamap p1 on table partitionone using 'mv' as select empname,  year, sum(year),month,day from partitionone group by empname, year, month, day")
+    sql("drop materialized view if exists p1")
+    sql("create materialized view p1   as select empname,  year, sum(year),month,day from partitionone group by empname, year, month, day")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert into partitionone values('k',2,2014,1,2)")
     sql("insert into partitionone values('k',2,2014,1,1)")
@@ -338,8 +338,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("create datamap p1 on table partitionone using 'mv' as select empname,  year, sum(year),month,day from partitionone group by empname, year, month, day")
+    sql("drop materialized view if exists p1")
+    sql("create materialized view p1   as select empname,  year, sum(year),month,day from partitionone group by empname, year, month, day")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert into partitionone values('k',2,2014,1,2)")
     sql("insert into partitionone values('k',2,2014,1,1)")
@@ -358,12 +358,12 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("drop datamap if exists p2")
+    sql("drop materialized view if exists p1")
+    sql("drop materialized view if exists p2")
     sql(
-      "create datamap p1 on table partitionone using 'mv' as select empname, year,sum(year),day from partitionone group by empname, year, day")
+      "create materialized view p1   as select empname, year,sum(year),day from partitionone group by empname, year, day")
     sql(
-      "create datamap p2 on table partitionone using 'mv' as select empname, month,sum(year) from partitionone group by empname, month")
+      "create materialized view p2   as select empname, month,sum(year) from partitionone group by empname, month")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert into partitionone values('k',2,2014,1,2)")
 
@@ -383,15 +383,15 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("drop datamap if exists p2")
-    sql("drop datamap if exists p3")
+    sql("drop materialized view if exists p1")
+    sql("drop materialized view if exists p2")
+    sql("drop materialized view if exists p3")
     sql(
-      "create datamap p1 on table partitionone using 'mv' as select empname, year,month,sum(year) from partitionone group by empname, year, month")
+      "create materialized view p1   as select empname, year,month,sum(year) from partitionone group by empname, year, month")
     sql(
-      "create datamap p2 on table partitionone using 'mv' as select empname, month, day, sum(year) from partitionone group by empname, month, day")
+      "create materialized view p2   as select empname, month, day, sum(year) from partitionone group by empname, month, day")
     sql(
-      "create datamap p3 on table partitionone using 'mv' as select empname,month,sum(year) from partitionone group by empname, month")
+      "create materialized view p3   as select empname,month,sum(year) from partitionone group by empname, month")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert into partitionone values('k',2,2014,1,2)")
     val exceptionMessage = intercept[Exception] {
@@ -411,9 +411,9 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
+    sql("drop materialized view if exists p1")
     sql(
-      "create datamap p1 on table partitionone using 'mv' as select empname, sum(year) from partitionone group by empname")
+      "create materialized view p1   as select empname, sum(year) from partitionone group by empname")
     sql("insert into partitionone values('k',2014,1,1)")
     sql("insert into partitionone values('k',2014,1,2)")
     val exceptionMessage = intercept[Exception] {
@@ -431,12 +431,12 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
-    sql("drop datamap if exists p2")
+    sql("drop materialized view if exists p1")
+    sql("drop materialized view if exists p2")
     sql(
-      "create datamap p1 on table partitionone using 'mv' as select empname, sum(year) from partitionone group by empname")
+      "create materialized view p1   as select empname, sum(year) from partitionone group by empname")
     sql(
-      "create datamap p2 on table partitionone using 'mv' as select empname, year,sum(year),month,day from partitionone group by empname, year, month, day")
+      "create materialized view p2   as select empname, year,sum(year),month,day from partitionone group by empname, year, month, day")
     sql("insert into partitionone values('k',2,2014,1,1)")
     sql("insert into partitionone values('k',2,2014,1,2)")
     val exceptionMessage = intercept[Exception] {
@@ -444,7 +444,7 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
     }.getMessage
     assert(exceptionMessage.contains("Cannot drop partition as one of the partition"))
     assert(exceptionMessage.contains("p1"))
-    sql("drop datamap p1 on table partitionone")
+    sql("drop materialized view p1 ")
     sql("alter table partitionone drop partition(year=2014,month=1, day=1)")
   }
 
@@ -456,9 +456,9 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
+    sql("drop materialized view if exists p1")
     sql(
-      "create datamap p1 on table partitionone using 'mv' as select empname, year, sum(year) from partitionone group by empname, year")
+      "create materialized view p1   as select empname, year, sum(year) from partitionone group by empname, year")
     sql("insert into partitionone values('k',2014,1,1)")
     val exceptionMessage = intercept[Exception] {
       sql("alter table p1_table drop partition(partitionone_year=1)")
@@ -474,9 +474,9 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
+    sql("drop materialized view if exists p1")
     sql(
-      "create datamap p1 on table partitionone using 'mv' as select empname, sum(year) from partitionone group by empname")
+      "create materialized view p1   as select empname, sum(year) from partitionone group by empname")
     sql("insert into partitionone values('k',2014,1,1)")
     val exceptionMessage = intercept[Exception] {
       sql("alter table p1_table drop partition(year=2014)")
@@ -492,15 +492,15 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
+    sql("drop materialized view if exists p1")
     sql(
-      "create datamap p1 on table partitionone using 'mv' as select empname, sum(year) from partitionone group by empname")
+      "create materialized view p1   as select empname, sum(year) from partitionone group by empname")
     assert(intercept[Exception] {
       sql("alter table p1_table add partition(c=1)")
     }.getMessage.equals("Cannot add partition directly on non partitioned table"))
-    sql("drop datamap if exists p1")
+    sql("drop materialized view if exists p1")
     sql(
-      "create datamap p1 on table partitionone using 'mv' as select empname, year from " +
+      "create materialized view p1   as select empname, year from " +
       "partitionone")
     assert(intercept[Exception] {
       sql("alter table p1_table add partition(partitionone_year=1)")
@@ -515,9 +515,9 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (year int, month int,day int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop datamap if exists p1")
+    sql("drop materialized view if exists p1")
     sql(
-      "create datamap p1 on table partitionone using 'mv' as select empname, sum(year) from partitionone group by empname")
+      "create materialized view p1   as select empname, sum(year) from partitionone group by empname")
     intercept[Exception] {
       sql("alter table partitionone rename to p")
     }
@@ -528,23 +528,23 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
     sql("create table partitiontable(id int,name string) partitioned by (email string) " +
         "STORED AS carbondata tblproperties('sort_scope'='global_sort')")
     sql("insert into table partitiontable select 1,'huawei','abc'")
-    sql("create datamap ag1 on table partitiontable using 'mv' as select count(email),id" +
+    sql("create materialized view ag1 as select count(email),id" +
         " from partitiontable group by id")
-    sql("create datamap ag2 on table partitiontable using 'mv' as select sum(email),name" +
+    sql("create materialized view ag2 as select sum(email),name" +
         " from partitiontable group by name")
-    sql("create datamap ag3 on table partitiontable using 'mv' as select max(email),name" +
+    sql("create materialized view ag3 as select max(email),name" +
         " from partitiontable group by name")
-    sql("create datamap ag4 on table partitiontable using 'mv' as select min(email),name" +
+    sql("create materialized view ag4 as select min(email),name" +
         " from partitiontable group by name")
-    sql("create datamap ag5 on table partitiontable using 'mv' as select avg(email),name" +
+    sql("create materialized view ag5 as select avg(email),name" +
         " from partitiontable group by name")
     sql("alter table partitiontable add partition (email='def')")
     sql("insert into table partitiontable select 1,'huawei','def'")
-    sql("drop datamap ag1 on table partitiontable")
-    sql("drop datamap ag2 on table partitiontable")
-    sql("drop datamap ag3 on table partitiontable")
-    sql("drop datamap ag4 on table partitiontable")
-    sql("drop datamap ag5 on table partitiontable")
+    sql("drop materialized view ag1")
+    sql("drop materialized view ag2")
+    sql("drop materialized view ag3")
+    sql("drop materialized view ag4")
+    sql("drop materialized view ag5")
     sql("alter table partitiontable drop partition(email='def')")
     assert(intercept[Exception] {
       sql("alter table partitiontable drop partition(email='def')")
@@ -557,20 +557,20 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
     sql("create table partitiontable(id int,name string) partitioned by (email string) " +
         "STORED AS carbondata tblproperties('sort_scope'='global_sort')")
     sql("insert into table partitiontable select 1,'huawei','abc'")
-    sql("drop datamap if exists ag1")
-    sql("create datamap ag1 on table partitiontable using 'mv' as select count(*),id" +
+    sql("drop materialized view if exists ag1")
+    sql("create materialized view ag1 as select count(*),id" +
         " from partitiontable group by id")
     sql("insert into table partitiontable select 1,'huawei','def'")
-    assert(sql("show datamap on table partitiontable").collect().head.get(0).toString.equalsIgnoreCase("ag1"))
-    sql("drop datamap ag1 on table partitiontable")
+    assert(sql("show materialized views on table partitiontable").collect().head.get(0).toString.equalsIgnoreCase("ag1"))
+    sql("drop materialized view ag1")
   }
 
   test("test blocking partitioning of mv table") {
     sql("drop table if exists updatetime_8")
     sql("create table updatetime_8" +
         "(countryid smallint,hs_len smallint,minstartdate string,startdate string,newdate string,minnewdate string) partitioned by (imex smallint) STORED AS carbondata tblproperties('sort_scope'='global_sort','sort_columns'='countryid,imex,hs_len,minstartdate,startdate,newdate,minnewdate','table_blocksize'='256')")
-    sql("drop datamap if exists ag")
-    sql("create datamap ag on table updatetime_8 using 'mv' dmproperties('partitioning'='false') as select imex,sum(hs_len) from updatetime_8 group by imex")
+    sql("drop materialized view if exists ag")
+    sql("create materialized view ag properties('partitioning'='false') as select imex,sum(hs_len) from updatetime_8 group by imex")
     val carbonTable = CarbonEnv.getCarbonTable(Some("partition_mv"), "ag_table")(sqlContext.sparkSession)
     assert(!carbonTable.isHivePartitionTable)
     sql("drop table if exists updatetime_8")
@@ -585,7 +585,7 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
       "String,doj timestamp,projectcode int) STORED AS carbondata tblproperties" +
       "('sort_scope'='global_sort')")
     sql(
-      "create datamap sensor_1 on table partitionallcompaction using 'mv' as select " +
+      "create materialized view sensor_1 as select " +
       "sum(salary),doj, deptname,projectcode from partitionallcompaction group by doj," +
       "deptname,projectcode")
     sql(
@@ -624,8 +624,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists updatetime_8")
     sql("create table updatetime_8" +
         "(countryid smallint,hs_len smallint,minstartdate string,startdate string,newdate string,minnewdate string) partitioned by (imex smallint) STORED AS carbondata tblproperties('sort_scope'='global_sort','sort_columns'='countryid,imex,hs_len,minstartdate,startdate,newdate,minnewdate','table_blocksize'='256')")
-    sql("drop datamap if exists ag")
-    sql("create datamap ag on table updatetime_8 using 'mv' as select sum(hs_len), imex from updatetime_8 group by imex")
+    sql("drop materialized view if exists ag")
+    sql("create materialized view ag as select sum(hs_len), imex from updatetime_8 group by imex")
     sql("insert into updatetime_8 select 21,20,'fbv','gbv','wvsw','vwr',23")
     sql("insert into updatetime_8 select 21,20,'fbv','gbv','wvsw','vwr',24")
     sql("insert into updatetime_8 select 21,20,'fbv','gbv','wvsw','vwr',23")
@@ -648,19 +648,19 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
         | STORED AS carbondata
       """.stripMargin)
     sql(
-      "create datamap p7 on table partitionone using 'mv' as select empname, year, day, sum(year), sum(day) from partitionone group by empname, year, day")
+      "create materialized view p7   as select empname, year, day, sum(year), sum(day) from partitionone group by empname, year, day")
     sql(
-      "create datamap p1 on table partitionone using 'mv' as select empname, sum(year) from partitionone group by empname")
+      "create materialized view p1   as select empname, sum(year) from partitionone group by empname")
     sql(
-      "create datamap p2 on table partitionone using 'mv' as select empname, year,sum(year) from partitionone group by empname, year")
+      "create materialized view p2   as select empname, year,sum(year) from partitionone group by empname, year")
     sql(
-      "create datamap p3 on table partitionone using 'mv' as select empname, year, month, sum(year), sum(month) from partitionone group by empname, year, month")
+      "create materialized view p3   as select empname, year, month, sum(year), sum(month) from partitionone group by empname, year, month")
     sql(
-      "create datamap p4 on table partitionone using 'mv' as select empname, year,month,day,sum(year) from partitionone group by empname, year, month, day")
+      "create materialized view p4   as select empname, year,month,day,sum(year) from partitionone group by empname, year, month, day")
     sql(
-      "create datamap p5 on table partitionone using 'mv' as select empname, month,sum(year) from partitionone group by empname, month")
+      "create materialized view p5   as select empname, month,sum(year) from partitionone group by empname, month")
     sql(
-      "create datamap p6 on table partitionone using 'mv' as select empname, month, day, sum(year), sum(month) from partitionone group by empname, month, day")
+      "create materialized view p6   as select empname, month, day, sum(year), sum(month) from partitionone group by empname, month, day")
     assert(!CarbonEnv.getCarbonTable(Some("partition_mv"),"p1_table")(sqlContext.sparkSession).isHivePartitionTable)
     assert(CarbonEnv.getCarbonTable(Some("partition_mv"),"p2_table")(sqlContext.sparkSession).getPartitionInfo.getColumnSchemaList.size() == 1)
     assert(CarbonEnv.getCarbonTable(Some("partition_mv"),"p3_table")(sqlContext.sparkSession).getPartitionInfo.getColumnSchemaList.size == 2)
@@ -675,8 +675,8 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists partitionone")
     sql("create table partitionone(a int,b int) partitioned by (c int) STORED AS carbondata")
     sql("insert into partitionone values(1,2,3)")
-    sql("drop datamap if exists dm1")
-    sql("create datamap dm1 on table partitionone using 'mv' as select c,sum(b) from partitionone group by c")
+    sql("drop materialized view if exists dm1")
+    sql("create materialized view dm1   as select c,sum(b) from partitionone group by c")
     checkAnswer(sql("select c,sum(b) from partitionone group by c"), Seq(Row(3,2)))
     sql("drop table if exists partitionone")
   }
@@ -685,16 +685,16 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists partitionone")
     sql("create table partitionone(a int,b int) partitioned by (c timestamp,d timestamp) STORED AS carbondata")
     sql("insert into partitionone values(1,2,'2017-01-01 01:00:00','2018-01-01 01:00:00')")
-    sql("drop datamap if exists dm1")
+    sql("drop materialized view if exists dm1")
     sql("describe formatted partitionone").show(100, false)
-    sql("create datamap dm1 on table partitionone using 'mv' as select timeseries(c,'day'),sum(b) from partitionone group by timeseries(c,'day')")
+    sql("create materialized view dm1   as select timeseries(c,'day'),sum(b) from partitionone group by timeseries(c,'day')")
     assert(!CarbonEnv.getCarbonTable(Some("partition_mv"),"dm1_table")(sqlContext.sparkSession).isHivePartitionTable)
     assert(sql("select timeseries(c,'day'),sum(b) from partitionone group by timeseries(c,'day')").collect().length  == 1)
     sql("drop table if exists partitionone")
     sql("create table partitionone(a int,b timestamp) partitioned by (c timestamp) STORED AS carbondata")
     sql("insert into partitionone values(1,'2017-01-01 01:00:00','2018-01-01 01:00:00')")
-    sql("drop datamap if exists dm1")
-    sql("create datamap dm1 on table partitionone using 'mv' as select timeseries(b,'day'),c from partitionone group by timeseries(b,'day'),c")
+    sql("drop materialized view if exists dm1")
+    sql("create materialized view dm1   as select timeseries(b,'day'),c from partitionone group by timeseries(b,'day'),c")
     assert(CarbonEnv.getCarbonTable(Some("partition_mv"),"dm1_table")(sqlContext.sparkSession).isHivePartitionTable)
     assert(sql("select timeseries(b,'day'),c from partitionone group by timeseries(b,'day'),c").collect().length == 1)
     sql("drop table if exists partitionone")

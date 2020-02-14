@@ -22,9 +22,7 @@ import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.JoinType
 import org.apache.spark.sql.catalyst.plans.logical
-import org.apache.spark.sql.catalyst.plans.logical.Statistics
-import org.apache.spark.sql.SQLConf
-import org.apache.spark.sql.util.SparkSQLUtil
+import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, LogicalPlan, Statistics}
 
 import org.apache.carbondata.mv.plans.modular.Flags._
 
@@ -39,14 +37,15 @@ object ModularRelation {
   }
 }
 
-case class ModularRelation(databaseName: String,
+case class ModularRelation(
+    databaseName: String,
     tableName: String,
     outputList: Seq[NamedExpression],
     flags: FlagSet,
     rest: Seq[Seq[Any]]) extends LeafNode {
-  override def computeStats(spark: SparkSession, conf: SQLConf): Statistics = {
+  protected override def computeStats(spark: SparkSession): Statistics = {
     val plan = spark.table(s"${ databaseName }.${ tableName }").queryExecution.optimizedPlan
-    val stats = SparkSQLUtil.invokeStatsMethod(plan, conf)
+    val stats = plan.stats
     SparkSQLUtil.getStatisticsObj(outputList, plan, stats)
   }
 
@@ -144,9 +143,9 @@ case class HarmonizedRelation(source: ModularPlan) extends LeafNode {
 
   //  override def computeStats(spark: SparkSession, conf: SQLConf): Statistics = source.stats
   // (spark, conf)
-  override def computeStats(spark: SparkSession, conf: SQLConf): Statistics = {
+  protected override def computeStats(spark: SparkSession): Statistics = {
     val plan = spark.table(s"${ databaseName }.${ tableName }").queryExecution.optimizedPlan
-    val stats = SparkSQLUtil.invokeStatsMethod(plan, conf)
+    val stats = plan.stats
     val output = source.asInstanceOf[GroupBy].child.children(0).asInstanceOf[ModularRelation]
       .outputList.map(_.toAttribute)
     val aliasMap = AttributeMap(
@@ -199,4 +198,26 @@ case class HarmonizedRelation(source: ModularPlan) extends LeafNode {
     }
   }
 
+}
+
+object SparkSQLUtil {
+  def getStatisticsObj(outputList: Seq[NamedExpression],
+      plan: LogicalPlan, stats: Statistics,
+      aliasMap: Option[AttributeMap[Attribute]] = None)
+  : Statistics = {
+    val output = outputList.map(_.toAttribute)
+    val mapSeq = plan.collect { case n: logical.LeafNode => n }.map {
+      table => AttributeMap(table.output.zip(output))
+    }
+    val rewrites = mapSeq.head
+    val attributes : AttributeMap[ColumnStat] = stats.attributeStats
+    var attributeStats = AttributeMap(attributes.iterator
+      .map { pair => (rewrites(pair._1), pair._2) }.toSeq)
+    if (aliasMap.isDefined) {
+      attributeStats = AttributeMap(
+        attributeStats.map(pair => (aliasMap.get(pair._1), pair._2)).toSeq)
+    }
+    val hints = stats.hints
+    Statistics(stats.sizeInBytes, stats.rowCount, attributeStats, hints)
+  }
 }

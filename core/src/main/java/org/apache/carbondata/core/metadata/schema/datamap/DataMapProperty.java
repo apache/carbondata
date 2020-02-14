@@ -26,22 +26,13 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 public class DataMapProperty {
 
   /**
-   * Used to specify the store location of the datamap
-   */
-  public static final String PARTITIONING = "partitioning";
-  public static final String PATH = "path";
-
-  /**
    * For datamap created with 'WITH DEFERRED REBUILD' syntax, we will add this
    * property internally
    */
   public static final String DEFERRED_REBUILD = "_internal.deferred.rebuild";
+
   /**
-   * for internal property 'CHILD_SELECT_QUERY'
+   * internal property, true if it needs full refresh, thus it does not support incremental load
    */
-  public static final String CHILD_SELECT_QUERY = "CHILD_SELECT QUERY";
-  /**
-   * for internal property 'QUERYTYPE'
-   */
-  public static final String QUERY_TYPE = "QUERYTYPE";
+  public static final String FULL_REFRESH = "full_refresh";
 }
