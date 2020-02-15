@@ -157,21 +157,23 @@ object CarbonMergeFilesRDD {
     if (carbonTable.isHivePartitionTable && !StringUtils.isEmpty(tempFolderPath)) {
       // remove all tmp folder of index files
       val startDelete = System.currentTimeMillis()
-      val numThreads = Math.min(Math.max(partitionInfo.size(), 1), 10)
-      val executorService = Executors.newFixedThreadPool(numThreads)
-      val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+      // get all files in all folder of index files
+      val allTmpFiles = partitionInfo
+        .asScala
+        .map { partitionPath =>
+          FileFactory.getCarbonFile(partitionPath + "/" + tempFolderPath)
+            .listFiles().toList
+        }.toList.flatten.map(_.getAbsolutePath)
+      // delete files in parallel
+      sparkSession.sparkContext.parallelize(allTmpFiles).map {
+        deleteFileWithRetry(_, 3)
+      }.collect()
+      // delete dirs
       partitionInfo
         .asScala
         .map { partitionPath =>
-          executorService.submit(new Runnable {
-            override def run(): Unit = {
-              ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
-              FileFactory.deleteAllCarbonFilesOfDir(
-                FileFactory.getCarbonFile(partitionPath + "/" + tempFolderPath))
-            }
-          })
+          FileFactory.deleteFile(partitionPath + "/" + tempFolderPath)
         }
-        .map(_.get())
       LOGGER.info("Time taken to remove partition files for all partitions: " +
                   (System.currentTimeMillis() - startDelete))
     } else if (carbonTable.isHivePartitionTable) {
@@ -189,6 +191,27 @@ object CarbonMergeFilesRDD {
       })
     }
     mergeIndexSize
+  }
+
+  /**
+   * delete the file with retry
+   */
+  def deleteFileWithRetry(filePath: String, _retryTimes: Integer): Unit = {
+    var retryTimes = _retryTimes
+    while (!deleteFile(filePath) && retryTimes > 0) {
+      retryTimes -= 1
+    }
+  }
+
+  /**
+   * delete the file
+   */
+  def deleteFile(filePath: String): Boolean = {
+    val success = FileFactory.deleteFile(filePath)
+    if (!success && FileFactory.isFileExist(filePath)) {
+      LOGGER.warn("Failed To delete indexfile:" + filePath)
+    }
+    success
   }
 
   /**
