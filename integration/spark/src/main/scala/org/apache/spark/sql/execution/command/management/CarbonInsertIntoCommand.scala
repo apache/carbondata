@@ -176,8 +176,17 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
       convertedStaticPartition)
     scanResultRdd = sparkSession.sessionState.executePlan(newLogicalPlan).toRdd
     if (logicalPartitionRelation != null) {
-      logicalPartitionRelation =
-        getReArrangedSchemaLogicalRelation(reArrangedIndex, logicalPartitionRelation)
+      if (selectedColumnSchema.length != logicalPartitionRelation.output.length) {
+        throw new RuntimeException(" schema length doesn't match partition length")
+      }
+      val isNotReArranged = selectedColumnSchema.zipWithIndex.exists {
+        case (cs, i) => !cs.getColumnName.equals(logicalPartitionRelation.output(i).name)
+      }
+      if (isNotReArranged) {
+        // Re-arrange the catalog table schema and output for partition relation
+        logicalPartitionRelation =
+          getReArrangedSchemaLogicalRelation(reArrangedIndex, logicalPartitionRelation)
+      }
     }
     // Delete stale segment folders that are not in table status but are physically present in
     // the Fact folder

@@ -1160,6 +1160,8 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test mv with duplicate columns in query and constant column") {
+    // new optimized insert into flow doesn't support duplicate column names, so send it to old flow
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
     sql("drop table if exists maintable")
     sql("create table maintable(name string, age int, add string) STORED AS carbondata")
     sql("create materialized view dupli_mv as select name, sum(age),sum(age) from maintable group by name")
@@ -1178,6 +1180,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     assert(TestUtil.verifyMVDataMap(df4.queryExecution.optimizedPlan, "constant_mv"))
     assert(TestUtil.verifyMVDataMap(df5.queryExecution.optimizedPlan, "dupli_projection"))
     assert(TestUtil.verifyMVDataMap(df6.queryExecution.optimizedPlan, "dupli_projection"))
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false")
   }
 
   test("test mv query when the column names and table name same in join scenario") {

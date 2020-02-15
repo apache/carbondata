@@ -29,6 +29,8 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.SortColumnRangeInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.OutputFilesInfoHolder;
 
 public class CarbonDataLoadConfiguration {
@@ -236,18 +238,12 @@ public class CarbonDataLoadConfiguration {
   }
 
   public DataType[] getMeasureDataType() {
-    List<Integer> measureIndexes = new ArrayList<>(dataFields.length);
-    int measureCount = 0;
-    for (int i = 0; i < dataFields.length; i++) {
-      if (!dataFields[i].getColumn().isDimension()) {
-        measureIndexes.add(i);
-        measureCount++;
-      }
-    }
-
-    DataType[] type = new DataType[measureCount];
+    // data field might be rearranged in case of partition.
+    // so refer internal order not the data field order.
+    List<CarbonMeasure> visibleMeasures = tableSpec.getCarbonTable().getVisibleMeasures();
+    DataType[] type = new DataType[visibleMeasures.size()];
     for (int i = 0; i < type.length; i++) {
-      type[i] = dataFields[measureIndexes.get(i)].getColumn().getDataType();
+      type[i] = visibleMeasures.get(i).getDataType();
     }
     return type;
   }
@@ -258,22 +254,16 @@ public class CarbonDataLoadConfiguration {
    * @return
    */
   public CarbonColumn[] getNoDictAndComplexDimensions() {
-    List<Integer> noDicOrCompIndexes = new ArrayList<>(dataFields.length);
-    int noDicCount = 0;
-    for (int i = 0; i < dataFields.length; i++) {
-      if (dataFields[i].getColumn().isDimension() && (
-          dataFields[i].getColumn().getDataType() != DataTypes.DATE || dataFields[i].getColumn()
-              .isComplex())) {
-        noDicOrCompIndexes.add(i);
-        noDicCount++;
+    // data field might be rearranged in case of partition.
+    // so refer internal order not the data field order.
+    List<CarbonDimension> visibleDimensions = tableSpec.getCarbonTable().getVisibleDimensions();
+    List<CarbonColumn> noDictionaryDimensions = new ArrayList<>();
+    for (int i = 0; i < visibleDimensions.size(); i++) {
+      if (visibleDimensions.get(i).getDataType() != DataTypes.DATE) {
+        noDictionaryDimensions.add(visibleDimensions.get(i));
       }
     }
-
-    CarbonColumn[] dims = new CarbonColumn[noDicCount];
-    for (int i = 0; i < dims.length; i++) {
-      dims[i] = dataFields[noDicOrCompIndexes.get(i)].getColumn();
-    }
-    return dims;
+    return noDictionaryDimensions.toArray(new CarbonColumn[0]);
   }
 
   /**

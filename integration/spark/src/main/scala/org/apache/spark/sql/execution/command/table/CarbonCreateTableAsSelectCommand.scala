@@ -41,7 +41,7 @@ case class CarbonCreateTableAsSelectCommand(
     ifNotExistsSet: Boolean = false,
     tableLocation: Option[String] = None) extends AtomicRunnableCommand {
 
-  var loadCommand: CarbonInsertIntoCommand = _
+  var insertIntoCommand: CarbonInsertIntoCommand = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val tableName = tableInfo.getFactTable.getTableName
@@ -76,7 +76,7 @@ case class CarbonCreateTableAsSelectCommand(
         .createCarbonDataSourceHadoopRelation(sparkSession,
           TableIdentifier(tableName, Option(dbName)))
       // execute command to load data into carbon table
-      loadCommand = CarbonInsertIntoCommand(
+      insertIntoCommand = CarbonInsertIntoCommand(
         databaseNameOp = Some(carbonDataSourceHadoopRelation.carbonRelation.databaseName),
         tableName = carbonDataSourceHadoopRelation.carbonRelation.tableName,
         options = scala.collection.immutable
@@ -85,14 +85,14 @@ case class CarbonCreateTableAsSelectCommand(
         isOverwriteTable = false,
         logicalPlan = query,
         tableInfo = tableInfo)
-      loadCommand.processMetadata(sparkSession)
+      insertIntoCommand.processMetadata(sparkSession)
     }
     Seq.empty
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    if (null != loadCommand) {
-      loadCommand.processData(sparkSession)
+    if (null != insertIntoCommand) {
+      insertIntoCommand.processData(sparkSession)
     }
     Seq.empty
   }

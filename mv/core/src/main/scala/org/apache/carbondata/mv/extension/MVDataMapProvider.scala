@@ -21,7 +21,7 @@ import java.io.IOException
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonUtils, SparkSession}
-import org.apache.spark.sql.execution.command.management.CarbonInsertIntoWithDf
+import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.sql.util.SparkSQLUtil
@@ -141,19 +141,17 @@ class MVDataMapProvider(
           !column.getColumnName
             .equalsIgnoreCase(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)
         }.sortBy(_.getSchemaOrdinal).map(_.getColumnName).mkString(",")
-      val insertWithDf = CarbonInsertIntoWithDf(
+      val insertIntoCommand = CarbonInsertIntoCommand(
         databaseNameOp = Some(identifier.getDatabaseName),
         tableName = identifier.getTableName,
         options = scala.collection.immutable.Map("fileheader" -> header),
         isOverwriteTable,
-        dataFrame = updatedQuery,
-        updateModel = None,
-        tableInfoOp = None,
+        logicalPlan = updatedQuery.queryExecution.analyzed,
+        tableInfo = dataMapTable.getTableInfo,
         internalOptions = Map("mergedSegmentName" -> newLoadName,
-          CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true"),
-        partition = Map.empty)
+          CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true"))
       try {
-        insertWithDf.process(sparkSession)
+        insertIntoCommand.run(sparkSession)
       } catch {
         case ex: Exception =>
           // If load to dataMap table fails, disable the dataMap and if newLoad is still
