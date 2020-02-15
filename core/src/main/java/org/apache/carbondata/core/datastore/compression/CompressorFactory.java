@@ -35,7 +35,7 @@ public class CompressorFactory {
   private final Map<String, Compressor> allSupportedCompressors = new HashMap<>();
 
   public enum NativeSupportedCompressor {
-    NONE("none",NoneCompressor.class),
+    NONE("none", NoneCompressor.class),
     SNAPPY("snappy", SnappyCompressor.class),
     ZSTD("zstd", ZstdCompressor.class),
     GZIP("gzip", GzipCompressor.class);
