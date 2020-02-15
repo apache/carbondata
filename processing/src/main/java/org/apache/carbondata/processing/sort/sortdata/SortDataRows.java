@@ -51,6 +51,8 @@ public class SortDataRows {
   private ThreadLocal<ReUsableByteArrayDataOutputStream> reUsableByteArrayDataOutputStream;
   private int sortBufferSize;
 
+  private int instanceId;
+
   private SortIntermediateFileMerger intermediateFileMerger;
 
   public SortDataRows(SortParameters parameters,
@@ -78,6 +80,10 @@ public class SortDataRows {
     // size of list will be sort buffer size + 1 to avoid creation of new
     // array in list array
     this.recordHolderList = new Object[sortBufferSize][];
+  }
+
+  public void setInstanceId(int instanceId) {
+    this.instanceId = instanceId;
   }
 
   public void addRow(Object[] row) throws CarbonSortKeyAndGroupByException {
@@ -146,7 +152,7 @@ public class SortDataRows {
       String locationChosen = tmpFileLocation[new Random().nextInt(tmpFileLocation.length)];
       File sortTempFile = new File(
               locationChosen + File.separator + parameters.getTableName()
-                      + '_' + parameters.getRangeId() + '_' + System.nanoTime()
+                      + '_' + instanceId + '_' + parameters.getRangeId() + '_' + System.nanoTime()
                       + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
       writeDataToFile(recordHolderArray, recordHolderArray.length, sortTempFile);
       // add sort temp filename to arrayList. When the list size reaches 20 then
@@ -186,7 +192,7 @@ public class SortDataRows {
       String[] tmpLocation = parameters.getTempFileLocation();
       String locationChosen = tmpLocation[new Random().nextInt(tmpLocation.length)];
       File file = new File(locationChosen + File.separator + parameters.getTableName()
-          + '_' + parameters.getRangeId() + '_' + System.nanoTime()
+          + '_' + instanceId + '_' + parameters.getRangeId() + '_' + System.nanoTime()
           + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
       writeDataToFile(recordHolderList, this.entryCount, file);
     }

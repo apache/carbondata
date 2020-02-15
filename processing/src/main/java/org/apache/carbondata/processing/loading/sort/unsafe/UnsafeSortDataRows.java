@@ -62,6 +62,8 @@ public class UnsafeSortDataRows {
 
   private final String taskId;
 
+  private int instanceId;
+
   public UnsafeSortDataRows(SortParameters parameters,
       UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger, int inMemoryChunkSize) {
     this.parameters = parameters;
@@ -79,6 +81,10 @@ public class UnsafeSortDataRows {
     this.threadStatusObserver = new ThreadStatusObserver();
     this.taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
     this.inMemoryChunkSize = inMemoryChunkSize * 1024L * 1024L;
+  }
+
+  public void setInstanceId(int instanceId) {
+    this.instanceId = instanceId;
   }
 
   public void initialize() {
@@ -267,7 +273,7 @@ public class UnsafeSortDataRows {
         String tmpDir = parameters.getTempFileLocation()[
                 new Random().nextInt(parameters.getTempFileLocation().length)];
         File sortTempFile = new File(tmpDir + File.separator + parameters.getTableName()
-                + '_' + parameters.getRangeId() + '_' + System.nanoTime()
+                + '_' + instanceId + '_' + parameters.getRangeId() + '_' + System.nanoTime()
                 + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
         writeDataToFile(rowPage, sortTempFile);
         LOGGER.info("Time taken to sort row page with size" + rowPage.getBuffer().getActualSize()

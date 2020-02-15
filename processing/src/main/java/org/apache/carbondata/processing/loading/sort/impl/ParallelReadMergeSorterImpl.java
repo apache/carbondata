@@ -100,6 +100,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
     try {
       for (int i = 0; i < iterators.length; i++) {
         SortDataRows sortDataRows = new SortDataRows(sortParameters, intermediateFileMerger);
+        sortDataRows.setInstanceId(i);
         executorService.execute(
             new SortIteratorThread(iterators[i], sortDataRows, batchSize, rowCounter,
                 threadStatusObserver));

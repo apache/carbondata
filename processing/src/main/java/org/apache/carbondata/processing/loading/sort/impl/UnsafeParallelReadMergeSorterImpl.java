@@ -95,6 +95,7 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
       for (int i = 0; i < iterators.length; i++) {
         UnsafeSortDataRows sortDataRows = new UnsafeSortDataRows(
                 sortParameters, unsafeIntermediateFileMerger, inMemoryChunkSizeInMB);
+        sortDataRows.setInstanceId(i);
         executorService.execute(new SortIteratorThread(iterators[i], sortDataRows,
                 batchSize, rowCounter, this.threadStatusObserver));
       }
