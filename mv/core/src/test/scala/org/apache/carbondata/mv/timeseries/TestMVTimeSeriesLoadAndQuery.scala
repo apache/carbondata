@@ -21,6 +21,8 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.mv.rewrite.TestUtil
 
 class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
@@ -284,6 +286,9 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test mv timeseries duplicate columns and constant columns") {
+    // new optimized insert into flow doesn't support duplicate column names, so send it to old flow
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
     dropDataMap("datamap1")
     sql(
       "create materialized view datamap1 as " +
@@ -300,6 +305,8 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     val df3 = sql("select timeseries(projectjoindate,'month') ,sum(1)  ex from maintable group by timeseries(projectjoindate,'month')")
     checkPlan("datamap1", df3)
     dropDataMap("datamap1")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false")
   }
 
   test("test mv timeseries with like filters") {
@@ -313,6 +320,10 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test mv timeseries with join scenario") {
+    // this test case datamap table is created with distinct column (2 columns),
+    // but insert projection has duplicate column(3 columns). Cannot support in new insert into flow
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
     sql("drop table if exists secondtable")
     sql(
       "CREATE TABLE secondtable (empno int,empname string, projectcode int, projectjoindate " +
@@ -328,6 +339,8 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       " from maintable t1 inner join secondtable t2 where" +
       " t2.projectcode = t1.projectcode group by timeseries(t1.projectjoindate,'month')")
     checkPlan("datamap1", df)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false")
   }
 
   test("test create materialized view with group by columns not present in projection") {

@@ -99,9 +99,13 @@ public class TablePage {
     noDictDimensionPages = new ColumnPage[model.getNoDictionaryCount()];
     int tmpNumDictDimIdx = 0;
     int tmpNumNoDictDimIdx = 0;
-    for (int i = 0; i < dictDimensionPages.length + noDictDimensionPages.length; i++) {
+    for (int i = 0; i < tableSpec.getNumDimensions(); i++) {
       TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i);
-      ColumnType columnType = tableSpec.getDimensionSpec(i).getColumnType();
+      if (spec.getSchemaDataType().isComplexType()) {
+        // skip complex columns and go other dimensions.
+        // partition scenario dimensions can present after complex columns.
+        continue;
+      }
       ColumnPage page;
       if (spec.getSchemaDataType() == DataTypes.DATE) {
         page = ColumnPage.newPage(

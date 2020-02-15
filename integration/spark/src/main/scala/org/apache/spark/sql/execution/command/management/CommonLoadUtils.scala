@@ -50,7 +50,7 @@ import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOp
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, TableDataMap}
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
-import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.{DateDirectDictionaryGenerator, TimeStampGranularityTypeValue}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
@@ -728,7 +728,13 @@ object CommonLoadUtils {
     }
     val updatedRdd: RDD[InternalRow] = rdd.map { internalRow =>
       for (index <- timeStampIndex) {
-        internalRow.setLong(index, internalRow.getLong(index) / 1000)
+        if (internalRow.getLong(index) == 0) {
+          internalRow.setNullAt(index)
+        } else {
+          internalRow.setLong(
+            index,
+            internalRow.getLong(index) / TimeStampGranularityTypeValue.MILLIS_SECONDS.getValue)
+        }
       }
       var doubleValue: Double = 0
       for (index <- doubleIndex) {

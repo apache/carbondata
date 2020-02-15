@@ -321,18 +321,16 @@ case class CarbonInsertFromStageCommand(
         val header = columns.mkString(",")
         val selectColumns = columns.filter(!partition.contains(_))
         val selectedDataFrame = dataFrame.select(selectColumns.head, selectColumns.tail: _*)
-        CarbonInsertIntoWithDf(
+        CarbonInsertIntoCommand(
           databaseNameOp = Option(table.getDatabaseName),
           tableName = table.getTableName,
           options = scala.collection.immutable.Map("fileheader" -> header,
             "binary_decoder" -> "base64"),
           isOverwriteTable = false,
-          dataFrame = selectedDataFrame,
-          updateModel = None,
-          tableInfoOp = None,
-          internalOptions = Map.empty,
+          logicalPlan = selectedDataFrame.queryExecution.analyzed,
+          tableInfo = table.getTableInfo,
           partition = partition
-        ).process(spark)
+        ).run(spark)
     }
     LOGGER.info(s"finish data loading, time taken ${ System.currentTimeMillis() - start }ms")
   }

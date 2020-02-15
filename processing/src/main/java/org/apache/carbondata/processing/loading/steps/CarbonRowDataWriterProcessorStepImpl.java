@@ -19,7 +19,7 @@ package org.apache.carbondata.processing.loading.steps;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +35,7 @@ import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -52,7 +52,6 @@ import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 
 /**
@@ -170,70 +169,29 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   }
 
   private void initializeNoReArrangeIndexes() {
-    List<ColumnSchema> listOfColumns =
-        configuration.getTableSpec().getCarbonTable().getTableInfo().getFactTable()
-            .getListOfColumns();
-    List<Integer> internalOrder = new ArrayList<>();
-    List<Integer> invisibleIndex = new ArrayList<>();
-    for (ColumnSchema col : listOfColumns) {
-      // consider the invisible columns other than the dummy measure(-1)
-      if (col.isInvisible() && col.getSchemaOrdinal() != -1) {
-        invisibleIndex.add(col.getSchemaOrdinal());
-      }
-    }
-    int complexChildCount = 0;
-    for (ColumnSchema col : listOfColumns) {
-      if (col.isInvisible()) {
-        continue;
-      }
-      if (col.getColumnName().contains(".")) {
-        // If the schema ordinal is -1,
-        // no need to consider it during shifting columns to derive new shifted ordinal
-        if (col.getSchemaOrdinal() != -1) {
-          complexChildCount = complexChildCount + 1;
-        }
-      } else {
-        // get number of invisible index count before this column
-        int invisibleIndexCount = 0;
-        for (int index : invisibleIndex) {
-          if (index < col.getSchemaOrdinal()) {
-            invisibleIndexCount++;
-          }
-        }
-        if (col.getDataType().isComplexType()) {
-          // Calculate re-arrange index by ignoring the complex child count.
-          // As projection will have only parent columns
-          internalOrder.add(col.getSchemaOrdinal() - complexChildCount - invisibleIndexCount);
-        } else {
-          internalOrder.add(col.getSchemaOrdinal() - invisibleIndexCount);
-        }
-      }
-    }
+    // Data might have partition columns in the end in new insert into flow.
+    // But when convert to 3 parts, just keep in internal order. so derive index for that.
+    List<CarbonColumn> listOfColumns = new ArrayList<>();
+    listOfColumns.addAll(configuration.getTableSpec().getCarbonTable().getVisibleDimensions());
+    listOfColumns.addAll(configuration.getTableSpec().getCarbonTable().getVisibleMeasures());
     // In case of partition, partition data will be at the end. So, need to keep data position
-    List<Pair<DataField, Integer>> dataPositionList = new ArrayList<>();
+    Map<String, Integer> dataPositionMap = new HashMap<>();
     int dataPosition = 0;
     for (DataField field : configuration.getDataFields()) {
-      dataPositionList.add(Pair.of(field, dataPosition++));
+      dataPositionMap.put(field.getColumn().getColName(), dataPosition++);
     }
-    // convert to original create order
-    dataPositionList.sort(Comparator.comparingInt(p -> p.getKey().getColumn().getSchemaOrdinal()));
-    // re-arranged data fields
-    List<Pair<DataField, Integer>> reArrangedDataFieldList = new ArrayList<>();
-    for (int index : internalOrder) {
-      reArrangedDataFieldList.add(dataPositionList.get(index));
-    }
-    // get the index of each type and used for 3 parts conversion
-    for (Pair<DataField, Integer> fieldWithDataPosition : reArrangedDataFieldList) {
-      if (fieldWithDataPosition.getKey().getColumn().hasEncoding(Encoding.DICTIONARY)) {
-        directDictionaryDimensionIndex.add(fieldWithDataPosition.getValue());
+    // get the index of each type and to be used in 3 parts conversion
+    for (CarbonColumn column : listOfColumns) {
+      if (column.hasEncoding(Encoding.DICTIONARY)) {
+        directDictionaryDimensionIndex.add(dataPositionMap.get(column.getColName()));
       } else {
-        if (fieldWithDataPosition.getKey().getColumn().getDataType().isComplexType()) {
-          complexTypeIndex.add(fieldWithDataPosition.getValue());
-        } else if (fieldWithDataPosition.getKey().getColumn().isMeasure()) {
-          measureIndex.add(fieldWithDataPosition.getValue());
+        if (column.getDataType().isComplexType()) {
+          complexTypeIndex.add(dataPositionMap.get(column.getColName()));
+        } else if (column.isMeasure()) {
+          measureIndex.add(dataPositionMap.get(column.getColName()));
         } else {
           // other dimensions
-          otherDimensionIndex.add(fieldWithDataPosition.getValue());
+          otherDimensionIndex.add(dataPositionMap.get(column.getColName()));
         }
       }
     }
