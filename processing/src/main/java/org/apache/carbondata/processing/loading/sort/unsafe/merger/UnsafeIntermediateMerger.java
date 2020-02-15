@@ -47,13 +47,8 @@ public class UnsafeIntermediateMerger {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(UnsafeIntermediateMerger.class.getName());
 
-  /**
-   * executorService
-   */
   private ExecutorService executorService;
-  /**
-   * rowPages
-   */
+
   private List<UnsafeCarbonRowPage> rowPages;
 
   private List<UnsafeInMemoryIntermediateDataMerger> mergedPages;
@@ -65,9 +60,7 @@ public class UnsafeIntermediateMerger {
   private List<File> procFiles;
 
   private List<Future<Void>> mergerTask;
-  /**
-   * size to be spilled in sort memory
-   */
+
   private long spillSizeInSortMemory;
 
   public UnsafeIntermediateMerger(SortParameters parameters) {
@@ -91,7 +84,6 @@ public class UnsafeIntermediateMerger {
           " less than the page size " + inMemoryChunkSizeInMB * 1024 * 1024 +
           ",so no merge and spill in-memory pages to disk");
     }
-
   }
 
   public void addDataChunkToMerge(UnsafeCarbonRowPage rowPage) {
@@ -99,6 +91,9 @@ public class UnsafeIntermediateMerger {
     // intermediate merging of sort temp files will be triggered
     synchronized (lockObject) {
       rowPages.add(rowPage);
+      if (rowPages.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
+        tryTriggerInMemoryMerging(false);
+      }
     }
   }
 
@@ -107,28 +102,14 @@ public class UnsafeIntermediateMerger {
     // intermediate merging of sort temp files will be triggered
     synchronized (lockObject) {
       procFiles.add(sortTempFile);
+      if (procFiles.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
+        File[] fileList = procFiles.toArray(new File[procFiles.size()]);
+        this.procFiles = new ArrayList<>();
+        startIntermediateMerging(fileList);
+      }
     }
   }
 
-  public void startFileMergingIfPossible() {
-    File[] fileList;
-    if (procFiles.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
-      synchronized (lockObject) {
-        fileList = procFiles.toArray(new File[procFiles.size()]);
-        this.procFiles = new ArrayList<File>();
-      }
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Sumitting request for intermediate merging no of files: " + fileList.length);
-      }
-      startIntermediateMerging(fileList);
-    }
-  }
-
-  /**
-   * Below method will be used to start the intermediate file merging
-   *
-   * @param intermediateFiles
-   */
   private void startIntermediateMerging(File[] intermediateFiles) {
     //pick a temp location randomly
     String[] tempFileLocations = parameters.getTempFileLocation();
@@ -139,6 +120,10 @@ public class UnsafeIntermediateMerger {
         + CarbonCommonConstants.MERGERD_EXTENSION);
     UnsafeIntermediateFileMerger merger =
         new UnsafeIntermediateFileMerger(parameters, intermediateFiles, file);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Submitting request for intermediate merging number of files: "
+              + intermediateFiles.length);
+    }
     mergerTask.add(executorService.submit(merger));
   }
 
@@ -160,18 +145,8 @@ public class UnsafeIntermediateMerger {
       }
     }
     if (pages2Merge.size() > 1) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Sumitting request for intermediate merging of in-memory pages : "
-            + pages2Merge.size());
-      }
       startIntermediateMerging(pages2Merge.toArray(new UnsafeCarbonRowPage[pages2Merge.size()]),
           totalRows2Merge, spillDisk);
-    }
-  }
-
-  public void startInmemoryMergingIfPossible() {
-    if (rowPages.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
-      tryTriggerInMemoryMerging(false);
     }
   }
 
@@ -187,6 +162,10 @@ public class UnsafeIntermediateMerger {
     UnsafeInMemoryIntermediateDataMerger merger =
         new UnsafeInMemoryIntermediateDataMerger(rowPages, totalRows, parameters, spillDisk);
     mergedPages.add(merger);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Submitting request for intermediate merging of in-memory pages : "
+              + rowPages.length);
+    }
     mergerTask.add(executorService.submit(merger));
   }
 

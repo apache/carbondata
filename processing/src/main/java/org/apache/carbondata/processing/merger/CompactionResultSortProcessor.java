@@ -455,6 +455,10 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     dimensionColumnCount = dimensions.size();
     sortParameters = createSortParameters();
     intermediateFileMerger = new SortIntermediateFileMerger(sortParameters);
+    // Delete if any older file exists in sort temp folder
+    CarbonDataProcessorUtil.deleteSortLocationIfExists(sortParameters.getTempFileLocation());
+    // create new sort temp directory
+    CarbonDataProcessorUtil.createLocations(sortParameters.getTempFileLocation());
     // TODO: Now it is only supported onheap merge, but we can have unsafe merge
     // as well by using UnsafeSortDataRows.
     this.sortDataRows = new SortDataRows(sortParameters, intermediateFileMerger);

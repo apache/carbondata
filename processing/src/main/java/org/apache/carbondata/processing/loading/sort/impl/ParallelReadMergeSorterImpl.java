@@ -82,28 +82,37 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
     finalMerger =
         new SingleThreadFinalSortFilesMerger(dataFolderLocations, sortParameters.getTableName(),
             sortParameters);
+    // Delete if any older file exists in sort temp folder
+    CarbonDataProcessorUtil.deleteSortLocationIfExists(sortParameters.getTempFileLocation());
+    // create new sort temp directory
+    CarbonDataProcessorUtil.createLocations(sortParameters.getTempFileLocation());
   }
 
   @Override
   public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
       throws CarbonDataLoadingException {
-    SortDataRows sortDataRow = new SortDataRows(sortParameters, intermediateFileMerger);
     final int batchSize = CarbonProperties.getInstance().getBatchSize();
-    sortDataRow.initialize();
-    this.executorService = Executors.newFixedThreadPool(iterators.length,
+    this.executorService = Executors.newFixedThreadPool(sortParameters.getNumberOfCores(),
         new CarbonThreadFactory("SafeParallelSorterPool:" + sortParameters.getTableName(),
                 true));
     this.threadStatusObserver = new ThreadStatusObserver(executorService);
 
     try {
       for (int i = 0; i < iterators.length; i++) {
+        SortDataRows sortDataRows = new SortDataRows(sortParameters, intermediateFileMerger);
+        sortDataRows.setInstanceId(i);
         executorService.execute(
-            new SortIteratorThread(iterators[i], sortDataRow, batchSize, rowCounter,
+            new SortIteratorThread(iterators[i], sortDataRows, batchSize, rowCounter,
                 threadStatusObserver));
       }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
-      processRowToNextStep(sortDataRow, sortParameters);
+      LOGGER.info("Record Processed For table: " + sortParameters.getTableName());
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
+          .recordSortRowsStepTotalTime(sortParameters.getPartitionID(), System.currentTimeMillis());
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
+          .recordDictionaryValuesTotalTime(sortParameters.getPartitionID(),
+                      System.currentTimeMillis());
     } catch (Exception e) {
       checkError();
       throw new CarbonDataLoadingException("Problem while shutdown the server ", e);
@@ -152,28 +161,6 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
   }
 
   /**
-   * Below method will be used to process data to next step
-   */
-  private boolean processRowToNextStep(SortDataRows sortDataRows, SortParameters parameters)
-      throws CarbonDataLoadingException {
-    try {
-      // start sorting
-      sortDataRows.startSorting();
-
-      // check any more rows are present
-      LOGGER.info("Record Processed For table: " + parameters.getTableName());
-      CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-          .recordSortRowsStepTotalTime(parameters.getPartitionID(), System.currentTimeMillis());
-      CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-          .recordDictionaryValuesTotalTime(parameters.getPartitionID(),
-              System.currentTimeMillis());
-      return false;
-    } catch (CarbonSortKeyAndGroupByException e) {
-      throw new CarbonDataLoadingException(e);
-    }
-  }
-
-  /**
    * This thread iterates the iterator and adds the rows to @{@link SortDataRows}
    */
   private static class SortIteratorThread implements Runnable {
@@ -201,6 +188,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
     @Override
     public void run() {
       try {
+        sortDataRows.initialize();
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
           int i = 0;
@@ -215,6 +203,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
             rowCounter.getAndAdd(i);
           }
         }
+        sortDataRows.startSorting();
       } catch (Exception e) {
         LOGGER.error(e.getMessage(), e);
         observer.notifyFailed(e);
