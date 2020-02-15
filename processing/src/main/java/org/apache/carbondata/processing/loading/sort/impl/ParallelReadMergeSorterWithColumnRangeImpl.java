@@ -90,6 +90,10 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
     for (int i = 0; i < columnRangeInfo.getNumOfRanges(); i++) {
       insideRowCounterList.add(new AtomicLong(0));
     }
+    // Delete if any older file exists in sort temp folder
+    CarbonDataProcessorUtil.deleteSortLocationIfExists(sortParameters.getTempFileLocation());
+    // create new sort temp directory
+    CarbonDataProcessorUtil.createLocations(sortParameters.getTempFileLocation());
   }
 
   @Override

@@ -42,13 +42,8 @@ public class SortIntermediateFileMerger {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(SortIntermediateFileMerger.class.getName());
 
-  /**
-   * executorService
-   */
   private ExecutorService executorService;
-  /**
-   * procFiles
-   */
+
   private List<File> procFiles;
 
   private SortParameters parameters;
@@ -72,20 +67,11 @@ public class SortIntermediateFileMerger {
     // intermediate merging of sort temp files will be triggered
     synchronized (lockObject) {
       procFiles.add(sortTempFile);
-    }
-  }
-
-  public void startMergingIfPossible() {
-    File[] fileList;
-    if (procFiles.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
-      synchronized (lockObject) {
-        fileList = procFiles.toArray(new File[procFiles.size()]);
-        this.procFiles = new ArrayList<File>();
+      if (procFiles.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
+        File[] fileList = procFiles.toArray(new File[procFiles.size()]);
+        this.procFiles = new ArrayList<>();
+        startIntermediateMerging(fileList);
       }
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Sumitting request for intermediate merging no of files: " + fileList.length);
-      }
-      startIntermediateMerging(fileList);
     }
   }
 
@@ -101,6 +87,10 @@ public class SortIntermediateFileMerger {
         + '_' + parameters.getRangeId() + '_' + System.nanoTime()
         + CarbonCommonConstants.MERGERD_EXTENSION);
     IntermediateFileMerger merger = new IntermediateFileMerger(parameters, intermediateFiles, file);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Submitting request for intermediate merging number of files: "
+              + intermediateFiles.length);
+    }
     mergerTask.add(executorService.submit(merger));
   }
 
