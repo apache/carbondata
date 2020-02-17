@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -55,6 +56,7 @@ import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.statusmanager.StageInputCollector;
 import org.apache.carbondata.core.stream.StreamFile;
 import org.apache.carbondata.core.stream.StreamPruner;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -116,6 +118,21 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         CarbonCommonConstants.DICTIONARY_INCLUDE)) {
       DeprecatedFeatureException.globalDictNotSupported();
     }
+
+    List<InputSplit> splits = new LinkedList<>();
+
+    if (CarbonProperties.isQueryStageInputEnabled()) {
+      // If there are stage files, collect them and create splits so that they are
+      // included for the query
+      try {
+        List<InputSplit> stageInputSplits =
+            StageInputCollector.createInputSplits(carbonTable, job.getConfiguration());
+        splits.addAll(stageInputSplits);
+      } catch (ExecutionException | InterruptedException e) {
+        LOG.error("Failed to create input splits from stage files", e);
+        throw new IOException(e);
+      }
+    }
     this.readCommittedScope = getReadCommitted(job, identifier);
     LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
     String updateDeltaVersion = job.getConfiguration().get(UPDATE_DELTA_VERSION);
@@ -141,12 +158,14 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       streamSegments = segments.getStreamSegments();
       streamSegments = getFilteredSegment(job, streamSegments, true, readCommittedScope);
       if (validSegments.size() == 0) {
-        return getSplitsOfStreaming(job, streamSegments, carbonTable);
+        splits.addAll(getSplitsOfStreaming(job, streamSegments, carbonTable));
+        return splits;
       }
       List<Segment> filteredSegmentToAccess =
           getFilteredSegment(job, segments.getValidSegments(), true, readCommittedScope);
       if (filteredSegmentToAccess.size() == 0) {
-        return getSplitsOfStreaming(job, streamSegments, carbonTable);
+        splits.addAll(getSplitsOfStreaming(job, streamSegments, carbonTable));
+        return splits;
       } else {
         setSegmentsToAccess(job.getConfiguration(), filteredSegmentToAccess);
       }
@@ -178,9 +197,10 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
 
     // do block filtering and get split
-    List<InputSplit> splits = getSplits(
+    List<InputSplit> batchSplits = getSplits(
         job, dataMapFilter, segmentToAccess,
         updateStatusManager, segments.getInvalidSegments());
+    splits.addAll(batchSplits);
 
     // add all splits of streaming
     List<InputSplit> splitsOfStreaming = getSplitsOfStreaming(job, streamSegments, carbonTable);

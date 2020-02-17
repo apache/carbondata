@@ -36,9 +36,11 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.util.ThreadLocalSessionInfo
+import org.apache.carbondata.core.statusmanager.StageInputCollector
+import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
+import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
 
 case class CarbonCountStar(
     attributesRaw: Seq[Attribute],
@@ -54,7 +56,7 @@ case class CarbonCountStar(
     CarbonInputFormat.setQuerySegment(job.getConfiguration, carbonTable)
 
     // get row count
-    val rowCount = CarbonUpdateUtil.getRowCount(
+    var rowCount = CarbonUpdateUtil.getRowCount(
       tableInputFormat.getBlockRowCount(
         job,
         carbonTable,
@@ -65,6 +67,17 @@ case class CarbonCountStar(
             carbonTable.getTableName,
             Some(carbonTable.getDatabaseName))).map(_.asJava).orNull, false),
       carbonTable)
+
+    if (CarbonProperties.isQueryStageInputEnabled) {
+      // check for number of row for stage input
+      val splits = StageInputCollector.createInputSplits(carbonTable, job.getConfiguration)
+      if (!splits.isEmpty) {
+        val df = DataLoadProcessBuilderOnSpark.createInputDataFrame(
+          sparkSession, carbonTable, splits.asScala)
+        rowCount += df.count()
+      }
+    }
+
     val valueRaw =
       attributesRaw.head.dataType match {
         case StringType => Seq(UTF8String.fromString(Long.box(rowCount).toString)).toArray
