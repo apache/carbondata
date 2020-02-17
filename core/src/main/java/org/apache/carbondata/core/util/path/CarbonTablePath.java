@@ -71,7 +71,7 @@ public class CarbonTablePath {
   }
 
   public static String getStageDataDir(String tablePath) {
-    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + STAGE_DATA_DIR;
+    return tablePath + CarbonCommonConstants.FILE_SEPARATOR + STAGE_DATA_DIR;
   }
 
   public static String getStageSnapshotFile(String tablePath) {
