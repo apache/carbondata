@@ -152,7 +152,7 @@ public class SortDataRows {
       String locationChosen = tmpFileLocation[new Random().nextInt(tmpFileLocation.length)];
       File sortTempFile = new File(
               locationChosen + File.separator + parameters.getTableName()
-                      + '_' + instanceId + '_' + parameters.getRangeId() + '_' + System.nanoTime()
+                      + '_' + parameters.getRangeId() + '_' + instanceId + '_' + System.nanoTime()
                       + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
       writeDataToFile(recordHolderArray, recordHolderArray.length, sortTempFile);
       // add sort temp filename to arrayList. When the list size reaches 20 then
@@ -192,7 +192,7 @@ public class SortDataRows {
       String[] tmpLocation = parameters.getTempFileLocation();
       String locationChosen = tmpLocation[new Random().nextInt(tmpLocation.length)];
       File file = new File(locationChosen + File.separator + parameters.getTableName()
-          + '_' + instanceId + '_' + parameters.getRangeId() + '_' + System.nanoTime()
+          + '_' + parameters.getRangeId() + '_' + instanceId + '_' + System.nanoTime()
           + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
       writeDataToFile(recordHolderList, this.entryCount, file);
     }
