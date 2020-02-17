@@ -273,7 +273,7 @@ public class UnsafeSortDataRows {
         String tmpDir = parameters.getTempFileLocation()[
                 new Random().nextInt(parameters.getTempFileLocation().length)];
         File sortTempFile = new File(tmpDir + File.separator + parameters.getTableName()
-                + '_' + instanceId + '_' + parameters.getRangeId() + '_' + System.nanoTime()
+                + '_' + parameters.getRangeId() + '_' + instanceId + '_' + System.nanoTime()
                 + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
         writeDataToFile(rowPage, sortTempFile);
         LOGGER.info("Time taken to sort row page with size" + rowPage.getBuffer().getActualSize()
