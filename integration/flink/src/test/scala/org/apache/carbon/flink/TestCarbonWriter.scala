@@ -28,6 +28,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class TestCarbonWriter extends QueryTest {
@@ -95,9 +96,18 @@ class TestCarbonWriter extends QueryTest {
           throw new UnsupportedOperationException(exception)
       }
 
+      checkAnswer(sql(s"select count(1) from $tableName"), Seq(Row(0)))
+
+      // query with stage input
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT, "true")
+      checkAnswer(sql(s"select count(*) from $tableName"), Seq(Row(1000)))
+      sql(s"select * from $tableName limit 10").show
+      checkAnswer(sql(s"select max(intField) from $tableName"), Seq(Row(999)))
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT, "false")
+
       sql(s"INSERT INTO $tableName STAGE")
 
-      checkAnswer(sql(s"SELECT count(1) FROM $tableName"), Seq(Row(1000)))
+      checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(1000)))
 
       // ensure the stage snapshot file and all stage files are deleted
       assertResult(false)(FileFactory.isFileExist(CarbonTablePath.getStageSnapshotFile(tablePath)))
