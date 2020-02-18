@@ -27,6 +27,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
+
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -36,7 +37,6 @@ class TestCarbonWriter extends QueryTest {
 
   val tableName = "test_flink"
   val bucketTableName = "insert_bucket_table"
-
 
   test("Writing flink data to local carbon table") {
     sql(s"DROP TABLE IF EXISTS $tableName").collect()
@@ -281,9 +281,9 @@ class TestCarbonWriter extends QueryTest {
 
       val plan = sql(
         s"""
-          |select t1.*, t2.*
-          |from $tableName t1, $bucketTableName t2
-          |where t1.stringField = t2.stringField
+           |select t1.*, t2.*
+           |from $tableName t1, $bucketTableName t2
+           |where t1.stringField = t2.stringField
       """.stripMargin).queryExecution.executedPlan
       var shuffleExists = false
       plan.collect {
@@ -297,15 +297,16 @@ class TestCarbonWriter extends QueryTest {
 
       checkAnswer(sql(
         s"""select count(*) from
-          |(select t1.*, t2.*
-          |from $tableName t1, $bucketTableName t2
-          |where t1.stringField = t2.stringField) temp
+           |(select t1.*, t2.*
+           |from $tableName t1, $bucketTableName t2
+           |where t1.stringField = t2.stringField) temp
       """.stripMargin), Row(1000))
     } finally {
       sql(s"DROP TABLE IF EXISTS $tableName").collect()
       sql(s"DROP TABLE IF EXISTS $bucketTableName").collect()
     }
   }
+
 
   private def newWriterProperties(
     dataTempPath: String,
