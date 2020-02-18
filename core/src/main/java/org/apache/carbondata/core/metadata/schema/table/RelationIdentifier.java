@@ -21,6 +21,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * class to maintain the relation between parent and child
@@ -34,6 +35,8 @@ public class RelationIdentifier implements Serializable, Writable {
   private String tableId;
 
   private String tablePath = "";
+
+  private String provider = "carbondata";
 
   public RelationIdentifier(String databaseName, String tableName, String tableId) {
     this.databaseName = databaseName;
@@ -61,12 +64,25 @@ public class RelationIdentifier implements Serializable, Writable {
     this.tablePath = tablePath;
   }
 
+  public String getProvider() {
+    return provider;
+  }
+
+  public void setProvider(String provider) {
+    this.provider = provider;
+  }
+
+  public boolean isCarbonDataTable() {
+    return provider.equalsIgnoreCase("carbondata");
+  }
+
   @Override
   public void write(DataOutput out) throws IOException {
     out.writeUTF(databaseName);
     out.writeUTF(tableName);
     out.writeUTF(tableId);
     out.writeUTF(tablePath);
+    out.writeUTF(provider);
   }
 
   @Override
@@ -75,6 +91,7 @@ public class RelationIdentifier implements Serializable, Writable {
     this.tableName = in.readUTF();
     this.tableId = in.readUTF();
     this.tablePath = in.readUTF();
+    this.provider = in.readUTF();
   }
 
   @Override
@@ -84,15 +101,16 @@ public class RelationIdentifier implements Serializable, Writable {
 
     RelationIdentifier that = (RelationIdentifier) o;
 
-    if (databaseName != null ?
-        !databaseName.equals(that.databaseName) :
-        that.databaseName != null) {
+    if (!Objects.equals(databaseName, that.databaseName)) {
       return false;
     }
-    if (tableName != null ? !tableName.equals(that.tableName) : that.tableName != null) {
+    if (!Objects.equals(tableName, that.tableName)) {
       return false;
     }
-    return tableId != null ? tableId.equals(that.tableId) : that.tableId == null;
+    if (!Objects.equals(provider, that.provider)) {
+      return false;
+    }
+    return Objects.equals(tableId, that.tableId);
   }
 
   @Override
@@ -100,6 +118,7 @@ public class RelationIdentifier implements Serializable, Writable {
     int result = databaseName != null ? databaseName.hashCode() : 0;
     result = 31 * result + (tableName != null ? tableName.hashCode() : 0);
     result = 31 * result + (tableId != null ? tableId.hashCode() : 0);
+    result = 31 * result + (provider != null ? provider.hashCode() : 0);
     return result;
   }
 

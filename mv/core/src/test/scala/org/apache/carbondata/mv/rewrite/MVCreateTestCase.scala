@@ -104,6 +104,133 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table6 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
   }
 
+  test("test create mv on parquet spark table") {
+    sql("drop materialized view if exists mv1")
+    sql("drop table if exists source")
+    sql("create table source using parquet as select * from fact_table1")
+    sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
+    var df = sql("select empname, avg(salary) from source group by empname")
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
+    // load to parquet table and check again
+    sql("insert into source select * from fact_table1")
+    df = sql("select empname, avg(salary) from source group by empname")
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
+    sql(s"drop materialized view mv1")
+    sql("drop table source")
+  }
+
+  test("test create mv on partitioned parquet spark table") {
+    sql("drop materialized view if exists mv1")
+    sql("drop table if exists source")
+    sql("""
+        | create table source (empname String, designation String, doj Timestamp,
+        | workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, salary int)
+        | using parquet partitioned by (empname)
+        """.stripMargin)
+    sql("insert into source select designation, doj, workgroupcategory, workgroupcategoryname, " +
+        "deptno, deptname, salary, empname from fact_table1")
+    sql("select * from source limit 2").show(false)
+    sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
+    var df = sql("select empname, avg(salary) from source group by empname")
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
+    // load to parquet table and check again
+    sql("insert into source select designation, doj, workgroupcategory, workgroupcategoryname, " +
+        "deptno, deptname, salary, empname from fact_table1")
+    df = sql("select empname, avg(salary) from source group by empname")
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
+    sql(s"drop materialized view mv1")
+    sql("drop table source")
+  }
+
+  test("test create mv on orc spark table") {
+    sql("drop materialized view if exists mv1")
+    sql("drop table if exists source")
+    sql("create table source using orc as select * from fact_table1")
+    sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
+    var df = sql("select empname, avg(salary) from source group by empname")
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
+    // load to orc table and check again
+    sql("insert into source select * from fact_table1")
+    df = sql("select empname, avg(salary) from source group by empname")
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
+    sql(s"drop materialized view mv1")
+    sql("drop table source")
+  }
+
+  test("test create mv on partitioned orc spark table") {
+    sql("drop materialized view if exists mv1")
+    sql("drop table if exists source")
+    sql("""
+          | create table source (empname String, designation String, doj Timestamp,
+          | workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, salary int)
+          | using orc partitioned by (empname)
+        """.stripMargin)
+    sql("insert into source select designation, doj, workgroupcategory, workgroupcategoryname, " +
+        "deptno, deptname, salary, empname from fact_table1")
+    sql("select * from source limit 2").show(false)
+    sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
+    var df = sql("select empname, avg(salary) from source group by empname")
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
+    // load to parquet table and check again
+    sql("insert into source select designation, doj, workgroupcategory, workgroupcategoryname, " +
+        "deptno, deptname, salary, empname from fact_table1")
+    df = sql("select empname, avg(salary) from source group by empname")
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
+    sql(s"drop materialized view mv1")
+    sql("drop table source")
+  }
+
+  test("test create mv on parquet hive table") {
+    sql("drop materialized view if exists mv1")
+    sql("drop table if exists source")
+    sql("create table source stored as parquet as select * from fact_table1")
+    sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
+    var df = sql("select empname, avg(salary) from source group by empname")
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
+    // load to parquet table and check again
+    sql("insert into source select * from fact_table1")
+    df = sql("select empname, avg(salary) from source group by empname")
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
+    sql(s"drop materialized view mv1")
+    sql("drop table source")
+  }
+
+  // TODO: orc hive table is not supported since MV rewrite does not handle HiveTableRelation
+  ignore("test create mv on orc hive table") {
+    sql("drop materialized view if exists mv2")
+    sql("drop table if exists source")
+    sql("create table source stored as orc as select * from fact_table1")
+    sql("explain extended select empname, avg(salary) from source group by empname").show(false)
+    sql("create materialized view mv2 as select empname, deptname, avg(salary) from source group by empname, deptname")
+    sql("select * from mv2_table").show
+    val df = sql("select empname, avg(salary) from source group by empname")
+    sql("explain extended select empname, avg(salary) from source group by empname").show(false)
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv2"))
+    checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+    sql(s"drop materialized view mv2")
+    sql("drop table source")
+  }
+
   test("test create mv with simple and same projection") {
     sql("drop materialized view if exists mv1")
     sql("create materialized view mv1 as select empname, designation from fact_table1")

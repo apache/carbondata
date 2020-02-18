@@ -20,15 +20,13 @@ package org.apache.carbondata.mv.extension
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.sql.CarbonDatasourceHadoopRelation
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.execution.command.Field
-import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.DataType
 
 import org.apache.carbondata.common.exceptions.sql.MalformedMaterializedViewException
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, ModularRelation, Select}
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -44,26 +42,25 @@ class MVUtil {
    */
   def getFieldsAndDataMapFieldsFromPlan(
       plan: ModularPlan,
-      logicalRelation: Seq[LogicalRelation]): scala.collection.mutable.LinkedHashMap[Field,
-    MVField] = {
+      relations: Seq[Relation]): mutable.LinkedHashMap[Field, MVField] = {
     plan match {
       case select: Select =>
         select.children.map {
           case groupBy: GroupBy =>
             getFieldsFromProject(groupBy.outputList, groupBy.predicateList,
-              logicalRelation, groupBy.flagSpec)
+              relations, groupBy.flagSpec)
           case _: ModularRelation =>
             getFieldsFromProject(select.outputList, select.predicateList,
-              logicalRelation, select.flagSpec)
+              relations, select.flagSpec)
         }.head
       case groupBy: GroupBy =>
         groupBy.child match {
           case select: Select =>
             getFieldsFromProject(groupBy.outputList, select.predicateList,
-              logicalRelation, select.flagSpec)
+              relations, select.flagSpec)
           case _: ModularRelation =>
             getFieldsFromProject(groupBy.outputList, groupBy.predicateList,
-              logicalRelation, groupBy.flagSpec)
+              relations, groupBy.flagSpec)
         }
     }
   }
@@ -73,17 +70,17 @@ class MVUtil {
    * user query
    * @param outputList of the modular plan
    * @param predicateList of the modular plan
-   * @param logicalRelation list of main table from query
+   * @param relations list of main table from query
    * @param flagSpec to get SortOrder attribute if exists
    * @return fieldRelationMap
    */
   private def getFieldsFromProject(
       outputList: Seq[NamedExpression],
       predicateList: Seq[Expression],
-      logicalRelation: Seq[LogicalRelation],
+      relations: Seq[Relation],
       flagSpec: Seq[Seq[Any]]): mutable.LinkedHashMap[Field, MVField] = {
     var fieldToDataMapFieldMap = scala.collection.mutable.LinkedHashMap.empty[Field, MVField]
-    fieldToDataMapFieldMap ++== getFieldsFromProject(outputList, logicalRelation)
+    fieldToDataMapFieldMap ++== getFieldsFromProject(outputList, relations)
     var finalPredicateList: Seq[NamedExpression] = Seq.empty
     predicateList.map { p =>
       p.collect {
@@ -106,31 +103,30 @@ class MVUtil {
         }
       }
     }
-    fieldToDataMapFieldMap ++== getFieldsFromProject(finalPredicateList.distinct, logicalRelation)
+    fieldToDataMapFieldMap ++== getFieldsFromProject(finalPredicateList.distinct, relations)
     fieldToDataMapFieldMap
   }
 
   private def getFieldsFromProject(
       projectList: Seq[NamedExpression],
-      logicalRelation: Seq[LogicalRelation]): mutable.LinkedHashMap[Field, MVField] = {
+      relations: Seq[Relation]): mutable.LinkedHashMap[Field, MVField] = {
     var fieldToDataMapFieldMap = scala.collection.mutable.LinkedHashMap.empty[Field, MVField]
     projectList.map {
       case attr: AttributeReference =>
-        val carbonTable = getCarbonTable(logicalRelation, attr)
-        if (null != carbonTable) {
+        val catalogTable = getCatalogTable(relations, attr)
+        if (null != catalogTable) {
           val arrayBuffer: ArrayBuffer[ColumnTableRelation] = new ArrayBuffer[ColumnTableRelation]()
-          val relation = getColumnRelation(attr.name,
-            carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
-            carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName,
-            carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName,
-            carbonTable)
+          val relation = getColumnRelation(
+            attr.name,
+            catalogTable.identifier.table,
+            catalogTable.database)
           if (null != relation) {
             arrayBuffer += relation
           }
           var qualifier: Option[String] = None
           if (attr.qualifier.nonEmpty) {
             qualifier = if (attr.qualifier.headOption.get.startsWith("gen_sub")) {
-              Some(carbonTable.getTableName)
+              Some(catalogTable.identifier.table)
             } else {
               attr.qualifier.headOption
             }
@@ -142,17 +138,16 @@ class MVUtil {
             qualifier.headOption,
             "",
             arrayBuffer,
-            carbonTable.getTableName)
+            catalogTable.identifier.table)
         }
       case Alias(attr: AttributeReference, name) =>
-        val carbonTable = getCarbonTable(logicalRelation, attr)
-        if (null != carbonTable) {
+        val catalogTable = getCatalogTable(relations, attr)
+        if (null != catalogTable) {
           val arrayBuffer: ArrayBuffer[ColumnTableRelation] = new ArrayBuffer[ColumnTableRelation]()
-          val relation = getColumnRelation(attr.name,
-            carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
-            carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName,
-            carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName,
-            carbonTable)
+          val relation = getColumnRelation(
+            attr.name,
+            catalogTable.identifier.table,
+            catalogTable.database)
           if (null != relation) {
             arrayBuffer += relation
           }
@@ -165,13 +160,12 @@ class MVUtil {
         val arrayBuffer: ArrayBuffer[ColumnTableRelation] = new ArrayBuffer[ColumnTableRelation]()
         a.collect {
           case attr: AttributeReference =>
-            val carbonTable = getCarbonTable(logicalRelation, attr)
-            if (null != carbonTable) {
-              val relation = getColumnRelation(attr.name,
-                carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
-                carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName,
-                carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName,
-                carbonTable)
+            val catalogTable = getCatalogTable(relations, attr)
+            if (null != catalogTable) {
+              val relation = getColumnRelation(
+                attr.name,
+                catalogTable.identifier.table,
+                catalogTable.database)
               if (null != relation) {
                 arrayBuffer += relation
               }
@@ -190,13 +184,12 @@ class MVUtil {
         val arrayBuffer: ArrayBuffer[ColumnTableRelation] = new ArrayBuffer[ColumnTableRelation]()
         a.collect {
           case attr: AttributeReference =>
-            val carbonTable = getCarbonTable(logicalRelation, attr)
-            if (null != carbonTable) {
-              val relation = getColumnRelation(attr.name,
-                carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
-                carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName,
-                carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName,
-                carbonTable)
+            val catalogTable = getCatalogTable(relations, attr)
+            if (null != catalogTable) {
+              val relation = getColumnRelation(
+                attr.name,
+                catalogTable.identifier.table,
+                catalogTable.database)
               if (null != relation) {
                 arrayBuffer += relation
               }
@@ -213,37 +206,26 @@ class MVUtil {
    */
   private def getColumnRelation(
       parentColumnName: String,
-      parentTableId: String,
       parentTableName: String,
-      parentDatabaseName: String,
-      carbonTable: CarbonTable): ColumnTableRelation = {
-    val parentColumn = carbonTable.getColumnByName(parentColumnName)
-    var columnTableRelation: ColumnTableRelation = null
-    if (null != parentColumn) {
-      val parentColumnId = parentColumn.getColumnId
-      columnTableRelation = ColumnTableRelation(parentColumnName = parentColumnName,
-        parentColumnId = parentColumnId,
-        parentTableName = parentTableName,
-        parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
-      columnTableRelation
-    } else {
-      columnTableRelation
-    }
+      parentDatabaseName: String) = {
+    ColumnTableRelation(
+      columnName = parentColumnName,
+      tableName = parentTableName,
+      databaseName = parentDatabaseName)
   }
 
   /**
-   * This method is used to get carbon table for corresponding attribute reference
-   * from logical relation
+   * Return the catalog table after matching the attr in logicalRelation
    */
-  private def getCarbonTable(logicalRelation: Seq[LogicalRelation],
-      attr: AttributeReference) = {
-    val relations = logicalRelation
-      .filter(lr => lr.output
-        .exists(attrRef => attrRef.name.equalsIgnoreCase(attr.name) &&
-                           attrRef.exprId.equals(attr.exprId)))
-    if (relations.nonEmpty) {
-      relations
-        .head.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.carbonTable
+  private def getCatalogTable(
+      relations: Seq[Relation],
+      attr: AttributeReference): CatalogTable = {
+    val filteredRelation = relations.filter { relation =>
+        relation.output.exists(attrRef => attrRef.name.equalsIgnoreCase(attr.name) &&
+                                          attrRef.exprId.equals(attr.exprId))
+    }
+    if (filteredRelation.nonEmpty) {
+      filteredRelation.head.catalogTable.get
     } else {
       null
     }

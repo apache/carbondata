@@ -35,9 +35,12 @@ import org.apache.carbondata.format.SchemaEvolutionEntry
 trait CarbonMetaStore {
 
   def lookupRelation(dbName: Option[String], tableName: String)
-    (sparkSession: SparkSession): LogicalPlan
+    (sparkSession: SparkSession): CarbonRelation
 
   def lookupRelation(tableIdentifier: TableIdentifier)
+    (sparkSession: SparkSession): CarbonRelation
+
+  def lookupAnyRelation(dbName: Option[String], tableName: String)
     (sparkSession: SparkSession): LogicalPlan
 
   /**
