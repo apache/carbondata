@@ -323,6 +323,7 @@ CarbonData DML statements are documented here,which includes:
 | Property                                                | Description                                                  |
 | ------------------------------------------------------- | ------------------------------------------------------------ |
 | [BATCH_FILE_COUNT](#batch_file_count)                   | The number of stage files per processing                     |
+| [BATCH_FILE_ORDER](#batch_file_order)                   | The order type of stage files in per processing                     |
 
 -
   You can use the following options to load data:
@@ -334,11 +335,24 @@ CarbonData DML statements are documented here,which includes:
     OPTIONS('batch_file_count'='5')
     ```
 
+  - ##### BATCH_FILE_ORDER: 
+    The order type of stage files in per processing, choices: ASC, DESC.
+    The default is ASC.
+    Stage files will order by the last modified time with the specified order type.
+
+    ``` 
+    OPTIONS('batch_file_order'='DESC')
+    ```
+
   Examples:
   ```
   INSERT INTO table1 STAGE
 
   INSERT INTO table1 STAGE OPTIONS('batch_file_count' = '5')
+  Note: This command use the default file order, will insert the earliest stage files into the table.
+
+  INSERT INTO table1 STAGE OPTIONS('batch_file_count' = '5', 'batch_file_order'='DESC')
+  Note: This command will insert the latest stage files into the table.
   ```
 
 ### Load Data Using Static Partition 

@@ -27,7 +27,6 @@ import scala.collection.JavaConverters._
 import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.InputSplit
-import org.apache.log4j.Logger
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.util.SparkSQLUtil
@@ -35,7 +34,7 @@ import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.filesystem.{AbstractDFSCarbonFile, CarbonFile}
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{ColumnarFormatVersion, SegmentFileStore}
@@ -61,12 +60,9 @@ case class CarbonInsertFromStageCommand(
     options: Map[String, String]
 ) extends DataCommand {
 
-  @transient var LOGGER: Logger = _
-
-  val DELETE_FILES_RETRY_TIMES = 3
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   override def processData(spark: SparkSession): Seq[Row] = {
-    LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     Checker.validateTableExists(databaseNameOp, tableName, spark)
     val table = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(spark)
     val hadoopConf = spark.sessionState.newHadoopConf()
@@ -118,15 +114,31 @@ case class CarbonInsertFromStageCommand(
 
       // 1) read all existing stage files
       val batchSize = try {
-        Integer.valueOf(options.getOrElse("batch_file_count", Integer.MAX_VALUE.toString))
+        Integer.valueOf(
+          options.getOrElse(CarbonInsertFromStageCommand.BATCH_FILE_COUNT_KEY,
+            CarbonInsertFromStageCommand.BATCH_FILE_COUNT_DEFAULT))
       } catch {
         case _: NumberFormatException =>
-          throw new MalformedCarbonCommandException("Option [batch_file_count] is not a number.")
+          throw new MalformedCarbonCommandException("Option [" +
+            CarbonInsertFromStageCommand.BATCH_FILE_COUNT_KEY + "] is not a number.")
       }
       if (batchSize < 1) {
-        throw new MalformedCarbonCommandException("Option [batch_file_count] is less than 1.")
+        throw new MalformedCarbonCommandException("Option [" +
+            CarbonInsertFromStageCommand.BATCH_FILE_COUNT_KEY + "] is less than 1.")
       }
-      val stageFiles = listStageFiles(stagePath, hadoopConf, batchSize)
+      val orderType = options.getOrElse(CarbonInsertFromStageCommand.BATCH_FILE_ORDER_KEY,
+        CarbonInsertFromStageCommand.BATCH_FILE_ORDER_DEFAULT)
+      if (!orderType.equalsIgnoreCase(CarbonInsertFromStageCommand.BATCH_FILE_ORDER_ASC) &&
+        !orderType.equalsIgnoreCase(CarbonInsertFromStageCommand.BATCH_FILE_ORDER_DESC)) {
+        throw new MalformedCarbonCommandException("Option [" +
+            CarbonInsertFromStageCommand.BATCH_FILE_ORDER_KEY + "] is invalid, should be " +
+            CarbonInsertFromStageCommand.BATCH_FILE_ORDER_ASC + " or " +
+            CarbonInsertFromStageCommand.BATCH_FILE_ORDER_DESC + ".")
+      }
+      LOGGER.info("Option [" + CarbonInsertFromStageCommand.BATCH_FILE_ORDER_KEY +
+                  "] value is " + orderType)
+      val stageFiles = listStageFiles(stagePath, hadoopConf, batchSize,
+        orderType.equalsIgnoreCase(CarbonInsertFromStageCommand.BATCH_FILE_ORDER_ASC))
       if (stageFiles.isEmpty) {
         // no stage files, so do nothing
         LOGGER.warn("files not found under stage metadata folder")
@@ -446,7 +458,7 @@ case class CarbonInsertFromStageCommand(
       executorService: ExecutorService,
       stageFiles: Array[(CarbonFile, CarbonFile)]): Unit = {
     val startTime = System.currentTimeMillis()
-    var retry = DELETE_FILES_RETRY_TIMES
+    var retry = CarbonInsertFromStageCommand.DELETE_FILES_RETRY_TIMES
     while (deleteStageFiles(executorService, stageFiles).length > 0 && retry > 0) {
       retry -= 1
     }
@@ -484,7 +496,7 @@ case class CarbonInsertFromStageCommand(
     if (table.isHivePartitionTable) {
       return
     }
-    var retries = DELETE_FILES_RETRY_TIMES
+    var retries = CarbonInsertFromStageCommand.DELETE_FILES_RETRY_TIMES
     while(deleteSnapShotFile(snapshotFilePath) && retries > 0) {
       retries -= 1
     }
@@ -497,7 +509,8 @@ case class CarbonInsertFromStageCommand(
   private def listStageFiles(
       loadDetailsDir: String,
       hadoopConf: Configuration,
-      batchSize: Int
+      batchSize: Int,
+      ascendingSort: Boolean
   ): Array[(CarbonFile, CarbonFile)] = {
     val dir = FileFactory.getCarbonFile(loadDetailsDir, hadoopConf)
     if (dir.exists()) {
@@ -518,7 +531,12 @@ case class CarbonInsertFromStageCommand(
       }.filter { file =>
         successFiles.contains(file.getName)
       }.sortWith {
-        (file1, file2) => file1.getLastModifiedTime < file2.getLastModifiedTime
+        (file1, file2) =>
+          if (ascendingSort) {
+            file1.getLastModifiedTime < file2.getLastModifiedTime
+          } else {
+            file1.getLastModifiedTime > file2.getLastModifiedTime
+          }
       }.map { file =>
         (file, successFiles(file.getName))
       }
@@ -555,4 +573,28 @@ case class CarbonInsertFromStageCommand(
   }
 
   override protected def opName: String = "INSERT STAGE"
+}
+
+object CarbonInsertFromStageCommand {
+
+  val DELETE_FILES_RETRY_TIMES = 3
+
+  val BATCH_FILE_COUNT_KEY = "batch_file_count"
+
+  val BATCH_FILE_COUNT_DEFAULT: String = Integer.MAX_VALUE.toString
+
+  val BATCH_FILE_ORDER_KEY = "batch_file_order"
+
+  /**
+   * Use this option will insert the earliest stage files into the table.
+   */
+  val BATCH_FILE_ORDER_ASC = "ASC"
+
+  /**
+   * Use this option will insert the latest stage files into the table.
+   */
+  val BATCH_FILE_ORDER_DESC = "DESC"
+
+  val BATCH_FILE_ORDER_DEFAULT: String = BATCH_FILE_ORDER_KEY
+
 }
