@@ -235,12 +235,11 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
 
   test("test mv with non-carbon table") {
     sql("drop table if exists noncarbon")
-    sql("create table noncarbon (product string,amount int)")
+    sql("create table noncarbon (product string,amount int) stored as parquet")
     sql("insert into noncarbon values('Mobile',2000)")
     sql("drop materialized view if exists p")
-    intercept[MalformedCarbonCommandException] {
-      sql("Create materialized view p  as Select product from noncarbon")
-    }.getMessage.contains("Non-Carbon table does not support creating MV materialized view")
+    sql("Create materialized view p as Select product from noncarbon")
+    sql("drop materialized view p")
     sql("drop table if exists noncarbon")
   }
 

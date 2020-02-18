@@ -288,6 +288,20 @@ object CarbonEnv {
   }
 
   /**
+   * Return any kinds of table including non-carbon table
+   */
+  def getAnyTable(
+      databaseNameOp: Option[String],
+      tableName: String)
+    (sparkSession: SparkSession): CarbonTable = {
+    val catalog = getInstance(sparkSession).carbonMetaStore
+    catalog
+      .lookupAnyRelation(databaseNameOp, tableName)(sparkSession)
+      .asInstanceOf[CarbonRelation]
+      .carbonTable
+  }
+
+  /**
    *
    * @return true is the relation was changes and was removed from cache. false is there is no
    *         change in the relation.
