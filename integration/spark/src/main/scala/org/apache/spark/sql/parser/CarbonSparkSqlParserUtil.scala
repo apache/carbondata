@@ -460,6 +460,7 @@ object CarbonSparkSqlParserUtil {
       )
       TableNewProcessor(tableModel)
     }
+    tableInfo.setTablePath(identifier.getTablePath)
     tableInfo.setTransactionalTable(isTransactionalTable)
     tableInfo
   }

@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
@@ -189,7 +190,11 @@ public abstract class DataMapProvider {
             return false;
           }
         } else {
-          List<RelationIdentifier> relationIdentifiers = dataMapSchema.getParentTables();
+          // set segment mapping only for carbondata table
+          List<RelationIdentifier> relationIdentifiers = dataMapSchema.getParentTables()
+              .stream()
+              .filter(RelationIdentifier::isCarbonDataTable)
+              .collect(Collectors.toList());
           for (RelationIdentifier relationIdentifier : relationIdentifiers) {
             List<String> mainTableSegmentList =
                 DataMapUtil.getMainTableValidSegmentList(relationIdentifier);
