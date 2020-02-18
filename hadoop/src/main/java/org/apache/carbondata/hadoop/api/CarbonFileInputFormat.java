@@ -27,11 +27,11 @@ import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.index.IndexFilter;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -128,7 +128,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       }
     }
     // this will be null in case of corrupt schema file.
-    DataMapFilter filter = getFilterPredicates(job.getConfiguration());
+    IndexFilter filter = getFilterPredicates(job.getConfiguration());
 
     // if external table Segments are found, add it to the List
     List<Segment> externalTableSegments = new ArrayList<Segment>();
@@ -160,7 +160,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
     List<InputSplit> splits = new ArrayList<>();
     boolean useBlockDataMap = job.getConfiguration().getBoolean("filter_blocks", true);
     // useBlockDataMap would be false in case of SDK when user has not provided any filter, In
-    // this case we don't want to load block/blocklet datamap. It would be true in all other
+    // this case we don't want to load block/blocklet index. It would be true in all other
     // scenarios
     if (filter != null) {
       filter.resolve(false);
@@ -248,7 +248,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
    */
   private List<InputSplit> getSplits(
       JobContext job,
-      DataMapFilter dataMapFilter,
+      IndexFilter indexFilter,
       List<Segment> validSegments) throws IOException {
 
     numSegments = validSegments.size();
@@ -256,7 +256,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
 
     // for each segment fetch blocks matching filter in Driver BTree
     List<CarbonInputSplit> dataBlocksOfSegment =
-        getDataBlocksOfSegment(job, carbonTable, dataMapFilter, validSegments,
+        getDataBlocksOfSegment(job, carbonTable, indexFilter, validSegments,
             new ArrayList<Segment>(), new ArrayList<String>());
     numBlocks = dataBlocksOfSegment.size();
     result.addAll(dataBlocksOfSegment);

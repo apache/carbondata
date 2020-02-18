@@ -633,7 +633,7 @@ public final class CarbonProperties {
     }
     boolean configuredValue = Boolean.parseBoolean(loadDataMapsParallel);
     if (configuredValue) {
-      LOGGER.info("Loading datamaps in parallel for " + databaseName + "." + tableName);
+      LOGGER.info("Loading index in parallel for " + databaseName + "." + tableName);
     }
     return configuredValue;
   }

@@ -78,12 +78,12 @@ private[sql] case class CarbonAlterTableRenameCommand(
     }
 
     if (!oldCarbonTable.canAllow(oldCarbonTable, TableOperation.ALTER_RENAME)) {
-      throw new MalformedCarbonCommandException("alter rename is not supported for index datamap")
+      throw new MalformedCarbonCommandException("alter rename is not supported for index")
     }
-    // if table have created MV, not support table rename
-    if (oldCarbonTable.hasMVCreated || oldCarbonTable.isChildTableForMV) {
+    // if table have create MV, not support table rename
+    if (oldCarbonTable.hasMVCreated || oldCarbonTable.isMVTable) {
       throw new MalformedCarbonCommandException(
-        "alter rename is not supported for datamap table or for tables which have child datamap")
+        "alter rename is not supported for MV table or for tables which have MV")
     }
 
     var timeStamp = 0L
@@ -107,7 +107,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
       }
       // invalid data map for the old table, see CARBON-1690
       val oldAbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-      DataMapStoreManager.getInstance().clearDataMaps(oldAbsoluteTableIdentifier)
+      DataMapStoreManager.getInstance().clearIndexes(oldAbsoluteTableIdentifier)
       // get the latest carbon table and check for column existence
       val operationContext = new OperationContext
       // TODO: Pass new Table Path in pre-event.
@@ -149,8 +149,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
 
       // Update the storage location with datamap schema
       if (!dataMapSchemaList.isEmpty) {
-        DataMapStoreManager.getInstance().
-          updateDataMapSchema(dataMapSchemaList, newTableName)
+        DataMapStoreManager.getInstance().updateDataMapSchema(dataMapSchemaList, newTableName)
       }
       val alterTableRenamePostEvent: AlterTableRenamePostEvent = AlterTableRenamePostEvent(
         carbonTable,

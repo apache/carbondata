@@ -72,10 +72,10 @@ class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
     checkAnswer(sql("select * from carbon_table where c1='a1'"),
       sql("select * from testparquet where c1='a1'"))
     if (!sqlContext.sparkContext.version.startsWith("2.1")) {
-      val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+      val mapSize = DataMapStoreManager.getInstance().getIndexes.size()
       DataMapStoreManager.getInstance()
-        .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
-      assert(mapSize >= DataMapStoreManager.getInstance().getAllDataMaps.size())
+        .clearIndexes(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
+      assert(mapSize >= DataMapStoreManager.getInstance().getIndexes.size())
     }
     sql("drop table if exists testparquet")
     sql("drop table if exists testformat")
@@ -112,10 +112,10 @@ class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
       val frame = sqlContext.read.format("carbon").load(warehouse1 + "/test_folder")
       assert(frame.where("c1='a1'").count() == 3)
 
-      val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+      val mapSize = DataMapStoreManager.getInstance().getIndexes.size()
       DataMapStoreManager.getInstance()
-        .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/test_folder"))
-      assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+        .clearIndexes(AbsoluteTableIdentifier.from(warehouse1 + "/test_folder"))
+      assert(mapSize > DataMapStoreManager.getInstance().getIndexes.size())
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
     }
   }
@@ -735,10 +735,10 @@ class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
       val frame = sqlContext.read.format("carbon").load(warehouse1 + "/test_folder")
       assert(frame.count() == 30)
       assert(frame.where("c1='a1'").count() == 3)
-      val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+      val mapSize = DataMapStoreManager.getInstance().getIndexes.size()
       DataMapStoreManager.getInstance()
-        .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/test_folder"))
-      assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+        .clearIndexes(AbsoluteTableIdentifier.from(warehouse1 + "/test_folder"))
+      assert(mapSize > DataMapStoreManager.getInstance().getIndexes.size())
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
     }
   }

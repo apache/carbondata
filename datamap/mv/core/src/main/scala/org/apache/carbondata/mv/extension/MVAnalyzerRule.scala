@@ -37,7 +37,7 @@ import org.apache.carbondata.mv.plans.modular.{ModularPlan, Select}
 import org.apache.carbondata.mv.rewrite.{MVUdf, SummaryDataset, SummaryDatasetCatalog}
 
 /**
- * Analyzer rule to rewrite the query for MV datamap
+ * Analyzer rule to rewrite the query for MV
  *
  * @param sparkSession
  */
@@ -84,15 +84,15 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
         Aggregate(grp, aExp, child)
     }
     if (needAnalysis) {
-      var catalog = DataMapStoreManager.getInstance().getDataMapCatalog(dataMapProvider,
-        DataMapClassProvider.MV.getShortName).asInstanceOf[SummaryDatasetCatalog]
+      var catalog = DataMapStoreManager.getInstance().getMVCatalog(dataMapProvider)
+        .asInstanceOf[SummaryDatasetCatalog]
       // when first time DataMapCatalogs are initialized, it stores session info also,
       // but when carbon session is newly created, catalog map will not be cleared,
       // so if session info is different, remove the entry from map.
       if (catalog != null && !catalog.mvSession.sparkSession.equals(sparkSession)) {
-        DataMapStoreManager.getInstance().clearDataMapCatalog()
-        catalog = DataMapStoreManager.getInstance().getDataMapCatalog(dataMapProvider,
-          DataMapClassProvider.MV.getShortName).asInstanceOf[SummaryDatasetCatalog]
+        DataMapStoreManager.getInstance().clearMVCatalog()
+        catalog = DataMapStoreManager.getInstance().getMVCatalog(dataMapProvider)
+          .asInstanceOf[SummaryDatasetCatalog]
       }
       if (catalog != null && isValidPlan(plan, catalog)) {
         val modularPlan = catalog.mvSession.sessionState.rewritePlan(plan).withMVTable
@@ -166,7 +166,7 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
     if (!plan.isInstanceOf[Command]  && !plan.isInstanceOf[DeserializeToObject]) {
       val catalogs = extractCatalogs(plan)
       !isDataMapReplaced(catalog.listAllValidSchema(), catalogs) &&
-      isDataMapExists(catalog.listAllValidSchema(), catalogs) &&
+      isMVExists(catalog.listAllValidSchema(), catalogs) &&
       !isSegmentSetForMainTable(catalogs)
     } else {
       false
@@ -192,13 +192,13 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
   }
 
   /**
-   * Check whether any suitable datamaps(like datamap which parent tables are present in the plan)
+   * Check whether any suitable MV (like MV which parent tables are present in the plan)
    * exists for this plan.
    *
    * @param mvs
    * @return
    */
-  def isDataMapExists(mvs: Array[SummaryDataset], catalogs: Seq[Option[CatalogTable]]): Boolean = {
+  def isMVExists(mvs: Array[SummaryDataset], catalogs: Seq[Option[CatalogTable]]): Boolean = {
     catalogs.exists { c =>
       mvs.exists { mv =>
         mv.dataMapSchema.getParentTables.asScala.exists { identifier =>
@@ -218,7 +218,7 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
   /**
    * Check if any segments are set for main table for Query. If any segments are set, then
-   * skip mv datamap table for query
+   * skip mv table for query
    */
   def isSegmentSetForMainTable(catalogs: Seq[Option[CatalogTable]]): Boolean = {
     catalogs.foreach { c =>

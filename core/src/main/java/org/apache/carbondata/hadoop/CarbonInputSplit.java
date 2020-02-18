@@ -36,14 +36,14 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapRowIndexes;
-import org.apache.carbondata.core.indexstore.row.DataMapRow;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexRowIndexes;
+import org.apache.carbondata.core.indexstore.row.IndexRow;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.stream.ExtendedByteArrayInputStream;
 import org.apache.carbondata.core.stream.ExtendedDataInputStream;
-import org.apache.carbondata.core.util.BlockletDataMapUtil;
+import org.apache.carbondata.core.util.BlockletIndexUtil;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -93,7 +93,7 @@ public class CarbonInputSplit extends FileSplit
    */
   private Set<Integer> validBlockletIds;
 
-  private transient DataMapRow dataMapRow;
+  private transient IndexRow indexRow;
 
   private transient List<ColumnSchema> columnSchema;
 
@@ -404,8 +404,8 @@ public class CarbonInputSplit extends FileSplit
     out.writeLong(length);
     out.writeShort(version.number());
     //TODO remove this code once count(*) optmization is added in case of index server
-    if (null != dataMapRow) {
-      out.writeInt(this.dataMapRow.getInt(BlockletDataMapRowIndexes.ROW_COUNT_INDEX));
+    if (null != indexRow) {
+      out.writeInt(this.indexRow.getInt(BlockletIndexRowIndexes.ROW_COUNT_INDEX));
     } else if (null != detailInfo) {
       out.writeInt(this.detailInfo.getRowCount());
     } else {
@@ -418,11 +418,11 @@ public class CarbonInputSplit extends FileSplit
     out.writeUTF(blockletId);
     out.writeUTF(segment.toString());
     // please refer writeDetailInfo doc
-    out.writeBoolean(writeDetailInfo && (detailInfo != null || dataMapRow != null));
+    out.writeBoolean(writeDetailInfo && (detailInfo != null || indexRow != null));
     if (writeDetailInfo && detailInfo != null) {
       detailInfo.write(out);
       // please refer writeDetailInfo doc
-    } else if (writeDetailInfo && dataMapRow != null) {
+    } else if (writeDetailInfo && indexRow != null) {
       writeBlockletDetailsInfo(out);
     }
     out.writeBoolean(dataMapWritePath != null);
@@ -623,8 +623,8 @@ public class CarbonInputSplit extends FileSplit
     return dataMapWritePath;
   }
 
-  public void setDataMapRow(DataMapRow dataMapRow) {
-    this.dataMapRow = dataMapRow;
+  public void setIndexRow(IndexRow indexRow) {
+    this.indexRow = indexRow;
   }
 
   public void setColumnSchema(List<ColumnSchema> columnSchema) {
@@ -644,21 +644,21 @@ public class CarbonInputSplit extends FileSplit
   }
 
   private void writeBlockletDetailsInfo(DataOutput out) throws IOException {
-    out.writeInt(this.dataMapRow.getInt(BlockletDataMapRowIndexes.ROW_COUNT_INDEX));
+    out.writeInt(this.indexRow.getInt(BlockletIndexRowIndexes.ROW_COUNT_INDEX));
     if (this.isBlockCache) {
       out.writeShort(0);
     } else {
-      out.writeShort(this.dataMapRow.getShort(BlockletDataMapRowIndexes.BLOCKLET_PAGE_COUNT_INDEX));
+      out.writeShort(this.indexRow.getShort(BlockletIndexRowIndexes.BLOCKLET_PAGE_COUNT_INDEX));
     }
-    out.writeShort(this.dataMapRow.getShort(BlockletDataMapRowIndexes.VERSION_INDEX));
+    out.writeShort(this.indexRow.getShort(BlockletIndexRowIndexes.VERSION_INDEX));
     out.writeShort(Short.parseShort(this.blockletId));
-    out.writeLong(this.dataMapRow.getLong(BlockletDataMapRowIndexes.SCHEMA_UPADATED_TIME_INDEX));
+    out.writeLong(this.indexRow.getLong(BlockletIndexRowIndexes.SCHEMA_UPADATED_TIME_INDEX));
     out.writeBoolean(false);
-    out.writeLong(this.dataMapRow.getLong(BlockletDataMapRowIndexes.BLOCK_FOOTER_OFFSET));
+    out.writeLong(this.indexRow.getLong(BlockletIndexRowIndexes.BLOCK_FOOTER_OFFSET));
     // write -1 if columnSchemaBinary is null so that at the time of reading it can distinguish
     // whether schema is written or not
     if (null != this.columnSchema) {
-      byte[] columnSchemaBinary = BlockletDataMapUtil.convertSchemaToBinary(this.columnSchema);
+      byte[] columnSchemaBinary = BlockletIndexUtil.convertSchemaToBinary(this.columnSchema);
       out.writeInt(columnSchemaBinary.length);
       out.write(columnSchemaBinary);
     } else {
@@ -671,7 +671,7 @@ public class CarbonInputSplit extends FileSplit
       out.write(new byte[0]);
     } else {
       byte[] blockletInfoBinary =
-          this.dataMapRow.getByteArray(BlockletDataMapRowIndexes.BLOCKLET_INFO_INDEX);
+          this.indexRow.getByteArray(BlockletIndexRowIndexes.BLOCKLET_INFO_INDEX);
       out.writeInt(blockletInfoBinary.length);
       out.write(blockletInfoBinary);
     }
@@ -680,18 +680,18 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public BlockletDetailInfo getDetailInfo() {
-    if (null != dataMapRow && detailInfo == null) {
+    if (null != indexRow && detailInfo == null) {
       detailInfo = new BlockletDetailInfo();
       detailInfo
-          .setRowCount(this.dataMapRow.getInt(BlockletDataMapRowIndexes.ROW_COUNT_INDEX));
+          .setRowCount(this.indexRow.getInt(BlockletIndexRowIndexes.ROW_COUNT_INDEX));
       rowCount = detailInfo.getRowCount();
       detailInfo
-          .setVersionNumber(this.dataMapRow.getShort(BlockletDataMapRowIndexes.VERSION_INDEX));
+          .setVersionNumber(this.indexRow.getShort(BlockletIndexRowIndexes.VERSION_INDEX));
       detailInfo.setBlockletId(Short.parseShort(this.blockletId));
       detailInfo.setSchemaUpdatedTimeStamp(
-          this.dataMapRow.getLong(BlockletDataMapRowIndexes.SCHEMA_UPADATED_TIME_INDEX));
+          this.indexRow.getLong(BlockletIndexRowIndexes.SCHEMA_UPADATED_TIME_INDEX));
       detailInfo.setBlockFooterOffset(
-          this.dataMapRow.getLong(BlockletDataMapRowIndexes.BLOCK_FOOTER_OFFSET));
+          this.indexRow.getLong(BlockletIndexRowIndexes.BLOCK_FOOTER_OFFSET));
       start = detailInfo.getBlockFooterOffset();
       detailInfo
           .setBlockSize(getLength());
@@ -700,21 +700,21 @@ public class CarbonInputSplit extends FileSplit
       if (!this.isBlockCache) {
         detailInfo.setColumnSchemas(this.columnSchema);
         detailInfo.setPagesCount(
-            this.dataMapRow.getShort(BlockletDataMapRowIndexes.BLOCKLET_PAGE_COUNT_INDEX));
+            this.indexRow.getShort(BlockletIndexRowIndexes.BLOCKLET_PAGE_COUNT_INDEX));
         detailInfo.setBlockletInfoBinary(
-            this.dataMapRow.getByteArray(BlockletDataMapRowIndexes.BLOCKLET_INFO_INDEX));
+            this.indexRow.getByteArray(BlockletIndexRowIndexes.BLOCKLET_INFO_INDEX));
       } else {
         detailInfo.setBlockletInfoBinary(new byte[0]);
       }
       if (location == null) {
         try {
-          location = new String(dataMapRow.getByteArray(BlockletDataMapRowIndexes.LOCATIONS),
+          location = new String(indexRow.getByteArray(BlockletIndexRowIndexes.LOCATIONS),
               CarbonCommonConstants.DEFAULT_CHARSET).split(",");
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
       }
-      dataMapRow = null;
+      indexRow = null;
     }
     return detailInfo;
   }
@@ -751,8 +751,8 @@ public class CarbonInputSplit extends FileSplit
    */
   public void updateFooteroffset() {
     if (isBlockCache && start == 0) {
-      if (null != dataMapRow) {
-        start = this.dataMapRow.getLong(BlockletDataMapRowIndexes.BLOCK_FOOTER_OFFSET);
+      if (null != indexRow) {
+        start = this.indexRow.getLong(BlockletIndexRowIndexes.BLOCK_FOOTER_OFFSET);
       } else if (null != detailInfo) {
         start = detailInfo.getBlockFooterOffset();
       }
@@ -761,8 +761,8 @@ public class CarbonInputSplit extends FileSplit
 
   public void updateBlockLength() {
     if (length == -1) {
-      if (null != dataMapRow) {
-        length = this.dataMapRow.getLong(BlockletDataMapRowIndexes.BLOCK_LENGTH);
+      if (null != indexRow) {
+        length = this.indexRow.getLong(BlockletIndexRowIndexes.BLOCK_LENGTH);
       } else if (null != detailInfo) {
         length = detailInfo.getBlockSize();
       }
@@ -782,10 +782,10 @@ public class CarbonInputSplit extends FileSplit
 
   @Override
   public String[] getLocations() throws IOException {
-    if (this.location == null && dataMapRow == null) {
+    if (this.location == null && indexRow == null) {
       return new String[] {};
-    } else if (dataMapRow != null) {
-      location = new String(dataMapRow.getByteArray(BlockletDataMapRowIndexes.LOCATIONS),
+    } else if (indexRow != null) {
+      location = new String(indexRow.getByteArray(BlockletIndexRowIndexes.LOCATIONS),
           CarbonCommonConstants.DEFAULT_CHARSET).split(",");
     }
     return this.location;

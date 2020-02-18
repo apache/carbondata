@@ -22,7 +22,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datamap.dev.BlockletSerializer;
-import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainBlocklet;
+import org.apache.carbondata.core.datamap.dev.fgindex.FineGrainBlocklet;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;

@@ -23,6 +23,7 @@ import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
@@ -675,6 +676,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select name,sum(salary) from test4 group by name")
     assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv13"))
+    sql("drop materialized view mv13")
   }
 
   test("jira carbondata-2528-1") {
@@ -876,6 +878,25 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists mvtable2")
   }
 
+  test("test drop wrong index name")  {
+    sql("drop materialized view if exists mv1")
+    sql("create materialized view mv1 as select empname, designation from fact_table1")
+    sql(
+      s"""
+         | CREATE INDEX bloom1 ON TABLE fact_table1
+         | USING 'bloomfilter'
+         | properties('INDEX_COLUMNS'='empname,deptname', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+    intercept[NoSuchDataMapException] {
+      sql("drop index mv1 on table fact_table1")
+    }
+    intercept[NoSuchDataMapException] {
+      sql("drop materialized view bloom1")
+    }
+    sql("drop materialized view mv1")
+    sql("drop index bloom1")
+  }
+
   test("test create materialized view with streaming table")  {
     sql("drop materialized view if exists dm_stream_test1")
     sql("drop materialized view if exists dm_stream_bloom")
@@ -891,9 +912,9 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm_stream_bloom ON TABLE fact_streaming_table1
+         | CREATE INDEX dm_stream_bloom ON TABLE fact_streaming_table1
          | USING 'bloomfilter'
-         | DMProperties('INDEX_COLUMNS'='empname,deptname', 'BLOOM_SIZE'='640000')
+         | properties('INDEX_COLUMNS'='empname,deptname', 'BLOOM_SIZE'='640000')
       """.stripMargin)
 
     val exception_tb_mv: Exception = intercept[Exception] {

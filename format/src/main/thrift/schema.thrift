@@ -214,7 +214,7 @@ struct DataMapSchema  {
     3: optional map<string, string> properties;
     // relation identifier of a table which stores data of Materialize View.
     4: optional RelationIdentifier childTableIdentifier;
-    // in case of preaggregate/timeseries datamap it will be used to maintain the child schema
+    // in case of MV it will be used to maintain the child schema
     // which will be usefull in case of query and data load
     // Deprecated
     5: optional TableSchema childTableSchema;

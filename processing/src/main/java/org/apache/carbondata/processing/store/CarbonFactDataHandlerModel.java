@@ -42,7 +42,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.OutputFilesInfoHolder;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.processing.datamap.DataMapWriterListener;
+import org.apache.carbondata.processing.datamap.IndexWriterListener;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
@@ -144,7 +144,7 @@ public class CarbonFactDataHandlerModel {
 
   private SortScopeOptions.SortScope sortScope;
 
-  private DataMapWriterListener dataMapWriterlistener;
+  private IndexWriterListener indexWriterlistener;
 
   private short writingCoresCount;
 
@@ -167,7 +167,7 @@ public class CarbonFactDataHandlerModel {
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
       CarbonDataLoadConfiguration configuration, String[] storeLocation, int bucketId,
-      int taskExtension, DataMapWriterListener listener) {
+      int taskExtension, IndexWriterListener listener) {
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
 
@@ -234,7 +234,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.columnCompressor = configuration.getColumnCompressor();
 
     if (listener == null) {
-      listener = new DataMapWriterListener();
+      listener = new IndexWriterListener();
       listener.registerAllWriter(
           configuration.getTableSpec().getCarbonTable(),
           configuration.getSegmentId(),
@@ -246,7 +246,7 @@ public class CarbonFactDataHandlerModel {
               configuration.getSegmentId()),
           segmentProperties);
     }
-    carbonFactDataHandlerModel.dataMapWriterlistener = listener;
+    carbonFactDataHandlerModel.indexWriterlistener = listener;
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
     carbonFactDataHandlerModel.initNumberOfCores();
     carbonFactDataHandlerModel
@@ -305,7 +305,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setColumnCompressor(loadModel.getColumnCompressor());
 
     carbonFactDataHandlerModel.tableSpec = new TableSpec(carbonTable);
-    DataMapWriterListener listener = new DataMapWriterListener();
+    IndexWriterListener listener = new IndexWriterListener();
     listener.registerAllWriter(
         carbonTable,
         loadModel.getSegmentId(),
@@ -316,7 +316,7 @@ public class CarbonFactDataHandlerModel {
             String.valueOf(loadModel.getFactTimeStamp()),
             loadModel.getSegmentId()),
         segmentProperties);
-    carbonFactDataHandlerModel.dataMapWriterlistener = listener;
+    carbonFactDataHandlerModel.indexWriterlistener = listener;
     carbonFactDataHandlerModel.initNumberOfCores();
     carbonFactDataHandlerModel
         .setColumnLocalDictGenMap(CarbonUtil.getLocalDictionaryModel(carbonTable));
@@ -588,8 +588,8 @@ public class CarbonFactDataHandlerModel {
     return writingCoresCount;
   }
 
-  public DataMapWriterListener getDataMapWriterlistener() {
-    return dataMapWriterlistener;
+  public IndexWriterListener getIndexWriterlistener() {
+    return indexWriterlistener;
   }
 
   public Map<String, LocalDictionaryGenerator> getColumnLocalDictGenMap() {

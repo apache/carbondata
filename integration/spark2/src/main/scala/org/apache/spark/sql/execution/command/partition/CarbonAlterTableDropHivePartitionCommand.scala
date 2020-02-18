@@ -162,7 +162,7 @@ case class CarbonAlterTableDropHivePartitionCommand(
       // If normal table then set uuid to ""
       val uuid = "";
       val segments = new SegmentStatusManager(table.getAbsoluteTableIdentifier)
-        .getValidAndInvalidSegments(table.isChildTableForMV).getValidSegments
+        .getValidAndInvalidSegments(table.isMVTable).getValidSegments
       // First drop the partitions from partition mapper files of each segment
       val tuples = new CarbonDropPartitionRDD(sparkSession,
         table.getTablePath,
@@ -187,7 +187,7 @@ case class CarbonAlterTableDropHivePartitionCommand(
       val postStatusEvent = AlterTableDropPartitionPostStatusEvent(table)
       OperationListenerBus.getInstance().fireEvent(postStatusEvent, operationContext)
 
-      DataMapStoreManager.getInstance().clearDataMaps(table.getAbsoluteTableIdentifier)
+      DataMapStoreManager.getInstance().clearIndexes(table.getAbsoluteTableIdentifier)
     } finally {
       AlterTableUtil.releaseLocks(locks)
       SegmentFileStore.cleanSegments(table, null, true)

@@ -30,11 +30,11 @@ import java.util.Set;
 import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.DataMapUtil;
-import org.apache.carbondata.core.datamap.status.DataMapSegmentStatusUtil;
 import org.apache.carbondata.core.datamap.status.DataMapStatus;
 import org.apache.carbondata.core.datamap.status.DataMapStatusDetail;
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager;
+import org.apache.carbondata.core.datamap.status.MVSegmentStatusUtil;
+import org.apache.carbondata.core.index.IndexUtil;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
@@ -59,8 +59,8 @@ public class DataMapSchema implements Serializable, Writable {
 
   /**
    * There are two kind of DataMaps:
-   * 1. Index DataMap: provider name is class name of implementation class of DataMapFactory
-   * 2. MV DataMap: provider name is class name of {@code MVDataMapProvider}
+   * 1. Index Index: provider name is class name of implementation class of IndexFactory
+   * 2. MV: provider name is class name of {@code MVProvider}
    */
   // the old version the field name for providerName was className, so to de-serialization
   // old schema provided the old field name in the alternate filed using annotation
@@ -99,7 +99,7 @@ public class DataMapSchema implements Serializable, Writable {
   private Map<String, Set<String>> mainTableColumnList;
 
   /**
-   * DataMap table column order map as per Select query
+   * Index table column order map as per Select query
    */
   private Map<Integer, String> columnsOrderMap;
 
@@ -179,7 +179,7 @@ public class DataMapSchema implements Serializable, Writable {
   }
 
   /**
-   * Return true if this datamap is an Index DataMap
+   * Return true if this datamap is an Index Index
    * @return
    */
   public boolean isIndexDataMap() {
@@ -192,7 +192,7 @@ public class DataMapSchema implements Serializable, Writable {
   }
 
   /**
-   * Return true if this datamap is lazy (created with DEFERRED REBUILD syntax)
+   * Return true if this datamap is lazy (created with DEFERRED REFRESH syntax)
    */
   public boolean isLazy() {
     String deferredRebuild = getProperties().get(DataMapProperty.DEFERRED_REBUILD);
@@ -258,9 +258,9 @@ public class DataMapSchema implements Serializable, Writable {
       columns = getProperties().get(INDEX_COLUMNS.toLowerCase());
     }
     if (columns == null) {
-      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " DMPROPERTY is required");
+      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " property is required");
     } else if (StringUtils.isBlank(columns)) {
-      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " DMPROPERTY is blank");
+      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " property is blank");
     } else {
       return columns.split(",", -1);
     }
@@ -347,7 +347,7 @@ public class DataMapSchema implements Serializable, Writable {
         LoadMetadataDetails load = loads[i];
         if (load.getSegmentStatus().equals(SegmentStatus.SUCCESS)) {
           Map<String, List<String>> segmentMaps =
-              DataMapSegmentStatusUtil.getSegmentMap(load.getExtraInfo());
+              MVSegmentStatusUtil.getSegmentMap(load.getExtraInfo());
           Map<String, String> syncInfoMap = new HashMap<>();
           for (Map.Entry<String, List<String>> entry : segmentMaps.entrySet()) {
             // when in join scenario, one table is loaded and one more is not loaded,
@@ -355,7 +355,7 @@ public class DataMapSchema implements Serializable, Writable {
             if (entry.getValue().isEmpty()) {
               syncInfoMap.put(entry.getKey(), "NA");
             } else {
-              syncInfoMap.put(entry.getKey(), DataMapUtil.getMaxSegmentID(entry.getValue()));
+              syncInfoMap.put(entry.getKey(), IndexUtil.getMaxSegmentID(entry.getValue()));
             }
           }
           String loadEndTime;

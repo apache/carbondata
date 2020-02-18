@@ -53,10 +53,10 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
   private InputMetricsStats inputMetricsStats;
 
   /**
-   * Whether to clear datamap when reader is closed. In some scenarios such as datamap rebuild,
-   * we will set it to true and will clear the datamap after rebuild
+   * Whether to clear index when reader is closed. In some scenarios such as index rebuild,
+   * we will set it to true and will clear the index after rebuild
    */
-  private boolean skipClearDataMapAtClose = false;
+  private boolean skipClearIndexAtClose = false;
 
   public CarbonRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport,
       InputMetricsStats inputMetricsStats, Configuration configuration) {
@@ -159,9 +159,9 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
   @Override
   public void close() throws IOException {
     logStatistics(rowCount, queryModel.getStatisticsRecorder());
-    if (!skipClearDataMapAtClose) {
-      // Clear the datamap cache
-      DataMapStoreManager.getInstance().clearDataMapCache(
+    if (!skipClearIndexAtClose) {
+      // Clear the index cache
+      DataMapStoreManager.getInstance().clearIndexCache(
           queryModel.getTable().getAbsoluteTableIdentifier(), false);
     }
     // close read support
@@ -174,7 +174,7 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     }
   }
 
-  public void setSkipClearDataMapAtClose(boolean skipClearDataMapAtClose) {
-    this.skipClearDataMapAtClose = skipClearDataMapAtClose;
+  public void setSkipClearIndexAtClose(boolean skipClearIndexAtClose) {
+    this.skipClearIndexAtClose = skipClearIndexAtClose;
   }
 }

@@ -58,7 +58,7 @@ public interface BlockletDetailsFetcher {
       throws IOException;
 
   /**
-   * clears the datamap from cache and segmentMap from executor
+   * clears the index from cache and segmentMap from executor
    */
   void clear();
 }

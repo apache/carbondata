@@ -29,7 +29,7 @@ import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRe
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.cache.{CarbonDropCacheCommand, CarbonShowCacheCommand}
-import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDataMapRebuildCommand, CarbonDataMapShowCommand, CarbonDropDataMapCommand}
+import org.apache.spark.sql.execution.command.index.{CarbonCreateIndexCommand, CarbonDropIndexCommand, CarbonRefreshIndexCommand, CarbonShowIndexCommand}
 import org.apache.spark.sql.execution.command.management._
 import org.apache.spark.sql.execution.command.schema.CarbonAlterTableDropColumnCommand
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
@@ -89,7 +89,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val restructure: Parser[LogicalPlan] = alterTableDropColumn
 
   protected lazy val datamapManagement: Parser[LogicalPlan] =
-    createDataMap | dropDataMap | showDataMap | refreshDataMap
+    createIndex | dropIndex | showIndex | refreshDatamapIndex
 
   protected lazy val stream: Parser[LogicalPlan] =
     createStream | dropStream | showStreams
@@ -160,22 +160,21 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   /**
-   * The syntax of datamap creation is as follows.
-   * CREATE DATAMAP IF NOT EXISTS datamapName [ON TABLE tableName]
-   * USING 'DataMapProviderName'
-   * [WITH DEFERRED REBUILD]
-   * DMPROPERTIES('KEY'='VALUE') AS SELECT COUNT(COL1) FROM tableName
+   * CREATE INDEX IF NOT EXISTS index_name
+   * ON TABLE table_name
+   * USING 'IndexName'
+   * [WITH DEFERRED REFRESH]
+   * PROPERTIES('KEY'='VALUE')
    */
-  protected lazy val createDataMap: Parser[LogicalPlan] =
-    CREATE ~> DATAMAP ~> opt(IF ~> NOT ~> EXISTS) ~ ident ~
-    opt(ontable) ~
+  protected lazy val createIndex: Parser[LogicalPlan] =
+    CREATE ~> INDEX ~> opt(IF ~> NOT ~> EXISTS) ~ ident ~
+    ontable ~
     (USING ~> stringLit) ~
-    opt(WITH ~> DEFERRED ~> REBUILD) ~
-    (DMPROPERTIES ~> "(" ~> repsep(options, ",") <~ ")").? ~
-    (AS ~> restInput).? <~ opt(";") ^^ {
-      case ifnotexists ~ dmname ~ tableIdent ~ dmProviderName ~ deferred ~ dmprops ~ query =>
-        val map = dmprops.getOrElse(List[(String, String)]()).toMap[String, String]
-        CarbonCreateDataMapCommand(dmname, tableIdent, dmProviderName, map, query,
+    opt(WITH ~> DEFERRED ~> REFRESH) ~
+    (PROPERTIES ~> "(" ~> repsep(options, ",") <~ ")").? <~ opt(";") ^^ {
+      case ifnotexists ~ indexName ~ tableIdent ~ indexProviderName ~ deferred ~ props =>
+        val map = props.getOrElse(List[(String, String)]()).toMap[String, String]
+        CarbonCreateIndexCommand(indexName, tableIdent, indexProviderName, map,
           ifnotexists.isDefined, deferred.isDefined)
     }
 
@@ -186,33 +185,30 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   /**
-   * The below syntax is used to drop the datamap.
-   * DROP DATAMAP IF EXISTS datamapName ON TABLE tablename
+   * DROP INDEX IF EXISTS index_name ON TABLE table_name
    */
-  protected lazy val dropDataMap: Parser[LogicalPlan] =
-    DROP ~> DATAMAP ~> opt(IF ~> EXISTS) ~ ident ~ opt(ontable) <~ opt(";")  ^^ {
-      case ifexists ~ dmname ~ tableIdent =>
-        CarbonDropDataMapCommand(dmname, ifexists.isDefined, tableIdent)
+  protected lazy val dropIndex: Parser[LogicalPlan] =
+    DROP ~> INDEX ~> opt(IF ~> EXISTS) ~ ident ~ ontable <~ opt(";")  ^^ {
+      case ifexists ~ indexName ~ tableIdent =>
+        CarbonDropIndexCommand(indexName, ifexists.isDefined, tableIdent)
     }
 
   /**
-   * The syntax of show datamap is used to show datamaps on the table
-   * SHOW DATAMAP ON TABLE tableName
+   * SHOW INDEXES [ON TABLE table_name]
    */
-  protected lazy val showDataMap: Parser[LogicalPlan] =
-    SHOW ~> DATAMAP ~> opt(ontable) <~ opt(";") ^^ {
+  protected lazy val showIndex: Parser[LogicalPlan] =
+    SHOW ~> INDEXES ~> opt(ontable) <~ opt(";") ^^ {
       case tableIdent =>
-        CarbonDataMapShowCommand(tableIdent)
+        CarbonShowIndexCommand(tableIdent)
     }
 
   /**
-   * The syntax of show datamap is used to show datamaps on the table
-   * REBUILD DATAMAP datamapname [ON TABLE] tableName
+   * REFRESH INDEX index_name ON TABLE table_ame
    */
-  protected lazy val refreshDataMap: Parser[LogicalPlan] =
-    REBUILD ~> DATAMAP ~> ident ~ opt(ontable) <~ opt(";") ^^ {
+  protected lazy val refreshDatamapIndex: Parser[LogicalPlan] =
+    REFRESH ~> INDEX ~> ident ~ ontable <~ opt(";") ^^ {
       case datamap ~ tableIdent =>
-        CarbonDataMapRebuildCommand(datamap, tableIdent)
+        CarbonRefreshIndexCommand(datamap, tableIdent)
     }
 
   protected lazy val alterDataMap: Parser[LogicalPlan] =
@@ -614,7 +610,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   protected lazy val indexCommands: Parser[LogicalPlan] =
-    showIndexes | createIndexTable | dropIndexTable | registerIndexes | rebuildIndex
+    showIndexes | createIndexTable | dropIndexTable | registerIndexes | refreshIndex
 
   protected lazy val createIndexTable: Parser[LogicalPlan] =
     CREATE ~> INDEX ~> ident ~ (ON ~> TABLE ~> (ident <~ ".").? ~ ident) ~
@@ -731,8 +727,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         RegisterIndexTableCommand(dbName, indexTable, tableName)
     }
 
-  protected lazy val rebuildIndex: Parser[LogicalPlan] =
-    REBUILD ~> INDEX ~> (ident <~ ".").? ~ ident ~
+  protected lazy val refreshIndex: Parser[LogicalPlan] =
+    REFRESH ~> INDEX ~> (ident <~ ".").? ~ ident ~
     (WHERE ~> (SEGMENT ~ "." ~ ID) ~> IN ~> "(" ~> repsep(segmentId, ",") <~ ")").? <~
     opt(";") ^^ {
       case dbName ~ table ~ segs =>

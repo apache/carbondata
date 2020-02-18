@@ -28,7 +28,7 @@ import java.util.List;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.BlockletDataMapUtil;
+import org.apache.carbondata.core.util.BlockletIndexUtil;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
@@ -218,13 +218,13 @@ public class BlockletDetailInfo implements Serializable, Writable {
    */
   public void readColumnSchema(byte[] schemaArray) throws IOException {
     if (null != schemaArray) {
-      columnSchemas = BlockletDataMapUtil.readColumnSchema(schemaArray);
+      columnSchemas = BlockletIndexUtil.readColumnSchema(schemaArray);
     }
   }
 
   private void convertColumnSchemaToBinary() throws IOException {
     if (null != columnSchemas) {
-      columnSchemaBinary = BlockletDataMapUtil.convertSchemaToBinary(columnSchemas);
+      columnSchemaBinary = BlockletIndexUtil.convertSchemaToBinary(columnSchemas);
     }
   }
 

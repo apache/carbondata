@@ -64,7 +64,7 @@ case class Relation(output: Seq[AttributeReference], catalogTable: Option[Catalo
  */
 object MVHelper {
 
-  def createMVDataMap(
+  def createMVTable(
       sparkSession: SparkSession,
       dataMapSchema: DataMapSchema,
       queryString: String,
@@ -76,7 +76,7 @@ object MVHelper {
       )
     }
     val mvUtil = new MVUtil
-    mvUtil.validateDMProperty(properties)
+    mvUtil.validateProperty(properties)
     val queryPlan = dropDummyFunc(MVParser.getMVPlan(queryString, sparkSession))
     // if there is limit in MV ctas query string, throw exception, as its not a valid usecase
     queryPlan match {
@@ -88,7 +88,7 @@ object MVHelper {
     val mainTables = getCatalogTables(queryPlan)
     if (mainTables.isEmpty) {
       throw new MalformedCarbonCommandException(
-        s"Non-Carbon table does not support creating MV datamap")
+        s"Non-Carbon table does not support creating MV")
     }
     val modularPlan = validateMVQuery(sparkSession, queryPlan)
     val updatedQueryWithDb = modularPlan.asCompactSQL
@@ -136,7 +136,7 @@ object MVHelper {
       if (!table.getTableInfo.isTransactionalTable) {
         throw new MalformedCarbonCommandException("Unsupported operation on NonTransactional table")
       }
-      if (table.isChildTableForMV) {
+      if (table.isMVTable) {
         throw new MalformedCarbonCommandException(
           "Cannot create MV on child table " + table.getTableUniqueName)
       }
@@ -148,7 +148,7 @@ object MVHelper {
       parentTablesList.add(table)
     }
 
-    // Check if load is in progress in any of the parent table mapped to the datamap
+    // Check if load is in progress in any of the parent table mapped to the MV
     parentTablesList.asScala.foreach {
       parentTable =>
         if (SegmentStatusManager.isLoadInProgressInTable(parentTable)) {
@@ -166,7 +166,7 @@ object MVHelper {
       finalModularPlan, getRelation(queryPlan))
     // If dataMap is mapped to single main table, then inherit table properties from main table,
     // else, will use default table properties. If DMProperties contains table properties, then
-    // table properties of datamap table will be updated
+    // table properties of MV table will be updated
     if (parentTablesList.size() == 1) {
       inheritTablePropertiesFromMainTable(
         parentTablesList.get(0),
@@ -199,7 +199,7 @@ object MVHelper {
     properties.foreach(t => tableProperties.put(t._1, t._2))
     val usePartitioning = properties.getOrElse("partitioning", "true").toBoolean
 
-    // Inherit partition from parent table if datamap is mapped to single parent table
+    // Inherit partition from parent table if MV is mapped to single parent table
     val partitionerFields = if (parentTablesList.size() == 1) {
       val partitionInfo = parentTablesList.get(0).getPartitionInfo
       val parentPartitionColumns = if (!usePartitioning) {
@@ -303,8 +303,8 @@ object MVHelper {
       logicalPlan: LogicalPlan): ModularPlan = {
     val dataMapProvider = DataMapManager.get().getDataMapProvider(null,
       new DataMapSchema("", DataMapClassProvider.MV.getShortName), sparkSession)
-    var catalog = DataMapStoreManager.getInstance().getDataMapCatalog(dataMapProvider,
-      DataMapClassProvider.MV.getShortName).asInstanceOf[SummaryDatasetCatalog]
+    var catalog = DataMapStoreManager.getInstance().getMVCatalog(dataMapProvider)
+      .asInstanceOf[SummaryDatasetCatalog]
     if (catalog == null) {
       catalog = new SummaryDatasetCatalog(sparkSession)
     }
@@ -614,8 +614,8 @@ object MVHelper {
       fieldRelationMap foreach (fields => {
         val aggFunc = fields._2.aggregateFunction
         val relationList = fields._2.columnTableRelationList
-        // check if columns present in datamap are long_string_col in parent table. If they are
-        // long_string_columns in parent, make them long_string_columns in datamap
+        // check if columns present in MV are long_string_col in parent table. If they are
+        // long_string_columns in parent, make them long_string_columns in MV
         if (aggFunc.isEmpty && relationList.size == 1 && longStringColumnInParents
           .contains(relationList.head.columnName)) {
           varcharDatamapFields += relationList.head.columnName
@@ -633,7 +633,7 @@ object MVHelper {
         if (!fieldNames.contains(newColName)) {
           throw new MalformedDataMapCommandException(
             CarbonCommonConstants.LONG_STRING_COLUMNS.toUpperCase() + ":" + colName
-            + " does not in datamap")
+            + " does not in MV")
         }
         newColName
       }

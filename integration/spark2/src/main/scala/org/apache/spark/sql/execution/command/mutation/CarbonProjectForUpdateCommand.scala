@@ -88,7 +88,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
 
     if (!carbonTable.canAllow(carbonTable, TableOperation.UPDATE)) {
       throw new MalformedCarbonCommandException(
-        "update operation is not supported for index datamap")
+        "update operation is not supported for index")
     }
 
     // Block the update operation for non carbon formats
@@ -205,7 +205,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
         .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
                                  !dataMapSchema.isIndexDataMap).asJava
       if (!allDataMapSchemas.isEmpty) {
-        DataMapStatusManager.truncateDataMap(allDataMapSchemas)
+        DataMapStatusManager.truncateMVTable(allDataMapSchemas)
       }
       // trigger event for Update table
       val updateTablePostEvent: UpdateTablePostEvent =

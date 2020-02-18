@@ -24,8 +24,8 @@ import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.DataMapUtil;
-import org.apache.carbondata.core.datamap.status.DataMapSegmentStatusUtil;
+import org.apache.carbondata.core.datamap.status.MVSegmentStatusUtil;
+import org.apache.carbondata.core.index.IndexUtil;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
@@ -36,7 +36,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 /**
  * Interface to check whether datamap can be enabled
  */
-@InterfaceAudience.Developer("DataMap")
+@InterfaceAudience.Developer("Index")
 public abstract class DataMapSyncStatus {
 
   /**
@@ -57,7 +57,7 @@ public abstract class DataMapSyncStatus {
     for (LoadMetadataDetails loadMetadataDetail : dataMapLoadMetadataDetails) {
       if (loadMetadataDetail.getSegmentStatus() == SegmentStatus.SUCCESS) {
         Map<String, List<String>> segmentMap =
-            DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetail.getExtraInfo());
+            MVSegmentStatusUtil.getSegmentMap(loadMetadataDetail.getExtraInfo());
         if (dataMapSegmentMap.isEmpty()) {
           dataMapSegmentMap.putAll(segmentMap);
         } else {
@@ -72,7 +72,7 @@ public abstract class DataMapSyncStatus {
     List<RelationIdentifier> parentTables = dataMapSchema.getParentTables();
     for (RelationIdentifier parentTable : parentTables) {
       List<String> mainTableValidSegmentList =
-          DataMapUtil.getMainTableValidSegmentList(parentTable);
+          IndexUtil.getMainTableValidSegmentList(parentTable);
       if (!mainTableValidSegmentList.isEmpty() && !dataMapSegmentMap.isEmpty()) {
         isDataMapInSync = dataMapSegmentMap.get(
             parentTable.getDatabaseName() + CarbonCommonConstants.POINT + parentTable

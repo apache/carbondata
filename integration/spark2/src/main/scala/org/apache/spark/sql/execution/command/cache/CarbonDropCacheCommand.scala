@@ -17,15 +17,14 @@
 
 package org.apache.spark.sql.execution.command.cache
 
-import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.MetadataCommand
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, DataMapUtil}
+import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.index.IndexUtil
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{DropTableCacheEvent, OperationContext, OperationListenerBus}
@@ -53,11 +52,11 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall
     if (CarbonProperties.getInstance().isDistributedPruningEnabled(carbonTable.getDatabaseName,
       carbonTable.getTableName)) {
       LOGGER.info("Clearing cache from IndexServer")
-      DataMapUtil.executeClearDataMapJob(carbonTable, DataMapUtil.DISTRIBUTED_JOB_NAME)
+      IndexUtil.executeClearIndexJob(carbonTable, IndexUtil.DISTRIBUTED_JOB_NAME)
     }
     if (cache != null) {
       LOGGER.info("Clearing cache from driver side")
-      DataMapStoreManager.getInstance().clearDataMaps(carbonTable.getAbsoluteTableIdentifier)
+      DataMapStoreManager.getInstance().clearIndexes(carbonTable.getAbsoluteTableIdentifier)
     }
     LOGGER.info("Drop cache request served for table " + carbonTable.getTableUniqueName)
   }

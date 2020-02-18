@@ -106,7 +106,7 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
   }
 
   test("LuceneDataMapExample") {
-    LuceneDataMapExample.exampleBody(spark)
+    LuceneIndexExample.exampleBody(spark)
   }
 
   test("ExternalTableExample") {

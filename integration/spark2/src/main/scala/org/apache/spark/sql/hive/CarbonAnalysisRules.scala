@@ -31,6 +31,7 @@ import org.apache.spark.sql.execution.command.mutation.CarbonProjectForDeleteCom
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.strategy.CarbonPlanHelper
 import org.apache.spark.sql.util.CarbonException
+import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -76,11 +77,11 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
           }
         } else if (!indexSchemas.isEmpty) {
           throw new UnsupportedOperationException(
-            "Update operation is not supported for table which has index datamaps")
+            "Update operation is not supported for table which has index")
         }
-        if (carbonTable.isChildTableForMV) {
+        if (carbonTable.isMVTable) {
           throw new UnsupportedOperationException(
-            "Update operation is not supported for mv datamap table")
+            "Update operation is not supported for mv table")
         }
       }
       val tableRelation =
@@ -207,9 +208,9 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
         val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
         val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
         if (carbonTable != null) {
-          if (carbonTable.isChildTableForMV) {
+          if (carbonTable.isMVTable) {
             throw new UnsupportedOperationException(
-              "Delete operation is not supported for datamap table")
+              "Delete operation is not supported for MV table")
           }
           val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
           if (carbonTable.hasMVCreated) {
@@ -222,7 +223,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
             }
           } else if (!indexSchemas.isEmpty) {
             throw new UnsupportedOperationException(
-              "Delete operation is not supported for table which has index datamaps")
+              "Delete operation is not supported for table which has index")
           }
         }
         // include tuple id in subquery

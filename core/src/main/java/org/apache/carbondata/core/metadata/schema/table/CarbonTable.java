@@ -36,10 +36,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
-import org.apache.carbondata.core.datamap.TableDataMap;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.features.TableOperation;
+import org.apache.carbondata.core.index.TableIndex;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.DatabaseLocationProvider;
@@ -70,6 +70,7 @@ import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
+
 
 /**
  * Mapping class for Carbon actual table
@@ -858,10 +859,10 @@ public class CarbonTable implements Serializable, Writable {
   /**
    * Return true if this table is a MV table (child table of other table)
    */
-  public boolean isChildTableForMV() {
-    return null != tableInfo.getFactTable().getTableProperties()
-        .get(CarbonCommonConstants.PARENT_TABLES) && !tableInfo.getFactTable().getTableProperties()
-        .get(CarbonCommonConstants.PARENT_TABLES).isEmpty();
+  public boolean isMVTable() {
+    String parentTables = tableInfo.getFactTable().getTableProperties()
+        .get(CarbonCommonConstants.PARENT_TABLES);
+    return null != parentTables && !parentTables.isEmpty();
   }
 
   /**
@@ -919,15 +920,15 @@ public class CarbonTable implements Serializable, Writable {
    */
   public boolean canAllow(CarbonTable carbonTable, TableOperation operation, Object... targets) {
     try {
-      List<TableDataMap> datamaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
-      if (!datamaps.isEmpty()) {
-        for (TableDataMap dataMap : datamaps) {
-          DataMapFactory factoryClass = DataMapStoreManager.getInstance()
-              .getDataMapFactoryClass(carbonTable, dataMap.getDataMapSchema());
+      List<TableIndex> indexes = DataMapStoreManager.getInstance().getAllIndex(carbonTable);
+      if (!indexes.isEmpty()) {
+        for (TableIndex index : indexes) {
+          IndexFactory factoryClass = DataMapStoreManager.getInstance()
+              .getIndexFactoryClass(carbonTable, index.getDataMapSchema());
           if (factoryClass.willBecomeStale(operation)) {
             return false;
           }
-          // check whether the operation is blocked for datamap
+          // check whether the operation is blocked for index
           if (factoryClass.isOperationBlocked(operation, targets)) {
             return false;
           }
@@ -953,7 +954,7 @@ public class CarbonTable implements Serializable, Writable {
       CarbonColumn carbonColumn = getColumnByName(column.trim().toLowerCase());
       if (carbonColumn == null) {
         throw new MalformedDataMapCommandException(String
-            .format("column '%s' does not exist in table. Please check create DataMap statement.",
+            .format("column '%s' does not exist in table. Please check create index statement.",
                 column));
       }
       if (carbonColumn.getColName().isEmpty()) {

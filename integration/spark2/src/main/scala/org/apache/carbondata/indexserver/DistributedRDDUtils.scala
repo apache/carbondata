@@ -28,11 +28,12 @@ import org.apache.spark.Partition
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapStoreManager, Segment}
-import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datamap.dev.expr.IndexDistributableWrapper
+import org.apache.carbondata.core.index.IndexDistributable
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.readcommitter.{LatestFilesReadCommittedScope, TableStatusReadCommittedScope}
+import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{IndexServerLoadEvent, OperationContext, OperationListenerBus}
@@ -52,10 +53,10 @@ object DistributedRDDUtils {
       tableUniqueName: String, rddId: Int): Seq[Partition] = {
     // sort the partitions in increasing order of index size.
     val (segments, legacySegments) = segment.span(split => split
-      .asInstanceOf[DataMapDistributableWrapper].getDistributable.getSegment.getIndexSize > 0)
-    val sortedPartitions = segments.sortWith(_.asInstanceOf[DataMapDistributableWrapper]
+      .asInstanceOf[IndexDistributableWrapper].getDistributable.getSegment.getIndexSize > 0)
+    val sortedPartitions = segments.sortWith(_.asInstanceOf[IndexDistributableWrapper]
                                               .getDistributable.getSegment.getIndexSize >
-                                            _.asInstanceOf[DataMapDistributableWrapper]
+                                            _.asInstanceOf[IndexDistributableWrapper]
                                               .getDistributable.getSegment.getIndexSize)
     val executorCache = DistributedRDDUtils.executorToCacheSizeMapping
     // check if any executor is dead.
@@ -86,7 +87,7 @@ object DistributedRDDUtils {
       }
     groupedPartitions.zipWithIndex.map {
       case ((location, splitList), index) =>
-        new DataMapRDDPartition(rddId,
+        new IndexRDDPartition(rddId,
           index, splitList,
           Array(location))
     }.toArray.sortBy(_.index)
@@ -103,14 +104,14 @@ object DistributedRDDUtils {
       }.toSeq
       legacySegments.zipWithIndex.map {
         case (legacySegment, index) =>
-          val wrapper: DataMapDistributable = legacySegment
-            .asInstanceOf[DataMapDistributableWrapper].getDistributable
+          val wrapper: IndexDistributable = legacySegment
+            .asInstanceOf[IndexDistributableWrapper].getDistributable
           val executor = validExecutorIds(index % validExecutorIds.length)
           wrapper.setLocations(Array("executor_" + executor))
           legacySegment
       }
     } else { Seq() } ++ segments.map { partition =>
-      val wrapper: DataMapDistributable = partition.asInstanceOf[DataMapDistributableWrapper]
+      val wrapper: IndexDistributable = partition.asInstanceOf[IndexDistributableWrapper]
         .getDistributable
       wrapper.setLocations(Array(DistributedRDDUtils
         .assignExecutor(tableUniqueName, wrapper.getSegment, executorList)))

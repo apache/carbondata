@@ -26,8 +26,8 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
-import org.apache.carbondata.core.datamap.dev.DataMap;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.Index;
+import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
@@ -41,14 +41,14 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
  *  USING 'short-name-of-the-datamap'
  * }
  * otherwise, user should use the class name of the datamap implementation to create the datamap
- * (subclass of {@link DataMapFactory})
+ * (subclass of {@link IndexFactory})
  * <p>
  * {@code
  *  CREATE DATAMAP dm ON TABLE table
  *  USING 'class-name-of-the-datamap'
  * }
  */
-@InterfaceAudience.Developer("DataMap")
+@InterfaceAudience.Developer("Index")
 @InterfaceStability.Evolving
 public class DataMapRegistry {
   private static Map<String, String> shortNameToClassName = new ConcurrentHashMap<>();
@@ -64,7 +64,7 @@ public class DataMapRegistry {
     return shortNameToClassName.get(shortName);
   }
 
-  public static DataMapFactory<? extends DataMap> getDataMapFactoryByShortName(
+  public static IndexFactory<? extends Index> getIndexFactoryByShortName(
       CarbonTable table, DataMapSchema dataMapSchema) throws MalformedDataMapCommandException {
     String providerName = dataMapSchema.getProviderName();
     try {
@@ -72,25 +72,25 @@ public class DataMapRegistry {
           DataMapClassProvider.getDataMapProviderOnName(providerName).getClassName(),
           DataMapClassProvider.getDataMapProviderOnName(providerName).getShortName());
     } catch (UnsupportedOperationException ex) {
-      throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found", ex);
+      throw new MalformedDataMapCommandException("Index '" + providerName + "' not found", ex);
     }
-    DataMapFactory<? extends DataMap> dataMapFactory;
+    IndexFactory<? extends Index> indexFactory;
     String className = getDataMapClassName(providerName.toLowerCase());
     if (className != null) {
       try {
-        dataMapFactory = (DataMapFactory<? extends DataMap>)
+        indexFactory = (IndexFactory<? extends Index>)
             Class.forName(className).getConstructors()[0].newInstance(table, dataMapSchema);
       } catch (ClassNotFoundException ex) {
-        throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found", ex);
+        throw new MalformedDataMapCommandException("Index '" + providerName + "' not found", ex);
       } catch (InvocationTargetException ex) {
         throw new MalformedDataMapCommandException(ex.getTargetException().getMessage());
       } catch (InstantiationException | IllegalAccessException | IllegalArgumentException ex) {
         throw new MetadataProcessException(
-            "failed to create DataMap '" + providerName + "': " + ex.getMessage(), ex);
+            "failed to create '" + providerName + "': " + ex.getMessage(), ex);
       }
     } else {
-      throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found");
+      throw new MalformedDataMapCommandException("Index '" + providerName + "' not found");
     }
-    return dataMapFactory;
+    return indexFactory;
   }
 }

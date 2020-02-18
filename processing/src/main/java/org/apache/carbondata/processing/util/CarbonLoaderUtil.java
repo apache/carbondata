@@ -272,7 +272,7 @@ public final class CarbonLoaderUtil {
               String.valueOf(SegmentStatusManager.createNewSegmentId(listOfLoadFolderDetailsArray));
           loadModel.setLoadMetadataDetails(listOfLoadFolderDetails);
           LoadMetadataDetails entryTobeRemoved = null;
-          if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildTableForMV()
+          if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isMVTable()
               && !loadModel.getSegmentId().isEmpty()) {
             for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
               if (entry.getLoadName().equalsIgnoreCase(loadModel.getSegmentId())) {

@@ -48,8 +48,8 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
         | STORED AS carbondata
       """.stripMargin)
     // bloom
-    sql("CREATE DATAMAP IF NOT EXISTS cache_1_bloom ON TABLE cache_db.cache_1 USING 'bloomfilter' " +
-        "DMPROPERTIES('INDEX_COLUMNS'='deptno')")
+    sql("CREATE INDEX IF NOT EXISTS cache_1_bloom ON TABLE cache_db.cache_1 USING 'bloomfilter' " +
+        "PROPERTIES('INDEX_COLUMNS'='deptno')")
     sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE cache_1 ")
 
     sql(

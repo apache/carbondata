@@ -4,11 +4,10 @@ import java.util.concurrent.ConcurrentHashMap
 
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
 import scala.collection.JavaConverters._
-import scala.util.Random
 
 import org.apache.carbondata.core.datamap.Segment
-import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
+import org.apache.carbondata.core.datamap.dev.expr.IndexDistributableWrapper
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexDistributable
 import org.apache.carbondata.indexserver.DistributedRDDUtils
 
 class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
@@ -77,9 +76,9 @@ class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
       i =>
         val segment = new Segment(i.toString)
         segment.setIndexSize(1)
-        val blockletDataMapDistributable = new BlockletDataMapDistributable(i.toString)
+        val blockletDataMapDistributable = new BlockletIndexDistributable(i.toString)
         blockletDataMapDistributable.setSegment(segment)
-        new DataMapDistributableWrapper("", blockletDataMapDistributable)
+        new IndexDistributableWrapper("", blockletDataMapDistributable)
     }
 
     DistributedRDDUtils
@@ -97,17 +96,17 @@ class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
         }
         (host.toString, executorIds)
     }.toMap
-    val dataMapDistributableWrapper = (0 to 5010).map {
+    val indexDistributableWrapper = (0 to 5010).map {
       i =>
         val segment = new Segment(i.toString)
         segment.setIndexSize(111)
-        val blockletDataMapDistributable = new BlockletDataMapDistributable(i.toString)
+        val blockletDataMapDistributable = new BlockletIndexDistributable(i.toString)
         blockletDataMapDistributable.setSegment(segment)
-        new DataMapDistributableWrapper("", blockletDataMapDistributable)
+        new IndexDistributableWrapper("", blockletDataMapDistributable)
     }
 
     DistributedRDDUtils
-      .getExecutors(dataMapDistributableWrapper.toArray, executorList, "default_table1", 1)
+      .getExecutors(indexDistributableWrapper.toArray, executorList, "default_table1", 1)
     DistributedRDDUtils.executorToCacheSizeMapping.asScala.foreach {
       a => a._2.values().asScala.foreach(size => assert(size > 27500 && size < 28000))
     }

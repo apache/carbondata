@@ -104,7 +104,7 @@ public class DataMapStatusManager {
   }
 
   /**
-   * This method will disable all lazy (DEFERRED REBUILD) datamap in the given table
+   * This method will disable all lazy (DEFERRED REFRESH) datamap in the given table
    */
   public static void disableAllLazyDataMaps(CarbonTable table) throws IOException {
     List<DataMapSchema> allDataMapSchemas =
@@ -142,13 +142,13 @@ public class DataMapStatusManager {
   }
 
   /**
-   * This method will remove all segments of dataMap table in case of Insert-Overwrite/Update/Delete
+   * This method will remove all segments of MV table in case of Insert-Overwrite/Update/Delete
    * operations on main table
    *
    * @param allDataMapSchemas of main carbon table
    * @throws IOException
    */
-  public static void truncateDataMap(List<DataMapSchema> allDataMapSchemas)
+  public static void truncateMVTable(List<DataMapSchema> allDataMapSchemas)
       throws IOException, NoSuchDataMapException {
     for (DataMapSchema datamapschema : allDataMapSchemas) {
       if (!datamapschema.isLazy()) {

@@ -35,7 +35,7 @@ import org.apache.carbondata.events._
 
 /**
  * Create Materialized View Command implementation
- * It will create the MV table, load the MV table (if deferred rebuild is false),
+ * It will create the MV table, load the MV table (if deferred refresh is false),
  * and register the MV schema in [[DataMapStoreManager]]
  */
 case class CreateMaterializedViewCommand(
@@ -60,7 +60,7 @@ case class CreateMaterializedViewCommand(
     dataMapSchema = new DataMapSchema(mvName, DataMapClassProvider.MV.name())
     dataMapSchema.setProperties(mutableMap.asJava)
     dataMapProvider = DataMapManager.get.getDataMapProvider(null, dataMapSchema, sparkSession)
-    if (DataMapStoreManager.getInstance().getAllDataMapSchemas.asScala
+    if (DataMapStoreManager.getInstance().getAllMVSchemas.asScala
       .exists(_.getDataMapName.equalsIgnoreCase(dataMapSchema.getDataMapName))) {
       if (!ifNotExistsSet) {
         throw new MalformedMaterializedViewException(

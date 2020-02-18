@@ -39,8 +39,8 @@ import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.status.DataMapSegmentStatusUtil;
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager;
+import org.apache.carbondata.core.datamap.status.MVSegmentStatusUtil;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -353,7 +353,7 @@ public final class CarbonDataMergerUtil {
           loadMetadataDetails.setMajorCompacted("true");
         }
 
-        if (carbonTable.isChildTableForMV()) {
+        if (carbonTable.isMVTable()) {
           // If table is child table, then get segment mapping and set to extraInfo
           DataMapSchema dataMapSchema = null;
           try {
@@ -364,7 +364,7 @@ public final class CarbonDataMergerUtil {
             throw e;
           }
           if (null != dataMapSchema) {
-            String segmentMap = DataMapSegmentStatusUtil
+            String segmentMap = MVSegmentStatusUtil
                 .getUpdatedSegmentMap(mergedLoadNumber, dataMapSchema, loadDetails);
             loadMetadataDetails.setExtraInfo(segmentMap);
           }
@@ -953,7 +953,7 @@ public final class CarbonDataMergerUtil {
     SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegments = null;
     try {
       validAndInvalidSegments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
-          .getValidAndInvalidSegments(carbonTable.isChildTableForMV());
+          .getValidAndInvalidSegments(carbonTable.isMVTable());
     } catch (IOException e) {
       LOGGER.error("Error while getting valid segment list for a table identifier");
       throw new IOException();

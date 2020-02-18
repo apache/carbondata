@@ -95,7 +95,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
         //      OptimizeIn(conf),
         ConstantFolding,
         ReorderAssociativeOperator,
-        // No need to apply LikeSimplification rule while creating datamap
+        // No need to apply LikeSimplification rule while creating MV
         // as modular plan asCompactSql will be set in datamapschema
         //        LikeSimplification,
         BooleanSimplification,

@@ -47,12 +47,12 @@ public class DataMapManager {
     DataMapProvider provider;
     if (dataMapSchema.getProviderName().equalsIgnoreCase(DataMapClassProvider.MV.toString())) {
       provider = (DataMapProvider) CarbonScalaUtil.createDataMapProvider(
-          "org.apache.carbondata.mv.extension.MVDataMapProvider",
+          "org.apache.carbondata.mv.extension.MVProvider",
               sparkSession,
               mainTable,
               dataMapSchema);
     } else {
-      provider = new IndexDataMapProvider(mainTable, dataMapSchema, sparkSession);
+      provider = new IndexProvider(mainTable, dataMapSchema, sparkSession);
     }
     return provider;
   }

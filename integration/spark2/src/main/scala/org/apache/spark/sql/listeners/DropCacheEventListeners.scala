@@ -47,7 +47,7 @@ object DropCacheDataMapEventListener extends OperationEventListener {
         val carbonTable = dropCacheEvent.carbonTable
         val sparkSession = dropCacheEvent.sparkSession
         val internalCall = dropCacheEvent.internalCall
-        if (carbonTable.isChildTableForMV && !internalCall) {
+        if (carbonTable.isMVTable && !internalCall) {
           throw new UnsupportedOperationException("Operation not allowed on child table.")
         }
 
@@ -114,7 +114,7 @@ object DropCacheBloomEventListener extends OperationEventListener {
             } catch {
               case e: Exception =>
                 LOGGER.warn(
-                  s"Clean cache for Bloom datamap ${datamap.getDataMapName} failed.", e)
+                  s"Clean cache for Bloom index ${datamap.getDataMapName} failed.", e)
             }
           case _ =>
         }

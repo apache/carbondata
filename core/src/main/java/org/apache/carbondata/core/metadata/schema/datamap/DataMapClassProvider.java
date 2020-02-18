@@ -27,8 +27,8 @@ package org.apache.carbondata.core.metadata.schema.datamap;
  */
 
 public enum DataMapClassProvider {
-  LUCENE("org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory", "lucene"),
-  BLOOMFILTER("org.apache.carbondata.datamap.bloom.BloomCoarseGrainDataMapFactory", "bloomfilter"),
+  LUCENE("org.apache.carbondata.index.lucene.LuceneFineGrainIndexFactory", "lucene"),
+  BLOOMFILTER("org.apache.carbondata.index.bloom.BloomCoarseGrainIndexFactory", "bloomfilter"),
   MV("org.apache.carbondata.core.datamap.MVDataMap", "mv");
 
   /**

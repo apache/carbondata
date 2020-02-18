@@ -72,7 +72,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     String schemaPath = getSchemaPath(storePath, dataMapSchema.getDataMapName());
     if (FileFactory.isFileExist(schemaPath)) {
       throw new IOException(
-          "DataMap with name " + dataMapSchema.getDataMapName() + " already exists in storage");
+          "Index with name " + dataMapSchema.getDataMapName() + " already exists in storage");
     }
     // write the datamap shema in json format.
     try {
@@ -172,17 +172,17 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
       throws IOException {
     String schemaPath = getSchemaPath(storePath, dataMapName);
     if (!FileFactory.isFileExist(schemaPath)) {
-      throw new IOException("DataMap with name " + dataMapName + " does not exists in storage");
+      throw new IOException("Index with name " + dataMapName + " does not exists in storage");
     }
 
-    LOG.info(String.format("Trying to delete DataMap %s schema", dataMapName));
+    LOG.info(String.format("Trying to delete Index %s schema", dataMapName));
 
     dataMapSchemas.removeIf(schema -> schema.getDataMapName().equalsIgnoreCase(dataMapName));
     touchMDTFile();
     if (!FileFactory.deleteFile(schemaPath)) {
-      throw new IOException("DataMap with name " + dataMapName + " cannot be deleted");
+      throw new IOException("Index with name " + dataMapName + " cannot be deleted");
     }
-    LOG.info(String.format("DataMap %s schema is deleted", dataMapName));
+    LOG.info(String.format("Index %s schema is deleted", dataMapName));
   }
 
   private void checkAndReloadDataMapSchemas(boolean touchFile) throws IOException {

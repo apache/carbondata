@@ -655,10 +655,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     assert(exception.getMessage()
       .contains("Unsupported operation on non transactional table"))
 
-    //2. Datamap creation
+    //2. MV creation
     exception = intercept[MalformedCarbonCommandException] {
       sql(
-        "CREATE DATAMAP agg_sdkOutputTable ON TABLE sdkOutputTable USING \"preaggregate\" AS " +
+        "CREATE MATERIALIZED VIEW agg_sdkOutputTable AS " +
         "SELECT name, sum(age) FROM sdkOutputTable GROUP BY name,age")
     }
     assert(exception.getMessage()

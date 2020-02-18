@@ -68,7 +68,7 @@ case class ShowMaterializedViewCommand(tableIdentifier: Option[TableIdentifier])
           dataMapSchemaList.addAll(schemaList)
         }
       case _ =>
-        dataMapSchemaList.addAll(DataMapStoreManager.getInstance().getAllDataMapSchemas)
+        dataMapSchemaList.addAll(DataMapStoreManager.getInstance().getAllMVSchemas)
     }
     dataMapSchemaList.asScala.filter(
       _.getProviderName.equalsIgnoreCase(DataMapClassProvider.MV.name())

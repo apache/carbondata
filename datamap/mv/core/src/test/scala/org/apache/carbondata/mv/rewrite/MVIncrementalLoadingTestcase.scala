@@ -22,13 +22,13 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.status.DataMapSegmentStatusUtil
+import org.apache.carbondata.core.datamap.status.MVSegmentStatusUtil
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 
 
 /**
- * Test Class to verify Incremental Load on  MV Datamap
+ * Test Class to verify Incremental Load on MV Table
  */
 class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
 
@@ -64,7 +64,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
       "datamap1_table"
     )
     var loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    var segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
+    var segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0")
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
@@ -74,7 +74,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     loadDataToFactTable("test_table1")
     sql(s"refresh materialized view datamap1")
     loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
+    segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
     segmentList.clear()
     segmentList.add("1")
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
@@ -109,7 +109,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
       "datamap1_table")
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    val segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
+    val segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("1")
     segmentList.add("2")
@@ -147,7 +147,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from main_table"), sql("select * from testtable"))
     sql(s"refresh materialized view datamap1")
     loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    val segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
+    val segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0")
     segmentList.add("1")
@@ -179,7 +179,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
       "datamap1_table"
     )
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    val segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(3).getExtraInfo)
+    val segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(3).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0")
     segmentList.add("1")
@@ -217,7 +217,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
       "datamap1_table")
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    val segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(2).getExtraInfo)
+    val segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(2).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0.1")
     segmentList.add("4")
@@ -246,7 +246,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql(" select a, sum(b) from test_table  group by a"), Seq(Row("d", null)))
     sql(s"refresh materialized view datamap1")
     loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    val segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
+    val segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("2")
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
@@ -343,7 +343,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
     assert(loadMetadataDetails(0).getSegmentStatus == SegmentStatus.COMPACTED)
     assert(loadMetadataDetails(1).getSegmentStatus == SegmentStatus.COMPACTED)
-    var segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(2).getExtraInfo)
+    var segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(2).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0")
     segmentList.add("1")
@@ -389,7 +389,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
       "datamap1_table"
     )
     var loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    var segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
+    var segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0")
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
@@ -398,7 +398,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     loadDataToFactTable("test_table")
     loadDataToFactTable("test_table1")
     loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
+    segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
     segmentList.clear()
     segmentList.add("1")
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
@@ -436,7 +436,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
       "datamap1_table")
     var loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
     assert(loadMetadataDetails(0).getSegmentStatus == SegmentStatus.MARKED_FOR_DELETE)
-    var segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
+    var segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0")
     segmentList.add("1")
@@ -471,7 +471,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
       "datamap1_table")
     var loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
     assert(loadMetadataDetails(0).getSegmentStatus == SegmentStatus.MARKED_FOR_DELETE)
-    var segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
+    var segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0")
     segmentList.add("1")
@@ -543,7 +543,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
       "datamap1_table")
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
     assert(loadMetadataDetails.length == 1)
-    var segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
+    var segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0.1")
     assert(segmentList.containsAll(segmentMap.get("default.test_table")))

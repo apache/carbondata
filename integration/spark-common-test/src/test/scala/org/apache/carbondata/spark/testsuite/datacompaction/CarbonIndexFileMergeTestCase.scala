@@ -34,7 +34,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 
@@ -459,9 +459,9 @@ class CarbonIndexFileMergeTestCase
 
   private def mergeFileNameIsNull(segmentId: String, dbName: String, tableName: String): Boolean = {
     val carbonTable = CarbonEnv.getCarbonTable(Option(dbName), tableName)(sqlContext.sparkSession)
-    val dataMapFactory = DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable)
-      .getDataMapFactory
-    val method = classOf[BlockletDataMapFactory]
+    val dataMapFactory = DataMapStoreManager.getInstance().getDefaultIndex(carbonTable)
+      .getIndexFactory
+    val method = classOf[BlockletIndexFactory]
       .getDeclaredMethod("getTableBlockIndexUniqueIdentifiers", classOf[Segment])
     method.setAccessible(true)
     val segment = new Segment(segmentId)

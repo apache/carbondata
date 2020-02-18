@@ -34,12 +34,12 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
-import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.index.IndexFilter;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataRefNode;
 import org.apache.carbondata.core.indexstore.blockletindex.IndexWrapper;
@@ -62,7 +62,7 @@ import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
-import org.apache.carbondata.core.util.BlockletDataMapUtil;
+import org.apache.carbondata.core.util.BlockletIndexUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -145,8 +145,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // and measure column start index
     queryProperties.filterMeasures = new HashSet<>();
     queryProperties.complexFilterDimension = new HashSet<>();
-    if (queryModel.getDataMapFilter() != null) {
-      QueryUtil.getAllFilterDimensionsAndMeasures(queryModel.getDataMapFilter().getResolver(),
+    if (queryModel.getIndexFilter() != null) {
+      QueryUtil.getAllFilterDimensionsAndMeasures(queryModel.getIndexFilter().getResolver(),
           queryProperties.complexFilterDimension, queryProperties.filterMeasures);
     }
 
@@ -165,8 +165,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   private List<AbstractIndex> getDataBlocks(QueryModel queryModel) throws IOException {
     Map<String, List<TableBlockInfo>> listMap = new LinkedHashMap<>();
-    // this is introduced to handle the case when CACHE_LEVEL=BLOCK and there are few other dataMaps
-    // like lucene, Bloom created on the table. In that case all the dataMaps will do blocklet
+    // this is introduced to handle the case when CACHE_LEVEL=BLOCK and there are few other index
+    // like lucene, Bloom created on the table. In that case all the indexes will do blocklet
     // level pruning and blockInfo entries will be repeated with different blockletIds
     Map<String, DataFileFooter> filePathToFileFooterMapping = new HashMap<>();
     Map<String, SegmentProperties> filePathToSegmentPropertiesMap = new HashMap<>();
@@ -248,7 +248,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     }
     // First validate the schema of the carbondata file if the same column name have different
     // datatype
-    boolean sameColumnSchemaList = BlockletDataMapUtil
+    boolean sameColumnSchemaList = BlockletIndexUtil
         .isSameColumnAndDifferentDatatypeInSchema(columnsInTable,
             queryModel.getTable().getTableInfo().getFactTable().getListOfColumns());
     if (!sameColumnSchemaList) {
@@ -305,11 +305,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   }
 
   private void createFilterExpression(QueryModel queryModel, SegmentProperties properties) {
-    if (queryModel.getDataMapFilter() != null) {
-      if (!queryModel.getDataMapFilter().isResolvedOnSegment(properties)) {
-        DataMapFilter expression = new DataMapFilter(properties, queryModel.getTable(),
-            queryModel.getDataMapFilter().getExpression());
-        queryModel.setDataMapFilter(expression);
+    if (queryModel.getIndexFilter() != null) {
+      if (!queryModel.getIndexFilter().isResolvedOnSegment(properties)) {
+        IndexFilter expression = new IndexFilter(properties, queryModel.getTable(),
+            queryModel.getIndexFilter().getExpression());
+        queryModel.setIndexFilter(expression);
       }
     }
   }
@@ -322,7 +322,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
     // cases when blockletID will be -1
     // 1. In case of legacy store
-    // 2. In case CACHE_LEVEL is block and no other dataMap apart from blockletDataMap is
+    // 2. In case CACHE_LEVEL is block and no other index apart from blockletIndex is
     // created for a table
     // In all above cases entries will be according to the number of blocks and not according to
     // number of blocklets
@@ -465,11 +465,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       LOGGER.info("Query prefetch is: " + queryModel.isPreFetchData());
       blockExecutionInfo.setPrefetchBlocklet(queryModel.isPreFetchData());
     }
-    // In case of fg datamap it should not go to direct fill.
-    boolean fgDataMapPathPresent = false;
+    // In case of fg index it should not go to direct fill.
+    boolean fgIndexPathPresent = false;
     for (TableBlockInfo blockInfo : queryModel.getTableBlockInfos()) {
-      fgDataMapPathPresent = blockInfo.getDataMapWriterPath() != null;
-      if (fgDataMapPathPresent) {
+      fgIndexPathPresent = blockInfo.getDataMapWriterPath() != null;
+      if (fgIndexPathPresent) {
         queryModel.setDirectVectorFill(false);
         break;
       }
@@ -485,10 +485,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             projectDimensions,
             segmentProperties.getDimensionOrdinalToChunkMapping(),
             queryProperties.complexFilterDimension));
-    if (null != queryModel.getDataMapFilter()) {
+    if (null != queryModel.getIndexFilter()) {
       FilterResolverIntf filterResolverIntf;
       // loading the filter executor tree for filter evaluation
-      filterResolverIntf = queryModel.getDataMapFilter().getResolver();
+      filterResolverIntf = queryModel.getIndexFilter().getResolver();
       blockExecutionInfo.setFilterExecuterTree(
           FilterUtil.getFilterExecuterTree(filterResolverIntf, segmentProperties,
               blockExecutionInfo.getComlexDimensionInfoMap(), false));

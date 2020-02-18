@@ -50,7 +50,7 @@ import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePost
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.sdk.file.{Field, Schema}
-import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory.clearDataMapFiles
+import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory.clearIndexFiles
 
 
 /**
@@ -80,7 +80,7 @@ case class CarbonAddLoadCommand(
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
-    if (carbonTable.isChildTableForMV) {
+    if (carbonTable.isMVTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on MV table")
     }
     // if insert overwrite in progress, do not allow add segment
@@ -229,12 +229,12 @@ case class CarbonAddLoadCommand(
         model)
     operationContext.setProperty("isOverwrite", false)
     OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
-    // Add pre event listener for index datamap
-    val tableDataMaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable)
+    // Add pre event listener for index
+    val tableIndexes = DataMapStoreManager.getInstance().getAllIndex(carbonTable)
     val dataMapOperationContext = new OperationContext()
-    if (tableDataMaps.size() > 0) {
+    if (tableIndexes.size() > 0) {
       val dataMapNames: mutable.Buffer[String] =
-        tableDataMaps.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
+        tableIndexes.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
       val buildDataMapPreExecutionEvent: BuildDataMapPreExecutionEvent =
         BuildDataMapPreExecutionEvent(
           sparkSession, carbonTable.getAbsoluteTableIdentifier, dataMapNames)
@@ -322,7 +322,7 @@ case class CarbonAddLoadCommand(
       val segmentFile = CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath) +
                         File.separator + segment.getSegmentFileName
       FileFactory.deleteFile(segmentFile)
-      clearDataMapFiles(carbonTable, model.getSegmentId)
+      clearIndexFiles(carbonTable, model.getSegmentId)
       LOGGER.info("********clean up done**********")
       LOGGER.error("Data load failed due to failure in table status updation.")
       throw new Exception("Data load failed due to failure in table status updation.")
@@ -333,7 +333,7 @@ case class CarbonAddLoadCommand(
         carbonTable.getCarbonTableIdentifier,
         model)
     OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
-    if (tableDataMaps.size() > 0) {
+    if (tableIndexes.size() > 0) {
       val buildDataMapPostExecutionEvent = BuildDataMapPostExecutionEvent(sparkSession,
         carbonTable.getAbsoluteTableIdentifier, null, Seq(model.getSegmentId), false)
       OperationListenerBus.getInstance()

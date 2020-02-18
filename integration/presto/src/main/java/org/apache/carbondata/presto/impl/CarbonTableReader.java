@@ -31,10 +31,10 @@ import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.index.IndexFilter;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
@@ -154,9 +154,9 @@ public class CarbonTableReader {
           config).getLastModifiedTime();
       carbonTableCacheModel.setCurrentSchemaTime(latestTime);
       if (!carbonTableCacheModel.isValid()) {
-        // Invalidate datamaps
+        // Invalidate indexes
         DataMapStoreManager.getInstance()
-            .clearDataMaps(carbonTableCacheModel.getCarbonTable().getAbsoluteTableIdentifier());
+            .clearIndexes(carbonTableCacheModel.getCarbonTable().getAbsoluteTableIdentifier());
       }
     }
   }
@@ -275,7 +275,7 @@ public class CarbonTableReader {
       CarbonTableInputFormat.setTableInfo(config, tableInfo);
       CarbonTableInputFormat carbonTableInputFormat =
           createInputFormat(jobConf, carbonTable.getAbsoluteTableIdentifier(),
-              new DataMapFilter(carbonTable, filters, true), filteredPartitions);
+              new IndexFilter(carbonTable, filters, true), filteredPartitions);
       Job job = Job.getInstance(jobConf);
       List<InputSplit> splits = carbonTableInputFormat.getSplits(job);
       Gson gson = new Gson();
@@ -357,12 +357,12 @@ public class CarbonTableReader {
   }
 
   private CarbonTableInputFormat<Object> createInputFormat(Configuration conf,
-      AbsoluteTableIdentifier identifier, DataMapFilter dataMapFilter,
+      AbsoluteTableIdentifier identifier, IndexFilter indexFilter,
       List<PartitionSpec> filteredPartitions) {
     CarbonTableInputFormat format = new CarbonTableInputFormat<Object>();
     CarbonTableInputFormat
         .setTablePath(conf, identifier.appendWithLocalPrefix(identifier.getTablePath()));
-    CarbonTableInputFormat.setFilterPredicates(conf, dataMapFilter);
+    CarbonTableInputFormat.setFilterPredicates(conf, indexFilter);
     if (filteredPartitions.size() != 0) {
       CarbonTableInputFormat.setPartitionsToPrune(conf, filteredPartitions);
     }

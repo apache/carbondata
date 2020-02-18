@@ -25,7 +25,7 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.datamap.DataMapFilter
+import org.apache.carbondata.core.index.IndexFilter
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, TrueExpression}
@@ -106,7 +106,7 @@ class TestImplicitFilterExpression extends QueryTest with BeforeAndAfterAll {
     // create implicit expression which will replace the right child (True expression)
     FilterUtil.createImplicitExpressionAndSetAsRightChild(filterExpression, blockToBlockletMap)
     // update the filter expression
-    scanRDD.dataMapFilter = new DataMapFilter(carbonTable, filterExpression)
+    scanRDD.dataMapFilter = new IndexFilter(carbonTable, filterExpression)
     // execute the query and get the result count
     checkAnswer(query.toDF(), Seq(Row(expectedResultCount)))
   }

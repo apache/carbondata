@@ -30,14 +30,14 @@ import org.apache.carbondata.common.exceptions.DeprecatedFeatureException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
-import org.apache.carbondata.core.datamap.DataMapChooser;
-import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
-import org.apache.carbondata.core.datamap.DataMapUtil;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.TableDataMap;
-import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
+import org.apache.carbondata.core.datamap.dev.expr.IndexExprWrapper;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.index.IndexChooser;
+import org.apache.carbondata.core.index.IndexFilter;
+import org.apache.carbondata.core.index.IndexUtil;
+import org.apache.carbondata.core.index.TableIndex;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -133,7 +133,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier,
         readCommittedScope.getConfiguration());
     SegmentStatusManager.ValidAndInvalidSegmentsInfo segments = segmentStatusManager
-        .getValidAndInvalidSegments(carbonTable.isChildTableForMV(), loadMetadataDetails,
+        .getValidAndInvalidSegments(carbonTable.isMVTable(), loadMetadataDetails,
             this.readCommittedScope);
 
     if (getValidateSegmentsToAccess(job.getConfiguration())) {
@@ -171,15 +171,15 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         getFilteredSegment(job, validAndInProgressSegments, false, readCommittedScope);
 
     // process and resolve the expression
-    DataMapFilter dataMapFilter = getFilterPredicates(job.getConfiguration());
+    IndexFilter indexFilter = getFilterPredicates(job.getConfiguration());
 
-    if (dataMapFilter != null) {
-      dataMapFilter.resolve(false);
+    if (indexFilter != null) {
+      indexFilter.resolve(false);
     }
 
     // do block filtering and get split
     List<InputSplit> splits = getSplits(
-        job, dataMapFilter, segmentToAccess,
+        job, indexFilter, segmentToAccess,
         updateStatusManager, segments.getInvalidSegments());
 
     // add all splits of streaming
@@ -267,7 +267,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       long maxSize = getMaxSplitSize(job);
       if (filterResolverIntf == null) {
         if (carbonTable != null) {
-          DataMapFilter filter = getFilterPredicates(job.getConfiguration());
+          IndexFilter filter = getFilterPredicates(job.getConfiguration());
           if (filter != null) {
             filter.processFilterExpression();
             filterResolverIntf = filter.getResolver();
@@ -326,7 +326,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    * @return
    * @throws IOException
    */
-  private List<InputSplit> getSplits(JobContext job, DataMapFilter expression,
+  private List<InputSplit> getSplits(JobContext job, IndexFilter expression,
       List<Segment> validSegments, SegmentUpdateStatusManager updateStatusManager,
       List<Segment> invalidSegments) throws IOException {
 
@@ -418,7 +418,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         table, loadMetadataDetails);
     SegmentStatusManager.ValidAndInvalidSegmentsInfo allSegments =
         new SegmentStatusManager(identifier, readCommittedScope.getConfiguration())
-            .getValidAndInvalidSegments(table.isChildTableForMV(), loadMetadataDetails,
+            .getValidAndInvalidSegments(table.isMVTable(), loadMetadataDetails,
                 readCommittedScope);
     Map<String, Long> blockRowCountMapping = new HashMap<>();
     Map<String, Long> segmentAndBlockCountMapping = new HashMap<>();
@@ -451,9 +451,9 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()),
               toBeCleanedSegments);
     }
-    DataMapExprWrapper dataMapExprWrapper =
-        DataMapChooser.getDefaultDataMap(getOrCreateCarbonTable(job.getConfiguration()), null);
-    DataMapUtil.loadDataMaps(table, dataMapExprWrapper, filteredSegment, partitions);
+    IndexExprWrapper indexExprWrapper =
+        IndexChooser.getDefaultIndex(getOrCreateCarbonTable(job.getConfiguration()), null);
+    IndexUtil.loadIndex(table, indexExprWrapper, filteredSegment, partitions);
     if (isIUDTable || isUpdateFlow) {
       Map<String, Long> blockletToRowCountMap = new HashMap<>();
       if (CarbonProperties.getInstance()
@@ -474,14 +474,14 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           if (CarbonProperties.getInstance().isFallBackDisabled()) {
             throw e;
           }
-          TableDataMap defaultDataMap = DataMapStoreManager.getInstance().getDefaultDataMap(table);
+          TableIndex defaultIndex = DataMapStoreManager.getInstance().getDefaultIndex(table);
           blockletToRowCountMap
-              .putAll(defaultDataMap.getBlockRowCount(filteredSegment, partitions, defaultDataMap));
+              .putAll(defaultIndex.getBlockRowCount(filteredSegment, partitions, defaultIndex));
         }
       } else {
-        TableDataMap defaultDataMap = DataMapStoreManager.getInstance().getDefaultDataMap(table);
+        TableIndex defaultIndex = DataMapStoreManager.getInstance().getDefaultIndex(table);
         blockletToRowCountMap
-            .putAll(defaultDataMap.getBlockRowCount(filteredSegment, partitions, defaultDataMap));
+            .putAll(defaultIndex.getBlockRowCount(filteredSegment, partitions, defaultIndex));
       }
       // key is the (segmentId","+blockletPath) and key is the row count of that blocklet
       for (Map.Entry<String, Long> eachBlocklet : blockletToRowCountMap.entrySet()) {
@@ -517,8 +517,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         totalRowCount =
             getDistributedCount(table, partitions, filteredSegment);
       } else {
-        TableDataMap defaultDataMap = DataMapStoreManager.getInstance().getDefaultDataMap(table);
-        totalRowCount = defaultDataMap.getRowCount(filteredSegment, partitions, defaultDataMap);
+        TableIndex defaultIndex = DataMapStoreManager.getInstance().getDefaultIndex(table);
+        totalRowCount = defaultIndex.getRowCount(filteredSegment, partitions, defaultIndex);
       }
       blockRowCountMapping.put(CarbonCommonConstantsInternal.ROW_COUNT, totalRowCount);
     }

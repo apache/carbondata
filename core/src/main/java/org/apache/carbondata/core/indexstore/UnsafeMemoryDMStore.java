@@ -18,8 +18,8 @@
 package org.apache.carbondata.core.indexstore;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.indexstore.row.DataMapRow;
-import org.apache.carbondata.core.indexstore.row.UnsafeDataMapRow;
+import org.apache.carbondata.core.indexstore.row.IndexRow;
+import org.apache.carbondata.core.indexstore.row.UnsafeIndexRow;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryBlock;
@@ -32,7 +32,7 @@ import static org.apache.carbondata.core.memory.CarbonUnsafe.BYTE_ARRAY_OFFSET;
 import static org.apache.carbondata.core.memory.CarbonUnsafe.getUnsafe;
 
 /**
- * Store the data map row @{@link DataMapRow} data to unsafe.
+ * Store the data map row @{@link IndexRow} data to unsafe.
  */
 public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
 
@@ -116,7 +116,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
    *
    * @param indexRow
    */
-  public void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow) {
+  public void addIndexRow(CarbonRowSchema[] schema, IndexRow indexRow) {
     // First calculate the required memory to keep the row in unsafe
     int rowSize = indexRow.getTotalSizeInBytes();
     // Check whether allocated memory is sufficient or not.
@@ -151,7 +151,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
         case STRUCT:
           CarbonRowSchema[] childSchemas =
               ((CarbonRowSchema.StructCarbonRowSchema) schema[i]).getChildSchemas();
-          DataMapRow row = indexRow.getRow(i);
+          IndexRow row = indexRow.getRow(i);
           for (int j = 0; j < childSchemas.length; j++) {
             currentPosition = addToUnsafe(childSchemas[j], row, j, pointer, varColPosition);
             if (currentPosition > 0) {
@@ -177,7 +177,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
     pointers[rowCount++] = pointer;
   }
 
-  private int addToUnsafe(CarbonRowSchema schema, DataMapRow row, int index, int startOffset,
+  private int addToUnsafe(CarbonRowSchema schema, IndexRow row, int index, int startOffset,
       int varPosition) {
     switch (schema.getSchemaType()) {
       case FIXED:
@@ -246,9 +246,9 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
     }
   }
 
-  public DataMapRow getDataMapRow(CarbonRowSchema[] schema, int index) {
+  public IndexRow getDataMapRow(CarbonRowSchema[] schema, int index) {
     assert (index < rowCount);
-    return new UnsafeDataMapRow(schema, memoryBlock, pointers[index]);
+    return new UnsafeIndexRow(schema, memoryBlock, pointers[index]);
   }
 
   public void finishWriting() {

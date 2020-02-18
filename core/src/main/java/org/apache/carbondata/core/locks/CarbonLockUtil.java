@@ -54,7 +54,7 @@ public class CarbonLockUtil {
       } else if (locktype.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
         LOGGER.info("Delete segments lock has been successfully released");
       } else if (locktype.equals(LockUsage.DATAMAP_STATUS_LOCK)) {
-        LOGGER.info("DataMap status lock has been successfully released");
+        LOGGER.info("Index status lock has been successfully released");
       }
     } else {
       if (locktype.equals(LockUsage.METADATA_LOCK)) {

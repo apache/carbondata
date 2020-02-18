@@ -27,9 +27,9 @@ import java.util.UUID;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.index.IndexFilter;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
@@ -289,7 +289,7 @@ public class CarbonReaderBuilder {
     format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
     if (filterExpression != null) {
       format.setFilterPredicates(job.getConfiguration(),
-          new DataMapFilter(table, filterExpression, true));
+          new IndexFilter(table, filterExpression, true));
     }
     if (null != this.fileLists) {
       format.setFileLists(this.fileLists);
@@ -373,8 +373,8 @@ public class CarbonReaderBuilder {
         return new CarbonReader<>(readers);
       }
     } catch (Exception ex) {
-      // Clear the datamap cache as it can get added in getSplits() method
-      DataMapStoreManager.getInstance().clearDataMapCache(
+      // Clear the index cache as it can get added in getSplits() method
+      DataMapStoreManager.getInstance().clearIndexCache(
           format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier(),
           false);
       throw ex;
@@ -432,8 +432,8 @@ public class CarbonReaderBuilder {
       }
     } finally {
       if (format != null) {
-        // Clear the datamap cache as it is added in getSplits() method
-        DataMapStoreManager.getInstance().clearDataMapCache(
+        // Clear the index cache as it is added in getSplits() method
+        DataMapStoreManager.getInstance().clearIndexCache(
             format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier(),
             false);
       }

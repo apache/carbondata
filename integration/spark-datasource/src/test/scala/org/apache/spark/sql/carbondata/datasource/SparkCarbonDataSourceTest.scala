@@ -148,10 +148,10 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     spark.sql("insert into carbon_table select * from testparquet")
     TestUtil.checkAnswer(spark.sql("select * from carbon_table where c1='a1'"), spark.sql("select * from testparquet where c1='a1'"))
     if (!spark.sparkContext.version.startsWith("2.1")) {
-      val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+      val mapSize = DataMapStoreManager.getInstance().getIndexes.size()
       DataMapStoreManager.getInstance()
-        .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
-      assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+        .clearIndexes(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
+      assert(mapSize > DataMapStoreManager.getInstance().getIndexes.size())
     }
     spark.sql("drop table if exists testparquet")
     spark.sql("drop table if exists testformat")
@@ -176,10 +176,10 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       TestUtil.checkAnswer(sql("SELECT * FROM carbon_table WHERE c1='a1'"),
         sql("SELECT * FROM test_parquet WHERE c1='a1'"))
       if (!SparkUtil.isSparkVersionEqualTo("2.1")) {
-        val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+        val mapSize = DataMapStoreManager.getInstance().getIndexes.size()
         DataMapStoreManager.getInstance()
-          .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
-        assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+          .clearIndexes(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
+        assert(mapSize > DataMapStoreManager.getInstance().getIndexes.size())
       }
       assert(df.schema.map(_.name) === Seq("c1", "c2", "number"))
       sql("ALTER TABLE carbon_table ADD COLUMNS (a1 INT, b1 STRING) ")
@@ -250,10 +250,10 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       TestUtil.checkAnswer(sql("SELECT * FROM carbon_table WHERE c1='a1'"),
         sql("SELECT * FROM test_parquet WHERE c1='a1'"))
       if (!sparkContext.version.startsWith("2.1")) {
-        val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+        val mapSize = DataMapStoreManager.getInstance().getIndexes.size()
         DataMapStoreManager.getInstance()
-          .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
-        assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+          .clearIndexes(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
+        assert(mapSize > DataMapStoreManager.getInstance().getIndexes.size())
       }
       assert(df.schema.map(_.name) === Seq("c1", "c2", "number"))
       sql("ALTER TABLE carbon_table drop COLUMNS (a1 INT, b1 STRING) ")
@@ -285,10 +285,10 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       TestUtil.checkAnswer(sql("SELECT * FROM carbon_table WHERE c1='a1'"),
         sql("SELECT * FROM test_parquet WHERE c1='a1'"))
       if (!sparkContext.version.startsWith("2.1")) {
-        val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+        val mapSize = DataMapStoreManager.getInstance().getIndexes.size()
         DataMapStoreManager.getInstance()
-          .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
-        assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+          .clearIndexes(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
+        assert(mapSize > DataMapStoreManager.getInstance().getIndexes.size())
       }
       assert(df.schema.map(_.name) === Seq("c1", "c2", "number"))
       sql("ALTER TABLE carbon_table RENAME TO carbon_table2 ")
@@ -322,10 +322,10 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       TestUtil.checkAnswer(sql("SELECT * FROM carbon_table WHERE c1='a1'"),
         sql("SELECT * FROM test_parquet WHERE c1='a1'"))
       if (!SparkUtil.isSparkVersionEqualTo("2.1")) {
-        val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+        val mapSize = DataMapStoreManager.getInstance().getIndexes.size()
         DataMapStoreManager.getInstance()
-          .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
-        assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+          .clearIndexes(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
+        assert(mapSize > DataMapStoreManager.getInstance().getIndexes.size())
       }
       assert(df.schema.map(_.name) === Seq("c1", "c2", "number"))
       sql("ALTER TABLE carbon_table change number number decimal(9,4)")
@@ -539,10 +539,10 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val frame = spark.read.format("carbon").load(warehouse1 + "/test_folder")
       assert(frame.where("c1='a1'").count() == 3)
 
-        val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+        val mapSize = DataMapStoreManager.getInstance().getIndexes.size()
         DataMapStoreManager.getInstance()
-          .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/test_folder"))
-        assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+          .clearIndexes(AbsoluteTableIdentifier.from(warehouse1 + "/test_folder"))
+        assert(mapSize > DataMapStoreManager.getInstance().getIndexes.size())
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
     }
   }
@@ -1172,7 +1172,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     spark.sql("drop table if exists car")
   }
 
-  test("test clearing datamaps") {
+  test("test clearing indexes") {
     if (!spark.sparkContext.version.startsWith("2.1")) {
       import spark.implicits._
       val df = spark.sparkContext.parallelize(1 to 10)
@@ -1188,21 +1188,21 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       spark.sql("create table carbon_table1(c1 string, c2 string, number int) using carbon")
       spark.sql("insert into carbon_table select * from testparquet")
       spark.sql("insert into carbon_table1 select * from testparquet")
-      DataMapStoreManager.getInstance().getAllDataMaps.clear()
+      DataMapStoreManager.getInstance().getIndexes.clear()
       spark.sql("select * from carbon_table where c1='a1'").collect()
-      assert(DataMapStoreManager.getInstance().getAllDataMaps.size() == 1)
+      assert(DataMapStoreManager.getInstance().getIndexes.size() == 1)
       spark.sql("select * from carbon_table where c1='a2'").collect()
-      assert(DataMapStoreManager.getInstance().getAllDataMaps.size() == 1)
+      assert(DataMapStoreManager.getInstance().getIndexes.size() == 1)
       spark.sql("select * from carbon_table1 where c1='a1'").collect()
-      assert(DataMapStoreManager.getInstance().getAllDataMaps.size() == 2)
+      assert(DataMapStoreManager.getInstance().getIndexes.size() == 2)
       spark.sql("select * from carbon_table1 where c1='a2'").collect()
-      assert(DataMapStoreManager.getInstance().getAllDataMaps.size() == 2)
+      assert(DataMapStoreManager.getInstance().getIndexes.size() == 2)
       DataMapStoreManager.getInstance()
-        .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
-      assert(DataMapStoreManager.getInstance().getAllDataMaps.size() == 1)
+        .clearIndexes(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
+      assert(DataMapStoreManager.getInstance().getIndexes.size() == 1)
       DataMapStoreManager.getInstance()
-        .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table1"))
-      assert(DataMapStoreManager.getInstance().getAllDataMaps.size() == 0)
+        .clearIndexes(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table1"))
+      assert(DataMapStoreManager.getInstance().getIndexes.size() == 0)
       spark.sql("drop table if exists testparquet")
       spark.sql("drop table if exists carbon_table")
       spark.sql("drop table if exists carbon_table1")
@@ -1225,10 +1225,10 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val frame = spark.read.format("carbon").load(warehouse1 + "/test_folder")
       assert(frame.count() == 30)
       assert(frame.where("c1='a1'").count() == 3)
-      val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+      val mapSize = DataMapStoreManager.getInstance().getIndexes.size()
       DataMapStoreManager.getInstance()
-        .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/test_folder"))
-      assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+        .clearIndexes(AbsoluteTableIdentifier.from(warehouse1 + "/test_folder"))
+      assert(mapSize > DataMapStoreManager.getInstance().getIndexes.size())
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
     }
   }

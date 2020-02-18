@@ -97,7 +97,7 @@ object LoadMVTablePreListener extends OperationEventListener {
     val carbonLoadModel = loadEvent.getCarbonLoadModel
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val isInternalLoadCall = carbonLoadModel.isAggLoadRequest
-    if (table.isChildTableForMV && !isInternalLoadCall) {
+    if (table.isMVTable && !isInternalLoadCall) {
       throw new UnsupportedOperationException("Cannot insert data directly into MV table")
     }
   }
@@ -186,11 +186,11 @@ object DataMapDeleteSegmentPreListener extends OperationEventListener {
     if (null != carbonTable) {
       if (carbonTable.hasMVCreated) {
         throw new UnsupportedOperationException(
-          "Delete segment operation is not supported on tables having child datamap")
+          "Delete segment operation is not supported on tables having MV table")
       }
-      if (carbonTable.isChildTableForMV) {
+      if (carbonTable.isMVTable) {
         throw new UnsupportedOperationException(
-          "Delete segment operation is not supported on datamap table")
+          "Delete segment operation is not supported on MV table")
       }
     }
   }
@@ -206,7 +206,7 @@ object DataMapAddColumnsPreListener extends OperationEventListener {
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     val dataTypeChangePreListener = event.asInstanceOf[AlterTableAddColumnPreEvent]
     val carbonTable = dataTypeChangePreListener.carbonTable
-    if (carbonTable.isChildTableForMV) {
+    if (carbonTable.isMVTable) {
       throw new UnsupportedOperationException(
         s"Cannot add columns in a DataMap table " +
         s"${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
@@ -240,15 +240,15 @@ object DataMapDropColumnPreListener extends OperationEventListener {
           if (columnExistsInChild.isDefined) {
             throw new UnsupportedOperationException(
               s"Column ${ columnExistsInChild.head } cannot be dropped because it exists " +
-              s"in " + dataMapSchema.getProviderName + " datamap:" +
+              s"in " + dataMapSchema.getProviderName + " MV:" +
               s"${ dataMapSchema.getDataMapName }")
           }
         }
       }
     }
-    if (carbonTable.isChildTableForMV) {
+    if (carbonTable.isMVTable) {
       throw new UnsupportedOperationException(
-        s"Cannot drop columns present in a datamap table ${ carbonTable.getDatabaseName }." +
+        s"Cannot drop columns present in a MV table ${ carbonTable.getDatabaseName }." +
         s"${ carbonTable.getTableName }")
     }
   }
@@ -278,14 +278,14 @@ object DataMapChangeDataTypeorRenameColumnPreListener
           if (listOfColumns.contains(columnToBeAltered.toLowerCase)) {
             throw new UnsupportedOperationException(
               s"Column $columnToBeAltered exists in a " + dataMapSchema.getProviderName +
-              " datamap. Drop " + dataMapSchema.getProviderName + "  datamap to continue")
+              " MV. Drop " + dataMapSchema.getProviderName + "  MV to continue")
           }
         }
       }
     }
-    if (carbonTable.isChildTableForMV) {
+    if (carbonTable.isMVTable) {
       throw new UnsupportedOperationException(
-        s"Cannot change data type or rename column for columns present in mv datamap table " +
+        s"Cannot change data type or rename column for columns present in MV table " +
         s"${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
     }
   }
@@ -303,7 +303,7 @@ object DataMapAlterTableDropPartitionMetaListener extends OperationEventListener
     val parentCarbonTable = dropPartitionEvent.parentCarbonTable
     val partitionsToBeDropped = dropPartitionEvent.specs.flatMap(_.keys)
     if (parentCarbonTable.hasMVCreated) {
-      // used as a flag to block direct drop partition on datamap tables fired by the user
+      // used as a flag to block direct drop partition on MV tables fired by the user
       operationContext.setProperty("isInternalDropCall", "true")
       // Filter out all the tables which don't have the partition being dropped.
       val dataMapSchemaList = DataMapStoreManager.getInstance
@@ -323,7 +323,7 @@ object DataMapAlterTableDropPartitionMetaListener extends OperationEventListener
         }
       if (childTablesWithoutPartitionColumns.nonEmpty) {
         throw new MetadataProcessException(s"Cannot drop partition as one of the partition is not" +
-                                           s" participating in the following datamaps ${
+                                           s" participating in the following MV ${
                                              childTablesWithoutPartitionColumns.toList
                                                .map(_.getRelationIdentifier.getTableName)
                                            }. Please drop the specified child tables to " +
@@ -334,7 +334,7 @@ object DataMapAlterTableDropPartitionMetaListener extends OperationEventListener
         if (nonPartitionChildTables.nonEmpty) {
           throw new MetadataProcessException(
             s"Cannot drop partition if child Table is mapped to more than one parent table. Drop " +
-            s"datamaps ${ nonPartitionChildTables.toList.map(_.getDataMapName) }  to continue")
+            s"MV ${ nonPartitionChildTables.toList.map(_.getDataMapName) }  to continue")
         }
         val childDropPartitionCommands =
           dataMapSchemaList.map { dataMapSchema =>
@@ -344,10 +344,10 @@ object DataMapAlterTableDropPartitionMetaListener extends OperationEventListener
               .isHivePartitionTable) {
               throw new MetadataProcessException(
                 "Cannot drop partition as one of the partition is not participating in the " +
-                "following datamap " + dataMapSchema.getDataMapName +
-                ". Please drop the specified datamap to continue")
+                "following MV " + dataMapSchema.getDataMapName +
+                ". Please drop the specified MV to continue")
             }
-            // as the datamap table columns start with parent table name therefore the
+            // as the MV table columns start with parent table name therefore the
             // partition column also has to be updated with parent table name to generate
             // partitionSpecs for the child table.
             val childSpecs = dropPartitionEvent.specs.map {
@@ -367,7 +367,7 @@ object DataMapAlterTableDropPartitionMetaListener extends OperationEventListener
         operationContext.setProperty("dropPartitionCommands", childDropPartitionCommands)
         childDropPartitionCommands.foreach(_.processMetadata(SparkSession.getActiveSession.get))
       }
-    } else if (parentCarbonTable.isChildTableForMV) {
+    } else if (parentCarbonTable.isMVTable) {
       if (operationContext.getProperty("isInternalDropCall") == null) {
         throw new UnsupportedOperationException("Cannot drop partition directly on child table")
       }

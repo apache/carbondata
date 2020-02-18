@@ -59,7 +59,7 @@ case class CarbonDeleteStageFilesCommand(
     if (!table.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
-    if (table.isChildTableForMV) {
+    if (table.isMVTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on MV table")
     }
     val tablePath = table.getTablePath

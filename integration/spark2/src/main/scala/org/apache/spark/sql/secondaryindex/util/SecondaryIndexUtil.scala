@@ -231,7 +231,7 @@ object SecondaryIndexUtil {
             .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(tablePath),
               loadMetadataDetails)
 
-          // clear the datamap cache for the merged segments, as the index files and
+          // clear the index cache for the merged segments, as the index files and
           // data files are rewritten after compaction
           if (mergedSegments.size > 0) {
 

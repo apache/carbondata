@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -34,7 +33,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_main")
   }
 
-  //Create Lucene DataMap With DMProperties(String DataType) on MainTable
+  //Create Lucene Index With properties(String DataType) on MainTable
   test("LuceneDataMap_TC001", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
     sql(
@@ -43,15 +42,15 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       "serialname String,salary int ) STORED AS carbondata")
     sql(
       s"""
-         | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
+         | CREATE INDEX lucene_datamap ON TABLE datamap_main
          | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='country')
+         | properties('INDEX_COLUMNS'='country')
       """.stripMargin)
-    checkExistence(sql("show datamap on table datamap_main"), true, "lucene_datamap")
-    sql("drop datamap if exists lucene_datamap on table datamap_main")
+    checkExistence(sql("show indexes on table datamap_main"), true, "lucene_datamap")
+    sql("drop index if exists lucene_datamap on table datamap_main")
   }
 
-  //Create Lucene DataMap With DMProperties(Other DataTypes) on MainTable
+  //Create Lucene Index With properties(Other DataTypes) on MainTable
   test("LuceneDataMap_TC002", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
     sql(
@@ -60,16 +59,16 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     val exception_otherdataType: Exception = intercept[Exception] {
       sql(
         s"""
-           | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
+           | CREATE INDEX lucene_datamap ON TABLE datamap_main
            | USING 'lucene'
-           | DMProperties('INDEX_COLUMNS'='id')
+           | properties('INDEX_COLUMNS'='id')
       """.stripMargin)
     }
     assert(exception_otherdataType.getMessage
       .contains("Only String column is supported, column 'id' is INT type."))
   }
 
-  //Create Lucene DataMap With DMProperties on MainTable and Load Data and Query
+  //Create Lucene Index With properties on MainTable and Load Data and Query
   ignore("LuceneDataMap_TC003", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
     sql(
@@ -79,18 +78,18 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       "('SORT_COLUMNS'='country,name','SORT_SCOPE'='LOCAL_SORT')")
     sql(
       s"""
-         | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
+         | CREATE INDEX lucene_datamap ON TABLE datamap_main
          | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='country')
+         | properties('INDEX_COLUMNS'='country')
       """.stripMargin)
     sql(s"LOAD DATA INPATH '$csvPath' INTO TABLE datamap_main")
 
     checkAnswer(sql("SELECT * FROM datamap_main WHERE TEXT_MATCH('country:china')"),
       sql("select * from datamap_main where country='china'"))
-    sql("drop datamap if exists lucene_datamap on table datamap_main")
+    sql("drop index if exists lucene_datamap on table datamap_main")
   }
 
-  //Create Different Lucene DataMap With DMProperties on MainTable and filter using 'like','AND'
+  //Create Different Lucene Index With properties on MainTable and filter using 'like','AND'
   // & 'OR'
   ignore("LuceneDataMap_TC004", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
@@ -100,9 +99,9 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       "serialname String,salary int ) STORED AS carbondata ")
     sql(
       s"""
-         | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
+         | CREATE INDEX lucene_datamap ON TABLE datamap_main
          | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='country,name,serialname')
+         | properties('INDEX_COLUMNS'='country,name,serialname')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' INTO TABLE datamap_main")
     checkAnswer(sql("SELECT * FROM datamap_main WHERE TEXT_MATCH('country:ch*')"),
@@ -118,10 +117,10 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       sql(
         "select * from datamap_main where country like 'u%' OR name like 'aaa1%' AND name like " +
         "'aaa2%'"))
-    sql("drop datamap if exists lucene_datamap on table datamap_main")
+    sql("drop index if exists lucene_datamap on table datamap_main")
   }
 
-  //Create Different Lucene DataMap With DMProperties on MainTable and check Datamap after Delete
+  //Create Different Lucene Index With properties on MainTable and check Datamap after Delete
   // Segment
   ignore("LuceneDataMap_TC005", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
@@ -131,9 +130,9 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       "serialname String,salary int ) STORED AS carbondata")
     sql(
       s"""
-         | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
+         | CREATE INDEX lucene_datamap ON TABLE datamap_main
          | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='country,name')
+         | properties('INDEX_COLUMNS'='country,name')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' INTO TABLE datamap_main")
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' INTO TABLE datamap_main")
@@ -143,10 +142,10 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("clean files for table datamap_main")
     checkAnswer(sql("SELECT COUNT(*) FROM datamap_main WHERE TEXT_MATCH('country:china')"),
       sql("select COUNT(*) from datamap_main where country='china'"))
-    sql("drop datamap if exists lucene_datamap on table datamap_main")
+    sql("drop index if exists lucene_datamap on table datamap_main")
   }
 
-  //Create Different Lucene DataMap With DMProperties on MainTable with different 'TBLProperties'
+  //Create Different Lucene Index With properties on MainTable with different 'TBLProperties'
   // and Load Data with Differnt OPTIONS & Verify
   ignore("LuceneDataMap_TC006", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
@@ -157,18 +156,18 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       "TBLPROPERTIES('SORT_COLUMNS'='country,name','SORT_SCOPE'='LOCAL_SORT')")
     sql(
       s"""
-         | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
+         | CREATE INDEX lucene_datamap ON TABLE datamap_main
          | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='country')
+         | properties('INDEX_COLUMNS'='country')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' INTO TABLE datamap_main OPTIONS('header'='false'," +
         s"'BAD_RECORDS_LOGGER_ENABLE'='FALSE','BAD_RECORDS_ACTION'='FORCE')")
     checkAnswer(sql("SELECT COUNT(*) FROM datamap_main WHERE TEXT_MATCH('country:china')"),
       sql("select COUNT(*) from datamap_main where country='china'"))
-    sql("drop datamap if exists lucene_datamap on table datamap_main")
+    sql("drop index if exists lucene_datamap on table datamap_main")
   }
 
-  //Create LuceneDataMap With DMProperties on MainTable and Insert data and Update and
+  //Create LuceneDataMap With properties on MainTable and Insert data and Update and
   // Verify
   ignore("LuceneDataMap_TC007", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
@@ -177,9 +176,9 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       "STORED AS carbondata")
     sql(
       s"""
-         | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
+         | CREATE INDEX lucene_datamap ON TABLE datamap_main
          | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='country,name')
+         | properties('INDEX_COLUMNS'='country,name')
       """.stripMargin)
     sql("insert into datamap_main select 1,'abc','aa'")
     sql("insert into datamap_main select 2,'def','ab'")
@@ -190,7 +189,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("update datamap_main set (country)=('fed') where id=2")
     checkAnswer(sql("SELECT COUNT(*) FROM datamap_main WHERE TEXT_MATCH('country:fed')"),
       sql("select COUNT(*) from datamap_main where country='fed'"))
-    sql("drop datamap if exists lucene_datamap on table datamap_main")
+    sql("drop index if exists lucene_datamap on table datamap_main")
   }
 
   override protected def afterAll(): Unit = {
