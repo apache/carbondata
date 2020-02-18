@@ -419,6 +419,8 @@ public class SecondaryIndexQueryResultProcessor {
     }
     dimensionColumnCount = dimensions.size();
     sortParameters = createSortParameters();
+    CarbonDataProcessorUtil.deleteSortLocationIfExists(sortParameters.getTempFileLocation());
+    CarbonDataProcessorUtil.createLocations(sortParameters.getTempFileLocation());
     intermediateFileMerger = new SortIntermediateFileMerger(sortParameters);
     this.sortDataRows = new SortDataRows(sortParameters, intermediateFileMerger);
     this.sortDataRows.initialize();
