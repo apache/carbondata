@@ -203,8 +203,16 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putObject(int rowId, Object obj) {
-    throw new UnsupportedOperationException(
-        "Not supported this opeartion from " + this.getClass().getName());
+    columnVector.putObject(rowId, obj);
+  }
+
+  public CarbonColumnVectorImpl getColumnVector() {
+    return this.columnVector;
+  }
+
+  @Override
+  public CarbonColumnVector getChildrenVector() {
+    return null;
   }
 
   @Override

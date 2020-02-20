@@ -21,6 +21,7 @@ import java.io.File
 import java.sql.SQLException
 import java.util
 
+import io.prestosql.jdbc.PrestoArray
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.RandomStringUtils
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike}
@@ -65,6 +66,21 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     CarbonUtil.deleteFoldersAndFiles(FileFactory.getCarbonFile(storePath))
   }
 
+  def buildComplexTest(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    createComplexTable
+    import java.io.IOException
+    val source = new File(this.getClass.getResource("/").getPath + "../../" + "/temp").getCanonicalPath
+    val srcDir = new File(source)
+    val destination = new File(this.getClass.getResource("/").getPath + "../../" + "/target/store/sdk_output/files/").getCanonicalPath
+    val destDir = new File(destination)
+    try FileUtils.copyDirectory(srcDir, destDir)
+    catch {
+      case e: IOException =>
+        e.printStackTrace()
+    }
+  }
+
   def buildTestDataSingleFile(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     createTable
@@ -76,6 +92,17 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     FileUtils.deleteDirectory(new File(writerPath))
     createTable
     buildTestData(1000000, null, false)
+  }
+
+
+
+  private def createComplexTable = {
+    prestoServer.execute("drop table if exists sdk_output.files")
+    prestoServer.execute("drop schema if exists sdk_output")
+    prestoServer.execute("create schema sdk_output")
+    prestoServer
+      .execute(
+        "create table sdk_output.files(name varchar, age int, address array(varchar), address2 array(varchar)) with(format='CARBON') ")
   }
 
   private def createTable = {
@@ -222,6 +249,17 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
         deleteFile(eachDir.getPath, extension)
       }
     }
+  }
+
+  test("test complex") {
+    buildComplexTest()
+    val actualResult: List[Map[String, Any]] = prestoServer
+      .executeQuery("SELECT address FROM files")
+    var actual = (actualResult(0)("address").asInstanceOf[PrestoArray].getArray()).asInstanceOf[Array[Object]](0).toString
+    actual = actual.replaceAll("\\p{C}", " ").trim.replaceAll(" +", " ")
+    val expected = "abc defg abc defg abc defg"
+    assert(actual.equals(expected))
+    cleanTestData()
   }
 
   test("test show schemas") {

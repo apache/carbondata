@@ -41,6 +41,16 @@ public class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbon
   }
 
   @Override
+  public CarbonColumnVector getColumnVector() {
+    return null;
+  }
+
+  @Override
+  public CarbonColumnVector getChildrenVector() {
+    return null;
+  }
+
+  @Override
   public void putBoolean(int rowId, boolean value) {
     columnVector.putBoolean(invertedIndex[rowId], value);
   }

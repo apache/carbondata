@@ -18,6 +18,7 @@
 package org.apache.carbondata.presto.readers;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 
 import com.facebook.presto.spi.block.Block;
@@ -60,6 +61,10 @@ public class BooleanStreamReader extends CarbonColumnVectorImpl
     for (int i = 0; i < count; i++) {
       type.writeBoolean(builder, src[srcIndex++] == 1);
     }
+  }
+
+  @Override public CarbonColumnVector getColumnVector() {
+    return null;
   }
 
   @Override

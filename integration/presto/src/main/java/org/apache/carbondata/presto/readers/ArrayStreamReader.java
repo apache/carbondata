@@ -20,24 +20,24 @@ package org.apache.carbondata.presto.readers;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 
-import com.facebook.presto.spi.block.Block;
-import com.facebook.presto.spi.block.BlockBuilder;
-import com.facebook.presto.spi.type.ArrayType;
-import com.facebook.presto.spi.type.Type;
-import com.facebook.presto.spi.type.VarcharType;
+import io.prestosql.spi.block.Block;
+import io.prestosql.spi.block.BlockBuilder;
+import io.prestosql.spi.type.ArrayType;
+import io.prestosql.spi.type.Type;
+import io.prestosql.spi.type.VarcharType;
 
 /**
- * Class to read the Object Stream
+ * Class to read the Array Stream
  */
-public class ObjectStreamReader extends CarbonColumnVectorImpl implements PrestoVectorBlockBuilder {
+
+public class ArrayStreamReader extends CarbonColumnVectorImpl implements PrestoVectorBlockBuilder {
 
   protected int batchSize;
 
   protected Type type = new ArrayType(VarcharType.VARCHAR);
 
   protected BlockBuilder builder;
-
-  public ObjectStreamReader(int batchSize, DataType dataType) {
+  public ArrayStreamReader(int batchSize, DataType dataType) {
     super(batchSize, dataType);
     this.batchSize = batchSize;
     this.builder = type.createBlockBuilder(null, batchSize);
@@ -48,6 +48,8 @@ public class ObjectStreamReader extends CarbonColumnVectorImpl implements Presto
     return builder.build();
   }
 
+  Block childBlock = null;
+
   @Override
   public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
@@ -55,7 +57,19 @@ public class ObjectStreamReader extends CarbonColumnVectorImpl implements Presto
 
   @Override
   public void putObject(int rowId, Object value) {
-    type.writeObject(builder, value);
+    if (this.childBlock == null) {
+      childBlock = ((SliceStreamReader) getChildrenVector()).buildBlock();
+      // byte[] val = (byte[]) value;
+      // offsetVector = createOffsetVector(val);
+      // valueIsNull = createValueIsNull(offsetVector);
+      type.writeObject(builder, childBlock);
+    } else {
+      // Block arrayBlock = ArrayBlock.fromElementBlock(this.batchSize,
+      // Optional.ofNullable(valueIsNull), offsetVector, childBlock);
+      // type.writeObject(builder, childBlock);
+      // arrayBlock.writePositionTo(0, (BlockBuilder) arrayBlock);
+      // type.writeObject(builder, StructuralTestUtil().arrayBlockOf());
+    }
   }
 
   @Override
@@ -74,5 +88,5 @@ public class ObjectStreamReader extends CarbonColumnVectorImpl implements Presto
       builder.appendNull();
     }
   }
-
 }
+

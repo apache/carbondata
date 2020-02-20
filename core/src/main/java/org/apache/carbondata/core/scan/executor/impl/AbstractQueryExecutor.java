@@ -508,7 +508,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     int[] dimensionChunkIndexes = QueryUtil.getDimensionChunkIndexes(projectDimensions,
         segmentProperties.getDimensionOrdinalToChunkMapping(),
         currentBlockFilterDimensions, allProjectionListDimensionIdexes);
-    ReusableDataBuffer[] dimensionBuffer = new ReusableDataBuffer[projectDimensions.size()];
+    ReusableDataBuffer[] dimensionBuffer = new ReusableDataBuffer[projectDimensions.size() + 1];
     for (int i = 0; i < dimensionBuffer.length; i++) {
       dimensionBuffer[i] = new ReusableDataBuffer();
     }

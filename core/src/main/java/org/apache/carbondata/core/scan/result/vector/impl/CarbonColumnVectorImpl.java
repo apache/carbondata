@@ -70,6 +70,8 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   private CarbonColumnVector dictionaryVector;
 
+  private CarbonColumnVectorImpl childrenVector;
+
   private LazyPageLoader lazyPage;
 
   private boolean loaded;
@@ -100,6 +102,19 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       data = new Object[batchSize];
     }
 
+  }
+
+  @Override
+  public CarbonColumnVector getColumnVector() {
+    return null;
+  }
+
+  public CarbonColumnVectorImpl getChildrenVector() {
+    return childrenVector;
+  }
+
+  public void setChildrenVector(CarbonColumnVectorImpl childrenVector) {
+    this.childrenVector = childrenVector;
   }
 
   @Override

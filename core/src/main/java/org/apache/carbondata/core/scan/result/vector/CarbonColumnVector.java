@@ -24,6 +24,10 @@ import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 
 public interface CarbonColumnVector {
 
+  CarbonColumnVector getColumnVector();
+
+  CarbonColumnVector getChildrenVector();
+
   void putBoolean(int rowId, boolean value);
 
   void putFloat(int rowId, float value);

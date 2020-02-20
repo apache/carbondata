@@ -43,6 +43,16 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
   }
 
   @Override
+  public CarbonColumnVector getColumnVector() {
+    return columnVector;
+  }
+
+  @Override
+  public CarbonColumnVector getChildrenVector() {
+    return null;
+  }
+
+  @Override
   public void putBoolean(int rowId, boolean value) {
     if (!filteredRows[rowId]) {
       columnVector.putBoolean(counter++, value);

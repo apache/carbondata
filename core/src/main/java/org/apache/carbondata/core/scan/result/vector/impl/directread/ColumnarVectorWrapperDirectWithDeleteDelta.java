@@ -42,6 +42,16 @@ class ColumnarVectorWrapperDirectWithDeleteDelta extends AbstractCarbonColumnarV
   }
 
   @Override
+  public CarbonColumnVector getColumnVector() {
+    return null;
+  }
+
+  @Override
+  public CarbonColumnVector getChildrenVector() {
+    return null;
+  }
+
+  @Override
   public void putBoolean(int rowId, boolean value) {
     if (!deletedRows.get(rowId)) {
       if (nullBits.get(rowId)) {

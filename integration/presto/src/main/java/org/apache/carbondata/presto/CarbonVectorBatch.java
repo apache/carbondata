@@ -27,6 +27,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
+import org.apache.carbondata.presto.readers.ArrayStreamReader;
 import org.apache.carbondata.presto.readers.BooleanStreamReader;
 import org.apache.carbondata.presto.readers.ByteStreamReader;
 import org.apache.carbondata.presto.readers.DecimalSliceStreamReader;
@@ -34,7 +35,6 @@ import org.apache.carbondata.presto.readers.DoubleStreamReader;
 import org.apache.carbondata.presto.readers.FloatStreamReader;
 import org.apache.carbondata.presto.readers.IntegerStreamReader;
 import org.apache.carbondata.presto.readers.LongStreamReader;
-import org.apache.carbondata.presto.readers.ObjectStreamReader;
 import org.apache.carbondata.presto.readers.ShortStreamReader;
 import org.apache.carbondata.presto.readers.SliceStreamReader;
 import org.apache.carbondata.presto.readers.TimestampStreamReader;
@@ -103,7 +103,9 @@ public class CarbonVectorBatch {
         return null;
       }
     } else {
-      return new ObjectStreamReader(batchSize, field.getDataType());
+      CarbonColumnVectorImpl columnVector = new ArrayStreamReader(batchSize, field.getDataType());
+      columnVector.setChildrenVector(new SliceStreamReader(batchSize, DataTypes.STRING));
+      return columnVector;
     }
   }
 

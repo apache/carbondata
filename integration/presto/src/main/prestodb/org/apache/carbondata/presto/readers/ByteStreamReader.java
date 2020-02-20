@@ -18,6 +18,7 @@
 package org.apache.carbondata.presto.readers;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 
 import com.facebook.presto.spi.block.Block;
@@ -50,6 +51,10 @@ public class ByteStreamReader extends CarbonColumnVectorImpl implements PrestoVe
   @Override
   public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
+  }
+
+  @Override public CarbonColumnVector getColumnVector() {
+    return null;
   }
 
   @Override
