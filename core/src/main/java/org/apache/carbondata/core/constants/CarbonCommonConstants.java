@@ -205,17 +205,6 @@ public final class CarbonCommonConstants {
   public static final String ZOOKEEPER_LOCATION = "/CarbonLocks";
 
   /**
-   * xxhash algorithm property for hashmap
-   */
-  @CarbonProperty
-  public static final String ENABLE_XXHASH = "carbon.enableXXHash";
-
-  /**
-   * xxhash algorithm property for hashmap Default value false
-   */
-  public static final String ENABLE_XXHASH_DEFAULT = "true";
-
-  /**
    * System property to enable or disable local dictionary generation
    */
   @CarbonProperty

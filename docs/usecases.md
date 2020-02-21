@@ -83,7 +83,6 @@ Apart from these, the following CarbonData configuration was suggested to be con
 
 | Configuration for | Parameter                               | Value  | Description |
 |------------------ | --------------------------------------- | ------ | ----------- |
-| Data Loading | carbon.graph.rowset.size                | 100000 | Based on the size of each row, this determines the memory required during data loading.Higher value leads to increased memory foot print |
 | Data Loading | carbon.number.of.cores.while.loading    | 12     | More cores can improve data loading speed |
 | Data Loading | carbon.sort.size                        | 100000 | Number of records to sort at a time.More number of records configured will lead to increased memory foot print |
 | Data Loading | table_blocksize                         | 256  | To efficiently schedule multiple tasks during query |
@@ -134,7 +133,6 @@ Use all columns are no-dictionary as the cardinality is high.
 
 | Configuration for | Parameter                               | Value                   | Description |
 | ------------------| --------------------------------------- | ----------------------- | ------------------|
-| Data Loading | carbon.graph.rowset.size                | 100000                  | Based on the size of each row, this determines the memory required during data loading.Higher value leads to increased memory foot print |
 | Data Loading | enable.unsafe.sort                      | TRUE                    | Temporary data generated during sort is huge which causes GC bottlenecks. Using unsafe reduces the pressure on GC |
 | Data Loading | enable.offheap.sort                     | TRUE                    | Temporary data generated during sort is huge which causes GC bottlenecks. Using offheap reduces the pressure on GC.offheap can be accessed through java unsafe.hence enable.unsafe.sort needs to be true |
 | Data Loading | offheap.sort.chunk.size.in.mb           | 128                     | Size of memory to allocate for sorting.Can increase this based on the memory available |
@@ -143,7 +141,7 @@ Use all columns are no-dictionary as the cardinality is high.
 | Data Loading | table_blocksize                         | 512                     | To efficiently schedule multiple tasks during query. This size depends on data scenario.If data is such that the filters would select less number of blocklets to scan, keeping higher number works well.If the number blocklets to scan is more, better to reduce the size as more tasks can be scheduled in parallel. |
 | Data Loading | carbon.sort.intermediate.files.limit    | 100                     | Increased to 100 as number of cores are more.Can perform merging in backgorund.If less number of files to merge, sort threads would be idle |
 | Data Loading | carbon.use.local.dir                    | TRUE                    | yarn application directory will be usually on a single disk.YARN would be configured with multiple disks to be used as temp or to assign randomly to applications. Using the yarn temp directory will allow carbon to use multiple disks and improve IO performance |
-| Data Loading | sort.inmemory.size.in.mb                | 92160 | Memory allocated to do inmemory sorting. When more memory is available in the node, configuring this will retain more sort blocks in memory so that the merge sort is faster due to no/very less IO |
+| Data Loading | sort.inmemory.size.inmb                | 92160 | Memory allocated to do inmemory sorting. When more memory is available in the node, configuring this will retain more sort blocks in memory so that the merge sort is faster due to no/very less IO |
 | Compaction | carbon.major.compaction.size            | 921600                  | Sum of several loads to combine into single segment |
 | Compaction | carbon.number.of.cores.while.compacting | 12                      | Higher number of cores can improve the compaction speed.Data size is huge.Compaction need to use more threads to speed up the process |
 | Compaction | carbon.enable.auto.load.merge           | FALSE                   | Doing auto minor compaction is costly process as data size is huge.Perform manual compaction when the cluster is less loaded |
