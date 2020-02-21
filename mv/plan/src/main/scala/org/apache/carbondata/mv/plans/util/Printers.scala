@@ -362,6 +362,15 @@ trait Printers {
 
   def formatExpressionsInUDF(exp: Seq[Expression]): String = {
     val result = exp.map {
+      case cast: Cast =>
+        // for rolledUp queries of timeseries column with Date type, make
+        // Cast sql with attribute name
+        cast.child match {
+          case attr: AttributeReference if attr.name.startsWith("gen_subsumer_") =>
+            s"CAST(${ attr.name } AS ${ cast.dataType.sql })"
+          case _ =>
+            cast.sql
+        }
       case attr: AttributeReference =>
         if (attr.name.startsWith("gen_subsumer_")) {
           attr.name
