@@ -33,8 +33,6 @@ carbon.sort.file.buffer.size=10
 carbon.number.of.cores.while.loading=2
 #Record count to sort and write to temp intermediate files
 carbon.sort.size=100000
-#Algorithm for hashmap for hashkey calculation
-carbon.enableXXHash=true
 #enable prefetch of data during merge sort while reading data from sort temp files in data loading
 #carbon.merge.sort.prefetch=true
 

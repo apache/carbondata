@@ -89,7 +89,6 @@ LIMIT 5000
 | CarbonData主要配置                   | 参数值 | 描述                                                         |
 | ------------------------------------ | ------ | ------------------------------------------------------------ |
 | carbon.inmemory.record.size          | 480000 | 查询每个表需要加载到内存的总行数。                           |
-| carbon.number.of.cores               | 4      | carbon查询过程中并行扫描的线程数。                           |
 | carbon.number.of.cores.while.loading | 15     | carbon数据加载过程中并行扫描的线程数。                       |
 | carbon.sort.file.buffer.size         | 20     | 在合并排序(读/写)操作时存储每个临时过程文件的所使用的总缓存大小。单位为MB |
 | carbon.sort.size                     | 500000 | 在数据加载操作时，每次被排序的记录数。                       |
