@@ -62,6 +62,8 @@ abstract class DefaultMatchPattern extends MatchPattern[ModularPlan] {
           a.child match {
             case s: ScalaUDF if s.function.isInstanceOf[TimeSeriesFunction] =>
               Utils.getTransformedTimeSeriesUDF(s) -> a.toAttribute
+            case cast: Cast if cast.child.isInstanceOf[AttributeReference] =>
+                Utils.getTransformedCastExpression(cast) -> a.toAttribute
             case _ =>
               a.child -> a.toAttribute
           }
@@ -89,6 +91,8 @@ abstract class DefaultMatchPattern extends MatchPattern[ModularPlan] {
               val newExp = a transform {
                 case s: ScalaUDF if s.function.isInstanceOf[TimeSeriesFunction] =>
                   Utils.getTransformedTimeSeriesUDF(s)
+                case cast: Cast if cast.child.isInstanceOf[AttributeReference] =>
+                  Utils.getTransformedCastExpression(cast)
               }
               attribute = aliasMapExp.get(newExp)
             }

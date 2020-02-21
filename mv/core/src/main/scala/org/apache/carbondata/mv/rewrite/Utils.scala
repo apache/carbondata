@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.mv.rewrite
 
+import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, Cast, Divide, Expression, Literal, Multiply, NamedExpression, PredicateHelper, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan, Project}
@@ -587,6 +588,22 @@ object Utils extends PredicateHelper {
     s.transform {
       case l: Literal =>
         Literal(l.toString().toLowerCase, l.dataType)
+    }
+  }
+
+  /**
+   * transform cast expression to change it's child attribute reference name to lower case
+   */
+  def getTransformedCastExpression(cast: Cast): Expression = {
+    cast.transform {
+      case attr: AttributeReference =>
+        CarbonToSparkAdapter.createAttributeReference(
+          attr.name.toLowerCase,
+          attr.dataType,
+          attr.nullable,
+          attr.metadata,
+          attr.exprId,
+          attr.qualifier)
     }
   }
 

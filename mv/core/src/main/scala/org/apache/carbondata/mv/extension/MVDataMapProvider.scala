@@ -23,8 +23,6 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.{CarbonUtils, SparkSession}
 import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
-import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
-import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.common.exceptions.sql.MalformedMaterializedViewException

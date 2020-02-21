@@ -261,6 +261,25 @@
       sql("drop materialized view  if exists datamap2")
     }
 
+    test("test rollup for timeseries column of Date type") {
+      drop()
+      sql("CREATE TABLE maintable (empno int,empname string, projectcode int, projectjoindate " +
+        "date,salary double) STORED AS CARBONDATA")
+      sql("insert into maintable select 11,'joey',2,'2016-02-23',300")
+      sql("insert into maintable select 13,'pheobe',1,'2016-02-23',450")
+      sql("insert into maintable select 22,'cathy',1,'2016-02-25',450.5")
+      sql("drop materialized view  if exists datamap1")
+      val result = sql("select timeseries(projectjoindate,'week'),sum(projectcode) from maintable group by timeseries(projectjoindate,'week')")
+      sql("create materialized view  datamap1  as select timeseries(projectjoindate,'day'),sum(projectcode) from maintable group by timeseries(projectjoindate,'day')")
+      val dayDF= sql("select timeseries(projectjoindate,'day'),sum(projectcode) from maintable group by timeseries(projectjoindate,'day')")
+      assert(TestUtil.verifyMVDataMap(dayDF.queryExecution.optimizedPlan, "datamap1"))
+      val weekDF = sql("select timeseries(projectjoindate,'week'),sum(projectcode) from maintable group by timeseries(projectjoindate,'week')")
+      assert(TestUtil.verifyMVDataMap(weekDF.queryExecution.optimizedPlan, "datamap1"))
+      checkAnswer(result, weekDF)
+      sql("drop materialized view  if exists datamap1")
+      drop()
+    }
+
     def drop(): Unit = {
       sql("drop table if exists maintable")
     }

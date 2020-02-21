@@ -423,6 +423,12 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop materialized view if exists dm ")
     sql("create materialized view dm  as select max(to_date(dob)) , min(to_date(dob)) from maintable where to_date(dob)='1975-06-11' or to_date(dob)='1975-06-23'")
     checkExistence(sql("select max(to_date(dob)) , min(to_date(dob)) from maintable where to_date(dob)='1975-06-11' or to_date(dob)='1975-06-23'"), true, "1975-06-11 1975-06-11")
+    sql("drop materialized view if exists dm2 ")
+    sql("create materialized view dm2 as select to_date(dob) from maintable where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =120 or DECIMAL_COLUMN1 = 4.34 or Double_COLUMN1 =12345  or INTEGER_COLUMN1 IS NULL")
+    checkExistence(sql("select to_date(DOB) from maintable where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =120 or DECIMAL_COLUMN1 = 4.34 or Double_COLUMN1 =12345  or INTEGER_COLUMN1 IS NULL"), true, "1975-06-11")
+    val df = sql("select to_date(DOB) from maintable where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =120 or DECIMAL_COLUMN1 = 4.34 or Double_COLUMN1 =12345  or INTEGER_COLUMN1 IS NULL")
+    TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "dm2")
+    sql("drop table IF EXISTS maintable")
   }
 
   test("test preagg and mv") {
