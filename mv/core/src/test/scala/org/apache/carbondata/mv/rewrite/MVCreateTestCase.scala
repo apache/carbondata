@@ -109,9 +109,16 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists source")
     sql("create table source using parquet as select * from fact_table1")
     sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
-    val df = sql("select empname, avg(salary) from source group by empname")
+    var df = sql("select empname, avg(salary) from source group by empname")
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
+    // load to parquet table and check again
+    sql("insert into source select * from fact_table1")
+    df = sql("select empname, avg(salary) from source group by empname")
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
     sql(s"drop materialized view mv1")
     sql("drop table source")
   }
@@ -121,9 +128,16 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists source")
     sql("create table source using orc as select * from fact_table1")
     sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
-    val df = sql("select empname, avg(salary) from source group by empname")
+    var df = sql("select empname, avg(salary) from source group by empname")
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
+    // load to orc table and check again
+    sql("insert into source select * from fact_table1")
+    df = sql("select empname, avg(salary) from source group by empname")
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
     sql(s"drop materialized view mv1")
     sql("drop table source")
   }
@@ -133,9 +147,16 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists source")
     sql("create table source stored as parquet as select * from fact_table1")
     sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
-    val df = sql("select empname, avg(salary) from source group by empname")
+    var df = sql("select empname, avg(salary) from source group by empname")
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
+    // load to parquet table and check again
+    sql("insert into source select * from fact_table1")
+    df = sql("select empname, avg(salary) from source group by empname")
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
+
     sql(s"drop materialized view mv1")
     sql("drop table source")
   }
