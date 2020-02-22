@@ -617,7 +617,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     ("(" ~> repsep(ident, ",") <~ ")") ~ (AS ~> stringLit) ~
     (TBLPROPERTIES ~> "(" ~> repsep(options, ",") <~ ")").? <~ opt(";") ^^ {
       case indexTableName ~ table ~ cols ~ indexStoreType ~ tblProp =>
-
         if (!("carbondata".equalsIgnoreCase(indexStoreType))) {
           sys.error("Not a carbon format request")
         }
