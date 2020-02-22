@@ -80,8 +80,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
-    indexManagement | alterTableFinishStreaming | stream | cli |
-    cacheManagement | alterDataMap | insertStageData | indexTableCommands
+    indexTableCommands | indexManagement | alterTableFinishStreaming | stream | cli |
+    cacheManagement | alterDataMap | insertStageData
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | deleteStage | cleanFiles | addLoad
@@ -170,7 +170,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
    * SHOW INDEXES [ON TABLE table_name]
    */
   protected lazy val showIndex: Parser[LogicalPlan] =
-    SHOW ~> INDEXES ~> opt(ontable) <~ opt(";") ^^ {
+    SHOW ~> INDEX ~> opt(ontable) <~ opt(";") ^^ {
       case tableIdent =>
         CarbonShowIndexCommand(tableIdent)
     }
