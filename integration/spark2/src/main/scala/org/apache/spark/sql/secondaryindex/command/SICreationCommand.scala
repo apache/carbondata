@@ -22,6 +22,7 @@ import java.util
 import java.util.UUID
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.language.implicitConversions
 
 import org.apache.log4j.Logger
@@ -58,23 +59,30 @@ class ErrorMessage(message: String) extends Exception(message) {
   * Command for index table creation
   * @param indexModel      SecondaryIndex model holding the index infomation
   * @param tableProperties SI table properties
+  * @param ifNotExists     true if IF NOT EXISTS is set
+  * @param isDeferredRefresh true if WITH DEFERRED REFRESH is set
   * @param isCreateSIndex  if false then will not create index table schema in the carbonstore
-   *                        and will avoid dataload for SI creation.
+  *                        and will avoid dataload for SI creation.
   */
- private[sql] case class CreateIndexTable(indexModel: SecondaryIndex,
-     tableProperties: scala.collection.mutable.Map[String, String],
+ private[sql] case class CreateIndexTableCommand(
+     indexModel: IndexModel,
+     tableProperties: mutable.Map[String, String],
+     ifNotExists: Boolean,
+     isDeferredRefresh: Boolean,
      var isCreateSIndex: Boolean = true)
    extends DataCommand {
 
    val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
    override def processData(sparkSession: SparkSession): Seq[Row] = {
-    val databaseName = CarbonEnv.getDatabaseName(indexModel.databaseName)(sparkSession)
-    indexModel.databaseName = Some(databaseName)
+     if (isDeferredRefresh) {
+       throw new UnsupportedOperationException("DEFERRED REFRESH is not supported")
+     }
+    val databaseName = CarbonEnv.getDatabaseName(indexModel.dbName)(sparkSession)
     val tableName = indexModel.tableName
     val storePath = CarbonProperties.getStorePath
     val dbLocation = CarbonEnv.getDatabaseLocation(databaseName, sparkSession)
-    val indexTableName = indexModel.indexTableName
+    val indexTableName = indexModel.indexName
 
     val tablePath = dbLocation + CarbonCommonConstants.FILE_SEPARATOR + indexTableName
      setAuditTable(databaseName, indexTableName)
@@ -83,14 +91,13 @@ class ErrorMessage(message: String) extends Exception(message) {
        "SI Table Properties" -> tableProperties.toString()))
     LOGGER.info(
       s"Creating Index with Database name [$databaseName] and Index name [$indexTableName]")
-    val catalog = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-    val identifier = TableIdentifier(tableName, indexModel.databaseName)
+    val identifier = TableIdentifier(tableName, indexModel.dbName)
     var carbonTable: CarbonTable = null
     var locks: List[ICarbonLock] = List()
     var oldIndexInfo = ""
 
     try {
-      carbonTable = CarbonEnv.getCarbonTable(indexModel.databaseName, tableName)(sparkSession)
+      carbonTable = CarbonEnv.getCarbonTable(indexModel.dbName, tableName)(sparkSession)
       if (carbonTable == null) {
         throw new ErrorMessage(s"Parent Table $databaseName.$tableName is not found")
       }
@@ -130,7 +137,7 @@ class ErrorMessage(message: String) extends Exception(message) {
       // get carbon table again to reflect any changes during lock acquire.
       carbonTable =
         CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .lookupRelation(indexModel.databaseName, tableName)(sparkSession)
+          .lookupRelation(indexModel.dbName, tableName)(sparkSession)
           .asInstanceOf[CarbonRelation].carbonTable
       if (carbonTable == null) {
         throw new ErrorMessage(s"Parent Table $databaseName.$tableName is not found")
@@ -146,14 +153,18 @@ class ErrorMessage(message: String) extends Exception(message) {
       val indexTables = CarbonInternalScalaUtil.getIndexesTables(carbonTable)
       val indexTableExistsInCarbon = indexTables.asScala.contains(indexTableName)
       val indexTableExistsInHive = sparkSession.sessionState.catalog
-        .tableExists(TableIdentifier(indexTableName, indexModel.databaseName))
+        .tableExists(TableIdentifier(indexTableName, indexModel.dbName))
       if (indexTableExistsInHive && isCreateSIndex) {
-        LOGGER.error(
-          s"Index creation with Database name [$databaseName] and index name " +
-          s"[$indexTableName] failed. " +
-          s"Index [$indexTableName] already exists under database [$databaseName]")
-        throw new ErrorMessage(
-          s"Index [$indexTableName] already exists under database [$databaseName]")
+        if (!ifNotExists) {
+          LOGGER.error(
+            s"Index creation with Database name [$databaseName] and index name " +
+            s"[$indexTableName] failed. " +
+            s"Index [$indexTableName] already exists under database [$databaseName]")
+          throw new ErrorMessage(
+            s"Index [$indexTableName] already exists under database [$databaseName]")
+        } else {
+          return Seq.empty
+        }
       } else if (((indexTableExistsInCarbon && !indexTableExistsInHive) ||
         (!indexTableExistsInCarbon && indexTableExistsInHive)) && isCreateSIndex) {
         LOGGER.error(

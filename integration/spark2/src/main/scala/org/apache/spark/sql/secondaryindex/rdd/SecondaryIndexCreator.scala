@@ -26,7 +26,7 @@ import scala.collection.mutable.ListBuffer
 import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.{CarbonEnv, SQLContext}
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.secondaryindex.command.SecondaryIndexModel
+import org.apache.spark.sql.secondaryindex.command.IndexTableModel
 import org.apache.spark.sql.secondaryindex.events.{LoadTableSIPostExecutionEvent, LoadTableSIPreExecutionEvent}
 import org.apache.spark.sql.secondaryindex.util.{CarbonInternalScalaUtil, FileInternalUtil, SecondaryIndexCreationResultImpl, SecondaryIndexUtil}
 import org.apache.spark.sql.util.SparkSQLUtil
@@ -53,7 +53,7 @@ object SecondaryIndexCreator {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  def createSecondaryIndex(secondaryIndexModel: SecondaryIndexModel,
+  def createSecondaryIndex(secondaryIndexModel: IndexTableModel,
     segmentToLoadStartTimeMap: java.util.Map[String, String],
     indexTable: CarbonTable,
     forceAccessSegment: Boolean = false,
@@ -74,7 +74,7 @@ object SecondaryIndexCreator {
         .carbonMetaStore
       indexCarbonTable = metastore
         .lookupRelation(Some(secondaryIndexModel.carbonLoadModel.getDatabaseName),
-          secondaryIndexModel.secondaryIndex.indexTableName)(secondaryIndexModel.sqlContext
+          secondaryIndexModel.secondaryIndex.indexName)(secondaryIndexModel.sqlContext
           .sparkSession).asInstanceOf[CarbonRelation].carbonTable
     }
 
@@ -123,7 +123,7 @@ object SecondaryIndexCreator {
       FileInternalUtil
         .updateTableStatus(validSegmentList,
           secondaryIndexModel.carbonLoadModel.getDatabaseName,
-          secondaryIndexModel.secondaryIndex.indexTableName,
+          secondaryIndexModel.secondaryIndex.indexName,
           SegmentStatus.INSERT_IN_PROGRESS,
           secondaryIndexModel.segmentIdToLoadStartTimeMapping,
           new java.util
@@ -219,7 +219,7 @@ object SecondaryIndexCreator {
         tableStatusUpdateForSuccess = FileInternalUtil.updateTableStatus(
           successSISegments,
           secondaryIndexModel.carbonLoadModel.getDatabaseName,
-          secondaryIndexModel.secondaryIndex.indexTableName,
+          secondaryIndexModel.secondaryIndex.indexName,
           SegmentStatus.INSERT_IN_PROGRESS,
           secondaryIndexModel.segmentIdToLoadStartTimeMapping,
           segmentToLoadStartTimeMap,
@@ -256,7 +256,7 @@ object SecondaryIndexCreator {
         tableStatusUpdateForSuccess = FileInternalUtil.updateTableStatus(
           successSISegments,
           secondaryIndexModel.carbonLoadModel.getDatabaseName,
-          secondaryIndexModel.secondaryIndex.indexTableName,
+          secondaryIndexModel.secondaryIndex.indexName,
           SegmentStatus.SUCCESS,
           secondaryIndexModel.segmentIdToLoadStartTimeMapping,
           segmentToLoadStartTimeMap,
@@ -282,7 +282,7 @@ object SecondaryIndexCreator {
         tableStatusUpdateForFailure = FileInternalUtil.updateTableStatus(
           failedSISegments,
           secondaryIndexModel.carbonLoadModel.getDatabaseName,
-          secondaryIndexModel.secondaryIndex.indexTableName,
+          secondaryIndexModel.secondaryIndex.indexName,
           SegmentStatus.MARKED_FOR_DELETE,
           secondaryIndexModel.segmentIdToLoadStartTimeMapping,
           segmentToLoadStartTimeMap,
@@ -308,7 +308,7 @@ object SecondaryIndexCreator {
         FileInternalUtil
           .updateTableStatus(validSegmentList,
             secondaryIndexModel.carbonLoadModel.getDatabaseName,
-            secondaryIndexModel.secondaryIndex.indexTableName,
+            secondaryIndexModel.secondaryIndex.indexName,
             SegmentStatus.MARKED_FOR_DELETE,
             secondaryIndexModel.segmentIdToLoadStartTimeMapping,
             new java.util
@@ -333,7 +333,7 @@ object SecondaryIndexCreator {
         case e: Exception =>
           LOGGER
             .error("Problem while cleaning up stale folder for index table " +
-                   secondaryIndexModel.secondaryIndex.indexTableName, e)
+                   secondaryIndexModel.secondaryIndex.indexName, e)
       }
       // close the executor service
       if (null != executorService) {
@@ -347,7 +347,7 @@ object SecondaryIndexCreator {
    *
    * @return
    */
-  def getCopyObject(secondaryIndexModel: SecondaryIndexModel): CarbonLoadModel = {
+  def getCopyObject(secondaryIndexModel: IndexTableModel): CarbonLoadModel = {
     val carbonLoadModel = secondaryIndexModel.carbonLoadModel
     val copyObj = new CarbonLoadModel
     copyObj.setTableName(carbonLoadModel.getTableName)
@@ -356,7 +356,7 @@ object SecondaryIndexCreator {
     copyObj.setCarbonDataLoadSchema(carbonLoadModel.getCarbonDataLoadSchema)
     copyObj.setColumnCompressor(CarbonInternalScalaUtil
       .getCompressorForIndexTable(carbonLoadModel.getDatabaseName,
-        secondaryIndexModel.secondaryIndex.indexTableName,
+        secondaryIndexModel.secondaryIndex.indexName,
         carbonLoadModel.getTableName)(secondaryIndexModel.sqlContext.sparkSession))
     copyObj
   }

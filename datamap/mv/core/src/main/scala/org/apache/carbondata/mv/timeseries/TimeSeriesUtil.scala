@@ -19,7 +19,7 @@ package org.apache.carbondata.mv.timeseries
 
 import scala.util.control.Breaks.{break, breakable}
 
-import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException, MalformedMaterializedViewException}
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedMaterializedViewException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable

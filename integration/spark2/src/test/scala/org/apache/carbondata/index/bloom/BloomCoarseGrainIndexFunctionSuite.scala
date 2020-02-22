@@ -54,9 +54,10 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          |  """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (city, id)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     var map = DataMapStatusManager.readDataMapStatusMap()
@@ -101,9 +102,10 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          |  """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (city, id)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     var map = DataMapStatusManager.readDataMapStatusMap()
@@ -147,9 +149,10 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          |  """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (city, id)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     var map = DataMapStatusManager.readDataMapStatusMap()
@@ -200,8 +203,9 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
        """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable USING 'bloomfilter' properties (
-         | 'INDEX_COLUMNS'='salary')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (salary)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
@@ -238,8 +242,9 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
        """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable USING 'bloomfilter' properties (
-         | 'INDEX_COLUMNS'='salary')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (salary)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
@@ -278,8 +283,9 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
        """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable USING 'bloomfilter' properties (
-         | 'INDEX_COLUMNS'='doj')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (doj)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
@@ -316,8 +322,9 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
        """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable USING 'bloomfilter' properties (
-         | 'INDEX_COLUMNS'='doj')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (doj)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
@@ -354,8 +361,9 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
        """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable USING 'bloomfilter' properties (
-         | 'INDEX_COLUMNS'='starttime')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (starttime)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
@@ -392,8 +400,9 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
        """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable USING 'bloomfilter' properties (
-         | 'INDEX_COLUMNS'='starttime')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (starttime)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
@@ -415,9 +424,9 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
     sql(s"CREATE TABLE $bloomSampleTable(c1 string, c2 int, c3 string) STORED AS carbondata")
     sql(
       s"""
-         | CREATE INDEX $indexName on table $bloomSampleTable
+         | CREATE INDEX $indexName
+         | on table $bloomSampleTable (c1, c2)
          | using 'bloomfilter'
-         | properties('index_columns'='c1, c2')
        """.stripMargin)
 
     // load data with empty value
@@ -445,9 +454,9 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
     // create index on longstring columns
     sql(
       s"""
-         | CREATE INDEX $indexName on table $bloomSampleTable
-         | using 'bloomfilter'
-         | properties('index_columns'='c3')
+         | CREATE INDEX $indexName
+         | on table $bloomSampleTable (c3)
+         | as 'bloomfilter'
        """.stripMargin)
 
     sql(s"INSERT INTO $normalTable SELECT 'c1v1', 1, 'xxx'")
@@ -488,9 +497,10 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
 
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='city,id,age,name', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (city,id,age,name)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
@@ -529,9 +539,10 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
 
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='city,id,age,name', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (city,id,age,name)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
@@ -570,9 +581,10 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
 
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='city,id,age,name', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (city,id,age,name)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
@@ -609,8 +621,9 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
        """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable USING 'bloomfilter' properties (
-         | 'INDEX_COLUMNS'='salary')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (salary)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040.56'").show(false)
     sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040'").show(false)
@@ -647,8 +660,9 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
        """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable USING 'bloomfilter' properties (
-         | 'INDEX_COLUMNS'='salary')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (salary)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040.56'").show(false)
     sql(s"SELECT * FROM $bloomSampleTable WHERE salary='1040'").show(false)
@@ -685,8 +699,9 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
        """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable USING 'bloomfilter' properties (
-         | 'INDEX_COLUMNS'='doj')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (doj)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-14'").show(false)
     sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-15'").show(false)
@@ -723,8 +738,9 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
        """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable USING 'bloomfilter' properties (
-         | 'INDEX_COLUMNS'='doj')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (doj)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-14'").show(false)
     sql(s"SELECT * FROM $bloomSampleTable WHERE doj='2016-03-15'").show(false)
@@ -746,9 +762,9 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
 
     sql(
       s"""
-         | CREATE INDEX $indexName on table $bloomSampleTable
+         | CREATE INDEX $indexName
+         | on table $bloomSampleTable (c1, c2)
          | using 'bloomfilter'
-         | properties('index_columns'='c1, c2')
        """.stripMargin)
 
     // query on null fields
@@ -768,9 +784,9 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
     sql(s"CREATE TABLE $bloomSampleTable(c1 string, c2 int, c3 string) STORED AS carbondata")
     sql(
       s"""
-         | CREATE INDEX $indexName on table $bloomSampleTable
-         | using 'bloomfilter'
-         | properties('index_columns'='c1, c2')
+         | CREATE INDEX $indexName
+         | on table $bloomSampleTable (c1, c2)
+         | as 'bloomfilter'
        """.stripMargin)
     sql(s"INSERT INTO $bloomSampleTable SELECT 'c1v1', 1, 'c3v1'")
     sql(s"INSERT INTO $bloomSampleTable SELECT 'c1v2', 2, 'c3v2'")
@@ -822,9 +838,10 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
       .save()
 
     val withoutBloom = sql("select count(*) from test_rcd where city = 'city40'").collect().toSeq
-    sql("CREATE INDEX dm_rcd ON TABLE test_rcd " +
-        "USING 'bloomfilter' properties " +
-        "('INDEX_COLUMNS' = 'city', 'BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')")
+    sql("CREATE INDEX dm_rcd " +
+        "ON TABLE test_rcd (city)" +
+        "AS 'bloomfilter' " +
+        "properties ('BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')")
     checkAnswer(sql("select count(*) from test_rcd where city = 'city40'"), withoutBloom)
 
     sql("drop table if exists test_rcd").collect()

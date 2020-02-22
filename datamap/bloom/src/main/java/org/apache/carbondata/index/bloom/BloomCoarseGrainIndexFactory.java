@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
@@ -103,7 +103,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
   private Map<String, Set<String>> segmentMap = new ConcurrentHashMap<>();
 
   public BloomCoarseGrainIndexFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
-      throws MalformedDataMapCommandException {
+      throws MalformedIndexCommandException {
     super(carbonTable, dataMapSchema);
     Objects.requireNonNull(carbonTable);
     Objects.requireNonNull(dataMapSchema);
@@ -126,7 +126,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
           .createCache(new CacheType("bloom_cache"), BloomIndexCache.class.getName());
     } catch (Exception e) {
       LOGGER.error(e.getMessage(), e);
-      throw new MalformedDataMapCommandException(e.getMessage());
+      throw new MalformedIndexCommandException(e.getMessage());
     }
   }
 
@@ -136,7 +136,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
    * 2. BLOOM_SIZE should be an integer that greater than 0
    */
   private int validateAndGetBloomFilterSize(DataMapSchema dmSchema)
-      throws MalformedDataMapCommandException {
+      throws MalformedIndexCommandException {
     String bloomFilterSizeStr = dmSchema.getProperties().get(BLOOM_SIZE);
     if (StringUtils.isBlank(bloomFilterSizeStr)) {
       LOGGER.warn(
@@ -148,13 +148,13 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     try {
       bloomFilterSize = Integer.parseInt(bloomFilterSizeStr);
     } catch (NumberFormatException e) {
-      throw new MalformedDataMapCommandException(
+      throw new MalformedIndexCommandException(
           String.format("Invalid value of bloom filter size '%s', it should be an integer",
               bloomFilterSizeStr));
     }
     // todo: reconsider the boundaries of bloom filter size
     if (bloomFilterSize <= 0) {
-      throw new MalformedDataMapCommandException(
+      throw new MalformedIndexCommandException(
           String.format("Invalid value of bloom filter size '%s', it should be greater than 0",
               bloomFilterSizeStr));
     }
@@ -167,7 +167,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
    * 2. BLOOM_FPP should be (0, 1)
    */
   private double validateAndGetBloomFilterFpp(DataMapSchema dmSchema)
-      throws MalformedDataMapCommandException {
+      throws MalformedIndexCommandException {
     String bloomFilterFppStr = dmSchema.getProperties().get(BLOOM_FPP);
     if (StringUtils.isBlank(bloomFilterFppStr)) {
       LOGGER.warn(
@@ -179,12 +179,12 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     try {
       bloomFilterFpp = Double.parseDouble(bloomFilterFppStr);
     } catch (NumberFormatException e) {
-      throw new MalformedDataMapCommandException(
+      throw new MalformedIndexCommandException(
           String.format("Invalid value of bloom filter fpp '%s', it should be an numeric",
               bloomFilterFppStr));
     }
     if (bloomFilterFpp < 0 || bloomFilterFpp - 1 >= 0) {
-      throw new MalformedDataMapCommandException(
+      throw new MalformedIndexCommandException(
           String.format("Invalid value of bloom filter fpp '%s', it should be in range 0~1",
               bloomFilterFppStr));
     }

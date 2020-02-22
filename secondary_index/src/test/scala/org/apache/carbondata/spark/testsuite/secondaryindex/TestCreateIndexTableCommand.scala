@@ -29,7 +29,7 @@ import org.apache.carbondata.format.TableInfo
 /**
  * test cases for testing create index table
  */
-class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
+class TestCreateIndexTableCommand extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop table if exists carbon")

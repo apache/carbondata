@@ -210,7 +210,7 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     sql(
       s"""
          | CREATE INDEX $dataMapName ON TABLE $tableName
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | PROPERTIES(
          | 'INDEX_COLUMNS'='smallIntField,floatField,timestampField,dateField,stringField',
          | 'BLOOM_SIZE'='6400',

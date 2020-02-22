@@ -28,7 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.apache.carbondata.common.Strings;
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.status.DataMapStatus;
 import org.apache.carbondata.core.datamap.status.DataMapStatusDetail;
@@ -252,15 +252,15 @@ public class DataMapSchema implements Serializable, Writable {
    * Return the list of column name
    */
   public String[] getIndexColumns()
-      throws MalformedDataMapCommandException {
+      throws MalformedIndexCommandException {
     String columns = getProperties().get(INDEX_COLUMNS);
     if (columns == null) {
       columns = getProperties().get(INDEX_COLUMNS.toLowerCase());
     }
     if (columns == null) {
-      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " property is required");
+      throw new MalformedIndexCommandException(INDEX_COLUMNS + " property is required");
     } else if (StringUtils.isBlank(columns)) {
-      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " property is blank");
+      throw new MalformedIndexCommandException(INDEX_COLUMNS + " property is blank");
     } else {
       return columns.split(",", -1);
     }

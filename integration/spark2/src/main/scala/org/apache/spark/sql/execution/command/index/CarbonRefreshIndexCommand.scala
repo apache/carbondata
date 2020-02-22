@@ -21,7 +21,7 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.DataCommand
 
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.DataMapManager
@@ -39,13 +39,13 @@ case class CarbonRefreshIndexCommand(
     val schemaOption = CarbonShowIndexCommand(Some(table)).getAllIndexes(sparkSession)
       .find(p => p.getDataMapName.equalsIgnoreCase(indexName))
     if (schemaOption.isEmpty) {
-      throw new MalformedDataMapCommandException(
+      throw new MalformedIndexCommandException(
         s"Index with name $indexName does not exist on table ${table.table}")
     }
     val schema = schemaOption.get
     if (!schema.isLazy) {
-      throw new MalformedDataMapCommandException(
-        s"Non-lazy index $indexName does not support rebuild")
+      throw new MalformedIndexCommandException(
+        s"Non-lazy index $indexName does not support manual refresh")
     }
 
     val carbonTable = CarbonEnv.getCarbonTable(table)(sparkSession)

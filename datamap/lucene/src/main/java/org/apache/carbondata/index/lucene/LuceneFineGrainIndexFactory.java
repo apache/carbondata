@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.IndexModel;
 import org.apache.carbondata.core.datamap.dev.IndexWriter;
@@ -42,7 +42,7 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrainIndex> {
 
   public LuceneFineGrainIndexFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
-      throws MalformedDataMapCommandException {
+      throws MalformedIndexCommandException {
     super(carbonTable, dataMapSchema);
   }
 

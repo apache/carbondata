@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
 import org.apache.carbondata.common.exceptions.sql.NoSuchIndexException;
 import org.apache.carbondata.common.exceptions.sql.NoSuchMaterializedViewException;
@@ -445,7 +445,7 @@ public final class DataMapStoreManager {
    * The index is created using index name, index factory class and table identifier.
    */
   public IndexFactory getIndexFactoryClass(CarbonTable table, DataMapSchema dataMapSchema)
-      throws MalformedDataMapCommandException {
+      throws MalformedIndexCommandException {
     try {
       // try to create datamap by reflection to test whether it is a valid IndexFactory class
       return (IndexFactory)
@@ -466,7 +466,7 @@ public final class DataMapStoreManager {
    */
   // TODO: make it private
   public TableIndex createAndRegisterIndex(CarbonTable table,
-      DataMapSchema dataMapSchema) throws MalformedDataMapCommandException {
+      DataMapSchema dataMapSchema) throws MalformedIndexCommandException {
     IndexFactory indexFactory = getIndexFactoryClass(table, dataMapSchema);
     return registerDataMap(table, dataMapSchema, indexFactory);
   }

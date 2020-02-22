@@ -53,9 +53,9 @@ class LuceneCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
       sql(
         s"""
-           | CREATE INDEX dm ON TABLE datamap_test
-           | USING 'lucene'
-           | properties('INDEX_COLUMNS'='name,city')
+           | CREATE INDEX dm
+           | ON TABLE datamap_test (name, city)
+           | AS 'lucene'
       """.stripMargin)
 
      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")

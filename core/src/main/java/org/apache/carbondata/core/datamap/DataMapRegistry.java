@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.core.datamap.dev.Index;
 import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
@@ -65,14 +65,14 @@ public class DataMapRegistry {
   }
 
   public static IndexFactory<? extends Index> getIndexFactoryByShortName(
-      CarbonTable table, DataMapSchema dataMapSchema) throws MalformedDataMapCommandException {
+      CarbonTable table, DataMapSchema dataMapSchema) throws MalformedIndexCommandException {
     String providerName = dataMapSchema.getProviderName();
     try {
       registerDataMap(
           DataMapClassProvider.getDataMapProviderOnName(providerName).getClassName(),
           DataMapClassProvider.getDataMapProviderOnName(providerName).getShortName());
     } catch (UnsupportedOperationException ex) {
-      throw new MalformedDataMapCommandException("Index '" + providerName + "' not found", ex);
+      throw new MalformedIndexCommandException("Index '" + providerName + "' not found", ex);
     }
     IndexFactory<? extends Index> indexFactory;
     String className = getDataMapClassName(providerName.toLowerCase());
@@ -81,15 +81,15 @@ public class DataMapRegistry {
         indexFactory = (IndexFactory<? extends Index>)
             Class.forName(className).getConstructors()[0].newInstance(table, dataMapSchema);
       } catch (ClassNotFoundException ex) {
-        throw new MalformedDataMapCommandException("Index '" + providerName + "' not found", ex);
+        throw new MalformedIndexCommandException("Index '" + providerName + "' not found", ex);
       } catch (InvocationTargetException ex) {
-        throw new MalformedDataMapCommandException(ex.getTargetException().getMessage());
+        throw new MalformedIndexCommandException(ex.getTargetException().getMessage());
       } catch (InstantiationException | IllegalAccessException | IllegalArgumentException ex) {
         throw new MetadataProcessException(
             "failed to create '" + providerName + "': " + ex.getMessage(), ex);
       }
     } else {
-      throw new MalformedDataMapCommandException("Index '" + providerName + "' not found");
+      throw new MalformedIndexCommandException("Index '" + providerName + "' not found");
     }
     return indexFactory;
   }

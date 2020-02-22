@@ -30,7 +30,7 @@ import org.apache.spark.sql.execution.command.table.{CarbonCreateTableLikeComman
 import org.apache.spark.sql.execution.datasources.{InsertIntoHadoopFsRelationCommand, RefreshResource, RefreshTable}
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand, MatchResetCommand}
-import org.apache.spark.sql.secondaryindex.command.{CreateIndexTable, DropIndexCommand, RegisterIndexTableCommand, ShowIndexesCommand}
+import org.apache.spark.sql.secondaryindex.command.{CreateIndexTableCommand, DropIndexCommand, RegisterIndexTableCommand, ShowIndexesCommand}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -207,13 +207,14 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         DDLHelper.explain(explain, sparkSession)
       case showTables: ShowTablesCommand =>
         DDLHelper.showTables(showTables, sparkSession)
-      case CreateIndexTable(indexModel, tableProperties, isCreateSIndex) =>
+      case CreateIndexTableCommand(
+        indexModel, tableProperties, ifNotExists, isDeferredRefresh, isCreateSIndex) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(TableIdentifier(indexModel.tableName, indexModel.databaseName))(
+          .tableExists(TableIdentifier(indexModel.tableName, indexModel.dbName))(
             sparkSession)
         if (isCarbonTable) {
-          ExecutedCommandExec(CreateIndexTable(indexModel, tableProperties,
-            isCreateSIndex)) :: Nil
+          ExecutedCommandExec(CreateIndexTableCommand(
+            indexModel, tableProperties, ifNotExists, isDeferredRefresh, isCreateSIndex)) :: Nil
         } else {
           sys.error("Operation not allowed on non-carbon table")
         }

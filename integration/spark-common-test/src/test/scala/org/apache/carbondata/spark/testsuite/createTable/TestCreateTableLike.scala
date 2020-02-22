@@ -145,7 +145,7 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
     sql(
       s"""
          | CREATE INDEX dm1 ON TABLE sourceTable
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties('INDEX_COLUMNS'='b', 'BLOOM_SIZE'='32000')
       """.stripMargin)
     sql("create table targetTable like sourceTable")

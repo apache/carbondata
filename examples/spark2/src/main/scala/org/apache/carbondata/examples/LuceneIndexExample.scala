@@ -56,9 +56,9 @@ object LuceneIndexExample {
     // create lucene index on personTable
     spark.sql(
       s"""
-         | CREATE INDEX IF NOT EXISTS dm ON TABLE personTable
-         | USING 'lucene'
-         | properties('INDEX_COLUMNS'='id , name')
+         | CREATE INDEX IF NOT EXISTS dm
+         | ON TABLE personTable (id, name)
+         | AS 'lucene'
       """.stripMargin)
 
     // 1. Compare the performance:

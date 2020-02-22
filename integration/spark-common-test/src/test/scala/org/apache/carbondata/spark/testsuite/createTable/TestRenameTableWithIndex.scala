@@ -50,7 +50,7 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE INDEX dm_carbon_table_name ON TABLE carbon_table
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties('INDEX_COLUMNS'='name,city', 'BLOOM_SIZE'='640000')
       """.stripMargin)
 

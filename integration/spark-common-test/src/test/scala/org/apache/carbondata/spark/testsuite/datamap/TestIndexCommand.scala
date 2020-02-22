@@ -22,7 +22,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.MetadataProcessException
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -109,17 +109,17 @@ class TestIndexCommand extends QueryTest with BeforeAndAfterAll {
         sql(s"insert into $tableName  values(3,'a1','b2','c1','image3')")
         sql(
             s"""
-               | CREATE INDEX agg10 ON TABLE $tableName USING 'lucene'
+               | CREATE INDEX agg10 ON TABLE $tableName AS 'lucene'
                | properties('INDEX_COLUMNS'='name')
                | """.stripMargin)
 
         checkAnswer(sql(s"show indexes on table $tableName"),
             Seq(Row("agg10", "lucene", s"default.${tableName}", "'index_columns'='name'", "ENABLED", "NA")))
 
-        val e = intercept[MalformedDataMapCommandException] {
+        val e = intercept[MalformedIndexCommandException] {
             sql(
                 s"""
-                   | CREATE INDEX agg1 ON TABLE $tableName USING 'lucene'
+                   | CREATE INDEX agg1 ON TABLE $tableName AS 'lucene'
                    | properties('INDEX_COLUMNS'='image')
                    | """.stripMargin)
         }

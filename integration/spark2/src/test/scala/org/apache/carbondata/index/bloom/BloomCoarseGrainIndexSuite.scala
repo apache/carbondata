@@ -26,7 +26,7 @@ import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedIndexCommandException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
@@ -148,9 +148,10 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          |  """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (city, id)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     var map = DataMapStatusManager.readDataMapStatusMap()
@@ -188,13 +189,14 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
          | STORED AS carbondata TBLPROPERTIES('table_blocksize'='128')
          |  """.stripMargin)
-    val deferredRebuildException = intercept[MalformedDataMapCommandException] {
+    val deferredRebuildException = intercept[MalformedIndexCommandException] {
       sql(
         s"""
-           | CREATE INDEX $indexName ON TABLE $bloomSampleTable
-           | USING 'bloomfilter'
+           | CREATE INDEX $indexName
+           | ON TABLE $bloomSampleTable (city, id)
+           | AS 'bloomfilter'
            | WITH DEFERRED REFRESH
-           | properties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+           | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
     }
     assert(deferredRebuildException.getMessage.contains(
@@ -202,11 +204,12 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
 
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (city, id)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
-    val exception = intercept[MalformedDataMapCommandException] {
+    val exception = intercept[MalformedIndexCommandException] {
       sql(s"REFRESH INDEX $indexName ON TABLE $bloomSampleTable")
     }
     assert(exception.getMessage.contains(s"Non-lazy index $indexName does not support rebuild"))
@@ -242,9 +245,10 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
 
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (city, id)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
@@ -281,10 +285,11 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
 
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (city, id)
+         | AS 'bloomfilter'
          | WITH DEFERRED REFRESH
-         | properties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     var map = DataMapStatusManager.readDataMapStatusMap()
@@ -359,10 +364,11 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
 
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
+         | CREATE INDEX $indexName
+         | ON TABLE $bloomSampleTable (city, id)
+         | AS 'bloomfilter'
          | WITH DEFERRED REFRESH
-         | properties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
@@ -391,21 +397,24 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          |  """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $datamap11 ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='id', 'BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
+         | CREATE INDEX $datamap11
+         | ON TABLE $bloomSampleTable (id)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
       """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $datamap12 ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='name', 'BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
+         | CREATE INDEX $datamap12
+         | ON TABLE $bloomSampleTable (name)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
       """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $datamap13 ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='city', 'BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
+         | CREATE INDEX $datamap13
+         | ON TABLE $bloomSampleTable (city)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
       """.stripMargin)
 
     // create a table and 1 bloom index on it, this index contains 3 index columns
@@ -417,9 +426,10 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          |  """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $datamap2 ON TABLE $normalTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='id, name, city', 'BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
+         | CREATE INDEX $datamap2
+         | ON TABLE $normalTable (id, name, city)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
       """.stripMargin)
 
     (0 until iterations).foreach { p =>
@@ -467,15 +477,17 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          |  """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $datamap1 ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='name', 'BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
+         | CREATE INDEX $datamap1
+         | ON TABLE $bloomSampleTable (name)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
       """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $datamap2 ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='city', 'BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
+         | CREATE INDEX $datamap2
+         | ON TABLE $bloomSampleTable (city)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
       """.stripMargin)
 
     sql(
@@ -500,9 +512,10 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
 
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $normalTable
-         | USING 'bloomfilter'
-         | properties( 'INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX $indexName
+         | ON TABLE $normalTable (city, id)
+         | AS 'bloomfilter'
+         | properties( 'BLOOM_SIZE'='640000')
       """.stripMargin)
     val changeDataTypeException: MalformedCarbonCommandException = intercept[MalformedCarbonCommandException] {
       sql(s"ALTER TABLE $normalTable CHANGE id id bigint")
@@ -525,9 +538,10 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          |  """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName ON TABLE $normalTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX $indexName
+         | ON TABLE $normalTable (city, id)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
     val exception: MalformedCarbonCommandException = intercept[MalformedCarbonCommandException] {
       sql(s"alter table $normalTable drop columns(name, id)")
@@ -551,9 +565,9 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $indexName on table $bloomSampleTable
-         | using 'bloomfilter'
-         | properties('index_columns'='c1, c2')
+         | CREATE INDEX $indexName
+         | on table $bloomSampleTable (c1,c2)
+         | as 'bloomfilter'
          | """.stripMargin)
     sql(
       s"""
@@ -578,12 +592,13 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
          | STORED AS carbondata
          | """.stripMargin)
-    val exception: MalformedDataMapCommandException = intercept[MalformedDataMapCommandException] {
+    val exception: MalformedIndexCommandException = intercept[MalformedIndexCommandException] {
       sql(
         s"""
-           | CREATE INDEX $indexName ON TABLE $normalTable
-           | USING 'bloomfilter'
-           | properties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+           | CREATE INDEX $indexName
+           | ON TABLE $normalTable (city, id)
+           | AS 'bloomfilter'
+           | properties('BLOOM_SIZE'='640000')
            | """.stripMargin)
     }
     assert(exception.getMessage.contains(
@@ -597,12 +612,13 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
       "timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 " +
       "decimal(30,10), DECIMAL_COLUMN2 decimal(36,36),Double_COLUMN1 double, Double_COLUMN2 " +
       "double,INTEGER_COLUMN1 int) STORED AS carbondata")
-    val exception: MalformedDataMapCommandException = intercept[MalformedDataMapCommandException] {
+    val exception: MalformedIndexCommandException = intercept[MalformedIndexCommandException] {
       sql(
         s"""
-           | CREATE INDEX binaryBloom ON TABLE binaryTable
-           | USING 'bloomfilter'
-           | properties('INDEX_COLUMNS'='cust_id', 'BLOOM_SIZE'='640000')
+           | CREATE INDEX binaryBloom
+           | ON TABLE binaryTable (cust_id)
+           | AS 'bloomfilter'
+           | properties('BLOOM_SIZE'='640000')
            | """.stripMargin)
     }
     assert(exception.getMessage.equalsIgnoreCase(
@@ -632,9 +648,10 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     // create simple index on segment0
     sql(
       s"""
-         | CREATE INDEX $datamap1 ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='id', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX $datamap1
+         | ON TABLE $bloomSampleTable (id)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     // add some columns including dict/noDict/measure column
@@ -666,10 +683,10 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     // create index on newly added column
     sql(
       s"""
-         | CREATE INDEX $datamap2 ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='s1,dictString,s8,noDictString,age,num1',
-         | 'BLOOM_SIZE'='640000')
+         | CREATE INDEX $datamap2
+         | ON TABLE $bloomSampleTable (s1,dictString,s8,noDictString,age,num1)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     // load data into table (segment2)
@@ -787,10 +804,10 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     // create index
     sql(
       s"""
-         | CREATE INDEX dm_test ON TABLE $bloomSampleTable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='$columnNames',
-         | 'BLOOM_SIZE'='640000')
+         | CREATE INDEX dm_test
+         | ON TABLE $bloomSampleTable ($columnNames)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     // second data load
@@ -910,10 +927,10 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
 
     sql(
       s"""
-         |CREATE INDEX IF NOT EXISTS bloomfilter_all_dimensions ON TABLE store
-         | USING 'bloomfilter'
+         | CREATE INDEX IF NOT EXISTS bloomfilter_all_dimensions
+         | ON TABLE store (market_code, device_code, country_code, category_id, date,product_id)
+         | AS 'bloomfilter'
          | properties (
-         | 'INDEX_COLUMNS'='market_code, device_code, country_code, category_id, date,product_id',
          | 'BLOOM_SIZE'='640000',
          | 'BLOOM_FPP'='0.000001',
          | 'BLOOM_COMPRESS'='true'

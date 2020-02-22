@@ -92,7 +92,7 @@ class TestCarbonDropCacheCommand extends QueryTest with BeforeAndAfterAll {
         s"doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, " +
         s"deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp," +
         s"attendance int, utilization int, salary int) STORED AS carbondata")
-    sql(s"CREATE INDEX dblom ON TABLE $tableName USING 'bloomfilter' " +
+    sql(s"CREATE INDEX dblom ON TABLE $tableName AS 'bloomfilter' " +
         "PROPERTIES('INDEX_COLUMNS'='deptno')")
     sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE $tableName")
     sql(s"SELECT * FROM $tableName").collect()

@@ -29,7 +29,7 @@ Creating BloomFilter DataMap
   ```
   CREATE DATAMAP [IF NOT EXISTS] datamap_name
   ON TABLE main_table
-  USING 'bloomfilter'
+  AS 'bloomfilter'
   DMPROPERTIES ('index_columns'='city, name', 'BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')
   ```
 
@@ -92,7 +92,7 @@ User can create BloomFilter DataMap using the Create DataMap DDL:
   ```
   CREATE DATAMAP dm
   ON TABLE datamap_test
-  USING 'bloomfilter'
+  AS 'bloomfilter'
   DMPROPERTIES ('INDEX_COLUMNS' = 'name,id', 'BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001', 'BLOOM_COMPRESS'='true')
   ```
 

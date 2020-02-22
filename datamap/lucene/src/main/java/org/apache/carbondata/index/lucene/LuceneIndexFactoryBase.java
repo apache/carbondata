@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
@@ -116,7 +116,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
   boolean storeBlockletWise;
 
   public LuceneIndexFactoryBase(CarbonTable carbonTable, DataMapSchema dataMapSchema)
-      throws MalformedDataMapCommandException {
+      throws MalformedIndexCommandException {
     super(carbonTable, dataMapSchema);
     Objects.requireNonNull(carbonTable.getAbsoluteTableIdentifier());
     Objects.requireNonNull(dataMapSchema);
@@ -174,9 +174,9 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
 
   /**
    * this method will delete the index folders during drop index
-   * @throws MalformedDataMapCommandException
+   * @throws MalformedIndexCommandException
    */
-  private void deleteIndex() throws MalformedDataMapCommandException {
+  private void deleteIndex() throws MalformedIndexCommandException {
     SegmentStatusManager ssm = new SegmentStatusManager(tableIdentifier);
     try {
       List<Segment> validSegments =
@@ -185,7 +185,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
         deleteIndexData(segment);
       }
     } catch (IOException | RuntimeException ex) {
-      throw new MalformedDataMapCommandException(
+      throw new MalformedIndexCommandException(
           "drop index failed, failed to delete index directory");
     }
   }
@@ -280,7 +280,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
   public void deleteIndexData() {
     try {
       deleteIndex();
-    } catch (MalformedDataMapCommandException ex) {
+    } catch (MalformedIndexCommandException ex) {
       LOGGER.error("failed to delete index directory ", ex);
     }
   }
@@ -333,17 +333,17 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
    * Currently only string and non-dictionary column is supported for Lucene Index
    */
   @Override
-  public void validate() throws MalformedDataMapCommandException {
+  public void validate() throws MalformedIndexCommandException {
     super.validate();
     List<CarbonColumn> indexColumns = getCarbonTable().getIndexedColumns(getDataMapSchema());
 
     for (CarbonColumn column : indexColumns) {
       if (column.getDataType() != DataTypes.STRING) {
-        throw new MalformedDataMapCommandException(String.format(
+        throw new MalformedIndexCommandException(String.format(
             "Only String column is supported, column '%s' is %s type. ",
             column.getColName(), column.getDataType()));
       } else if (column.getDataType() == DataTypes.DATE) {
-        throw new MalformedDataMapCommandException(String.format(
+        throw new MalformedIndexCommandException(String.format(
             "Dictionary column is not supported, column '%s' is dictionary column",
             column.getColName()));
       }

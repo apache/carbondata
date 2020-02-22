@@ -296,7 +296,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE INDEX dm_test_dm_index ON TABLE test_dm_index
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties('INDEX_COLUMNS'='a', 'BLOOM_SIZE'='640000')
       """.stripMargin)
 

@@ -27,14 +27,13 @@ import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Coalesce, Expression, Literal, NamedExpression, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Average}
-import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Join, Limit, LogicalPlan, Project}
 import org.apache.spark.sql.execution.command.{Field, PartitionerField, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{ArrayType, DateType, MapType, StructType}
 
-import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
@@ -631,7 +630,7 @@ object MVHelper {
       val newLongStringColumn = longStringColumn.get.split(",").map(_.trim).map { colName =>
         val newColName = parentTable.getTableName.toLowerCase() + "_" + colName
         if (!fieldNames.contains(newColName)) {
-          throw new MalformedDataMapCommandException(
+          throw new MalformedCarbonCommandException(
             CarbonCommonConstants.LONG_STRING_COLUMNS.toUpperCase() + ":" + colName
             + " does not in MV")
         }

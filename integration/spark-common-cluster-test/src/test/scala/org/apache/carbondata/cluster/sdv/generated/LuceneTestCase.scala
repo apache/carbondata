@@ -42,9 +42,9 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       "serialname String,salary int ) STORED AS carbondata")
     sql(
       s"""
-         | CREATE INDEX lucene_datamap ON TABLE datamap_main
-         | USING 'lucene'
-         | properties('INDEX_COLUMNS'='country')
+         | CREATE INDEX lucene_datamap
+         | ON TABLE datamap_main (country)
+         | AS 'lucene'
       """.stripMargin)
     checkExistence(sql("show indexes on table datamap_main"), true, "lucene_datamap")
     sql("drop index if exists lucene_datamap on table datamap_main")
@@ -59,9 +59,9 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     val exception_otherdataType: Exception = intercept[Exception] {
       sql(
         s"""
-           | CREATE INDEX lucene_datamap ON TABLE datamap_main
-           | USING 'lucene'
-           | properties('INDEX_COLUMNS'='id')
+           | CREATE INDEX lucene_datamap
+           | ON TABLE datamap_main (id)
+           | AS 'lucene'
       """.stripMargin)
     }
     assert(exception_otherdataType.getMessage
@@ -78,9 +78,9 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       "('SORT_COLUMNS'='country,name','SORT_SCOPE'='LOCAL_SORT')")
     sql(
       s"""
-         | CREATE INDEX lucene_datamap ON TABLE datamap_main
-         | USING 'lucene'
-         | properties('INDEX_COLUMNS'='country')
+         | CREATE INDEX lucene_datamap
+         | ON TABLE datamap_main (country)
+         | AS 'lucene'
       """.stripMargin)
     sql(s"LOAD DATA INPATH '$csvPath' INTO TABLE datamap_main")
 
@@ -99,9 +99,9 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       "serialname String,salary int ) STORED AS carbondata ")
     sql(
       s"""
-         | CREATE INDEX lucene_datamap ON TABLE datamap_main
-         | USING 'lucene'
-         | properties('INDEX_COLUMNS'='country,name,serialname')
+         | CREATE INDEX lucene_datamap
+         | ON TABLE datamap_main (country,name,serialname)
+         | AS 'lucene'
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' INTO TABLE datamap_main")
     checkAnswer(sql("SELECT * FROM datamap_main WHERE TEXT_MATCH('country:ch*')"),
@@ -130,9 +130,9 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       "serialname String,salary int ) STORED AS carbondata")
     sql(
       s"""
-         | CREATE INDEX lucene_datamap ON TABLE datamap_main
-         | USING 'lucene'
-         | properties('INDEX_COLUMNS'='country,name')
+         | CREATE INDEX lucene_datamap
+         | ON TABLE datamap_main (country,name)
+         | AS 'lucene'
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' INTO TABLE datamap_main")
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' INTO TABLE datamap_main")
@@ -156,9 +156,9 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       "TBLPROPERTIES('SORT_COLUMNS'='country,name','SORT_SCOPE'='LOCAL_SORT')")
     sql(
       s"""
-         | CREATE INDEX lucene_datamap ON TABLE datamap_main
-         | USING 'lucene'
-         | properties('INDEX_COLUMNS'='country')
+         | CREATE INDEX lucene_datamap
+         | ON TABLE datamap_main (country)
+         | AS 'lucene'
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' INTO TABLE datamap_main OPTIONS('header'='false'," +
         s"'BAD_RECORDS_LOGGER_ENABLE'='FALSE','BAD_RECORDS_ACTION'='FORCE')")
@@ -176,9 +176,9 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       "STORED AS carbondata")
     sql(
       s"""
-         | CREATE INDEX lucene_datamap ON TABLE datamap_main
-         | USING 'lucene'
-         | properties('INDEX_COLUMNS'='country,name')
+         | CREATE INDEX lucene_datamap
+         | ON TABLE datamap_main (country,name)
+         | AS 'lucene'
       """.stripMargin)
     sql("insert into datamap_main select 1,'abc','aa'")
     sql("insert into datamap_main select 2,'def','ab'")

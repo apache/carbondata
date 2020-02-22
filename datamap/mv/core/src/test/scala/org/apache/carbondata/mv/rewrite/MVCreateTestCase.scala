@@ -885,7 +885,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE INDEX bloom1 ON TABLE fact_table1
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties('INDEX_COLUMNS'='empname,deptname', 'BLOOM_SIZE'='640000')
       """.stripMargin)
     intercept[NoSuchIndexException] {
@@ -914,7 +914,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE INDEX dm_stream_bloom ON TABLE fact_streaming_table1
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties('INDEX_COLUMNS'='empname,deptname', 'BLOOM_SIZE'='640000')
       """.stripMargin)
 

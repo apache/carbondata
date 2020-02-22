@@ -471,10 +471,9 @@ public final class CarbonCommonConstants {
   public static final String LOCAL_DICTIONARY_EXCLUDE = "local_dictionary_exclude";
 
   /**
-   * DMPROPERTY for Index Index, like lucene, bloomfilter Index,
-   * to indicate a list of column name to be indexed
+   * Internal property to store for index column names
    */
-  public static final String INDEX_COLUMNS = "INDEX_COLUMNS";
+  public static final String INDEX_COLUMNS = "_INDEX_COLUMNS";
 
   /**
    * Index handler table property. It allows user to create a new sort column from the set of

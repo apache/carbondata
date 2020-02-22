@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -98,7 +98,7 @@ public abstract class DataMapProvider {
    * This is called when user creates datamap, for example "CREATE DATAMAP dm ON TABLE mainTable"
    * Implementation should initialize metadata for datamap, like creating table
    */
-  public abstract void initMeta(String ctasSqlStatement) throws MalformedDataMapCommandException,
+  public abstract void initMeta(String ctasSqlStatement) throws MalformedIndexCommandException,
       IOException;
 
   /**

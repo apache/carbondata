@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
@@ -947,18 +947,18 @@ public class CarbonTable implements Serializable, Writable {
    * Get all index columns specified by dataMapSchema
    */
   public List<CarbonColumn> getIndexedColumns(DataMapSchema dataMapSchema)
-      throws MalformedDataMapCommandException {
+      throws MalformedIndexCommandException {
     String[] columns = dataMapSchema.getIndexColumns();
     List<CarbonColumn> indexColumn = new ArrayList<>(columns.length);
     for (String column : columns) {
       CarbonColumn carbonColumn = getColumnByName(column.trim().toLowerCase());
       if (carbonColumn == null) {
-        throw new MalformedDataMapCommandException(String
+        throw new MalformedIndexCommandException(String
             .format("column '%s' does not exist in table. Please check create index statement.",
                 column));
       }
       if (carbonColumn.getColName().isEmpty()) {
-        throw new MalformedDataMapCommandException(
+        throw new MalformedIndexCommandException(
             CarbonCommonConstants.INDEX_COLUMNS + " contains invalid column name");
       }
       indexColumn.add(carbonColumn);

@@ -210,7 +210,7 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     sql(
       s"""
          | CREATE INDEX dm ON TABLE datamap_test
-         | USING 'lucene'
+         | AS 'lucene'
          | properties('INDEX_COLUMNS'='Name , cIty')
       """.stripMargin)
     val ex = intercept[ProcessMetaDataException] {
@@ -231,8 +231,8 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     sql(
       s"""
          | CREATE INDEX dm3 ON TABLE bloomtable
-         | USING 'bloomfilter'
-         | properties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
     val ex = intercept[ProcessMetaDataException] {
       sql("alter table bloomtable change city nation string")

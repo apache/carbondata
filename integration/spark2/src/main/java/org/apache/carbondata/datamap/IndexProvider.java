@@ -24,7 +24,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.core.datamap.DataMapProvider;
 import org.apache.carbondata.core.datamap.DataMapRegistry;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
@@ -48,7 +48,7 @@ public class IndexProvider extends DataMapProvider {
   private List<CarbonColumn> indexedColumns;
 
   public IndexProvider(CarbonTable table, DataMapSchema schema, SparkSession sparkSession)
-      throws MalformedDataMapCommandException {
+      throws MalformedIndexCommandException {
     super(table, schema);
     this.sparkSession = sparkSession;
     this.indexFactory = createDataMapFactory();
@@ -62,11 +62,11 @@ public class IndexProvider extends DataMapProvider {
 
   @Override
   public void initMeta(String ctasSqlStatement)
-      throws MalformedDataMapCommandException, IOException {
+      throws MalformedIndexCommandException, IOException {
     CarbonTable mainTable = getMainTable();
     DataMapSchema dataMapSchema = getDataMapSchema();
     if (mainTable == null) {
-      throw new MalformedDataMapCommandException("Parent table is required to create index");
+      throw new MalformedIndexCommandException("Parent table is required to create index");
     }
     ArrayList<RelationIdentifier> relationIdentifiers = new ArrayList<>();
     RelationIdentifier relationIdentifier =
@@ -104,7 +104,7 @@ public class IndexProvider extends DataMapProvider {
   }
 
   private IndexFactory<? extends Index> createDataMapFactory()
-      throws MalformedDataMapCommandException {
+      throws MalformedIndexCommandException {
     CarbonTable mainTable = getMainTable();
     DataMapSchema dataMapSchema = getDataMapSchema();
     IndexFactory<? extends Index> indexFactory;

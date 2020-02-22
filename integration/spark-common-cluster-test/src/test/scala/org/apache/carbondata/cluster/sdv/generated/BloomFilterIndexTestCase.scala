@@ -105,7 +105,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX $indexName ON TABLE $tableName
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='booleanField, shortField, intField, bigintField, doubleField, stringField, timestampField, decimalField, dateField, charField, floatField, stringDictField, stringSortField, stringLocalDictField, longStringField',
          | 'BLOOM_SIZE'='6400',
@@ -161,7 +161,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX $dataMapName ON TABLE $tableName
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='booleanField, shortField, intField, bigintField, doubleField, stringField, timestampField, decimalField, dateField, charField, floatField, stringDictField, stringSortField, stringLocalDictField, longStringField',
          | 'BLOOM_SIZE'='6400',
@@ -237,7 +237,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX $dataMapName1 ON TABLE $tableName1
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='booleanField, shortField, intField, bigintField, doubleField, stringField, timestampField, decimalField, dateField, charField, floatField, stringDictField, stringSortField, stringLocalDictField, longStringField'
          | )
@@ -246,7 +246,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX ${dataMapName2Prefix}0 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='booleanField'
          | )
@@ -254,7 +254,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX ${dataMapName2Prefix}1 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='shortField'
          | )
@@ -262,7 +262,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX ${dataMapName2Prefix}2 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='intField'
          | )
@@ -270,7 +270,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX ${dataMapName2Prefix}3 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='bigintField'
          | )
@@ -278,7 +278,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX ${dataMapName2Prefix}4 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='doubleField'
          | )
@@ -286,7 +286,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX ${dataMapName2Prefix}5 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='stringField'
          | )
@@ -294,7 +294,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX ${dataMapName2Prefix}6 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='timestampField'
          | )
@@ -302,7 +302,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX ${dataMapName2Prefix}7 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='decimalField'
          | )
@@ -310,7 +310,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX ${dataMapName2Prefix}8 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='dateField'
          | )
@@ -318,7 +318,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX ${dataMapName2Prefix}9 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='charField'
          | )
@@ -326,7 +326,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX ${dataMapName2Prefix}10 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='floatField'
          | )
@@ -334,7 +334,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX ${dataMapName2Prefix}11 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='stringDictField'
          | )
@@ -342,7 +342,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX ${dataMapName2Prefix}12 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='stringSortField'
          | )
@@ -350,7 +350,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX ${dataMapName2Prefix}13 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='stringLocalDictField'
          | )
@@ -358,7 +358,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(
       s"""
          | CREATE INDEX ${dataMapName2Prefix}14 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | AS 'bloomfilter'
          | properties(
          | 'INDEX_COLUMNS'='longStringField'
          | )

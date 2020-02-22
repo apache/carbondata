@@ -28,7 +28,7 @@ Lucene DataMap can be created using following DDL
   ```
   CREATE DATAMAP [IF NOT EXISTS] datamap_name
   ON TABLE main_table
-  USING 'lucene'
+  AS 'lucene'
   DMPROPERTIES ('index_columns'='city, name', ...)
   ```
 
@@ -67,7 +67,7 @@ It will show all DataMaps created on main table.
   ```
   CREATE DATAMAP dm
   ON TABLE datamap_test
-  USING 'lucene'
+  AS 'lucene'
   DMPROPERTIES ('INDEX_COLUMNS' = 'name, country',)
   ```
 

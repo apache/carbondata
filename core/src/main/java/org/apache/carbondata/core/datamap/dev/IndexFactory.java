@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.cgindex.CoarseGrainIndex;
 import org.apache.carbondata.core.datamap.dev.expr.IndexDistributableWrapper;
@@ -191,14 +191,14 @@ public abstract class IndexFactory<T extends Index> {
    * 3. INDEX_COLUMNS can't contains duplicate same columns
    * 4. INDEX_COLUMNS should be exists in table columns
    */
-  public void validate() throws MalformedDataMapCommandException {
+  public void validate() throws MalformedIndexCommandException {
     List<CarbonColumn> indexColumns = carbonTable.getIndexedColumns(dataMapSchema);
     Set<String> unique = new HashSet<>();
     for (CarbonColumn indexColumn : indexColumns) {
       unique.add(indexColumn.getColName());
     }
     if (unique.size() != indexColumns.size()) {
-      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " has duplicate column");
+      throw new MalformedIndexCommandException("index column list has duplicate column");
     }
   }
 

@@ -21,21 +21,21 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 
 /**
- * This exception will be thrown when Datamap related SQL statement is invalid
+ * This exception will be thrown when Index related SQL statement is invalid
  */
 @InterfaceAudience.User
 @InterfaceStability.Stable
-public class MalformedDataMapCommandException extends MalformedCarbonCommandException {
+public class MalformedIndexCommandException extends MalformedCarbonCommandException {
   /**
    * default serial version ID.
    */
   private static final long serialVersionUID = 1L;
 
-  public MalformedDataMapCommandException(String msg) {
+  public MalformedIndexCommandException(String msg) {
     super(msg);
   }
 
-  public MalformedDataMapCommandException(String msg, Throwable e) {
+  public MalformedIndexCommandException(String msg, Throwable e) {
     super(msg, e);
   }
 }
