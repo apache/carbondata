@@ -405,8 +405,8 @@ public class SegmentUpdateStatusManager {
       String firstPart = deltaFilePathName.substring(0, deltaFilePathName.lastIndexOf('.'));
       String blockName =
           firstPart.substring(0, firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN));
-      long timestamp = Long.parseLong(firstPart
-          .substring(firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1, firstPart.length()));
+      long timestamp =
+          Long.parseLong(CarbonTablePath.DataFileUtil.getTimeStampFromFileName(deltaFilePathName));
       // It compares whether this delta file belongs to this block or not. And also checks that
       // corresponding delta file is valid or not by considering its load start and end time with
       // the file timestamp.
@@ -450,8 +450,8 @@ public class SegmentUpdateStatusManager {
                 && pathName.getSize() > 0) {
               String firstPart = fileName.substring(0, fileName.indexOf('.'));
               String blkName = firstPart.substring(0, firstPart.lastIndexOf("-"));
-              long timestamp = Long.parseLong(
-                  firstPart.substring(firstPart.lastIndexOf("-") + 1, firstPart.length()));
+              long timestamp =
+                  Long.parseLong(CarbonTablePath.DataFileUtil.getTimeStampFromFileName(fileName));
               if (blockName.equals(blkName) && (Long.compare(timestamp, deltaEndTimeStamp) <= 0)
                   && (Long.compare(timestamp, deltaStartTimestamp) >= 0)) {
                 return true;
@@ -503,11 +503,8 @@ public class SegmentUpdateStatusManager {
 
       String fileName = eachFile.getName();
       if (fileName.endsWith(fileExtension)) {
-        String firstPart = fileName.substring(0, fileName.lastIndexOf('.'));
-
-        long timestamp = Long.parseLong(firstPart
-            .substring(firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1,
-                firstPart.length()));
+        long timestamp =
+            Long.parseLong(CarbonTablePath.DataFileUtil.getTimeStampFromFileName(fileName));
 
         if (excludeOriginalFact) {
           if (Long.compare(factTimeStampFinal, timestamp) == 0) {

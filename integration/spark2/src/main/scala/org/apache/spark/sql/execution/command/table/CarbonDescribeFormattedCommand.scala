@@ -141,11 +141,6 @@ private[sql] case class CarbonDescribeFormattedCommand(
         Strings.formatSize(
           tblProps.getOrElse(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
             CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT).toFloat), ""),
-      ("Data File Compressor ", tblProps
-        .getOrElse(CarbonCommonConstants.COMPRESSOR,
-          CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.COMPRESSOR,
-          CarbonCommonConstants.DEFAULT_COMPRESSOR)), ""),
       //////////////////////////////////////////////////////////////////////////////
       //  Index Information
       //////////////////////////////////////////////////////////////////////////////

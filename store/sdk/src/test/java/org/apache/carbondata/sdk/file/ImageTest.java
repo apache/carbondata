@@ -1066,7 +1066,7 @@ public class ImageTest extends TestCase {
         .builder()
         .withFileLists(fileLists)
         .getSplits(true);
-    Assert.assertTrue(5 == splits.length);
+    Assert.assertEquals(5, splits.length);
     for (int j = 0; j < splits.length; j++) {
       ArrowCarbonReader.builder(splits[j]).build();
     }

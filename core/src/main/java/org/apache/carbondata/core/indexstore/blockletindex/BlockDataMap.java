@@ -396,7 +396,8 @@ public class BlockDataMap extends CoarseGrainDataMap
     row.setInt((int) fileFooter.getNumberOfRows(), ordinal++);
     // add file name
     byte[] filePathBytes =
-        getFileNameFromPath(filePath).getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+        CarbonTablePath.getCarbonDataFileName(filePath)
+            .getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
     row.setByteArray(filePathBytes, ordinal++);
     // add version number
     row.setShort(fileFooter.getVersionId().number(), ordinal++);
@@ -430,10 +431,6 @@ public class BlockDataMap extends CoarseGrainDataMap
       minMaxFlagRow.setBoolean(minMaxFlag[i], flagOrdinal++);
     }
     row.setRow(minMaxFlagRow, ordinal);
-  }
-
-  protected String getFileNameFromPath(String filePath) {
-    return CarbonTablePath.getCarbonDataFileName(filePath);
   }
 
   protected String getFilePath() {

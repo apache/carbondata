@@ -474,7 +474,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
           future.get();
         } catch (ExecutionException e) {
           LOG.error("Error while loading data", e);
-          throw new InterruptedException(e.getMessage());
+          throw new RuntimeException(e);
         } finally {
           executorService.shutdownNow();
           dataLoadExecutor.close();

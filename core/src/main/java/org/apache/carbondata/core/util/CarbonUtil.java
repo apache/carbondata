@@ -1586,17 +1586,16 @@ public final class CarbonUtil {
       UpdateVO invalidBlockVOForSegmentId, SegmentUpdateStatusManager updateStatusMngr) {
 
     if (!updateStatusMngr.isBlockValid(segmentId,
-        CarbonTablePath.getCarbonDataFileName(filePath) + CarbonTablePath
-            .getCarbonDataExtension())) {
+        CarbonTablePath.getCarbonDataFileName(filePath) +
+            CarbonTablePath.getCarbonDataExtension())) {
       return true;
     }
     // in case of compaction over si table the factTimeStamp will be null for the
     // main table's compacted segments in that case no need to validate the block
     if (null != invalidBlockVOForSegmentId &&
         null != invalidBlockVOForSegmentId.getFactTimestamp()) {
-      Long blockTimeStamp = Long.parseLong(filePath
-          .substring(filePath.lastIndexOf('-') + 1,
-              filePath.lastIndexOf('.')));
+      long blockTimeStamp =
+          Long.parseLong(CarbonTablePath.DataFileUtil.getTimeStampFromFileName(filePath));
       if ((blockTimeStamp > invalidBlockVOForSegmentId.getFactTimestamp() && (
           invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp() != null
               && blockTimeStamp < invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp()))) {

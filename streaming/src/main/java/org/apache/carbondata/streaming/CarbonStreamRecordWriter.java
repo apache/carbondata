@@ -139,7 +139,9 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
 
     segmentDir = CarbonTablePath.getSegmentPath(
         carbonTable.getAbsoluteTableIdentifier().getTablePath(), segmentId);
-    fileName = CarbonTablePath.getCarbonDataFileName(0, taskNo + "", 0, 0, "0", segmentId);
+    fileName = CarbonTablePath.getCarbonDataFileName(
+        0, taskNo + "", 0, 0, "0",
+        segmentId, CompressorFactory.NativeSupportedCompressor.SNAPPY.getName());
 
     // initialize metadata
     isNoDictionaryDimensionColumn =
@@ -186,7 +188,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       compressorName = carbonTable.getTableInfo().getFactTable().getTableProperties().get(
           CarbonCommonConstants.COMPRESSOR);
       if (null == compressorName) {
-        compressorName = CompressorFactory.getInstance().getCompressor().getName();
+        compressorName = CompressorFactory.NativeSupportedCompressor.SNAPPY.getName();
       }
       writeFileHeader();
     }

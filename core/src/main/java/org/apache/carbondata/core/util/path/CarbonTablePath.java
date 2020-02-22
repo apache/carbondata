@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.util.path;
 
 import java.io.File;
+import java.util.Objects;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -25,6 +26,9 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.DASH;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.POINT;
 
 import org.apache.hadoop.conf.Configuration;
 
@@ -35,8 +39,6 @@ public class CarbonTablePath {
 
   private static final String METADATA_DIR = "Metadata";
   private static final String DICTIONARY_EXT = ".dict";
-  private static final String DICTIONARY_META_EXT = ".dictmeta";
-  private static final String SORT_INDEX_EXT = ".sortindex";
   public static final String SCHEMA_FILE = "schema";
   private static final String FACT_DIR = "Fact";
   private static final String SEGMENT_PREFIX = "Segment_";
@@ -230,7 +232,7 @@ public class CarbonTablePath {
         if (bucketNumber.equals("-1")) {
           return file.getName().startsWith(taskId) && file.getName().endsWith(INDEX_FILE_EXT);
         }
-        return file.getName().startsWith(taskId + "-" + bucketNumber) && file.getName()
+        return file.getName().startsWith(taskId + DASH + bucketNumber) && file.getName()
             .endsWith(INDEX_FILE_EXT);
       }
     });
@@ -270,10 +272,21 @@ public class CarbonTablePath {
   private static String getCarbonIndexFileName(String taskNo, int bucketNumber,
       String factUpdatedtimeStamp, String segmentNo) {
     if (bucketNumber == -1) {
-      return taskNo + "-" + segmentNo + "-" + factUpdatedtimeStamp + INDEX_FILE_EXT;
+      return new StringBuilder()
+          .append(taskNo).append(DASH)
+          .append(segmentNo).append(DASH)
+          .append(factUpdatedtimeStamp)
+          .append(INDEX_FILE_EXT)
+          .toString();
+    } else {
+      return new StringBuilder()
+          .append(taskNo).append(DASH)
+          .append(bucketNumber).append(DASH)
+          .append(segmentNo).append(DASH)
+          .append(factUpdatedtimeStamp)
+          .append(INDEX_FILE_EXT)
+          .toString();
     }
-    return taskNo + "-" + bucketNumber + "-" + segmentNo + "-" + factUpdatedtimeStamp
-        + INDEX_FILE_EXT;
   }
 
   /**
@@ -285,22 +298,38 @@ public class CarbonTablePath {
   }
 
   /**
-   * Gets data file name only with out path
-   *
-   * @param filePartNo          data file part number
-   * @param taskNo              task identifier
-   * @param factUpdateTimeStamp unique identifier to identify an update
-   * @return gets data file name only with out path
+   * Gets data file name only, without parent path
    */
   public static String getCarbonDataFileName(Integer filePartNo, String taskNo, int bucketNumber,
-      int batchNo, String factUpdateTimeStamp, String segmentNo) {
-    return DATA_PART_PREFIX + filePartNo + "-" + taskNo + BATCH_PREFIX + batchNo + "-"
-        + bucketNumber + "-" + segmentNo + "-" + factUpdateTimeStamp + CARBON_DATA_EXT;
+      int batchNo, String factUpdateTimeStamp, String segmentNo, String compressor) {
+    Objects.requireNonNull(filePartNo);
+    Objects.requireNonNull(taskNo);
+    Objects.requireNonNull(factUpdateTimeStamp);
+    Objects.requireNonNull(compressor);
+
+    // Start from CarbonData 2.0, the data file name patten is:
+    // partNo-taskNo-batchNo-bucketNo-segmentNo-timestamp.compressor.carbondata
+    // For example:
+    // part-0-0_batchno0-0-0-1580982686749.zstd.carbondata
+    //
+    // If the compressor name is missing, the file is compressed by snappy, which is
+    // the default compressor in CarbonData 1.x
+
+    return new StringBuilder()
+        .append(DATA_PART_PREFIX)
+        .append(filePartNo).append(DASH)
+        .append(taskNo).append(BATCH_PREFIX)
+        .append(batchNo).append(DASH)
+        .append(bucketNumber).append(DASH)
+        .append(segmentNo).append(DASH)
+        .append(factUpdateTimeStamp).append(POINT)
+        .append(compressor).append(CARBON_DATA_EXT)
+        .toString();
   }
 
   public static String getShardName(String taskNo, int bucketNumber, int batchNo,
       String factUpdateTimeStamp, String segmentNo) {
-    return taskNo + BATCH_PREFIX + batchNo + "-" + bucketNumber + "-" + segmentNo + "-"
+    return taskNo + BATCH_PREFIX + batchNo + DASH + bucketNumber + DASH + segmentNo + DASH
         + factUpdateTimeStamp;
   }
 
@@ -409,11 +438,10 @@ public class CarbonTablePath {
      * @return
      */
     public static Boolean compareCarbonFileTimeStamp(String fileName, Long timestamp) {
-      int lastIndexOfHyphen = fileName.lastIndexOf("-");
-      int lastIndexOfDot = fileName.lastIndexOf(".");
-      if (lastIndexOfHyphen > 0 && lastIndexOfDot > 0) {
-        return fileName.substring(fileName.lastIndexOf("-") + 1, fileName.lastIndexOf("."))
-            .equals(timestamp.toString());
+      int startIndex = fileName.lastIndexOf(DASH);
+      int endIndex = fileName.indexOf(CarbonCommonConstants.POINT, startIndex);
+      if (startIndex > 0 && endIndex > 0) {
+        return fileName.substring(startIndex + 1, endIndex).equals(timestamp.toString());
       }
       return false;
     }
@@ -422,8 +450,7 @@ public class CarbonTablePath {
      * Return the timestamp present in the delete delta file.
      */
     public static String getTimeStampFromDeleteDeltaFile(String fileName) {
-      return fileName.substring(fileName.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1,
-          fileName.lastIndexOf("."));
+      return DataFileUtil.getTimeStampFromFileName(fileName);
     }
 
     /**
@@ -441,12 +468,12 @@ public class CarbonTablePath {
       // Get the file name from path
       String fileName = getFileName(carbonFilePath);
       // + 1 for size of "-"
-      int firstDashPos = fileName.indexOf("-");
-      int secondDash = fileName.indexOf("-", firstDashPos + 1);
-      int startIndex = fileName.indexOf("-", secondDash + 1) + 1;
-      int endIndex = fileName.indexOf("-", startIndex);
+      int firstDashPos = fileName.indexOf(DASH);
+      int secondDash = fileName.indexOf(DASH, firstDashPos + 1);
+      int startIndex = fileName.indexOf(DASH, secondDash + 1) + 1;
+      int endIndex = fileName.indexOf(DASH, startIndex);
       // to support backward compatibility
-      if (startIndex == -1 || endIndex == -1) {
+      if (endIndex == -1) {
         return "-1";
       }
       return fileName.substring(startIndex, endIndex);
@@ -459,8 +486,8 @@ public class CarbonTablePath {
       // Get the file name from path
       String fileName = getFileName(carbonDataFileName);
       // + 1 for size of "-"
-      int startIndex = fileName.indexOf("-") + 1;
-      int endIndex = fileName.indexOf("-", startIndex);
+      int startIndex = fileName.indexOf(DASH) + 1;
+      int endIndex = fileName.indexOf(DASH, startIndex);
       return fileName.substring(startIndex, endIndex);
     }
 
@@ -471,9 +498,9 @@ public class CarbonTablePath {
       // Get the file name from path
       String fileName = getFileName(carbonDataFileName);
       // + 1 for size of "-"
-      int firstDashPos = fileName.indexOf("-");
-      int startIndex = fileName.indexOf("-", firstDashPos + 1) + 1;
-      int endIndex = fileName.indexOf("-", startIndex);
+      int firstDashPos = fileName.indexOf(DASH);
+      int startIndex = fileName.indexOf(DASH, firstDashPos + 1) + 1;
+      int endIndex = fileName.indexOf(DASH, startIndex);
       return fileName.substring(startIndex, endIndex);
     }
 
@@ -491,13 +518,13 @@ public class CarbonTablePath {
       // Get the file name from path
       String fileName = getFileName(carbonDataFileName);
       // + 1 for size of "-"
-      int firstDashPos = fileName.indexOf("-");
-      int startIndex1 = fileName.indexOf("-", firstDashPos + 1) + 1;
-      int endIndex1 = fileName.indexOf("-", startIndex1);
-      int startIndex = fileName.indexOf("-", endIndex1 + 1);
+      int firstDashPos = fileName.indexOf(DASH);
+      int startIndex1 = fileName.indexOf(DASH, firstDashPos + 1) + 1;
+      int endIndex1 = fileName.indexOf(DASH, startIndex1);
+      int startIndex = fileName.indexOf(DASH, endIndex1 + 1);
       if (startIndex > -1) {
         startIndex += 1;
-        int endIndex = fileName.indexOf("-", startIndex);
+        int endIndex = fileName.indexOf(DASH, startIndex);
         if (endIndex == -1) {
           return null;
         }
@@ -546,7 +573,7 @@ public class CarbonTablePath {
           CarbonCommonConstants.FILE_SEPARATOR, endIndex - 1) + 1;
       String segmentDirStr = dataFileAbsolutePath.substring(startIndex, endIndex);
       //identify id in segment_<id>
-      String[] segmentDirSplits = segmentDirStr.split("_");
+      String[] segmentDirSplits = segmentDirStr.split(CarbonCommonConstants.UNDERSCORE);
       try {
         if (segmentDirSplits.length == 2) {
           return segmentDirSplits[1];
@@ -559,7 +586,7 @@ public class CarbonTablePath {
   }
 
   /**
-   * Return the carbondata file name
+   * Return the carbondata file name without extension name
    */
   public static String getCarbonDataFileName(String carbonDataFilePath) {
     return carbonDataFilePath.substring(
@@ -659,15 +686,15 @@ public class CarbonTablePath {
     String segmentNoStr = DataFileUtil.getSegmentNo(actualBlockName);
     StringBuilder shardName = new StringBuilder();
     if (null != segmentNoStr) {
-      shardName.append(DataFileUtil.getTaskNo(actualBlockName)).append("-");
-      shardName.append(DataFileUtil.getBucketNo(actualBlockName)).append("-");
-      shardName.append(segmentNoStr).append("-");
+      shardName.append(DataFileUtil.getTaskNo(actualBlockName)).append(DASH);
+      shardName.append(DataFileUtil.getBucketNo(actualBlockName)).append(DASH);
+      shardName.append(segmentNoStr).append(DASH);
       shardName.append(DataFileUtil.getTimeStampFromFileName(actualBlockName));
       return shardName.toString();
     } else {
       // data before version 1.4 does not have SegmentNo in carbondata filename
-      shardName.append(DataFileUtil.getTaskNo(actualBlockName)).append("-");
-      shardName.append(DataFileUtil.getBucketNo(actualBlockName)).append("-");
+      shardName.append(DataFileUtil.getTaskNo(actualBlockName)).append(DASH);
+      shardName.append(DataFileUtil.getBucketNo(actualBlockName)).append(DASH);
       shardName.append(DataFileUtil.getTimeStampFromFileName(actualBlockName));
       return shardName.toString();
     }
