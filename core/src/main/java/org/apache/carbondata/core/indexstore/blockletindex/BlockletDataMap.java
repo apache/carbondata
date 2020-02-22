@@ -41,6 +41,7 @@ import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * Datamap implementation for blocklet.
@@ -168,7 +169,8 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
       row.setInt(blockletInfo.getNumberOfRows(), ordinal++);
       // add file name
       byte[] filePathBytes =
-          getFileNameFromPath(filePath).getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+          CarbonTablePath.getCarbonDataFileName(filePath)
+              .getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
       row.setByteArray(filePathBytes, ordinal++);
       // add version number
       row.setShort(fileFooter.getVersionId().number(), ordinal++);

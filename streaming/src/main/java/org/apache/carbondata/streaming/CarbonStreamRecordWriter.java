@@ -26,7 +26,6 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
@@ -38,6 +37,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonHeaderReader;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -139,7 +139,9 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
 
     segmentDir = CarbonTablePath.getSegmentPath(
         carbonTable.getAbsoluteTableIdentifier().getTablePath(), segmentId);
-    fileName = CarbonTablePath.getCarbonDataFileName(0, taskNo + "", 0, 0, "0", segmentId);
+    fileName = CarbonTablePath.getCarbonDataFileName(
+        0, taskNo + "", 0, 0, "0",
+        segmentId, CarbonProperties.getInstance().getDefaultCompressor());
 
     // initialize metadata
     isNoDictionaryDimensionColumn =
@@ -178,7 +180,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       if (header.isSetCompressor_name()) {
         compressorName = header.getCompressor_name();
       } else {
-        compressorName = CompressorFactory.NativeSupportedCompressor.SNAPPY.getName();
+        compressorName = CarbonProperties.getInstance().getDefaultCompressor();
       }
     } else {
       // IF the file is not existed, use the create api
@@ -186,7 +188,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       compressorName = carbonTable.getTableInfo().getFactTable().getTableProperties().get(
           CarbonCommonConstants.COMPRESSOR);
       if (null == compressorName) {
-        compressorName = CompressorFactory.getInstance().getCompressor().getName();
+        compressorName = CarbonProperties.getInstance().getDefaultCompressor();
       }
       writeFileHeader();
     }

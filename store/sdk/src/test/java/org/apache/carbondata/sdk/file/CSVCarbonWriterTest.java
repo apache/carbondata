@@ -89,6 +89,31 @@ public class CSVCarbonWriterTest {
     FileUtils.deleteDirectory(new File(path));
   }
 
+  // [CARBONDATA-3688]: compressor name is added in data file name
+  @Test
+  public void testFileName() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(new Schema(fields), path);
+
+    File[] dataFiles = new File(path).listFiles(new FileFilter() {
+      @Override
+      public boolean accept(File pathname) {
+        return pathname.getName().endsWith(
+            CarbonCommonConstants.DEFAULT_COMPRESSOR + CarbonCommonConstants.FACT_FILE_EXT);
+      }
+    });
+
+    Assert.assertTrue(dataFiles.length > 0);
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
   @Test
   public void testWriteFilesJsonSchema() throws IOException {
     String path = "./testWriteFilesJsonSchema";

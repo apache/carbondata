@@ -146,8 +146,9 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         seg = new Segment(load.getLoadName(), null, readCommittedScope);
         if (fileLists != null) {
           for (int i = 0; i < fileLists.size(); i++) {
-            if (fileLists.get(i).toString().endsWith(seg.getSegmentNo()
-                + CarbonTablePath.CARBON_DATA_EXT)) {
+            String timestamp =
+                CarbonTablePath.DataFileUtil.getTimeStampFromFileName(fileLists.get(i).toString());
+            if (timestamp.equals(seg.getSegmentNo())) {
               externalTableSegments.add(seg);
               break;
             }

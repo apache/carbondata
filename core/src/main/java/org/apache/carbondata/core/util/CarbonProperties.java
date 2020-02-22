@@ -1962,4 +1962,8 @@ public final class CarbonProperties {
       return badRecordHandling.equalsIgnoreCase("true");
     }
   }
+
+  public String getDefaultCompressor() {
+    return getProperty(CarbonCommonConstants.COMPRESSOR, CarbonCommonConstants.DEFAULT_COMPRESSOR);
+  }
 }
