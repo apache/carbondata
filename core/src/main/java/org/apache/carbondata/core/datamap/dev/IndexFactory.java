@@ -40,8 +40,6 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.events.Event;
 
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_COLUMNS;
-
 /**
  * Factory class for creating the index.
  */

@@ -159,38 +159,11 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         CarbonShowStreamsCommand(tableIdent)
     }
 
-//  /**
-//   * CREATE INDEX IF NOT EXISTS index_name
-//   * ON TABLE table_name
-//   * USING 'IndexName'
-//   * [WITH DEFERRED REFRESH]
-//   * PROPERTIES('KEY'='VALUE')
-//   */
-//  protected lazy val createIndex: Parser[LogicalPlan] =
-//    CREATE ~> INDEX ~> opt(IF ~> NOT ~> EXISTS) ~ ident ~
-//    ontable ~
-//    (USING ~> stringLit) ~
-//    opt(WITH ~> DEFERRED ~> REFRESH) ~
-//    (PROPERTIES ~> "(" ~> repsep(options, ",") <~ ")").? <~ opt(";") ^^ {
-//      case ifnotexists ~ indexName ~ tableIdent ~ indexProviderName ~ deferred ~ props =>
-//        val map = props.getOrElse(List[(String, String)]()).toMap[String, String]
-//        CreateIndexCommand(indexName, tableIdent, indexProviderName, map,
-//          ifnotexists.isDefined, deferred.isDefined)
-//    }
 
   protected lazy val ontable: Parser[TableIdentifier] =
     ON ~> TABLE ~>  (ident <~ ".").? ~ ident ^^ {
       case dbName ~ tableName =>
         TableIdentifier(tableName, dbName)
-    }
-
-  /**
-   * DROP INDEX IF EXISTS index_name ON TABLE table_name
-   */
-  protected lazy val dropIndex: Parser[LogicalPlan] =
-    DROP ~> INDEX ~> opt(IF ~> EXISTS) ~ ident ~ ontable <~ opt(";")  ^^ {
-      case ifexists ~ indexName ~ tableIdent =>
-        CarbonDropIndexCommand(indexName, ifexists.isDefined, tableIdent)
     }
 
   /**

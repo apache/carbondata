@@ -28,8 +28,8 @@ import org.apache.spark.sql.hive.{CarbonHiveMetadataUtil, CarbonRelation}
 import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
 import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
 
-import org.apache.carbondata.common.exceptions.sql.NoSuchIndexException
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -45,14 +45,19 @@ private[sql] case class DropIndexCommand(
   extends RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
-    try {
+    val parentTable = try {
+      CarbonEnv.getCarbonTable(dbNameOp, parentTableName)(sparkSession)
+    } catch {
+      case e: NoSuchTableException =>
+        if (!ifExistsSet) throw e
+        else return Seq.empty
+    }
+    if (DataMapStoreManager.getInstance().isIndexExist(parentTable.getTableId, indexName)) {
       CarbonDropIndexCommand(indexName, ifExistsSet, TableIdentifier(parentTableName, dbNameOp))
         .run(sparkSession)
-    } catch {
-      case e: NoSuchIndexException =>
-      case t: Throwable => throw t
+    } else {
+      dropIndexTable(sparkSession)
     }
-    dropIndexTable(sparkSession)
     Seq.empty
   }
 
