@@ -80,15 +80,15 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
-    datamapManagement | alterTableFinishStreaming | stream | cli |
-    cacheManagement | alterDataMap | insertStageData | indexCommands
+    indexManagement | alterTableFinishStreaming | stream | cli |
+    cacheManagement | alterDataMap | insertStageData | indexTableCommands
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | deleteStage | cleanFiles | addLoad
 
   protected lazy val restructure: Parser[LogicalPlan] = alterTableDropColumn
 
-  protected lazy val datamapManagement: Parser[LogicalPlan] =
+  protected lazy val indexManagement: Parser[LogicalPlan] =
     createIndex | dropIndex | showIndex | refreshDatamapIndex
 
   protected lazy val stream: Parser[LogicalPlan] =
@@ -609,7 +609,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         CarbonAlterTableDropColumnCommand(alterTableDropColumnModel)
     }
 
-  protected lazy val indexCommands: Parser[LogicalPlan] =
+  protected lazy val indexTableCommands: Parser[LogicalPlan] =
     showIndexes | createIndexTable | dropIndexTable | registerIndexes | refreshIndex
 
   protected lazy val createIndexTable: Parser[LogicalPlan] =

@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 
-import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException
+import org.apache.carbondata.common.exceptions.sql.NoSuchIndexException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
@@ -109,19 +109,16 @@ case class CarbonDropIndexCommand(
         dropSchemaFromSystemFolder(sparkSession)
         return Seq.empty
       }
-
-      if (!ifExistsSet) {
-        throw new NoSuchDataMapException(indexName)
-      }
     } catch {
-      case e: NoSuchDataMapException =>
-        throw e
+      case e: NoSuchIndexException =>
+        if (!ifExistsSet) {
+          throw e
+        }
       case ex: Exception =>
         LOGGER.error(s"Dropping index $indexName failed", ex)
         throwMetadataException(dbName, tableName,
           s"Dropping index $indexName failed: ${ ex.getMessage }")
-    }
-    finally {
+    } finally {
       if (carbonLocks.nonEmpty) {
         val unlocked = carbonLocks.forall(_.unlock())
         if (unlocked) {

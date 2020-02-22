@@ -23,7 +23,7 @@ import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException
+import org.apache.carbondata.common.exceptions.sql.{NoSuchIndexException, NoSuchMaterializedViewException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
@@ -880,6 +880,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test drop wrong index name")  {
     sql("drop materialized view if exists mv1")
+    sql("drop index if exists bloom1 on table fact_table1")
     sql("create materialized view mv1 as select empname, designation from fact_table1")
     sql(
       s"""
@@ -887,14 +888,14 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
          | USING 'bloomfilter'
          | properties('INDEX_COLUMNS'='empname,deptname', 'BLOOM_SIZE'='640000')
       """.stripMargin)
-    intercept[NoSuchDataMapException] {
+    intercept[NoSuchIndexException] {
       sql("drop index mv1 on table fact_table1")
     }
-    intercept[NoSuchDataMapException] {
+    intercept[NoSuchMaterializedViewException] {
       sql("drop materialized view bloom1")
     }
     sql("drop materialized view mv1")
-    sql("drop index bloom1")
+    sql("drop index bloom1 on table fact_table1")
   }
 
   test("test create materialized view with streaming table")  {

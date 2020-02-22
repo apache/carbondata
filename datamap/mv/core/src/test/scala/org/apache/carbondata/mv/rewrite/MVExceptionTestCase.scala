@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.mv.rewrite
 
+import org.apache.spark.sql.AnalysisException
+
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException, MalformedMaterializedViewException}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.test.util.QueryTest
@@ -28,10 +30,10 @@ class MVExceptionTestCase  extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test mv no base table") {
-    val ex = intercept[NoSuchTableException] {
+    val ex = intercept[AnalysisException] {
       sql("create materialized view main_table_mv as select sum(age),name from main_table_error group by name")
     }
-    assertResult("Table or view 'main_table_error' not found in database 'default';")(ex.getMessage())
+    assertResult("Table or view not found: main_table_error; line 1 pos 39")(ex.getMessage())
   }
 
   test("test mv reduplicate mv table") {
