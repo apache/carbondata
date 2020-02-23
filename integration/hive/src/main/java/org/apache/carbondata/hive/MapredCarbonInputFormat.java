@@ -43,7 +43,7 @@ import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.InvalidPathException;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hive.ql.exec.Utilities;
+import org.apache.hadoop.hive.ql.exec.SerializationUtilities;
 import org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;
 import org.apache.hadoop.hive.ql.plan.ExprNodeGenericFuncDesc;
 import org.apache.hadoop.hive.ql.plan.TableScanDesc;
@@ -142,7 +142,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
         return;
       }
       ExprNodeGenericFuncDesc exprNodeGenericFuncDesc =
-          Utilities.deserializeObject(expr, ExprNodeGenericFuncDesc.class);
+          SerializationUtilities.deserializeObject(expr, ExprNodeGenericFuncDesc.class);
       LOGGER.debug("hive expression:" + exprNodeGenericFuncDesc.getGenericUDF());
       LOGGER.debug("hive expression string:" + exprNodeGenericFuncDesc.getExprString());
       Expression expression = Hive2CarbonExpression.convertExprHive2Carbon(exprNodeGenericFuncDesc);

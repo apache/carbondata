@@ -33,6 +33,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hive.ql.exec.SerializationUtilities;
 import org.apache.hadoop.hive.ql.exec.Utilities;
 import org.apache.hadoop.hive.ql.plan.ExprNodeColumnDesc;
 import org.apache.hadoop.hive.ql.plan.ExprNodeConstantDesc;
@@ -56,8 +57,6 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static parquet.hadoop.ParquetInputFormat.FILTER_PREDICATE;
 
 /**
  * @program carbondata
@@ -97,8 +96,10 @@ public class Hive2CarbonExpressionTest {
     ExprNodeGenericFuncDesc node = new ExprNodeGenericFuncDesc(TypeInfoFactory.intTypeInfo,
         new GenericUDFOPEqual(), children);
     Configuration configuration=new Configuration();
-    configuration.set("mapreduce.input.carboninputformat.filter.predicate", Utilities.serializeExpression(node));
-    CarbonInputFormat.setFilterPredicates(configuration,new DataMapFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node)));
+    configuration.set("mapreduce.input.carboninputformat.filter.predicate",
+        SerializationUtilities.serializeExpression(node));
+    CarbonInputFormat.setFilterPredicates(configuration,
+        new DataMapFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node)));
 
     final Job job = new Job(new JobConf(configuration));
     final CarbonTableInputFormat format = new CarbonTableInputFormat();
