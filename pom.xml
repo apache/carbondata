@@ -172,11 +172,11 @@
           </exclusion>
           <exclusion>
             <groupId>javax.servlet</groupId>
-            <artifactId>*</artifactId>
+            <artifactId>servlet-api</artifactId>
           </exclusion>
           <exclusion>
             <groupId>javax.servlet.jsp</groupId>
-            <artifactId>*</artifactId>
+            <artifactId>jsp-api</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -192,11 +192,11 @@
           </exclusion>
           <exclusion>
             <groupId>javax.servlet</groupId>
-            <artifactId>*</artifactId>
+            <artifactId>servlet-api</artifactId>
           </exclusion>
           <exclusion>
             <groupId>javax.servlet.jsp</groupId>
-            <artifactId>*</artifactId>
+            <artifactId>jsp-api</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -212,11 +212,11 @@
           </exclusion>
           <exclusion>
             <groupId>javax.servlet</groupId>
-            <artifactId>*</artifactId>
+            <artifactId>servlet-api</artifactId>
           </exclusion>
           <exclusion>
             <groupId>javax.servlet.jsp</groupId>
-            <artifactId>*</artifactId>
+            <artifactId>jsp-api</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
