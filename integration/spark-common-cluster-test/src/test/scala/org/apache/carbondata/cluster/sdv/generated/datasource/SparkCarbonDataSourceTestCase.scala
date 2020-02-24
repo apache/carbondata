@@ -40,7 +40,7 @@ import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
   import spark._
 
-  val warehouse1 = s"${TestQueryExecutor.projectPath}/integration/spark-datasource/target/warehouse"
+  val warehouse1 = s"${TestQueryExecutor.projectPath}/integration/spark/target/warehouse"
 
   test("test write using dataframe") {
     import sqlContext.implicits._
@@ -617,7 +617,7 @@ class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
       "double, HQ_DEPOSIT double) row format delimited fields terminated by ',' collection items " +
       "terminated by '$'")
     val sourceFile = FileFactory
-      .getPath(s"$resource" + "../../../../../spark-datasource/src/test/resources/Array.csv")
+      .getPath(s"$resource" + "../../../../../spark/src/test/resources/Array.csv")
       .toString
     sql(s"load data local inpath '$sourceFile' into table array_com_hive")
     sql(
@@ -644,7 +644,7 @@ class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
       "terminated by '$' map keys terminated by '&'")
     val sourceFile = FileFactory
       .getPath(
-        s"$resource" + "../../../../../spark-datasource/src/test/resources/structofarray.csv")
+        s"$resource" + "../../../../../spark/src/test/resources/structofarray.csv")
       .toString
     sql(s"load data local inpath '$sourceFile' into table STRUCT_OF_ARRAY_com_hive")
     sql(
@@ -1274,7 +1274,7 @@ class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
       "terminated by ',' LINES terminated by '\n' stored as textfile")
     val sourceFile = FileFactory
       .getPath(s"$resource" +
-               "../../../../../spark-datasource/src/test/resources/vardhandaterestruct.csv")
+               "../../../../../spark/src/test/resources/vardhandaterestruct.csv")
       .toString
     sql(s"load data local inpath '$sourceFile' into table fileformat_drop_hive")
     sql(
