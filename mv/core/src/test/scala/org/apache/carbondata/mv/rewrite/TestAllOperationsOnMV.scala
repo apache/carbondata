@@ -420,7 +420,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
   test("test todate UDF function with mv") {
     sql("drop table IF EXISTS maintable")
     sql("CREATE TABLE maintable (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED AS carbondata")
-  sql("insert into maintable values(1, 'abc', 'abc001', '1975-06-11 01:00:03.0','1975-06-11 02:00:03.0', 120, 1234,4.34,24.56,12345, 2464, 45)")
+    sql("insert into maintable values(1, 'abc', 'abc001', '1975-06-11 01:00:03.0','1975-06-11 02:00:03.0', 120, 1234,4.34,24.56,12345, 2464, 45)")
     sql("drop materialized view if exists dm ")
     sql("create materialized view dm  as select max(to_date(dob)) , min(to_date(dob)) from maintable where to_date(dob)='1975-06-11' or to_date(dob)='1975-06-23'")
     checkExistence(sql("select max(to_date(dob)) , min(to_date(dob)) from maintable where to_date(dob)='1975-06-11' or to_date(dob)='1975-06-23'"), true, "1975-06-11 1975-06-11")
@@ -577,12 +577,15 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     intercept[Exception] {
       sql("alter table maintable drop columns(c_code)")
     }.getMessage.contains("Column name cannot be dropped because it exists in mv materialized view: dm1")
-   sql("drop table if exists maintable")
+    sql("drop table if exists maintable")
   }
 
   test("drop meta cache on mv materialized view table") {
+    defaultConfig()
+    printConfiguration()
     sql("drop table IF EXISTS maintable")
     sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
+    printTable("maintable")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop materialized view if exists dm ")
     sql("create materialized view dm  as select name, sum(price) from maintable group by name")
@@ -606,6 +609,10 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     assert(droppedCacheKeys.asScala.exists(key => key.startsWith(tablePath)))
 
     // check if cache does not have any more table index entries
+    cacheAfterDrop.asScala.foreach { key =>
+      LOGGER.error("cacheAfterDrop - key : " + key)
+    }
+    LOGGER.error("table path: " + tablePath)
     assert(!cacheAfterDrop.asScala.exists(key => key.startsWith(tablePath)))
 
     // Check if mv index entries are dropped
@@ -620,6 +627,5 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     newSet.addAll(oldSet)
     newSet
   }
-  
-}
 
+}

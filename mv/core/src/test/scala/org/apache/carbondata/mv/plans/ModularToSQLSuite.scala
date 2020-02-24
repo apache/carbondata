@@ -29,7 +29,6 @@ class ModularToSQLSuite extends ModularPlanTest with BeforeAndAfter {
 
   val spark = sqlContext
   val testHive = sqlContext.sparkSession
-  val hiveClient = CarbonSessionCatalogUtil.getClient(spark.sparkSession)
   
   ignore("convert modular plans to sqls") {
     

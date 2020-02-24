@@ -30,7 +30,6 @@ class SignatureSuite extends ModularPlanTest with BeforeAndAfterAll {
 
   val spark = sqlContext
   val testHive = sqlContext.sparkSession
-  val hiveClient = CarbonSessionCatalogUtil.getClient(spark.sparkSession)
   
   ignore("test signature computing") {
 

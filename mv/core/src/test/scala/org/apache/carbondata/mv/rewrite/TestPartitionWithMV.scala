@@ -33,6 +33,7 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
   val testData = s"$resourcesPath/sample.csv"
 
   override def beforeAll(): Unit = {
+    defaultConfig()
     sql("drop database if exists partition_mv cascade")
     sql("create database partition_mv")
     sql("use partition_mv")

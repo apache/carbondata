@@ -27,8 +27,7 @@ class TestSQLSuite extends ModularPlanTest with BeforeAndAfter {
 
   val spark = sqlContext
   val testHive = sqlContext.sparkSession
-  val hiveClient = CarbonSessionCatalogUtil.getClient(spark.sparkSession)
-  
+
   ignore("protypical mqo rewrite test") {
     
     hiveClient.runSqlHive(

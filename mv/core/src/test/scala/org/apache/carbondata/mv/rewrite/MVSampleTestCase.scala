@@ -31,10 +31,10 @@ class MVSampleTestCase extends QueryTest with BeforeAndAfterAll {
     drop()
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-    val projectPath = new File(this.getClass.getResource("/").getPath + "../../../../../")
+    val projectPath = new File(this.getClass.getResource("/").getPath + "../../../../")
       .getCanonicalPath.replaceAll("\\\\", "/")
     val integrationPath = s"$projectPath/integration"
-    val resourcesPath = s"$integrationPath/spark-common-test/src/test/resources"
+    val resourcesPath = s"$integrationPath/spark/src/test/resources"
     sql("drop database if exists sample cascade")
     sql("create database sample")
     sql("use sample")

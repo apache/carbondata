@@ -23,6 +23,7 @@ import org.scalatest.BeforeAndAfterAll
 class MVFilterAndJoinTest extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
+    defaultConfig()
     drop
     sql("create table main_table (name string,age int,height int) STORED AS carbondata")
     sql("create table dim_table (name string,age int,height int) STORED AS carbondata")

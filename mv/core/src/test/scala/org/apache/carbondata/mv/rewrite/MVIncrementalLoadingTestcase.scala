@@ -33,6 +33,7 @@ import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusMan
 class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
+    defaultConfig()
     sql("drop table IF EXISTS test_table")
     sql("drop table IF EXISTS test_table1")
     sql("drop table IF EXISTS main_table")
@@ -101,7 +102,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("Delete from table test_table1 where segment.id in (0)")
     sql("drop materialized view if exists datamap1")
     sql("create materialized view datamap1 with deferred refresh as select empname, designation " +
-      "from test_table")
+        "from test_table")
     loadDataToFactTable("test_table")
     loadDataToFactTable("test_table1")
     sql(s"refresh materialized view datamap1")
@@ -306,7 +307,6 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS test_table")
   }
 
-
   test("test set segments with main table having mv before refresh") {
     sql("drop table IF EXISTS main_table")
     sql("create table main_table(a string,b string,c int) STORED AS carbondata")
@@ -318,7 +318,8 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql(s"refresh materialized view datamap1")
     val df = sql("select a, sum(c) from main_table  group by a")
     assert(!TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
-    sql("reset")
+    defaultConfig()
+    sqlContext.sparkSession.conf.unset("carbon.input.segments.default.main_table")
     checkAnswer(sql("select a, sum(c) from main_table  group by a"), Seq(Row("a", 1), Row("b", 2)))
     val df1= sql("select a, sum(c) from main_table  group by a")
     assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap1"))
@@ -612,6 +613,13 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
 
 
   override def afterAll(): Unit = {
+    defaultConfig()
+    Seq("carbon.enable.auto.load.merge",
+      "carbon.input.segments.default.main_table",
+      "carbon.input.segments.default.test_table",
+      "carbon.input.segments.default.datamap1_table").foreach { key =>
+      sqlContext.sparkSession.conf.unset(key)
+    }
     sql("drop table if exists products")
     sql("drop table if exists sales")
     sql("drop table if exists products1")

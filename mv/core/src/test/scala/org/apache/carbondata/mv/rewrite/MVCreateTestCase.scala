@@ -35,10 +35,10 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     drop()
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-    val projectPath = new File(this.getClass.getResource("/").getPath + "../../../../../")
+    val projectPath = new File(this.getClass.getResource("/").getPath + "../../../../")
       .getCanonicalPath.replaceAll("\\\\", "/")
     val integrationPath = s"$projectPath/integration"
-    val resourcesPath = s"$integrationPath/spark-common-test/src/test/resources"
+    val resourcesPath = s"$integrationPath/spark/src/test/resources"
     sql(
       """
         | CREATE TABLE fact_table1 (empname String, designation String, doj Timestamp,

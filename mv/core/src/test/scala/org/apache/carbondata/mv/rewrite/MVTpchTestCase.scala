@@ -27,10 +27,10 @@ class MVTpchTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     drop()
-    val projectPath = new File(this.getClass.getResource("/").getPath + "../../../../../")
+    val projectPath = new File(this.getClass.getResource("/").getPath + "../../../../")
       .getCanonicalPath.replaceAll("\\\\", "/")
     val integrationPath = s"$projectPath/integration"
-    val resourcesPath = s"$integrationPath/spark-common-test/src/test/resources"
+    val resourcesPath = s"$integrationPath/spark/src/test/resources"
 
     sql(s"""create table if not exists LINEITEM(  L_SHIPDATE date,  L_SHIPMODE string,  L_SHIPINSTRUCT string,  L_RETURNFLAG string,  L_RECEIPTDATE date,  L_ORDERKEY INT ,  L_PARTKEY INT ,  L_SUPPKEY   string,  L_LINENUMBER int,  L_QUANTITY double,  L_EXTENDEDPRICE double,  L_DISCOUNT double,  L_TAX double,  L_LINESTATUS string,  L_COMMITDATE date,  L_COMMENT  string) STORED AS carbondata""")
     sql(s"""create table if not exists ORDERS(  O_ORDERDATE date,  O_ORDERPRIORITY string,  O_ORDERSTATUS string,  O_ORDERKEY int,  O_CUSTKEY string,  O_TOTALPRICE double,  O_CLERK string,  O_SHIPPRIORITY int,  O_COMMENT string) STORED AS carbondata""")

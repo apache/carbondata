@@ -31,7 +31,6 @@ class Tpcds_1_4_Suite extends ModularPlanTest with BeforeAndAfter {
 
   val spark = sqlContext
   val testHive = sqlContext.sparkSession
-  val hiveClient = CarbonSessionCatalogUtil.getClient(spark.sparkSession)
 
   test("test using tpc-ds queries") {
 
