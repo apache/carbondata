@@ -11,7 +11,7 @@
   </parent>
 
   <artifactId>carbondata-lucene</artifactId>
-  <name>Apache CarbonData :: Lucene Index DataMap</name>
+  <name>Apache CarbonData :: Lucene Index</name>
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>

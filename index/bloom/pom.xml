@@ -11,7 +11,7 @@
   </parent>
 
   <artifactId>carbondata-bloom</artifactId>
-  <name>Apache CarbonData :: Bloom Index DataMap</name>
+  <name>Apache CarbonData :: Bloom Index</name>
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>

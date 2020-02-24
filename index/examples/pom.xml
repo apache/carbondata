@@ -28,8 +28,8 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>carbondata-datamap-examples</artifactId>
-  <name>Apache CarbonData :: DataMap Examples</name>
+  <artifactId>carbondata-index-examples</artifactId>
+  <name>Apache CarbonData :: Index Examples</name>
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
@@ -38,7 +38,7 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark2</artifactId>
+      <artifactId>carbondata-spark</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
