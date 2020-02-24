@@ -748,7 +748,7 @@ bool testWriteDataWithSchemaFile(JNIEnv *env, char *path, int argc, char *argv[]
         writer.builder(env);
         writer.outputPath(path);
         writer.withCsvInput();
-        writer.withSchemaFile("../../../integration/spark-common/target/warehouse/add_segment_test/Metadata/schema");
+        writer.withSchemaFile("../../../integration/spark/target/warehouse/add_segment_test/Metadata/schema");
         writer.writtenBy("CSDK");
         writer.taskNo(15541554.81);
         writer.withThreadSafe(1);

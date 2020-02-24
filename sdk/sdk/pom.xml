@@ -11,8 +11,8 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>carbondata-store-sdk</artifactId>
-  <name>Apache CarbonData :: Store SDK</name>
+  <artifactId>carbondata-sdk</artifactId>
+  <name>Apache CarbonData :: SDK</name>
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
