@@ -127,7 +127,7 @@
   ```
 
   **NOTE:**
-  + BloomFilter can be created to enhance performance for queries with precise equal/in conditions. You can find more information about it in BloomFilter datamap [document](./datamap/bloomfilter-datamap-guide.md).
+  + BloomFilter can be created to enhance performance for queries with precise equal/in conditions. You can find more information about it in BloomFilter index [document](./index/bloomfilter-index-guide.md).
 
 
 ## Configuration for Optimizing Data Loading performance for Massive Data

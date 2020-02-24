@@ -99,28 +99,25 @@
     <module>core</module>
     <module>processing</module>
     <module>hadoop</module>
-    <module>integration/spark-common</module>
-    <module>integration/spark-datasource</module>
-    <module>integration/spark2</module>
-    <module>integration/spark-common-test</module>
-    <module>datamap/examples</module>
-    <module>store/sdk</module>
-    <module>assembly</module>
-    <module>tools/cli</module>
-    <module>datamap/bloom</module>
-    <module>datamap/lucene</module>
-    <module>datamap/mv/plan</module>
-    <module>datamap/mv/core</module>
-    <module>examples/spark2</module>
+    <module>mv/plan</module>
+    <module>mv/core</module>
+    <module>index/secondary-index</module>
+    <module>index/bloom</module>
+    <module>index/lucene</module>
+    <module>index/examples</module>
+    <module>streaming</module>
+    <module>geo</module>
+    <module>integration/spark</module>
     <module>integration/hive</module>
-    <module>secondary_index</module>
     <module>integration/flink</module>
     <module>integration/flink-build</module>
     <module>integration/flink-proxy</module>
     <module>integration/presto</module>
+    <module>sdk/sdk</module>
+    <module>tools/cli</module>
+    <module>examples/spark</module>
     <module>examples/flink</module>
-    <module>streaming</module>
-    <module>geo</module>
+    <module>assembly</module>
   </modules>
 
   <properties>
@@ -531,25 +528,20 @@
                 <sourceDirectory>${basedir}/geo/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark2/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark2/src/main/spark2.3</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark2/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark-common/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark-common/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark-common/src/main/spark2.3</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark-common-test/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark-common-test/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark/src/main/spark2.3</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/presto/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/store/sdk/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/datamap/bloom/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/datamap/lucene/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/secondary_index/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/secondary_index/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/sdk/sdk/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/index/bloom/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/index/lucene/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/index/secondary-index/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/index/secondary-index/src/main/java</sourceDirectory>
               </sourceDirectories>
             </configuration>
           </plugin>
@@ -583,25 +575,20 @@
                 <sourceDirectory>${basedir}/geo/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark2/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark2/src/main/spark2.4</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark2/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark-common/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark-common/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark-common/src/main/spark2.4</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark-common-test/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark-common-test/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark/src/main/spark2.4</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/presto/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/store/sdk/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/datamap/bloom/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/datamap/lucene/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/secondary_index/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/secondary_index/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/sdk/sdk/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/index/bloom/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/index/lucene/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/index/secondary-index/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/index/secondary-index/src/main/java</sourceDirectory>
               </sourceDirectories>
             </configuration>
           </plugin>

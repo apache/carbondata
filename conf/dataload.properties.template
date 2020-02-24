@@ -18,7 +18,7 @@
 
 #carbon store path
 # you should change to the code path of your local machine
-carbon.storelocation=/home/david/Documents/carbondata/examples/spark2/target/store
+carbon.storelocation=/home/david/Documents/carbondata/examples/spark/target/store
 
 #csv delimiter character
 delimiter=,

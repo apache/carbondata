@@ -76,7 +76,7 @@ CarbonData DDL statements are documented here,which includes:
   [LOCATION 'path']
   ```
 
-  **NOTE:** CarbonData also supports "STORED AS carbondata" and "USING carbondata". Find example code at [CarbonSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/CarbonSessionExample.scala) in the CarbonData repo.
+  **NOTE:** CarbonData also supports "STORED AS carbondata" and "USING carbondata". Find example code at [CarbonSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark/src/main/scala/org/apache/carbondata/examples/CarbonSessionExample.scala) in the CarbonData repo.
 ### Usage Guidelines
 
 **Supported properties:**
@@ -241,7 +241,7 @@ CarbonData DDL statements are documented here,which includes:
                   'SORT_SCOPE'='NO_SORT')
    ```
 
-   **NOTE:** CarbonData also supports "using carbondata". Find example code at [SparkSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/SparkSessionExample.scala) in the CarbonData repo.
+   **NOTE:** CarbonData also supports "using carbondata". Find example code at [SparkSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark/src/main/scala/org/apache/carbondata/examples/SparkSessionExample.scala) in the CarbonData repo.
 
    - ##### Table Block Size Configuration
 

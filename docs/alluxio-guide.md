@@ -34,7 +34,7 @@ This tutorial provides a brief introduction to using Alluxio.
  - Access the Alluxio web: [http://localhost:19999/home](http://localhost:19999/home)   
 
 ### Running Example
- - Please refer to [AlluxioExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/AlluxioExample.scala)
+ - Please refer to [AlluxioExample](https://github.com/apache/carbondata/blob/master/examples/spark/src/main/scala/org/apache/carbondata/examples/AlluxioExample.scala)
 
 ## CarbonData supports alluxio by spark-shell
 
@@ -50,7 +50,7 @@ This tutorial provides a brief introduction to using Alluxio.
 ### Running spark-shell
  - Running the command in spark path
  ```$command
-./bin/spark-shell --jars ${CARBONDATA_PATH}/assembly/target/scala-2.11/apache-carbondata-1.6.0-SNAPSHOT-bin-spark2.3.4-hadoop2.7.2.jar,${ALLUXIO_PATH}/client/alluxio-1.8.1-client.jar
+./bin/spark-shell --jars ${CARBONDATA_PATH}/assembly/target/scala-2.11/apache-carbondata-2.0.0-SNAPSHOT-bin-spark2.3.4-hadoop2.7.2.jar,${ALLUXIO_PATH}/client/alluxio-1.8.1-client.jar
 ```
  - Testing use alluxio by CarbonSession
  ```$scala
@@ -59,7 +59,7 @@ import org.apache.spark.sql.SparkSession
 	
 val carbon = SparkSession.builder().master("local").appName("test").getOrCreateCarbonSession("alluxio://localhost:19998/carbondata");
 carbon.sql("CREATE TABLE carbon_alluxio(id String,name String, city String,age Int) STORED as carbondata");
-carbon.sql(s"LOAD DATA LOCAL INPATH '${CARBONDATA_PATH}/integration/spark-common-test/src/test/resources/sample.csv' into table carbon_alluxio");
+carbon.sql(s"LOAD DATA LOCAL INPATH '${CARBONDATA_PATH}/integration/spark/src/test/resources/sample.csv' into table carbon_alluxio");
 carbon.sql("select * from carbon_alluxio").show
 ```
  - Result
@@ -96,9 +96,9 @@ carbon.sql("select * from carbon_alluxio").show
 ```$command
 ./bin/spark-submit \
 --master local \
---jars ${ALLUXIO_PATH}/client/alluxio-1.8.1-client.jar,${CARBONDATA_PATH}/examples/spark2/target/carbondata-examples-1.6.0-SNAPSHOT.jar \
+--jars ${ALLUXIO_PATH}/client/alluxio-1.8.1-client.jar,${CARBONDATA_PATH}/examples/spark/target/carbondata-examples-2.0.0-SNAPSHOT.jar \
 --class org.apache.carbondata.examples.AlluxioExample \
-${CARBONDATA_PATH}/assembly/target/scala-2.11/apache-carbondata-1.6.0-SNAPSHOT-bin-spark2.3.4-hadoop2.7.2.jar \
+${CARBONDATA_PATH}/assembly/target/scala-2.11/apache-carbondata-2.0.0-SNAPSHOT-bin-spark2.3.4-hadoop2.7.2.jar \
 false
 ```
 **NOTE**: Please set runShell as false, which can avoid dependency on alluxio shell module.

@@ -582,10 +582,8 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
 
   test("drop meta cache on mv materialized view table") {
     defaultConfig()
-    printConfiguration()
     sql("drop table IF EXISTS maintable")
     sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
-    printTable("maintable")
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop materialized view if exists dm ")
     sql("create materialized view dm  as select name, sum(price) from maintable group by name")
@@ -609,10 +607,6 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     assert(droppedCacheKeys.asScala.exists(key => key.startsWith(tablePath)))
 
     // check if cache does not have any more table index entries
-    cacheAfterDrop.asScala.foreach { key =>
-      LOGGER.error("cacheAfterDrop - key : " + key)
-    }
-    LOGGER.error("table path: " + tablePath)
     assert(!cacheAfterDrop.asScala.exists(key => key.startsWith(tablePath)))
 
     // Check if mv index entries are dropped
@@ -627,5 +621,4 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     newSet.addAll(oldSet)
     newSet
   }
-
 }

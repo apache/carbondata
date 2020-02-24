@@ -27,7 +27,7 @@ Apache CarbonData is a new big data file format for faster interactive query usi
 
 **File Format Concepts:** Start with the basics of understanding the [CarbonData file format](./file-structure-of-carbondata.md#carbondata-file-format) and its [storage structure](./file-structure-of-carbondata.md). This will help to understand other parts of the documentation, including deployment, programming and usage guides. 
 
-**Quick Start:** [Run an example program](./quick-start-guide.md#installing-and-configuring-carbondata-to-run-locally-with-spark-shell) on your local machine or [study some examples](https://github.com/apache/carbondata/tree/master/examples/spark2/src/main/scala/org/apache/carbondata/examples).
+**Quick Start:** [Run an example program](./quick-start-guide.md#installing-and-configuring-carbondata-to-run-locally-with-spark-shell) on your local machine or [study some examples](https://github.com/apache/carbondata/tree/master/examples/spark/src/main/scala/org/apache/carbondata/examples).
 
 **CarbonData SQL Language Reference:** CarbonData extends the Spark SQL language and adds several [DDL](./ddl-of-carbondata.md) and [DML](./dml-of-carbondata.md) statements to support operations on it. Refer to the [Reference Manual](./language-manual.md) to understand the supported features and functions.
 

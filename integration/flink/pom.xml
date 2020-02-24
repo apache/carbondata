@@ -112,7 +112,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.carbondata</groupId>
-            <artifactId>carbondata-store-sdk</artifactId>
+            <artifactId>carbondata-sdk</artifactId>
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
@@ -201,7 +201,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.apache.carbondata</groupId>
-                    <artifactId>carbondata-spark2</artifactId>
+                    <artifactId>carbondata-spark</artifactId>
                     <version>${project.version}</version>
                     <scope>test</scope>
                     <exclusions>
@@ -218,7 +218,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.apache.carbondata</groupId>
-                    <artifactId>carbondata-spark2</artifactId>
+                    <artifactId>carbondata-spark</artifactId>
                     <version>${project.version}</version>
                     <scope>test</scope>
                     <exclusions>

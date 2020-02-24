@@ -94,6 +94,8 @@ class CarbonObjectInspector extends SettableStructObjectInspector {
       return PrimitiveObjectInspectorFactory.writableStringObjectInspector;
     } else if (typeInfo.equals(TypeInfoFactory.booleanTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableBooleanObjectInspector;
+    } else if (typeInfo.equals(TypeInfoFactory.byteTypeInfo)) {
+      return PrimitiveObjectInspectorFactory.writableByteObjectInspector;
     } else if (typeInfo instanceof VarcharTypeInfo) {
       return new WritableHiveVarcharObjectInspector((VarcharTypeInfo) typeInfo);
     } else if (typeInfo.equals(TypeInfoFactory.binaryTypeInfo)) {

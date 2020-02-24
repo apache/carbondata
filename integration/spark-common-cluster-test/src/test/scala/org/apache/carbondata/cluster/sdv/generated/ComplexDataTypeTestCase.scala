@@ -42,7 +42,7 @@ import org.apache.carbondata.sdk.file.CarbonWriter
 
 class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
-  val filePath = TestQueryExecutor.integrationPath + "/spark-common-test/src/test/resources"
+  val filePath = TestQueryExecutor.integrationPath + "/spark/src/test/resources"
   val writerPath =
     s"${ resourcesPath }" + "/SparkCarbonFileFormat/WriterOutputComplex/"
 

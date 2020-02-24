@@ -21,7 +21,7 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-store-sdk</artifactId>
+      <artifactId>carbondata-sdk</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

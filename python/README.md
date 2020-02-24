@@ -18,14 +18,14 @@ if you have a CarbonData dataset, you can use PyCarbon to read data. For the gen
 But user should do some config first:
 
  - config pyspark and add carbon assembly jar to pyspark/jars folder, which can be compiled from CarbonData project.
- - default Java sdk jar is in carbondata/store/sdk/target,  user also can specific the jar location like by --carbon-sdk-path in generate_pycarbon_dataset.py.
+ - default Java sdk jar is in carbondata/sdk/sdk/target,  user also can specific the jar location like by --carbon-sdk-path in generate_pycarbon_dataset.py.
 
  - set JAVA_HOME, PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON in you system environment.
 
 ### Generating the data:
 ```
 
-    python generate_pycarbon_mnist.py --carbon-sdk-path  /your_path/carbondata/store/sdk/target/carbondata-sdk.jar 
+    python generate_pycarbon_mnist.py --carbon-sdk-path  /your_path/carbondata/sdk/sdk/target/carbondata-sdk.jar 
 
 ```
 #### Part of code:
@@ -93,7 +93,7 @@ def make_tensor(reader):
 #### Running train and test based on mnist:
 
 ```
-    python  tf_example_carbon_unified_api.py --carbon-sdk-path  /your_path/carbondata/store/sdk/target/carbondata-sdk.jar 
+    python  tf_example_carbon_unified_api.py --carbon-sdk-path  /your_path/carbondata/sdk/sdk/target/carbondata-sdk.jar 
 
 ```
 #### Part or code:
