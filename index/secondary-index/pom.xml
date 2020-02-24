@@ -23,14 +23,14 @@
     <groupId>org.apache.carbondata</groupId>
     <artifactId>carbondata-parent</artifactId>
     <version>2.0.0-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
+    <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>carbondata-secondary_index</artifactId>
-  <name>Apache CarbonData :: SecondaryIndex</name>
+  <artifactId>carbondata-secondary-index</artifactId>
+  <name>Apache CarbonData :: Secondary Index</name>
 
   <properties>
-    <dev.path>${basedir}/../dev</dev.path>
+    <dev.path>${basedir}/../../dev</dev.path>
     <jacoco.append>true</jacoco.append>
   </properties>
 
@@ -45,7 +45,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark2</artifactId>
+      <artifactId>carbondata-spark</artifactId>
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
@@ -69,7 +69,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-store-sdk</artifactId>
+      <artifactId>carbondata-sdk</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

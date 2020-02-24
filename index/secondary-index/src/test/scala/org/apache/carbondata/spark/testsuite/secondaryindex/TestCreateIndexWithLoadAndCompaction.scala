@@ -23,7 +23,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.test.Spark2TestQueryExecutor
+import org.apache.spark.sql.test.SparkTestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -206,8 +206,8 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
       sql("alter table si_compaction_test compact 'minor'")
 
       // get index table from relation
-      val indexCarbonTable = CarbonEnv.getInstance(Spark2TestQueryExecutor.spark).carbonMetaStore
-        .lookupRelation(Option("default"), "alter_i1")(Spark2TestQueryExecutor.spark)
+      val indexCarbonTable = CarbonEnv.getInstance(SparkTestQueryExecutor.spark).carbonMetaStore
+        .lookupRelation(Option("default"), "alter_i1")(SparkTestQueryExecutor.spark)
         .asInstanceOf[CarbonRelation].carbonTable
       // read load metadata details
       val loadDetails: Array[LoadMetadataDetails] = SegmentStatusManager

@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
 import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil
-import org.apache.spark.sql.test.{Spark2TestQueryExecutor, TestQueryExecutor}
+import org.apache.spark.sql.test.{SparkTestQueryExecutor, TestQueryExecutor}
 import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
@@ -60,7 +60,7 @@ class TestCarbonSegmentUtil extends QueryTest {
   def test_getFilteredSegmentsUsingDataFrame() {
     createTable(tableName)
     val expected = BroadCastSIFilterPushJoin
-      .getFilteredSegments(s"select * from $tableName", Spark2TestQueryExecutor.spark)
+      .getFilteredSegments(s"select * from $tableName", SparkTestQueryExecutor.spark)
     assert(expected.length == 4)
     dropTables(tableName)
   }
@@ -73,7 +73,7 @@ class TestCarbonSegmentUtil extends QueryTest {
     val exception = intercept[UnsupportedOperationException] {
       BroadCastSIFilterPushJoin
         .getFilteredSegments("select * from test_table t1 join test_table1 t2 on t1.c1=t2.c1",
-          Spark2TestQueryExecutor.spark)
+          SparkTestQueryExecutor.spark)
     }
     exception.getMessage.contains("Get Filter Segments API supports if and only if only " +
                                   "one carbon main table is present in query.")
@@ -88,7 +88,7 @@ class TestCarbonSegmentUtil extends QueryTest {
     val exception = intercept[UnsupportedOperationException] {
       BroadCastSIFilterPushJoin
         .getFilteredSegments(s"select * from $tableName",
-          Spark2TestQueryExecutor.spark)
+          SparkTestQueryExecutor.spark)
     }
     exception.getMessage.contains("Get Filter Segments API supports if and only if " +
                                   "only one carbon main table is present in query.")
@@ -99,7 +99,7 @@ class TestCarbonSegmentUtil extends QueryTest {
   def test_identifySegmentsToBeMerged_Major() {
     createTable(tableName)
     val expected = SecondaryIndexUtil
-      .identifySegmentsToBeMerged(Spark2TestQueryExecutor.spark,
+      .identifySegmentsToBeMerged(SparkTestQueryExecutor.spark,
         tableName,
         databaseName)
     assert(expected.size() == 4)
@@ -115,7 +115,7 @@ class TestCarbonSegmentUtil extends QueryTest {
     sql(s"delete from table $tableName where SEGMENT.ID in (1)")
     sql(s"show segments for table $tableName").show(false)
     val expected = SecondaryIndexUtil
-      .identifySegmentsToBeMerged(Spark2TestQueryExecutor.spark,
+      .identifySegmentsToBeMerged(SparkTestQueryExecutor.spark,
         tableName,
         databaseName)
     assert(expected.size() == 0)
@@ -127,12 +127,12 @@ class TestCarbonSegmentUtil extends QueryTest {
   def test_identifySegmentsToBeMergedCustom() {
     createTable(tableName)
     val carbonTable = CarbonEnv
-      .getCarbonTable(Option(databaseName), tableName)(Spark2TestQueryExecutor.spark)
+      .getCarbonTable(Option(databaseName), tableName)(SparkTestQueryExecutor.spark)
     val customSegments = new util.ArrayList[String]()
     customSegments.add("1")
     customSegments.add("2")
     val expected = SecondaryIndexUtil
-      .identifySegmentsToBeMergedCustom(Spark2TestQueryExecutor.spark,
+      .identifySegmentsToBeMergedCustom(SparkTestQueryExecutor.spark,
         tableName,
         databaseName,
         customSegments
@@ -146,7 +146,7 @@ class TestCarbonSegmentUtil extends QueryTest {
   def test_getMergedLoadName() {
     createTable(tableName)
     val carbonTable = CarbonEnv
-      .getCarbonTable(Option(databaseName), tableName)(Spark2TestQueryExecutor.spark)
+      .getCarbonTable(Option(databaseName), tableName)(SparkTestQueryExecutor.spark)
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
     val expected = SecondaryIndexUtil
       .getMergedLoadName(loadMetadataDetails.toList.asJava)
@@ -161,7 +161,7 @@ class TestCarbonSegmentUtil extends QueryTest {
     sql(s"CREATE TABLE $tableName(c1 string, c2 string, c3 string) STORED AS carbondata")
     sql(s"INSERT INTO $tableName SELECT 'c1v1', '1', 'c3v1'")
     val carbonTable = CarbonEnv
-      .getCarbonTable(Option(databaseName), tableName)(Spark2TestQueryExecutor.spark)
+      .getCarbonTable(Option(databaseName), tableName)(SparkTestQueryExecutor.spark)
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
     val exception = intercept[UnsupportedOperationException] {
       SecondaryIndexUtil
@@ -178,7 +178,7 @@ class TestCarbonSegmentUtil extends QueryTest {
   def test_getMergedLoadName_unsorted_segment_list() {
     createTable(tableName)
     val carbonTable = CarbonEnv
-      .getCarbonTable(Option(databaseName), tableName)(Spark2TestQueryExecutor.spark)
+      .getCarbonTable(Option(databaseName), tableName)(SparkTestQueryExecutor.spark)
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
     val segments: util.List[LoadMetadataDetails] = new util.ArrayList[LoadMetadataDetails]()
     val load1 = new LoadMetadataDetails()
@@ -201,12 +201,12 @@ class TestCarbonSegmentUtil extends QueryTest {
   def test_getFilteredSegments_set_segments() {
     createTable(tableName)
     val expected = BroadCastSIFilterPushJoin
-      .getFilteredSegments(s"select * from $tableName", Spark2TestQueryExecutor.spark)
+      .getFilteredSegments(s"select * from $tableName", SparkTestQueryExecutor.spark)
     assert(expected.length == 4)
     sql(s"set carbon.input.segments.$databaseName.$tableName=0")
     val dataFrame_with_set_seg = sql(s"select count(*) from $tableName where c1='c1v1'")
     assert(dataFrame_with_set_seg.collect().length == 1)
-    sql("reset")
+    sql(s"set carbon.input.segments.$databaseName.$tableName")
     dropTables(tableName)
   }
 
@@ -223,14 +223,14 @@ class TestCarbonSegmentUtil extends QueryTest {
     sql(s"create index si_index_table1 on table $tableName(c2) AS 'carbondata' ")
     assert(BroadCastSIFilterPushJoin
              .getFilteredSegments(s"select * from $tableName where c3='c3v1'",
-               Spark2TestQueryExecutor.spark).length == 2)
+               SparkTestQueryExecutor.spark).length == 2)
     assert(BroadCastSIFilterPushJoin
              .getFilteredSegments(s"select * from $tableName where c3='c3v1' or c2 ='2'",
-               Spark2TestQueryExecutor.spark).length == 4)
+               SparkTestQueryExecutor.spark).length == 4)
     val exception = intercept[UnsupportedOperationException] {
       BroadCastSIFilterPushJoin
         .getFilteredSegments(s"select * from si_index_table",
-          Spark2TestQueryExecutor.spark)
+          SparkTestQueryExecutor.spark)
     }
     exception.getMessage.contains("Get Filter Segments API supports if and only if " +
                                   "only one carbon main table is present in query.")
@@ -293,7 +293,7 @@ class TestCarbonSegmentUtil extends QueryTest {
       "P_CAP_TIME','bad_records_action'='force')")
     assert(BroadCastSIFilterPushJoin
              .getFilteredSegments(s"select * from $tableName",
-               Spark2TestQueryExecutor.spark).length == 1)
+               SparkTestQueryExecutor.spark).length == 1)
     dropTables(tableName)
   }
 
