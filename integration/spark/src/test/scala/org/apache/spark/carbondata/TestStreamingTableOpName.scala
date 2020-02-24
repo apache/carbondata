@@ -40,7 +40,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
-import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
@@ -55,7 +55,6 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
   val badRecordFilePath: File =new File(currentPath + "/target/test/badRecords")
 
   override def beforeAll {
-    printConfiguration()
     badRecordFilePath.delete()
     badRecordFilePath.mkdirs()
     CarbonProperties.getInstance().addProperty(

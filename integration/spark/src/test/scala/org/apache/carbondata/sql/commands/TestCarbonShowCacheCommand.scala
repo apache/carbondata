@@ -31,7 +31,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 
 class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
   override protected def beforeAll(): Unit = {
-    printConfiguration()
     // use new database
     sql("drop database if exists cache_db cascade").collect()
     sql("drop database if exists cache_empty_db cascade").collect()

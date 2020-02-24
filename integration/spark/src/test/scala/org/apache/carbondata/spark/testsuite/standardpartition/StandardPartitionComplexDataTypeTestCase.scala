@@ -26,7 +26,6 @@ import org.scalatest.BeforeAndAfterAll
 class StandardPartitionComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
-    printConfiguration()
     dropTable
   }
 

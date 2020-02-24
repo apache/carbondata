@@ -37,7 +37,6 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
 
   override def beforeAll {
-    printConfiguration()
     try {
       sql("drop table IF EXISTS emptyColumnValues")
       sql("drop table IF EXISTS emptyColumnValues_false")

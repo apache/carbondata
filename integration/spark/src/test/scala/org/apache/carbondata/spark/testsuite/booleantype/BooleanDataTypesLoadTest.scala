@@ -29,10 +29,6 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
   val rootPath = new File(this.getClass.getResource("/").getPath
     + "../../../..").getCanonicalPath
 
-  override def beforeAll(): Unit = {
-    printConfiguration()
-  }
-
   override def beforeEach(): Unit = {
     sql("drop table if exists carbon_table")
     sql("drop table if exists boolean_table")

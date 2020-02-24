@@ -35,7 +35,6 @@ import org.apache.carbondata.spark.rdd.CarbonScanRDD
 class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    printConfiguration()
     dropTable
 
     CarbonProperties.getInstance()

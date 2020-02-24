@@ -5,7 +5,6 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 
 /**
  * Created by rahul on 19/9/17.

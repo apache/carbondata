@@ -898,7 +898,6 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
   }
 
   test("date with struct and array") {
-    printConfiguration()
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
     CarbonProperties.getInstance()

@@ -34,7 +34,6 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
   var hiveContext: HiveContext = _
 
   override def beforeAll {
-    printConfiguration()
     drop()
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")

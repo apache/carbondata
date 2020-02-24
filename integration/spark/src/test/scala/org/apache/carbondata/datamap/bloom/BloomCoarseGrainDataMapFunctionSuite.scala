@@ -22,7 +22,6 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
   val dataMapName = "bloom_dm"
 
   override protected def beforeAll(): Unit = {
-    printConfiguration()
     deleteFile(bigFile)
     new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
     createFile(bigFile, line = 2000)
@@ -368,7 +367,6 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
   }
 
   test("test bloom datamap: index column is timestamp, dictionary, sort_column") {
-    printConfiguration()
     val timeStampData = s"$resourcesPath/timeStampFormatData1.csv"
     sql(
       s"""

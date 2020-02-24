@@ -27,7 +27,6 @@ import org.scalatest.BeforeAndAfterAll
   */
 class TestLoadDataWithBlankLine extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
-    printConfiguration()
     sql("drop table if exists carbontable")
     sql("CREATE TABLE carbontable (empno int, empname String, designation String, " +
       "doj String, workgroupcategory int, workgroupcategoryname String, deptno int, " +
@@ -45,7 +44,6 @@ class TestLoadDataWithBlankLine extends QueryTest with BeforeAndAfterAll {
       "STORED AS carbondata")
   }
   test("test carbon table data loading when there are  blank lines in data") {
-    sql("select * from carbontable").show(100, false)
     checkAnswer(sql("select count(*) from carbontable"),
       Seq(Row(18)))
   }
@@ -53,7 +51,6 @@ class TestLoadDataWithBlankLine extends QueryTest with BeforeAndAfterAll {
   test("test carbon table data loading when the first line is blank") {
     sql(s"LOAD DATA LOCAL INPATH '${resourcesPath}/dataWithNullFirstLine.csv' INTO TABLE " +
       "carbontable2 OPTIONS('DELIMITER'= ',','FILEHEADER'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary')")
-    sql("select * from carbontable2").show(100, false)
     checkAnswer(sql("select count(*) from carbontable2"),
       Seq(Row(11)))
   }

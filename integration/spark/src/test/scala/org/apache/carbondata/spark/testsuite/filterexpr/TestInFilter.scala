@@ -21,8 +21,6 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.util.ThreadLocalSessionInfo
-
 class TestInFilter extends QueryTest with BeforeAndAfterAll{
 
   override def beforeAll: Unit = {

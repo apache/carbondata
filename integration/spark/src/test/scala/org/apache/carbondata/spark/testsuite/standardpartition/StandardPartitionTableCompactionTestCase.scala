@@ -121,7 +121,6 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
   }
 
   test("data compaction for static partition table") {
-    printConfiguration()
     sql(
       """
         | CREATE TABLE staticpartition (empno int, doj Timestamp,
@@ -144,7 +143,6 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
   }
 
   test("enable auto compaction for partition table"){
-    printConfiguration()
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
     CarbonProperties.getInstance()

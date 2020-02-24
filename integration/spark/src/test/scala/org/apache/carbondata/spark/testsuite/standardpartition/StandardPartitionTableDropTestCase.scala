@@ -29,7 +29,6 @@ import org.apache.carbondata.core.util.CarbonProperties
 class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    printConfiguration()
     dropTable
 
     CarbonProperties.getInstance()

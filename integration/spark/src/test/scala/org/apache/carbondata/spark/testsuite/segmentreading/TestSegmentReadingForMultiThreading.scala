@@ -17,7 +17,6 @@ import org.scalatest.BeforeAndAfterAll
 class TestSegmentReadingForMultiThreading extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
-    printConfiguration()
     sql("DROP TABLE IF EXISTS carbon_table_MulTI_THread")
     sql(
       "CREATE TABLE carbon_table_MulTI_THread (empno int, empname String, designation String, doj " +

@@ -17,13 +17,10 @@
 package org.apache.spark.carbondata.commands
 
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.CarbonEnv
-import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants
 import org.apache.carbondata.core.exception.InvalidConfigurationException
-import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 
 class SetCommandTestCase extends QueryTest with BeforeAndAfterAll{
   override def beforeAll: Unit = {
