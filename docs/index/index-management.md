@@ -15,7 +15,7 @@
     limitations under the License.
 -->
 
-# CarbonData DataMap Management
+# CarbonData Index Management
 
 - [Overview](#overview)
 - [DataMap Management](#datamap-management)

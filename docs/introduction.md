@@ -69,15 +69,15 @@ CarbonData has rich set of features to support various use cases in Big Data ana
 
   CarbonData can read any carbondata file and automatically infer schema from the file and provide a relational table view to perform sql queries using Spark or any other applicaion.
 
-### DataMaps
+### Index
 
 - ##### Bloom filter
 
-  CarbonData supports bloom filter as a datamap in order to quickly and efficiently prune the data for scanning and acheive faster query performance.
+  CarbonData supports bloom filter index in order to quickly and efficiently prune the data for scanning and acheive faster query performance.
 
 - ##### Lucene
 
-  Lucene is popular for indexing text data which are long.CarbonData provides a lucene datamap so that text columns can be indexed using lucene and use the index result for efficient pruning of data to be retrieved during query.
+  Lucene is popular for indexing text data which are long.CarbonData supports lucene index so that text columns can be indexed using lucene and use the index result for efficient pruning of data to be retrieved during query.
 
 - ##### MV (Materialized Views)
 

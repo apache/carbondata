@@ -24,8 +24,8 @@ CarbonData provides SDK to facilitate
 
 # SDK Writer
 
-In the carbon jars package, there exist a carbondata-store-sdk-x.x.x-SNAPSHOT.jar, including SDK writer and reader. 
-If user want to use SDK, except carbondata-store-sdk-x.x.x-SNAPSHOT.jar, 
+In the carbon jars package, there exist a carbondata-sdk-x.x.x-SNAPSHOT.jar, including SDK writer and reader. 
+If user want to use SDK, except carbondata-sdk-x.x.x-SNAPSHOT.jar, 
 it needs carbondata-core-x.x.x-SNAPSHOT.jar, carbondata-common-x.x.x-SNAPSHOT.jar, 
 carbondata-format-x.x.x-SNAPSHOT.jar, carbondata-hadoop-x.x.x-SNAPSHOT.jar and carbondata-processing-x.x.x-SNAPSHOT.jar.
 What's more, user also can use carbondata-sdk.jar directly.
@@ -246,7 +246,7 @@ Instead of creating table and query it, you can also query that file directly wi
 ```
 SELECT * FROM carbonfile.`$Path`
 ```
-Find example code at [DirectSQLExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/DirectSQLExample.scala) in the CarbonData repo.
+Find example code at [DirectSQLExample](https://github.com/apache/carbondata/blob/master/examples/spark/src/main/scala/org/apache/carbondata/examples/DirectSQLExample.scala) in the CarbonData repo.
 ## API List
 
 ### Class org.apache.carbondata.sdk.file.CarbonWriterBuilder
@@ -612,10 +612,10 @@ while (reader.hasNext()) {
 reader.close();
 ```
 
-Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/java/org/apache/carbondata/examples/sdk/CarbonReaderExample.java) in the CarbonData repo.
+Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/blob/master/examples/spark/src/main/java/org/apache/carbondata/examples/sdk/CarbonReaderExample.java) in the CarbonData repo.
 
 SDK reader also supports reading carbondata files and filling it to apache arrow vectors.
-Find example code at [ArrowCarbonReaderTest](https://github.com/apache/carbondata/blob/master/store/sdk/src/test/java/org/apache/carbondata/sdk/file/ArrowCarbonReaderTest.java) in the CarbonData repo.
+Find example code at [ArrowCarbonReaderTest](https://github.com/apache/carbondata/blob/master/sdk/sdk/src/test/java/org/apache/carbondata/sdk/file/ArrowCarbonReaderTest.java) in the CarbonData repo.
 
 
 ## API List
@@ -1007,7 +1007,7 @@ public Field(String name, String type);
 public Field(ColumnSchema columnSchema);
 ```
 
-Find S3 example code at [SDKS3Example](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/java/org/apache/carbondata/examples/sdk/SDKS3Example.java) in the CarbonData repo.
+Find S3 example code at [SDKS3Example](https://github.com/apache/carbondata/blob/master/examples/spark/src/main/java/org/apache/carbondata/examples/sdk/SDKS3Example.java) in the CarbonData repo.
 
 
 # Common API List for CarbonReader and CarbonWriter

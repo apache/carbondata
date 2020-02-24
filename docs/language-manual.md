@@ -24,9 +24,9 @@ CarbonData has its own parser, in addition to Spark's SQL Parser, to parse and p
 - [Data Types](./supported-data-types-in-carbondata.md)
 - Data Definition Statements
   - [DDL:](./ddl-of-carbondata.md)[Create](./ddl-of-carbondata.md#create-table),[Drop](./ddl-of-carbondata.md#drop-table),[Partition](./ddl-of-carbondata.md#partition),[Bucketing](./ddl-of-carbondata.md#bucketing),[Alter](./ddl-of-carbondata.md#alter-table),[CTAS](./ddl-of-carbondata.md#create-table-as-select),[External Table](./ddl-of-carbondata.md#create-external-table)
-  - [DataMaps](./datamap/datamap-management.md)
-    - [Bloom](./datamap/bloomfilter-datamap-guide.md)
-    - [Lucene](./datamap/lucene-datamap-guide.md)
+  - [Index](./index/index-management.md)
+    - [Bloom](./index/bloomfilter-index-guide.md)
+    - [Lucene](./index/lucene-index-guide.md)
   - Materialized Views (MV)
   - [Streaming](./streaming-guide.md)
 - Data Manipulation Statements
