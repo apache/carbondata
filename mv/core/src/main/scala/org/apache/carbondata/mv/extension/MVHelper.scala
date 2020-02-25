@@ -94,8 +94,8 @@ object MVHelper {
     val updatedQueryWithDb = modularPlan.asCompactSQL
     val (timeSeriesColumn, granularity) = validateMVTimeSeriesQuery(queryPlan, dataMapSchema)
     val isQueryNeedFullRebuild = checkIsQueryNeedFullRebuild(queryPlan)
-    val isHasNonCarbonProvider = checkIsMainTableHasNonCarbonSource(mainTables)
-    val isNeedFullRebuild = isQueryNeedFullRebuild || isHasNonCarbonProvider
+    val hasNonCarbonProvider = checkMainTableHasNonCarbonSource(mainTables)
+    val isNeedFullRebuild = isQueryNeedFullRebuild || hasNonCarbonProvider
     var counter = 0
     // the ctas query can have duplicate columns, so we should take distinct and create fields,
     // so that it won't fail during create mv table
@@ -167,7 +167,7 @@ object MVHelper {
     // If dataMap is mapped to single main table, then inherit table properties from main table,
     // else, will use default table properties. If DMProperties contains table properties, then
     // table properties of datamap table will be updated
-    if (parentTablesList.size() == 1) {
+    if (parentTablesList.size() == 1 && CarbonSource.isCarbonDataSource(mainTables.head)) {
       inheritTablePropertiesFromMainTable(
         parentTablesList.get(0),
         fields,
@@ -412,7 +412,7 @@ object MVHelper {
    * @param mainTables
    * @return
    */
-  private def checkIsMainTableHasNonCarbonSource(mainTables: Seq[CatalogTable]): Boolean = {
+  private def checkMainTableHasNonCarbonSource(mainTables: Seq[CatalogTable]): Boolean = {
     mainTables.exists(table => !CarbonSource.isCarbonDataSource(table))
   }
 
@@ -578,16 +578,16 @@ object MVHelper {
       fields: Seq[Field],
       fieldRelationMap: scala.collection.mutable.LinkedHashMap[Field, MVField],
       tableProperties: mutable.Map[String, String]): Unit = {
-    var neworder = Seq[String]()
-    val parentOrder = parentTable.getSortColumns().asScala
-    parentOrder.foreach(parentcol =>
+    var newOrder = Seq[String]()
+    val parentOrder = parentTable.getSortColumns.asScala
+    parentOrder.foreach(parentCol =>
       fields.filter(col => fieldRelationMap(col).aggregateFunction.isEmpty &&
                            fieldRelationMap(col).columnTableRelationList.size == 1 &&
-                           parentcol.equalsIgnoreCase(
-                             fieldRelationMap(col).columnTableRelationList(0).columnName))
-        .map(cols => neworder :+= cols.column))
-    if (neworder.nonEmpty) {
-      tableProperties.put(CarbonCommonConstants.SORT_COLUMNS, neworder.mkString(","))
+                           parentCol.equalsIgnoreCase(
+                             fieldRelationMap(col).columnTableRelationList.head.columnName))
+        .map(cols => newOrder :+= cols.column))
+    if (newOrder.nonEmpty) {
+      tableProperties.put(CarbonCommonConstants.SORT_COLUMNS, newOrder.mkString(","))
     }
     val sort_scope = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
       .get("sort_scope")
@@ -621,12 +621,12 @@ object MVHelper {
           varcharDatamapFields += relationList.head.columnName
         }
       })
-      if (!varcharDatamapFields.isEmpty) {
+      if (varcharDatamapFields.nonEmpty) {
         longStringColumn = Option(varcharDatamapFields.mkString(","))
       }
     }
 
-    if (longStringColumn != None) {
+    if (longStringColumn.isDefined) {
       val fieldNames = fields.map(_.column)
       val newLongStringColumn = longStringColumn.get.split(",").map(_.trim).map { colName =>
         val newColName = parentTable.getTableName.toLowerCase() + "_" + colName
