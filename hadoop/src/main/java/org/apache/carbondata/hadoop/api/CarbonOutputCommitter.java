@@ -175,7 +175,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     if (segmentSize > 0 || overwriteSet) {
       if (operationContext != null) {
         operationContext
-            .setProperty("current.segmentfile", newMetaEntry.getSegmentFile());
+            .setProperty(CarbonCommonConstants.CURRENT_SEGMENTFILE, newMetaEntry.getSegmentFile());
         LoadEvents.LoadTablePreStatusUpdateEvent event =
             new LoadEvents.LoadTablePreStatusUpdateEvent(carbonTable.getCarbonTableIdentifier(),
                 loadModel);
@@ -298,7 +298,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid);
     }
     if (operationContext != null) {
-      operationContext.setProperty("current.segmentfile", newMetaEntry.getSegmentFile());
+      operationContext
+          .setProperty(CarbonCommonConstants.CURRENT_SEGMENTFILE, newMetaEntry.getSegmentFile());
     }
     commitJobFinal(context, loadModel, operationContext, carbonTable, uniqueId);
   }

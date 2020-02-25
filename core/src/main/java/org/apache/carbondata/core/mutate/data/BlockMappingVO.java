@@ -30,6 +30,10 @@ public class BlockMappingVO {
 
   private Map<String, RowCountDetailsVO> completeBlockRowDetailVO;
 
+  // This map will help us to finding the segment id from the block path.
+  // key is 'blockpath' and value is 'segmentId'
+  private Map<String, String> blockToSegmentMapping;
+
   public void setCompleteBlockRowDetailVO(Map<String, RowCountDetailsVO> completeBlockRowDetailVO) {
     this.completeBlockRowDetailVO = completeBlockRowDetailVO;
   }
@@ -50,5 +54,13 @@ public class BlockMappingVO {
       Map<String, Long> segmentNumberOfBlockMapping) {
     this.blockRowCountMapping = blockRowCountMapping;
     this.segmentNumberOfBlockMapping = segmentNumberOfBlockMapping;
+  }
+
+  public void setBlockToSegmentMapping(Map<String, String> blockToSegmentMapping) {
+    this.blockToSegmentMapping = blockToSegmentMapping;
+  }
+
+  public Map<String, String> getBlockToSegmentMapping() {
+    return blockToSegmentMapping;
   }
 }

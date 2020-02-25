@@ -164,13 +164,12 @@ object SecondaryIndexCreator {
               new SecondaryIndexCreationResultImpl,
               carbonLoadModel,
               secondaryIndexModel.secondaryIndex,
-              segId, execInstance, indexCarbonTable, forceAccessSegment).collect()
-            val segmentFileName =
+              segId, execInstance, indexCarbonTable, forceAccessSegment, isCompactionCall).collect()
               SegmentFileStore
                 .writeSegmentFile(indexCarbonTable,
                   segId,
                   String.valueOf(carbonLoadModel.getFactTimeStamp))
-            segmentToLoadStartTimeMap.put(segId, String.valueOf(carbonLoadModel.getFactTimeStamp))
+            segmentToLoadStartTimeMap.put(segId, carbonLoadModel.getFactTimeStamp.toString)
             if (secondaryIndexCreationStatus.length > 0) {
               eachSegmentSecondaryIndexCreationStatus = secondaryIndexCreationStatus
             }
@@ -360,6 +359,7 @@ object SecondaryIndexCreator {
     copyObj.setColumnCompressor(
       CarbonInternalScalaUtil.getCompressorForIndexTable(
         indexTable, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable))
+    copyObj.setFactTimeStamp(carbonLoadModel.getFactTimeStamp)
     copyObj
   }
 

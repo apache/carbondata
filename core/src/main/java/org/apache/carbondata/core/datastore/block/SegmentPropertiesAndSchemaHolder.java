@@ -302,6 +302,10 @@ public class SegmentPropertiesAndSchemaHolder {
       this.columnsInTable = columnsInTable;
     }
 
+    public CarbonTable getCarbonTable() {
+      return this.carbonTable;
+    }
+
     public void initSegmentProperties() {
       segmentProperties = new SegmentProperties(columnsInTable);
     }

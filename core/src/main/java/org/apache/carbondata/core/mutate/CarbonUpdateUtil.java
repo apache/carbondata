@@ -61,6 +61,14 @@ public class CarbonUpdateUtil {
   /**
    * returns required filed from tuple id
    *
+   */
+  public static String getRequiredFieldFromTID(String Tid, int index) {
+    return Tid.split(CarbonCommonConstants.FILE_SEPARATOR)[index];
+  }
+
+  /**
+   * returns required filed from tuple id
+   *
    * @param Tid
    * @param tid
    * @return
@@ -74,7 +82,10 @@ public class CarbonUpdateUtil {
    * @param Tid
    * @return
    */
-  public static String getSegmentWithBlockFromTID(String Tid) {
+  public static String getSegmentWithBlockFromTID(String Tid, boolean isPartitionTable) {
+    if (isPartitionTable) {
+      return getRequiredFieldFromTID(Tid, TupleIdEnum.SEGMENT_ID);
+    }
     return getRequiredFieldFromTID(Tid, TupleIdEnum.SEGMENT_ID)
         + CarbonCommonConstants.FILE_SEPARATOR + getRequiredFieldFromTID(Tid, TupleIdEnum.BLOCK_ID);
   }
@@ -916,14 +927,15 @@ public class CarbonUpdateUtil {
    * @param blockName
    * @return
    */
-  public static String getSegmentBlockNameKey(String segID, String blockName) {
-
+  public static String getSegmentBlockNameKey(String segID, String blockName,
+      boolean isPartitionTable) {
     String blockNameWithOutPart = blockName
-            .substring(blockName.indexOf(CarbonCommonConstants.HYPHEN) + 1,
-                    blockName.lastIndexOf(CarbonTablePath.getCarbonDataExtension()));
-
+        .substring(blockName.indexOf(CarbonCommonConstants.HYPHEN) + 1,
+            blockName.lastIndexOf(CarbonTablePath.getCarbonDataExtension()));
+    if (isPartitionTable) {
+      return blockNameWithOutPart;
+    }
     return segID + CarbonCommonConstants.FILE_SEPARATOR + blockNameWithOutPart;
-
   }
 
   /**

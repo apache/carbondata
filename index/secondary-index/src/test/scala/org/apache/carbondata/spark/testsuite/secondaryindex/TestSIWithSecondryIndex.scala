@@ -19,6 +19,8 @@ package org.apache.carbondata.spark.testsuite.secondaryindex
 import scala.collection.JavaConverters._
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils
+.isFilterPushedDownToSI;
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
@@ -26,8 +28,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
 import org.apache.spark.sql.test.util.QueryTest
 
 class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
@@ -230,21 +230,4 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists uniqdata")
     sql("drop table if exists uniqdataTable")
   }
-
-  /**
-    * Method to check whether the filter is push down to SI table or not
-    *
-    * @param sparkPlan
-    * @return
-    */
-  private def isFilterPushedDownToSI(sparkPlan: SparkPlan): Boolean = {
-    var isValidPlan = false
-    sparkPlan.transform {
-      case broadCastSIFilterPushDown: BroadCastSIFilterPushJoin =>
-        isValidPlan = true
-        broadCastSIFilterPushDown
-    }
-    isValidPlan
-  }
-
 }

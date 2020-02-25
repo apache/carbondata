@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
+import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils
+.isFilterPushedDownToSI;
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.util.SparkUtil
@@ -62,7 +64,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // approx_count_distinct udf
     carbonQuery = sql("select approx_count_distinct(empname), approx_count_distinct(deptname) from udfValidation where empname = 'pramod' or deptname = 'network'")
     hiveQuery = sql("select approx_count_distinct(empname), approx_count_distinct(deptname) from udfHive where empname = 'pramod' or deptname = 'network'")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -74,7 +76,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // collect_list udf
     carbonQuery = sql("select collect_list(empname) from udfValidation where empname = 'pramod' or deptname = 'network' or designation='TL'")
     hiveQuery = sql("select collect_list(empname) from udfHive where empname = 'pramod' or deptname = 'network' or designation='TL'")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -86,7 +88,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // collect_set udf
     carbonQuery = sql("select collect_set(deptname) from udfValidation where empname = 'pramod' or deptname = 'network' or designation='TL'")
     hiveQuery = sql("select collect_set(deptname) from udfHive where empname = 'pramod' or deptname = 'network' or designation='TL'")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -98,7 +100,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // corr udf
     carbonQuery = sql("select corr(deptno, empno) from udfValidation where empname = 'pramod' or deptname = 'network' or designation='TL'")
     hiveQuery = sql("select corr(deptno, empno) from udfHive where empname = 'pramod' or deptname = 'network' or designation='TL'")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -110,7 +112,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // covar_pop udf
     carbonQuery = sql("select covar_pop(deptno, empno) from udfValidation where empname = 'pramod' or deptname = 'network' or designation='TL'")
     hiveQuery = sql("select covar_pop(deptno, empno) from udfHive where empname = 'pramod' or deptname = 'network' or designation='TL'")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -122,7 +124,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // covar_samp udf
     carbonQuery = sql("select covar_samp(deptno, empno) from udfValidation where empname = 'pramod' or deptname = 'network' or designation='TL'")
     hiveQuery = sql("select covar_samp(deptno, empno) from udfHive where empname = 'pramod' or deptname = 'network' or designation='TL'")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -134,7 +136,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // grouping udf
     carbonQuery = sql("select grouping(designation), grouping(deptname) from udfValidation where empname = 'pramod' or deptname = 'network' or designation='TL' group by designation, deptname with ROLLUP")
     hiveQuery = sql("select grouping(designation), grouping(deptname) from udfHive where empname = 'pramod' or deptname = 'network' or designation='TL' group by designation, deptname with ROLLUP")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -146,7 +148,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // mean udf
     carbonQuery = sql("select mean(deptno), mean(empno) from udfValidation where empname = 'pramod' or deptname = 'network' or designation='TL'")
     hiveQuery = sql("select mean(deptno), mean(empno) from udfHive where empname = 'pramod' or deptname = 'network' or designation='TL'")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -158,7 +160,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // skewness udf
     carbonQuery = sql("select skewness(deptno), skewness(empno) from udfValidation where empname = 'pramod' or deptname = 'network' or designation='TL'")
     hiveQuery = sql("select skewness(deptno), skewness(empno) from udfHive where empname = 'pramod' or deptname = 'network' or designation='TL'")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -170,7 +172,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // stddev udf
     carbonQuery = sql("select stddev(deptno), stddev(empno) from udfValidation where empname = 'pramod' or deptname = 'network' or designation='TL'")
     hiveQuery = sql("select stddev(deptno), stddev(empno) from udfHive where empname = 'pramod' or deptname = 'network' or designation='TL'")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -182,7 +184,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // stddev_pop udf
     carbonQuery = sql("select stddev_pop(deptno), stddev_pop(empno) from udfValidation where empname = 'pramod' or deptname = 'network' or designation='TL'")
     hiveQuery = sql("select stddev_pop(deptno), stddev_pop(empno) from udfHive where empname = 'pramod' or deptname = 'network' or designation='TL'")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -194,7 +196,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // stddev_samp udf
     carbonQuery = sql("select stddev_samp(deptno), stddev_samp(empno) from udfValidation where empname = 'pramod' or deptname = 'network' or designation='TL'")
     hiveQuery = sql("select stddev_samp(deptno), stddev_samp(empno) from udfHive where empname = 'pramod' or deptname = 'network' or designation='TL'")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -206,7 +208,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // var_pop udf
     carbonQuery = sql("select var_pop(deptno), var_pop(empno) from udfValidation where empname = 'pramod' or deptname = 'network' or designation='TL'")
     hiveQuery = sql("select var_pop(deptno), var_pop(empno) from udfHive where empname = 'pramod' or deptname = 'network' or designation='TL'")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -218,7 +220,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // var_samp udf
     carbonQuery = sql("select var_samp(deptno), var_samp(empno) from udfValidation where empname = 'pramod' or deptname = 'network' or designation='TL'")
     hiveQuery = sql("select var_samp(deptno), var_samp(empno) from udfHive where empname = 'pramod' or deptname = 'network' or designation='TL'")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -230,7 +232,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // variance udf
     carbonQuery = sql("select variance(deptno), variance(empno) from udfValidation where empname = 'pramod' or deptname = 'network' or designation='TL'")
     hiveQuery = sql("select variance(deptno), variance(empno) from udfHive where empname = 'pramod' or deptname = 'network' or designation='TL'")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -242,7 +244,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
     // COALESCE, CONV and SUBSTRING udf
     carbonQuery = sql("select COALESCE(CONV(substring(empname, 3, 2), 16, 10), ''), COALESCE(CONV(substring(deptname, 3, 2), 16, 10), '') from udfValidation where empname = 'pramod' or deptname = 'network' or designation='TL'")
     hiveQuery = sql("select COALESCE(CONV(substring(empname, 3, 2), 16, 10), ''), COALESCE(CONV(substring(deptname, 3, 2), 16, 10), '') from udfHive where empname = 'pramod' or deptname = 'network' or designation='TL'")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -275,7 +277,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
           "COALESCE(CONV(substring(empname, 3, 2), 16, 10), ''), COALESCE(CONV(substring(deptname, 3," +
           " 2), 16, 10), '') from udfHive where empname = 'pramod' or deptname = 'network' or " +
           "designation='TL' group by designation, deptname, empname with ROLLUP")
-        if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+        if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
           assert(true)
         } else {
           assert(false)
@@ -310,7 +312,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
           "COALESCE(CONV(substring(empname, 3, 2), 16, 10), '') as c25, COALESCE(CONV(substring(deptname, 3," +
           " 2), 16, 10), '') as c26 from udfHive where empname = 'pramod' or deptname = 'network' or " +
           "designation='TL' group by designation, deptname, empname with ROLLUP")
-        if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+        if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
           assert(true)
         } else {
           assert(false)
@@ -345,7 +347,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
           "COALESCE(CONV(substring(empname, 3, 2), 16, 10), ''), COALESCE(CONV(substring(deptname, 3," +
           " 2), 16, 10), '') from udfHive where empname = 'pramod' or deptname = 'network' or " +
           "designation='TL' group by designation, deptname, empname with ROLLUP")
-        if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+        if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
           assert(true)
         } else {
           assert(false)
@@ -380,7 +382,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
           "COALESCE(CONV(substring(empname, 3, 2), 16, 10), '') as c26, COALESCE(CONV(substring(deptname, 3," +
           " 2), 16, 10), '') as c27 from udfHive where empname = 'pramod' or deptname = 'network' or " +
           "designation='TL' group by designation, deptname, empname with ROLLUP")
-        if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+        if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
           assert(true)
         } else {
           assert(false)
@@ -393,7 +395,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
   test("test udf on filter - concat") {
     carbonQuery = sql("select concat_ws(deptname)from udfValidation where concat_ws(deptname) IS NOT NULL or concat_ws(deptname) is null")
     hiveQuery = sql("select concat_ws(deptname)from udfHive where concat_ws(deptname) IS NOT NULL or concat_ws(deptname) is null")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -404,7 +406,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
   test("test udf on filter - find_in_set") {
     carbonQuery = sql("select find_in_set(deptname,'o')from udfValidation where find_in_set(deptname,'o') =0 or find_in_set(deptname,'a') is null")
     hiveQuery = sql("select find_in_set(deptname,'o')from udfHive where find_in_set(deptname,'o') =0 or find_in_set(deptname,'a') is null")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)
@@ -415,7 +417,7 @@ class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfter
   test("test udf on filter - agg") {
     carbonQuery = sql("select max(length(deptname)),min(length(designation)),avg(length(empname)),count(length(empname)),sum(length(deptname)),variance(length(designation)) from udfValidation where length(empname)=6 or length(empname) is NULL")
     hiveQuery = sql("select max(length(deptname)),min(length(designation)),avg(length(empname)),count(length(empname)),sum(length(deptname)),variance(length(designation)) from udfHive where length(empname)=6 or length(empname) is NULL")
-    if (testSecondaryIndexForORFilterPushDown.isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
+    if (isFilterPushedDownToSI(carbonQuery.queryExecution.executedPlan)) {
       assert(true)
     } else {
       assert(false)

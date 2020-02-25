@@ -789,9 +789,13 @@ public class BlockIndex extends CoarseGrainIndex
       byte[][] minValue, boolean[] minMaxFlag, String filePath, int blockletId) {
     BitSet bitSet = null;
     if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
-      String uniqueBlockPath = !isPartitionTable ?
-                filePath.substring(filePath.lastIndexOf("/Part") + 1) :
-                filePath;
+      String uniqueBlockPath;
+      if (segmentPropertiesWrapper.getCarbonTable().isHivePartitionTable()) {
+        uniqueBlockPath = filePath
+            .substring(segmentPropertiesWrapper.getCarbonTable().getTablePath().length() + 1);
+      } else {
+        uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1);
+      }
       // this case will come in case of old store where index file does not contain the
       // blocklet information
       if (blockletId != -1) {

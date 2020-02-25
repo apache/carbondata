@@ -40,17 +40,20 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop database  if exists iud_db cascade")
     sql("create database  iud_db")
 
-    sql("""create table iud_db.source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED AS carbondata""")
+    sql(
+      """create table iud_db.source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED
+        |AS carbondata""".stripMargin)
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/source2.csv' INTO table iud_db.source2""")
     sql("use iud_db")
   }
+
   test("delete data from carbon table with alias [where clause ]") {
     sql("""create table iud_db.dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
     sql("""delete from iud_db.dest d where d.c1 = 'a'""").show
     checkAnswer(
       sql("""select c2 from iud_db.dest"""),
-      Seq(Row(2), Row(3),Row(4), Row(5))
+      Seq(Row(2), Row(3), Row(4), Row(5))
     )
   }
   test("delete data from  carbon table[where clause ]") {
@@ -70,7 +73,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""delete from dest where c1 IN ('d', 'e')""").show
     checkAnswer(
       sql("""select c1 from dest"""),
-      Seq(Row("a"), Row("b"),Row("c"))
+      Seq(Row("a"), Row("b"), Row("c"))
     )
   }
 
@@ -119,18 +122,22 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("partition delete data from carbon table with alias [where clause ]") {
     sql("drop table if exists iud_db.dest")
-    sql("""create table iud_db.dest (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED AS carbondata""")
+    sql(
+      """create table iud_db.dest (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED AS
+        |carbondata""".stripMargin)
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
     sql("""delete from iud_db.dest d where d.c1 = 'a'""").show
     checkAnswer(
       sql("""select c2 from iud_db.dest"""),
-      Seq(Row(2), Row(3),Row(4), Row(5))
+      Seq(Row(2), Row(3), Row(4), Row(5))
     )
   }
 
   test("partition delete data from  carbon table[where clause ]") {
     sql("""drop table if exists iud_db.dest""")
-    sql("""create table iud_db.dest (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED AS carbondata""")
+    sql(
+      """create table iud_db.dest (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED
+        |AS carbondata""".stripMargin)
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
     sql("""delete from iud_db.dest where c2 = 2""").show
     checkAnswer(
@@ -143,7 +150,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon2")
     import sqlContext.implicits._
     val df = sqlContext.sparkContext.parallelize(1 to 2000000)
-      .map(x => (x+"a", "b", x))
+      .map(x => (x + "a", "b", x))
       .toDF("c1", "c2", "c3")
     df.write
       .format("carbondata")
@@ -196,39 +203,44 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     val metaPath = carbonTable.getMetadataPath
     val files = FileFactory.getCarbonFile(metaPath)
     val result = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.getClass
-    if(result.getCanonicalName.contains("CarbonFileMetastore")) {
+    if (result.getCanonicalName.contains("CarbonFileMetastore")) {
       assert(files.listFiles(new CarbonFileFilter {
         override def accept(file: CarbonFile): Boolean = !file.isDirectory
       }).length == 2)
     }
-    else
+    else {
       assert(files.listFiles().length == 2)
-
+    }
     sql("drop table update_status_files")
   }
 
   test("tuple-id for partition table ") {
     sql("drop table if exists iud_db.dest_tuple_part")
     sql(
-      """create table iud_db.dest_tuple_part (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED AS carbondata""".stripMargin)
+      """create table iud_db.dest_tuple_part (c1 string,c2 int,c5 string) PARTITIONED BY(c3
+        |string) STORED AS carbondata"""
+        .stripMargin)
     sql(
-      s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest_tuple_part""".stripMargin)
+      s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest_tuple_part"""
+        .stripMargin)
     sql("drop table if exists iud_db.dest_tuple")
     sql(
-      """create table iud_db.dest_tuple (c1 string,c2 int,c5 string,c3 string) STORED AS carbondata""".stripMargin)
+      """create table iud_db.dest_tuple (c1 string,c2 int,c5 string,c3 string) STORED AS
+        |carbondata"""
+        .stripMargin)
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest_tuple""")
 
     val dataframe_part = sql("select getTupleId() as tupleId from iud_db.dest_tuple_part").collect()
     val listOfTupleId_part = dataframe_part.map(df => df.get(0).toString).sorted
-    assert(listOfTupleId_part(0).startsWith("c3=aa/0/0-100100000100001_batchno0-0-0-") &&
+    assert(listOfTupleId_part(0).startsWith("c3=aa/0-100100000100001_batchno0-0-0-") &&
            listOfTupleId_part(0).endsWith("/0/0/0"))
-    assert(listOfTupleId_part(1).startsWith("c3=bb/0/0-100100000100002_batchno0-0-0-") &&
+    assert(listOfTupleId_part(1).startsWith("c3=bb/0-100100000100002_batchno0-0-0-") &&
            listOfTupleId_part(1).endsWith("/0/0/0"))
-    assert(listOfTupleId_part(2).startsWith("c3=cc/0/0-100100000100003_batchno0-0-0-") &&
+    assert(listOfTupleId_part(2).startsWith("c3=cc/0-100100000100003_batchno0-0-0-") &&
            listOfTupleId_part(2).endsWith("/0/0/0"))
-    assert(listOfTupleId_part(3).startsWith("c3=dd/0/0-100100000100004_batchno0-0-0-") &&
+    assert(listOfTupleId_part(3).startsWith("c3=dd/0-100100000100004_batchno0-0-0-") &&
            listOfTupleId_part(3).endsWith("/0/0/0"))
-    assert(listOfTupleId_part(4).startsWith("c3=ee/0/0-100100000100005_batchno0-0-0-") &&
+    assert(listOfTupleId_part(4).startsWith("c3=ee/0-100100000100005_batchno0-0-0-") &&
            listOfTupleId_part(4).endsWith("/0/0/0"))
 
     val dataframe = sql("select getTupleId() as tupleId from iud_db.dest_tuple")
@@ -311,12 +323,15 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("test delete on table with decimal column") {
     sql("drop table if exists decimal_table")
     sql(
-      s"""create table decimal_table(smallIntField smallInt,intField int,bigIntField bigint,floatField float,
-          doubleField double,decimalField decimal(25, 4),timestampField timestamp,dateField date,stringField string,
+      s"""create table decimal_table(smallIntField smallInt,intField int,bigIntField bigint,
+          floatField float,
+          doubleField double,decimalField decimal(25, 4),timestampField timestamp,dateField date,
+          stringField string,
           varcharField varchar(10),charField char(10))stored as carbondata
       """.stripMargin)
     sql(s"load data local inpath '$resourcesPath/decimalData.csv' into table decimal_table")
-    val frame = sql("select decimalfield from decimal_table where smallIntField = -1 or smallIntField = 3")
+    val frame = sql(
+      "select decimalfield from decimal_table where smallIntField = -1 or smallIntField = 3")
     sql(s"delete from decimal_table where smallIntField = 2")
     checkAnswer(frame, Seq(
       Row(-1.1234),
@@ -328,30 +343,35 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("[CARBONDATA-3491] Return updated/deleted rows count when execute update/delete sql") {
     sql("drop table if exists test_return_row_count")
 
-    sql("create table test_return_row_count (a string, b string, c string) STORED AS carbondata").show()
+    sql("create table test_return_row_count (a string, b string, c string) STORED AS carbondata")
+      .show()
     sql("insert into test_return_row_count select 'aaa','bbb','ccc'").show()
     sql("insert into test_return_row_count select 'bbb','bbb','ccc'").show()
     sql("insert into test_return_row_count select 'ccc','bbb','ccc'").show()
     sql("insert into test_return_row_count select 'ccc','bbb','ccc'").show()
 
     checkAnswer(sql("delete from test_return_row_count where a = 'aaa'"),
-        Seq(Row(1))
+      Seq(Row(1))
     )
     checkAnswer(sql("select * from test_return_row_count"),
-        Seq(Row("bbb", "bbb", "ccc"), Row("ccc", "bbb", "ccc"), Row("ccc", "bbb", "ccc"))
+      Seq(Row("bbb", "bbb", "ccc"), Row("ccc", "bbb", "ccc"), Row("ccc", "bbb", "ccc"))
     )
 
     sql("drop table if exists test_return_row_count").show()
   }
 
-  test("[CARBONDATA-3561] Fix incorrect results after execute delete/update operation if there are null values") {
+  test(
+    "[CARBONDATA-3561] Fix incorrect results after execute delete/update operation if there are " +
+    "null values")
+  {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
     val tableName = "fix_incorrect_results_for_iud"
-    sql(s"drop table if exists ${tableName}")
+    sql(s"drop table if exists ${ tableName }")
 
-    sql(s"create table ${tableName} (a string, b string, c string) STORED AS carbondata").show()
-    sql(s"""insert into table ${tableName}
+    sql(s"create table ${ tableName } (a string, b string, c string) STORED AS carbondata").show()
+    sql(
+      s"""insert into table ${ tableName }
               select '1','1','2017' union all
               select '2','2','2017' union all
               select '3','3','2017' union all
@@ -363,17 +383,17 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
               select '9',null,'2017' union all
               select '10',null,'2017'""").show()
 
-    checkAnswer(sql(s"select count(1) from ${tableName} where b is null"), Seq(Row(4)))
+    checkAnswer(sql(s"select count(1) from ${ tableName } where b is null"), Seq(Row(4)))
 
-    checkAnswer(sql(s"delete from ${tableName} where b ='4'"), Seq(Row(1)))
-    checkAnswer(sql(s"delete from ${tableName} where a ='9'"), Seq(Row(1)))
-    checkAnswer(sql(s"update ${tableName} set (b) = ('10') where a = '10'"), Seq(Row(1)))
+    checkAnswer(sql(s"delete from ${ tableName } where b ='4'"), Seq(Row(1)))
+    checkAnswer(sql(s"delete from ${ tableName } where a ='9'"), Seq(Row(1)))
+    checkAnswer(sql(s"update ${ tableName } set (b) = ('10') where a = '10'"), Seq(Row(1)))
 
-    checkAnswer(sql(s"select count(1) from ${tableName} where b is null"), Seq(Row(2)))
-    checkAnswer(sql(s"select * from ${tableName} where a = '1'"), Seq(Row("1", "1", "2017")))
-    checkAnswer(sql(s"select * from ${tableName} where a = '10'"), Seq(Row("10", "10", "2017")))
+    checkAnswer(sql(s"select count(1) from ${ tableName } where b is null"), Seq(Row(2)))
+    checkAnswer(sql(s"select * from ${ tableName } where a = '1'"), Seq(Row("1", "1", "2017")))
+    checkAnswer(sql(s"select * from ${ tableName } where a = '10'"), Seq(Row("10", "10", "2017")))
 
-    sql(s"drop table if exists ${tableName}").show()
+    sql(s"drop table if exists ${ tableName }").show()
   }
 
   override def afterAll {

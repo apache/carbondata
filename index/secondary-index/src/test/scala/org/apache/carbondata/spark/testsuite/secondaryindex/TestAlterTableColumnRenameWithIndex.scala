@@ -16,10 +16,10 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
+import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils
+.isFilterPushedDownToSI;
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
-import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -93,21 +93,5 @@ class TestAlterTableColumnRenameWithIndex extends QueryTest with BeforeAndAfterA
 
   private def createTable(): Unit = {
     sql("create table si_rename (a string,b int, c string, d string) STORED AS carbondata")
-  }
-
-  /**
-    * Method to check whether the filter is push down to SI table or not
-    *
-    * @param sparkPlan
-    * @return
-    */
-  private def isFilterPushedDownToSI(sparkPlan: SparkPlan): Boolean = {
-    var isValidPlan = false
-    sparkPlan.transform {
-      case broadCastSIFilterPushDown: BroadCastSIFilterPushJoin =>
-        isValidPlan = true
-        broadCastSIFilterPushDown
-    }
-    isValidPlan
   }
 }

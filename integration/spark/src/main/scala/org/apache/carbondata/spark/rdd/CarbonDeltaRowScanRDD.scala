@@ -74,7 +74,9 @@ class CarbonDeltaRowScanRDD[T: ClassTag](
       val partition = p.asInstanceOf[CarbonSparkPartition]
       val splits = partition.multiBlockSplit.getAllSplits.asScala.filter { s =>
         updateStatusManager.getDetailsForABlock(
-          CarbonUpdateUtil.getSegmentBlockNameKey(s.getSegmentId, s.getBlockPath)) != null
+          CarbonUpdateUtil.getSegmentBlockNameKey(s.getSegmentId,
+            s.getBlockPath,
+            table.isHivePartitionTable)) != null
       }.asJava
       new CarbonSparkPartition(partition.rddId, partition.index,
         new CarbonMultiBlockSplit(splits, partition.multiBlockSplit.getLocations))

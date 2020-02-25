@@ -18,9 +18,12 @@
 package org.apache.carbondata.core.indexstore.blockletindex;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitIncludeFilterExecutorImpl;
@@ -59,6 +62,16 @@ public class TestBlockletIndex {
     };
 
     BlockIndex blockletDataMap = new BlockletIndex();
+
+    new MockUp<CarbonTable>() {
+      @Mock public boolean isHivePartitionTable() {
+        return false;
+      }
+    };
+
+    blockletDataMap.setSegmentPropertiesWrapper(
+        new SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper(new CarbonTable(),
+            new ArrayList<>()));
     Method method = BlockIndex.class
         .getDeclaredMethod("addBlockBasedOnMinMaxValue", FilterExecuter.class, byte[][].class,
             byte[][].class, boolean[].class, String.class, int.class);

@@ -131,14 +131,16 @@ object DeleteExecution {
       case Some(id) =>
         deleteRdd.map { row =>
           val tupleId: String = row.getString(id)
-          val key = CarbonUpdateUtil.getSegmentWithBlockFromTID(tupleId)
+          val key = CarbonUpdateUtil.getSegmentWithBlockFromTID(tupleId,
+            carbonTable.isHivePartitionTable)
           (key, row)
         }.groupByKey()
       case _ =>
         deleteRdd.map { row =>
           val tupleId: String = row
             .getString(row.fieldIndex(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))
-          val key = CarbonUpdateUtil.getSegmentWithBlockFromTID(tupleId)
+          val key = CarbonUpdateUtil.getSegmentWithBlockFromTID(tupleId,
+            carbonTable.isHivePartitionTable)
           (key, row)
         }.groupByKey()
     }
@@ -159,7 +161,6 @@ object DeleteExecution {
     val segmentUpdateStatusMngr = new SegmentUpdateStatusManager(carbonTable)
     CarbonUpdateUtil
       .createBlockDetailsMap(blockMappingVO, segmentUpdateStatusMngr)
-
     val metadataDetails = SegmentStatusManager.readTableStatusFile(
       CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath))
     val isStandardTable = CarbonUtil.isStandardCarbonTable(carbonTable)
@@ -171,6 +172,7 @@ object DeleteExecution {
     val conf = SparkSQLUtil
       .broadCastHadoopConf(sparkSession.sparkContext, sparkSession.sessionState.newHadoopConf())
     val rdd = rowContRdd.join(keyRdd)
+    val blockDetails = blockMappingVO.getBlockToSegmentMapping
     res = rdd.mapPartitionsWithIndex(
       (index: Int, records: Iterator[((String), (RowCountDetailsVO, Iterable[Row]))]) =>
         Iterator[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))]] {
@@ -185,7 +187,9 @@ object DeleteExecution {
                        timestamp,
                        rowCountDetailsVO,
                        isStandardTable,
-                       metadataDetails)
+                       metadataDetails
+                         .find(_.getLoadName.equalsIgnoreCase(blockDetails.get(key)))
+                         .get, carbonTable.isHivePartitionTable)
           }
           result
         }).collect()
@@ -196,18 +200,20 @@ object DeleteExecution {
         timestamp: String,
         rowCountDetailsVO: RowCountDetailsVO,
         isStandardTable: Boolean,
-        loads: Array[LoadMetadataDetails]
+        load: LoadMetadataDetails, isPartitionTable: Boolean
     ): Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))] = {
 
       val result = new DeleteDelataResultImpl()
       var deleteStatus = SegmentStatus.LOAD_FAILURE
       val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
       // here key = segment/blockName
-      val blockName = CarbonUpdateUtil
-        .getBlockName(
-          CarbonTablePath.addDataPartPrefix(key.split(CarbonCommonConstants.FILE_SEPARATOR)(1)))
-      val segmentId = key.split(CarbonCommonConstants.FILE_SEPARATOR)(0)
-      val load = loads.find(l => l.getLoadName.equalsIgnoreCase(segmentId)).get
+      val blockName = if (isPartitionTable) {
+        CarbonUpdateUtil.getBlockName(CarbonTablePath.addDataPartPrefix(key))
+      } else {
+        CarbonUpdateUtil
+          .getBlockName(
+            CarbonTablePath.addDataPartPrefix(key.split(CarbonCommonConstants.FILE_SEPARATOR)(1)))
+      }
       val deleteDeltaBlockDetails: DeleteDeltaBlockDetails = new DeleteDeltaBlockDetails(blockName)
       val resultIter =
         new Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))] {
@@ -219,11 +225,19 @@ object DeleteExecution {
             val oneRow = iter.next
             TID = oneRow
               .get(oneRow.fieldIndex(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)).toString
-            val offset = CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.OFFSET)
-            val blockletId = CarbonUpdateUtil
-              .getRequiredFieldFromTID(TID, TupleIdEnum.BLOCKLET_ID)
-            val pageId = Integer.parseInt(CarbonUpdateUtil
-              .getRequiredFieldFromTID(TID, TupleIdEnum.PAGE_ID))
+            val (offset, blockletId, pageId) = if (isPartitionTable) {
+              (CarbonUpdateUtil.getRequiredFieldFromTID(TID,
+                TupleIdEnum.OFFSET.getTupleIdIndex - 1),
+                CarbonUpdateUtil.getRequiredFieldFromTID(TID,
+                  TupleIdEnum.BLOCKLET_ID.getTupleIdIndex - 1),
+                Integer.parseInt(CarbonUpdateUtil.getRequiredFieldFromTID(TID,
+                  TupleIdEnum.PAGE_ID.getTupleIdIndex - 1)))
+            } else {
+              (CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.OFFSET),
+                CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.BLOCKLET_ID),
+                Integer.parseInt(CarbonUpdateUtil.getRequiredFieldFromTID(TID,
+                  TupleIdEnum.PAGE_ID)))
+            }
             val IsValidOffset = deleteDeltaBlockDetails.addBlocklet(blockletId, offset, pageId)
             // stop delete operation
             if(!IsValidOffset) {
@@ -240,9 +254,18 @@ object DeleteExecution {
             } else {
               CarbonUpdateUtil.getTableBlockPath(TID, tablePath, isStandardTable)
             }
-          val completeBlockName = CarbonTablePath
-            .addDataPartPrefix(CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.BLOCK_ID) +
-                               CarbonCommonConstants.FACT_FILE_EXT)
+          val completeBlockName = if (isPartitionTable) {
+            CarbonTablePath
+              .addDataPartPrefix(
+                CarbonUpdateUtil.getRequiredFieldFromTID(TID,
+                  TupleIdEnum.BLOCK_ID.getTupleIdIndex - 1) +
+                CarbonCommonConstants.FACT_FILE_EXT)
+          } else {
+            CarbonTablePath
+              .addDataPartPrefix(
+                CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.BLOCK_ID) +
+                CarbonCommonConstants.FACT_FILE_EXT)
+          }
           val deleteDeletaPath = CarbonUpdateUtil
             .getDeleteDeltaFilePath(blockPath, blockName, timestamp)
           val carbonDeleteWriter = new CarbonDeleteDeltaWriterImpl(deleteDeletaPath)
@@ -251,7 +274,7 @@ object DeleteExecution {
 
           segmentUpdateDetails.setBlockName(blockName)
           segmentUpdateDetails.setActualBlockName(completeBlockName)
-          segmentUpdateDetails.setSegmentName(segmentId)
+          segmentUpdateDetails.setSegmentName(load.getLoadName)
           segmentUpdateDetails.setDeleteDeltaEndTimestamp(timestamp)
           segmentUpdateDetails.setDeleteDeltaStartTimestamp(timestamp)
 
