@@ -60,7 +60,8 @@ class CarbonSecondaryIndexRDD[K, V](
     segmentId: String,
     confExecutorsTemp: String,
     indexCarbonTable: CarbonTable,
-    forceAccessSegment: Boolean = false)
+    forceAccessSegment: Boolean = false,
+    isCompactionCall: Boolean = false)
   extends CarbonRDD[(K, V)](ss, Nil) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
@@ -190,23 +191,27 @@ class CarbonSecondaryIndexRDD[K, V](
     val startTime = System.currentTimeMillis()
     val absoluteTableIdentifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
       carbonStoreLocation, databaseName, factTableName, tableId)
-    val updateStatusManager: SegmentUpdateStatusManager = new SegmentUpdateStatusManager(
-      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable)
     val jobConf: JobConf = new JobConf(hadoopConf)
     SparkHadoopUtil.get.addCredentials(jobConf)
     val job: Job = new Job(jobConf)
-    val format = CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)
+
+    if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
+      job.getConfiguration
+        .set("current.segmentfile", segmentId + "_" + carbonLoadModel.getFactTimeStamp)
+    }
+    val format =
+//      if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable &&
+//          isCompactionCall) {
+//        CarbonInputFormatUtil.createCarbonFileInputFormat(absoluteTableIdentifier, job);
+//      } else {
+        CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)
+//      }
     // initialise query_id for job
     job.getConfiguration.set("query.id", queryId)
     var defaultParallelism = sparkContext.defaultParallelism
     val result = new java.util.ArrayList[Partition](defaultParallelism)
     var partitionNo = 0
-    var columnSize = 0
     var noOfBlocks = 0
-
-    // mapping of the node and block list.
-    var nodeBlockMapping: java.util.Map[String, java.util.List[Distributable]] = new
-        java.util.HashMap[String, java.util.List[Distributable]]
 
     val taskInfoList = new java.util.ArrayList[Distributable]
     var carbonInputSplits = mutable.Seq[CarbonInputSplit]()
@@ -226,7 +231,6 @@ class CarbonSecondaryIndexRDD[K, V](
     // keep on assigning till last one is reached.
     if (!splits.isEmpty) {
       splitsOfLastSegment = splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).toList.asJava
-
 
       carbonInputSplits ++= splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
 

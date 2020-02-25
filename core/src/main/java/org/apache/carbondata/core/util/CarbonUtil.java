@@ -2764,11 +2764,29 @@ public final class CarbonUtil {
    * @param identifier
    * @param filePath
    * @param segmentId
+   * @param isTransactionalTable
    * @param isStandardTable
    * @return
    */
   public static String getBlockId(AbsoluteTableIdentifier identifier, String filePath,
       String segmentId, boolean isTransactionalTable, boolean isStandardTable) {
+    return getBlockId(identifier, filePath, segmentId, isTransactionalTable, isStandardTable,
+        false);
+  }
+
+  /**
+   * Generate the blockid as per the block path
+   *
+   * @param identifier
+   * @param filePath
+   * @param segmentId
+   * @param isStandardTable
+   * @param isPartitionTable
+   * @return
+   */
+  public static String getBlockId(AbsoluteTableIdentifier identifier, String filePath,
+      String segmentId, boolean isTransactionalTable, boolean isStandardTable,
+      boolean isPartitionTable) {
     String blockId;
     String blockName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.length());
     String tablePath = identifier.getTablePath();
@@ -2787,10 +2805,18 @@ public final class CarbonUtil {
         } else {
           partitionDir = "";
         }
-        // Replace / with # on partition director to support multi level partitioning. And access
-        // them all as a single entity.
-        blockId = partitionDir.replace("/", "#") + CarbonCommonConstants.FILE_SEPARATOR
-            + segmentId + CarbonCommonConstants.FILE_SEPARATOR + blockName;
+        if (isPartitionTable) {
+          blockId =
+              partitionDir.replace("/", "#")
+                  + CarbonCommonConstants.FILE_SEPARATOR + blockName;
+        } else {
+          // Replace / with # on partition director to support multi level partitioning. And access
+          // them all as a single entity.
+          blockId =
+              partitionDir.replace("/", "#")
+                  + CarbonCommonConstants.FILE_SEPARATOR + segmentId
+                  + CarbonCommonConstants.FILE_SEPARATOR + blockName;
+        }
       }
     } else {
       blockId = filePath.substring(0, filePath.length() - blockName.length()).replace("/", "#")

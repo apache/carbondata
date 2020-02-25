@@ -25,6 +25,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.IndexUtil;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 
 import org.apache.hadoop.conf.Configuration;
@@ -44,6 +45,18 @@ public class CarbonInputFormatUtil {
    */
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonProperties.class.getName());
+
+  public static <V> CarbonFileInputFormat<V> createCarbonFileInputFormat(
+      AbsoluteTableIdentifier identifier, Job job) throws IOException {
+    CarbonFileInputFormat<V> carbonInputFormat = new CarbonFileInputFormat<V>();
+    CarbonTableInputFormat.setDatabaseName(job.getConfiguration(),
+        identifier.getCarbonTableIdentifier().getDatabaseName());
+    CarbonTableInputFormat
+        .setTableName(job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
+    FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
+    setDataMapJobIfConfigured(job.getConfiguration());
+    return carbonInputFormat;
+  }
 
   public static <V> CarbonTableInputFormat<V> createCarbonInputFormat(
       AbsoluteTableIdentifier identifier,

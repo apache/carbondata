@@ -121,12 +121,19 @@ private[sql] case class CreateIndexTableCommand(
       }
 
       if (carbonTable.isHivePartitionTable) {
-        throw new ErrorMessage(
-          s"Parent Table  ${ carbonTable.getDatabaseName }." +
-          s"${ carbonTable.getTableName }" +
-          s" is Partition Table and Secondary index on Partition table is not supported ")
+        val isPartitionColumn = indexModel.columnNames.exists {
+          siColumns => carbonTable.getTableInfo
+            .getFactTable
+            .getPartitionInfo
+            .getColumnSchemaList
+            .asScala
+            .exists(_.getColumnName.equalsIgnoreCase(siColumns))
+        }
+        if (isPartitionColumn) {
+          throw new UnsupportedOperationException(
+            "Secondary Index cannot be created on a partition column.")
+        }
       }
-
 
       locks = acquireLockForSecondaryIndexCreation(carbonTable.getAbsoluteTableIdentifier)
       if (locks.isEmpty) {

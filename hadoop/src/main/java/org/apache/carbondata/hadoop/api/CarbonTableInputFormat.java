@@ -61,6 +61,7 @@ import org.apache.carbondata.core.stream.StreamFile;
 import org.apache.carbondata.core.stream.StreamPruner;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
 import org.apache.hadoop.fs.BlockLocation;
@@ -188,7 +189,10 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
     List<Segment> segmentToAccess =
         getFilteredSegment(job, validAndInProgressSegments, false, readCommittedScope);
-
+    String segmentFileName = job.getConfiguration().get("current.segmentfile");
+    if (segmentFileName != null) {
+      segmentToAccess.get(0).setSegmentFileName(segmentFileName + CarbonTablePath.SEGMENT_EXT);
+    }
     // process and resolve the expression
     IndexFilter indexFilter = getFilterPredicates(job.getConfiguration());
 
