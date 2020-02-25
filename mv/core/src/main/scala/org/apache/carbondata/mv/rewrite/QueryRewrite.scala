@@ -225,7 +225,7 @@ class QueryRewrite private (
   }
 
   /**
-   * Update the modular plan as per the datamap table relation inside it.
+   * Update the modular plan as per the MV table relation inside it.
    *
    * @param subsumer plan to be updated
    * @return Updated modular plan.
@@ -390,7 +390,7 @@ class QueryRewrite private (
 
   private def getAttributeMap(subsumer: Seq[NamedExpression],
       subsume: Seq[NamedExpression]): Map[AttributeKey, NamedExpression] = {
-    // when datamap is created with duplicate columns like select sum(age),sum(age) from table,
+    // when MV is created with duplicate columns like select sum(age),sum(age) from table,
     // the subsumee will have duplicate, so handle that case here
     if (subsumer.length == subsume.groupBy(_.name).size) {
       subsume.zip(subsumer).flatMap { case (left, right) =>
@@ -460,7 +460,7 @@ class QueryRewrite private (
 
   /**
    * Updates the expressions as per the subsumer output expressions. It is needed to update the
-   * expressions as per the datamap table relation
+   * expressions as per the MV table relation
    *
    * @param expressions        expressions which are needed to update
    * @param aliasName          table alias name

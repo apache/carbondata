@@ -29,21 +29,6 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.processing.util.Auditor
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
-object Checker {
-  def validateTableExists(
-      dbName: Option[String],
-      tableName: String,
-      session: SparkSession): Unit = {
-    val database = dbName.getOrElse(session.catalog.currentDatabase)
-    val identifier = TableIdentifier(tableName, dbName)
-    if (!CarbonEnv.getInstance(session).carbonMetaStore.tableExists(identifier)(session)) {
-      val err = s"table $dbName.$tableName not found"
-      LogServiceFactory.getLogService(this.getClass.getName).error(err)
-      throw new NoSuchTableException(database, tableName)
-    }
-  }
-}
-
 /**
  * Operation that modifies metadata(schema, table_status, etc)
  */

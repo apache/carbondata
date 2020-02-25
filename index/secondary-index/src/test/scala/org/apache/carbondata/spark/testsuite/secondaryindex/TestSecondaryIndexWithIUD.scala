@@ -47,10 +47,10 @@ class TestSecondaryIndexWithIUD extends QueryTest with BeforeAndAfterAll {
       "create table dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table dest""")
     sql("drop index if exists index_dest1 on dest")
-    sql("create index index_dest1 on table dest (c3) AS 'carbondata'")
+    sql("create index index_dest1 on dest (c3) AS 'carbondata'")
     sql("drop index if exists index_dest2 on dest")
     //create second index table , result should be same
-    sql("create index index_dest2 on table dest (c3,c5) AS 'carbondata'")
+    sql("create index index_dest2 on dest (c3,c5) AS 'carbondata'")
     // delete all rows in the segment
     sql("delete from dest d where d.c2 not in (56)").show
     checkAnswer(
@@ -99,7 +99,7 @@ class TestSecondaryIndexWithIUD extends QueryTest with BeforeAndAfterAll {
       "create table source (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table source""")
     sql("drop index if exists index_source1 on source")
-    sql("create index index_source1 on table source (c5) AS 'carbondata'")
+    sql("create index index_source1 on source (c5) AS 'carbondata'")
     // delete (5-1)=4 rows
     try {
       sql("""delete from source d where d.c2 in (1,2,3,4)""").show
@@ -117,7 +117,7 @@ class TestSecondaryIndexWithIUD extends QueryTest with BeforeAndAfterAll {
     }
     // crete second index table
     sql("drop index if exists index_source2 on source")
-    sql("create index index_source2 on table source (c3) AS 'carbondata'")
+    sql("create index index_source2 on source (c3) AS 'carbondata'")
     // result should be same
       checkAnswer(
         sql("""select c3 from source"""),
@@ -134,7 +134,7 @@ class TestSecondaryIndexWithIUD extends QueryTest with BeforeAndAfterAll {
       "create table test (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table test""")
     sql("drop index if exists index_test1 on test")
-    sql("create index index_test1 on table test (c3) AS 'carbondata'")
+    sql("create index index_test1 on test (c3) AS 'carbondata'")
     // delete all rows in the segment
     sql("delete from test d where d.c2 not in (56)").show
     checkAnswer(
@@ -147,7 +147,7 @@ class TestSecondaryIndexWithIUD extends QueryTest with BeforeAndAfterAll {
   test("test if secondary index gives correct result on limit query after row deletion") {
     sql("drop table if exists t10")
     sql("create table t10(id string, country string) STORED AS carbondata").show()
-    sql("create index si3 on table t10(country) AS 'carbondata'")
+    sql("create index si3 on t10(country) AS 'carbondata'")
     sql(
       s" load data INPATH '$resourcesPath/secindex/IUD/sample_1.csv' INTO table t10 options " +
       "('DELIMITER'=',','FILEHEADER'='id,country')")
@@ -171,7 +171,7 @@ class TestSecondaryIndexWithIUD extends QueryTest with BeforeAndAfterAll {
       "create table test (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table test""")
     sql("drop index if exists index_test1 on test")
-    sql("create index index_test1 on table test (c3) AS 'carbondata'")
+    sql("create index index_test1 on test (c3) AS 'carbondata'")
     sql("delete from test d where d.c2 = '1'").show
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table test""")
     sql("alter table test compact 'major'")
@@ -190,7 +190,7 @@ class TestSecondaryIndexWithIUD extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table dest""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table dest""")
     sql("drop index if exists index_dest1 on dest")
-    sql("create index index_dest1 on table dest (c3) AS 'carbondata'")
+    sql("create index index_dest1 on dest (c3) AS 'carbondata'")
     checkAnswer(sql("select count(*) from dest"), Seq(Row(10)))
     sql("set carbon.input.segments.default.dest=0")
     checkAnswer(sql("select count(*) from dest"), Seq(Row(5)))
@@ -232,7 +232,7 @@ class TestSecondaryIndexWithIUD extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists test")
     sql(s"create external table test STORED AS carbondata location '$writerPath'")
     val exception = intercept[MalformedCarbonCommandException] {
-      sql("create index idx on table test(cert_no) AS 'carbondata'")
+      sql("create index idx on test(cert_no) AS 'carbondata'")
     }
     assert(exception.getMessage
       .contains("Unsupported operation on non transactional table"))
@@ -244,7 +244,7 @@ class TestSecondaryIndexWithIUD extends QueryTest with BeforeAndAfterAll {
     sql("create table dest (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata")
     sql("insert into dest values('a',1,'abc','b')")
     sql("create table dest_parquet stored as parquet select * from dest")
-    sql("create index index_dest on table dest (c3) AS 'carbondata'")
+    sql("create index index_dest on dest (c3) AS 'carbondata'")
     checkAnswer(sql(
       "select c3 from dest where c3 = 'abc' union select c3 from dest  where c3 = 'abc'"),
       sql("select c3 from dest_parquet where c3 = 'abc' union select c3 from " +
@@ -267,8 +267,8 @@ class TestSecondaryIndexWithIUD extends QueryTest with BeforeAndAfterAll {
     sql("create table dest_parquet stored as parquet select * from dest")
     sql("create table dest_parquet1 stored as parquet select * from dest")
     sql("create table dest1 STORED AS carbondata select * from dest")
-    sql("create index index_dest on table dest (c3) AS 'carbondata'")
-    sql("create index index_dest1 on table dest1 (c3) AS 'carbondata'")
+    sql("create index index_dest on dest (c3) AS 'carbondata'")
+    sql("create index index_dest1 on dest1 (c3) AS 'carbondata'")
     checkAnswer(sql(
       "select c3 from dest where c3 = 'abc' union select c3 from dest1  where c3 = 'abc'"),
       sql(

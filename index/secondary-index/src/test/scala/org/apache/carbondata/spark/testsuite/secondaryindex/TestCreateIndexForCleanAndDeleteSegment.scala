@@ -31,7 +31,7 @@ class TestCreateIndexForCleanAndDeleteSegment extends QueryTest with BeforeAndAf
   }
 
   test("test secondary index for delete segment by id") {
-    sql("drop index if exists index_no_dictionary on delete_segment_by_id")
+    sql("drop index if exists index1 on delete_segment_by_id")
     sql("drop table if exists delete_segment_by_id")
 
     sql("CREATE table delete_segment_by_id (empno int, empname String, " +
@@ -44,12 +44,12 @@ class TestCreateIndexForCleanAndDeleteSegment extends QueryTest with BeforeAndAf
     "TABLE delete_segment_by_id OPTIONS('DELIMITER'=',', 'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE')")
 
 
-    sql("create index index_no_dictionary on table delete_segment_by_id (workgroupcategoryname, empname) AS 'carbondata'")
+    sql("create index index1 on delete_segment_by_id (workgroupcategoryname, empname) AS 'carbondata'")
 
     sql("delete from table delete_segment_by_id where segment.id IN(0)")
 
     checkAnswer(sql("select count(*) from delete_segment_by_id"),
-      sql("select count(*) from index_no_dictionary"))
+      sql("select count(*) from index1"))
 
     sql("drop table if exists delete_segment_by_id")
   }

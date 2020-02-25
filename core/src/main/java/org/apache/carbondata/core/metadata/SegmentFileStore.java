@@ -39,13 +39,13 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
+import org.apache.carbondata.core.index.TableIndex;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.locks.CarbonLockUtil;
@@ -527,8 +527,8 @@ public class SegmentFileStore {
 
         SegmentStatusManager
             .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
-        // clear dataMap cache for the segmentId for which the table status file is getting updated
-        clearBlockDataMapCache(carbonTable, segmentId);
+        // clear index cache for the segmentId for which the table status file is getting updated
+        clearBlockIndexCache(carbonTable, segmentId);
         status = true;
       } else {
         LOGGER.error(
@@ -547,20 +547,20 @@ public class SegmentFileStore {
   }
 
   /**
-   * After updating table status file clear the dataMap cache for all segmentId's on which
-   * dataMap is being created because flows like merge index file creation involves modification of
+   * After updating table status file clear the index cache for all segmentId's on which
+   * index is being created because flows like merge index file creation involves modification of
    * segment file and once segment file is modified the cache for that segment need to be cleared
    * otherwise the old cache will be used which is stale
    *
    * @param carbonTable
    * @param segmentId
    */
-  public static void clearBlockDataMapCache(CarbonTable carbonTable, String segmentId) {
-    TableDataMap defaultDataMap = DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable);
+  public static void clearBlockIndexCache(CarbonTable carbonTable, String segmentId) {
+    TableIndex defaultIndex = DataMapStoreManager.getInstance().getDefaultIndexInTable(carbonTable);
     LOGGER.info(
         "clearing cache while updating segment file entry in table status file for segmentId: "
             + segmentId);
-    defaultDataMap.getDataMapFactory().clear(segmentId);
+    defaultIndex.getIndexFactory().clear(segmentId);
   }
 
   private static CarbonFile[] getSegmentFiles(String segmentPath) {
@@ -915,7 +915,7 @@ public class SegmentFileStore {
     if (toBeDeleteSegments.size() > 0 || toBeUpdatedSegments.size() > 0) {
       Set<Segment> segmentSet = new HashSet<>(
           new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
-              .getValidAndInvalidSegments(carbonTable.isChildTableForMV()).getValidSegments());
+              .getValidAndInvalidSegments(carbonTable.isMVTable()).getValidSegments());
       CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, uniqueId, true,
           Segment.toSegmentList(toBeDeleteSegments, null),
           Segment.toSegmentList(toBeUpdatedSegments, null), uuid);

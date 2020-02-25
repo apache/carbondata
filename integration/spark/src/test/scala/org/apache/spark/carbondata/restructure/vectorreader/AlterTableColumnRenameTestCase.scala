@@ -209,18 +209,18 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='Name , cIty')
+         | CREATE INDEX dm
+         | ON datamap_test (Name , cIty)
+         | AS 'lucene'
       """.stripMargin)
     val ex = intercept[ProcessMetaDataException] {
       sql("alter table datamap_test change Name myName string")
     }
-    ex.getMessage.contains("alter table column rename is not supported for index datamap")
+    ex.getMessage.contains("alter table column rename is not supported for index")
     sql("DROP TABLE IF EXISTS datamap_test")
   }
 
-  test("test rename column with bloom datamap") {
+  test("test rename column index bloom index") {
     sql("DROP TABLE IF EXISTS bloomtable")
     sql(
       s"""
@@ -230,14 +230,15 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
          |  """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm3 ON TABLE bloomtable
-         | USING 'bloomfilter'
-         | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX dm3
+         | ON TABLE bloomtable (city)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
     val ex = intercept[ProcessMetaDataException] {
       sql("alter table bloomtable change city nation string")
     }
-    ex.getMessage.contains("alter table column rename is not supported for index datamap")
+    ex.getMessage.contains("alter table column rename is not supported for index")
     sql("drop table if exists bloomtable")
   }
 

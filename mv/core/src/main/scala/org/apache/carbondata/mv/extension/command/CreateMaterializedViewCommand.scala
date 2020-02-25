@@ -27,7 +27,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedMaterializedViewExce
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
-import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
+import org.apache.carbondata.core.metadata.schema.datamap.{DataMapProperty, MVProviderName}
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.DataMapManager
@@ -35,7 +35,7 @@ import org.apache.carbondata.events._
 
 /**
  * Create Materialized View Command implementation
- * It will create the MV table, load the MV table (if deferred rebuild is false),
+ * It will create the MV table, load the MV table (if deferred refresh is false),
  * and register the MV schema in [[DataMapStoreManager]]
  */
 case class CreateMaterializedViewCommand(
@@ -57,10 +57,10 @@ case class CreateMaterializedViewCommand(
     val mutableMap = mutable.Map[String, String](properties.toSeq: _*)
     mutableMap.put(DataMapProperty.DEFERRED_REBUILD, deferredRebuild.toString)
 
-    dataMapSchema = new DataMapSchema(mvName, DataMapClassProvider.MV.name())
+    dataMapSchema = new DataMapSchema(mvName, MVProviderName.NAME)
     dataMapSchema.setProperties(mutableMap.asJava)
     dataMapProvider = DataMapManager.get.getDataMapProvider(null, dataMapSchema, sparkSession)
-    if (DataMapStoreManager.getInstance().getAllDataMapSchemas.asScala
+    if (DataMapStoreManager.getInstance().getAllMVSchemas.asScala
       .exists(_.getDataMapName.equalsIgnoreCase(dataMapSchema.getDataMapName))) {
       if (!ifNotExistsSet) {
         throw new MalformedMaterializedViewException(
@@ -78,7 +78,7 @@ case class CreateMaterializedViewCommand(
     dataMapProvider.initMeta(queryString.orNull)
 
     val postExecEvent = CreateDataMapPostExecutionEvent(
-      sparkSession, systemFolderLocation, null, DataMapClassProvider.MV.name())
+      sparkSession, systemFolderLocation, null, MVProviderName.NAME)
     OperationListenerBus.getInstance().fireEvent(postExecEvent, operationContext)
     Seq.empty
   }

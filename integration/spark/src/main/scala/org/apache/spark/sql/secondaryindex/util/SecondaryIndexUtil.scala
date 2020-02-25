@@ -124,10 +124,11 @@ object SecondaryIndexUtil {
    * Get a new CarbonLoadModel
    *
    */
-  def getCarbonLoadModel(indexCarbonTable: CarbonTable,
-    loadsToMerge: util.List[LoadMetadataDetails],
-    factTimeStamp: Long,
-    columnCompressor: String): CarbonLoadModel = {
+  def getCarbonLoadModel(
+      indexCarbonTable: CarbonTable,
+      loadsToMerge: util.List[LoadMetadataDetails],
+      factTimeStamp: Long,
+      columnCompressor: String): CarbonLoadModel = {
     val carbonLoadModel = new CarbonLoadModel
     carbonLoadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(indexCarbonTable))
     carbonLoadModel.setTableName(indexCarbonTable.getTableName)
@@ -231,7 +232,7 @@ object SecondaryIndexUtil {
             .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(tablePath),
               loadMetadataDetails)
 
-          // clear the datamap cache for the merged segments, as the index files and
+          // clear the index cache for the merged segments, as the index files and
           // data files are rewritten after compaction
           if (mergedSegments.size > 0) {
 

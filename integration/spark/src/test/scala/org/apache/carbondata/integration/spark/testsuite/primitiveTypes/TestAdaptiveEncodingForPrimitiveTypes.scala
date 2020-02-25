@@ -361,13 +361,16 @@ class TestAdaptiveEncodingForPrimitiveTypes extends QueryTest with BeforeAndAfte
     sql("drop table if exists complexTable")
   }
 
-  test("test bloom datamap on the adaptive encoded column") {
+  test("test index on the adaptive encoded column") {
     sql("drop table if exists negativeTable")
     sql("create table negativeTable (intColumn int,stringColumn string,shortColumn short) STORED AS carbondata TBLPROPERTIES('SORT_COLUMNS'='intColumn,shortColumn')")
     sql(s"load data inpath '${resourcesPath + "/dataWithNegativeValues.csv"}' into table negativeTable options('FILEHEADER'='intColumn,stringColumn,shortColumn')")
     checkAnswer(sql("select * from negativeTable"), sql("select * from negativeTable_Compare"))
     // create bloom in the intColumn and shortColumn
-    sql("CREATE DATAMAP negativeTable_bloom ON TABLE negativeTable USING 'bloomfilter' DMProperties('INDEX_COLUMNS'='intColumn,shortColumn', 'BLOOM_SIZE'='640000')")
+    sql("CREATE INDEX negativeTable_bloom " +
+        "ON TABLE negativeTable (intColumn,shortColumn)" +
+        "AS 'bloomfilter' " +
+        "properties('BLOOM_SIZE'='640000')")
 
     checkAnswer(sql("select * from negativeTable where intColumn<0"), sql("select * from negativeTable_Compare where intColumn<0"))
     checkAnswer(sql("select * from negativeTable where intColumn<=0"), sql("select * from negativeTable_Compare where intColumn<=0"))

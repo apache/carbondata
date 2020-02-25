@@ -22,7 +22,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.secondaryindex.command.{SecondaryIndex, SecondaryIndexModel}
+import org.apache.spark.sql.secondaryindex.command.{IndexModel, IndexTableModel}
 import org.apache.spark.sql.secondaryindex.rdd.SecondaryIndexCreator
 import org.apache.spark.sql.secondaryindex.util.{CarbonInternalScalaUtil, SecondaryIndexUtil}
 
@@ -50,11 +50,11 @@ object Compactor {
     }
     val indexTablesList = CarbonInternalScalaUtil.getIndexesMap(carbonMainTable).asScala
     indexTablesList.foreach { indexTableAndColumns =>
-      val secondaryIndex = SecondaryIndex(Some(carbonLoadModel.getDatabaseName),
+      val secondaryIndex = IndexModel(Some(carbonLoadModel.getDatabaseName),
         carbonLoadModel.getTableName,
         indexTableAndColumns._2.asScala.toList,
         indexTableAndColumns._1)
-      val secondaryIndexModel = SecondaryIndexModel(sqlContext,
+      val secondaryIndexModel = IndexTableModel(sqlContext,
         carbonLoadModel,
         carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
         secondaryIndex,
@@ -93,10 +93,7 @@ object Compactor {
           .getCarbonLoadModel(indexCarbonTable,
             loadMetadataDetails.toList.asJava,
             System.currentTimeMillis(),
-            CarbonInternalScalaUtil
-              .getCompressorForIndexTable(indexCarbonTable.getDatabaseName,
-                indexCarbonTable.getTableName,
-                carbonMainTable.getTableName)(sqlContext.sparkSession))
+            CarbonInternalScalaUtil.getCompressorForIndexTable(indexCarbonTable, carbonMainTable))
 
         // merge the data files of the compacted segments and take care of
         // merging the index files inside this if needed
@@ -117,7 +114,7 @@ object Compactor {
 
       } catch {
         case ex: Exception =>
-          LOGGER.error(s"Compaction failed for SI table ${secondaryIndex.indexTableName}", ex)
+          LOGGER.error(s"Compaction failed for SI table ${secondaryIndex.indexName}", ex)
           throw ex
       }
     }

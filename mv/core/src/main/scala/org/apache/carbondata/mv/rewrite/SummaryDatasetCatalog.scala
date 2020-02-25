@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.FindDataSourceTable
 
-import org.apache.carbondata.core.datamap.DataMapCatalog
+import org.apache.carbondata.core.datamap.MVCatalog
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.mv.extension.{MVHelper, MVParser}
@@ -42,7 +42,7 @@ private[mv] case class SummaryDataset(
     relation: ModularPlan)
 
 /**
- * It is wrapper on datamap relation along with schema.
+ * It is wrapper on MV relation along with schema.
  */
 case class MVPlanWrapper(plan: ModularPlan, dataMapSchema: DataMapSchema) extends ModularPlan {
   override def output: Seq[Attribute] = plan.output
@@ -51,7 +51,7 @@ case class MVPlanWrapper(plan: ModularPlan, dataMapSchema: DataMapSchema) extend
 }
 
 private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
-  extends DataMapCatalog[SummaryDataset] {
+  extends MVCatalog[SummaryDataset] {
 
   @transient
   private val summaryDatasets = new scala.collection.mutable.ArrayBuffer[SummaryDataset]
@@ -103,8 +103,8 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
     writeLock {
       val currentDatabase = sparkSession.catalog.currentDatabase
 
-      // This is required because datamap schemas are across databases, so while loading the
-      // catalog, if the datamap is in database other than sparkSession.currentDataBase(), then it
+      // This is required because MV schemas are across databases, so while loading the
+      // catalog, if the MV is in database other than sparkSession.currentDataBase(), then it
       // fails to register, so set the database present in the dataMapSchema Object
       setCurrentDataBase(dataMapSchema.getRelationIdentifier.getDatabaseName)
       val mvPlan = MVParser.getMVPlan(dataMapSchema.getCtasQuery, sparkSession)
@@ -156,7 +156,7 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
     writeLock {
       val dataIndex = summaryDatasets
         .indexWhere(sd => sd.dataMapSchema.getDataMapName.equals(dataMapName))
-      require(dataIndex >= 0, s"Datamap $dataMapName is not registered.")
+      require(dataIndex >= 0, s"MV $dataMapName is not registered.")
       summaryDatasets.remove(dataIndex)
     }
   }
@@ -164,7 +164,7 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
 
   override def listAllValidSchema(): Array[SummaryDataset] = {
     val statusDetails = DataMapStatusManager.getEnabledDataMapStatusDetails
-    // Only select the enabled datamaps for the query.
+    // Only select the enabled MV for the query.
     val enabledDataSets = summaryDatasets.filter { p =>
       statusDetails.exists(_.getDataMapName.equalsIgnoreCase(p.dataMapSchema.getDataMapName))
     }
@@ -251,14 +251,11 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
     readLock {
       val sig = plan.signature
       val statusDetails = DataMapStatusManager.getEnabledDataMapStatusDetails
-      // Only select the enabled datamaps for the query.
+      // Only select the enabled MV for the query.
       val enabledDataSets = summaryDatasets.filter { p =>
         statusDetails.exists(_.getDataMapName.equalsIgnoreCase(p.dataMapSchema.getDataMapName))
       }
 
-      //  ****not sure what enabledDataSets is used for ****
-      //  can enable/disable datamap move to other place ?
-      //    val feasible = enabledDataSets.filter { x =>
       val feasible = enabledDataSets.filter { x =>
         (x.signature, sig) match {
           case (Some(sig1), Some(sig2)) =>

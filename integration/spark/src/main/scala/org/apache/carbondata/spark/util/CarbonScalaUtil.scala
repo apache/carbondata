@@ -524,9 +524,9 @@ object CarbonScalaUtil {
   }
 
   /**
-   * Create datamap provider using class name
+   * Create MV provider using class name
    */
-  def createDataMapProvider(
+  def createMVProvider(
       className: String,
       sparkSession: SparkSession,
       table: CarbonTable,

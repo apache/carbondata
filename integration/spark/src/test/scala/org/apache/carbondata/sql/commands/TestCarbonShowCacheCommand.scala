@@ -48,8 +48,8 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
         | STORED AS carbondata
       """.stripMargin)
     // bloom
-    sql("CREATE DATAMAP IF NOT EXISTS cache_1_bloom ON TABLE cache_db.cache_1 USING 'bloomfilter' " +
-        "DMPROPERTIES('INDEX_COLUMNS'='deptno')")
+    sql("CREATE INDEX IF NOT EXISTS cache_1_bloom ON TABLE cache_db.cache_1 AS 'bloomfilter' " +
+        "PROPERTIES('INDEX_COLUMNS'='deptno')")
     sql(s"LOAD DATA INPATH '$resourcesPath/data.csv' INTO TABLE cache_1 ")
 
     sql(
@@ -132,7 +132,7 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql("delete from table empTable where segment.id in(1)").show()
     // check whether select * query invalidates the cache for the invalid segments
     sql("select * from empTable").show()
-    showCache = sql("SHOW METACACHE on table empTable").collect()
+    showCache = sql("SHOW METACACHE on empTable").collect()
     assert(showCache(0).get(2).toString.equalsIgnoreCase("1/1 index files cached"))
   }
 

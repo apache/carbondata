@@ -20,7 +20,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, NoSuchIndexException}
 
 class DropTableTest extends QueryTest with BeforeAndAfterAll {
 
@@ -58,6 +58,7 @@ class DropTableTest extends QueryTest with BeforeAndAfterAll {
     sql("create index i1 on table cd.t1(c) AS 'carbondata'")
     sql("create index i2 on table cd.t1(c,b) AS 'carbondata'")
     sql("show tables in cd").show()
+    sql("show indexes on cd.t1").show(false)
     sql("drop index i1 on cd.t1")
     sql("drop index i2 on cd.t1")
     assert(sql("show tables in cd").collect()
@@ -68,10 +69,10 @@ class DropTableTest extends QueryTest with BeforeAndAfterAll {
   test("test drop index command") {
     sql("drop table if exists testDrop")
     sql("create table testDrop (a string, b string, c string) STORED AS carbondata")
-    val exception = intercept[MalformedCarbonCommandException] {
+    val exception = intercept[NoSuchIndexException] {
       sql("drop index indTestDrop on testDrop")
     }
-    assert(exception.getMessage.contains("Index table [default.indtestdrop] does not exist on parent table [default.testdrop]"))
+    assert(exception.getMessage.contains("Index with name indtestdrop does not exist"))
     sql("drop table if exists testDrop")
   }
 }

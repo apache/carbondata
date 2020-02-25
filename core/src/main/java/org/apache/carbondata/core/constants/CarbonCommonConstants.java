@@ -460,10 +460,9 @@ public final class CarbonCommonConstants {
   public static final String LOCAL_DICTIONARY_EXCLUDE = "local_dictionary_exclude";
 
   /**
-   * DMPROPERTY for Index DataMap, like lucene, bloomfilter DataMap,
-   * to indicate a list of column name to be indexed
+   * Internal property to store for index column names
    */
-  public static final String INDEX_COLUMNS = "INDEX_COLUMNS";
+  public static final String INDEX_COLUMNS = "_INDEX_COLUMNS";
 
   /**
    * Index handler table property. It allows user to create a new sort column from the set of
@@ -2375,7 +2374,7 @@ public final class CarbonCommonConstants {
    * When the number of small files increase for SI segments(it can happen as number of columns will
    * be less and we store position id and reference columns), user an either set to true which will
    * merge the data files for upcoming loads or run SI rebuild command which does this job for all
-   * segments. (REBUILD INDEX <index_table>)
+   * segments. (REFRESH INDEX <index_table>)
    */
   public static final String CARBON_SI_SEGMENT_MERGE_DEFAULT = "false";
 

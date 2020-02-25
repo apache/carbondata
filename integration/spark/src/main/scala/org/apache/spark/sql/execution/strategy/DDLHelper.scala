@@ -383,7 +383,7 @@ object DDLHelper {
           throw new MalformedCarbonCommandException(
             "The table which has materialized view does not support set streaming property")
         }
-        if (carbonTable.isChildTableForMV) {
+        if (carbonTable.isMVTable) {
           throw new MalformedCarbonCommandException(
             "Datamap table does not support set streaming property")
         }

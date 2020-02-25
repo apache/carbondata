@@ -182,12 +182,12 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         carbonMergerMapping,
         mergedLoadName)
     OperationListenerBus.getInstance.fireEvent(alterTableCompactionPreEvent, operationContext)
-    // Add pre event listener for index datamap
-    val tableDataMaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable)
+    // Add pre event listener for index
+    val indexes = DataMapStoreManager.getInstance().getAllIndexes(carbonTable)
     val dataMapOperationContext = new OperationContext()
-    if (null != tableDataMaps) {
+    if (null != indexes) {
       val dataMapNames: mutable.Buffer[String] =
-        tableDataMaps.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
+        indexes.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
       val dataMapPreExecutionEvent: BuildDataMapPreExecutionEvent =
         new BuildDataMapPreExecutionEvent(sqlContext.sparkSession,
         carbonTable.getAbsoluteTableIdentifier, dataMapNames)
@@ -304,7 +304,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         mergedLoadName)
       OperationListenerBus.getInstance()
         .fireEvent(compactionLoadStatusPostEvent, operationContext)
-      if (null != tableDataMaps) {
+      if (null != indexes) {
         val buildDataMapPostExecutionEvent = new BuildDataMapPostExecutionEvent(
           sqlContext.sparkSession, carbonTable.getAbsoluteTableIdentifier,
           null, Seq(mergedLoadNumber), true)
@@ -319,7 +319,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       }
       // here either of the conditions can be true, when delete segment is fired after compaction
       // has started, statusFileUpdation will be false , but at the same time commitComplete can be
-      // true because compaction for all datamaps will be finished at a time to the maximum level
+      // true because compaction for all indexes will be finished at a time to the maximum level
       // possible (level 1, 2 etc). so we need to check for either condition
       if (!statusFileUpdation || !commitComplete) {
         LOGGER.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +

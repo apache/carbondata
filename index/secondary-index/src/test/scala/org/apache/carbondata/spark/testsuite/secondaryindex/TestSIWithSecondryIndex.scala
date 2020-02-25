@@ -44,7 +44,7 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
     sql("alter table table_WithSIAndAlter add columns(date1 date, time timestamp)")
     sql("update table_WithSIAndAlter set(date1) = (c2)").show
     sql("update table_WithSIAndAlter set(time) = (c3)").show
-    sql("create index si_altercolumn on table table_WithSIAndAlter(date1,time) AS 'carbondata'")
+    sql("create index si_altercolumn on table_WithSIAndAlter(date1,time) AS 'carbondata'")
   }
 
   private def isExpectedValueValid(dbName: String,
@@ -74,7 +74,7 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
     sql("insert into delete_records values('k','r')")
     sql("delete from delete_records where a='k'").show()
     sql("alter table delete_records compact 'minor'")
-    sql("create index index1 on table delete_records(b) AS 'carbondata'")
+    sql("create index index1 on delete_records(b) AS 'carbondata'")
     checkAnswer(sql("select count(*) from index1"), Row(0))
     sql("drop table if exists delete_records")
   }
@@ -85,7 +85,7 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
     sql("create table maintable (a string,b string, c int) STORED AS carbondata")
     sql("insert into maintable values('k','x',2)")
     sql("insert into maintable values('k','r',1)")
-    sql("create index index21 on table maintable(b) AS 'carbondata'")
+    sql("create index index21 on maintable(b) AS 'carbondata'")
     checkAnswer(sql("select * from maintable where c>1"), Seq(Row("k","x",2)))
     sql("ALTER TABLE maintable RENAME TO maintableeee")
     checkAnswer(sql("select * from maintableeee where c>1"), Seq(Row("k","x",2)))
@@ -94,15 +94,15 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
   test("validate column_meta_cache and cache_level on SI table") {
     sql("drop table if exists column_meta_cache")
     sql("create table column_meta_cache(c1 String, c2 String, c3 int, c4 double) STORED AS carbondata")
-    sql("create index indexCache on table column_meta_cache(c2,c1) AS 'carbondata' TBLPROPERTIES('COLUMN_meta_CachE'='c2','cache_level'='BLOCK')")
+    sql("create index indexCache on column_meta_cache(c2,c1) AS 'carbondata' PROPERTIES('COLUMN_meta_CachE'='c2','cache_level'='BLOCK')")
     assert(isExpectedValueValid("default", "indexCache", "column_meta_cache", "c2"))
     assert(isExpectedValueValid("default", "indexCache", "cache_level", "BLOCK"))
     // set invalid values for SI table for column_meta_cache and cache_level and verify
     intercept[MalformedCarbonCommandException] {
-      sql("create index indexCache1 on table column_meta_cache(c2) AS 'carbondata' TBLPROPERTIES('COLUMN_meta_CachE'='abc')")
+      sql("create index indexCache1 on column_meta_cache(c2) AS 'carbondata' PROPERTIES('COLUMN_meta_CachE'='abc')")
     }
     intercept[MalformedCarbonCommandException] {
-      sql("create index indexCache1 on table column_meta_cache(c2) AS 'carbondata' TBLPROPERTIES('cache_level'='abc')")
+      sql("create index indexCache1 on column_meta_cache(c2) AS 'carbondata' PROPERTIES('cache_level'='abc')")
     }
     intercept[Exception] {
       sql("Alter table indexCache SET TBLPROPERTIES('column_meta_cache'='abc')")
@@ -145,7 +145,7 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
         "TABLE uniqdata OPTIONS('DELIMITER'=',', 'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE')")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO " +
         "TABLE uniqdata OPTIONS('DELIMITER'=',', 'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE')")
-    sql("create index index1 on table uniqdata (workgroupcategoryname) AS 'carbondata'")
+    sql("create index index1 on uniqdata (workgroupcategoryname) AS 'carbondata'")
     val indexTable = CarbonEnv.getCarbonTable(Some("default"), "index1")(sqlContext.sparkSession)
     val carbontable = CarbonEnv.getCarbonTable(Some("default"), "uniqdata")(sqlContext.sparkSession)
     val details = SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath)

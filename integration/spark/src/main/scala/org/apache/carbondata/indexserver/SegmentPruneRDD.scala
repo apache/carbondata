@@ -23,13 +23,14 @@ import org.apache.spark.{Partition, SparkEnv, TaskContext}
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.core.cache.CacheProvider
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, DistributableDataMapFormat}
-import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper
+import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.index.DistributableIndexFormat
+import org.apache.carbondata.core.index.dev.expr.IndexDistributableWrapper
 import org.apache.carbondata.core.indexstore.SegmentWrapper
 import org.apache.carbondata.spark.rdd.CarbonRDD
 
 class SegmentPruneRDD(@transient private val ss: SparkSession,
-    dataMapFormat: DistributableDataMapFormat)
+    dataMapFormat: DistributableIndexFormat)
   extends CarbonRDD[(String, SegmentWrapper)](ss, Nil) {
 
   override protected def internalGetPartitions: Array[Partition] = {
@@ -38,19 +39,18 @@ class SegmentPruneRDD(@transient private val ss: SparkSession,
 
   override def internalCompute(split: Partition,
       context: TaskContext): Iterator[(String, SegmentWrapper)] = {
-    val inputSplits = split.asInstanceOf[DataMapRDDPartition].inputSplit
+    val inputSplits = split.asInstanceOf[IndexRDDPartition].inputSplit
     val segments = inputSplits.map(_
-      .asInstanceOf[DataMapDistributableWrapper].getDistributable.getSegment)
+      .asInstanceOf[IndexDistributableWrapper].getDistributable.getSegment)
     segments.foreach(_.setReadCommittedScope(dataMapFormat.getReadCommittedScope))
     if (dataMapFormat.getInvalidSegments.size > 0) {
       // clear the segmentMap and from cache in executor when there are invalid segments
       DataMapStoreManager.getInstance().clearInvalidSegments(dataMapFormat.getCarbonTable,
         dataMapFormat.getInvalidSegments)
     }
-    val blockletMap = DataMapStoreManager.getInstance
-      .getDefaultDataMap(dataMapFormat.getCarbonTable)
-    val prunedSegments = blockletMap
-      .pruneSegments(segments.toList.asJava, dataMapFormat.getFilterResolverIntf)
+    val index = DataMapStoreManager.getInstance.getDefaultIndexInTable(dataMapFormat.getCarbonTable)
+    val prunedSegments = index.pruneSegments(
+      segments.toList.asJava, dataMapFormat.getFilterResolverIntf)
     val executorIP = s"${ SparkEnv.get.blockManager.blockManagerId.host }_${
       SparkEnv.get.blockManager.blockManagerId.executorId
     }"

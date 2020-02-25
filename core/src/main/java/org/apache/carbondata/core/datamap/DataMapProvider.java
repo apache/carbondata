@@ -27,13 +27,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
-import org.apache.carbondata.core.datamap.status.DataMapSegmentStatusUtil;
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager;
+import org.apache.carbondata.core.datamap.status.MVSegmentStatusUtil;
+import org.apache.carbondata.core.index.IndexUtil;
+import org.apache.carbondata.core.index.dev.IndexFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -48,25 +49,26 @@ import com.google.gson.Gson;
 import org.apache.log4j.Logger;
 
 /**
- * DataMap is a accelerator for certain type of query. Developer can add new DataMap
+ * Index is a accelerator for certain type of query. Developer can add new Index
  * implementation to improve query performance.
  *
- * Currently two types of DataMap are supported
+ * Currently two types of Index are supported
  * <ol>
- *   <li> MVDataMap: materialized view type of DataMap to accelerate olap style query,
+ *   <li> MVDataMap: materialized view type of Index to accelerate olap style query,
  * like SPJG query (select, predicate, join, groupby) </li>
- *   <li> DataMap: index type of DataMap to accelerate filter query </li>
+ *   <li> Index: index type of Index to accelerate filter query </li>
  * </ol>
  *
  * <p>
  * In following command <br>
- * {@code CREATE DATAMAP dm ON TABLE main USING 'provider'}, <br>
- * the <b>provider</b> string can be a short name or class name of the DataMap implementation.
+ * {@code CREATE INDEX index ON main AS 'provider'}, <br>
+ * the <b>provider</b> string can be a short name or class name of the Index implementation.
  *
  * <br>Currently CarbonData supports following provider:
  * <ol>
  *   <li> lucene: index backed by Apache Lucene </li>
  *   <li> bloomfilter: index backed by Bloom Filter </li>
+ *   <li> carbondata: index backed by CarbonData table </li>
  * </ol>
  *
  * @since 1.4.0
@@ -97,7 +99,7 @@ public abstract class DataMapProvider {
    * This is called when user creates datamap, for example "CREATE DATAMAP dm ON TABLE mainTable"
    * Implementation should initialize metadata for datamap, like creating table
    */
-  public abstract void initMeta(String ctasSqlStatement) throws MalformedDataMapCommandException,
+  public abstract void initMeta(String ctasSqlStatement) throws MalformedIndexCommandException,
       IOException;
 
   /**
@@ -124,7 +126,7 @@ public abstract class DataMapProvider {
   /**
    * Rebuild the datamap by loading all existing data from mainTable
    * This is called when refreshing the datamap when
-   * 1. after datamap creation and no "WITH DEFERRED REBUILD" defined
+   * 1. after datamap creation and no "WITH DEFERRED REFRESH" defined
    * 2. user manually trigger REBUILD DATAMAP command
    */
   public boolean rebuild() throws IOException, NoSuchDataMapException {
@@ -178,7 +180,7 @@ public abstract class DataMapProvider {
                   == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) && SegmentStatusManager
                   .isLoadInProgress(dataMapTableAbsoluteTableIdentifier,
                       loadMetaDetail.getLoadName())) {
-                throw new RuntimeException("Rebuild to datamap " + dataMapSchema.getDataMapName()
+                throw new RuntimeException("Rebuild to " + dataMapSchema.getDataMapName()
                     + " is already in progress");
               }
             }
@@ -197,7 +199,7 @@ public abstract class DataMapProvider {
               .collect(Collectors.toList());
           for (RelationIdentifier relationIdentifier : relationIdentifiers) {
             List<String> mainTableSegmentList =
-                DataMapUtil.getMainTableValidSegmentList(relationIdentifier);
+                IndexUtil.getMainTableValidSegmentList(relationIdentifier);
             if (mainTableSegmentList.isEmpty()) {
               return false;
             }
@@ -272,7 +274,7 @@ public abstract class DataMapProvider {
       // If segment Map is empty, load all valid segments from main tables to dataMap
       for (RelationIdentifier relationIdentifier : relationIdentifiers) {
         List<String> mainTableSegmentList =
-            DataMapUtil.getMainTableValidSegmentList(relationIdentifier);
+            IndexUtil.getMainTableValidSegmentList(relationIdentifier);
         // If mainTableSegmentList is empty, no need to trigger load command
         // TODO: handle in case of multiple tables load to datamap table
         if (mainTableSegmentList.isEmpty()) {
@@ -287,13 +289,13 @@ public abstract class DataMapProvider {
         List<String> dataMapTableSegmentList = new ArrayList<>();
         // Get all segments for parent relationIdentifier
         List<String> mainTableSegmentList =
-            DataMapUtil.getMainTableValidSegmentList(relationIdentifier);
+            IndexUtil.getMainTableValidSegmentList(relationIdentifier);
         boolean ifTableStatusUpdateRequired = false;
         for (LoadMetadataDetails loadMetaDetail : listOfLoadFolderDetails) {
           if (loadMetaDetail.getSegmentStatus() == SegmentStatus.SUCCESS
               || loadMetaDetail.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS) {
             Map<String, List<String>> segmentMaps =
-                DataMapSegmentStatusUtil.getSegmentMap(loadMetaDetail.getExtraInfo());
+                MVSegmentStatusUtil.getSegmentMap(loadMetaDetail.getExtraInfo());
             String mainTableMetaDataPath =
                 CarbonTablePath.getMetadataPath(relationIdentifier.getTablePath());
             LoadMetadataDetails[] parentTableLoadMetaDataDetails =
@@ -346,7 +348,7 @@ public abstract class DataMapProvider {
               if (loadMetaDetail.getSegmentStatus() == SegmentStatus.SUCCESS
                   || loadMetaDetail.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS) {
                 Map<String, List<String>> segmentMaps =
-                    DataMapSegmentStatusUtil.getSegmentMap(loadMetaDetail.getExtraInfo());
+                    MVSegmentStatusUtil.getSegmentMap(loadMetaDetail.getExtraInfo());
                 List<String> segmentIds = segmentMaps.get(
                     relationIdentifier.getDatabaseName() + CarbonCommonConstants.POINT
                         + relationIdentifier.getTableName());
@@ -402,14 +404,13 @@ public abstract class DataMapProvider {
   }
 
   /**
-   * Provide the datamap catalog instance or null if this datamap not required to rewrite
-   * the query.
+   * Provide the MV catalog instance or null if this MV not required to rewrite the query.
    */
-  public DataMapCatalog createDataMapCatalog() {
+  public MVCatalog createMVCatalog() {
     return null;
   }
 
-  public abstract DataMapFactory getDataMapFactory();
+  public abstract IndexFactory getIndexFactory();
 
   public abstract boolean supportRebuild();
 

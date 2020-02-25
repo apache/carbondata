@@ -30,7 +30,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonCommonConstantsInternal, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.exception.InvalidConfigurationException
-import org.apache.carbondata.core.util.{BlockletDataMapUtil, CarbonProperties, CarbonUtil, SessionParams}
+import org.apache.carbondata.core.util.{BlockletIndexUtil, CarbonProperties, CarbonUtil, SessionParams}
 
 case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
   extends RunnableCommand {

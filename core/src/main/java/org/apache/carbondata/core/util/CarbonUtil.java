@@ -3076,7 +3076,7 @@ public final class CarbonUtil {
       SegmentStatusManager segmentStatusManager =
           new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier());
       SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
-          segmentStatusManager.getValidAndInvalidSegments(carbonTable.isChildTableForMV());
+          segmentStatusManager.getValidAndInvalidSegments(carbonTable.isMVTable());
       List<Segment> validSegments = validAndInvalidSegmentsInfo.getValidSegments();
       if (validSegments.isEmpty()) {
         return carbonProperties.getFormatVersion();

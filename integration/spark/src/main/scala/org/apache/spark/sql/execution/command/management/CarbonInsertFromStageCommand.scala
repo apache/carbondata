@@ -29,13 +29,13 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{Checker, DataCommand}
+import org.apache.spark.sql.execution.command.DataCommand
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.filesystem.{AbstractDFSCarbonFile, CarbonFile}
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{ColumnarFormatVersion, SegmentFileStore}
@@ -66,7 +66,6 @@ case class CarbonInsertFromStageCommand(
 
   override def processData(spark: SparkSession): Seq[Row] = {
     LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    Checker.validateTableExists(databaseNameOp, tableName, spark)
     val table = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(spark)
     val hadoopConf = spark.sessionState.newHadoopConf()
     FileFactory.getConfiguration.addResource(hadoopConf)
@@ -75,7 +74,7 @@ case class CarbonInsertFromStageCommand(
     if (!table.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
-    if (table.isChildTableForMV) {
+    if (table.isMVTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on MV table")
     }
 

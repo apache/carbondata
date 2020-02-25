@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
+import org.apache.carbondata.core.metadata.schema.datamap.{IndexProviderName, MVProviderName}
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.events._
 
@@ -40,7 +40,7 @@ object ShowCachePreMVEventListener extends OperationEventListener {
       case showTableCacheEvent: ShowTableCacheEvent =>
         val carbonTable = showTableCacheEvent.carbonTable
         val internalCall = showTableCacheEvent.internalCall
-        if (carbonTable.isChildTableForMV && !internalCall) {
+        if (carbonTable.isMVTable && !internalCall) {
           throw new UnsupportedOperationException("Operation not allowed on child table.")
         }
     }
@@ -69,9 +69,9 @@ object ShowCacheDataMapEventListener extends OperationEventListener {
         val datamaps = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
           .asScala.toList
 
-        val bloomDataMaps = filterDataMaps(datamaps, DataMapClassProvider.BLOOMFILTER.getShortName)
+        val bloomDataMaps = filterDataMaps(datamaps, IndexProviderName.BLOOMFILTER.getShortName)
 
-        val mvDataMaps = filterDataMaps(datamaps, DataMapClassProvider.MV.getShortName)
+        val mvDataMaps = filterDataMaps(datamaps, MVProviderName.NAME)
         operationContext
           .setProperty(carbonTable.getTableUniqueName, childTables ++ bloomDataMaps ++ mvDataMaps)
     }
@@ -82,7 +82,7 @@ object ShowCacheDataMapEventListener extends OperationEventListener {
     dataMaps.collect {
       case dataMap if dataMap.getProviderName
         .equalsIgnoreCase(filter) =>
-        if (filter.equalsIgnoreCase(DataMapClassProvider.BLOOMFILTER.getShortName)) {
+        if (filter.equalsIgnoreCase(IndexProviderName.BLOOMFILTER.getShortName)) {
           (s"${ dataMap.getRelationIdentifier.getDatabaseName }-${
             dataMap.getDataMapName}", dataMap.getProviderName,
             dataMap.getRelationIdentifier.getTableId)

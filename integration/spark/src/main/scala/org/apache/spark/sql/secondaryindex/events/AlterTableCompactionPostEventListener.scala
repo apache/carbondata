@@ -27,7 +27,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.secondaryindex.command.SecondaryIndex
+import org.apache.spark.sql.secondaryindex.command.IndexModel
 import org.apache.spark.sql.secondaryindex.load.Compactor
 import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
 
@@ -69,7 +69,7 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
           })
           if (null != indexTablesList && indexTablesList.nonEmpty) {
             indexTablesList.foreach { indexTableAndColumns =>
-              val secondaryIndex = SecondaryIndex(Some(carbonLoadModel.getDatabaseName),
+              val secondaryIndex = IndexModel(Some(carbonLoadModel.getDatabaseName),
                 carbonLoadModel.getTableName,
                 indexTableAndColumns._2.asScala.toList,
                 indexTableAndColumns._1)
@@ -77,7 +77,7 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
                 .carbonMetaStore
               val indexCarbonTable = metastore
                 .lookupRelation(Some(carbonLoadModel.getDatabaseName),
-                  secondaryIndex.indexTableName)(sQLContext
+                  secondaryIndex.indexName)(sQLContext
                   .sparkSession).asInstanceOf[CarbonRelation].carbonTable
 
               val validSegments: mutable.Buffer[Segment] = CarbonDataMergerUtil.getValidSegmentList(

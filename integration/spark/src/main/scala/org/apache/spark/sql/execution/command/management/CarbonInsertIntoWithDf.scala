@@ -44,7 +44,8 @@ import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
 * insert into with df, doesn't use logical plan
 *
 */
-case class CarbonInsertIntoWithDf(databaseNameOp: Option[String],
+case class CarbonInsertIntoWithDf(
+    databaseNameOp: Option[String],
     tableName: String,
     options: Map[String, String],
     isOverwriteTable: Boolean,
@@ -54,8 +55,6 @@ case class CarbonInsertIntoWithDf(databaseNameOp: Option[String],
     var internalOptions: Map[String, String] = Map.empty,
     var partition: Map[String, Option[String]] = Map.empty,
     var operationContext: OperationContext = new OperationContext) {
-
-
 
   def process(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -94,7 +93,7 @@ case class CarbonInsertIntoWithDf(databaseNameOp: Option[String],
     var isUpdateTableStatusRequired = false
     val uuid = ""
     try {
-      val (tableDataMaps, dataMapOperationContext) =
+      val (tableIndexes, dataMapOperationContext) =
         CommonLoadUtils.firePreLoadEvents(
           sparkSession = sparkSession,
           carbonLoadModel = carbonLoadModel,
@@ -153,7 +152,7 @@ case class CarbonInsertIntoWithDf(databaseNameOp: Option[String],
       val info = CommonLoadUtils.makeAuditInfo(loadResult)
       CommonLoadUtils.firePostLoadEvents(sparkSession,
         carbonLoadModel,
-        tableDataMaps,
+        tableIndexes,
         dataMapOperationContext,
         table,
         operationContext)

@@ -74,7 +74,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
 
     if (!carbonTable.canAllow(carbonTable, TableOperation.DELETE)) {
       throw new MalformedCarbonCommandException(
-        "delete operation is not supported for index datamap")
+        "delete operation is not supported for index")
     }
 
     IUDCommonUtil.checkIfSegmentListIsSet(sparkSession, plan)
@@ -133,12 +133,12 @@ private[sql] case class CarbonProjectForDeleteCommand(
       HorizontalCompaction.tryHorizontalCompaction(sparkSession, carbonTable,
         isUpdateOperation = false)
 
-      val allDataMapSchemas = DataMapStoreManager.getInstance
+      val mvSchemas = DataMapStoreManager.getInstance
         .getDataMapSchemasOfTable(carbonTable).asScala
         .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
                                  !dataMapSchema.isIndexDataMap).asJava
-      if (!allDataMapSchemas.isEmpty) {
-        DataMapStatusManager.truncateDataMap(allDataMapSchemas)
+      if (!mvSchemas.isEmpty) {
+        DataMapStatusManager.truncateMVTable(mvSchemas)
       }
 
       // prepriming for delete command

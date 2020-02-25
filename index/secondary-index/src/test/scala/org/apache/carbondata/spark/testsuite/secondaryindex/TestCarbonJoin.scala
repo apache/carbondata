@@ -53,7 +53,7 @@ class TestCarbonJoin extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS result")
     sql("create table if not exists ctable (type int, id1 string, id string) stored as " +
         "carbondata")
-    sql("create index cindex on table ctable (id) AS 'carbondata'")
+    sql("create index cindex on ctable (id) AS 'carbondata'")
     sql("insert into ctable select 0, 'animal1', 'animal'")
     sql("insert into ctable select 1, 'person1', 'person'")
     sql("create table ptable(pid string) stored as parquet")

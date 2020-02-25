@@ -76,7 +76,7 @@ class CarbonDataFileMergeTestCaseOnSI
         |  TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(
-      "CREATE INDEX indexmerge_index1 on table indexmerge (name) AS 'carbondata' tblproperties" +
+      "CREATE INDEX indexmerge_index1 on table indexmerge (name) AS 'carbondata' properties" +
       "('table_blocksize'='1')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE indexmerge OPTIONS('header'='false', " +
         s"'GLOBAL_SORT_PARTITIONS'='100')")
@@ -102,11 +102,11 @@ class CarbonDataFileMergeTestCaseOnSI
         s"'GLOBAL_SORT_PARTITIONS'='100')")
     val rows = sql("""Select count(*) from nonindexmerge where name='n164419'""").collect()
     sql(
-      "CREATE INDEX nonindexmerge_index1 on table nonindexmerge (name) AS 'carbondata' " +
-      "tblproperties('table_blocksize'='1')")
+      "CREATE INDEX nonindexmerge_index1 on nonindexmerge (name) AS 'carbondata' " +
+      "properties('table_blocksize'='1')")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "true")
-    sql("REBUILD INDEX nonindexmerge_index1").collect()
+    sql("REFRESH INDEX nonindexmerge_index1 on nonindexmerge").collect()
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
     sql("clean files for table nonindexmerge_index1")
     assert(getDataFileCount("nonindexmerge_index1", "0") < 7)
@@ -131,15 +131,15 @@ class CarbonDataFileMergeTestCaseOnSI
     val rows = sql("""Select count(*) from nonindexmerge where name='n164419'""").collect()
     sql(
     "CREATE INDEX nonindexmerge_index2 on table nonindexmerge (name) AS 'carbondata' " +
-    "tblproperties('table_blocksize'='1')")
+    "properties('table_blocksize'='1')")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "true")
-    sql("REBUILD INDEX nonindexmerge_index2 WHERE SEGMENT.ID IN(0)").collect()
+    sql("REFRESH INDEX nonindexmerge_index2 ON nonindexmerge WHERE SEGMENT.ID IN(0)").collect()
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
     sql("clean files for table nonindexmerge_index2")
     assert(getDataFileCount("nonindexmerge_index2", "0") < 7)
     assert(getDataFileCount("nonindexmerge_index2", "1") == 100)
-    sql("REBUILD INDEX nonindexmerge_index2 WHERE SEGMENT.ID IN(1)").collect()
+    sql("REFRESH INDEX nonindexmerge_index2 ON nonindexmerge WHERE SEGMENT.ID IN(1)").collect()
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
     sql("clean files for table nonindexmerge_index2")
     assert(getDataFileCount("nonindexmerge_index2", "1") < 7)
@@ -147,7 +147,7 @@ class CarbonDataFileMergeTestCaseOnSI
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
   }
 
-  test("Verify command of REBUILD INDEX command with invalid segments") {
+  test("Verify command of REFRESH INDEX command with invalid segments") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "false")
     sql("DROP TABLE IF EXISTS nonindexmerge")
@@ -159,15 +159,15 @@ class CarbonDataFileMergeTestCaseOnSI
       """.stripMargin)
     sql(
       "CREATE INDEX nonindexmerge_index2 on table nonindexmerge (name) AS 'carbondata' " +
-      "tblproperties('table_blocksize'='1')")
+      "properties('table_blocksize'='1')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE nonindexmerge OPTIONS('header'='false', " +
         s"'GLOBAL_SORT_PARTITIONS'='100')")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "true")
     val exceptionMessage = intercept[RuntimeException] {
-      sql("REBUILD INDEX nonindexmerge_index2 WHERE SEGMENT.ID IN(1,2)").collect()
+      sql("REFRESH INDEX nonindexmerge_index2 on nonindexmerge WHERE SEGMENT.ID IN(1,2)").collect()
     }.getMessage
-    assert(exceptionMessage.contains("Rebuild index by segment id is failed. Invalid ID:"))
+    assert(exceptionMessage.contains("Refresh index by segment id is failed. Invalid ID:"))
   }
 
   test("Verify index data file merge with compaction") {
@@ -188,7 +188,7 @@ class CarbonDataFileMergeTestCaseOnSI
     val rows = sql("""Select count(*) from nonindexmerge where name='n164419'""").collect()
     sql(
     "CREATE INDEX nonindexmerge_index3 on table nonindexmerge (name) AS 'carbondata' " +
-    "tblproperties('table_blocksize'='1')")
+    "properties('table_blocksize'='1')")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "true")
     sql("ALTER TABLE nonindexmerge COMPACT 'minor'").collect()
@@ -223,7 +223,7 @@ class CarbonDataFileMergeTestCaseOnSI
     val rows = sql("""Select count(*) from nonindexmerge where name='n164419'""").collect()
     sql(
     "CREATE INDEX nonindexmerge_index4 on table nonindexmerge (name) AS 'carbondata' " +
-    "tblproperties('table_blocksize'='1')")
+    "properties('table_blocksize'='1')")
     sql("clean files for table nonindexmerge_index4")
     assert(getDataFileCount("nonindexmerge_index4", "0.2") < 15)
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)

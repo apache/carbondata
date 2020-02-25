@@ -276,12 +276,12 @@ class MVUtil {
     if (a.child.isInstanceOf[GetMapValue] || a.child.isInstanceOf[GetStructField] ||
         a.child.isInstanceOf[GetArrayItem]) {
       throw new UnsupportedOperationException(
-        s"MV datamap is not supported for complex datatype child columns and complex datatype " +
+        s"MV is not supported for complex datatype child columns and complex datatype " +
         s"return types of function :" + a.child.simpleString)
     }
   }
 
-  def validateDMProperty(tableProperty: mutable.Map[String, String]): Unit = {
+  def validateProperty(tableProperty: mutable.Map[String, String]): Unit = {
     val tableProperties = Array("sort_columns",
       "local_dictionary_include", "local_dictionary_exclude", "long_string_columns",
       "no_inverted_index", "inverted_index", "column_meta_cache", "range_column")
@@ -290,7 +290,7 @@ class MVUtil {
     if (unsupportedProps.nonEmpty) {
       throw new MalformedMaterializedViewException(
         "DMProperties " + unsupportedProps.keySet.mkString(",") +
-        " are not allowed for this datamap")
+        " are not allowed for this MV")
     }
   }
 

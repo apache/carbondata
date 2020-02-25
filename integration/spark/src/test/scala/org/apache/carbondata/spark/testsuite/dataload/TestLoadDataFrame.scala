@@ -186,6 +186,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       .message
       .contains("not found"))
   }
+
   test("test streaming Table") {
     dataFrame.write
       .format("carbondata")

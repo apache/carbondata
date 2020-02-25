@@ -85,7 +85,7 @@ case class CarbonCreateDataSourceTableCommand(
       case ex: TableAlreadyExistsException if ignoreIfExists =>
         LOGGER.error(ex)
         return Seq.empty[Row]
-      case ex =>
+      case ex: Throwable =>
         throw ex
     }
 

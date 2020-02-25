@@ -80,8 +80,8 @@ class CarbonEnv {
     sparkSession.udf.register("getPositionId", () => "")
     sparkSession.udf.register("NI", (anyRef: AnyRef) => true)
 
-    // register for lucene datamap
-    // TODO: move it to proper place, it should be registered by datamap implementation
+    // register for lucene index
+    // TODO: move it to proper place, it should be registered by index implementation
     sparkSession.udf.register("text_match", new TextMatchUDF)
     sparkSession.udf.register("text_match_with_limit", new TextMatchMaxDocUDF)
     sparkSession.udf.register("in_polygon", new InPolygonUDF)
@@ -128,7 +128,7 @@ class CarbonEnv {
   }
 
   private def cleanChildTablesNotRegisteredInHive(sparkSession: SparkSession): Unit = {
-    // If in case JDBC application is killed/stopped, when create datamap was in progress, datamap
+    // If in case JDBC application is killed/stopped, when create MV was in progress, MV
     // table was created and datampschema was saved to the system, but table was not registered to
     // metastore. So, when we restart JDBC application, we need to clean up
     // stale tables and datamapschema's.

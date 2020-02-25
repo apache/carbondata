@@ -40,8 +40,6 @@ case class DropMaterializedViewCommand(
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   private var provider: DataMapProvider = _
-  var mainTable: CarbonTable = _
-  var mvSchema: DataMapSchema = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     setAuditInfo(Map("mvName" -> mvName))
@@ -60,21 +58,19 @@ case class DropMaterializedViewCommand(
   private def dropSchema(sparkSession: SparkSession): Unit = {
     LOGGER.info("Trying to drop materialized view schema")
     try {
-      mvSchema = DataMapStoreManager.getInstance().getDataMapSchema(mvName)
-      if (mvSchema != null) {
-        val operationContext = new OperationContext()
-        val storeLocation = CarbonProperties.getInstance().getSystemFolderLocation
-        val preExecEvent = UpdateDataMapPreExecutionEvent(sparkSession, storeLocation, null)
-        OperationListenerBus.getInstance().fireEvent(preExecEvent, operationContext)
+      val mvSchema = DataMapStoreManager.getInstance().getMVSchema(mvName)
+      val operationContext = new OperationContext()
+      val storeLocation = CarbonProperties.getInstance().getSystemFolderLocation
+      val preExecEvent = UpdateDataMapPreExecutionEvent(sparkSession, storeLocation, null)
+      OperationListenerBus.getInstance().fireEvent(preExecEvent, operationContext)
 
-        DataMapStatusManager.dropDataMap(mvName)
+      DataMapStatusManager.dropDataMap(mvName)
 
-        val postExecEvent = UpdateDataMapPostExecutionEvent(sparkSession, storeLocation, null)
-        OperationListenerBus.getInstance().fireEvent(postExecEvent, operationContext)
+      val postExecEvent = UpdateDataMapPostExecutionEvent(sparkSession, storeLocation, null)
+      OperationListenerBus.getInstance().fireEvent(postExecEvent, operationContext)
 
-        provider = DataMapManager.get.getDataMapProvider(null, mvSchema, sparkSession)
-        provider.cleanMeta()
-      }
+      provider = DataMapManager.get.getDataMapProvider(null, mvSchema, sparkSession)
+      provider.cleanMeta()
     } catch {
       case e: Exception =>
         if (!ifExistsSet) {

@@ -26,7 +26,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.secondaryindex.command.SecondaryIndex
+import org.apache.spark.sql.secondaryindex.command.IndexModel
 import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
 import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
 
@@ -77,7 +77,7 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
                   .getOrElse("isSITableEnabled", "true").toBoolean
 
                 if (!isLoadSIForFailedSegments) {
-                  val secondaryIndex = SecondaryIndex(Some(carbonTable.getDatabaseName),
+                  val secondaryIndex = IndexModel(Some(carbonTable.getDatabaseName),
                     indexMetadata.getParentTableName,
                     indexMetadata.getIndexesMap.get(indexTableName).asScala.toList,
                     indexTableName)

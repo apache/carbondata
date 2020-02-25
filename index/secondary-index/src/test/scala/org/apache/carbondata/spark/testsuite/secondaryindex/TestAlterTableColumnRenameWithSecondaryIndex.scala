@@ -65,8 +65,8 @@ class TestAlterTableColumnRenameWithSecondaryIndex extends QueryTest with Before
   test("test column rename with SI tables load and query") {
     dropTable()
     createTable()
-    sql("create index index1 on table si_rename(c) AS 'carbondata'")
-    sql("create index index2 on table si_rename(c,d) AS 'carbondata'")
+    sql("create index index1 on si_rename(c) AS 'carbondata'")
+    sql("create index index2 on si_rename(c,d) AS 'carbondata'")
     sql("insert into si_rename select 'abc',3,'def','mno'")
     sql("insert into si_rename select 'def',4,'xyz','pqr'")
     val query1 = sql("select c,d from si_rename where d = 'pqr' or c = 'def'").count()

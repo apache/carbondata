@@ -657,7 +657,7 @@ object AlterTableUtil {
   def validateGlobalSortPartitions(carbonTable: CarbonTable,
       propertiesMap: mutable.Map[String, String]): Unit = {
     if (propertiesMap.get("global_sort_partitions").isDefined) {
-      val globalSortPartitionsProp = propertiesMap.get("global_sort_partitions").get
+      val globalSortPartitionsProp = propertiesMap("global_sort_partitions")
       var pass = false
       try {
         val globalSortPartitions = Integer.parseInt(globalSortPartitionsProp)
@@ -665,7 +665,8 @@ object AlterTableUtil {
           pass = true
         }
       } catch {
-        case _ =>
+        case _: Throwable =>
+          // ignored
       }
       if (!pass) {
         throw new MalformedCarbonCommandException(
@@ -792,8 +793,8 @@ object AlterTableUtil {
   }
 
   private def clearCache(carbonTable: CarbonTable): Unit = {
-    // clear dataMap cache
-    DataMapStoreManager.getInstance().clearDataMaps(carbonTable.getAbsoluteTableIdentifier)
+    // clear index cache
+    DataMapStoreManager.getInstance().clearIndexes(carbonTable.getAbsoluteTableIdentifier)
     // clear segmentProperties Cache
     SegmentPropertiesAndSchemaHolder.getInstance()
       .invalidate(carbonTable.getAbsoluteTableIdentifier)

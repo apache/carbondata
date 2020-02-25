@@ -254,10 +254,10 @@ class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with Before
 
   private def clearDataMapCache(): Unit = {
     if (!sqlContext.sparkContext.version.startsWith("2.1")) {
-      val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+      val mapSize = DataMapStoreManager.getInstance().getIndexes.size()
       DataMapStoreManager.getInstance()
-        .clearDataMaps(AbsoluteTableIdentifier.from(writerPath))
-      assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+        .clearIndexes(AbsoluteTableIdentifier.from(writerPath))
+      assert(mapSize > DataMapStoreManager.getInstance().getIndexes.size())
     }
   }
 

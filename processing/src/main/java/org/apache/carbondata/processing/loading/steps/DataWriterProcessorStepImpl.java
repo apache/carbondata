@@ -39,7 +39,7 @@ import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.processing.datamap.DataMapWriterListener;
+import org.apache.carbondata.processing.datamap.IndexWriterListener;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
@@ -62,7 +62,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private long readCounter;
 
-  private DataMapWriterListener listener;
+  private IndexWriterListener listener;
 
   private final Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap;
 
@@ -241,10 +241,10 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       super.close();
       if (listener != null) {
         try {
-          LOGGER.debug("closing all the DataMap writers registered to DataMap writer listener");
+          LOGGER.debug("closing all the Index writers registered to Index writer listener");
           listener.finish();
         } catch (IOException e) {
-          LOGGER.error("error while closing the datamap writers", e);
+          LOGGER.error("error while closing the index writers", e);
           // ignoring the exception
         }
       }

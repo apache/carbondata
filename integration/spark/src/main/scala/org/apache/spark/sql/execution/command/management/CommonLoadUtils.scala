@@ -47,8 +47,9 @@ import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants, SortScopeOptions}
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, TableDataMap}
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
+import org.apache.carbondata.core.index.TableIndex
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.{DateDirectDictionaryGenerator, TimeStampGranularityTypeValue}
 import org.apache.carbondata.core.metadata.SegmentFileStore
@@ -276,7 +277,7 @@ object CommonLoadUtils {
       isOverwriteTable: Boolean,
       isDataFrame: Boolean,
       updateModel: Option[UpdateTableModel],
-      operationContext: OperationContext): (util.List[TableDataMap], OperationContext) = {
+      operationContext: OperationContext): (util.List[TableIndex], OperationContext) = {
     operationContext.setProperty("uuid", uuid)
     if (updateModel.isDefined && updateModel.get.isUpdate) {
       operationContext.setProperty("isLoadOrCompaction", false)
@@ -294,24 +295,24 @@ object CommonLoadUtils {
         sparkSession)
     operationContext.setProperty("isOverwrite", isOverwriteTable)
     OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
-    // Add pre event listener for index datamap
-    val tableDataMaps = DataMapStoreManager.getInstance().getAllDataMap(table)
+    // Add pre event listener for index
+    val tableIndexes = DataMapStoreManager.getInstance().getAllIndexes(table)
     val dataMapOperationContext = new OperationContext()
-    if (tableDataMaps.size() > 0) {
+    if (tableIndexes.size() > 0) {
       val dataMapNames: mutable.Buffer[String] =
-        tableDataMaps.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
+        tableIndexes.asScala.map(index => index.getDataMapSchema.getDataMapName)
       val buildDataMapPreExecutionEvent: BuildDataMapPreExecutionEvent =
         BuildDataMapPreExecutionEvent(sparkSession,
           table.getAbsoluteTableIdentifier, dataMapNames)
       OperationListenerBus.getInstance().fireEvent(buildDataMapPreExecutionEvent,
         dataMapOperationContext)
     }
-    (tableDataMaps, dataMapOperationContext)
+    (tableIndexes, dataMapOperationContext)
   }
 
   def firePostLoadEvents(sparkSession: SparkSession,
       carbonLoadModel: CarbonLoadModel,
-      tableDataMaps: util.List[TableDataMap],
+      tableIndexes: util.List[TableIndex],
       dataMapOperationContext: OperationContext,
       table: CarbonTable,
       operationContext: OperationContext): Unit = {
@@ -320,7 +321,7 @@ object CommonLoadUtils {
         table.getCarbonTableIdentifier,
         carbonLoadModel)
     OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
-    if (tableDataMaps.size() > 0) {
+    if (tableIndexes.size() > 0) {
       val buildDataMapPostExecutionEvent = BuildDataMapPostExecutionEvent(sparkSession,
         table.getAbsoluteTableIdentifier, null, Seq(carbonLoadModel.getSegmentId), false)
       OperationListenerBus.getInstance()
@@ -485,7 +486,7 @@ object CommonLoadUtils {
     }
     // Rearrange the partition column at the end of output list
     if (catalogTable.partitionColumnNames.nonEmpty &&
-        (loadModel.getCarbonDataLoadSchema.getCarbonTable.isChildTableForMV) && output.nonEmpty) {
+        (loadModel.getCarbonDataLoadSchema.getCarbonTable.isMVTable) && output.nonEmpty) {
       val partitionOutPut =
         catalogTable.partitionColumnNames.map(col => output.find(_.name.equalsIgnoreCase(col)).get)
       output = output.filterNot(partitionOutPut.contains(_)) ++ partitionOutPut
@@ -1020,7 +1021,7 @@ object CommonLoadUtils {
     } finally {
       CarbonUtils.threadUnset("partition.operationcontext")
       if (loadParams.isOverwriteTable) {
-        DataMapStoreManager.getInstance().clearDataMaps(table.getAbsoluteTableIdentifier)
+        DataMapStoreManager.getInstance().clearIndexes(table.getAbsoluteTableIdentifier)
         // Clean the overwriting segments if any.
         SegmentFileStore.cleanSegments(
           table,

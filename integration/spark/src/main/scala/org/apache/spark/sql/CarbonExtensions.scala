@@ -28,16 +28,7 @@ class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
 
   override def apply(extensions: SparkSessionExtensions): Unit = {
     // Try to initialize MV extension before carbon extension
-    // It may fail if MVExtension class is not in class path
-    try {
-      val clazz = Class.forName("org.apache.carbondata.mv.extension.MVExtension")
-      val method = clazz.getMethod("apply", classOf[SparkSessionExtensions])
-      val mvExtension = clazz.newInstance()
-      method.invoke(mvExtension, extensions)
-    } catch {
-      case _: Throwable =>
-        // If MVExtension initialization failed, ignore it
-    }
+    initMV(extensions)
 
     // Carbon internal parser
     extensions
@@ -63,6 +54,19 @@ class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
 
     // init CarbonEnv
     CarbonEnv.init()
+  }
+
+  private def initMV(extensions: SparkSessionExtensions) = {
+    // It may fail if MVExtension class is not in class path
+    try {
+      val clazz = Class.forName("org.apache.carbondata.mv.extension.MVExtension")
+      val method = clazz.getMethod("apply", classOf[SparkSessionExtensions])
+      val mvExtension = clazz.newInstance()
+      method.invoke(mvExtension, extensions)
+    } catch {
+      case _: Throwable =>
+      // If MVExtension initialization failed, ignore it
+    }
   }
 }
 

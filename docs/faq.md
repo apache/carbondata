@@ -44,7 +44,7 @@
 - [Failed to insert data on the cluster](#failed-to-insert-data-on-the-cluster)
 - [Failed to execute Concurrent Operations(Load,Insert,Update) on table by multiple workers](#failed-to-execute-concurrent-operations-on-table-by-multiple-workers)
 - [Failed to create a table with a single numeric column](#failed-to-create-a-table-with-a-single-numeric-column)
-- [Failed to create datamap and drop datamap is also not working](#failed-to-create-datamap-and-drop-datamap-is-also-not-working)
+- [Failed to create index and drop index is also not working](#failed-to-create-datamap-and-drop-datamap-is-also-not-working)
 
 ## 
 
@@ -172,7 +172,7 @@ Example:
 
 ```
 create table gdp21(cntry smallint, gdp double, y_year date) stored as carbondata;
-create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp21 group by cntry;
+create materialized view ag1 as select cntry, sum(gdp) from gdp21 group by cntry;
 select ctry from pop1 where ctry in (select cntry from gdp21 group by cntry);
 ```
 
@@ -183,7 +183,7 @@ Example:
 
 ```
 create table gdp21(cntry smallint, gdp double, y_year date) stored as carbondata;
-create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp21 group by cntry;
+create materialized view ag1 as select cntry, sum(gdp) from gdp21 group by cntry;
 select cntry, sum(gdp) from gdp21 where cntry in (select ctry from pop1) group by cntry;
 ```
 
@@ -194,7 +194,7 @@ Example:
 
 ```
 create table gdp21(cntry smallint, gdp double, y_year date) stored as carbondata;
-create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp21 group by cntry;
+create materialized view ag1 as select cntry, sum(gdp) from gdp21 group by cntry;
 select cntry,sum(gdp) from gdp21,pop1 where cntry=ctry group by cntry;
 ```
 
@@ -499,7 +499,7 @@ Note : Refrain from using "mvn clean package" without specifying the profile.
 
   A single column that can be considered as dimension is mandatory for table creation.
 
-## Failed to create datamap and drop datamap is also not working
+## Failed to create index and drop index is also not working
   
   **Symptom**
 
@@ -515,5 +515,5 @@ Note : Refrain from using "mvn clean package" without specifying the profile.
 
   **Procedure**
 
-  Drop that particular datamap using Drop Table command using table name as
-  parentTableName_datamapName so as to clear the stale folders.
+  Drop that particular index using Drop Table command using table name as
+  indexName so as to clear the stale folders.

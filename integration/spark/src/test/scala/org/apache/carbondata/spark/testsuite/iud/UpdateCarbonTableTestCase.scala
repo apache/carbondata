@@ -766,7 +766,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists senten")
   }
 
-  test("block updating table which has index datamap") {
+  test("block updating table which has index") {
     sql("use iud")
     sql("drop table if exists test_dm_index")
 
@@ -775,14 +775,14 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(
       s"""
-         | CREATE DATAMAP dm_test_dm_index ON TABLE test_dm_index
-         | USING 'bloomfilter'
-         | DMProperties('INDEX_COLUMNS'='a', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX dm_test_dm_index ON TABLE test_dm_index
+         | AS 'bloomfilter'
+         | properties('INDEX_COLUMNS'='a', 'BLOOM_SIZE'='640000')
       """.stripMargin)
 
     assert(intercept[UnsupportedOperationException] {
       sql("update test_dm_index set(a) = ('aaa') where a = 'ccc'")
-    }.getMessage.contains("Update operation is not supported for table which has index datamaps"))
+    }.getMessage.contains("Update operation is not supported for table which has index"))
 
     sql("drop table if exists test_dm_index")
   }

@@ -24,10 +24,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
-import org.apache.carbondata.core.util.BlockletDataMapUtil;
+import org.apache.carbondata.core.util.BlockletIndexUtil;
 
 /**
- * class for creating schema for a given DataMap
+ * class for creating schema for a given Index
  */
 public class SchemaGenerator {
 
@@ -172,8 +172,8 @@ public class SchemaGenerator {
 
   /**
    * Creates the schema to store summary information or the information which can be stored only
-   * once per datamap. It stores datamap level max/min of each column and partition information of
-   * datamap
+   * once per index. It stores index level max/min of each column and partition information of
+   * index
    *
    * @param segmentProperties
    */
@@ -285,7 +285,7 @@ public class SchemaGenerator {
       minMaxLen = new int[minMaxCacheColumns.size()];
       int counter = 0;
       for (CarbonColumn column : minMaxCacheColumns) {
-        minMaxLen[counter++] = segmentProperties.createColumnValueLength()[BlockletDataMapUtil
+        minMaxLen[counter++] = segmentProperties.createColumnValueLength()[BlockletIndexUtil
             .getColumnOrdinal(segmentProperties, column)];
       }
     } else {
@@ -309,7 +309,7 @@ public class SchemaGenerator {
       int counter = 0;
       for (CarbonColumn column : minMaxCacheColumns) {
         columnOrdinalsTOAccess[counter++] =
-            BlockletDataMapUtil.getColumnOrdinal(segmentProperties, column);
+            BlockletIndexUtil.getColumnOrdinal(segmentProperties, column);
       }
     } else {
       // when columns to cache is not specified then column access order will be same as the array

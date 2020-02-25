@@ -24,11 +24,11 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.execution.command.{Checker, DataCommand}
+import org.apache.spark.sql.execution.command.DataCommand
 import org.apache.spark.sql.types.{BooleanType, StringType}
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
+import org.apache.carbondata.core.metadata.schema.datamap.{IndexProviderName, MVProviderName}
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 
 /**
@@ -62,16 +62,15 @@ case class ShowMaterializedViewCommand(tableIdentifier: Option[TableIdentifier])
       case Some(table) =>
         val carbonTable = CarbonEnv.getCarbonTable(table)(sparkSession)
         setAuditTable(carbonTable)
-        Checker.validateTableExists(table.database, table.table, sparkSession)
         val schemaList = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
         if (!schemaList.isEmpty) {
           dataMapSchemaList.addAll(schemaList)
         }
       case _ =>
-        dataMapSchemaList.addAll(DataMapStoreManager.getInstance().getAllDataMapSchemas)
+        dataMapSchemaList.addAll(DataMapStoreManager.getInstance().getAllMVSchemas)
     }
     dataMapSchemaList.asScala.filter(
-      _.getProviderName.equalsIgnoreCase(DataMapClassProvider.MV.name())
+      _.getProviderName.equalsIgnoreCase(MVProviderName.NAME)
     ).toList
   }
 

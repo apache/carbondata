@@ -287,7 +287,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  test("block deleting records from table which has index datamap") {
+  test("block deleting records from table which has index") {
     sql("drop table if exists test_dm_index")
 
     sql("create table test_dm_index (a string, b string, c string) STORED AS carbondata")
@@ -295,14 +295,15 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(
       s"""
-         | CREATE DATAMAP dm_test_dm_index ON TABLE test_dm_index
-         | USING 'bloomfilter'
-         | DMProperties('INDEX_COLUMNS'='a', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX dm_test_dm_index
+         | ON TABLE test_dm_index (a)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     assert(intercept[UnsupportedOperationException] {
       sql("delete from test_dm_index where a = 'ccc'")
-    }.getMessage.contains("Delete operation is not supported for table which has index datamaps"))
+    }.getMessage.contains("Delete operation is not supported for table which has index"))
 
     sql("drop table if exists test_dm_index")
   }

@@ -24,7 +24,6 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.CacheType
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -32,7 +31,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSch
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.datamap.bloom.{BloomCacheKeyValue, BloomCoarseGrainDataMapFactory}
+import org.apache.carbondata.index.bloom.{BloomCacheKeyValue, BloomCoarseGrainIndexFactory}
 import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 
@@ -51,7 +50,7 @@ object CacheUtil {
     if (carbonTable.isTransactionalTable) {
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       val validAndInvalidSegmentsInfo = new SegmentStatusManager(absoluteTableIdentifier)
-        .getValidAndInvalidSegments(carbonTable.isChildTableForMV)
+        .getValidAndInvalidSegments(carbonTable.isMVTable)
       // Fire a job to clear the invalid segments cached in the executors.
       if (CarbonProperties.getInstance().isDistributedPruningEnabled(carbonTable.getDatabaseName,
         carbonTable.getTableName)) {
@@ -92,10 +91,10 @@ object CacheUtil {
   def getBloomCacheKeys(carbonTable: CarbonTable, datamap: DataMapSchema): List[String] = {
     val segments = CarbonDataMergerUtil.getValidSegmentList(carbonTable).asScala
 
-    // Generate shard Path for the datamap
+    // Generate shard Path for the index
     val shardPaths = segments.flatMap {
       segment =>
-        BloomCoarseGrainDataMapFactory.getAllShardPaths(carbonTable.getTablePath,
+        BloomCoarseGrainIndexFactory.getAllShardPaths(carbonTable.getTablePath,
           segment.getSegmentNo, datamap.getDataMapName).asScala
     }
 

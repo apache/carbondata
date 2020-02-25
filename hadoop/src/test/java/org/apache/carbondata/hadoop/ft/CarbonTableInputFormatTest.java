@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.DataMapFilter;
+import org.apache.carbondata.core.index.IndexFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -90,7 +90,7 @@ public class CarbonTableInputFormatTest {
     Expression expression = new EqualToExpression(new ColumnExpression("country", DataTypes.STRING),
         new LiteralExpression("china", DataTypes.STRING));
     CarbonTableInputFormat.setFilterPredicates(job.getConfiguration(),
-        new DataMapFilter(loadModel.getCarbonDataLoadSchema().getCarbonTable(), expression));
+        new IndexFilter(loadModel.getCarbonDataLoadSchema().getCarbonTable(), expression));
     List splits = carbonInputFormat.getSplits(job);
 
     Assert.assertTrue(splits != null);
@@ -264,7 +264,7 @@ public class CarbonTableInputFormatTest {
     }
     if (filter != null) {
       CarbonTableInputFormat.setFilterPredicates(job.getConfiguration(),
-          new DataMapFilter(loadModel.getCarbonDataLoadSchema().getCarbonTable(), filter));
+          new IndexFilter(loadModel.getCarbonDataLoadSchema().getCarbonTable(), filter));
     }
     CarbonTableInputFormat.setDatabaseName(job.getConfiguration(),
         abs.getCarbonTableIdentifier().getDatabaseName());

@@ -48,8 +48,8 @@ import org.apache.carbondata.common.annotations.{InterfaceAudience, InterfaceSta
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapFilter
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.IndexFilter
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnarFormatVersion}
 import org.apache.carbondata.core.metadata.schema.SchemaReader
@@ -383,7 +383,7 @@ class SparkCarbonFileFormat extends FileFormat
     filter match {
       case Some(c) => CarbonInputFormat
         .setFilterPredicates(hadoopConf,
-          new DataMapFilter(model.getCarbonDataLoadSchema.getCarbonTable, c, true))
+          new IndexFilter(model.getCarbonDataLoadSchema.getCarbonTable, c, true))
       case None => None
     }
     val format: CarbonFileInputFormat[Object] = new CarbonFileInputFormat[Object]

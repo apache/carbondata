@@ -29,7 +29,7 @@ import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRe
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.cache.{CarbonDropCacheCommand, CarbonShowCacheCommand}
-import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDataMapRebuildCommand, CarbonDataMapShowCommand, CarbonDropDataMapCommand}
+import org.apache.spark.sql.execution.command.index.{CarbonRefreshIndexCommand, CreateIndexCommand, DropIndexCommand, ShowIndexCommand}
 import org.apache.spark.sql.execution.command.management._
 import org.apache.spark.sql.execution.command.schema.CarbonAlterTableDropColumnCommand
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
@@ -80,16 +80,13 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
-    datamapManagement | alterTableFinishStreaming | stream | cli |
-    cacheManagement | alterDataMap | insertStageData | indexCommands
+    indexCommands | alterTableFinishStreaming | stream | cli |
+    cacheManagement | alterDataMap | insertStageData
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | deleteStage | cleanFiles | addLoad
 
   protected lazy val restructure: Parser[LogicalPlan] = alterTableDropColumn
-
-  protected lazy val datamapManagement: Parser[LogicalPlan] =
-    createDataMap | dropDataMap | showDataMap | refreshDataMap
 
   protected lazy val stream: Parser[LogicalPlan] =
     createStream | dropStream | showStreams
@@ -159,60 +156,11 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         CarbonShowStreamsCommand(tableIdent)
     }
 
-  /**
-   * The syntax of datamap creation is as follows.
-   * CREATE DATAMAP IF NOT EXISTS datamapName [ON TABLE tableName]
-   * USING 'DataMapProviderName'
-   * [WITH DEFERRED REBUILD]
-   * DMPROPERTIES('KEY'='VALUE') AS SELECT COUNT(COL1) FROM tableName
-   */
-  protected lazy val createDataMap: Parser[LogicalPlan] =
-    CREATE ~> DATAMAP ~> opt(IF ~> NOT ~> EXISTS) ~ ident ~
-    opt(ontable) ~
-    (USING ~> stringLit) ~
-    opt(WITH ~> DEFERRED ~> REBUILD) ~
-    (DMPROPERTIES ~> "(" ~> repsep(options, ",") <~ ")").? ~
-    (AS ~> restInput).? <~ opt(";") ^^ {
-      case ifnotexists ~ dmname ~ tableIdent ~ dmProviderName ~ deferred ~ dmprops ~ query =>
-        val map = dmprops.getOrElse(List[(String, String)]()).toMap[String, String]
-        CarbonCreateDataMapCommand(dmname, tableIdent, dmProviderName, map, query,
-          ifnotexists.isDefined, deferred.isDefined)
-    }
 
   protected lazy val ontable: Parser[TableIdentifier] =
-    ON ~> TABLE ~>  (ident <~ ".").? ~ ident ^^ {
-      case dbName ~ tableName =>
+    ON ~> TABLE.? ~  (ident <~ ".").? ~ ident ^^ {
+      case tableKeyWord ~ dbName ~ tableName =>
         TableIdentifier(tableName, dbName)
-    }
-
-  /**
-   * The below syntax is used to drop the datamap.
-   * DROP DATAMAP IF EXISTS datamapName ON TABLE tablename
-   */
-  protected lazy val dropDataMap: Parser[LogicalPlan] =
-    DROP ~> DATAMAP ~> opt(IF ~> EXISTS) ~ ident ~ opt(ontable) <~ opt(";")  ^^ {
-      case ifexists ~ dmname ~ tableIdent =>
-        CarbonDropDataMapCommand(dmname, ifexists.isDefined, tableIdent)
-    }
-
-  /**
-   * The syntax of show datamap is used to show datamaps on the table
-   * SHOW DATAMAP ON TABLE tableName
-   */
-  protected lazy val showDataMap: Parser[LogicalPlan] =
-    SHOW ~> DATAMAP ~> opt(ontable) <~ opt(";") ^^ {
-      case tableIdent =>
-        CarbonDataMapShowCommand(tableIdent)
-    }
-
-  /**
-   * The syntax of show datamap is used to show datamaps on the table
-   * REBUILD DATAMAP datamapname [ON TABLE] tableName
-   */
-  protected lazy val refreshDataMap: Parser[LogicalPlan] =
-    REBUILD ~> DATAMAP ~> ident ~ opt(ontable) <~ opt(";") ^^ {
-      case datamap ~ tableIdent =>
-        CarbonDataMapRebuildCommand(datamap, tableIdent)
     }
 
   protected lazy val alterDataMap: Parser[LogicalPlan] =
@@ -614,48 +562,47 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   protected lazy val indexCommands: Parser[LogicalPlan] =
-    showIndexes | createIndexTable | dropIndexTable | registerIndexes | rebuildIndex
+    createIndex | dropIndexTable | showIndexes | registerIndexes | refreshIndex
 
-  protected lazy val createIndexTable: Parser[LogicalPlan] =
-    CREATE ~> INDEX ~> ident ~ (ON ~> TABLE ~> (ident <~ ".").? ~ ident) ~
-    ("(" ~> repsep(ident, ",") <~ ")") ~ (AS ~> stringLit) ~
-    (TBLPROPERTIES ~> "(" ~> repsep(options, ",") <~ ")").? <~ opt(";") ^^ {
-      case indexTableName ~ table ~ cols ~ indexStoreType ~ tblProp =>
-
-        if (!("carbondata".equalsIgnoreCase(indexStoreType))) {
-          sys.error("Not a carbon format request")
-        }
-
-        val (dbName, tableName) = table match {
-          case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
-        }
-
-        val tableProperties = if (tblProp.isDefined) {
-          val tblProps = tblProp.get.map(f => f._1 -> f._2)
-          scala.collection.mutable.Map(tblProps: _*)
+  /**
+   * CREATE INDEX [IF NOT EXISTS] index_name
+   * ON TABLE [db_name.]table_name (column_name, ...)
+   * AS carbondata/bloomfilter/lucene
+   * [WITH DEFERRED REFRESH]
+   * [PROPERTIES ('key'='value')]
+   */
+  protected lazy val createIndex: Parser[LogicalPlan] =
+    CREATE ~> INDEX ~> opt(IF ~> NOT ~> EXISTS) ~ ident ~
+    ontable ~
+    ("(" ~> repsep(ident, ",") <~ ")") ~
+    (AS ~> stringLit) ~
+    (WITH ~> DEFERRED ~> REFRESH).? ~
+    (PROPERTIES ~> "(" ~> repsep(options, ",") <~ ")").? <~ opt(";") ^^ {
+      case ifNotExists ~ indexName ~ table ~ cols ~ indexProvider ~ deferred ~ props =>
+        val tableColumns = cols.map(f => f.toLowerCase)
+        val indexModel = IndexModel(
+          table.database, table.table.toLowerCase, tableColumns, indexName.toLowerCase)
+        val propList = props.getOrElse(List[(String, String)]())
+        val properties = mutable.Map[String, String](propList : _*)
+        if ("carbondata".equalsIgnoreCase(indexProvider)) {
+          // validate the tableBlockSize from table properties
+          CommonUtil.validateSize(properties, CarbonCommonConstants.TABLE_BLOCKSIZE)
+          // validate for supported table properties
+          validateTableProperties(properties)
+          // validate column_meta_cache property if defined
+          validateColumnMetaCacheAndCacheLevelProeprties(
+            table.database, indexName.toLowerCase, tableColumns, properties)
+          validateColumnCompressorProperty(
+            properties.getOrElse(CarbonCommonConstants.COMPRESSOR, null))
+          CreateIndexTableCommand(indexModel, properties, ifNotExists.isDefined, deferred.isDefined)
         } else {
-          scala.collection.mutable.Map.empty[String, String]
+          CreateIndexCommand(indexModel, indexProvider,
+            properties.toMap, ifNotExists.isDefined, deferred.isDefined)
         }
-        // validate the tableBlockSize from table properties
-        CommonUtil.validateSize(tableProperties, CarbonCommonConstants.TABLE_BLOCKSIZE)
-        // validate for supported table properties
-        validateTableProperties(tableProperties)
-        // validate column_meta_cache proeperty if defined
-        val tableColumns: List[String] = cols.map(f => f.toLowerCase)
-        validateColumnMetaCacheAndCacheLevelProeprties(dbName,
-          indexTableName.toLowerCase,
-          tableColumns,
-          tableProperties)
-        validateColumnCompressorProperty(tableProperties
-          .getOrElse(CarbonCommonConstants.COMPRESSOR, null))
-        val indexTableModel = SecondaryIndex(dbName,
-          tableName.toLowerCase,
-          tableColumns,
-          indexTableName.toLowerCase)
-        CreateIndexTable(indexTableModel, tableProperties)
     }
 
-  private def validateColumnMetaCacheAndCacheLevelProeprties(dbName: Option[String],
+  private def validateColumnMetaCacheAndCacheLevelProeprties(
+      dbName: Option[String],
       tableName: String,
       tableColumns: Seq[String],
       tableProperties: scala.collection.mutable.Map[String, String]): Unit = {
@@ -707,39 +654,44 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
   }
 
+  /**
+   * DROP INDEX [IF EXISTS] index_name
+   * ON [db_name.]table_name
+   */
   protected lazy val dropIndexTable: Parser[LogicalPlan] =
-    DROP ~> INDEX ~> opt(IF ~> EXISTS) ~ ident ~ (ON ~> (ident <~ ".").? ~ ident) <~ opt(";") ^^ {
-      case ifexist ~ indexTableName ~ table =>
-        val (dbName, tableName) = table match {
-          case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
-        }
-        DropIndexCommand(ifexist.isDefined, dbName, indexTableName.toLowerCase, tableName)
+    DROP ~> INDEX ~> opt(IF ~> EXISTS) ~ ident ~
+    ontable <~ opt(";") ^^ {
+      case ifexist ~ indexName ~ table =>
+        DropIndexCommand(ifexist.isDefined, table.database, table.table, indexName.toLowerCase)
     }
 
+  /**
+   * SHOW INDEXES ON table_name
+   */
   protected lazy val showIndexes: Parser[LogicalPlan] =
-    SHOW ~> INDEXES ~> ON ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
-      case databaseName ~ tableName =>
-        ShowIndexesCommand(databaseName, tableName)
+    SHOW ~> INDEXES ~> ontable <~ opt(";") ^^ {
+      case table =>
+        ShowIndexCommand(table.database, table.table)
     }
 
   protected lazy val registerIndexes: Parser[LogicalPlan] =
-    REGISTER ~> INDEX ~> TABLE ~> ident ~ (ON ~> (ident <~ ".").? ~ ident) <~ opt(";") ^^ {
+    REGISTER ~> INDEX ~> TABLE ~> ident ~ ontable <~ opt(";") ^^ {
       case indexTable ~ table =>
-        val (dbName, tableName) = table match {
-          case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
-        }
-        RegisterIndexTableCommand(dbName, indexTable, tableName)
+        RegisterIndexTableCommand(table.database, indexTable, table.table)
     }
 
-  protected lazy val rebuildIndex: Parser[LogicalPlan] =
-    REBUILD ~> INDEX ~> (ident <~ ".").? ~ ident ~
+  /**
+   * REFRESH INDEX index_name
+   * ON [db_name.]table_ame
+   * [WHERE SEGMENT.ID IN (segment_id, ...)]
+   */
+  protected lazy val refreshIndex: Parser[LogicalPlan] =
+    REFRESH ~> INDEX ~>  ident ~
+    ontable ~
     (WHERE ~> (SEGMENT ~ "." ~ ID) ~> IN ~> "(" ~> repsep(segmentId, ",") <~ ")").? <~
     opt(";") ^^ {
-      case dbName ~ table ~ segs =>
-        val alterTableModel =
-          AlterTableModel(CarbonParserUtil.convertDbNameToLowerCase(dbName), table, None, null,
-            Some(System.currentTimeMillis()), null, segs)
-        SIRebuildSegmentCommand(alterTableModel)
+      case indexName ~ parentTableIdent ~ segments =>
+        CarbonRefreshIndexCommand(indexName, parentTableIdent, segments)
     }
 
   def getFields(schema: Seq[StructField], isExternal: Boolean = false): Seq[Field] = {

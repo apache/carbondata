@@ -23,7 +23,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.hive.DistributionUtil
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.spark.rdd.CarbonRDD
 
@@ -41,8 +41,8 @@ class DistributedShowCacheRDD(@transient private val ss: SparkSession,
     }.toArray
 
   override protected def getPreferredLocations(split: Partition): Seq[String] = {
-    if (split.asInstanceOf[DataMapRDDPartition].getLocations != null) {
-      split.asInstanceOf[DataMapRDDPartition].getLocations.toSeq
+    if (split.asInstanceOf[IndexRDDPartition].getLocations != null) {
+      split.asInstanceOf[IndexRDDPartition].getLocations.toSeq
     } else {
       Seq()
     }
@@ -54,37 +54,37 @@ class DistributedShowCacheRDD(@transient private val ss: SparkSession,
         // create a dummy split for each executor to accumulate the cache size.
         val dummySplit = new CarbonInputSplit()
         dummySplit.setLocation(Array(executor))
-        new DataMapRDDPartition(id, idx, List(dummySplit), Array(executor))
+        new IndexRDDPartition(id, idx, List(dummySplit), Array(executor))
     }
   }
 
   override def internalCompute(split: Partition, context: TaskContext): Iterator[String] = {
-    val dataMaps = DataMapStoreManager.getInstance().getAllDataMaps.asScala
+    val indexes = DataMapStoreManager.getInstance().getIndexes.asScala
     val tableList = tableUniqueId.split(",")
-    val iterator = dataMaps.collect {
-      case (tableId, tableDataMaps) if tableUniqueId.isEmpty || tableList.contains(tableId) =>
-        val sizeAndIndexLengths = tableDataMaps.asScala
-          .map { dataMap =>
-            val dataMapName = if (dataMap.getDataMapFactory.isInstanceOf[BlockletDataMapFactory]) {
-              dataMap
-                .getDataMapFactory
-                .asInstanceOf[BlockletDataMapFactory]
+    val iterator = indexes.collect {
+      case (tableId, tableIndexes) if tableUniqueId.isEmpty || tableList.contains(tableId) =>
+        val sizeAndIndexLengths = tableIndexes.asScala
+          .map { index =>
+            val indexName = if (index.getIndexFactory.isInstanceOf[BlockletIndexFactory]) {
+              index
+                .getIndexFactory
+                .asInstanceOf[BlockletIndexFactory]
                 .getCarbonTable
                 .getTableUniqueName
             } else {
-              dataMap.getDataMapSchema.getRelationIdentifier.getDatabaseName + "_" + dataMap
+              index.getDataMapSchema.getRelationIdentifier.getDatabaseName + "_" + index
                 .getDataMapSchema.getDataMapName
             }
             if (executorCache) {
               val executorIP = s"${ SparkEnv.get.blockManager.blockManagerId.host }_${
                 SparkEnv.get.blockManager.blockManagerId.executorId
               }"
-              s"${ executorIP }:${ dataMap.getDataMapFactory.getCacheSize }:${
-                dataMap.getDataMapSchema.getProviderName
+              s"${ executorIP }:${ index.getIndexFactory.getCacheSize }:${
+                index.getDataMapSchema.getProviderName
               }"
             } else {
-              s"${dataMapName}:${dataMap.getDataMapFactory.getCacheSize}:${
-                dataMap.getDataMapSchema.getProviderName
+              s"${indexName}:${index.getIndexFactory.getCacheSize}:${
+                index.getDataMapSchema.getProviderName
               }"
             }
           }

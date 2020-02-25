@@ -27,7 +27,7 @@ import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{Checker, DataCommand}
+import org.apache.spark.sql.execution.command.DataCommand
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -52,14 +52,13 @@ case class CarbonDeleteStageFilesCommand(
   @transient val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   override def processData(spark: SparkSession): Seq[Row] = {
-    Checker.validateTableExists(databaseNameOp, tableName, spark)
     val table = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(spark)
     val configuration = spark.sessionState.newHadoopConf()
     setAuditTable(table)
     if (!table.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
-    if (table.isChildTableForMV) {
+    if (table.isMVTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on MV table")
     }
     val tablePath = table.getTablePath

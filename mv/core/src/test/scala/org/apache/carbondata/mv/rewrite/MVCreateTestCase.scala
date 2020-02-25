@@ -18,15 +18,19 @@ package org.apache.carbondata.mv.rewrite
 
 import java.io.File
 import java.nio.file.{Files, Paths}
+import java.util
 
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, NoSuchIndexException, NoSuchMaterializedViewException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
@@ -750,6 +754,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select name,sum(salary) from test4 group by name")
     assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv13"))
+    sql("drop materialized view mv13")
   }
 
   test("jira carbondata-2528-1") {
@@ -951,6 +956,27 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists mvtable2")
   }
 
+  test("test drop wrong index name")  {
+    sql("drop materialized view if exists mv1")
+    sql("drop index if exists bloom1 on table fact_table1")
+    sql("create materialized view mv1 as select empname, designation from fact_table1")
+    sql(
+      s"""
+         | CREATE INDEX bloom1
+         | ON fact_table1 (empname,deptname)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
+      """.stripMargin)
+    val ex1 = intercept[NoSuchIndexException] {
+      sql("drop index mv1 on table fact_table1")
+    }
+    val ex2 = intercept[NoSuchMaterializedViewException] {
+      sql("drop materialized view bloom1")
+    }
+    sql("drop materialized view mv1")
+    sql("drop index bloom1 on table fact_table1")
+  }
+
   test("test create materialized view with streaming table")  {
     sql("drop materialized view if exists dm_stream_test1")
     sql("drop materialized view if exists dm_stream_bloom")
@@ -966,9 +992,10 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm_stream_bloom ON TABLE fact_streaming_table1
-         | USING 'bloomfilter'
-         | DMProperties('INDEX_COLUMNS'='empname,deptname', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX dm_stream_bloom
+         | ON fact_streaming_table1 (empname,deptname)
+         | AS 'bloomfilter'
+         | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     val exception_tb_mv: Exception = intercept[Exception] {
@@ -1405,6 +1432,92 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     }.getMessage.contains("Column name cannot be dropped because it exists in mv materialized view: mv1")
     sql("drop table if exists t1")
     sql("drop table if exists t2")
+  }
+
+  // prepare sdk writer output
+  def buildTestData(rows: Int,
+      options: util.Map[String, String],
+      sortColumns: List[String]): Any = {
+    val schema = new StringBuilder()
+      .append("[ \n")
+      .append("   {\"NaMe\":\"string\"},\n")
+      .append("   {\"age\":\"int\"},\n")
+      .append("   {\"height\":\"double\"}\n")
+      .append("]")
+      .toString()
+
+    try {
+      val builder = CarbonWriter.builder()
+      val writer =
+        if (options != null) {
+          builder.outputPath(writerPath)
+            .sortBy(sortColumns.toArray)
+            .uniqueIdentifier(
+              System.currentTimeMillis).withBlockSize(2).withLoadOptions(options)
+            .withCsvInput(Schema.parseJson(schema)).writtenBy("TestNonTransactionalCarbonTable").build()
+        } else {
+          builder.outputPath(writerPath)
+            .sortBy(sortColumns.toArray)
+            .uniqueIdentifier(
+              System.currentTimeMillis).withBlockSize(2)
+            .withCsvInput(Schema.parseJson(schema)).writtenBy("TestNonTransactionalCarbonTable").build()
+        }
+      var i = 0
+      while (i < rows) {
+        if ((options != null) && (i < 3)) {
+          // writing a bad record
+          writer.write(Array[String]( "robot" + i, String.valueOf(i.toDouble / 2), "robot"))
+        } else {
+          writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
+        }
+        i += 1
+      }
+      if ((options != null) && sortColumns.nonEmpty) {
+        //Keep one valid record. else carbon data file will not generate
+        writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
+      }
+      writer.close()
+    } catch {
+      case ex: Throwable => throw new RuntimeException(ex)
+    }
+  }
+
+  var writerPath = new File(this.getClass.getResource("/").getPath
+                            + "../../target/SparkCarbonFileFormat/WriterOutput/")
+    .getCanonicalPath
+  writerPath = writerPath.replace("\\", "/")
+
+  def buildTestDataSingleFile(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildTestData(3, null, List("name"))
+  }
+
+  test("Test Blocked MV operations for non transactional table ") {
+    buildTestDataSingleFile()
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
+         |'$writerPath' """.stripMargin)
+
+    //2. MV creation
+    var exception = intercept[MalformedCarbonCommandException] {
+      sql(
+        "CREATE MATERIALIZED VIEW agg_sdkOutputTable AS " +
+        "SELECT name, sum(age) FROM sdkOutputTable GROUP BY name")
+    }
+    assert(exception.getMessage()
+      .contains("Unsupported operation on NonTransactional table"))
+
+    sql("DROP TABLE sdkOutputTable")
+    //drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+
+  def cleanTestData() = {
+    FileUtils.deleteDirectory(new File(writerPath))
   }
 
   def copy(oldLoc: String, newLoc: String): Unit = {

@@ -401,7 +401,7 @@ object CarbonSource {
           } else {
             throw ex
           }
-        case ex => throw ex
+        case ex: Throwable => throw ex
       }
     }
   }

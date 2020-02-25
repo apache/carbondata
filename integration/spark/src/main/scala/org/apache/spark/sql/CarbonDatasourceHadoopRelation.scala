@@ -32,7 +32,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapFilter
+import org.apache.carbondata.core.index.IndexFilter
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -95,7 +95,7 @@ case class CarbonDatasourceHadoopRelation(
     new CarbonScanRDD(
       sparkSession,
       projection,
-      filterExpression.map(new DataMapFilter(carbonTable, _, true)).orNull,
+      filterExpression.map(new IndexFilter(carbonTable, _, true)).orNull,
       identifier,
       carbonTable.getTableInfo.serialize(),
       carbonTable.getTableInfo,

@@ -18,10 +18,7 @@
 package org.apache.carbondata.mv.timeseries;
 
 /**
- * type for create datamap
- * The syntax of datamap creation is as follows.
- * CREATE DATAMAP IF NOT EXISTS dataMapName ON TABLE tableName USING 'DataMapProvider'
- * DMPROPERTIES('KEY'='VALUE') AS SELECT COUNT(COL1) FROM tableName
+ * Granularity for timeseries materialized view
  *
  * Please refer {{org.apache.spark.sql.parser.CarbonSpark2SqlParser}}
  */

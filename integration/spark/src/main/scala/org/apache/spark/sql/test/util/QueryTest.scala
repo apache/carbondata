@@ -107,7 +107,7 @@ class QueryTest extends PlanTest {
 
   protected def dropDataMaps(tableName: String, dataMapNames: String*): Unit = {
     for (dataMapName <- dataMapNames) {
-      sql(s"DROP DATAMAP IF EXISTS $dataMapName ON TABLE $tableName")
+      sql(s"DROP INDEX IF EXISTS $dataMapName ON TABLE $tableName")
     }
   }
 

@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, Checker}
+import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.api.CarbonStore
@@ -84,12 +84,9 @@ case class CarbonCleanFilesCommand(
       throw new ConcurrentOperationException(carbonTable, "insert overwrite", "clean file")
     }
     val operationContext = new OperationContext
-    val cleanFilesPreEvent: CleanFilesPreEvent =
-      CleanFilesPreEvent(carbonTable,
-        sparkSession)
+    val cleanFilesPreEvent: CleanFilesPreEvent = CleanFilesPreEvent(carbonTable, sparkSession)
     OperationListenerBus.getInstance.fireEvent(cleanFilesPreEvent, operationContext)
     if (tableName.isDefined) {
-      Checker.validateTableExists(databaseNameOp, tableName.get, sparkSession)
       if (forceTableClean) {
         deleteAllData(sparkSession, databaseNameOp, tableName.get)
       } else {
@@ -101,8 +98,7 @@ case class CarbonCleanFilesCommand(
     if (cleanFileCommands != null) {
       cleanFileCommands.foreach(_.processData(sparkSession))
     }
-    val cleanFilesPostEvent: CleanFilesPostEvent =
-      CleanFilesPostEvent(carbonTable, sparkSession)
+    val cleanFilesPostEvent: CleanFilesPostEvent = CleanFilesPostEvent(carbonTable, sparkSession)
     OperationListenerBus.getInstance.fireEvent(cleanFilesPostEvent, operationContext)
     Seq.empty
   }

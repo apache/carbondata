@@ -30,16 +30,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
-import org.apache.carbondata.core.datamap.TableDataMap;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.features.TableOperation;
+import org.apache.carbondata.core.index.TableIndex;
+import org.apache.carbondata.core.index.dev.IndexFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.DatabaseLocationProvider;
@@ -47,7 +47,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
+import org.apache.carbondata.core.metadata.schema.datamap.MVProviderName;
 import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata;
 import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo;
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
@@ -70,6 +70,7 @@ import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
+
 
 /**
  * Mapping class for Carbon actual table
@@ -859,16 +860,16 @@ public class CarbonTable implements Serializable, Writable {
   public boolean hasMVCreated() throws IOException {
     List<DataMapSchema> schemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(this);
     return schemas.stream().anyMatch(schema ->
-        schema.getProviderName().equalsIgnoreCase(DataMapClassProvider.MV.toString()));
+        schema.getProviderName().equalsIgnoreCase(MVProviderName.NAME));
   }
 
   /**
    * Return true if this table is a MV table (child table of other table)
    */
-  public boolean isChildTableForMV() {
-    return null != tableInfo.getFactTable().getTableProperties()
-        .get(CarbonCommonConstants.PARENT_TABLES) && !tableInfo.getFactTable().getTableProperties()
-        .get(CarbonCommonConstants.PARENT_TABLES).isEmpty();
+  public boolean isMVTable() {
+    String parentTables = tableInfo.getFactTable().getTableProperties()
+        .get(CarbonCommonConstants.PARENT_TABLES);
+    return null != parentTables && !parentTables.isEmpty();
   }
 
   /**
@@ -926,15 +927,15 @@ public class CarbonTable implements Serializable, Writable {
    */
   public boolean canAllow(CarbonTable carbonTable, TableOperation operation, Object... targets) {
     try {
-      List<TableDataMap> datamaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
-      if (!datamaps.isEmpty()) {
-        for (TableDataMap dataMap : datamaps) {
-          DataMapFactory factoryClass = DataMapStoreManager.getInstance()
-              .getDataMapFactoryClass(carbonTable, dataMap.getDataMapSchema());
+      List<TableIndex> indexes = DataMapStoreManager.getInstance().getAllIndexes(carbonTable);
+      if (!indexes.isEmpty()) {
+        for (TableIndex index : indexes) {
+          IndexFactory factoryClass = DataMapStoreManager.getInstance()
+              .getIndexFactoryClass(carbonTable, index.getDataMapSchema());
           if (factoryClass.willBecomeStale(operation)) {
             return false;
           }
-          // check whether the operation is blocked for datamap
+          // check whether the operation is blocked for index
           if (factoryClass.isOperationBlocked(operation, targets)) {
             return false;
           }
@@ -953,18 +954,18 @@ public class CarbonTable implements Serializable, Writable {
    * Get all index columns specified by dataMapSchema
    */
   public List<CarbonColumn> getIndexedColumns(DataMapSchema dataMapSchema)
-      throws MalformedDataMapCommandException {
+      throws MalformedIndexCommandException {
     String[] columns = dataMapSchema.getIndexColumns();
     List<CarbonColumn> indexColumn = new ArrayList<>(columns.length);
     for (String column : columns) {
       CarbonColumn carbonColumn = getColumnByName(column.trim().toLowerCase());
       if (carbonColumn == null) {
-        throw new MalformedDataMapCommandException(String
-            .format("column '%s' does not exist in table. Please check create DataMap statement.",
+        throw new MalformedIndexCommandException(String
+            .format("column '%s' does not exist in table. Please check create index statement.",
                 column));
       }
       if (carbonColumn.getColName().isEmpty()) {
-        throw new MalformedDataMapCommandException(
+        throw new MalformedIndexCommandException(
             CarbonCommonConstants.INDEX_COLUMNS + " contains invalid column name");
       }
       indexColumn.add(carbonColumn);

@@ -19,7 +19,7 @@ package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.execution.command.{Checker, DataCommand}
+import org.apache.spark.sql.execution.command.DataCommand
 import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.api.CarbonStore
@@ -59,7 +59,6 @@ case class CarbonShowLoadsCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     setAuditTable(carbonTable)
     if (!carbonTable.getTableInfo.isTransactionalTable) {

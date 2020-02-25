@@ -36,7 +36,7 @@ import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DistributableDataMapFormat
+import org.apache.carbondata.core.index.DistributableIndexFormat
 import org.apache.carbondata.core.indexstore.{ExtendedBlockletWrapperContainer, SegmentWrapperContainer}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
@@ -48,9 +48,9 @@ import org.apache.carbondata.events.{IndexServerEvent, OperationContext, Operati
   clientPrincipal = "spark.carbon.indexserver.principal")
 trait ServerInterface {
   /**
-   * Used to prune and cache the datamaps for the table.
+   * Used to prune and cache the index for the table.
    */
-  def getSplits(request: DistributableDataMapFormat): ExtendedBlockletWrapperContainer
+  def getSplits(request: DistributableIndexFormat): ExtendedBlockletWrapperContainer
 
   /**
    * Get the cache size for the specified tables.
@@ -63,18 +63,18 @@ trait ServerInterface {
   def invalidateSegmentCache(carbonTable: CarbonTable,
   segmentIds: Array[String], jobGroupId: String = "", isFallBack: Boolean = false): Unit
 
-  def getCount(request: DistributableDataMapFormat): LongWritable
+  def getCount(request: DistributableIndexFormat): LongWritable
 
-  def getPrunedSegments(request: DistributableDataMapFormat): SegmentWrapperContainer
+  def getPrunedSegments(request: DistributableIndexFormat): SegmentWrapperContainer
 
 }
 
 /**
  * An instance of a distributed Index Server which will be used for:
- * 1. Pruning the datamaps in a distributed way by using the executors.
- * 2. Caching the pruned datamaps in executor size to be reused in the next query.
- * 3. Getting the size of the datamaps cached in the executors.
- * 4. Clearing the datamaps for a table or for the specified invalid segments.
+ * 1. Pruning the index in a distributed way by using the executors.
+ * 2. Caching the pruned indexes in executor size to be reused in the next query.
+ * 3. Getting the size of the indexes cached in the executors.
+ * 4. Clearing the indexes for a table or for the specified invalid segments.
  *
  * Start using ./bin/start-indexserver.sh
  * Stop using ./bin/stop-indexserver.sh
@@ -121,7 +121,7 @@ object IndexServer extends ServerInterface {
     })
   }
 
-  def getCount(request: DistributableDataMapFormat): LongWritable = {
+  def getCount(request: DistributableIndexFormat): LongWritable = {
     doAs {
       val sparkSession = SparkSQLUtil.getSparkSession
       var currentUser: String = null
@@ -153,7 +153,7 @@ object IndexServer extends ServerInterface {
     }
   }
 
-  def getSplits(request: DistributableDataMapFormat): ExtendedBlockletWrapperContainer = {
+  def getSplits(request: DistributableIndexFormat): ExtendedBlockletWrapperContainer = {
     doAs {
       val sparkSession = SparkSQLUtil.getSparkSession
       if (!request.isFallbackJob) {
@@ -174,7 +174,7 @@ object IndexServer extends ServerInterface {
       if (!request.isFallbackJob) {
         DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
       }
-      if (request.isJobToClearDataMaps) {
+      if (request.isJobToClearIndex) {
         DistributedRDDUtils.invalidateTableMapping(request.getCarbonTable.getTableUniqueName)
       }
       new ExtendedBlockletWrapperContainer(splits.map(_._2), request.isFallbackJob)
@@ -224,7 +224,7 @@ object IndexServer extends ServerInterface {
     }
   }
 
-  override def getPrunedSegments(request: DistributableDataMapFormat): SegmentWrapperContainer =
+  override def getPrunedSegments(request: DistributableIndexFormat): SegmentWrapperContainer =
     doAs {
       val sparkSession = SparkSQLUtil.getSparkSession
       sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)

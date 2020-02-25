@@ -59,7 +59,7 @@
     <Bug pattern="STCAL_INVOKE_ON_STATIC_DATE_FORMAT_INSTANCE"/>
   </Match>
   <Match>
-    <Class name="org.apache.carbondata.core.datamap.DistributableDataMapFormat"/>
+    <Class name="org.apache.carbondata.core.datamap.DistributableIndexFormat"/>
     <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
   </Match>
   <Match>
@@ -115,17 +115,17 @@
     <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
   </Match>
   <Match>
-    <Class name="org.apache.carbondata.core.datamap.DataMapFilter"/>
+    <Class name="org.apache.carbondata.core.index.IndexFilter"/>
     <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
   </Match>
   <Match>
-    <Class name="org.apache.carbondata.core.datamap.DataMapFilter"/>
+    <Class name="org.apache.carbondata.core.index.IndexFilter"/>
     <Bug pattern="SE_BAD_FIELD"/>
   </Match>
   <Match>
     <Class name="org.apache.carbondata.events.OperationContext"/>
     <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
   </Match>
-  <Match> <Class name="~org.apache.spark.sql.secondaryindex.Jobs.DistributableBlockletDataMapLoader"/> <Field name="dataMapExprWrapper"/> <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/> </Match>
-  <Match> <Class name="~org.apache.spark.sql.secondaryindex.Jobs.DistributableBlockletDataMapLoader"/> <Field name="validSegments"/> <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/> </Match>
+  <Match> <Class name="~org.apache.spark.sql.secondaryindex.Jobs.DistributableBlockletIndexLoader"/> <Field name="indexExprWrapper"/> <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/> </Match>
+  <Match> <Class name="~org.apache.spark.sql.secondaryindex.Jobs.DistributableBlockletIndexLoader"/> <Field name="validSegments"/> <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/> </Match>
 </FindBugsFilter>

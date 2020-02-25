@@ -517,7 +517,7 @@ object CarbonDataRDDFactory {
       if (carbonLoadModel.isCarbonTransactionalTable) {
         // delete segment is applicable for transactional table
         CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
-        clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
+        clearIndexFiles(carbonTable, carbonLoadModel.getSegmentId)
       }
       LOGGER.info("********clean up done**********")
       LOGGER.warn("Cannot write load metadata file as data load failed")
@@ -534,7 +534,7 @@ object CarbonDataRDDFactory {
         if (carbonLoadModel.isCarbonTransactionalTable) {
           // delete segment is applicable for transactional table
           CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
-          clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
+          clearIndexFiles(carbonTable, carbonLoadModel.getSegmentId)
         }
         LOGGER.info("********clean up done**********")
         throw new Exception(status(0)._2._2.errorMsg)
@@ -542,7 +542,7 @@ object CarbonDataRDDFactory {
       // as no record loaded in new segment, new segment should be deleted
       val newEntryLoadStatus =
         if (carbonLoadModel.isCarbonTransactionalTable &&
-            !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildTableForMV &&
+            !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isMVTable &&
             !CarbonLoaderUtil.isValidSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)) {
           LOGGER.warn("Cannot write load metadata file as there is no data to load")
           SegmentStatus.MARKED_FOR_DELETE
@@ -597,7 +597,7 @@ object CarbonDataRDDFactory {
           val segmentFile = CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
                             File.separator + segmentFileName
           FileFactory.deleteFile(segmentFile)
-          clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
+          clearIndexFiles(carbonTable, carbonLoadModel.getSegmentId)
         }
         LOGGER.info("********clean up done**********")
         LOGGER.error("Data load failed due to failure in table status updation.")
@@ -642,17 +642,17 @@ object CarbonDataRDDFactory {
   }
 
   /**
-   * clear datamap files for segment
+   * clear index files for segment
    */
-  def clearDataMapFiles(carbonTable: CarbonTable, segmentId: String): Unit = {
+  def clearIndexFiles(carbonTable: CarbonTable, segmentId: String): Unit = {
     try {
       val segments = List(new Segment(segmentId)).asJava
-      DataMapStoreManager.getInstance().getAllDataMap(carbonTable).asScala
+      DataMapStoreManager.getInstance().getAllIndexes(carbonTable).asScala
         .filter(_.getDataMapSchema.isIndexDataMap)
-        .foreach(_.deleteDatamapData(segments))
+        .foreach(_.deleteIndexData(segments))
     } catch {
       case ex : Exception =>
-        LOGGER.error(s"Failed to clear datamap files for" +
+        LOGGER.error(s"Failed to clear index files for" +
                      s" ${carbonTable.getDatabaseName}.${carbonTable.getTableName}")
     }
   }
@@ -974,7 +974,7 @@ object CarbonDataRDDFactory {
           .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
                                    !dataMapSchema.isIndexDataMap).asJava
         if (!allDataMapSchemas.isEmpty) {
-          DataMapStatusManager.truncateDataMap(allDataMapSchemas)
+          DataMapStatusManager.truncateMVTable(allDataMapSchemas)
         }
       }
     }

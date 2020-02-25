@@ -27,7 +27,7 @@ import org.apache.spark.sql.execution.command.cache.{CacheUtil, CarbonDropCacheC
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
+import org.apache.carbondata.core.metadata.schema.datamap.IndexProviderName
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.events.{DropTableCacheEvent, Event, OperationContext, OperationEventListener}
 
@@ -47,7 +47,7 @@ object DropCacheDataMapEventListener extends OperationEventListener {
         val carbonTable = dropCacheEvent.carbonTable
         val sparkSession = dropCacheEvent.sparkSession
         val internalCall = dropCacheEvent.internalCall
-        if (carbonTable.isChildTableForMV && !internalCall) {
+        if (carbonTable.isMVTable && !internalCall) {
           throw new UnsupportedOperationException("Operation not allowed on child table.")
         }
 
@@ -104,7 +104,7 @@ object DropCacheBloomEventListener extends OperationEventListener {
           .asScala.toList
         datamaps.foreach {
           case datamap if datamap.getProviderName
-            .equalsIgnoreCase(DataMapClassProvider.BLOOMFILTER.getShortName) =>
+            .equalsIgnoreCase(IndexProviderName.BLOOMFILTER.getShortName) =>
             try {
               // Get datamap keys
               val datamapKeys = CacheUtil.getBloomCacheKeys(carbonTable, datamap)
@@ -114,7 +114,7 @@ object DropCacheBloomEventListener extends OperationEventListener {
             } catch {
               case e: Exception =>
                 LOGGER.warn(
-                  s"Clean cache for Bloom datamap ${datamap.getDataMapName} failed.", e)
+                  s"Clean cache for Bloom index ${datamap.getDataMapName} failed.", e)
             }
           case _ =>
         }

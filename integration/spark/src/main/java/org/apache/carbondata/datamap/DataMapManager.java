@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.datamap;
 
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.core.datamap.DataMapProvider;
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
+import org.apache.carbondata.core.metadata.schema.datamap.MVProviderName;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.spark.util.CarbonScalaUtil;
@@ -40,19 +40,19 @@ public class DataMapManager {
   }
 
   /**
-   * Return a DataMapClassProvider instance for specified dataMapSchema.
+   * Return a IndexProviderName instance for specified dataMapSchema.
    */
   public DataMapProvider getDataMapProvider(CarbonTable mainTable, DataMapSchema dataMapSchema,
-      SparkSession sparkSession) throws MalformedDataMapCommandException {
+      SparkSession sparkSession) throws MalformedIndexCommandException {
     DataMapProvider provider;
-    if (dataMapSchema.getProviderName().equalsIgnoreCase(DataMapClassProvider.MV.toString())) {
-      provider = (DataMapProvider) CarbonScalaUtil.createDataMapProvider(
-          "org.apache.carbondata.mv.extension.MVDataMapProvider",
+    if (dataMapSchema.getProviderName().equalsIgnoreCase(MVProviderName.NAME)) {
+      provider = (DataMapProvider) CarbonScalaUtil.createMVProvider(
+          "org.apache.carbondata.mv.extension.MVProvider",
               sparkSession,
               mainTable,
               dataMapSchema);
     } else {
-      provider = new IndexDataMapProvider(mainTable, dataMapSchema, sparkSession);
+      provider = new IndexProvider(mainTable, dataMapSchema, sparkSession);
     }
     return provider;
   }
