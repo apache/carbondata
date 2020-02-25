@@ -1519,7 +1519,7 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_QUERY_PREFETCH_ENABLE_DEFAULT = "true";
 
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_QUERY_STAGE_INPUT =
       "carbon.query.stage.input.enable";
 

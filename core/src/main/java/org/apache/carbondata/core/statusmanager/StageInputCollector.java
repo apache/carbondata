@@ -56,7 +56,7 @@ public class StageInputCollector {
 
   /**
    * Collect all stage files and create splits from them.
-   * These splits can be included in the queried.
+   * These splits will be included for the query
    */
   public static List<InputSplit> createInputSplits(CarbonTable table, Configuration hadoopConf)
       throws ExecutionException, InterruptedException {

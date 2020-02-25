@@ -103,11 +103,13 @@ class TestCarbonWriter extends QueryTest {
       checkAnswer(sql(s"select count(*) from $tableName"), Seq(Row(1000)))
       sql(s"select * from $tableName limit 10").show
       checkAnswer(sql(s"select max(intField) from $tableName"), Seq(Row(999)))
+      checkAnswer(sql(s"select count(intField) from $tableName where intField >= 900"), Seq(Row(100)))
       CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT, "false")
 
       sql(s"INSERT INTO $tableName STAGE")
 
       checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(1000)))
+      checkAnswer(sql(s"select count(intField) from $tableName where intField >= 900"), Seq(Row(100)))
 
       // ensure the stage snapshot file and all stage files are deleted
       assertResult(false)(FileFactory.isFileExist(CarbonTablePath.getStageSnapshotFile(tablePath)))
