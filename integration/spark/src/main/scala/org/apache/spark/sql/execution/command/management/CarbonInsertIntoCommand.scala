@@ -37,7 +37,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil, ThreadLocalSessionInfo}
@@ -274,6 +274,20 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
     Seq.empty
   }
 
+  private def isAlteredSchema(tableSchema: TableSchema): Boolean = {
+    if (tableInfo.getFactTable.getSchemaEvolution != null) {
+      tableInfo
+        .getFactTable
+        .getSchemaEvolution
+        .getSchemaEvolutionEntryList.asScala.exists(entry =>
+        (entry.getAdded != null && entry.getAdded.size() > 0) ||
+        (entry.getRemoved != null && entry.getRemoved.size() > 0)
+      )
+    } else {
+      false
+    }
+  }
+
   def getReArrangedLogicalPlan(
       reArrangedIndex: Seq[Int],
       selectedColumnSchema: Seq[ColumnSchema],
@@ -468,7 +482,7 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
     }
     var createOrderColumns = table.getCreateOrderColumn.asScala
     val createOrderMap = mutable.Map[String, Int]()
-    if (partitionColumnNames != null) {
+    if (partitionColumnNames != null && isAlteredSchema(tableInfo.getFactTable)) {
       // For alter table drop/add column scenarios, partition column may not be in the end.
       // Need to keep it in the end.
       createOrderColumns = createOrderColumns.filterNot(col =>
