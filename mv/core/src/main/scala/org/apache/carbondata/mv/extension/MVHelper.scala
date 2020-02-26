@@ -93,7 +93,7 @@ object MVHelper {
     val updatedQueryWithDb = modularPlan.asCompactSQL
     val (timeSeriesColumn, granularity) = validateMVTimeSeriesQuery(queryPlan, dataMapSchema)
     val isQueryNeedFullRebuild = checkIsQueryNeedFullRebuild(queryPlan)
-    val hasNonCarbonProvider = checkMainTableHasNonCarbonSource(mainTables)
+    val hasNonCarbonProvider = checkHasNonCarbonSource(mainTables)
     val isNeedFullRebuild = isQueryNeedFullRebuild || hasNonCarbonProvider
     var counter = 0
     // the ctas query can have duplicate columns, so we should take distinct and create fields,
@@ -411,7 +411,7 @@ object MVHelper {
    * @param mainTables
    * @return
    */
-  private def checkMainTableHasNonCarbonSource(mainTables: Seq[CatalogTable]): Boolean = {
+  private def checkHasNonCarbonSource(mainTables: Seq[CatalogTable]): Boolean = {
     mainTables.exists(table => !CarbonSource.isCarbonDataSource(table))
   }
 

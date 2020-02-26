@@ -138,6 +138,9 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into source select designation, doj, workgroupcategory, workgroupcategoryname, " +
         "deptno, deptname, salary, empname from fact_table1")
     sql("select * from source limit 2").show(false)
+    sql("explain extended select empname, avg(salary) from source group by empname").show(false)
+
+
     sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
     var df = sql("select empname, avg(salary) from source group by empname")
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
