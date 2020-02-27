@@ -200,12 +200,7 @@ class CarbonSecondaryIndexRDD[K, V](
         .set("current.segmentfile", segmentId + "_" + carbonLoadModel.getFactTimeStamp)
     }
     val format =
-//      if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable &&
-//          isCompactionCall) {
-//        CarbonInputFormatUtil.createCarbonFileInputFormat(absoluteTableIdentifier, job);
-//      } else {
-        CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)
-//      }
+      CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)
     // initialise query_id for job
     job.getConfiguration.set("query.id", queryId)
     var defaultParallelism = sparkContext.defaultParallelism
