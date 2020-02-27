@@ -60,6 +60,7 @@ public class SegmentUpdateStatusManager {
   private LoadMetadataDetails[] segmentDetails;
   private SegmentUpdateDetails[] updateDetails;
   private Map<String, SegmentUpdateDetails> blockAndDetailsMap;
+  private boolean isPartitionTable;
   /**
    * It contains the mapping of segment path and corresponding delete delta file paths,
    * avoiding listing these files for every query
@@ -79,6 +80,7 @@ public class SegmentUpdateStatusManager {
   public SegmentUpdateStatusManager(CarbonTable table,
       LoadMetadataDetails[] segmentDetails, String updateVersion) {
     this.identifier = table.getAbsoluteTableIdentifier();
+    this.isPartitionTable = table.isHivePartitionTable();
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
     this.segmentDetails = segmentDetails;
@@ -102,6 +104,7 @@ public class SegmentUpdateStatusManager {
       segmentDetails = SegmentStatusManager.readLoadMetadata(
           CarbonTablePath.getMetadataPath(identifier.getTablePath()));
     }
+    this.isPartitionTable = table.isHivePartitionTable();
     if (segmentDetails.length != 0) {
       updateDetails = readLoadMetadata();
     } else {
@@ -140,14 +143,11 @@ public class SegmentUpdateStatusManager {
   private void populateMap() {
     blockAndDetailsMap = new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (SegmentUpdateDetails blockDetails : updateDetails) {
-
       String blockIdentifier = CarbonUpdateUtil
-          .getSegmentBlockNameKey(blockDetails.getSegmentName(), blockDetails.getActualBlockName());
-
+          .getSegmentBlockNameKey(blockDetails.getSegmentName(), blockDetails.getActualBlockName(),
+              isPartitionTable);
       blockAndDetailsMap.put(blockIdentifier, blockDetails);
-
     }
-
   }
 
   /**
@@ -159,7 +159,7 @@ public class SegmentUpdateStatusManager {
   private SegmentUpdateDetails getDetailsForABlock(String segID, String actualBlockName) {
 
     String blockIdentifier = CarbonUpdateUtil
-        .getSegmentBlockNameKey(segID, actualBlockName);
+        .getSegmentBlockNameKey(segID, actualBlockName, isPartitionTable);
 
     return blockAndDetailsMap.get(blockIdentifier);
 
@@ -174,6 +174,10 @@ public class SegmentUpdateStatusManager {
 
     return blockAndDetailsMap.get(key);
 
+  }
+
+  public Map<String, SegmentUpdateDetails> getBlockAndDetailsMap() {
+    return blockAndDetailsMap;
   }
 
   /**

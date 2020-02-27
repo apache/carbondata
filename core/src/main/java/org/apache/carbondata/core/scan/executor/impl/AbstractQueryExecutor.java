@@ -433,7 +433,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .getBlockId(queryModel.getAbsoluteTableIdentifier(), filePath, segment.getSegmentNo(),
             queryModel.getTable().getTableInfo().isTransactionalTable(),
             isStandardTable, queryModel.getTable().isHivePartitionTable());
-    if (!isStandardTable || queryModel.getTable().isHivePartitionTable()) {
+    if (!isStandardTable) {
       blockExecutionInfo.setBlockId(CarbonTablePath.getShortBlockIdForPartitionTable(blockId));
     } else {
       blockExecutionInfo.setBlockId(CarbonTablePath.getShortBlockId(blockId));

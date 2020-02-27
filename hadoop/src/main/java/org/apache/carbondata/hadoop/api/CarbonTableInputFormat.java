@@ -446,6 +446,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
                 readCommittedScope);
     Map<String, Long> blockRowCountMapping = new HashMap<>();
     Map<String, Long> segmentAndBlockCountMapping = new HashMap<>();
+    Map<String, String> blockToSegmentMapping = new HashMap<>();
 
     // TODO: currently only batch segment is supported, add support for streaming table
     List<Segment> filteredSegment =
@@ -515,7 +516,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
         long rowCount = eachBlocklet.getValue();
 
-        String key = CarbonUpdateUtil.getSegmentBlockNameKey(segmentId, blockName);
+        String key = CarbonUpdateUtil
+            .getSegmentBlockNameKey(segmentId, blockName, table.isHivePartitionTable());
 
         // if block is invalid then don't add the count
         SegmentUpdateDetails details = updateStatusManager.getDetailsForABlock(key);
@@ -530,6 +532,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
             }
             segmentAndBlockCountMapping.put(segmentId, count + 1);
           }
+          blockToSegmentMapping.put(key, segmentId);
           blockCount += rowCount;
           blockRowCountMapping.put(key, blockCount);
         }
@@ -546,7 +549,10 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       }
       blockRowCountMapping.put(CarbonCommonConstantsInternal.ROW_COUNT, totalRowCount);
     }
-    return new BlockMappingVO(blockRowCountMapping, segmentAndBlockCountMapping);
+    BlockMappingVO blockMappingVO =
+        new BlockMappingVO(blockRowCountMapping, segmentAndBlockCountMapping);
+    blockMappingVO.setBlockToSegmentMapping(blockToSegmentMapping);
+    return blockMappingVO;
   }
 
   public ReadCommittedScope getReadCommitted(JobContext job, AbsoluteTableIdentifier identifier)

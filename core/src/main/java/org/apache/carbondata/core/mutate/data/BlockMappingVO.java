@@ -30,6 +30,8 @@ public class BlockMappingVO {
 
   private Map<String, RowCountDetailsVO> completeBlockRowDetailVO;
 
+  private Map<String, String> blockToSegmentMapping;
+
   public void setCompleteBlockRowDetailVO(Map<String, RowCountDetailsVO> completeBlockRowDetailVO) {
     this.completeBlockRowDetailVO = completeBlockRowDetailVO;
   }
@@ -50,5 +52,13 @@ public class BlockMappingVO {
       Map<String, Long> segmentNumberOfBlockMapping) {
     this.blockRowCountMapping = blockRowCountMapping;
     this.segmentNumberOfBlockMapping = segmentNumberOfBlockMapping;
+  }
+
+  public void setBlockToSegmentMapping(Map<String, String> blockToSegmentMapping) {
+    this.blockToSegmentMapping = blockToSegmentMapping;
+  }
+
+  public Map<String, String> getBlockToSegmentMapping() {
+    return blockToSegmentMapping;
   }
 }

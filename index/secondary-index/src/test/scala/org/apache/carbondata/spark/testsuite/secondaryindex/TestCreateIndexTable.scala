@@ -445,12 +445,6 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test blocking secondary Index on Partition table") {
-    intercept[RuntimeException] {
-      sql("""create index part_index on table part_si(c3) AS 'carbondata'""").show()
-    }
-  }
-
   object CarbonMetastore {
     import org.apache.carbondata.core.reader.ThriftReader
 
