@@ -37,7 +37,8 @@ public class CompressorFactory {
   public enum NativeSupportedCompressor {
     SNAPPY("snappy", SnappyCompressor.class),
     ZSTD("zstd", ZstdCompressor.class),
-    GZIP("gzip", GzipCompressor.class);
+    GZIP("gzip", GzipCompressor.class),
+    QAT("qat", QATCompressor.class);
 
     private String name;
     private Class<Compressor> compressorClass;
