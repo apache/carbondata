@@ -16,7 +16,7 @@
 -->
 
 
-# Presto guide
+# Prestodb guide
 This tutorial provides a quick introduction to using current integration/presto module.
 
 
@@ -234,12 +234,14 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
   ```
   $ git clone https://github.com/apache/carbondata
   $ cd carbondata
-  $ mvn -DskipTests -P{spark-version} -Dspark.version={spark-version-number} -Dhadoop.version={hadoop-version-number} clean package
+  $ mvn -DskipTests -P{spark-version} -P{prestodb/prestosql} -Dspark.version={spark-version-number} -Dhadoop.version={hadoop-version-number} clean package
   ```
   Replace the spark and hadoop version with the version used in your cluster.
-  For example, if you are using Spark 2.4.4, you would like to compile using:
+  For example, use prestodb profile and 
+  if you are using Spark 2.4.4, you would like to compile using:
+  
   ```
-  mvn -DskipTests -Pspark-2.4 -Dspark.version=2.4.4 -Dhadoop.version=2.7.2 clean package
+  mvn -DskipTests -Pspark-2.4 -Pprestodb -Dspark.version=2.4.4 -Dhadoop.version=2.7.2 clean package
   ```
 
   Secondly: Create a folder named 'carbondata' under $PRESTO_HOME$/plugin and

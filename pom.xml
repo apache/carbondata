@@ -121,6 +121,7 @@
   </modules>
 
   <properties>
+    <!--    default properties-->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <snappy.version>1.1.2.6</snappy.version>
     <hadoop.version>2.7.2</hadoop.version>
@@ -136,6 +137,16 @@
     <spark.master.url>local[2]</spark.master.url>
     <hdfs.url>local</hdfs.url>
     <presto.jdbc.url>localhost:8086</presto.jdbc.url>
+    <!--    prestosql by default-->
+    <presto.version>316</presto.version>
+    <presto.groupid>io.prestosql</presto.groupid>
+    <presto.hadoop.groupid>io.prestosql.hadoop</presto.hadoop.groupid>
+    <presto.hadoop.artifactid>hadoop-apache</presto.hadoop.artifactid>
+    <presto.hadoop.version>3.2.0-2</presto.hadoop.version>
+    <airlift.version>0.36</airlift.version>
+    <presto.mvn.plugin.groupid>io.prestosql</presto.mvn.plugin.groupid>
+    <presto.mvn.plugin.version>6</presto.mvn.plugin.version>
+    <presto.depndency.scope>compile</presto.depndency.scope>
     <!--todo:this can be enabled when presto tests need to be run-->
     <!--<spark.hadoop.hive.metastore.uris>thrift://localhost:8086</spark.hadoop.hive.metastore.uris>-->
     <suite.name>org.apache.carbondata.cluster.sdv.suite.SDVSuites</suite.name>
@@ -533,8 +544,6 @@
                 <sourceDirectory>${basedir}/integration/spark/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/presto/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/sdk/sdk/src/main/java</sourceDirectory>
@@ -580,8 +589,6 @@
                 <sourceDirectory>${basedir}/integration/spark/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/hive/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/presto/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/sdk/sdk/src/main/java</sourceDirectory>
@@ -642,6 +649,83 @@
       <properties>
         <script.exetension>.bat</script.exetension>
       </properties>
+    </profile>
+    <!--    prestodb-->
+    <profile>
+      <id>prestodb</id>
+      <properties>
+        <presto.version>0.217</presto.version>
+        <scala.version>2.11.8</scala.version>
+        <airlift.version>0.31</airlift.version>
+        <presto.groupid>com.facebook.presto</presto.groupid>
+        <presto.hadoop.groupid>com.facebook.presto.hadoop</presto.hadoop.groupid>
+        <presto.hadoop.artifactid>hadoop-apache2</presto.hadoop.artifactid>
+        <presto.hadoop.version>2.7.4-3</presto.hadoop.version>
+        <presto.mvn.plugin.groupid>io.takari.maven.plugins</presto.mvn.plugin.groupid>
+        <presto.mvn.plugin.version>0.1.12</presto.mvn.plugin.version>
+        <presto.depndency.scope>provided</presto.depndency.scope>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.eluder.coveralls</groupId>
+            <artifactId>coveralls-maven-plugin</artifactId>
+            <version>4.3.0</version>
+            <configuration>
+              <repoToken>opPwqWW41vYppv6KISea3u1TJvE1ugJ5Y</repoToken>
+              <sourceEncoding>UTF-8</sourceEncoding>
+              <jacocoReports>
+                <jacocoReport>${basedir}/target/carbondata-coverage-report/carbondata-coverage-report.xml
+                </jacocoReport>
+              </jacocoReports>
+              <sourceDirectories>
+                <sourceDirectory>${basedir}/integration/presto/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
+              </sourceDirectories>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <!--    prestosql-->
+    <profile>
+      <id>prestosql</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <presto.version>316</presto.version>
+        <scala.version>2.11.8</scala.version>
+        <airlift.version>0.36</airlift.version>
+        <presto.groupid>io.prestosql</presto.groupid>
+        <presto.hadoop.groupid>io.prestosql.hadoop</presto.hadoop.groupid>
+        <presto.hadoop.artifactid>hadoop-apache</presto.hadoop.artifactid>
+        <presto.hadoop.version>3.2.0-2</presto.hadoop.version>
+        <presto.mvn.plugin.groupid>io.prestosql</presto.mvn.plugin.groupid>
+        <presto.mvn.plugin.version>6</presto.mvn.plugin.version>
+        <presto.depndency.scope>compile</presto.depndency.scope>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.eluder.coveralls</groupId>
+            <artifactId>coveralls-maven-plugin</artifactId>
+            <version>4.3.0</version>
+            <configuration>
+              <repoToken>opPwqWW41vYppv6KISea3u1TJvE1ugJ5Y</repoToken>
+              <sourceEncoding>UTF-8</sourceEncoding>
+              <jacocoReports>
+                <jacocoReport>${basedir}/target/carbondata-coverage-report/carbondata-coverage-report.xml
+                </jacocoReport>
+              </jacocoReports>
+              <sourceDirectories>
+                <sourceDirectory>${basedir}/integration/presto/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
+              </sourceDirectories>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 
