@@ -31,7 +31,6 @@
   <packaging>presto-plugin</packaging>
 
   <properties>
-    <presto.version>0.217</presto.version>
     <httpcore.version>4.4.9</httpcore.version>
     <dev.path>${basedir}/../../dev</dev.path>
     <jacoco.append>true</jacoco.append>
@@ -228,7 +227,7 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.facebook.presto</groupId>
+      <groupId>${presto.groupid}</groupId>
       <artifactId>presto-tests</artifactId>
       <scope>test</scope>
       <version>${presto.version}</version>
@@ -354,7 +353,7 @@
 
     <!--presto integrated-->
     <dependency>
-      <groupId>com.facebook.presto</groupId>
+      <groupId>${presto.groupid}</groupId>
       <artifactId>presto-spi</artifactId>
       <version>${presto.version}</version>
       <scope>provided</scope>
@@ -370,14 +369,9 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>commons-lang</groupId>
-      <artifactId>commons-lang</artifactId>
-      <version>2.5</version>
-    </dependency>
-    <dependency>
-      <groupId>com.facebook.presto.hadoop</groupId>
-      <artifactId>hadoop-apache2</artifactId>
-      <version>2.7.4-3</version>
+      <groupId>${presto.hadoop.groupid}</groupId>
+      <artifactId>${presto.hadoop.artifactid}</artifactId>
+      <version>${presto.hadoop.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.antlr</groupId>
@@ -389,9 +383,8 @@
         </exclusion>
       </exclusions>
     </dependency>
-
     <dependency>
-      <groupId>com.facebook.presto</groupId>
+      <groupId>${presto.groupid}</groupId>
       <artifactId>presto-jdbc</artifactId>
       <version>${presto.version}</version>
       <exclusions>
@@ -406,7 +399,7 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.facebook.presto</groupId>
+      <groupId>${presto.groupid}</groupId>
       <artifactId>presto-hive</artifactId>
       <version>${presto.version}</version>
       <exclusions>
@@ -432,7 +425,7 @@
     <dependency>
       <groupId>io.airlift</groupId>
       <artifactId>slice</artifactId>
-      <version>0.31</version>
+      <version>${airlift.version}</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -460,6 +453,10 @@
       <scope>test</scope>
       <exclusions>
         <exclusion>
+          <groupId>io.prestosql.hadoop</groupId>
+          <artifactId>hadoop-apache</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.apache.hadoop</groupId>
           <artifactId>hadoop-client</artifactId>
         </exclusion>
@@ -475,7 +472,7 @@
       <groupId>com.google.code.findbugs</groupId>
       <artifactId>jsr305</artifactId>
       <version>3.0.2</version>
-      <scope>provided</scope>
+      <scope>${presto.depndency.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.glassfish.hk2</groupId>
@@ -589,7 +586,12 @@
           <failIfNoTests>false</failIfNoTests>
         </configuration>
       </plugin>
-
+      <plugin>
+        <groupId>${presto.mvn.plugin.groupid}</groupId>
+        <artifactId>presto-maven-plugin</artifactId>
+        <version>${presto.mvn.plugin.version}</version>
+        <extensions>true</extensions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
@@ -632,26 +634,6 @@
       </plugin>
 
       <plugin>
-        <groupId>com.ning.maven.plugins</groupId>
-        <artifactId>maven-duplicate-finder-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>io.takari.maven.plugins</groupId>
-        <artifactId>presto-maven-plugin</artifactId>
-        <version>0.1.12</version>
-        <extensions>true</extensions>
-      </plugin>
-      <plugin>
-        <groupId>pl.project13.maven</groupId>
-        <artifactId>git-commit-id-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>org.scalatest</groupId>
         <artifactId>scalatest-maven-plugin</artifactId>
         <version>1.0</version>
@@ -687,6 +669,106 @@
       <properties>
         <maven.test.skip>true</maven.test.skip>
       </properties>
+    </profile>
+    <profile>
+      <id>prestodb</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <excludes>
+                <exclude>src/main/prestosql</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.0.0</version>
+            <executions>
+              <execution>
+                <id>add-test-source</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>add-test-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>src/test/prestodb</source>
+                  </sources>
+                </configuration>
+              </execution>
+              <execution>
+                <id>add-source</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>add-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>src/main/prestodb</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>prestosql</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <excludes>
+                <exclude>src/main/prestodb</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.0.0</version>
+            <executions>
+              <execution>
+                <id>add-test-source</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>add-test-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>src/test/prestosql</source>
+                  </sources>
+                </configuration>
+              </execution>
+              <execution>
+                <id>add-source</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>add-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>src/main/prestosql</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 </project>

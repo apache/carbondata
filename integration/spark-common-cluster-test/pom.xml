@@ -81,9 +81,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.facebook.presto</groupId>
+      <groupId>${presto.groupid}</groupId>
       <artifactId>presto-jdbc</artifactId>
-      <version>0.210</version>
+      <version>${presto.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.antlr</groupId>

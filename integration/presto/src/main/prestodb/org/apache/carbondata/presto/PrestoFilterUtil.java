@@ -279,42 +279,42 @@ public class PrestoFilterUtil {
     return finalFilters;
   }
 
-  private static Object convertDataByType(Object rawdata, HiveType type) {
+  private static Object convertDataByType(Object rawData, HiveType type) {
     if (type.equals(HiveType.HIVE_INT) || type.equals(HiveType.HIVE_SHORT)) {
-      return Integer.valueOf(rawdata.toString());
+      return Integer.valueOf(rawData.toString());
     } else if (type.equals(HiveType.HIVE_LONG)) {
-      return rawdata;
+      return rawData;
     } else if (type.equals(HiveType.HIVE_STRING)) {
-      if (rawdata instanceof Slice) {
-        return ((Slice) rawdata).toStringUtf8();
+      if (rawData instanceof Slice) {
+        return ((Slice) rawData).toStringUtf8();
       } else {
-        return rawdata;
+        return rawData;
       }
     } else if (type.equals(HiveType.HIVE_BOOLEAN)) {
-      return rawdata;
+      return rawData;
     } else if (type.equals(HiveType.HIVE_DATE)) {
       Calendar c = Calendar.getInstance();
       c.setTime(new Date(0));
-      c.add(Calendar.DAY_OF_YEAR, ((Long) rawdata).intValue());
+      c.add(Calendar.DAY_OF_YEAR, ((Long) rawData).intValue());
       Date date = c.getTime();
       return date.getTime() * 1000;
     }
     else if (type.getTypeInfo() instanceof DecimalTypeInfo) {
-      if (rawdata instanceof Double) {
-        return new BigDecimal((Double) rawdata);
-      } else if (rawdata instanceof Long) {
-        return new BigDecimal(new BigInteger(String.valueOf(rawdata)),
+      if (rawData instanceof Double) {
+        return new BigDecimal((Double) rawData);
+      } else if (rawData instanceof Long) {
+        return new BigDecimal(new BigInteger(String.valueOf(rawData)),
             ((DecimalTypeInfo) type.getTypeInfo()).getScale());
-      } else if (rawdata instanceof Slice) {
-        return new BigDecimal(Decimals.decodeUnscaledValue((Slice) rawdata),
+      } else if (rawData instanceof Slice) {
+        return new BigDecimal(Decimals.decodeUnscaledValue((Slice) rawData),
             ((DecimalTypeInfo) type.getTypeInfo()).getScale());
       }
     }
     else if (type.equals(HiveType.HIVE_TIMESTAMP)) {
-      return (Long) rawdata * 1000;
+      return (Long) rawData * 1000;
     }
 
-    return rawdata;
+    return rawData;
   }
 
   /**
