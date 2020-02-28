@@ -2003,4 +2003,15 @@ public final class CarbonProperties {
         CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT,
         CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT_DEFAULT));
   }
+
+  public static boolean isAuditEnabled() {
+    return Boolean.parseBoolean(getInstance().getProperty(
+        CarbonCommonConstants.CARBON_ENABLE_AUDIT,
+        CarbonCommonConstants.CARBON_ENABLE_AUDIT_DEFAULT
+    ));
+  }
+
+  public static void setAuditEnabled(boolean enabled) {
+    getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_AUDIT, String.valueOf(enabled));
+  }
 }

@@ -25,6 +25,7 @@ import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.impl.AuditLevel;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -64,12 +65,14 @@ public class Auditor {
    * @param opId operation unique id
    */
   public static void logOperationStart(String opName, String opId) {
-    Objects.requireNonNull(opName);
-    Objects.requireNonNull(opId);
-    OpStartMessage message = new OpStartMessage(opName, opId);
-    Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-    String json = gson.toJson(message);
-    LOGGER.log(AuditLevel.AUDIT, json);
+    if (CarbonProperties.isAuditEnabled()) {
+      Objects.requireNonNull(opName);
+      Objects.requireNonNull(opId);
+      OpStartMessage message = new OpStartMessage(opName, opId);
+      Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+      String json = gson.toJson(message);
+      LOGGER.log(AuditLevel.AUDIT, json);
+    }
   }
 
   /**
@@ -83,14 +86,16 @@ public class Auditor {
    */
   public static void logOperationEnd(String opName, String opId, boolean success, String table,
       String opTime, Map<String, String> extraInfo) {
-    Objects.requireNonNull(opName);
-    Objects.requireNonNull(opId);
-    Objects.requireNonNull(opTime);
-    OpEndMessage message = new OpEndMessage(opName, opId, table, opTime,
-        success ? OpStatus.SUCCESS : OpStatus.FAILED,
-        extraInfo != null ? extraInfo : new HashMap<String, String>());
-    String json = gson.toJson(message);
-    LOGGER.log(AuditLevel.AUDIT, json);
+    if (CarbonProperties.isAuditEnabled()) {
+      Objects.requireNonNull(opName);
+      Objects.requireNonNull(opId);
+      Objects.requireNonNull(opTime);
+      OpEndMessage message = new OpEndMessage(opName, opId, table, opTime,
+          success ? OpStatus.SUCCESS : OpStatus.FAILED,
+          extraInfo != null ? extraInfo : new HashMap<String, String>());
+      String json = gson.toJson(message);
+      LOGGER.log(AuditLevel.AUDIT, json);
+    }
   }
 
   private enum OpStatus {
