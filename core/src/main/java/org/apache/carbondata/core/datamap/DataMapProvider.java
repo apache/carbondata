@@ -180,7 +180,7 @@ public abstract class DataMapProvider {
                   == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) && SegmentStatusManager
                   .isLoadInProgress(dataMapTableAbsoluteTableIdentifier,
                       loadMetaDetail.getLoadName())) {
-                throw new RuntimeException("Rebuild to " + dataMapSchema.getDataMapName()
+                throw new RuntimeException("Refresh to " + dataMapSchema.getDataMapName()
                     + " is already in progress");
               }
             }

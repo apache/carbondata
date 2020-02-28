@@ -20,9 +20,6 @@ package org.apache.carbondata.core.index;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 
-/**
- * Index level
- */
 @InterfaceAudience.Developer("Index")
 @InterfaceStability.Evolving
 public enum IndexLevel {

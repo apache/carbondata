@@ -201,6 +201,7 @@ public final class DataMapStoreManager {
       }
       return schema;
     } catch (NoSuchDataMapException e) {
+      LOGGER.error("get index schema failed: " + e.getMessage());
       throw new NoSuchIndexException(indexName);
     }
   }
@@ -214,6 +215,7 @@ public final class DataMapStoreManager {
       }
       return schema;
     } catch (NoSuchDataMapException e) {
+      LOGGER.error("get MV schema failed: " + e.getMessage());
       throw new NoSuchMaterializedViewException(mvName);
     }
   }

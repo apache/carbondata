@@ -339,7 +339,7 @@ public final class TableIndex extends OperationEventListener {
     try {
       executorService.awaitTermination(2, TimeUnit.HOURS);
     } catch (InterruptedException e) {
-      LOG.error("Error in pruning in multi-thread: " + e.getMessage());
+      LOG.error("Error in pruning index in multi-thread: " + e.getMessage());
     }
     // check for error
     for (Future<Void> result : results) {
