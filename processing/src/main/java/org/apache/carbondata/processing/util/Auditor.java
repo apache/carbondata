@@ -58,18 +58,26 @@ public class Auditor {
     }
   }
 
+  private static boolean enable = true;
+
+  public static void enable(boolean bool) {
+    enable = bool;
+  }
+
   /**
    * call this method to record audit log when operation is triggered
    * @param opName operation name
    * @param opId operation unique id
    */
   public static void logOperationStart(String opName, String opId) {
-    Objects.requireNonNull(opName);
-    Objects.requireNonNull(opId);
-    OpStartMessage message = new OpStartMessage(opName, opId);
-    Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-    String json = gson.toJson(message);
-    LOGGER.log(AuditLevel.AUDIT, json);
+    if (enable) {
+      Objects.requireNonNull(opName);
+      Objects.requireNonNull(opId);
+      OpStartMessage message = new OpStartMessage(opName, opId);
+      Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+      String json = gson.toJson(message);
+      LOGGER.log(AuditLevel.AUDIT, json);
+    }
   }
 
   /**
@@ -83,14 +91,16 @@ public class Auditor {
    */
   public static void logOperationEnd(String opName, String opId, boolean success, String table,
       String opTime, Map<String, String> extraInfo) {
-    Objects.requireNonNull(opName);
-    Objects.requireNonNull(opId);
-    Objects.requireNonNull(opTime);
-    OpEndMessage message = new OpEndMessage(opName, opId, table, opTime,
-        success ? OpStatus.SUCCESS : OpStatus.FAILED,
-        extraInfo != null ? extraInfo : new HashMap<String, String>());
-    String json = gson.toJson(message);
-    LOGGER.log(AuditLevel.AUDIT, json);
+    if (enable) {
+      Objects.requireNonNull(opName);
+      Objects.requireNonNull(opId);
+      Objects.requireNonNull(opTime);
+      OpEndMessage message = new OpEndMessage(opName, opId, table, opTime,
+          success ? OpStatus.SUCCESS : OpStatus.FAILED,
+          extraInfo != null ? extraInfo : new HashMap<String, String>());
+      String json = gson.toJson(message);
+      LOGGER.log(AuditLevel.AUDIT, json);
+    }
   }
 
   private enum OpStatus {

@@ -95,14 +95,16 @@ case class CarbonMergeDataSetCommand(
     // Lets generate all conditions combinations as one column and add them as 'status'.
     val condition = generateStatusColumnWithAllCombinations(mergeMatches)
 
+    // decide join type based on match conditions
+    val joinType = decideJoinType
+
     // Add the tupleid udf to get the tupleid to generate delete delta.
-    val frame = targetDs.withColumn(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID,
-      expr("getTupleId()")).withColumn("exist_on_target", lit(1)).join(
-      srcDS.withColumn("exist_on_src", lit(1)),
-      // Do the full outer join to get the data from both sides without missing anything.
-      // TODO As per the match conditions choose the join, sometimes it might be possible to use
-      // left_outer join.
-      mergeMatches.joinExpr, "full_outer").withColumn("status", condition)
+    val frame =
+      targetDs
+        .withColumn(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID, expr("getTupleId()"))
+        .withColumn("exist_on_target", lit(1))
+        .join(srcDS.withColumn("exist_on_src", lit(1)), mergeMatches.joinExpr, joinType)
+        .withColumn("status", condition)
     if (LOGGER.isDebugEnabled) {
       frame.explain()
     }
@@ -200,6 +202,36 @@ case class CarbonMergeDataSetCommand(
     HistoryTableLoadHelper.loadHistoryTable(sparkSession, rltn.head, carbonTable,
       trxMgr, mutationAction, mergeMatches)
     Seq.empty
+  }
+
+  // Decide join type based on match conditions
+  private def decideJoinType: String = {
+    if (containsWhenNotMatchedOnly) {
+      // if match condition contains WhenNotMatched only, then we do not need
+      // left table key and matched key
+      "right_outer"
+    } else if (containsWhenMatchedOnly) {
+      // if match condition contains WhenMatched only, then we need matched key only
+      "inner"
+    } else if (needKeyFromLeftTable) {
+      // if we need to keep keys from left table, then use full outer join
+      "full_outer"
+    } else {
+      // default join type
+      "right"
+    }
+  }
+
+  private def needKeyFromLeftTable: Boolean = {
+    mergeMatches.matchList.exists(_.isInstanceOf[WhenNotMatchedAndExistsOnlyOnTarget])
+  }
+
+  private def containsWhenMatchedOnly: Boolean = {
+    mergeMatches.matchList.forall(_.isInstanceOf[WhenMatched])
+  }
+
+  private def containsWhenNotMatchedOnly: Boolean = {
+    mergeMatches.matchList.forall(_.isInstanceOf[WhenNotMatched])
   }
 
   /**
