@@ -34,7 +34,7 @@ import org.apache.carbondata.core.datamap.{DataMapCatalog, DataMapProvider, Data
 import org.apache.carbondata.core.datamap.dev.{DataMap, DataMapFactory}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.indexstore.Blocklet
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty
+import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.mv.rewrite.{SummaryDataset, SummaryDatasetCatalog}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
@@ -62,7 +62,13 @@ class MVDataMapProvider(
       ctasSqlStatement,
       true)
     try {
-      DataMapStoreManager.getInstance.registerDataMapCatalog(this, dataMapSchema)
+      val catalog = DataMapStoreManager.getInstance().getDataMapCatalog(this,
+        DataMapClassProvider.MV.getShortName, false).asInstanceOf[SummaryDatasetCatalog]
+      if (catalog != null && !catalog.mvSession.sparkSession.equals(sparkSession)) {
+        DataMapStoreManager.getInstance.registerDataMapCatalog(this, dataMapSchema, true)
+      } else {
+        DataMapStoreManager.getInstance.registerDataMapCatalog(this, dataMapSchema, false)
+      }
       if (dataMapSchema.isLazy) {
         DataMapStatusManager.disableDataMap(dataMapSchema.getDataMapName)
       }

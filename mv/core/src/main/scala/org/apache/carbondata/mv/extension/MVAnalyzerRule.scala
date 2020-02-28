@@ -85,14 +85,13 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
     }
     if (needAnalysis) {
       var catalog = DataMapStoreManager.getInstance().getDataMapCatalog(dataMapProvider,
-        DataMapClassProvider.MV.getShortName).asInstanceOf[SummaryDatasetCatalog]
+        DataMapClassProvider.MV.getShortName, false).asInstanceOf[SummaryDatasetCatalog]
       // when first time DataMapCatalogs are initialized, it stores session info also,
       // but when carbon session is newly created, catalog map will not be cleared,
       // so if session info is different, remove the entry from map.
       if (catalog != null && !catalog.mvSession.sparkSession.equals(sparkSession)) {
-        DataMapStoreManager.getInstance().clearDataMapCatalog()
         catalog = DataMapStoreManager.getInstance().getDataMapCatalog(dataMapProvider,
-          DataMapClassProvider.MV.getShortName).asInstanceOf[SummaryDatasetCatalog]
+          DataMapClassProvider.MV.getShortName, true).asInstanceOf[SummaryDatasetCatalog]
       }
       if (catalog != null && isValidPlan(plan, catalog)) {
         val modularPlan = catalog.mvSession.sessionState.rewritePlan(plan).withMVTable
