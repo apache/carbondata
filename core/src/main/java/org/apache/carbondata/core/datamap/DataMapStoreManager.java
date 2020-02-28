@@ -228,22 +228,28 @@ public final class DataMapStoreManager {
    * @param dataMapProvider
    * @param dataMapSchema
    */
-  public void registerDataMapCatalog(DataMapProvider dataMapProvider,
-      DataMapSchema dataMapSchema) throws IOException {
-    synchronized (lockObject) {
-      initializeDataMapCatalogs(dataMapProvider);
-      String name = dataMapSchema.getProviderName().toLowerCase();
-      DataMapCatalog dataMapCatalog = dataMapCatalogs.get(name);
-      if (dataMapCatalog == null) {
-        dataMapCatalog = dataMapProvider.createDataMapCatalog();
-        // If MVDataMapProvider, then createDataMapCatalog will return summaryDatasetCatalog
-        // instance, which needs to be added to dataMapCatalogs.
-        // For other datamaps, createDataMapCatalog will return null, so no need to register
-        if (dataMapCatalog != null) {
-          dataMapCatalogs.put(name, dataMapCatalog);
-          dataMapCatalog.registerSchema(dataMapSchema);
-        }
-      } else {
+  public synchronized void registerDataMapCatalog(DataMapProvider dataMapProvider,
+      DataMapSchema dataMapSchema, boolean clearCatalogs) throws IOException {
+    // this check is added to check if when registering the datamapCatalog, if the catalog map has
+    // datasets with old session, then need to clear and reload the map, else error can be thrown
+    // if the databases are different in both the sessions
+    if (clearCatalogs) {
+      dataMapCatalogs = null;
+    }
+    initializeDataMapCatalogs(dataMapProvider);
+    String name = dataMapSchema.getProviderName().toLowerCase();
+    DataMapCatalog dataMapCatalog = dataMapCatalogs.get(name);
+    if (dataMapCatalog == null) {
+      dataMapCatalog = dataMapProvider.createDataMapCatalog();
+      // If MVDataMapProvider, then createDataMapCatalog will return summaryDatasetCatalog
+      // instance, which needs to be added to dataMapCatalogs.
+      // For other datamaps, createDataMapCatalog will return null, so no need to register
+      if (dataMapCatalog != null) {
+        dataMapCatalogs.put(name, dataMapCatalog);
+        dataMapCatalog.registerSchema(dataMapSchema);
+      }
+    } else {
+      if (!dataMapCatalog.isMVExists(dataMapSchema.getDataMapName())) {
         dataMapCatalog.registerSchema(dataMapSchema);
       }
     }
@@ -271,24 +277,23 @@ public final class DataMapStoreManager {
    */
   public synchronized DataMapCatalog getDataMapCatalog(
       DataMapProvider dataMapProvider,
-      String providerName) throws IOException {
+      String providerName,
+      boolean clearCatalogs) throws IOException {
+    // This method removes the datamapCatalog for the corresponding provider if the session gets
+    // refreshed or updated
+    if (clearCatalogs) {
+      dataMapCatalogs = null;
+    }
     initializeDataMapCatalogs(dataMapProvider);
     return dataMapCatalogs.get(providerName.toLowerCase());
-  }
-
-  /**
-   * This method removes the datamapCatalog for the corresponding provider if the session gets
-   * refreshed or updated
-   */
-  public void clearDataMapCatalog() {
-    dataMapCatalogs = null;
   }
 
   /**
    * Initialize by reading all datamaps from store and re register it
    * @param dataMapProvider
    */
-  private void initializeDataMapCatalogs(DataMapProvider dataMapProvider) throws IOException {
+  private synchronized void initializeDataMapCatalogs(DataMapProvider dataMapProvider)
+      throws IOException {
     if (dataMapCatalogs == null) {
       dataMapCatalogs = new ConcurrentHashMap<>();
       List<DataMapSchema> dataMapSchemas = getAllDataMapSchemas();

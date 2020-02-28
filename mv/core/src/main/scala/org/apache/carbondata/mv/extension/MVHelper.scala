@@ -304,7 +304,7 @@ object MVHelper {
     val dataMapProvider = DataMapManager.get().getDataMapProvider(null,
       new DataMapSchema("", DataMapClassProvider.MV.getShortName), sparkSession)
     var catalog = DataMapStoreManager.getInstance().getDataMapCatalog(dataMapProvider,
-      DataMapClassProvider.MV.getShortName).asInstanceOf[SummaryDatasetCatalog]
+      DataMapClassProvider.MV.getShortName, false).asInstanceOf[SummaryDatasetCatalog]
     if (catalog == null) {
       catalog = new SummaryDatasetCatalog(sparkSession)
     }

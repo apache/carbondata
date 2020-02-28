@@ -48,4 +48,9 @@ public interface DataMapCatalog<T> {
    */
   void refresh();
 
+  /**
+   * This checks whether the datamapSchema is already registered
+   */
+  Boolean isMVExists(String mvName);
+
 }

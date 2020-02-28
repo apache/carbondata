@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.execution.datasources.FindDataSourceTable
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.DataMapCatalog
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
@@ -52,6 +53,8 @@ case class MVPlanWrapper(plan: ModularPlan, dataMapSchema: DataMapSchema) extend
 
 private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
   extends DataMapCatalog[SummaryDataset] {
+
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   @transient
   private val summaryDatasets = new scala.collection.mutable.ArrayBuffer[SummaryDataset]
@@ -107,12 +110,19 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
       // catalog, if the datamap is in database other than sparkSession.currentDataBase(), then it
       // fails to register, so set the database present in the dataMapSchema Object
       setCurrentDataBase(dataMapSchema.getRelationIdentifier.getDatabaseName)
-      val mvPlan = MVParser.getMVPlan(dataMapSchema.getCtasQuery, sparkSession)
-      // here setting back to current database of current session, because if the actual query
-      // contains db name in query like, select db1.column1 from table and current database is
-      // default and if we drop the db1, still the session has current db as db1.
-      // So setting back to current database.
-      setCurrentDataBase(currentDatabase)
+      val mvPlan = try {
+        MVParser.getMVPlan(dataMapSchema.getCtasQuery, sparkSession)
+      } catch {
+        case ex: Exception =>
+          LOGGER.error("Error executing the updated query during register MV schema", ex)
+          throw ex
+      } finally {
+        // here setting back to current database of current session, because if the actual query
+        // contains db name in query like, select db1.column1 from table and current database is
+        // default and if we drop the db1, still the session has current db as db1.
+        // So setting back to current database.
+        setCurrentDataBase(currentDatabase)
+      }
       val planToRegister = MVHelper.dropDummyFunc(mvPlan)
       val modularPlan =
         mvSession.sessionState.modularizer.modularize(
@@ -166,6 +176,14 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
     }
   }
 
+  /**
+   * Checks if the schema is already registered
+   */
+  private[mv] def isMVExists(mvName: String): java.lang.Boolean = {
+    val dataIndex = summaryDatasets
+      .indexWhere(sd => sd.dataMapSchema.getDataMapName.equals(mvName))
+    dataIndex > 0
+  }
 
   override def listAllValidSchema(): Array[SummaryDataset] = {
     val statusDetails = DataMapStatusManager.getEnabledDataMapStatusDetails
