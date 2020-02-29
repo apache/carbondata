@@ -502,6 +502,51 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     assert(result.get(0).get(7).equals(dataAndIndexSize._2))
   }
 
+  test("test partition with all sort scope") {
+    sql("drop table if exists origin_csv")
+    sql(
+      s"""
+         | create table origin_csv(col1 int, col2 string, col3 date)
+         | using csv
+         | options('dateFormat'='yyyy-MM-dd', 'timestampFormat'='yyyy-MM-dd HH:mm:ss')
+         | """.stripMargin)
+    sql("insert into origin_csv select 1, '3aa', to_date('2019-11-11')")
+    sql("insert into origin_csv select 2, '2bb', to_date('2019-11-12')")
+    sql("insert into origin_csv select 3, '1cc', to_date('2019-11-13')")
+    verifyInsertForPartitionTable("tbl_p_ns", "no_sort")
+    verifyInsertForPartitionTable("tbl_p_ls", "local_sort")
+    verifyInsertForPartitionTable("tbl_p_gs", "global_sort")
+    sql("drop table origin_csv")
+  }
+
+  def verifyInsertForPartitionTable(tableName: String, sort_scope: String): Unit = {
+    sql(s"drop table if exists $tableName")
+    sql(
+      s"""
+         | create table $tableName (
+         | col1 int,
+         | col2 string,
+         | col3 date,
+         | col4 timestamp,
+         | col5 float
+         | )
+         | using carbondata
+         | options('dateFormat'='yyyy-MM-dd', 'timestampFormat'='yyyy-MM-dd HH:mm:ss',
+         | 'sort_scope'='${ sort_scope }', 'sort_columns'='col2')
+         | partitioned by(col3, col4)
+     """.stripMargin)
+    sql(
+      s"""
+         | insert into $tableName (
+         |  select col1, col2, 1.2, col3, to_timestamp('2019-02-02 13:01:01') from origin_csv
+         |  union all
+         |  select 123,'abc', 1.2, to_date('2019-01-01'), to_timestamp('2019-02-02 13:01:01'))
+         |  """.stripMargin
+    )
+    checkAnswer(sql(s"select count(*) from $tableName"), Seq(Row(4)))
+    sql(s"drop table $tableName")
+  }
+
   def getDataAndIndexSize(path: String): (String, String) = {
     val mergeIndexFiles = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = {

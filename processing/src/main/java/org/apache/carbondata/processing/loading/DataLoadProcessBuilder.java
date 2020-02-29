@@ -260,7 +260,7 @@ public final class DataLoadProcessBuilder {
     if (carbonTable.isHivePartitionTable()) {
       configuration.setWritingCoresCount((short) 1);
     }
-    TableSpec tableSpec = new TableSpec(carbonTable);
+    TableSpec tableSpec = new TableSpec(carbonTable, false);
     configuration.setTableSpec(tableSpec);
     if (loadModel.getSdkWriterCores() > 0) {
       configuration.setWritingCoresCount(loadModel.getSdkWriterCores());
