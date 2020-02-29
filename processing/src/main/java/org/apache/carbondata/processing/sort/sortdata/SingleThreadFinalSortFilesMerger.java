@@ -306,7 +306,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    * @return more element is present
    */
   public boolean hasNext() {
-    return this.recordHolderHeapLocal.size() > 0;
+    return this.recordHolderHeapLocal != null && this.recordHolderHeapLocal.size() > 0;
   }
 
   public void close() {
