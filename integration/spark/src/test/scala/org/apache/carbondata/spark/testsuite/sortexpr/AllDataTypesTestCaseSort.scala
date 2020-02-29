@@ -17,8 +17,14 @@
 
 package org.apache.carbondata.spark.testsuite.sortexpr
 
+import java.nio.ByteBuffer
+
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Test Class for sort expression query on multiple datatypes
@@ -35,6 +41,57 @@ class AllDataTypesTestCaseSort extends QueryTest with BeforeAndAfterAll {
     sql("CREATE TABLE alldatatypestablesort_hive (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)row format delimited fields terminated by ','")
     sql(s"""LOAD DATA local inpath '$resourcesPath/datawithoutheader.csv' INTO TABLE alldatatypestablesort_hive""");
 
+  }
+
+  test("simple string column encoding test") {
+    sql("drop table if exists source")
+    sql("create table source (id string, score int) stored as carbondata " +
+        "tblproperties ('local_dictionary_enable'='true', 'long_string_columns'='id')")
+    sql("insert into source values ('aaa', 123)")
+    sql("select * from source").show
+    checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
+    sql("drop table source")
+
+    sql("drop table if exists source")
+    sql("create table source (id string, score int) stored as carbondata " +
+        "tblproperties ('local_dictionary_enable'='false', 'long_string_columns'='id')")
+    sql("insert into source values ('aaa', 123)")
+    sql("select * from source").show
+    checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
+    sql("drop table source")
+
+    sql("create table source (id string, score int) stored as carbondata " +
+        "tblproperties ('local_dictionary_enable'='true')")
+    sql("insert into source values ('aaa', 123)")
+    sql("select * from source").show
+    checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
+    sql("drop table source")
+
+    sql("drop table if exists source")
+    sql("create table source (id string, score int) stored as carbondata " +
+        "tblproperties ('local_dictionary_enable'='false')")
+    sql("insert into source values ('aaa', 123)")
+    sql("select * from source").show
+    checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
+    sql("drop table source")
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "false")
+    sql("drop table if exists source")
+    sql("create table source (id string, score int) stored as carbondata " +
+        "tblproperties ('local_dictionary_enable'='true')")
+    sql("insert into source values ('aaa', 123)")
+    sql("select * from source").show
+    checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
+    sql("drop table source")
+
+    sql("create table source (id string, score int) stored as carbondata " +
+        "tblproperties ('local_dictionary_enable'='false')")
+    sql("insert into source values ('aaa', 123)")
+    sql("select * from source").show
+    checkAnswer(sql("select * from source"), Seq(Row("aaa", 123)))
+    sql("drop table source")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
+      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
   }
 
   test("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestablesort where empname in ('arvind','ayushi') group by empno,empname,utilization order by empno") {

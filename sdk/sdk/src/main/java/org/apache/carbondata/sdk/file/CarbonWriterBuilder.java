@@ -900,9 +900,9 @@ public class CarbonWriterBuilder {
       options = new HashMap<>();
     }
     CarbonLoadModelBuilder builder = new CarbonLoadModelBuilder(table);
-    CarbonLoadModel build = builder.build(options, timestamp, taskNo);
-    setCsvHeader(build);
-    return build;
+    CarbonLoadModel model = builder.build(options, timestamp, taskNo);
+    setCsvHeader(model);
+    return model;
   }
 
   /* loop through all the parent column and

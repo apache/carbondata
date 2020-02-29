@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -113,7 +114,7 @@ public class RLECodec implements ColumnPageCodec {
     }
 
     @Override
-    protected byte[] encodeData(ColumnPage input) throws IOException {
+    protected ByteBuffer encodeData(ColumnPage input) throws IOException {
       validateDataType(input.getDataType());
       this.dataType = input.getDataType();
       if (dataType == DataTypes.BYTE) {
@@ -140,7 +141,7 @@ public class RLECodec implements ColumnPageCodec {
         throw new UnsupportedOperationException(input.getDataType() +
             " does not support RLE encoding");
       }
-      return collectResult();
+      return ByteBuffer.wrap(collectResult());
     }
 
     @Override

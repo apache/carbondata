@@ -25,7 +25,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 
-public abstract class LVStringStatsCollector implements ColumnPageStatsCollector {
+public class StringStatsCollector implements ColumnPageStatsCollector {
 
   /**
    * allowed character limit for to be considered for storing min max
@@ -43,6 +43,10 @@ public abstract class LVStringStatsCollector implements ColumnPageStatsCollector
    * string/varchar type columns are more
    */
   private boolean ignoreWritingMinMax;
+
+  public static StringStatsCollector newInstance() {
+    return new StringStatsCollector();
+  }
 
   @Override
   public void updateNull(int rowId) {
@@ -84,27 +88,23 @@ public abstract class LVStringStatsCollector implements ColumnPageStatsCollector
 
   }
 
-  protected abstract byte[] getActualValue(byte[] value);
-
   @Override
   public void update(byte[] value) {
     // return if min/max need not be written
     if (isIgnoreMinMaxFlagSet(value)) {
       return;
     }
-    // input value is LV encoded
-    byte[] newValue = getActualValue(value);
     if (min == null) {
-      min = newValue;
+      min = value;
     }
     if (null == max) {
-      max = newValue;
+      max = value;
     }
-    if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(min, newValue) > 0) {
-      min = newValue;
+    if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(min, value) > 0) {
+      min = value;
     }
-    if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(max, newValue) < 0) {
-      max = newValue;
+    if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(max, value) < 0) {
+      max = value;
     }
   }
 

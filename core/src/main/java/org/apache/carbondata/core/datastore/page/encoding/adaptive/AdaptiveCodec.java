@@ -20,6 +20,7 @@ package org.apache.carbondata.core.datastore.page.encoding.adaptive;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorage;
@@ -157,11 +158,11 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
    * @param result
    * @throws IOException
    */
-  public byte[] writeInvertedIndexIfRequired(byte[] result) throws IOException {
+  public ByteBuffer writeInvertedIndexIfRequired(ByteBuffer result) throws IOException {
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream out = new DataOutputStream(stream);
     if (null != indexStorage) {
-      out.write(result);
+      out.write(result.array(), 0, result.position());
       if (indexStorage.getRowIdPageLengthInBytes() > 0) {
         out.writeInt(indexStorage.getRowIdPageLengthInBytes());
         short[] rowIdPage = (short[]) indexStorage.getRowIdPage();
@@ -178,7 +179,7 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
     }
     byte[] bytes = stream.toByteArray();
     stream.close();
-    return bytes;
+    return ByteBuffer.wrap(bytes);
   }
 
   /**
@@ -187,7 +188,7 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
    * @param dataChunk
    * @param result
    */
-  public void fillLegacyFieldsIfRequired(DataChunk2 dataChunk, byte[] result) {
+  public void fillLegacyFieldsIfRequired(DataChunk2 dataChunk, ByteBuffer result) {
     if (null != indexStorage) {
       SortState sort = (indexStorage.getRowIdPageLengthInBytes() > 0) ?
           SortState.SORT_EXPLICIT :
@@ -203,7 +204,7 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
       dataChunk.setRowid_page_length(0);
     }
     if (null != result) {
-      dataChunk.setData_page_length(result.length);
+      dataChunk.setData_page_length(result.limit() - result.position());
     }
   }
 
@@ -227,7 +228,7 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
     }
   }
 
-  public byte[] encodeAndCompressPage(ColumnPage input, ColumnPageValueConverter converter,
+  public ByteBuffer encodeAndCompressPage(ColumnPage input, ColumnPageValueConverter converter,
       Compressor compressor) throws IOException {
     encodedPage = ColumnPage.newPage(
         new ColumnPageEncoderMeta(input.getColumnPageEncoderMeta().getColumnSpec(), targetDataType,

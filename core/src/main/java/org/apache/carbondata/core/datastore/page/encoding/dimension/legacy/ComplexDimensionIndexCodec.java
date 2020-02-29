@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.page.encoding.dimension.legacy;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,7 @@ public class ComplexDimensionIndexCodec extends IndexStorageCodec {
         byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
         Compressor compressor = CompressorFactory.getInstance().getCompressor(
             inputPage.getColumnCompressorName());
-        byte[] compressed = compressor.compressByte(flattened);
+        ByteBuffer compressed = compressor.compressByte(flattened);
         super.indexStorage = indexStorage;
         super.compressedDataPage = compressed;
       }

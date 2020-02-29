@@ -74,6 +74,7 @@ public class CarbonTableInputFormatTest {
           new File("../hadoop/src/test/resources/data.csv").getCanonicalPath());
       loadModel = creator.createCarbonStore();
     } catch (Exception e) {
+      e.printStackTrace();
       Assert.fail("create table failed: " + e.getMessage());
     }
   }

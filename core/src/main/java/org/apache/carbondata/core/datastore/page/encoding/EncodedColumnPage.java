@@ -32,7 +32,7 @@ import org.apache.carbondata.format.DataChunk2;
 public class EncodedColumnPage {
 
   // encoded and compressed column page data
-  protected final byte[] encodedData;
+  protected final ByteBuffer encodedData;
 
   // metadata of this page
   private DataChunk2 pageMetadata;
@@ -44,7 +44,7 @@ public class EncodedColumnPage {
    * @param pageMetadata metadata of the encoded page
    * @param encodedData encoded data for this page
    */
-  public EncodedColumnPage(DataChunk2 pageMetadata, byte[] encodedData,
+  public EncodedColumnPage(DataChunk2 pageMetadata, ByteBuffer encodedData,
       ColumnPage actualPage) {
     if (pageMetadata == null) {
       throw new IllegalArgumentException("data chunk2 must not be null");
@@ -61,7 +61,7 @@ public class EncodedColumnPage {
    * return the encoded data as ByteBuffer
    */
   public ByteBuffer getEncodedData() {
-    return ByteBuffer.wrap(encodedData);
+    return encodedData;
   }
 
   public DataChunk2 getPageMetadata() {
@@ -73,7 +73,7 @@ public class EncodedColumnPage {
    */
   public int getTotalSerializedSize() {
     int metadataSize = CarbonUtil.getByteArray(pageMetadata).length;
-    int dataSize = encodedData.length;
+    int dataSize = encodedData.limit() - encodedData.position();
     return metadataSize + dataSize;
   }
 

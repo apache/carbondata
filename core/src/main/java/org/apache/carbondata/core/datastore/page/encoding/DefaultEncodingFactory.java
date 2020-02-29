@@ -30,7 +30,7 @@ import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveInteg
 import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompressCodec;
 import org.apache.carbondata.core.datastore.page.encoding.dimension.legacy.ComplexDimensionIndexCodec;
 import org.apache.carbondata.core.datastore.page.encoding.dimension.legacy.DirectDictDimensionIndexCodec;
-import org.apache.carbondata.core.datastore.page.encoding.dimension.legacy.HighCardDictDimensionIndexCodec;
+import org.apache.carbondata.core.datastore.page.encoding.dimension.legacy.PlainDimensionIndexCodec;
 import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -94,7 +94,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
             dimensionSpec.isInSortColumns() && dimensionSpec.isDoInvertedIndex())
             .createEncoder(null);
       case PLAIN_VALUE:
-        return new HighCardDictDimensionIndexCodec(dimensionSpec.isInSortColumns(),
+        return new PlainDimensionIndexCodec(dimensionSpec.isInSortColumns(),
             dimensionSpec.isInSortColumns() && dimensionSpec.isDoInvertedIndex(),
             dimensionSpec.getSchemaDataType() == DataTypes.VARCHAR
                 || dimensionSpec.getSchemaDataType() == DataTypes.BINARY).createEncoder(null);

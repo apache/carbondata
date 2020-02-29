@@ -18,12 +18,15 @@
 package org.apache.carbondata.core.datastore.compression;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public interface Compressor {
 
   String getName();
 
-  byte[] compressByte(byte[] unCompInput);
+  ByteBuffer compressByte(ByteBuffer compInput);
+
+  ByteBuffer compressByte(byte[] unCompInput);
 
   byte[] compressByte(byte[] unCompInput, int byteSize);
 
@@ -31,23 +34,23 @@ public interface Compressor {
 
   byte[] unCompressByte(byte[] compInput, int offset, int length);
 
-  byte[] compressShort(short[] unCompInput);
+  ByteBuffer compressShort(short[] unCompInput);
 
   short[] unCompressShort(byte[] compInput, int offset, int length);
 
-  byte[] compressInt(int[] unCompInput);
+  ByteBuffer compressInt(int[] unCompInput);
 
   int[] unCompressInt(byte[] compInput, int offset, int length);
 
-  byte[] compressLong(long[] unCompInput);
+  ByteBuffer compressLong(long[] unCompInput);
 
   long[] unCompressLong(byte[] compInput, int offset, int length);
 
-  byte[] compressFloat(float[] unCompInput);
+  ByteBuffer compressFloat(float[] unCompInput);
 
   float[] unCompressFloat(byte[] compInput, int offset, int length);
 
-  byte[] compressDouble(double[] unCompInput);
+  ByteBuffer compressDouble(double[] unCompInput);
 
   double[] unCompressDouble(byte[] compInput, int offset, int length);
 

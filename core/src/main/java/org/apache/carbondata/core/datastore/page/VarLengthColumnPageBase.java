@@ -24,9 +24,6 @@ import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
-import org.apache.carbondata.core.memory.CarbonUnsafe;
-import org.apache.carbondata.core.memory.MemoryBlock;
-import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
@@ -47,23 +44,11 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   final String taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
-  // memory allocated by Unsafe
-  MemoryBlock memoryBlock;
-
-  // base address of memoryBlock
-  Object baseAddress;
-
   // the offset of row in the unsafe memory, its size is pageSize + 1
-  ColumnPage rowOffset;
+  protected ColumnPage rowOffset;
 
   // the length of bytes added in the page
-  int totalLength;
-
-  // base offset of memoryBlock
-  long baseOffset;
-
-  // size of the allocated memory, in bytes
-  int capacity;
+  protected int totalLength;
 
   VarLengthColumnPageBase(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     super(columnPageEncoderMeta, pageSize);
@@ -509,23 +494,6 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   public void convertValue(ColumnPageValueConverter codec) {
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  /**
-   * reallocate memory if capacity length than current size + request size
-   */
-  protected void ensureMemory(int requestSize) {
-    if (totalLength + requestSize > capacity) {
-      int newSize = Math.max(2 * capacity, totalLength + requestSize);
-      MemoryBlock newBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, newSize);
-      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset,
-          newBlock.getBaseObject(), newBlock.getBaseOffset(), capacity);
-      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
-      memoryBlock = newBlock;
-      baseAddress = newBlock.getBaseObject();
-      baseOffset = newBlock.getBaseOffset();
-      capacity = newSize;
-    }
   }
 
   /**

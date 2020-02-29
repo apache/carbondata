@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.page.encoding.compress;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -73,7 +74,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
     return new ColumnPageEncoder() {
 
       @Override
-      protected byte[] encodeData(ColumnPage input) throws IOException {
+      protected ByteBuffer encodeData(ColumnPage input) throws IOException {
         Compressor compressor = CompressorFactory.getInstance().getCompressor(
             input.getColumnCompressorName());
         return input.compress(compressor);
