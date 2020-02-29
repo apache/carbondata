@@ -24,7 +24,10 @@ import java.util.Objects;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.processing.sort.DummyRowUpdater;
 import org.apache.carbondata.processing.sort.SchemaBasedRowUpdater;
 import org.apache.carbondata.processing.sort.SortTempRowUpdater;
@@ -120,39 +123,68 @@ public class TableFieldStat implements Serializable {
     int tmpDictNoSortCnt = 0;
     int tmpVarcharCnt = 0;
     int tmpComplexcount = 0;
+    int tmpMeasureIndex = 0;
 
-    List<CarbonDimension> allDimensions = sortParameters.getCarbonTable().getVisibleDimensions();
-    List<CarbonDimension> updatedDimensions = updateDimensionsBasedOnSortColumns(allDimensions);
-    for (int i = 0; i < updatedDimensions.size(); i++) {
-      CarbonDimension carbonDimension = updatedDimensions.get(i);
-      if (carbonDimension.getDataType() == DataTypes.DATE && !carbonDimension.isComplex()) {
-        if (carbonDimension.isSortColumn()) {
-          dictSortDimIdx[tmpDictSortCnt++] = i;
+    if (sortParameters.isInsertWithoutReArrangeFlow()
+        && sortParameters.getCarbonTable().getPartitionInfo() != null) {
+      List<ColumnSchema> reArrangedColumnSchema =
+          getReArrangedColumnSchema(sortParameters.getCarbonTable());
+      for (int i = 0; i < reArrangedColumnSchema.size(); i++) {
+        ColumnSchema columnSchema = reArrangedColumnSchema.get(i);
+        if (columnSchema.isDimensionColumn()) {
+          if (columnSchema.getDataType() == DataTypes.DATE && !columnSchema.getDataType()
+              .isComplexType()) {
+            if (columnSchema.isSortColumn()) {
+              dictSortDimIdx[tmpDictSortCnt++] = i;
+            } else {
+              dictNoSortDimIdx[tmpDictNoSortCnt++] = i;
+            }
+          } else if (!columnSchema.getDataType().isComplexType()) {
+            if (columnSchema.getDataType() == DataTypes.VARCHAR) {
+              varcharDimIdx[tmpVarcharCnt++] = i;
+            } else if (columnSchema.isSortColumn()) {
+              noDictSortDimIdx[tmpNoDictSortCnt++] = i;
+            } else {
+              noDictNoSortDimIdx[tmpNoDictNoSortCnt++] = i;
+            }
+          } else {
+            complexDimIdx[tmpComplexcount++] = i;
+          }
         } else {
-          dictNoSortDimIdx[tmpDictNoSortCnt++] = i;
+          measureIdx[tmpMeasureIndex++] = i;
         }
-      } else if (!carbonDimension.isComplex()) {
-        if (isVarcharDimFlags[i]) {
-          varcharDimIdx[tmpVarcharCnt++] = i;
-        } else if (carbonDimension.isSortColumn()) {
-          noDictSortDimIdx[tmpNoDictSortCnt++] = i;
+      }
+    } else {
+      List<CarbonDimension> allDimensions = sortParameters.getCarbonTable().getVisibleDimensions();
+      List<CarbonDimension> updatedDimensions = updateDimensionsBasedOnSortColumns(allDimensions);
+      for (int i = 0; i < updatedDimensions.size(); i++) {
+        CarbonDimension carbonDimension = updatedDimensions.get(i);
+        if (carbonDimension.getDataType() == DataTypes.DATE && !carbonDimension.isComplex()) {
+          if (carbonDimension.isSortColumn()) {
+            dictSortDimIdx[tmpDictSortCnt++] = i;
+          } else {
+            dictNoSortDimIdx[tmpDictNoSortCnt++] = i;
+          }
+        } else if (!carbonDimension.isComplex()) {
+          if (isVarcharDimFlags[i]) {
+            varcharDimIdx[tmpVarcharCnt++] = i;
+          } else if (carbonDimension.isSortColumn()) {
+            noDictSortDimIdx[tmpNoDictSortCnt++] = i;
+          } else {
+            noDictNoSortDimIdx[tmpNoDictNoSortCnt++] = i;
+          }
         } else {
-          noDictNoSortDimIdx[tmpNoDictNoSortCnt++] = i;
+          complexDimIdx[tmpComplexcount++] = i;
         }
-      } else {
-        complexDimIdx[tmpComplexcount++] = i;
+      }
+      int base = updatedDimensions.size();
+      // indices for measure columns
+      for (int i = 0; i < measureCnt; i++) {
+        measureIdx[i] = base + i;
       }
     }
-
     dictNoSortDimCnt = tmpDictNoSortCnt;
     noDictNoSortDimCnt = tmpNoDictNoSortCnt;
-
-    int base = updatedDimensions.size();
-
-    // indices for measure columns
-    for (int i = 0; i < measureCnt; i++) {
-      measureIdx[i] = base + i;
-    }
     if (sortParameters.isUpdateDictDims() || sortParameters.isUpdateNonDictDims()) {
       this.sortTempRowUpdater = new SchemaBasedRowUpdater(sortParameters.getDictDimActualPosition(),
           sortParameters.getNoDictActualPosition(), sortParameters.isUpdateDictDims(),
@@ -295,4 +327,29 @@ public class TableFieldStat implements Serializable {
     updatedDataFields.addAll(nonSortFields);
     return updatedDataFields;
   }
+
+  private static List<ColumnSchema> getReArrangedColumnSchema(
+      CarbonTable carbonTable) {
+    // handle 1.1 compatibility for sort columns
+    List<CarbonDimension> visibleDimensions =
+        updateDimensionsBasedOnSortColumns(carbonTable.getVisibleDimensions());
+    List<CarbonMeasure> visibleMeasures = carbonTable.getVisibleMeasures();
+    List<ColumnSchema> otherCols = new ArrayList<>();
+    if (carbonTable.getPartitionInfo() != null) {
+      List<ColumnSchema> columnSchemaList = carbonTable.getPartitionInfo().getColumnSchemaList();
+      for (CarbonDimension dim : visibleDimensions) {
+        if (!columnSchemaList.contains(dim.getColumnSchema())) {
+          otherCols.add(dim.getColumnSchema());
+        }
+      }
+      for (CarbonMeasure measure : visibleMeasures) {
+        if (!columnSchemaList.contains(measure.getColumnSchema())) {
+          otherCols.add(measure.getColumnSchema());
+        }
+      }
+      otherCols.addAll(columnSchemaList);
+    }
+    return otherCols;
+  }
+
 }

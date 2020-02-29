@@ -38,4 +38,6 @@ public final class DataLoadProcessorConstants {
 
   public static final String FACT_FILE_PATH = "FACT_FILE_PATH";
 
+  // to indicate that it is optimized insert flow without rearrange of each data rows
+  public static final String NO_REARRANGE_OF_ROWS = "NO_REARRANGE_OF_ROWS";
 }

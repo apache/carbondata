@@ -51,6 +51,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.api.{CarbonOutputCommitter, CarbonTableOutputFormat}
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat.CarbonRecordWriter
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.model.{CarbonLoadModel, CarbonLoadModelBuilder, LoadOption}
 import org.apache.carbondata.processing.util.CarbonBadRecordUtil
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
@@ -134,7 +135,7 @@ with Serializable {
       model,
       conf)
     CarbonTableOutputFormat.setOverwrite(conf, options("overwrite").toBoolean)
-    if (options.contains("no_rearrange_of_rows")) {
+    if (options.contains(DataLoadProcessorConstants.NO_REARRANGE_OF_ROWS)) {
       model.setLoadWithoutConverterWithoutReArrangeStep(true)
     } else {
       model.setLoadWithoutConverterStep(true)

@@ -61,6 +61,7 @@ import org.apache.carbondata.core.util._
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.indexserver.DistributedRDDUtils
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
 import org.apache.carbondata.processing.loading.model.{CarbonLoadModelBuilder, LoadOption}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -609,7 +610,8 @@ object CommonLoadUtils {
       optionsOriginal: mutable.Map[String, String],
       currPartitions: util.List[PartitionSpec]): LogicalRelation = {
     val table = loadModel.getCarbonDataLoadSchema.getCarbonTable
-    val metastoreSchema = if (optionsOriginal.contains("no_rearrange_of_rows")) {
+    val metastoreSchema =
+      if (optionsOriginal.contains(DataLoadProcessorConstants.NO_REARRANGE_OF_ROWS)) {
       StructType(catalogTable.schema.fields.map{f =>
         val column = table.getColumnByName(f.name)
         val updatedDataType = if (column.getDataType ==
@@ -694,7 +696,7 @@ object CommonLoadUtils {
       fileFormat = new SparkCarbonTableFormat,
       options = options.toMap)(sparkSession = sparkSession)
 
-    if (options.contains("no_rearrange_of_rows")) {
+    if (options.contains(DataLoadProcessorConstants.NO_REARRANGE_OF_ROWS)) {
       CarbonReflectionUtils.getLogicalRelation(hdfsRelation,
         metastoreSchema.toAttributes,
         Some(catalogTable),
@@ -980,7 +982,7 @@ object CommonLoadUtils {
       }
       val opt = collection.mutable.Map() ++ loadParams.optionsOriginal
       if (loadParams.scanResultRDD.isDefined) {
-        opt += (("no_rearrange_of_rows", "true"))
+        opt += ((DataLoadProcessorConstants.NO_REARRANGE_OF_ROWS, "true"))
       }
       // Create and ddd the segment to the tablestatus.
       CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadParams.carbonLoadModel,

@@ -376,6 +376,25 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
+   * get visible no dictionary dimensions as per data field order
+   *
+   * @param dataFields
+   * @return
+   */
+  public static DataType[] getNoDictDataTypesAsDataFieldOrder(DataField[] dataFields) {
+    List<DataType> type = new ArrayList<>();
+    for (DataField dataField : dataFields) {
+      if (!dataField.getColumn().isInvisible() && dataField.getColumn().isDimension()) {
+        if (dataField.getColumn().getColumnSchema().isSortColumn()
+            && dataField.getColumn().getColumnSchema().getDataType() != DataTypes.DATE) {
+          type.add(dataField.getColumn().getColumnSchema().getDataType());
+        }
+      }
+    }
+    return type.toArray(new DataType[type.size()]);
+  }
+
+  /**
    * Get the no dictionary sort column mapping of the table
    *
    * @param carbonTable
@@ -390,6 +409,33 @@ public final class CarbonDataProcessorUtil {
           noDicSortColMap.add(true);
         } else {
           noDicSortColMap.add(false);
+        }
+      }
+    }
+    Boolean[] mapping = noDicSortColMap.toArray(new Boolean[0]);
+    boolean[] noDicSortColMapping = new boolean[mapping.length];
+    for (int i = 0; i < mapping.length; i++) {
+      noDicSortColMapping[i] = mapping[i];
+    }
+    return noDicSortColMapping;
+  }
+
+  /**
+   * get mapping based on data fields order
+   *
+   * @param dataFields
+   * @return
+   */
+  public static boolean[] getNoDictSortColMappingAsDataFieldOrder(DataField[] dataFields) {
+    List<Boolean> noDicSortColMap = new ArrayList<>();
+    for (DataField dataField : dataFields) {
+      if (!dataField.getColumn().isInvisible() && dataField.getColumn().isDimension()) {
+        if (dataField.getColumn().getColumnSchema().isSortColumn()) {
+          if (dataField.getColumn().getColumnSchema().getDataType() != DataTypes.DATE) {
+            noDicSortColMap.add(true);
+          } else {
+            noDicSortColMap.add(false);
+          }
         }
       }
     }
@@ -431,6 +477,37 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
+   * If the dimension is added in older version 1.1, by default it will be sort column, So during
+   * initial sorting, carbonrow will be in order where added sort column is at the beginning, But
+   * before final merger of sort, the data should be in schema order
+   * (org.apache.carbondata.processing.sort.SchemaBasedRowUpdater updates the carbonRow in schema
+   * order), so This method helps to find the index of no dictionary sort column in the carbonrow
+   * data.
+   */
+  public static int[] getColumnIdxBasedOnSchemaInRowAsDataFieldOrder(DataField[] dataFields) {
+    List<Integer> noDicSortColMap = new ArrayList<>();
+    int counter = 0;
+    for (DataField dataField : dataFields) {
+      if (!dataField.getColumn().isInvisible() && dataField.getColumn().isDimension()) {
+        if (dataField.getColumn().getColumnSchema().getDataType() == DataTypes.DATE) {
+          continue;
+        }
+        if (dataField.getColumn().getColumnSchema().isSortColumn() && DataTypeUtil
+            .isPrimitiveColumn(dataField.getColumn().getColumnSchema().getDataType())) {
+          noDicSortColMap.add(counter);
+        }
+        counter++;
+      }
+    }
+    Integer[] mapping = noDicSortColMap.toArray(new Integer[0]);
+    int[] columnIdxBasedOnSchemaInRow = new int[mapping.length];
+    for (int i = 0; i < mapping.length; i++) {
+      columnIdxBasedOnSchemaInRow[i] = mapping[i];
+    }
+    return columnIdxBasedOnSchemaInRow;
+  }
+
+  /**
    * Get the data types of the no dictionary sort columns
    *
    * @param carbonTable
@@ -446,6 +523,34 @@ public final class CarbonDataProcessorUtil {
           noDictSortType.add(dimensions.get(i).getDataType());
         } else {
           noDictNoSortType.add(dimensions.get(i).getDataType());
+        }
+      }
+    }
+    DataType[] noDictSortTypes = noDictSortType.toArray(new DataType[noDictSortType.size()]);
+    DataType[] noDictNoSortTypes = noDictNoSortType.toArray(new DataType[noDictNoSortType.size()]);
+    Map<String, DataType[]> noDictSortAndNoSortTypes = new HashMap<>(2);
+    noDictSortAndNoSortTypes.put("noDictSortDataTypes", noDictSortTypes);
+    noDictSortAndNoSortTypes.put("noDictNoSortDataTypes", noDictNoSortTypes);
+    return noDictSortAndNoSortTypes;
+  }
+
+  /**
+   * Get the data types of the no dictionary sort columns as per dataFields order
+   *
+   * @param dataFields
+   * @return
+   */
+  public static Map<String, DataType[]> getNoDictSortAndNoSortDataTypesAsDataFieldOrder(
+      DataField[] dataFields) {
+    List<DataType> noDictSortType = new ArrayList<>();
+    List<DataType> noDictNoSortType = new ArrayList<>();
+    for (DataField dataField : dataFields) {
+      if (dataField.getColumn().isDimension()
+          && dataField.getColumn().getColumnSchema().getDataType() != DataTypes.DATE) {
+        if (dataField.getColumn().getColumnSchema().isSortColumn()) {
+          noDictSortType.add(dataField.getColumn().getColumnSchema().getDataType());
+        } else {
+          noDictNoSortType.add(dataField.getColumn().getColumnSchema().getDataType());
         }
       }
     }

@@ -250,6 +250,23 @@ public class CarbonDataLoadConfiguration {
     return type;
   }
 
+  public DataType[] getMeasureDataTypeAsDataFieldOrder() {
+    // same as data fields order
+    List<Integer> measureIndexes = new ArrayList<>(dataFields.length);
+    int measureCount = 0;
+    for (int i = 0; i < dataFields.length; i++) {
+      if (!dataFields[i].getColumn().isDimension()) {
+        measureIndexes.add(i);
+        measureCount++;
+      }
+    }
+    DataType[] type = new DataType[measureCount];
+    for (int i = 0; i < type.length; i++) {
+      type[i] = dataFields[measureIndexes.get(i)].getColumn().getDataType();
+    }
+    return type;
+  }
+
   /**
    * Get the data types of the no dictionary and the complex dimensions of the table
    *

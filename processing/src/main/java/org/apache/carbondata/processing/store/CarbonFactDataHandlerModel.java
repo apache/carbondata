@@ -304,7 +304,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
     carbonFactDataHandlerModel.setColumnCompressor(loadModel.getColumnCompressor());
 
-    carbonFactDataHandlerModel.tableSpec = new TableSpec(carbonTable);
+    carbonFactDataHandlerModel.tableSpec = new TableSpec(carbonTable, false);
     DataMapWriterListener listener = new DataMapWriterListener();
     listener.registerAllWriter(
         carbonTable,

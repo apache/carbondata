@@ -30,6 +30,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 public class TableSpec {
 
@@ -56,10 +57,40 @@ public class TableSpec {
   private int[] dictDimActualPosition;
   private int[] noDictDimActualPosition;
 
-  public TableSpec(CarbonTable carbonTable) {
+  public TableSpec(CarbonTable carbonTable, boolean keepPartitionColumnsToEnd) {
     this.carbonTable = carbonTable;
     List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
     List<CarbonMeasure> measures = carbonTable.getVisibleMeasures();
+    if (keepPartitionColumnsToEnd && carbonTable.getPartitionInfo() != null) {
+      // keep the partition columns in the end
+      List<CarbonDimension> reArrangedDimensions = new ArrayList<>();
+      List<CarbonMeasure> reArrangedMeasures = new ArrayList<>();
+      List<CarbonDimension> partitionDimensions = new ArrayList<>();
+      List<CarbonMeasure> partitionMeasures = new ArrayList<>();
+      List<ColumnSchema> columnSchemaList = carbonTable.getPartitionInfo().getColumnSchemaList();
+      for (CarbonDimension dim : dimensions) {
+        if (columnSchemaList.contains(dim.getColumnSchema())) {
+          partitionDimensions.add(dim);
+        } else {
+          reArrangedDimensions.add(dim);
+        }
+      }
+      if (partitionDimensions.size() != 0) {
+        reArrangedDimensions.addAll(partitionDimensions);
+      }
+      for (CarbonMeasure measure : measures) {
+        if (columnSchemaList.contains(measure.getColumnSchema())) {
+          partitionMeasures.add(measure);
+        } else {
+          reArrangedMeasures.add(measure);
+        }
+      }
+      if (partitionMeasures.size() != 0) {
+        reArrangedMeasures.addAll(partitionMeasures);
+      }
+      dimensions = reArrangedDimensions;
+      measures = reArrangedMeasures;
+    }
     // first calculate total number of columnar field considering column group and complex column
     numSimpleDimensions = 0;
     for (CarbonDimension dimension : dimensions) {
