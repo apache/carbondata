@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
@@ -27,6 +28,8 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
+
+import sun.nio.ch.DirectBuffer;
 
 // This extension uses unsafe memory to store page data, for fix length data type only (byte,
 // short, integer, long, float, double)
@@ -354,6 +357,15 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
       offset += eachRowSize;
     }
     return data;
+  }
+
+  @Override
+  public ByteBuffer getByteBuffer() {
+    int numRow = getEndLoop();
+    ByteBuffer out = ByteBuffer.allocateDirect(numRow * eachRowSize);
+    CarbonUnsafe.getUnsafe().copyMemory(
+        memoryBlock.getBaseOffset(), ((DirectBuffer)out).address(), numRow * eachRowSize);
+    return out;
   }
 
   @Override

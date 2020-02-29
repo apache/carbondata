@@ -50,7 +50,9 @@ case class Rcd(booleanField: Boolean, shortField: Short, intField: Int, bigintFi
 class CustomizeCompressor extends Compressor {
   override def getName: String = "org.apache.carbondata.integration.spark.testsuite.dataload.CustomizeCompressor"
 
-  override def compressByte(unCompInput: Array[Byte]): Array[Byte] = unCompInput
+  override def compressByte(compInput: ByteBuffer): ByteBuffer = compInput
+
+  override def compressByte(unCompInput: Array[Byte]): ByteBuffer = ByteBuffer.wrap(unCompInput)
 
   override def compressByte(unCompInput: Array[Byte], byteSize: Int): Array[Byte] = unCompInput
 
@@ -58,10 +60,10 @@ class CustomizeCompressor extends Compressor {
 
   override def unCompressByte(compInput: Array[Byte], offset: Int, length: Int): Array[Byte] = compInput
 
-  override def compressShort(unCompInput: Array[Short]): Array[Byte] = {
+  override def compressShort(unCompInput: Array[Short]): ByteBuffer = {
     val buffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_SHORT)
     buffer.asShortBuffer().put(unCompInput)
-    compressByte(buffer.array())
+    compressByte(buffer)
   }
 
   override def unCompressShort(compInput: Array[Byte], offset: Int, length: Int): Array[Short] = {
@@ -71,7 +73,7 @@ class CustomizeCompressor extends Compressor {
     res
   }
 
-  override def compressInt(unCompInput: Array[Int]): Array[Byte] = {
+  override def compressInt(unCompInput: Array[Int]): ByteBuffer = {
     val buffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_INT)
     buffer.asIntBuffer().put(unCompInput)
     compressByte(buffer.array())
@@ -84,7 +86,7 @@ class CustomizeCompressor extends Compressor {
     res
   }
 
-  override def compressLong(unCompInput: Array[Long]): Array[Byte] = {
+  override def compressLong(unCompInput: Array[Long]): ByteBuffer = {
     val buffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_LONG)
     buffer.asLongBuffer().put(unCompInput)
     compressByte(buffer.array())
@@ -97,7 +99,7 @@ class CustomizeCompressor extends Compressor {
     res
   }
 
-  override def compressFloat(unCompInput: Array[Float]): Array[Byte] = {
+  override def compressFloat(unCompInput: Array[Float]): ByteBuffer = {
     val buffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_FLOAT)
     buffer.asFloatBuffer().put(unCompInput)
     compressByte(buffer.array())
@@ -110,7 +112,7 @@ class CustomizeCompressor extends Compressor {
     res
   }
 
-  override def compressDouble(unCompInput: Array[Double]): Array[Byte] = {
+  override def compressDouble(unCompInput: Array[Double]): ByteBuffer = {
     val buffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_DOUBLE)
     buffer.asDoubleBuffer().put(unCompInput)
     compressByte(buffer.array())

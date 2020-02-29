@@ -27,7 +27,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 /**
  * This extension uses unsafe memory to store page data, for variable length data type (string)
  */
-public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
+public class UnsafeVarLengthColumnPage extends UnsafeVarLengthColumnPageBase {
 
   /**
    * create a page

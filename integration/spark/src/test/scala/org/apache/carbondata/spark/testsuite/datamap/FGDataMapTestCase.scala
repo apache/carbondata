@@ -361,11 +361,11 @@ class FGDataMapWriter(carbonTable: CarbonTable,
     outStream.writeObject(blockletListUpdated)
     outStream.close()
     val bytes = compressor.compressByte(out.getBytes)
-    stream.write(bytes)
+    stream.write(bytes.array(), 0, bytes.position())
     maxMin +=
     ((blockletId, (blockletListUpdated.head._1, blockletListUpdated.last
-      ._1), position, bytes.length))
-    position += bytes.length
+      ._1), position, bytes.limit()))
+    position += bytes.limit()
     blockletList.clear()
   }
 
@@ -428,8 +428,8 @@ class FGDataMapWriter(carbonTable: CarbonTable,
     outStream.writeObject(maxMin)
     outStream.close()
     val bytes = compressor.compressByte(out.getBytes)
-    stream.write(bytes)
-    stream.writeInt(bytes.length)
+    stream.write(bytes.array(), 0, bytes.position())
+    stream.writeInt(bytes.position())
     stream.close()
   }
 }

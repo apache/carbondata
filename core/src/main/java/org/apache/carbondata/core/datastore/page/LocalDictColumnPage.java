@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -28,6 +29,7 @@ import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
 import org.apache.carbondata.core.localdictionary.exception.DictionaryThresholdReachedException;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 import org.apache.log4j.Logger;
 
@@ -105,6 +107,15 @@ public class LocalDictColumnPage extends ColumnPage {
     }
   }
 
+  @Override
+  public ByteBuffer getByteBuffer() {
+    if (null != pageLevelDictionary) {
+      return encodedDataColumnPage.getByteBuffer();
+    } else {
+      return actualDataColumnPage.getByteBuffer();
+    }
+  }
+
   /**
    * Below method will be used to check whether page is local dictionary
    * generated or not. This will be used for while enoding the the page
@@ -126,7 +137,22 @@ public class LocalDictColumnPage extends ColumnPage {
     if (null != pageLevelDictionary) {
       try {
         actualDataColumnPage.putBytes(rowId, bytes);
-        dummyKey[0] = pageLevelDictionary.getDictionaryValue(bytes);
+        byte[] input;
+        DataType dataType = actualDataColumnPage.columnPageEncoderMeta.getStoreDataType();
+        if (dataType == DataTypes.STRING) {
+          ByteBuffer byteBuffer = ByteBuffer.allocate(bytes.length + 2);
+          byteBuffer.putShort((short) bytes.length);
+          byteBuffer.put(bytes);
+          input = byteBuffer.array();
+        } else if (dataType == DataTypes.VARCHAR || dataType == DataTypes.BINARY) {
+          ByteBuffer byteBuffer = ByteBuffer.allocate(bytes.length + 4);
+          byteBuffer.putInt(bytes.length);
+          byteBuffer.put(bytes);
+          input = byteBuffer.array();
+        } else {
+          input = bytes;
+        }
+        dummyKey[0] = pageLevelDictionary.getDictionaryValue(input);
         encodedDataColumnPage.putBytes(rowId, keyGenerator.generateKey(dummyKey));
       } catch (DictionaryThresholdReachedException e) {
         LOGGER.warn("Local Dictionary threshold reached for the column: " + actualDataColumnPage

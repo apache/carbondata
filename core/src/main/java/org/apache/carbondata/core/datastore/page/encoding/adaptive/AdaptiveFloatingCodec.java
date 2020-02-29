@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.page.encoding.adaptive;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -68,18 +69,18 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
   @Override
   public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
     return new ColumnPageEncoder() {
-      byte[] result = null;
+      ByteBuffer result = null;
       @Override
-      protected byte[] encodeData(ColumnPage input) throws IOException {
+      protected ByteBuffer encodeData(ColumnPage input) throws IOException {
         if (encodedPage != null) {
           throw new IllegalStateException("already encoded");
         }
         Compressor compressor =
             CompressorFactory.getInstance().getCompressor(input.getColumnCompressorName());
         result = encodeAndCompressPage(input, converter, compressor);
-        byte[] bytes = writeInvertedIndexIfRequired(result);
+        ByteBuffer bytes = writeInvertedIndexIfRequired(result);
         encodedPage.freeMemory();
-        if (bytes.length != 0) {
+        if (bytes.limit() != 0) {
           return bytes;
         }
         return result;

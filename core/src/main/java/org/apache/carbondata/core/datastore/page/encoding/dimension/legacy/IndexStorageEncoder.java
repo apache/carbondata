@@ -20,6 +20,7 @@ package org.apache.carbondata.core.datastore.page.encoding.dimension.legacy;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorage;
@@ -31,38 +32,48 @@ import org.apache.carbondata.format.SortState;
 
 public abstract class IndexStorageEncoder extends ColumnPageEncoder {
   BlockIndexerStorage indexStorage;
-  byte[] compressedDataPage;
+  ByteBuffer compressedDataPage;
 
   abstract void encodeIndexStorage(ColumnPage inputPage);
 
   @Override
-  protected byte[] encodeData(ColumnPage input) throws IOException {
+  protected ByteBuffer encodeData(ColumnPage input) throws IOException {
     encodeIndexStorage(input);
+    if (indexStorage.getRowIdPageLengthInBytes() > 0 ||
+        indexStorage.getDataRlePageLengthInBytes() > 0) {
+      return appendToCompressedData();
+    } else {
+      return compressedDataPage;
+    }
+  }
+
+  private ByteBuffer appendToCompressedData() throws IOException {
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream out = new DataOutputStream(stream);
-    out.write(compressedDataPage);
+    ByteBuffer buffer = compressedDataPage.asReadOnlyBuffer();
+    int length = buffer.limit();
+    for (int i = 0; i < length; i++) {
+      out.writeByte(buffer.get(i));
+    }
     if (indexStorage.getRowIdPageLengthInBytes() > 0) {
       out.writeInt(indexStorage.getRowIdPageLengthInBytes());
-      short[] rowIdPage = (short[])indexStorage.getRowIdPage();
-      for (short rowId : rowIdPage) {
+      for (short rowId : indexStorage.getRowIdPage()) {
         out.writeShort(rowId);
       }
       if (indexStorage.getRowIdRlePageLengthInBytes() > 0) {
-        short[] rowIdRlePage = (short[])indexStorage.getRowIdRlePage();
-        for (short rowIdRle : rowIdRlePage) {
+        for (short rowIdRle : indexStorage.getRowIdRlePage()) {
           out.writeShort(rowIdRle);
         }
       }
     }
     if (indexStorage.getDataRlePageLengthInBytes() > 0) {
-      short[] dataRlePage = (short[])indexStorage.getDataRlePage();
-      for (short dataRle : dataRlePage) {
+      for (short dataRle : indexStorage.getDataRlePage()) {
         out.writeShort(dataRle);
       }
     }
-    byte[] result = stream.toByteArray();
-    stream.close();
-    return result;
+    byte[] output = stream.toByteArray();
+    out.close();
+    return ByteBuffer.wrap(output);
   }
 
   @Override
@@ -84,6 +95,6 @@ public abstract class IndexStorageEncoder extends ColumnPageEncoder {
     if (indexStorage.getDataRlePageLengthInBytes() > 0) {
       dataChunk.setRle_page_length(indexStorage.getDataRlePageLengthInBytes());
     }
-    dataChunk.setData_page_length(compressedDataPage.length);
+    dataChunk.setData_page_length(compressedDataPage.limit() - compressedDataPage.position());
   }
 }

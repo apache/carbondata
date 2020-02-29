@@ -57,7 +57,7 @@ public abstract class ColumnPageEncoder {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(ColumnPageEncoder.class.getName());
 
-  protected abstract byte[] encodeData(ColumnPage input) throws IOException;
+  protected abstract ByteBuffer encodeData(ColumnPage input) throws IOException;
 
   protected abstract List<Encoding> getEncodingList();
 
@@ -91,15 +91,15 @@ public abstract class ColumnPageEncoder {
    * The encoded binary data and metadata are wrapped in encoding column page
    */
   public EncodedColumnPage encode(ColumnPage inputPage) throws IOException {
-    byte[] encodedBytes = encodeData(inputPage);
+    ByteBuffer encodedBytes = encodeData(inputPage);
     DataChunk2 pageMetadata = buildPageMetadata(inputPage, encodedBytes);
     return new EncodedColumnPage(pageMetadata, encodedBytes, inputPage);
   }
 
-  private DataChunk2 buildPageMetadata(ColumnPage inputPage, byte[] encodedBytes)
+  private DataChunk2 buildPageMetadata(ColumnPage inputPage, ByteBuffer encodedBytes)
       throws IOException {
     DataChunk2 dataChunk = new DataChunk2();
-    dataChunk.setData_page_length(encodedBytes.length);
+    dataChunk.setData_page_length(encodedBytes.limit() - encodedBytes.position());
     fillBasicFields(inputPage, dataChunk);
     fillNullBitSet(inputPage, dataChunk);
     fillEncoding(inputPage, dataChunk);

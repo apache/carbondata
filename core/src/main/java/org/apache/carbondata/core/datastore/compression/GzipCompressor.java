@@ -20,6 +20,7 @@ package org.apache.carbondata.core.datastore.compression;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
@@ -34,33 +35,49 @@ public class GzipCompressor extends AbstractCompressor {
     return "gzip";
   }
 
+  private byte[] compressData(byte[] data) {
+    return compressData(data, 0, data.length);
+  }
+
   /**
    * This method takes the Byte Array data and Compresses in gzip format
    *
    * @param data Data Byte Array passed for compression
    * @return Compressed Byte Array
    */
-  private byte[] compressData(byte[] data) {
-    int initialSize = (data.length / 2) == 0 ? data.length : data.length / 2;
-    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(initialSize);
-    try {
-      GzipCompressorOutputStream gzipCompressorOutputStream =
-          new GzipCompressorOutputStream(byteArrayOutputStream);
-      try {
-        /**
-         * Below api will write bytes from specified byte array to the gzipCompressorOutputStream
-         * The output stream will compress the given byte array.
-         */
-        gzipCompressorOutputStream.write(data);
-      } catch (IOException e) {
-        throw new RuntimeException("Error during Compression writing step ", e);
-      } finally {
-        gzipCompressorOutputStream.close();
+  private byte[] compressData(byte[] data, int offset, int length) {
+    int initialSize = (length / 2) == 0 ? length : length / 2;
+    ByteArrayOutputStream output = new ByteArrayOutputStream(initialSize);
+    try (GzipCompressorOutputStream stream = new GzipCompressorOutputStream(output)) {
+      /*
+       * Below api will write bytes from specified byte array to the gzipCompressorOutputStream
+       * The output stream will compress the given byte array.
+       */
+      stream.write(data, offset, length);
+    } catch (IOException e) {
+      throw new RuntimeException("Error during Compression writing step ", e);
+    }
+    return output.toByteArray();
+  }
+
+  /**
+   * This method takes the ByteBuffer data and Compresses in gzip format
+   *
+   * @param input compression input
+   * @return Compressed Byte Array
+   */
+  private byte[] compressData(ByteBuffer input) {
+    input.flip();
+    int initialSize = (input.limit() / 2) == 0 ? input.limit() : input.limit() / 2;
+    ByteArrayOutputStream output = new ByteArrayOutputStream(initialSize);
+    try (GzipCompressorOutputStream stream = new GzipCompressorOutputStream(output)) {
+      for (int i = 0; i < input.limit(); i++) {
+        stream.write(input.get(i));
       }
     } catch (IOException e) {
-      throw new RuntimeException("Error during Compression step ", e);
+      throw new RuntimeException("Error during Compression writing step ", e);
     }
-    return byteArrayOutputStream.toByteArray();
+    return output.toByteArray();
   }
 
   /**
@@ -94,8 +111,18 @@ public class GzipCompressor extends AbstractCompressor {
   }
 
   @Override
-  public byte[] compressByte(byte[] unCompInput) {
-    return compressData(unCompInput);
+  public ByteBuffer compressByte(ByteBuffer compInput) {
+    if (compInput.isDirect()) {
+      return ByteBuffer.wrap(compressData(compInput));
+    } else {
+      byte[] output = compressData(compInput.array(), 0, compInput.position());
+      return ByteBuffer.wrap(output);
+    }
+  }
+
+  @Override
+  public ByteBuffer compressByte(byte[] unCompInput) {
+    return ByteBuffer.wrap(compressData(unCompInput));
   }
 
   @Override

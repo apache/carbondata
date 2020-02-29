@@ -347,8 +347,8 @@ class CGDataMapWriter(
     outStream.writeObject(maxMin)
     outStream.close()
     val bytes = compressor.compressByte(out.getBytes)
-    stream.write(bytes)
-    stream.writeInt(bytes.length)
+    stream.write(bytes.array(), 0, bytes.position())
+    stream.writeInt(bytes.position())
     stream.close()
   }
 

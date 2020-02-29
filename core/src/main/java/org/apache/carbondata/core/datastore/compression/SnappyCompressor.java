@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.compression;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 
@@ -58,9 +59,25 @@ public class SnappyCompressor extends AbstractCompressor {
   }
 
   @Override
-  public byte[] compressByte(byte[] unCompInput) {
+  public ByteBuffer compressByte(ByteBuffer compInput) {
+    int inputLength = compInput.position();
+    ByteBuffer output = ByteBuffer.allocateDirect(Snappy.maxCompressedLength(inputLength));
+    int outputSize;
+    compInput.flip();
     try {
-      return Snappy.rawCompress(unCompInput, unCompInput.length);
+      outputSize = Snappy.compress(compInput, output);
+    } catch (IOException e) {
+      LOGGER.error(e.getMessage(), e);
+      throw new RuntimeException(e);
+    }
+    output.limit(outputSize);
+    return output;
+  }
+
+  @Override
+  public ByteBuffer compressByte(byte[] unCompInput) {
+    try {
+      return ByteBuffer.wrap(Snappy.rawCompress(unCompInput, unCompInput.length));
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
@@ -103,29 +120,9 @@ public class SnappyCompressor extends AbstractCompressor {
   }
 
   @Override
-  public byte[] compressShort(short[] unCompInput) {
-    try {
-      return Snappy.compress(unCompInput);
-    } catch (IOException e) {
-      LOGGER.error(e.getMessage(), e);
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
   public short[] unCompressShort(byte[] compInput, int offset, int length) {
     try {
       return Snappy.uncompressShortArray(compInput, offset, length);
-    } catch (IOException e) {
-      LOGGER.error(e.getMessage(), e);
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  public byte[] compressInt(int[] unCompInput) {
-    try {
-      return Snappy.compress(unCompInput);
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
@@ -143,16 +140,6 @@ public class SnappyCompressor extends AbstractCompressor {
   }
 
   @Override
-  public byte[] compressLong(long[] unCompInput) {
-    try {
-      return Snappy.compress(unCompInput);
-    } catch (IOException e) {
-      LOGGER.error(e.getMessage(), e);
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
   public long[] unCompressLong(byte[] compInput, int offset, int length) {
     try {
       return Snappy.uncompressLongArray(compInput, offset, length);
@@ -163,29 +150,9 @@ public class SnappyCompressor extends AbstractCompressor {
   }
 
   @Override
-  public byte[] compressFloat(float[] unCompInput) {
-    try {
-      return Snappy.compress(unCompInput);
-    } catch (IOException e) {
-      LOGGER.error(e.getMessage(), e);
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
   public float[] unCompressFloat(byte[] compInput, int offset, int length) {
     try {
       return Snappy.uncompressFloatArray(compInput, offset, length);
-    } catch (IOException e) {
-      LOGGER.error(e.getMessage(), e);
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override
-  public byte[] compressDouble(double[] unCompInput) {
-    try {
-      return Snappy.compress(unCompInput);
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);

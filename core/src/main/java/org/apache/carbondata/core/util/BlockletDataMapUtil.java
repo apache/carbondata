@@ -24,6 +24,7 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -318,8 +319,9 @@ public class BlockletDataMapUtil {
     }
     byte[] byteArray = stream.toByteArray();
     // Compress to reduce the size of schema
-    return CompressorFactory.NativeSupportedCompressor.SNAPPY.getCompressor().compressByte(
-        byteArray);
+    ByteBuffer byteBuffer =
+        CompressorFactory.NativeSupportedCompressor.SNAPPY.getCompressor().compressByte(byteArray);
+    return byteBuffer.array();
   }
 
   /**
