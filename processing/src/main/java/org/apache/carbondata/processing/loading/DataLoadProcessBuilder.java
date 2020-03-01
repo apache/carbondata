@@ -232,7 +232,7 @@ public final class DataLoadProcessBuilder {
     configuration.setDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER,
         loadModel.getBinaryDecoder());
     if (loadModel.isLoadWithoutConverterWithoutReArrangeStep()) {
-      configuration.setDataLoadProperty("no_rearrange_of_rows",
+      configuration.setDataLoadProperty(DataLoadProcessorConstants.NO_REARRANGE_OF_ROWS,
           loadModel.isLoadWithoutConverterWithoutReArrangeStep());
     }
     List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();

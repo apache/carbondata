@@ -44,6 +44,7 @@ import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.exception.BadRecordFoundException;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
@@ -137,7 +138,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
           .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PARTITION_ID,
               System.currentTimeMillis());
-      if (configuration.getDataLoadProperty("no_rearrange_of_rows") != null) {
+      if (configuration.getDataLoadProperty(
+          DataLoadProcessorConstants.NO_REARRANGE_OF_ROWS) != null) {
         initializeNoReArrangeIndexes();
       }
       if (iterators.length == 1) {
@@ -363,7 +365,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   private void processBatch(CarbonRowBatch batch, CarbonFactHandler dataHandler, int iteratorIndex)
       throws CarbonDataLoadingException {
     try {
-      if (configuration.getDataLoadProperty("no_rearrange_of_rows") != null) {
+      if (configuration.getDataLoadProperty(
+          DataLoadProcessorConstants.NO_REARRANGE_OF_ROWS) != null) {
         // convert without re-arrange
         while (batch.hasNext()) {
           CarbonRow row = batch.next();

@@ -78,7 +78,6 @@ public class TableSpec {
       if (partitionDimensions.size() != 0) {
         reArrangedDimensions.addAll(partitionDimensions);
       }
-
       for (CarbonMeasure measure : measures) {
         if (columnSchemaList.contains(measure.getColumnSchema())) {
           partitionMeasures.add(measure);
@@ -89,32 +88,21 @@ public class TableSpec {
       if (partitionMeasures.size() != 0) {
         reArrangedMeasures.addAll(partitionMeasures);
       }
-      // first calculate total number of columnar field considering column group and complex column
-      numSimpleDimensions = 0;
-      for (CarbonDimension dimension : reArrangedDimensions) {
-        if (!dimension.isComplex()) {
-          numSimpleDimensions++;
-        }
-      }
-      dimensionSpec = new DimensionSpec[dimensions.size()];
-      measureSpec = new MeasureSpec[measures.size()];
-      noDictionaryDimensionSpec = new ArrayList<>();
-      addDimensions(reArrangedDimensions);
-      addMeasures(reArrangedMeasures);
-    } else {
-      // first calculate total number of columnar field considering column group and complex column
-      numSimpleDimensions = 0;
-      for (CarbonDimension dimension : dimensions) {
-        if (!dimension.isComplex()) {
-          numSimpleDimensions++;
-        }
-      }
-      dimensionSpec = new DimensionSpec[dimensions.size()];
-      measureSpec = new MeasureSpec[measures.size()];
-      noDictionaryDimensionSpec = new ArrayList<>();
-      addDimensions(dimensions);
-      addMeasures(measures);
+      dimensions = reArrangedDimensions;
+      measures = reArrangedMeasures;
     }
+    // first calculate total number of columnar field considering column group and complex column
+    numSimpleDimensions = 0;
+    for (CarbonDimension dimension : dimensions) {
+      if (!dimension.isComplex()) {
+        numSimpleDimensions++;
+      }
+    }
+    dimensionSpec = new DimensionSpec[dimensions.size()];
+    measureSpec = new MeasureSpec[measures.size()];
+    noDictionaryDimensionSpec = new ArrayList<>();
+    addDimensions(dimensions);
+    addMeasures(measures);
   }
 
   private void addDimensions(List<CarbonDimension> dimensions) {
