@@ -575,14 +575,53 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("insert into table maintable select 'abc',21,2000")
     val res = sql("select name from maintable order by c_code")
     sql("drop materialized view if exists dm1")
-    sql("create materialized view dm1  as select name from maintable order by c_code")
+    intercept[UnsupportedOperationException] {
+      sql("create materialized view dm1  as select name from maintable order by c_code")
+    }.getMessage.contains("Order by column `c_code` must be present in project columns")
+    sql("create materialized view dm1  as select name,c_code from maintable order by c_code")
     val df = sql("select name from maintable order by c_code")
     TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "dm1")
     checkAnswer(res, df)
     intercept[Exception] {
       sql("alter table maintable drop columns(c_code)")
     }.getMessage.contains("Column name cannot be dropped because it exists in mv materialized view: dm1")
+    sql("insert into table maintable select 'mno',20,2000")
+    checkAnswer(sql("select name from maintable order by c_code"), Seq(Row("mno"), Row("abc")))
     sql("drop table if exists maintable")
+  }
+
+  test("test query on mv with limit") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
+    sql("insert into table maintable select 'abc',21,2000")
+    sql("insert into table maintable select 'bcd',22,2000")
+    sql("insert into table maintable select 'def',22,2000")
+    sql("drop materialized view if exists mv1")
+    sql("create materialized view mv1  as select a.name,a.price from maintable a")
+    var dataFrame = sql("select a.name,a.price from maintable a limit 1")
+    assert(dataFrame.count() == 1)
+    TestUtil.verifyMVDataMap(dataFrame.queryExecution.optimizedPlan, "mv1")
+    dataFrame = sql("select a.name,a.price from maintable a order by a.name limit 1")
+    assert(dataFrame.count() == 1)
+    TestUtil.verifyMVDataMap(dataFrame.queryExecution.optimizedPlan, "mv1")
+    sql("drop table if exists maintable")
+  }
+
+  test("test horizontal comapction on mv for more than two update") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
+    sql("insert into table maintable values('abc',21,2000),('mno',24,3000)")
+    sql("drop materialized view if exists mv1")
+    sql("create materialized view mv1  as select name,c_code from maintable")
+    sql("update maintable set(name) = ('aaa') where c_code = 21").show(false)
+    var df = sql("select name,c_code from maintable")
+    TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1")
+    checkAnswer(df, Seq(Row("aaa",21), Row("mno",24)))
+    sql("update maintable set(name) = ('mmm') where c_code = 24").show(false)
+    df = sql("select name,c_code from maintable")
+    TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1")
+    checkAnswer(df, Seq(Row("aaa",21), Row("mmm",24)))
+    sql("drop table IF EXISTS maintable")
   }
 
   test("drop meta cache on mv materialized view table") {

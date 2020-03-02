@@ -74,7 +74,7 @@ EXPLAIN SELECT a, sum(b) from maintable group by a;
     GROUP BY country, sex
   ```
  **NOTE**:
- * Group by columns has to be provided in projection list while creating mv datamap
+ * Group by and Order by columns has to be provided in projection list while creating mv datamap
  * If only single parent table is involved in mv datamap creation, then TableProperties of Parent table
    (if not present in a aggregate function like sum(col)) listed below will be
    inherited to datamap table

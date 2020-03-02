@@ -42,12 +42,11 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{SegmentStatusManager, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
-import org.apache.carbondata.processing.loading.events.LoadEvents.LoadMetadataEvent
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
@@ -220,16 +219,23 @@ case class CarbonAlterTableCompactionCommand(
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val compactionType = CompactionType.valueOf(alterTableModel.compactionType.toUpperCase)
     val compactionSize = CarbonDataMergerUtil.getCompactionSize(compactionType, carbonLoadModel)
+    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     if (CompactionType.IUD_UPDDEL_DELTA == compactionType) {
       if (alterTableModel.segmentUpdateStatusManager.isDefined) {
         carbonLoadModel.setSegmentUpdateStatusManager(
           alterTableModel.segmentUpdateStatusManager.get)
         carbonLoadModel.setLoadMetadataDetails(
           alterTableModel.segmentUpdateStatusManager.get.getLoadMetadataDetails.toList.asJava)
+      } else {
+        // segmentUpdateStatusManager will not be defined in case of IUD/horizontal compaction on
+        // materialized views. In that case, create new segmentUpdateStatusManager object
+        // using carbonTable
+        val segmentUpdateStatusManager = new SegmentUpdateStatusManager(carbonTable)
+        carbonLoadModel.setSegmentUpdateStatusManager(segmentUpdateStatusManager)
+        carbonLoadModel.setLoadMetadataDetails(
+          segmentUpdateStatusManager.getLoadMetadataDetails.toList.asJava)
       }
     }
-
-    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
 
     if (null == carbonLoadModel.getLoadMetadataDetails) {
       carbonLoadModel.readAndSetLoadMetadataDetails()
