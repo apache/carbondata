@@ -133,8 +133,7 @@ class CarbonAppendableStreamSink(
         false,
         parameters.asJava,
         parameters.asJava,
-        false,
-        sparkSession
+        false
       )
       OperationListenerBus.getInstance().fireEvent(loadTablePreExecutionEvent, operationContext)
       checkOrHandOffSegment()
