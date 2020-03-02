@@ -289,7 +289,11 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
 
           if (r2eJoinsMatch) {
             if (isPredicateEmR && isOutputEmR && isOutputRmE && rejoin.isEmpty && isLOEmLOR) {
-              Seq(sel_1a)
+              if (sel_1q.flagSpec.isEmpty) {
+                Seq(sel_1a)
+              } else {
+                Seq(sel_1a.copy(flags = sel_1q.flags, flagSpec = sel_1q.flagSpec))
+              }
             } else {
               // no compensation needed
               val tChildren = new collection.mutable.ArrayBuffer[ModularPlan]()

@@ -28,7 +28,7 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Coalesce, Expression, Literal, NamedExpression, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Average}
 import org.apache.spark.sql.catalyst.plans.QueryPlan
-import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Join, Limit, LogicalPlan, Project}
+import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Join, Limit, LogicalPlan, Project, Sort}
 import org.apache.spark.sql.execution.command.{Field, PartitionerField, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -85,6 +85,25 @@ object MVHelper {
                                                   "with limit")
       case _ =>
     }
+
+    // Order by columns needs to be present in projection list for creating mv. This is because,
+    // we have to perform order by on all segments during query, which requires the order by column
+    // data
+    queryPlan.transform {
+      case sort@Sort(order, _, _) =>
+        order.map { orderByCol =>
+          orderByCol.child match {
+            case attr: AttributeReference =>
+              if (!queryPlan.output.contains(attr.toAttribute)) {
+                throw new UnsupportedOperationException(
+                  "Order by column `" + attr.name + "` must be present in project columns")
+              }
+          }
+          order
+        }
+        sort
+    }
+
     val mainTables = getCatalogTables(queryPlan)
     if (mainTables.isEmpty) {
       throw new MalformedCarbonCommandException(

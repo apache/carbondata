@@ -17,12 +17,8 @@
 
 package org.apache.spark.sql
 
-import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
-import scala.collection.JavaConverters._
-
-import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
@@ -35,7 +31,6 @@ import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -120,51 +115,10 @@ class CarbonEnv {
         CarbonProperties.getInstance
           .addNonSerializableProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
         initialized = true
-        cleanChildTablesNotRegisteredInHive(sparkSession)
       }
     }
     Profiler.initialize(sparkSession.sparkContext)
     LOGGER.info("Initialize CarbonEnv completed...")
-  }
-
-  private def cleanChildTablesNotRegisteredInHive(sparkSession: SparkSession): Unit = {
-    // If in case JDBC application is killed/stopped, when create datamap was in progress, datamap
-    // table was created and datampschema was saved to the system, but table was not registered to
-    // metastore. So, when we restart JDBC application, we need to clean up
-    // stale tables and datamapschema's.
-    val dataMapSchemas = DataMapStoreManager.getInstance().getAllDataMapSchemas
-    dataMapSchemas.asScala.foreach {
-      dataMapSchema =>
-        if (null != dataMapSchema.getRelationIdentifier &&
-            !dataMapSchema.isIndexDataMap) {
-          val isTableExists = try {
-            sparkSession.sessionState
-              .catalog
-              .tableExists(TableIdentifier(dataMapSchema.getRelationIdentifier.getTableName,
-                Some(dataMapSchema.getRelationIdentifier.getDatabaseName)))
-          } catch {
-            // we need to take care of cleanup when the table does not exists, if table exists and
-            // some other user tries to access the table, it might fail, that time no need to handle
-            case ex: Exception =>
-              LOGGER.error("Error while checking the table existence", ex)
-              return
-          }
-          if (!isTableExists) {
-            try {
-              DataMapStoreManager.getInstance().dropDataMapSchema(dataMapSchema.getDataMapName)
-            } catch {
-              case e: IOException =>
-                throw e
-            } finally {
-              if (FileFactory.isFileExist(dataMapSchema.getRelationIdentifier.getTablePath)) {
-                CarbonUtil.deleteFoldersAndFilesSilent(FileFactory.getCarbonFile(dataMapSchema
-                  .getRelationIdentifier
-                  .getTablePath))
-              }
-            }
-          }
-        }
-    }
   }
 }
 

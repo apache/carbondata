@@ -235,6 +235,13 @@ class QueryRewrite private (
       case s: Select if s.dataMapTableRelation.isDefined =>
         val relation =
           s.dataMapTableRelation.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
+        val aliasMap = getAttributeMap(relation.outputList, s.outputList)
+        // Update the flagspec as per the mv table attributes.
+        val updatedFlagSpec: Seq[Seq[Any]] = updateFlagSpec(
+          keepAlias = false,
+          s,
+          relation,
+          aliasMap)
         val outputList = getUpdatedOutputList(relation.outputList, s.dataMapTableRelation)
         // when the output list contains multiple projection of same column, but relation
         // contains distinct columns, mapping may go wrong with columns, so select distinct
@@ -242,7 +249,8 @@ class QueryRewrite private (
         val oList = for ((o1, o2) <- mappings) yield {
           if (o1.name != o2.name) Alias(o2, o1.name)(exprId = o1.exprId) else o2
         }
-        relation.copy(outputList = oList).setRewritten()
+        relation.copy(outputList = oList, flags = s.flags, flagSpec = updatedFlagSpec)
+          .setRewritten()
       case g: GroupBy if g.dataMapTableRelation.isDefined =>
         val relation =
           g.dataMapTableRelation.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
