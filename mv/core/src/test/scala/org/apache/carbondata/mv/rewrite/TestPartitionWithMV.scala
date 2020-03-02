@@ -637,7 +637,10 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll {
     sql("insert into updatetime_8 select 21,21,'fbv','gbv','wvsw','vwr',25")
     sql("alter table updatetime_8 compact 'minor'")
     sql("alter table updatetime_8 compact 'minor'")
+    val df = sql("select sum(hs_len) from updatetime_8 group by imex")
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "ag"))
     checkAnswer(sql("select sum(hs_len) from updatetime_8 group by imex"),Seq(Row(40),Row(42),Row(83)))
+    sql("drop table updatetime_8").show(200, false)
   }
 
   test("check partitioning for child tables with various combinations") {
