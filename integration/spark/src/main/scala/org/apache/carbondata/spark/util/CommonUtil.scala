@@ -760,11 +760,13 @@ object CommonUtil {
       fields: Seq[(String, String)],
       varcharCols: Seq[String]
   ): Unit = {
-    if (sortKey.diff(sortKey.distinct).length > 0 ||
-        (sortKey.length > 1 && sortKey.contains(""))) {
+    val sortKeyLowerCase = sortKey.map(_.toLowerCase())
+    if ((sortKeyLowerCase).diff(sortKeyLowerCase.distinct).length > 0 ||
+      (sortKeyLowerCase.length > 1 && sortKeyLowerCase.contains(""))) {
       throw new MalformedCarbonCommandException(
-        "SORT_COLUMNS Either having duplicate columns : " +
-        sortKey.diff(sortKey.distinct).mkString(",") + " or it contains illegal argumnet.")
+        "SORT_COLUMNS Either contains duplicate columns : " +
+          sortKeyLowerCase.diff(sortKeyLowerCase.distinct).mkString(",") +
+          " or it contains an illegal argument.")
     }
 
     sortKey.foreach { column =>

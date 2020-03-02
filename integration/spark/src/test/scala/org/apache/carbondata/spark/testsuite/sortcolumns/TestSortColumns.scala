@@ -297,7 +297,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     val exceptionCaught = intercept[MalformedCarbonCommandException]{
       sql("CREATE TABLE sorttable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED AS carbondata tblproperties('sort_columns'='empno,empname,empno')")
     }
-    assert(exceptionCaught.getMessage.equals("SORT_COLUMNS Either having duplicate columns : empno or it contains illegal argumnet."))
+    assert(exceptionCaught.getMessage.equals("SORT_COLUMNS Either contains duplicate columns : empno or it contains an illegal argument."))
   }
 
   test("Test tableTwo data") {

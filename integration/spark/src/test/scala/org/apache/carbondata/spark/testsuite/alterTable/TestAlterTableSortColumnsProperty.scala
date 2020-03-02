@@ -282,12 +282,17 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     ex = intercept[RuntimeException] {
       sql("alter table alter_sc_validate set tblproperties('sort_columns'=' stringField1 , intField, stringField1')")
     }
-    assert(ex.getMessage.contains("SORT_COLUMNS Either having duplicate columns : stringField1 or it contains illegal argumnet"))
+    assert(ex.getMessage.contains("SORT_COLUMNS Either contains duplicate columns : stringfield1 or it contains an illegal argument"))
 
     ex = intercept[RuntimeException] {
       sql("alter table alter_sc_validate set tblproperties('sort_columns'=' stringField , intField, stringField')")
     }
-    assert(ex.getMessage.contains("SORT_COLUMNS Either having duplicate columns : stringField or it contains illegal argumnet"))
+    assert(ex.getMessage.contains("SORT_COLUMNS Either contains duplicate columns : stringfield or it contains an illegal argument"))
+
+    ex = intercept[RuntimeException] {
+      sql("alter table alter_sc_validate set tblproperties('sort_columns'=' stringField , intField, stringFIELD')")
+    }
+    assert(ex.getMessage.contains("SORT_COLUMNS Either contains duplicate columns : stringfield or it contains an illegal argument"))
 
     // not supported data type
 //    ex = intercept[RuntimeException] {
