@@ -246,9 +246,9 @@ public final class DataLoadProcessBuilder {
           partitionColumns, dataFields);
     } else {
       getDataFields(loadModel, dimensions, measures, complexDataFields, dataFields);
+      dataFields = updateDataFieldsBasedOnSortColumns(dataFields);
     }
-    configuration.setDataFields(
-        updateDataFieldsBasedOnSortColumns(dataFields).toArray(new DataField[dataFields.size()]));
+    configuration.setDataFields(dataFields.toArray(new DataField[0]));
     configuration.setBucketingInfo(carbonTable.getBucketingInfo());
     configuration.setPreFetch(loadModel.isPreFetch());
     configuration.setNumberOfSortColumns(carbonTable.getNumberOfSortColumns());
@@ -319,6 +319,10 @@ public final class DataLoadProcessBuilder {
     } else {
       partitionColumnSchemaList = new ArrayList<>();
     }
+    // 1.1 compatibility, dimensions will not have sort columns in the beginning in 1.1.
+    // Need to keep at the beginning now
+    List<DataField> sortDataFields = new ArrayList<>();
+    List<DataField> noSortDataFields = new ArrayList<>();
     for (CarbonColumn column : dimensions) {
       DataField dataField = new DataField(column);
       if (column.isComplex()) {
@@ -349,11 +353,23 @@ public final class DataLoadProcessBuilder {
             .contains(column.getColumnSchema())) {
           partitionColumns.add(dataField);
         } else {
-          dataFields.add(dataField);
+          if (dataField.getColumn().getColumnSchema().isSortColumn()) {
+            sortDataFields.add(dataField);
+          } else {
+            noSortDataFields.add(dataField);
+          }
         }
       }
     }
-    dataFields.addAll(complexDataFields);
+    if (sortDataFields.size() != 0) {
+      dataFields.addAll(sortDataFields);
+    }
+    if (noSortDataFields.size() != 0) {
+      dataFields.addAll(noSortDataFields);
+    }
+    if (complexDataFields.size() != 0) {
+      dataFields.addAll(complexDataFields);
+    }
     for (CarbonColumn column : measures) {
       if (partitionColumnSchemaList.size() != 0 && partitionColumnSchemaList
           .contains(column.getColumnSchema())) {
