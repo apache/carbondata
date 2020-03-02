@@ -26,6 +26,7 @@ import org.apache.commons.codec.binary.{Base64, Hex}
 import org.apache.spark.SparkException
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -1608,8 +1609,6 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                    | from uniqdata
               """.stripMargin).show()
         }
-        assert(e1.getMessage.contains("cannot resolve 'avg(substring(uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not BinaryType"))
-
         val e2 = intercept[Exception] {
             sql(
                 s"""
@@ -1624,7 +1623,6 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                    | where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =1233720368578 or DECIMAL_COLUMN1 = 12345678901.1234000058 or Double_COLUMN1 = 1.12345674897976E10 or INTEGER_COLUMN1 IS NULL limit 10
              """.stripMargin)
         }
-        assert(e2.getMessage.contains("cannot resolve 'avg(substring(uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not BinaryType"))
 
         val e3 = intercept[Exception] {
             sql(
@@ -1640,8 +1638,19 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
                    | where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =1233720368578 or DECIMAL_COLUMN1 = 12345678901.1234000058 or Double_COLUMN1 = 1.12345674897976E10 or INTEGER_COLUMN1 IS NULL limit 10
              """.stripMargin)
         }
-        assert(e3.getMessage.contains("cannot resolve 'avg(substring(uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not BinaryType"))
-
+        // Exceptions are specific to spark versions
+        val message_2_3 = "cannot resolve 'avg(substring(uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not BinaryType"
+        val message_2_4 = "cannot resolve 'avg(substring(default.uniqdata.`CUST_NAME`, 1, 2))' due to data type mismatch: function average requires numeric types, not binary"
+        if(SparkUtil.isSparkVersionEqualTo("2.3")) {
+            assert(e1.getMessage.contains(message_2_3))
+            assert(e2.getMessage.contains(message_2_3))
+            assert(e3.getMessage.contains(message_2_3))
+        }
+        else if (SparkUtil.isSparkVersionXandAbove("2.4")) {
+            assert(e1.getMessage.contains(message_2_4))
+            assert(e2.getMessage.contains(message_2_4))
+            assert(e3.getMessage.contains(message_2_4))
+        }
     }
 
     test("test binary insert with int value") {

@@ -167,7 +167,7 @@ object ExtractSelectModule extends PredicateHelper {
     children.zipWithIndex.flatMap {
       case (child, i) =>
         aq.find(child.outputSet.contains(_))
-          .flatMap(_.qualifier.headOption)
+          .flatMap(_.qualifier.lastOption)
           .map((i, _))
     }.toMap
   }

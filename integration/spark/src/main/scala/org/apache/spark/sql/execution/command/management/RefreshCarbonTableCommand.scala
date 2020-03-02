@@ -27,6 +27,8 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, MetadataCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.execution.datasources.RefreshTable
+import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -35,7 +37,7 @@ import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.SchemaReader
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
-import org.apache.carbondata.core.metadata.schema.table. TableInfo
+import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -154,18 +156,35 @@ case class RefreshCarbonTableCommand(
       tableInfo: TableInfo,
       tablePath: String)(sparkSession: SparkSession): Any = {
     val operationContext = new OperationContext
+    var allowCreateTableNonEmptyLocation: String = null
+    val allowCreateTableNonEmptyLocationConf =
+      "spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation"
     try {
       val refreshTablePreExecutionEvent: RefreshTablePreExecutionEvent =
         new RefreshTablePreExecutionEvent(sparkSession,
           tableInfo.getOrCreateAbsoluteTableIdentifier())
+      if (SparkUtil.isSparkVersionXandAbove("2.4")) {
+        // During refresh table, when this option is set to true, creating managed tables with
+        // nonempty location is allowed. Otherwise, an analysis exception is thrown.
+        // https://kb.databricks.com/jobs/spark-overwrite-cancel.html
+        allowCreateTableNonEmptyLocation = sparkSession.sessionState
+          .conf.getConfString(allowCreateTableNonEmptyLocationConf)
+        sparkSession.sessionState.conf.setConfString(allowCreateTableNonEmptyLocationConf, "true")
+      }
       OperationListenerBus.getInstance.fireEvent(refreshTablePreExecutionEvent, operationContext)
       CarbonCreateTableCommand(tableInfo, ifNotExistsSet = false, tableLocation = Some(tablePath))
         .run(sparkSession)
     } catch {
       case e: AnalysisException => throw e
-      case e: Exception =>
-        throw e
+      case e: Exception => throw e
+    } finally {
+      if (SparkUtil.isSparkVersionXandAbove("2.4")) {
+        // Set it back to default
+        sparkSession.sessionState.conf
+          .setConfString(allowCreateTableNonEmptyLocationConf, allowCreateTableNonEmptyLocation)
+      }
     }
+
     val refreshTablePostExecutionEvent: RefreshTablePostExecutionEvent =
       new RefreshTablePostExecutionEvent(sparkSession,
         tableInfo.getOrCreateAbsoluteTableIdentifier())

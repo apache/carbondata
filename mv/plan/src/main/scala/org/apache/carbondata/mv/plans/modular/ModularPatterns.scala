@@ -55,7 +55,7 @@ object SimpleModularizer extends ModularPatterns {
           val makeupmap: Map[Int, String] = children.zipWithIndex.flatMap {
             case (child, i) =>
               aq.find(child.outputSet.contains(_))
-                .flatMap(_.qualifier.headOption)
+                .flatMap(_.qualifier.lastOption)
                 .map((i, _))
           }.toMap
           g.copy(child = s.copy(aliasMap = makeupmap ++ aliasmap))
