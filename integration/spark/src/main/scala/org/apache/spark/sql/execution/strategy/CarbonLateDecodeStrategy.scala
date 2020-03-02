@@ -201,6 +201,18 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   }
 
   /**
+   * get deterministic expression for NamedExpression
+   */
+  private def makeDeterministicExp(exp: NamedExpression): Expression = {
+    exp match {
+      case alias: Alias if alias.child.isInstanceOf[CustomDeterministicExpression] =>
+        alias
+      case _ =>
+        CustomDeterministicExpression(exp)
+    }
+  }
+
+  /**
    * Convert all Expression to deterministic Expression
    */
   private def makeDeterministic(plan: LogicalPlan): LogicalPlan = {
@@ -220,7 +232,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
                 Some(a))
             case exp: NamedExpression
               if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
-              CustomDeterministicExpression(exp)
+              makeDeterministicExp(exp)
           }
         } else {
           p
@@ -239,7 +251,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
                 Some(a))
             case exp: NamedExpression
               if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
-              CustomDeterministicExpression(exp)
+              makeDeterministicExp(exp)
           }
         } else {
           f

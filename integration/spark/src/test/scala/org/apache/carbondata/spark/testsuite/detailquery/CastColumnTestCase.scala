@@ -953,10 +953,16 @@ class CastColumnTestCase extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  // Direct Dictionary and Timestamp Column.
-
-
-
+  test("test cast with rand UDF") {
+    sql("drop table if exists cast_rand")
+    sql("create table cast_rand(name string,gender string,age int) stored as carbondata")
+    sql("insert into cast_rand values('xxx','male',10)")
+    sql("select * from (select name, rand() from cast_rand) where name='xxx'").collect()
+    sql("select * from (select name, cast(floor(rand() * 5) as int) as `yyy` from cast_rand) where yyy<1").collect()
+    sql("select * from (select name, cast((rand() * 5) as int) as `yyy` from cast_rand) where yyy<1").collect()
+    sql("select * from (select name, floor(rand() * 5) from cast_rand) where name='xxx'").collect()
+    sql("drop table if exists cast_rand")
+  }
 
   override def afterAll {
     CarbonProperties.getInstance()
@@ -966,5 +972,6 @@ class CastColumnTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists DICTIONARY_HIVE_1")
     sql("drop table if exists NO_DICTIONARY_CARBON_2")
     sql("drop table if exists NO_DICTIONARY_HIVE_2")
+    sql("drop table if exists cast_rand")
   }
 }
