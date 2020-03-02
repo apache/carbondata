@@ -504,7 +504,19 @@ object CommonLoadUtils {
       if (numPartitions <= 0) {
         numPartitions = partitionsLen
       }
-      val sortColumns = attributes.take(table.getSortColumns.size())
+      val sortColumns =
+        if (table.isHivePartitionTable) {
+          // In case of partition column as sort column, attribute will not have it in the front.
+          // so need to look up the attribute and prepare
+          val sortColsAttr: collection.mutable.ArrayBuffer[AttributeReference] = ArrayBuffer()
+          val sortCols = table.getSortColumns.asScala
+          for (sortColumn <- sortCols) {
+            sortColsAttr += attributes.find(x => x.name.equalsIgnoreCase(sortColumn)).get
+          }
+          sortColsAttr
+        } else {
+          attributes.take(table.getSortColumns.size())
+        }
       val dataTypes = sortColumns.map(_.dataType)
       val sortedRDD: RDD[InternalRow] =
         GlobalSortHelper.sortBy(updatedRdd, numPartitions, dataTypes)
