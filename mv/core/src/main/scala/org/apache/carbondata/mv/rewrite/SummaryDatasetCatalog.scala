@@ -114,7 +114,7 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
         MVParser.getMVPlan(dataMapSchema.getCtasQuery, sparkSession)
       } catch {
         case ex: Exception =>
-          LOGGER.error("Error executing the updated query during register datamap schema", ex)
+          LOGGER.error("Error executing the updated query during register MV schema", ex)
           throw ex
       } finally {
         // here setting back to current database of current session, because if the actual query
@@ -174,9 +174,9 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
   /**
    * Checks if the schema is already registered
    */
-  private[mv] def isSchemaAlreadyRegistered(dataMapName: String): java.lang.Boolean = {
+  private[mv] def isMVExists(mvName: String): java.lang.Boolean = {
     val dataIndex = summaryDatasets
-      .indexWhere(sd => sd.dataMapSchema.getDataMapName.equals(dataMapName))
+      .indexWhere(sd => sd.dataMapSchema.getDataMapName.equals(mvName))
     dataIndex > 0
   }
 

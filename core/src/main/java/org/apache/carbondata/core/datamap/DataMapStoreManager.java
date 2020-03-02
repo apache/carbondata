@@ -249,7 +249,7 @@ public final class DataMapStoreManager {
         dataMapCatalog.registerSchema(dataMapSchema);
       }
     } else {
-      if (!dataMapCatalog.isSchemaAlreadyRegistered(dataMapSchema.getDataMapName())) {
+      if (!dataMapCatalog.isMVExists(dataMapSchema.getDataMapName())) {
         dataMapCatalog.registerSchema(dataMapSchema);
       }
     }
@@ -275,8 +275,10 @@ public final class DataMapStoreManager {
    * @param providerName
    * @return
    */
-  public synchronized DataMapCatalog getDataMapCatalog(DataMapProvider dataMapProvider,
-      String providerName, boolean clearCatalogs) throws IOException {
+  public synchronized DataMapCatalog getDataMapCatalog(
+      DataMapProvider dataMapProvider,
+      String providerName,
+      boolean clearCatalogs) throws IOException {
     // This method removes the datamapCatalog for the corresponding provider if the session gets
     // refreshed or updated
     if (clearCatalogs) {

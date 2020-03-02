@@ -51,6 +51,6 @@ public interface DataMapCatalog<T> {
   /**
    * This checks whether the datamapSchema is already registered
    */
-  Boolean isSchemaAlreadyRegistered(String dataMapName);
+  Boolean isMVExists(String mvName);
 
 }
