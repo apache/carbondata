@@ -19,10 +19,10 @@ package org.apache.carbondata.mv.rewrite
 
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{CarbonToSparkAdapter, DataFrame, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.execution.datasources.FindDataSourceTable
 
 import org.apache.carbondata.core.datamap.DataMapCatalog
@@ -119,10 +119,15 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
           mvSession.sessionState.optimizer.execute(planToRegister)).next().semiHarmonized
       val signature = modularPlan.signature
       val identifier = dataMapSchema.getRelationIdentifier
-      val output = new FindDataSourceTable(sparkSession)
+      val plan = new FindDataSourceTable(sparkSession)
         .apply(sparkSession.sessionState.catalog
-        .lookupRelation(TableIdentifier(identifier.getTableName, Some(identifier.getDatabaseName))))
-        .output
+          .lookupRelation(TableIdentifier(identifier.getTableName,
+            Some(identifier.getDatabaseName))))
+      val output = if (plan.isInstanceOf[SubqueryAlias]) {
+        CarbonToSparkAdapter.getOutput(plan.asInstanceOf[SubqueryAlias])
+      } else {
+        plan.output
+      }
       val relation = ModularRelation(identifier.getDatabaseName,
         identifier.getTableName,
         output,

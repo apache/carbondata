@@ -128,14 +128,14 @@ class MVUtil {
             qualifier = if (attr.qualifier.headOption.get.startsWith("gen_sub")) {
               Some(catalogTable.identifier.table)
             } else {
-              attr.qualifier.headOption
+              attr.qualifier.lastOption
             }
           }
           fieldToDataMapFieldMap +=
           getFieldToDataMapFields(
             attr.name,
             attr.dataType,
-            qualifier.headOption,
+            qualifier.lastOption,
             "",
             arrayBuffer,
             catalogTable.identifier.table)

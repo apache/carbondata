@@ -367,7 +367,7 @@ object MVHelper {
   private def updateColumnName(attr: Attribute, counter: Int): String = {
     val name = getUpdatedName(attr.name, counter)
     val value = attr.qualifier.map(qualifier => qualifier + "_" + name)
-    if (value.nonEmpty) value.head else name
+    if (value.nonEmpty) value.last else name
   }
 
   // Return all relations involved in the plan

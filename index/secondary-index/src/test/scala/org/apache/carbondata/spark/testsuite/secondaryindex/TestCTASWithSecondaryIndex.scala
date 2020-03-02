@@ -19,6 +19,7 @@ package org.apache.carbondata.spark.testsuite.secondaryindex
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -201,20 +202,36 @@ class TestCTASWithSecondaryIndex extends QueryTest with BeforeAndAfterAll{
   }
 
   test("test ctas with carbon table with SI having cast of UDF functions") {
-    sql("drop table if exists carbon_table1")
-    val query =   "select cast(approx_count_distinct(empname) as string) as c1, cast(approx_count_distinct(deptname) as string) as c2,cast(corr(deptno, empno) as string) as c5, cast(covar_pop(deptno, empno) as string) as c6, " +
-                  "cast(covar_samp(deptno, empno) as string) as c7, cast(grouping(designation) as string) as c8, cast(grouping(deptname) as string) as c9, cast(mean(deptno) as string) as c10, cast(mean" +
-                  "(empno) as string) as c11,cast(skewness(deptno) as string) as c12, cast(skewness(empno) as string) as c13, cast(stddev(deptno) as string) as c14, cast(stddev(empno) as string) as c15, cast(stddev_pop" +
-                  "(deptno) as string) as c16, cast(stddev_pop(empno) as string) as c17, cast(stddev_samp(deptno) as string) as c18, cast(stddev_samp(empno) as string) as c19, cast(var_pop(deptno) as string) as c20, " +
-                  "cast(var_pop(empno) as string) as c21, cast(var_samp(deptno) as string) as c22, cast(var_samp(empno) as string) as c23, cast(variance(deptno) as string) as c24, cast(variance(empno) as string) as c25, " +
-                  "COALESCE(CONV(substring(empname, 3, 2), 16, 10), '') as c26, COALESCE(CONV(substring(deptname, 3," +
-                  " 2), 16, 10), '') as c27 from udfValidation where empname = 'pramod' or deptname = 'network' or " +
-                  "designation='TL' group by designation, deptname, empname with ROLLUP"
-    val df = sql(s"explain extended $query").collect()
-    df(0).getString(0).contains("default.ind_i1 ")
-    sql(s"create table carbon_table1 stored as carbondata as $query")
-    checkAnswer(sql("select count(*) from carbon_table1"), Seq(Row(15)))
-    sql("drop table if exists carbon_table1")
+    if(SparkUtil.isSparkVersionEqualTo("2.3")) {
+      sql("drop table if exists carbon_table1")
+      val query =
+        "select cast(approx_count_distinct(empname) as string) as c1, cast(approx_count_distinct" +
+        "(deptname) as string) as c2,cast(corr(deptno, empno) as string) as c5, cast(covar_pop" +
+        "(deptno, empno) as string) as c6, " +
+        "cast(covar_samp(deptno, empno) as string) as c7, cast(grouping(designation) as string) " +
+        "as c8, cast(grouping(deptname) as string) as c9, cast(mean(deptno) as string) as c10, " +
+        "cast(mean" +
+        "(empno) as string) as c11,cast(skewness(deptno) as string) as c12, cast(skewness(empno) " +
+        "as string) as c13, cast(stddev(deptno) as string) as c14, cast(stddev(empno) as string) " +
+        "as c15, cast(stddev_pop" +
+        "(deptno) as string) as c16, cast(stddev_pop(empno) as string) as c17, cast(stddev_samp" +
+        "(deptno) as string) as c18, cast(stddev_samp(empno) as string) as c19, cast(var_pop" +
+        "(deptno) as string) as c20, " +
+        "cast(var_pop(empno) as string) as c21, cast(var_samp(deptno) as string) as c22, cast" +
+        "(var_samp(empno) as string) as c23, cast(variance(deptno) as string) as c24, cast" +
+        "(variance(empno) as string) as c25, " +
+        "COALESCE(CONV(substring(empname, 3, 2), 16, 10), '') as c26, COALESCE(CONV(substring" +
+        "(deptname, 3," +
+        " 2), 16, 10), '') as c27 from udfValidation where empname = 'pramod' or deptname = " +
+        "'network' or " +
+        "designation='TL' group by designation, deptname, empname with ROLLUP"
+      val df = sql(s"explain extended $query").collect()
+      df(0).getString(0).contains("default.ind_i1 ")
+      sql(s"create table carbon_table1 stored as carbondata as $query")
+      checkAnswer(sql("select count(*) from carbon_table1"), Seq(Row(15)))
+      sql("drop table if exists carbon_table1")
+      }
+
   }
 
   test("test ctas with carbon table with SI having concat function") {

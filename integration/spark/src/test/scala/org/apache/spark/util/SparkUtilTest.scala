@@ -34,8 +34,8 @@ class SparkUtilTest extends FunSuite{
     } else {
       assert(SparkUtil.isSparkVersionXandAbove("2.1"))
       assert(SparkUtil.isSparkVersionXandAbove("2.2"))
-      assert(SparkUtil.isSparkVersionXandAbove("2.3"))
-      assert(!SparkUtil.isSparkVersionXandAbove("2.4"))
+      assert(SparkUtil.isSparkVersionXandAbove("2.3") ||
+             SparkUtil.isSparkVersionXandAbove("2.4"))
     }
   }
 
@@ -51,8 +51,8 @@ class SparkUtilTest extends FunSuite{
     } else {
       assert(!SparkUtil.isSparkVersionEqualTo("2.1"))
       assert(!SparkUtil.isSparkVersionEqualTo("2.2"))
-      assert(SparkUtil.isSparkVersionEqualTo("2.3"))
-      assert(!SparkUtil.isSparkVersionEqualTo("2.4"))
+      assert(SparkUtil.isSparkVersionEqualTo("2.3") ||
+             SparkUtil.isSparkVersionXandAbove("2.4"))
     }
   }
 }

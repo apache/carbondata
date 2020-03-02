@@ -25,8 +25,9 @@ import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexRepl
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, SessionCatalog}
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, AttributeSet, Expression, ExpressionSet, ExprId, NamedExpression, ScalaUDF, SubqueryExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.ExprCode
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, AttributeSet, ExprId, Expression, ExpressionSet, NamedExpression, ScalaUDF, SubqueryExpression}
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation, SubqueryAlias}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.ExplainCommand
 import org.apache.spark.sql.hive.HiveExternalCatalog
@@ -60,6 +61,10 @@ object CarbonToSparkAdapter {
     AttributeReference(attrName, attr.dataType)(
       exprId = attr.exprId,
       qualifier = Some(newSubsume))
+  }
+
+  def getOutput(subQueryAlias: SubqueryAlias): Seq[Attribute] = {
+    subQueryAlias.output
   }
 
   def createScalaUDF(s: ScalaUDF, reference: AttributeReference): ScalaUDF = {
