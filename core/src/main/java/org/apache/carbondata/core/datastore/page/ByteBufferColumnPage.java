@@ -79,14 +79,13 @@ public class ByteBufferColumnPage extends ColumnPage {
    */
   @Override
   public void putBytes(int rowId, byte[] bytes) {
-    ensureByteArrayMaxLength(rowId, bytes);
-
     // since it is variable length, we need to prepare each
     // element as LV result byte array (first two/four bytes are the length of the array)
     int requiredLength;
     DataType dataType = getDataType();
     if (dataType == DataTypes.STRING) {
       requiredLength = bytes.length + CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
+      ensureMaxLengthForString(requiredLength);
     } else if (dataType == DataTypes.VARCHAR || dataType == DataTypes.BINARY) {
       requiredLength = bytes.length + CarbonCommonConstants.INT_SIZE_IN_BYTE;
     } else {
@@ -127,11 +126,10 @@ public class ByteBufferColumnPage extends ColumnPage {
   }
 
   // since we later store a column page in a byte array, so its maximum size is 2GB
-  private void ensureByteArrayMaxLength(int rowId, byte[] bytes) {
-    // rowId * 4 represents the length of L in LV
-    if (bytes.length > (Integer.MAX_VALUE - totalLength - rowId * 4)) {
-      throw new RuntimeException("CarbonData only support maximum 2GB size for one column page,"
-          + " exceed this limit at rowId " + rowId);
+  private void ensureMaxLengthForString(int requiredLength) {
+    if (requiredLength > Short.MAX_VALUE) {
+      throw new RuntimeException("input data length " + requiredLength +
+          " bytes too long, maximum length supported is " + Short.MAX_VALUE + " bytes");
     }
   }
 
