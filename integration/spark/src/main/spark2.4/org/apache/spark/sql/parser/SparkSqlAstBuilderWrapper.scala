@@ -15,30 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql
+package org.apache.spark.sql.parser
 
-import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression}
-import org.apache.spark.sql.execution.FileSourceScanExec
-import org.apache.spark.sql.execution.datasources.HadoopFsRelation
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
+import org.apache.spark.sql.execution.SparkSqlAstBuilder
+import org.apache.spark.sql.internal.SQLConf
 
-object MixedFormatHandlerUtil {
+/**
+ * use this wrapper to adapter multiple spark versions
+ */
+class SparkSqlAstBuilderWrapper(conf: SQLConf)
+  extends SparkSqlAstBuilder(conf) {
 
-  def getScanForSegments(
-      @transient relation: HadoopFsRelation,
-      output: Seq[Attribute],
-      outputSchema: StructType,
-      partitionFilters: Seq[Expression],
-      dataFilters: Seq[Expression],
-      tableIdentifier: Option[TableIdentifier]
-  ): FileSourceScanExec = {
-    FileSourceScanExec(
-      relation,
-      output,
-      outputSchema,
-      partitionFilters,
-      dataFilters,
-      tableIdentifier)
-  }
+  def visitPropertyKeyValues(ctx: TablePropertyListContext): Map[String, String] = ???
 }

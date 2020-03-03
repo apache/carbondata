@@ -165,7 +165,7 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
                       // creation time
                       sparkSession.sql(
                         s"""ALTER TABLE ${carbonLoadModel.getDatabaseName}.$indexTableName SET
-                           |SERDEPROPERTIES ('isSITableEnabled' = 'true')""".stripMargin)
+                           |SERDEPROPERTIES ('isSITableEnabled' = 'true')""".stripMargin).collect()
                     }
                   } catch {
                     case ex: Exception =>

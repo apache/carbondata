@@ -560,7 +560,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
         sparkSession.sessionState.catalog.listTables(database)
           .map(table => CarbonTable.buildUniqueName(database, table.table))
     }
-    val cachedTableList = if (EnvHelper.isCloud(sparkSession)) {
+    val cachedTableList = if (EnvHelper.isLegacy(sparkSession)) {
       // for multi-tenant scenario, it need to check the table unique name
       // ensure the current user own this table
       CarbonMetadata.getInstance().getAllTables.asScala.filter { carbonTable =>

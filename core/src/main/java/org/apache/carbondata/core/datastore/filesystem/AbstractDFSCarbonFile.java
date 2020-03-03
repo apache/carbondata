@@ -153,7 +153,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     try {
       return fileSystem.getFileStatus(path).getLen();
     } catch (IOException e) {
-      throw new CarbonFileException("Unable to get file status: ", e);
+      throw new CarbonFileException("Unable to get file status for " + path.toString(), e);
     }
   }
 

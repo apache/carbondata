@@ -34,7 +34,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 class CarbonExtensionSpark2SqlParser extends CarbonSpark2SqlParser {
 
   override protected lazy val extendedSparkSyntax: Parser[LogicalPlan] =
-    loadDataNew | alterTableAddColumns
+    loadDataNew | alterTableAddColumns | explainPlan
 
   /**
    * alter table add columns with TBLPROPERTIES

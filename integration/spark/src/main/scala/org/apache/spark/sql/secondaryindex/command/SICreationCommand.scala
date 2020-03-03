@@ -309,6 +309,7 @@ class ErrorMessage(message: String) extends Exception(message) {
                  |isSITableEnabled "false", parentTableId
                  |"${carbonTable.getCarbonTableIdentifier.getTableId}",
                  |parentTableName "$tableName"$carbonSchemaString) """.stripMargin)
+              .collect()
           } catch {
             case e: IOException =>
               if (FileFactory.isFileExist(tablePath)) {
@@ -323,6 +324,7 @@ class ErrorMessage(message: String) extends Exception(message) {
                 'parentTableName'='$tableName', 'isIndexTable' = 'true', 'isSITableEnabled' =
                 'false', 'parentTablePath' = '${carbonTable.getTablePath}',
                 'parentTableId' = '${carbonTable.getCarbonTableIdentifier.getTableId}')""")
+            .collect()
         }
 
         CarbonInternalScalaUtil.addIndexTableInfo(carbonTable, indexTableName, indexTableCols)
@@ -331,7 +333,7 @@ class ErrorMessage(message: String) extends Exception(message) {
 
         sparkSession.sql(
           s"""ALTER TABLE $databaseName.$tableName SET SERDEPROPERTIES ('indexInfo' =
-              |'$indexInfo')""".stripMargin)
+              |'$indexInfo')""".stripMargin).collect()
 
       val tableIdent = TableIdentifier(tableName, Some(databaseName))
 
@@ -356,7 +358,7 @@ class ErrorMessage(message: String) extends Exception(message) {
         // enable the SI table
         sparkSession.sql(
           s"""ALTER TABLE $databaseName.$indexTableName SET
-             |SERDEPROPERTIES ('isSITableEnabled' = 'true')""".stripMargin)
+             |SERDEPROPERTIES ('isSITableEnabled' = 'true')""".stripMargin).collect()
       }
       val createTablePostExecutionEvent: CreateTablePostExecutionEvent =
         CreateTablePostExecutionEvent(sparkSession, tableIdentifier)

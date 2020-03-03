@@ -86,6 +86,7 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
         fileSystem.rename(path, new Path(changeToName));
         return true;
       } else {
+        LOGGER.warn("Unrecognized file system for path: " + path);
         return false;
       }
     } catch (IOException e) {

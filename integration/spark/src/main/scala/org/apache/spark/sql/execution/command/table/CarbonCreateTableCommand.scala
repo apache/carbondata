@@ -142,7 +142,7 @@ case class CarbonCreateTableCommand(
                  |  isVisible "$isVisible"
                  |  $carbonSchemaString)
                  |  $partitionString
-             """.stripMargin)
+             """.stripMargin).collect()
           }
         } catch {
           case e: AnalysisException =>

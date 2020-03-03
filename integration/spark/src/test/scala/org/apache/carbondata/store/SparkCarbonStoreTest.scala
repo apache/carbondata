@@ -39,7 +39,7 @@ class SparkCarbonStoreTest extends QueryTest with BeforeAndAfterAll {
         "STORED AS carbondata")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE t1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
 
-    store = new SparkCarbonStore("test", storeLocation)
+    store = new SparkCarbonStore(sqlContext.sparkSession)
   }
 
   test("test CarbonStore.get, compare projection result") {

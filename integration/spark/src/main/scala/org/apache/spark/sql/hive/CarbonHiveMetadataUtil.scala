@@ -107,7 +107,7 @@ object CarbonHiveMetadataUtil {
     CarbonInternalScalaUtil.removeIndexTableInfo(parentCarbonTable, tableName)
     sparkSession.sql(
       s"""ALTER TABLE $dbName.$parentTableName SET SERDEPROPERTIES ('indexInfo'='$newIndexInfo')
-        """.stripMargin)
+        """.stripMargin).collect()
     FileInternalUtil.touchSchemaFileTimestamp(dbName, parentTableName,
       parentCarbonTable.getTablePath, System.currentTimeMillis())
     FileInternalUtil.touchStoreTimeStamp()

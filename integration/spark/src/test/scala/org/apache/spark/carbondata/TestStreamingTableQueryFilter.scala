@@ -240,6 +240,9 @@ class TestStreamingTableQueryFilter extends QueryTest with BeforeAndAfterAll {
       Thread.sleep(continueSeconds * 1000)
       thread2.interrupt()
       thread1.interrupt()
+    } catch {
+      case ex =>
+        LOGGER.error("finished to ingest data", ex)
     } finally {
       if (null != server) {
         server.close()

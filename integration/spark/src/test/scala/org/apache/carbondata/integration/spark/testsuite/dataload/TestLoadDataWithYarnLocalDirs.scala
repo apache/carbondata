@@ -49,7 +49,7 @@ class TestLoadDataWithYarnLocalDirs extends QueryTest with BeforeAndAfterAll {
 
   private def initYarnLocalDir = {
     //set all the possible env for yarn local dirs in case of various deploy environment
-    val sparkConf = SparkContext.getOrCreate().getConf
+    val sparkConf = sqlContext.sparkContext.getConf
     sparkConf.set("SPARK_EXECUTOR_DIRS", getMockedYarnLocalDirs)
     sparkConf.set("SPARK_LOCAL_DIRS", getMockedYarnLocalDirs)
     sparkConf.set("MESOS_DIRECTORY", getMockedYarnLocalDirs)

@@ -18,7 +18,9 @@
 package org.apache.carbondata.hive.test.server;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.ServerSocket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -30,7 +32,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
-import org.apache.hadoop.hive.metastore.utils.MetaStoreUtils;
 import org.apache.hadoop.hive.ql.metadata.Hive;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -59,13 +60,20 @@ public class HiveEmbeddedServer2 {
     if (hiveServer == null) {
       config = configure();
       hiveServer = new HiveServer2();
-      port = MetaStoreUtils.findFreePort();
+      port = findFreePort();
       config.setIntVar(ConfVars.HIVE_SERVER2_THRIFT_PORT, port);
       config.set(FileInputFormat.INPUT_DIR_RECURSIVE, "true");
       hiveServer.init(config);
       hiveServer.start();
       waitForStartup();
     }
+  }
+
+  public static int findFreePort() throws IOException {
+    ServerSocket socket = new ServerSocket(0);
+    int port = socket.getLocalPort();
+    socket.close();
+    return port;
   }
 
   public int getFreePort() {
@@ -139,6 +147,7 @@ public class HiveEmbeddedServer2 {
     conf.set("hive.added.archives.path", "");
     conf.set("fs.default.name", "file:///");
     conf.set(HiveConf.ConfVars.SUBMITLOCALTASKVIACHILD.varname, "false");
+    conf.set("hive.mapred.supports.subdirectories", "true");
 
     // clear mapred.job.tracker - Hadoop defaults to 'local' if not defined. Hive however expects
     // this to be set to 'local' - if it's not, it does a remote execution (i.e. no child JVM)

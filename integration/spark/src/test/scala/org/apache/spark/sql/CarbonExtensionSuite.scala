@@ -2,10 +2,10 @@ package org.apache.spark.sql
 
 import org.apache.spark.sql.execution.strategy.DDLStrategy
 import org.apache.spark.sql.parser.CarbonExtensionSqlParser
-import org.apache.spark.sql.test.util.PlanTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-class CarbonExtensionSuite extends PlanTest with BeforeAndAfterAll {
+class CarbonExtensionSuite extends QueryTest with BeforeAndAfterAll {
 
   var session: SparkSession = null
 
@@ -15,12 +15,7 @@ class CarbonExtensionSuite extends PlanTest with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    session = SparkSession
-      .builder()
-      .appName("parserApp")
-      .master("local")
-      .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
-      .getOrCreate()
+    session = sqlContext.sparkSession
   }
 
   test("test parser injection") {
