@@ -163,25 +163,21 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
         null
       }
     val convertedStaticPartition = getConvertedStaticPartitionMap(partitionColumnSchema)
-    val (reArrangedIndex, selectedColumnSchema) = getReArrangedIndexAndSelectedSchema(tableInfo,
-      partitionColumnSchema,
-      carbonLoadModel)
-    val newLogicalPlan = getReArrangedLogicalPlan(
-      reArrangedIndex,
-      selectedColumnSchema,
+    val indexToColumnMapping = getReArrangedIndexAndSelectedSchema(tableInfo, carbonLoadModel)
+    val newLogicalPlan = getReArrangedLogicalPlan(indexToColumnMapping,
       convertedStaticPartition)
     scanResultRdd = sparkSession.sessionState.executePlan(newLogicalPlan).toRdd
     if (logicalPartitionRelation != null) {
-      if (selectedColumnSchema.length != logicalPartitionRelation.output.length) {
+      if (indexToColumnMapping.length != logicalPartitionRelation.output.length) {
         throw new RuntimeException(" schema length doesn't match partition length")
       }
-      val isNotReArranged = selectedColumnSchema.zipWithIndex.exists {
-        case (cs, i) => !cs.getColumnName.equals(logicalPartitionRelation.output(i).name)
+      val isNotReArranged = indexToColumnMapping.exists {
+        case (index, cs) => !cs.getColumnName.equals(logicalPartitionRelation.output(index).name)
       }
       if (isNotReArranged) {
         // Re-arrange the catalog table schema and output for partition relation
         logicalPartitionRelation =
-          getReArrangedSchemaLogicalRelation(reArrangedIndex, logicalPartitionRelation)
+          getReArrangedSchemaLogicalRelation(indexToColumnMapping, logicalPartitionRelation)
       }
     }
     // Delete stale segment folders that are not in table status but are physically present in
@@ -298,8 +294,7 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
   }
 
   def getReArrangedLogicalPlan(
-      reArrangedIndex: Seq[Int],
-      selectedColumnSchema: Seq[ColumnSchema],
+      indexToColumnMapping: Seq[(Int, ColumnSchema)],
       convertedStaticPartition: mutable.Map[String, AnyRef]): LogicalPlan = {
     var processedProject: Boolean = false
     // check first node is the projection or not
@@ -329,66 +324,40 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
           val partitionList = oldProjectionList.takeRight(dynamicPartition.size)
           val partitionSchema = table.getPartitionInfo.getColumnSchemaList.asScala
           for (partitionCol <- partitionSchema) {
-            if (map.get(partitionCol.getColumnName).isDefined) {
+            if (map.contains(partitionCol.getColumnName)) {
               tempList = tempList :+ partitionList(map(partitionCol.getColumnName))
             }
           }
           oldProjectionList = tempList
         }
-        if (reArrangedIndex.size != oldProjectionList.size) {
-          // for non-partition table columns must match
-          if (partition.isEmpty) {
-            throw new AnalysisException(
-              s"Cannot insert into table $tableName because the number of columns are " +
-              s"different: " +
-              s"need ${ reArrangedIndex.size } columns, " +
-              s"but query has ${ oldProjectionList.size } columns.")
-          } else {
-            if (reArrangedIndex.size - oldProjectionList.size !=
-                convertedStaticPartition.size) {
-              throw new AnalysisException(
-                s"Cannot insert into table $tableName because the number of columns are " +
-                s"different: need ${ reArrangedIndex.size } columns, " +
-                s"but query has ${ oldProjectionList.size } columns.")
+        val newProjectionList = indexToColumnMapping.map {
+          case (index, columnSchema) =>
+            // column schema is already has sortColumns-dimensions-measures. Collect the ordinal &
+            // re-arrange the projection in the same order
+            if (partition.nonEmpty &&
+                convertedStaticPartition.contains(columnSchema.getColumnName
+                  .toLowerCase())) {
+              // If column schema present in partitionSchema means it is a static partition,
+              // then add a value literal expression in the project.
+              val value = convertedStaticPartition(columnSchema.getColumnName
+                .toLowerCase())
+              CarbonToSparkAdapter.createAliasRef(
+                new Literal(value,
+                  SparkDataTypeConverterImpl.convertCarbonToSparkDataType(
+                    columnSchema.getDataType)),
+                value.toString,
+                NamedExpression.newExprId).asInstanceOf[NamedExpression]
             } else {
-              // TODO: For partition case, remaining projections need to validate ?
+              // If column schema NOT present in partition column,
+              // get projection column mapping its ordinal.
+              if (partition.contains(columnSchema.getColumnName.toLowerCase())) {
+                // static partition + dynamic partition case,
+                // here dynamic partition ordinal will be more than projection size
+                oldProjectionList(index - convertedStaticPartition.size)
+              } else {
+                oldProjectionList(index)
+              }
             }
-          }
-        }
-        var newProjectionList: Seq[NamedExpression] = Seq.empty
-        var i = 0
-        while (i < reArrangedIndex.size) {
-          // column schema is already has sortColumns-dimensions-measures. Collect the ordinal &
-          // re-arrange the projection in the same order
-          if (partition.nonEmpty &&
-              convertedStaticPartition.contains(selectedColumnSchema(i).getColumnName
-                .toLowerCase())) {
-            // If column schema present in partitionSchema means it is a static partition,
-            // then add a value literal expression in the project.
-            val value = convertedStaticPartition(selectedColumnSchema(i).getColumnName
-              .toLowerCase())
-            newProjectionList = newProjectionList :+
-                                CarbonToSparkAdapter.createAliasRef(
-                                  new Literal(value,
-                                    SparkDataTypeConverterImpl.convertCarbonToSparkDataType(
-                                      selectedColumnSchema(i).getDataType)),
-                                  value.toString,
-                                  NamedExpression.newExprId).asInstanceOf[NamedExpression]
-          } else {
-            // If column schema NOT present in partition column,
-            // get projection column mapping its ordinal.
-            if (partition.contains(selectedColumnSchema(i).getColumnName.toLowerCase())) {
-              // static partition + dynamic partition case,
-              // here dynamic partition ordinal will be more than projection size
-              newProjectionList = newProjectionList :+
-                                  oldProjectionList(
-                                    reArrangedIndex(i) - convertedStaticPartition.size)
-            } else {
-              newProjectionList = newProjectionList :+
-                                  oldProjectionList(reArrangedIndex(i))
-            }
-          }
-          i = i + 1
         }
         processedProject = true
         Project(newProjectionList, p.child)
@@ -417,7 +386,7 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
     convertedStaticPartition
   }
 
-  def getReArrangedSchemaLogicalRelation(reArrangedIndex: Seq[Int],
+  def getReArrangedSchemaLogicalRelation(reArrangedIndex: Seq[(Int, ColumnSchema)],
       logicalRelation: LogicalRelation): LogicalRelation = {
     // rearrange the schema in catalog table and output attributes of logical relation
     if (reArrangedIndex.size != logicalRelation.schema.size) {
@@ -433,9 +402,9 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
     var i = 0
     for (index <- reArrangedIndex) {
       // rearranged schema
-      reArrangedFields(i) = fields(index)
+      reArrangedFields(i) = fields(index._1)
       // rearranged output attributes of logical relation
-      reArrangedAttributes(i) = output(index)
+      reArrangedAttributes(i) = output(index._1)
       i = i + 1
     }
     // update the new schema and output attributes
@@ -484,61 +453,26 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
 
   def getReArrangedIndexAndSelectedSchema(
       tableInfo: TableInfo,
-      partitionColumnSchema: mutable.Buffer[ColumnSchema],
-      carbonLoadModel: CarbonLoadModel): (Seq[Int], Seq[ColumnSchema]) = {
-    var reArrangedIndex: Seq[Int] = Seq()
-    var selectedColumnSchema: Seq[ColumnSchema] = Seq()
-    var partitionIndex: Seq[Int] = Seq()
+      carbonLoadModel: CarbonLoadModel): Seq[(Int, ColumnSchema)] = {
     val properties = tableInfo.getFactTable.getTableProperties.asScala
     val spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX)
     // internal order ColumnSchema (non-flat structure)
     val columnSchema = (table.getVisibleDimensions.asScala ++
-                        table.getVisibleMeasures.asScala).map(_.getColumnSchema)
-    val partitionColumnNames = if (partitionColumnSchema != null) {
-      partitionColumnSchema.map(x => x.getColumnName).toSet
-    } else {
-      null
-    }
-    var createOrderColumns = table.getCreateOrderColumn.asScala
+                        table.getVisibleMeasures.asScala ++
+                        table.getPartitionColumns.asScala).map(_.getColumnSchema)
+    val createOrderColumns = table.getCreateOrderColumn.asScala ++ table.getPartitionColumns.asScala
     val createOrderMap = mutable.Map[String, Int]()
-    if (partitionColumnNames != null && isAlteredSchema(tableInfo.getFactTable)) {
-      // For alter table drop/add column scenarios, partition column may not be in the end.
-      // Need to keep it in the end.
-      createOrderColumns = createOrderColumns.filterNot(col =>
-        partitionColumnNames.contains(col.getColumnSchema.getColumnName)) ++
-                           createOrderColumns.filter(col =>
-                             partitionColumnNames.contains(col.getColumnSchema.getColumnName))
-    }
     createOrderColumns.zipWithIndex.map {
       case (col, index) => createOrderMap.put(col.getColName, index)
     }
-    columnSchema.foreach {
+    columnSchema.map {
       col =>
         if (spatialProperty.isDefined &&
             col.getColumnName.equalsIgnoreCase(spatialProperty.get.trim)) {
           carbonLoadModel.setNonSchemaColumnsPresent(true)
         }
-        var skipPartitionColumn = false
-        if (partitionColumnNames != null &&
-            partitionColumnNames.contains(col.getColumnName)) {
-          partitionIndex = partitionIndex :+ createOrderMap(col.getColumnName)
-          skipPartitionColumn = true
-        } else {
-          reArrangedIndex = reArrangedIndex :+ createOrderMap(col.getColumnName)
-        }
-        if (!skipPartitionColumn) {
-          selectedColumnSchema = selectedColumnSchema :+ col
-        }
+        (createOrderMap(col.getColumnName), col)
     }
-    if (partitionColumnSchema != null) {
-      // keep partition columns in the end
-      selectedColumnSchema = selectedColumnSchema ++ partitionColumnSchema
-    }
-    if (partitionIndex.nonEmpty) {
-      // keep partition columns in the end and in the original create order
-      reArrangedIndex = reArrangedIndex ++ partitionIndex.sortBy(x => x)
-    }
-    (reArrangedIndex, selectedColumnSchema)
   }
 
 }

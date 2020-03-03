@@ -97,7 +97,7 @@ object SparkTypeConverter {
         case "array" => s"array<${ getArrayChildren(table, childDim.getColName) }>"
         case "struct" => s"struct<${ getStructChildren(table, childDim.getColName) }>"
         case "map" => s"map<${ getMapChildren(table, childDim.getColName) }>"
-        case dType => addDecimalScaleAndPrecision(childDim, dType)
+        case dType => addDecimalScaleAndPrecision(childDim.getColumnSchema, dType)
       }
     })
   }
@@ -120,8 +120,8 @@ object SparkTypeConverter {
         case "map" => s"${
           childDim.getColName.substring(dimName.length + 1)
         }:map<${ getMapChildren(table, childDim.getColName) }>"
-        case dType => s"${ childDim.getColName
-          .substring(dimName.length() + 1) }:${ addDecimalScaleAndPrecision(childDim, dType) }"
+        case dType => s"${ childDim.getColName.substring(dimName.length() + 1)
+        }:${ addDecimalScaleAndPrecision(childDim.getColumnSchema, dType) }"
       }
     }).mkString(",")
   }
@@ -136,11 +136,11 @@ object SparkTypeConverter {
     }.mkString(",")
   }
 
-  def addDecimalScaleAndPrecision(dimension: CarbonColumn, dataType: String): String = {
+  def addDecimalScaleAndPrecision(dimval: ColumnSchema, dataType: String): String = {
     var dType = dataType
-    if (CarbonDataTypes.isDecimal(dimension.getDataType)) {
+    if (CarbonDataTypes.isDecimal(dimval.getDataType)) {
       dType +=
-      "(" + dimension.getColumnSchema.getPrecision + "," + dimension.getColumnSchema.getScale + ")"
+      "(" + dimval.getPrecision + "," + dimval.getScale + ")"
     }
     dType
   }
@@ -160,7 +160,7 @@ object SparkTypeConverter {
       case dType => s"${
         childDim.getColName
           .substring(dimName.length + 1)
-      }:${ addDecimalScaleAndPrecision(childDim, dType) }"
+      }:${ addDecimalScaleAndPrecision(childDim.getColumnSchema, dType) }"
     }
   }
 

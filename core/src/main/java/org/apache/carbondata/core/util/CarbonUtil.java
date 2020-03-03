@@ -88,6 +88,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -1086,6 +1087,17 @@ public final class CarbonUtil {
   public static CarbonDimension findDimension(List<CarbonDimension> dimensions, String carbonDim) {
     CarbonDimension findDim = null;
     for (CarbonDimension dimension : dimensions) {
+      if (dimension.getColName().equalsIgnoreCase(carbonDim)) {
+        findDim = dimension;
+        break;
+      }
+    }
+    return findDim;
+  }
+
+  public static CarbonColumn findColumn(List<CarbonColumn> dimensions, String carbonDim) {
+    CarbonColumn findDim = null;
+    for (CarbonColumn dimension : dimensions) {
       if (dimension.getColName().equalsIgnoreCase(carbonDim)) {
         findDim = dimension;
         break;

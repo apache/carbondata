@@ -44,6 +44,8 @@ public class ColumnExpression extends LeafExpression {
 
   private CarbonColumn carbonColumn;
 
+  private boolean isPartition;
+
   public ColumnExpression(String columnName, DataType dataType) {
     this.columnName = columnName;
     this.dataType = dataType;
@@ -140,4 +142,11 @@ public class ColumnExpression extends LeafExpression {
   public void findAndSetChild(Expression oldExpr, Expression newExpr) {
   }
 
+  public boolean isPartition() {
+    return isPartition;
+  }
+
+  public void setPartition(boolean partition) {
+    isPartition = partition;
+  }
 }

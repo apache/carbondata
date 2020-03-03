@@ -107,6 +107,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
         }
       }
       fillMeasureData(scannedResult, row);
+      fillPartitionData(scannedResult.getBlockletId(), row);
       listBasedResult.add(row);
       rowCounter++;
     }

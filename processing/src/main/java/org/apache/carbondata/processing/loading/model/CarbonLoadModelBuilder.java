@@ -283,6 +283,10 @@ public class CarbonLoadModelBuilder {
           ignoreColumns.add(partition.getKey());
         }
       }
+      //      ignoreColumns.addAll(
+      //          carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getPartitionInfo()
+      //              .getColumnSchemaList().stream().map(ColumnSchema::getColumnName)
+      //              .collect(Collectors.toList()));
     }
 
     carbonLoadModel.setCsvHeaderColumns(

@@ -75,7 +75,7 @@ object DataLoadProcessorStepOnSpark {
       rowCounter: LongAccumulator): Iterator[CarbonRow] = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
-    val rowParser = new RowParserImpl(conf.getDataFields, conf)
+    val rowParser = new RowParserImpl(conf.getInputFields, conf)
     val isRawDataRequired = CarbonDataProcessorUtil.isRawDataRequired(conf)
     TaskContext.get().addTaskFailureListener { (t: TaskContext, e: Throwable) =>
       wrapException(e, model)
@@ -105,7 +105,7 @@ object DataLoadProcessorStepOnSpark {
       rowCounter: LongAccumulator): Iterator[CarbonRow] = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
-    val rowParser = new RowParserImpl(conf.getDataFields, conf)
+    val rowParser = new RowParserImpl(conf.getInputFields, conf)
     val isRawDataRequired = CarbonDataProcessorUtil.isRawDataRequired(conf)
     TaskContext.get().addTaskFailureListener { (t: TaskContext, e: Throwable) =>
       wrapException(e, model)
@@ -136,7 +136,7 @@ object DataLoadProcessorStepOnSpark {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
     val rowParser: RowParser = if (rangeField.isEmpty) {
-      new RowParserImpl(conf.getDataFields, conf)
+      new RowParserImpl(conf.getInputFields, conf)
     } else {
       new RangeColumnParserImpl(rangeField.get, conf)
     }
@@ -174,13 +174,13 @@ object DataLoadProcessorStepOnSpark {
       keepActualData: Boolean = false): Iterator[CarbonRow] = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
-    val rowParser = new RowParserImpl(conf.getDataFields, conf)
+    val rowParser = new RowParserImpl(conf.getInputFields, conf)
     val isRawDataRequired = CarbonDataProcessorUtil.isRawDataRequired(conf)
     val badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(conf)
     if (keepActualData) {
       conf.getDataFields.foreach(_.setUseActualData(keepActualData))
     }
-    val rowConverter = new RowConverterImpl(conf.getDataFields, conf, badRecordLogger)
+    val rowConverter = new RowConverterImpl(conf.getInputFields, conf, badRecordLogger)
     rowConverter.initialize()
 
     TaskContext.get().addTaskCompletionListener { context =>

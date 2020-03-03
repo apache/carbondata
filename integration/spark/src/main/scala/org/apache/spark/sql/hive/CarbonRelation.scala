@@ -31,7 +31,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension, ColumnSchema}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -92,18 +92,14 @@ case class CarbonRelation(
   }
 
   override val output = {
-    val columns = carbonTable.getCreateOrderColumn()
-      .asScala
-    val partitionColumnSchemas = if (carbonTable.getPartitionInfo() != null) {
+    val columns = carbonTable.getCreateOrderColumn.asScala.map(_.getColumnSchema)
+    val partitionColumns = if (carbonTable.getPartitionInfo() != null) {
       carbonTable.getPartitionInfo.getColumnSchemaList.asScala
     } else {
       Nil
     }
-    val otherColumns = columns.filterNot(a => partitionColumnSchemas.contains(a.getColumnSchema))
-    val partitionColumns = columns.filter(a => partitionColumnSchemas.contains(a.getColumnSchema))
-
     // get column Metadata
-    def getColumnMetaData(column: CarbonColumn) = {
+    def getColumnMetaData(column: ColumnSchema) = {
       val columnMetaData =
         if (null != column.getColumnProperties && !column.getColumnProperties.isEmpty &&
             null != column.getColumnProperties.get(CarbonCommonConstants.COLUMN_COMMENT)) {
@@ -116,32 +112,24 @@ case class CarbonRelation(
     }
 
     // convert each column to Attribute
-    (otherColumns ++= partitionColumns).filter(!_.isInvisible).map { column: CarbonColumn =>
-      val dataTypeStatement = if (column.isDimension()) {
-        column.getDataType.getName.toLowerCase match {
-          case "array" =>
-            s"array<${ SparkTypeConverter.getArrayChildren(carbonTable, column.getColName) }>"
-          case "struct" =>
-            s"struct<${ SparkTypeConverter.getStructChildren(carbonTable, column.getColName) }>"
-          case "map" =>
-            s"map<${ SparkTypeConverter.getMapChildren(carbonTable, column.getColName) }>"
-          case dType =>
-            SparkTypeConverter.addDecimalScaleAndPrecision(column, dType)
-        }
-      } else {
-        column.getDataType.getName.toLowerCase match {
-          case "decimal" => "decimal(" + column.getColumnSchema.getPrecision + "," + column
-            .getColumnSchema.getScale + ")"
-          case others => others
-        }
+    (columns ++= partitionColumns).filter(!_.isInvisible).map { column: ColumnSchema =>
+      val output: DataType = column.getDataType.getName.toLowerCase match {
+        case "array" =>
+          CarbonMetastoreTypes.toDataType(
+            s"array<${ SparkTypeConverter.getArrayChildren(carbonTable, column.getColumnName) }>")
+        case "struct" =>
+          CarbonMetastoreTypes.toDataType(
+            s"struct<${ SparkTypeConverter.getStructChildren(carbonTable, column.getColumnName) }>")
+        case "map" =>
+          CarbonMetastoreTypes.toDataType(
+            s"map<${ SparkTypeConverter.getMapChildren(carbonTable, column.getColumnName) }>")
+        case dType =>
+          val dataType = SparkTypeConverter.addDecimalScaleAndPrecision(column, dType)
+          CarbonMetastoreTypes.toDataType(dataType)
       }
       CarbonToSparkAdapter.createAttributeReference(
-        column.getColName,
-        CarbonMetastoreTypes.toDataType(dataTypeStatement),
-        nullable = true,
-        getColumnMetaData(column),
-        NamedExpression.newExprId,
-        qualifier = Option(tableName + "." + column.getColName))
+        column.getColumnName, output, nullable = true, getColumnMetaData(column),
+        NamedExpression.newExprId, qualifier = Option(tableName + "." + column.getColumnName))
     }
   }
 

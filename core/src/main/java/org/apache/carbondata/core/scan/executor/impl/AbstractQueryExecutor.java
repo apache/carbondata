@@ -464,6 +464,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             queryModel.getTable().getTableInfo().isTransactionalTable());
     blockExecutionInfo.setProjectionMeasures(
         projectionMeasures.toArray(new ProjectionMeasure[projectionMeasures.size()]));
+    blockExecutionInfo.setProjectionPartitionColumns(queryModel.getPartitionProjectionColumns());
     blockExecutionInfo.setDataBlock(blockIndex);
     // setting whether raw record query or not
     blockExecutionInfo.setRawRecordDetailQuery(queryModel.isForcedDetailRawQuery());

@@ -29,6 +29,7 @@ import org.apache.carbondata.core.scan.collector.ScannedResultCollector;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.infos.DimensionInfo;
 import org.apache.carbondata.core.scan.executor.infos.MeasureInfo;
+import org.apache.carbondata.core.scan.model.ProjectionColumn;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
@@ -61,8 +62,11 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
    */
   QueryStatisticsModel queryStatisticsModel;
 
+  protected List<ProjectionColumn> projectionPartitionColumns;
+
   AbstractScannedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     this.executionInfo = blockExecutionInfos;
+    this.projectionPartitionColumns = executionInfo.getProjectionPartitionColumns();
     measureInfo = blockExecutionInfos.getMeasureInfo();
     dimensionInfo = blockExecutionInfos.getDimensionInfo();
     this.queryStatisticsModel = blockExecutionInfos.getQueryStatisticsModel();
@@ -161,6 +165,15 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
       }
     }
     return null;
+  }
+
+  protected void fillPartitionData(String blockId, Object[] row) {
+    for (ProjectionColumn partitionColumn : projectionPartitionColumns) {
+      int partitionIndex = blockId.indexOf(partitionColumn.getColumnName() + "=");
+      row[partitionColumn.getOrdinal()] = DataTypeUtil.getDataBasedOnDataType(blockId
+          .substring(partitionIndex + partitionColumn.getColumnName().length() + 1,
+              blockId.indexOf("/", partitionIndex)), partitionColumn.getDataType());
+    }
   }
 
   @Override

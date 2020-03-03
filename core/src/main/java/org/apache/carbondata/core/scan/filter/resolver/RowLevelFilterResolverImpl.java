@@ -59,6 +59,9 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
       ConditionalExpression conditionalExpression = (ConditionalExpression) exp;
       List<ColumnExpression> columnList = conditionalExpression.getColumnList();
       for (ColumnExpression columnExpression : columnList) {
+        if (columnExpression.isPartition()) {
+          continue;
+        }
         if (columnExpression.isDimension()) {
           dimColumnEvaluatorInfo = new DimColumnResolvedFilterInfo();
           dimColumnEvaluatorInfo.setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());

@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.catalyst
 
+import java.util.UUID
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, LinkedHashSet, ListBuffer, Map}
@@ -36,7 +38,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.constants.SortScopeOptions.SortScope
 import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.schema.PartitionInfo
+import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.metadata.schema.partition.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, CustomIndex}
@@ -211,6 +214,11 @@ object CarbonParserUtil {
       isAlterFlow: Boolean = false,
       tableComment: Option[String] = None): TableModel = {
 
+    val partitionInfo: Option[PartitionInfo] = getPartitionInfo(partitionCols)
+    val partitionColumns = partitionInfo match {
+      case Some(partitionInfo) => partitionInfo.getColumnSchemaList.asScala.map(_.getColumnName)
+      case None => Seq()
+    }
     // Process spatial index property
     val indexFields = processSpatialIndexProperty(tableProperties, fields)
     val allFields = indexFields ++ fields
@@ -235,7 +243,7 @@ object CarbonParserUtil {
         } ")
     }
     val (dims, msrs, noDictionaryDims, sortKeyDims, varcharColumns) = extractDimAndMsrFields(
-      fields, indexFields, tableProperties)
+      fields, indexFields, tableProperties, partitionColumns)
 
     // column properties
     val colProps = extractColumnProperties(fields, tableProperties)
@@ -376,7 +384,7 @@ object CarbonParserUtil {
     }
     // long_string_columns columns cannot be in no_inverted_index columns
     var longStringColumns = varcharColumns.map(_.toUpperCase)
-    var noInvColIntersectLongStrCols = longStringColumns
+    val noInvColIntersectLongStrCols = longStringColumns
       .intersect(noInvertedIdxCols.map(_.toUpperCase))
     if (!noInvColIntersectLongStrCols.isEmpty) {
       throw new MalformedCarbonCommandException(
@@ -422,7 +430,7 @@ object CarbonParserUtil {
       Option(invertedIdxCols),
       Some(colProps),
       bucketFields: Option[BucketFields],
-      getPartitionInfo(partitionCols),
+      partitionInfo,
       tableComment)
   }
 
@@ -496,6 +504,9 @@ object CarbonParserUtil {
         columnSchema.setDataType(DataTypeConverterUtil.
           convertToCarbonType(partition_col.dataType.get))
         columnSchema.setColumnName(partition_col.partitionColumn)
+        columnSchema.setColumnUniqueId(UUID.randomUUID().toString)
+        columnSchema.setColumnReferenceId(columnSchema.getColumnUniqueId)
+        columnSchema.setEncodingList(new java.util.ArrayList[Encoding]())
         cols += columnSchema
       })
       Some(new PartitionInfo(cols.asJava, PartitionType.NATIVE_HIVE))
@@ -628,7 +639,7 @@ object CarbonParserUtil {
    * @return
    */
   protected def extractDimAndMsrFields(fields: Seq[Field], indexFields: Seq[Field],
-      tableProperties: Map[String, String]):
+      tableProperties: Map[String, String], partitionInfo: Seq[String]):
   (Seq[Field], Seq[Field], Seq[String], Seq[String], Seq[String]) = {
     var dimFields: LinkedHashSet[Field] = LinkedHashSet[Field]()
     var msrFields: Seq[Field] = Seq[Field]()
@@ -706,27 +717,39 @@ object CarbonParserUtil {
     // by default consider all String cols as dims and if any dictionary include isn't present then
     // add it to noDictionaryDims list. consider all dictionary excludes/include cols as dims
     allFields.foreach { field =>
-      if (field.dataType.get.toUpperCase.equals("TIMESTAMP")) {
-        noDictionaryDims :+= field.column
-        dimFields += field
-      } else if (isDetectAsDimensionDataType(field.dataType.get)) {
-        dimFields += field
-        // consider all String and binary cols as noDictionaryDims by default
-        if ((DataTypes.STRING.getName.equalsIgnoreCase(field.dataType.get)) ||
-            (DataTypes.BINARY.getName.equalsIgnoreCase(field.dataType.get))) {
+      if (!partitionInfo.contains(field.column)) {
+        if (field.dataType.get.toUpperCase.equals("TIMESTAMP")) {
           noDictionaryDims :+= field.column
+          dimFields += field
+        } else if (isDetectAsDimensionDataType(field.dataType.get)) {
+          dimFields += field
+          // consider all String and binary cols as noDictionaryDims by default
+          if ((DataTypes.STRING.getName.equalsIgnoreCase(field.dataType.get)) ||
+              (DataTypes.BINARY.getName.equalsIgnoreCase(field.dataType.get))) {
+            noDictionaryDims :+= field.column
+            dimFields += field
+          } else if (isDetectAsDimensionDataType(field.dataType.get)) {
+            dimFields += field
+            // consider all String and binary cols as noDicitonaryDims by default
+            if ((DataTypes.STRING.getName.equalsIgnoreCase(field.dataType.get)) ||
+                (DataTypes.BINARY.getName.equalsIgnoreCase(field.dataType.get))) {
+              noDictionaryDims :+= field.column
+            }
+          } else if (sortKeyDimsTmp.exists(x => x.equalsIgnoreCase(field.column)) &&
+                     isDefaultMeasure(field.dataType) &&
+                     (!field.dataType.get.equalsIgnoreCase("STRING"))) {
+            throw new MalformedCarbonCommandException(
+              s"Illegal argument in sort_column.Check if you " +
+              s"have included UNSUPPORTED DataType column{${
+                field.column
+              }}in sort_columns.")
+          } else if (sortKeyDimsTmp.exists(x => x.equalsIgnoreCase(field.column))) {
+            noDictionaryDims :+= field.column
+            dimFields += field
+          }
+        } else {
+          msrFields :+= field
         }
-      } else if (sortKeyDimsTmp.exists(x => x.equalsIgnoreCase(field.column)) &&
-                 isDefaultMeasure(field.dataType) &&
-                 (!field.dataType.get.equalsIgnoreCase("STRING"))) {
-        throw new MalformedCarbonCommandException(s"Illegal argument in sort_column.Check if you " +
-                                                  s"have included UNSUPPORTED DataType column{${
-                                                    field.column}}in sort_columns.")
-      } else if (sortKeyDimsTmp.exists(x => x.equalsIgnoreCase(field.column))) {
-        noDictionaryDims :+= field.column
-        dimFields += field
-      } else {
-        msrFields :+= field
       }
     }
 

@@ -32,6 +32,7 @@ public class ProjectionDimension extends ProjectionColumn {
 
   public ProjectionDimension(CarbonDimension dimension) {
     super(dimension.getColName());
+    this.dataType = dimension.getDataType();
     this.dimension = dimension;
   }
 
