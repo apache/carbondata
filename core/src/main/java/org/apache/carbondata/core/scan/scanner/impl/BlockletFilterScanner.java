@@ -202,9 +202,8 @@ public class BlockletFilterScanner extends BlockletFullScanner {
 
     BlockletScannedResult scannedResult =
         new FilterQueryScannedResult(blockExecutionInfo, queryStatisticsModel);
-    scannedResult.setBlockletId(
-        blockExecutionInfo.getBlockIdString(),
-            "" + rawBlockletColumnChunks.getDataBlock().blockletIndex());
+    scannedResult.setBlockletId(blockExecutionInfo.getBlockIdString(),
+        String.valueOf(rawBlockletColumnChunks.getDataBlock().blockletIndex()));
     // valid scanned blocklet
     QueryStatistic validScannedBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM);
@@ -452,9 +451,8 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     scannedResult.setPageFilteredRowCount(numberOfRows);
     scannedResult.setPageIdFiltered(pageFilteredPages);
     scannedResult.setLazyBlockletLoader(lazyBlocklet);
-    scannedResult.setBlockletId(
-        blockExecutionInfo.getBlockIdString(),
-            "" + rawBlockletColumnChunks.getDataBlock().blockletIndex());
+    scannedResult.setBlockletId(blockExecutionInfo.getBlockIdString(),
+        String.valueOf(rawBlockletColumnChunks.getDataBlock().blockletIndex()));
     // adding statistics for carbon scan time
     QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);

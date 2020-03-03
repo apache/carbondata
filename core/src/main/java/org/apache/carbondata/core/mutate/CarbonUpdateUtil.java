@@ -63,7 +63,7 @@ public class CarbonUpdateUtil {
    *
    */
   public static String getRequiredFieldFromTID(String Tid, int index) {
-    return Tid.split("/")[index];
+    return Tid.split(CarbonCommonConstants.FILE_SEPARATOR)[index];
   }
 
   /**

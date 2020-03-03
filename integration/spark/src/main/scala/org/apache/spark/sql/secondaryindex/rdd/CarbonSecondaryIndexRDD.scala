@@ -196,8 +196,10 @@ class CarbonSecondaryIndexRDD[K, V](
     val job: Job = new Job(jobConf)
 
     if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
-      job.getConfiguration
-        .set("current.segmentfile", segmentId + "_" + carbonLoadModel.getFactTimeStamp)
+      // set the configuration for current segment file("current.segment") as
+      // same as carbon output committer
+      job.getConfiguration.set(CarbonCommonConstants.CURRENT_SEGMENTFILE,
+        segmentId + CarbonCommonConstants.UNDERSCORE + carbonLoadModel.getFactTimeStamp)
     }
     val format =
       CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)

@@ -2102,6 +2102,11 @@ public final class CarbonCommonConstants {
   // As due to SnappyCompressor.MAX_BYTE_TO_COMPRESS is 1.75 GB
   public static final int TABLE_PAGE_SIZE_MAX_INMB = 1755;
 
+  /**
+   * Current segment file
+   */
+  public static final String CURRENT_SEGMENTFILE = "current.segmentfile";
+
   //////////////////////////////////////////////////////////////////////////////////////////
   // Unused constants and parameters start here
   //////////////////////////////////////////////////////////////////////////////////////////

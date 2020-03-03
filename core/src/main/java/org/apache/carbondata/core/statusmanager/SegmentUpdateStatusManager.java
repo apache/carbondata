@@ -176,10 +176,6 @@ public class SegmentUpdateStatusManager {
 
   }
 
-  public Map<String, SegmentUpdateDetails> getBlockAndDetailsMap() {
-    return blockAndDetailsMap;
-  }
-
   /**
    * Returns the LoadMetadata Details
    * @return

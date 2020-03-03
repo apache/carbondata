@@ -189,8 +189,9 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
     List<Segment> segmentToAccess =
         getFilteredSegment(job, validAndInProgressSegments, false, readCommittedScope);
-    String segmentFileName = job.getConfiguration().get("current.segmentfile");
+    String segmentFileName = job.getConfiguration().get(CarbonCommonConstants.CURRENT_SEGMENTFILE);
     if (segmentFileName != null) {
+      //per segment it has only one file("current.segment")
       segmentToAccess.get(0).setSegmentFileName(segmentFileName + CarbonTablePath.SEGMENT_EXT);
     }
     // process and resolve the expression

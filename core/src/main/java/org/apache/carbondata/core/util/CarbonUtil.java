@@ -2777,11 +2777,6 @@ public final class CarbonUtil {
   /**
    * Generate the blockid as per the block path
    *
-   * @param identifier
-   * @param filePath
-   * @param segmentId
-   * @param isStandardTable
-   * @param isPartitionTable
    * @return
    */
   public static String getBlockId(AbsoluteTableIdentifier identifier, String filePath,
@@ -2807,13 +2802,13 @@ public final class CarbonUtil {
         }
         if (isPartitionTable) {
           blockId =
-              partitionDir.replace("/", "#")
+              partitionDir.replace(CarbonCommonConstants.FILE_SEPARATOR, "#")
                   + CarbonCommonConstants.FILE_SEPARATOR + blockName;
         } else {
           // Replace / with # on partition director to support multi level partitioning. And access
           // them all as a single entity.
           blockId =
-              partitionDir.replace("/", "#")
+              partitionDir.replace(CarbonCommonConstants.FILE_SEPARATOR, "#")
                   + CarbonCommonConstants.FILE_SEPARATOR + segmentId
                   + CarbonCommonConstants.FILE_SEPARATOR + blockName;
         }

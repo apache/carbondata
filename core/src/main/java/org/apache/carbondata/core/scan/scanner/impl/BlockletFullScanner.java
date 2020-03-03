@@ -83,7 +83,7 @@ public class BlockletFullScanner implements BlockletScanner {
     totalPagesScanned.addCountStatistic(QueryStatisticsConstants.TOTAL_PAGE_SCANNED,
         totalPagesScanned.getCount() + rawBlockletColumnChunks.getDataBlock().numberOfPages());
     scannedResult.setBlockletId(blockExecutionInfo.getBlockIdString(),
-        "" + rawBlockletColumnChunks.getDataBlock().blockletIndex());
+        String.valueOf(rawBlockletColumnChunks.getDataBlock().blockletIndex()));
     DimensionRawColumnChunk[] dimensionRawColumnChunks =
         rawBlockletColumnChunks.getDimensionRawColumnChunks();
     DimensionColumnPage[][] dimensionColumnDataChunks =
