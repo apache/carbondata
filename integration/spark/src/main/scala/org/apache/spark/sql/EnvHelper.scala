@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql
 
+import org.apache.commons.lang3.StringUtils
+
 import org.apache.carbondata.core.metadata.DatabaseLocationProvider
 
 /**
@@ -26,17 +28,29 @@ object EnvHelper {
 
   def isCloud(sparkSession: SparkSession): Boolean = false
 
-  def isPrivacy(sparkSession: SparkSession, isExternal: Boolean): Boolean = false
+  def isPrivacy(sparkSession: SparkSession, isExternal: Boolean): Boolean = {
+    (!isExternal) && isCloud(sparkSession)
+  }
 
   def setDefaultHeader(
       sparkSession: SparkSession,
       optionsFinal: java.util.Map[String, String]
   ): Unit = {
-
+    if (isCloud(sparkSession)) {
+      val fileHeader = optionsFinal.get("fileheader")
+      val header = optionsFinal.get("header")
+      if (StringUtils.isEmpty(fileHeader) && StringUtils.isEmpty(header)) {
+        optionsFinal.put("header", "false")
+      }
+    }
   }
 
   def isRetainData(sparkSession: SparkSession, retainData: Boolean): Boolean = {
-    true
+    if (isCloud(sparkSession)) {
+      retainData
+    } else {
+      true
+    }
   }
 
   def getDatabase(database: String): String = {

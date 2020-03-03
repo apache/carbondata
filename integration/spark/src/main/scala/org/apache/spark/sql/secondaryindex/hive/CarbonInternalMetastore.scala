@@ -189,7 +189,7 @@ object CarbonInternalMetastore {
       } catch {
         case e: Exception =>
           // In case of creating a table, hive table will not be available.
-          LOGGER.error(e.getMessage, e)
+          LOGGER.error(e.getMessage)
       }
     }
   }

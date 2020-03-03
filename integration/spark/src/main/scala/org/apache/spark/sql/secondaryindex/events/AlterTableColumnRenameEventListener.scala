@@ -145,7 +145,7 @@ class AlterTableColumnRenameEventListener extends OperationEventListener with Lo
             sparkSession.sql(
               s"""ALTER TABLE $database.${
                 carbonTable.getTableName
-              } SET SERDEPROPERTIES ('indexInfo' = '$indexInfo')""".stripMargin)
+              } SET SERDEPROPERTIES ('indexInfo' = '$indexInfo')""".stripMargin).collect()
             CarbonEnv.getInstance(sparkSession).carbonMetaStore
               .removeTableFromMetadata(carbonTable.getDatabaseName, carbonTable.getTableName)
           }

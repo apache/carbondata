@@ -17,13 +17,19 @@
 
 package org.apache.spark.sql
 
+import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression}
 import org.apache.spark.sql.execution.FileSourceScanExec
 import org.apache.spark.sql.execution.datasources.HadoopFsRelation
 import org.apache.spark.sql.types.StructType
 
-object MixedFormatHandlerUtil {
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo
+
+object SparkSqlAdapter {
+
+  def initSparkSQL(): Unit = {
+  }
 
   def getScanForSegments(
       @transient relation: HadoopFsRelation,
@@ -38,8 +44,16 @@ object MixedFormatHandlerUtil {
       output,
       outputSchema,
       partitionFilters,
-      None,
       dataFilters,
       tableIdentifier)
+  }
+
+  def addSparkSessionListener(sparkSession: SparkSession): Unit = {
+    sparkSession.sparkContext.addSparkListener(new SparkListener {
+      override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
+        CarbonEnv.carbonEnvMap.remove(sparkSession)
+        ThreadLocalSessionInfo.unsetAll()
+      }
+    })
   }
 }

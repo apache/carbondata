@@ -52,7 +52,7 @@ class TestCreateTableIfNotExists extends QueryTest with BeforeAndAfterAll {
       futures = futures :+ runAsync()
     }
 
-    executorService.shutdown();
+    executorService.shutdown()
     executorService.awaitTermination(30L, TimeUnit.SECONDS)
 
     futures.foreach { future =>

@@ -23,7 +23,10 @@ import org.apache.spark.sql.execution.FileSourceScanExec
 import org.apache.spark.sql.execution.datasources.HadoopFsRelation
 import org.apache.spark.sql.types.StructType
 
-object MixedFormatHandlerUtil {
+object SparkSqlAdapter {
+
+  def initSparkSQL(): Unit = {
+  }
 
   def getScanForSegments(
       @transient relation: HadoopFsRelation,
@@ -38,6 +41,7 @@ object MixedFormatHandlerUtil {
       output,
       outputSchema,
       partitionFilters,
+      None,
       dataFilters,
       tableIdentifier)
   }

@@ -179,7 +179,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-hdfs</artifactId>
+        <artifactId>hadoop-client</artifactId>
         <version>${hadoop.version}</version>
         <scope>${hadoop.deps.scope}</scope>
         <exclusions>
@@ -214,6 +214,25 @@
           <exclusion>
             <groupId>javax.servlet.jsp</groupId>
             <artifactId>jsp-api</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-aws</artifactId>
+        <version>${hadoop.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -268,6 +287,10 @@
           <exclusion>
             <groupId>net.jpountz.lz4</groupId>
             <artifactId>lz4</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.univocity</groupId>
+            <artifactId>univocity-parsers</artifactId>
           </exclusion>
         </exclusions>
       </dependency>

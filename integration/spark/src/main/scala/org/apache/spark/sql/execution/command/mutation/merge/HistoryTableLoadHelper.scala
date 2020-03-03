@@ -93,7 +93,7 @@ object HistoryTableLoadHelper {
       unionDf.createOrReplaceTempView(alias)
       val start = System.currentTimeMillis()
       sparkSession.sql(s"insert into ${ insert.historyTable.quotedString } " +
-                       s"select * from ${ alias }")
+                       s"select * from ${ alias }").collect()
       LOGGER.info("Time taken to insert into history table " + (System.currentTimeMillis() - start))
     }
   }

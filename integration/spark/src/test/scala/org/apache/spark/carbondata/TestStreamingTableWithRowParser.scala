@@ -809,7 +809,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
           qry.awaitTermination()
         } catch {
           case ex: Throwable =>
-            throw new Exception(ex.getMessage)
+            LOGGER.error("finished to ingest data", ex)
         } finally {
           if (null != qry) {
             qry.stop()
@@ -860,6 +860,9 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
       Thread.sleep(continueSeconds * 1000)
       thread2.interrupt()
       thread1.interrupt()
+    } catch {
+      case ex =>
+        LOGGER.error("finished to ingest data", ex)
     } finally {
       if (null != server) {
         server.close()

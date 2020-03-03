@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.execution.command.table
 
+import org.apache.hadoop.hive.metastore.api.AlreadyExistsException
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonSource, Row, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType}
@@ -85,6 +86,14 @@ case class CarbonCreateDataSourceTableCommand(
       case ex: TableAlreadyExistsException if ignoreIfExists =>
         LOGGER.error(ex)
         return Seq.empty[Row]
+      case ex: AnalysisException if ignoreIfExists =>
+        if (ex.getCause != null && ex.getCause.getCause != null &&
+            ex.getCause.getCause.isInstanceOf[AlreadyExistsException]) {
+          LOGGER.error(ex)
+          return Seq.empty[Row]
+        } else {
+          throw ex
+        }
       case ex =>
         throw ex
     }

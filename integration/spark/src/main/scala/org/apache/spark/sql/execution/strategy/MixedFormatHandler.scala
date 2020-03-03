@@ -24,7 +24,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path, PathFilter}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{MixedFormatHandlerUtil, SparkSession}
+import org.apache.spark.sql.{SparkSession, SparkSqlAdapter}
 import org.apache.spark.sql.carbondata.execution.datasources.SparkCarbonFileFormat
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions
@@ -318,7 +318,7 @@ object MixedFormatHandler {
     val outputAttributes = readDataColumns ++ partitionColumns
 
     val scan =
-      MixedFormatHandlerUtil.getScanForSegments(
+      SparkSqlAdapter.getScanForSegments(
         fsRelation,
         outputAttributes,
         outputSchema,

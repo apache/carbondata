@@ -21,7 +21,7 @@ import java.io.File
 
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
-
+import org.apache.spark.sql.SparkSqlAdapter
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.examples._
@@ -121,12 +121,8 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
     DirectSQLExample.exampleBody(spark)
   }
 
-  // TODO:
-  //  As the hive version for spark-hive(1.2.1) and carbon-hive(3.1.0) are now different
-  //  therefore the HiveExample will throw RuntimeException.
-  //  Enable after spark supports 3.1.0 version.
-  //  A separate test class would be added instead.
-  ignore("HiveExample") {
+  test("HiveExample") {
+    SparkSqlAdapter.initSparkSQL()
     HiveExample.createCarbonTable(spark)
     HiveExample.readFromHive
   }

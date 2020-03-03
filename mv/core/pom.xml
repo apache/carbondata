@@ -41,11 +41,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.scalatest</groupId>
       <artifactId>scalatest_${scala.binary.version}</artifactId>
       <scope>test</scope>
@@ -141,7 +136,7 @@
           <filereports>CarbonTestSuite.txt</filereports>
           <argLine>-ea -Xmx3g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m
           </argLine>
-          <stderr />
+          <stderr/>
           <environmentVariables>
           </environmentVariables>
           <systemProperties>
@@ -160,22 +155,17 @@
     </plugins>
   </build>
   <profiles>
-  <profile>
-    <id>sdvtest</id>
-    <properties>
-      <maven.test.skip>true</maven.test.skip>
-    </properties>
-  </profile>
+    <profile>
+      <id>sdvtest</id>
+      <properties>
+        <maven.test.skip>true</maven.test.skip>
+      </properties>
+    </profile>
     <profile>
       <id>spark-2.3</id>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
-      <properties>
-        <spark.version>2.3.4</spark.version>
-        <scala.binary.version>2.11</scala.binary.version>
-        <scala.version>2.11.8</scala.version>
-      </properties>
       <build>
         <plugins>
           <plugin>
@@ -211,11 +201,6 @@
     </profile>
     <profile>
       <id>spark-2.4</id>
-      <properties>
-        <spark.version>2.4.4</spark.version>
-        <scala.binary.version>2.11</scala.binary.version>
-        <scala.version>2.11.8</scala.version>
-      </properties>
       <build>
         <plugins>
           <plugin>

@@ -1004,7 +1004,7 @@ object CommonLoadUtils {
           overwrite = false,
           ifPartitionNotExists = false)
       SparkUtil.setNullExecutionId(loadParams.sparkSession)
-      Dataset.ofRows(loadParams.sparkSession, convertedPlan)
+      Dataset.ofRows(loadParams.sparkSession, convertedPlan).collect()
     } catch {
       case ex: Throwable =>
         val (executorMessage, errorMessage) = CarbonScalaUtil.retrieveAndLogErrorMsg(ex, LOGGER)

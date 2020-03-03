@@ -34,7 +34,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
   def saveAsCarbonFile(parameters: Map[String, String] = Map()): Unit = {
     // create a new table using dataframe's schema and write its content into the table
     sqlContext.sparkSession.sql(
-      makeCreateTableString(dataFrame.schema, new CarbonOption(parameters)))
+      makeCreateTableString(dataFrame.schema, new CarbonOption(parameters))).collect()
     writeToCarbonFile(parameters)
   }
 

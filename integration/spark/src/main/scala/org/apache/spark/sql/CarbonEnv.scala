@@ -182,19 +182,10 @@ object CarbonEnv {
       if (carbonEnv == null) {
         carbonEnv = new CarbonEnv
         carbonEnv.init(sparkSession)
-        addSparkSessionListener(sparkSession)
+        CarbonToSparkAdapter.addSparkSessionListener(sparkSession)
         carbonEnvMap.put(sparkSession, carbonEnv)
       }
       carbonEnv
-  }
-
-  private def addSparkSessionListener(sparkSession: SparkSession): Unit = {
-    sparkSession.sparkContext.addSparkListener(new SparkListener {
-      override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
-        CarbonEnv.carbonEnvMap.remove(sparkSession)
-        ThreadLocalSessionInfo.unsetAll()
-      }
-    })
   }
 
   /**
@@ -367,7 +358,8 @@ object CarbonEnv {
         .locationUri.toString
     // for default database and db ends with .db
     // check whether the carbon store and hive store is same or different.
-    if (dbName.equals("default") || databaseLocation.endsWith(".db")) {
+    if ((!EnvHelper.isCloud(sparkSession)) &&
+        (dbName.equals("default") || databaseLocation.endsWith(".db"))) {
       val carbonStorePath = FileFactory.getUpdatedFilePath(CarbonProperties.getStorePath())
       val hiveStorePath = FileFactory.getUpdatedFilePath(
         sparkSession.conf.get("spark.sql.warehouse.dir", carbonStorePath))
@@ -419,7 +411,7 @@ object CarbonEnv {
     val path = location.getOrElse(
       CarbonEnv.newTablePath(databaseNameOp, tableName)(sparkSession))
     if (!isExternal && isTransactionalTable && location.isEmpty &&
-        FileFactory.getCarbonFile(path).exists()) {
+        (FileFactory.getCarbonFile(path).exists() || EnvHelper.isCloud(sparkSession))) {
       path + "_" + tableId
     } else {
       path
