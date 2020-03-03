@@ -188,7 +188,14 @@ public final class FilterUtil {
           return new FalseFilterExecutor();
         case ROWLEVEL:
         default:
-          if (filterExpressionResolverTree.getFilterExpression() instanceof UnknownExpression) {
+          RowLevelFilterResolverImpl rowLevelFilterResolver =
+              (RowLevelFilterResolverImpl) filterExpressionResolverTree;
+          // TODO: check this
+//          if (rowLevelFilterResolver.getDimColEvaluatorInfoList().size() + rowLevelFilterResolver
+//              .getMsrColEvalutorInfoList().size() == 0) {
+//            return new TrueFilterExecutor();
+//          } else
+            if (filterExpressionResolverTree.getFilterExpression() instanceof UnknownExpression) {
             FilterExecutor filterExecutor =
                 ((UnknownExpression) filterExpressionResolverTree.getFilterExpression())
                     .getFilterExecutor(filterExpressionResolverTree, segmentProperties);
@@ -197,14 +204,11 @@ public final class FilterUtil {
             }
           }
           return new RowLevelFilterExecutorImpl(
-              ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
-                  .getDimColEvaluatorInfoList(),
-              ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
-                  .getMsrColEvalutorInfoList(),
-              ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
-              ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
+              rowLevelFilterResolver.getDimColEvaluatorInfoList(),
+              rowLevelFilterResolver.getMsrColEvalutorInfoList(),
+              rowLevelFilterResolver.getFilterExpresion(),
+              rowLevelFilterResolver.getTableIdentifier(),
               segmentProperties, complexDimensionInfoMap);
-
       }
     }
     return new RowLevelFilterExecutorImpl(

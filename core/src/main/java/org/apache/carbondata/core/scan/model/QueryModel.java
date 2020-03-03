@@ -181,7 +181,8 @@ public class QueryModel {
     dim = CarbonUtil
         .findDimension(processVO.getCarbonDimensions(), columnName);
     msr = getCarbonMetadataMeasure(columnName, processVO.getCarbonMeasures());
-
+    CarbonColumn partitionColumn = CarbonUtil
+        .findColumn(processVO.getPartitionColumns(), columnName);
     if (null != dim) {
       // Dimension Column
       col.setCarbonColumn(dim);
@@ -203,6 +204,9 @@ public class QueryModel {
       col.setCarbonColumn(dim);
       col.setDimension(dim);
       col.setDimension(true);
+    } else if (partitionColumn != null) {
+      col.setCarbonColumn(partitionColumn);
+      col.setPartition(true);
     } else {
       // in case of sdk or file format, there can be chance that each carbondata file may have
       // different schema, so every segment properties will have dims and measures based on
@@ -224,7 +228,8 @@ public class QueryModel {
    */
   public CarbonColumn[] getProjectionColumns() {
     CarbonColumn[] carbonColumns =
-        new CarbonColumn[getProjectionDimensions().size() + getProjectionMeasures().size()];
+        new CarbonColumn[getProjectionDimensions().size() + getProjectionMeasures().size()
+            + getPartitionProjectionColumns().size()];
     for (ProjectionDimension dimension : getProjectionDimensions()) {
       carbonColumns[dimension.getOrdinal()] = dimension.getDimension();
     }
@@ -244,6 +249,10 @@ public class QueryModel {
 
   public List<ProjectionMeasure> getProjectionMeasures() {
     return projection.getMeasures();
+  }
+
+  public List<ProjectionColumn> getPartitionProjectionColumns() {
+    return projection.getPartitionColumns();
   }
 
   /**
@@ -413,11 +422,15 @@ public class QueryModel {
 
     private List<CarbonDimension> implicitDimensions;
 
+    private List<CarbonColumn> partitionColumns;
+
     public FilterProcessVO(List<CarbonDimension> carbonDimensions,
-        List<CarbonMeasure> carbonMeasures, List<CarbonDimension> implicitDimensions) {
+        List<CarbonMeasure> carbonMeasures, List<CarbonDimension> implicitDimensions,
+        List<CarbonColumn> partitionColumns) {
       this.carbonDimensions = carbonDimensions;
       this.carbonMeasures = carbonMeasures;
       this.implicitDimensions = implicitDimensions;
+      this.partitionColumns = partitionColumns;
     }
 
     public List<CarbonDimension> getCarbonDimensions() {
@@ -430,6 +443,10 @@ public class QueryModel {
 
     public List<CarbonDimension> getImplicitDimensions() {
       return implicitDimensions;
+    }
+
+    public List<CarbonColumn> getPartitionColumns() {
+      return partitionColumns;
     }
   }
 }

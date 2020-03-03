@@ -69,7 +69,7 @@ public class RowParserImpl implements RowParser {
   }
 
   public DataField[] getInput(CarbonDataLoadConfiguration configuration) {
-    DataField[] fields = configuration.getDataFields();
+    DataField[] fields = configuration.getInputFields();
     String[] header = configuration.getHeader();
     numberOfColumns = header.length;
     DataField[] input = new DataField[fields.length];

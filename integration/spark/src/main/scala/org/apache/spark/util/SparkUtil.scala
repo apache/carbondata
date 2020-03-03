@@ -19,8 +19,10 @@ package org.apache.spark.util
 
 import org.apache.spark.{SPARK_VERSION, TaskContext}
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.{Cast, Literal}
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
-import org.apache.spark.sql.types.{BinaryType, BooleanType, ByteType, DataType, DateType, DecimalType, DoubleType, FloatType, IntegerType, LongType, ShortType, StringType, TimestampType}
+import org.apache.spark.sql.types._
 
 /*
  * this object use to handle file splits
@@ -85,4 +87,13 @@ object SparkUtil {
       case _ => false
     }
   }
+
+  def convertToInternalRow(partitionValues: java.util.List[String],
+      structType: StructType): InternalRow = {
+    InternalRow.fromSeq(structType.fields.zipWithIndex.map {
+      case (structField, index) =>
+        Cast(Literal(partitionValues.get(index)), structField.dataType, None).eval()
+    })
+  }
+
 }

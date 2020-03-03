@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.scan.executor.infos;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.datastore.DataRefNode;
@@ -25,6 +26,7 @@ import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecutor;
+import org.apache.carbondata.core.scan.model.ProjectionColumn;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
@@ -160,6 +162,8 @@ public class BlockExecutionInfo {
    * list of measure selected in query
    */
   private ProjectionMeasure[] actualQueryMeasures;
+
+  private List<ProjectionColumn> projectionPartitionColumns;
 
   /**
    * variable to maintain dimension existence and default value info
@@ -509,6 +513,14 @@ public class BlockExecutionInfo {
 
   public void setActualQueryMeasures(ProjectionMeasure[] actualQueryMeasures) {
     this.actualQueryMeasures = actualQueryMeasures;
+  }
+
+  public List<ProjectionColumn> getProjectionPartitionColumns() {
+    return projectionPartitionColumns;
+  }
+
+  public void setProjectionPartitionColumns(List<ProjectionColumn> projectionPartitionColumns) {
+    this.projectionPartitionColumns = projectionPartitionColumns;
   }
 
   public int[] getProjectionListDimensionIndexes() {

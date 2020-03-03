@@ -144,7 +144,9 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
           continue;
         }
       }
-      Object[] row = new Object[queryDimensions.length + queryMeasures.length];
+      Object[] row =
+          new Object[queryDimensions.length + queryMeasures.length + projectionPartitionColumns
+              .size()];
       if (isDimensionExists) {
         surrogateResult = scannedResult.getDictionaryKeyIntegerArray();
         noDictionaryKeys = scannedResult.getNoDictionaryKeyArray();
@@ -161,6 +163,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         }
       }
       fillMeasureData(scannedResult, row);
+      fillPartitionData(scannedResult.getBlockletId(), row);
       if (isStructQueryType) {
         shiftNullForStruct(row, isComplexChildColumn);
       }

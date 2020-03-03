@@ -48,46 +48,17 @@ object StandardPartitionExample {
      * 1. Partition basic usages
      */
 
-    spark.sql("DROP TABLE IF EXISTS origintable")
-    spark.sql(
-      """
-        | CREATE TABLE origintable
-        | (id Int,
-        | vin String,
-        | logdate Date,
-        | phonenumber Long,
-        | country String,
-        | area String,
-        | salary Int)
-        | STORED AS carbondata
-      """.stripMargin)
-
-    spark.sql(
-      s"""
-       LOAD DATA LOCAL INPATH '$testData' into table origintable
-       """)
-
-    spark.sql("select * from origintable").show(false)
-
-    // create partition table with logdate as partition column
-
-    spark.sql("DROP TABLE IF EXISTS partitiontable0")
+    spark.sql("drop table if exists partitiontable0")
     spark.sql(
       """
         | CREATE TABLE partitiontable0
-        | (id Int,
-        | vin String,
-        | phonenumber Long,
-        | country String,
-        | area String,
-        | salary Int)
-        | PARTITIONED BY (logdate Date)
+        | (id Int)
+        | PARTITIONED BY (lonng Long)
         | STORED AS carbondata
-        | TBLPROPERTIES('SORT_COLUMNS'='id,vin')
       """.stripMargin)
-
-    // load data and build partition with logdate value
-
+//
+//    // load data and build partition with logdate value
+//
     spark.sql(
       s"""
        LOAD DATA LOCAL INPATH '$testData' into table partitiontable0
@@ -95,105 +66,10 @@ object StandardPartitionExample {
 
     spark.sql(
       s"""
-         | SELECT logdate,id,vin,phonenumber,country,area,salary
-         | FROM partitiontable0 where logdate = cast('2016-02-12' as date)
+         | SELECT *
+         | FROM partitiontable0 where lonng = 1234
       """.stripMargin).show(100, false)
 
-    spark.sql("show partitions default.partitiontable0").show()
-
-    // insert data to table partitiontable0 and build partition with static value '2018-02-15'
-    spark.sql("insert into table partitiontable0 partition(logdate='2018-02-15') " +
-              "select id,vin,phonenumber,country,area,salary from origintable")
-
-    spark.sql(
-      s"""
-         | SELECT logdate,id,vin,phonenumber,country,area,salary
-         | FROM partitiontable0
-      """.stripMargin).show(100, false)
-
-    // insert overwrite data to table partitiontable0
-
-    spark.sql("UPDATE origintable SET (salary) = (88888)").show()
-
-    spark.sql("insert overwrite table partitiontable0 partition(logdate='2018-02-15') " +
-              "select id,vin,phonenumber,country,area,salary from origintable")
-
-    spark.sql(
-      s"""
-         | SELECT logdate,id,vin,phonenumber,country,area,salary
-         | FROM partitiontable0
-      """.stripMargin).show(100, false)
-
-    /**
-     * 2.Compare the performance : with partition VS without partition
-     */
-
-    // build test data, if set the data is larger than 100M, it will take 10+ mins.
-    import scala.util.Random
-    import spark.implicits._
-    val r = new Random()
-    val df = spark.sparkContext.parallelize(1 to 10 * 100 * 1000)
-      .map(x => ("No." + r.nextInt(1000), "country" + x % 8, "city" + x % 50, x % 300))
-      .toDF("ID", "country", "city", "population")
-
-    // Create table without partition
-    df.write.format("carbondata")
-      .option("tableName", "withoutpartition")
-      .option("compress", "true")
-      .mode(SaveMode.Overwrite).save()
-
-    // Create table with partition
-    spark.sql("DROP TABLE IF EXISTS withpartition")
-    spark.sql(
-      """
-        | CREATE TABLE withpartition
-        | (ID String,
-        | city String,
-        | population Int)
-        | PARTITIONED BY (country String)
-        | STORED AS carbondata
-      """.stripMargin)
-
-    df.write.format("carbondata")
-      .option("tableName", "withpartition")
-      .option("compress", "true")
-      .mode(SaveMode.Overwrite).save()
-
-    // define time function
-    def time(code: => Unit): Double = {
-      val start = System.currentTimeMillis()
-      code
-      // return time in second
-      (System.currentTimeMillis() - start).toDouble / 1000
-    }
-
-    val time_without_partition = time {
-      spark.sql(
-        s"""
-           | SELECT *
-           | FROM withoutpartition WHERE country='country3'
-      """.stripMargin).count()
-    }
-
-    val time_with_partition = time {
-      spark.sql(
-        s"""
-           | SELECT *
-           | FROM withpartition WHERE country='country3'
-      """.stripMargin).count()
-    }
-    // scalastyle:off
-    println("----time of without partition----:" + time_without_partition.toString)
-    println("----time of with partition----:" + time_with_partition.toString)
-    // scalastyle:on
-
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
-
-    spark.sql("DROP TABLE IF EXISTS partitiontable0")
-    spark.sql("DROP TABLE IF EXISTS withoutpartition")
-    spark.sql("DROP TABLE IF EXISTS withpartition")
-    spark.sql("DROP TABLE IF EXISTS origintable")
+    spark.close()
   }
 }

@@ -28,6 +28,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.index.IndexFilter;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.DataTypeConverter;
@@ -61,6 +62,7 @@ public class QueryModelBuilder {
     int i = 0;
     for (String projectionColumnName : projectionColumns) {
       CarbonDimension dimension = table.getDimensionByName(projectionColumnName);
+      CarbonColumn carbonColumn = table.getPartitionColumn(projectionColumnName);
       if (dimension != null) {
         CarbonDimension complexParentDimension = dimension.getComplexParentDimension();
         if (null != complexParentDimension && dimension.getDataType() == DataTypes.DATE) {
@@ -72,6 +74,8 @@ public class QueryModelBuilder {
           projection.addDimension(dimension, i);
           i++;
         }
+      } else if (carbonColumn != null) {
+        projection.addPartition(carbonColumn, i++);
       } else {
         CarbonMeasure measure = table.getMeasureByName(projectionColumnName);
         if (measure == null) {
@@ -83,15 +87,8 @@ public class QueryModelBuilder {
       }
     }
     projection = optimizeProjectionForComplexColumns(projection, projectionColumns, factTableName);
-    List<String> projectionDimensionAndMeasures = new ArrayList<>();
     this.projection = projection;
-    for (ProjectionDimension projectionDimension : projection.getDimensions()) {
-      projectionDimensionAndMeasures.add(projectionDimension.getColumnName());
-    }
-    for (ProjectionMeasure projectionMeasure : projection.getMeasures()) {
-      projectionDimensionAndMeasures.add(projectionMeasure.getColumnName());
-    }
-    LOGGER.info("Projection Columns: " + projectionDimensionAndMeasures);
+    LOGGER.info("Projection Columns: " + projection);
     return this;
   }
 
