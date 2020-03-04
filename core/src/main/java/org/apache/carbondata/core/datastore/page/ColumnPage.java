@@ -147,7 +147,14 @@ public abstract class ColumnPage {
     ColumnPage actualPage;
     ColumnPage encodedPage;
     if (isUnsafeEnabled(columnPageEncoderMeta)) {
-      actualPage = new LVByteBufferColumnPage(columnPageEncoderMeta, pageSize);
+      DataType dataType = columnPageEncoderMeta.getStoreDataType();
+      if (dataType == DataTypes.STRING ||
+          dataType == DataTypes.VARCHAR ||
+          dataType == DataTypes.BINARY) {
+        actualPage = new LVByteBufferColumnPage(columnPageEncoderMeta, pageSize);
+      } else {
+        actualPage = new UnsafeVarLengthColumnPage(columnPageEncoderMeta, pageSize);
+      }
       encodedPage = new UnsafeFixLengthColumnPage(
           new ColumnPageEncoderMeta(columnPageEncoderMeta.getColumnSpec(), BYTE_ARRAY,
               columnPageEncoderMeta.getCompressorName()),
