@@ -278,6 +278,10 @@ case class CarbonAddLoadCommand(
       operationContext.setProperty(
         carbonTable.getTableUniqueName + "_Segment",
         model.getSegmentId)
+      // when this event is triggered, SI load listener will be called for all the SI tables under
+      // this main table, no need to load the SI tables for add load command, so add this property
+      // to check in SI loadevent listener to avoid loading to SI.
+      operationContext.setProperty("isAddLoad", "true")
       val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
         new LoadTablePreStatusUpdateEvent(
           carbonTable.getCarbonTableIdentifier,

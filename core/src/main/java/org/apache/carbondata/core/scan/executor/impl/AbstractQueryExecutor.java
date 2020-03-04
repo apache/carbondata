@@ -487,8 +487,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             queryProperties.complexFilterDimension));
     if (null != queryModel.getDataMapFilter()) {
       FilterResolverIntf filterResolverIntf;
-      // loading the filter executor tree for filter evaluation
-      filterResolverIntf = queryModel.getDataMapFilter().getResolver();
+      if (!filePath.startsWith(queryModel.getTable().getTablePath())) {
+        filterResolverIntf = queryModel.getDataMapFilter().getExternalSegmentResolver();
+      } else {
+        // loading the filter executor tree for filter evaluation
+        filterResolverIntf = queryModel.getDataMapFilter().getResolver();
+      }
       blockExecutionInfo.setFilterExecuterTree(
           FilterUtil.getFilterExecuterTree(filterResolverIntf, segmentProperties,
               blockExecutionInfo.getComlexDimensionInfoMap(), false));

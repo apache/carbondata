@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -31,6 +32,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.conditional.InExpression;
+import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
@@ -49,6 +52,10 @@ public class DataMapFilter implements Serializable {
 
   private Expression expression;
 
+  private Expression externalSegmentFilter;
+
+  private FilterResolverIntf externalSegmentResolver;
+
   private FilterResolverIntf resolver;
 
   private String serializedExpression;
@@ -65,6 +72,7 @@ public class DataMapFilter implements Serializable {
     resolve(lazyResolve);
     if (expression != null) {
       checkIfFilterColumnExistsInTable();
+      initializeExternalSegmentFilter();
       try {
         this.serializedExpression = ObjectSerializationUtil.convertObjectToString(expression);
       } catch (IOException e) {
@@ -98,6 +106,20 @@ public class DataMapFilter implements Serializable {
 
   public void setTable(CarbonTable table) {
     this.table = table;
+  }
+
+  private void initializeExternalSegmentFilter() {
+    if ((expression instanceof AndExpression) && (((AndExpression) expression)
+        .getRight() instanceof InExpression) && (expression.getChildren().get(1).getChildren()
+        .get(0) instanceof ColumnExpression) && (((ColumnExpression) expression.getChildren().get(1)
+        .getChildren().get(0))).getColumnName()
+        .equalsIgnoreCase(CarbonCommonConstants.POSITION_ID)) {
+      externalSegmentFilter = ((AndExpression) expression).getLeft();
+      if (externalSegmentFilter != null) {
+        processFilterExpression(null, null);
+        externalSegmentResolver = resolver != null ? resolver.getLeft() : resolveFilter().getLeft();
+      }
+    }
   }
 
   private Set<String> extractColumnExpressions(Expression expression) {
@@ -161,6 +183,7 @@ public class DataMapFilter implements Serializable {
 
   public void setExpression(Expression expression) {
     this.expression = expression;
+    initializeExternalSegmentFilter();
   }
 
   public FilterResolverIntf getResolver() {
@@ -183,6 +206,20 @@ public class DataMapFilter implements Serializable {
     }
     return !(table.hasColumnDrift() && RestructureUtil
         .hasColumnDriftOnSegment(table, segmentProperties));
+  }
+
+  Expression getExternalSegmentFilter() {
+    if (externalSegmentFilter == null) {
+      return expression;
+    }
+    return externalSegmentFilter;
+  }
+
+  public FilterResolverIntf getExternalSegmentResolver() {
+    if (externalSegmentResolver == null) {
+      return resolver;
+    }
+    return externalSegmentResolver;
   }
 
   public void processFilterExpression() {

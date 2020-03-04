@@ -193,30 +193,54 @@ public final class TableDataMap extends OperationEventListener {
       if (dataMaps.get(segment).isEmpty() || dataMaps.get(segment) == null) {
         continue;
       }
+      boolean isExternalSegment = segment.getSegmentPath() != null;
       List<Blocklet> pruneBlocklets = new ArrayList<>();
       SegmentProperties segmentProperties =
           segmentPropertiesFetcher.getSegmentProperties(segment, partitions);
       if (filter.isResolvedOnSegment(segmentProperties)) {
-        FilterExecuter filterExecuter = FilterUtil
-            .getFilterExecuterTree(filter.getResolver(), segmentProperties,
-                null, table.getMinMaxCacheColumns(segmentProperties),
-                false);
+        FilterExecuter filterExecuter;
+        if (!isExternalSegment) {
+          filterExecuter = FilterUtil
+              .getFilterExecuterTree(filter.getResolver(), segmentProperties, null,
+                  table.getMinMaxCacheColumns(segmentProperties), false);
+        } else {
+          filterExecuter = FilterUtil
+              .getFilterExecuterTree(filter.getExternalSegmentResolver(), segmentProperties, null,
+                  table.getMinMaxCacheColumns(segmentProperties), false);
+        }
         for (DataMap dataMap : dataMaps.get(segment)) {
-          pruneBlocklets.addAll(
-              dataMap.prune(filter.getResolver(), segmentProperties, partitions, filterExecuter,
-                  this.table));
+          if (!isExternalSegment) {
+            pruneBlocklets.addAll(dataMap
+                .prune(filter.getResolver(), segmentProperties, partitions, filterExecuter,
+                    this.table));
+          } else {
+            pruneBlocklets.addAll(dataMap
+                .prune(filter.getExternalSegmentResolver(), segmentProperties, partitions,
+                    filterExecuter, this.table));
+          }
         }
       } else {
+        FilterExecuter filterExecuter;
         Expression expression = filter.getExpression();
-        FilterExecuter filterExecuter = FilterUtil
-            .getFilterExecuterTree(new DataMapFilter(segmentProperties, table,
-                            expression).getResolver(), segmentProperties,
-                null, table.getMinMaxCacheColumns(segmentProperties),
-                false);
+        if (!isExternalSegment) {
+          filterExecuter = FilterUtil.getFilterExecuterTree(
+              new DataMapFilter(segmentProperties, table, expression).getResolver(),
+              segmentProperties, null, table.getMinMaxCacheColumns(segmentProperties), false);
+        } else {
+          filterExecuter = FilterUtil.getFilterExecuterTree(
+              new DataMapFilter(segmentProperties, table, expression).getExternalSegmentResolver(),
+              segmentProperties, null, table.getMinMaxCacheColumns(segmentProperties), false);
+        }
         for (DataMap dataMap : dataMaps.get(segment)) {
-          pruneBlocklets.addAll(
-              dataMap.prune(filter.getExpression(), segmentProperties,
-                  partitions, table, filterExecuter));
+          if (!isExternalSegment) {
+            pruneBlocklets.addAll(dataMap
+                .prune(filter.getExpression(), segmentProperties, partitions, table,
+                    filterExecuter));
+          } else {
+            pruneBlocklets.addAll(dataMap
+                .prune(filter.getExternalSegmentFilter(), segmentProperties, partitions, table,
+                    filterExecuter));
+          }
         }
       }
       blocklets.addAll(
@@ -325,31 +349,59 @@ public final class TableDataMap extends OperationEventListener {
             SegmentProperties segmentProperties =
                 segmentPropertiesFetcher.getSegmentPropertiesFromDataMap(dataMapList.get(0));
             Segment segment = segmentDataMapGroup.getSegment();
+            boolean isExternalSegment = segment.getSegmentPath() != null;
             if (filter.isResolvedOnSegment(segmentProperties)) {
-              FilterExecuter filterExecuter = FilterUtil
-                  .getFilterExecuterTree(filter.getResolver(), segmentProperties,
-                      null, table.getMinMaxCacheColumns(segmentProperties),
-                      false);
+              FilterExecuter filterExecuter;
+              if (!isExternalSegment) {
+                filterExecuter = FilterUtil
+                    .getFilterExecuterTree(filter.getResolver(), segmentProperties, null,
+                        table.getMinMaxCacheColumns(segmentProperties), false);
+              } else {
+                filterExecuter = FilterUtil
+                    .getFilterExecuterTree(filter.getExternalSegmentResolver(), segmentProperties,
+                        null, table.getMinMaxCacheColumns(segmentProperties), false);
+              }
               for (int i = segmentDataMapGroup.getFromIndex();
                    i <= segmentDataMapGroup.getToIndex(); i++) {
-                List<Blocklet> dmPruneBlocklets = dataMapList.get(i).prune(
-                    filter.getResolver(), segmentProperties, partitions, filterExecuter, table);
+                List<Blocklet> dmPruneBlocklets;
+                if (!isExternalSegment) {
+                  dmPruneBlocklets = dataMapList.get(i)
+                      .prune(filter.getResolver(), segmentProperties, partitions, filterExecuter,
+                          table);
+                } else {
+                  dmPruneBlocklets = dataMapList.get(i)
+                      .prune(filter.getExternalSegmentResolver(), segmentProperties, partitions,
+                          filterExecuter, table);
+                }
                 pruneBlocklets.addAll(addSegmentId(
                     blockletDetailsFetcher.getExtendedBlocklets(dmPruneBlocklets, segment),
                     segment));
               }
             } else {
               Expression filterExpression = filter.getNewCopyOfExpression();
-              FilterExecuter filterExecuter = FilterUtil
-                  .getFilterExecuterTree(new DataMapFilter(segmentProperties, table,
-                                  filterExpression).getResolver(), segmentProperties,
-                      null, table.getMinMaxCacheColumns(segmentProperties),
-                      false);
+              FilterExecuter filterExecuter;
+              if (!isExternalSegment) {
+                filterExecuter = FilterUtil.getFilterExecuterTree(
+                    new DataMapFilter(segmentProperties, table, filterExpression).getResolver(),
+                    segmentProperties, null, table.getMinMaxCacheColumns(segmentProperties), false);
+              } else {
+                filterExecuter = FilterUtil.getFilterExecuterTree(
+                    new DataMapFilter(segmentProperties, table, filterExpression)
+                        .getExternalSegmentResolver(), segmentProperties, null,
+                    table.getMinMaxCacheColumns(segmentProperties), false);
+              }
               for (int i = segmentDataMapGroup.getFromIndex();
                    i <= segmentDataMapGroup.getToIndex(); i++) {
-                List<Blocklet> dmPruneBlocklets = dataMapList.get(i).prune(
-                        filterExpression, segmentProperties, partitions, table,
-                    filterExecuter);
+                List<Blocklet> dmPruneBlocklets;
+                if (!isExternalSegment) {
+                  dmPruneBlocklets = dataMapList.get(i)
+                      .prune(filterExpression, segmentProperties, partitions, table,
+                          filterExecuter);
+                } else {
+                  dmPruneBlocklets = dataMapList.get(i)
+                      .prune(filter.getExternalSegmentFilter(), segmentProperties, partitions,
+                          table, filterExecuter);
+                }
                 pruneBlocklets.addAll(addSegmentId(
                     blockletDetailsFetcher.getExtendedBlocklets(dmPruneBlocklets, segment),
                     segment));
