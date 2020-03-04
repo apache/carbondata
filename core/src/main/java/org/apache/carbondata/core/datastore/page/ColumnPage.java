@@ -144,17 +144,10 @@ public abstract class ColumnPage {
     boolean isDecoderBasedFallBackEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
             CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT));
-    DataType dataType = columnPageEncoderMeta.getStoreDataType();
     ColumnPage actualPage;
     ColumnPage encodedPage;
     if (isUnsafeEnabled(columnPageEncoderMeta)) {
-      if (dataType == DataTypes.STRING ||
-          dataType == DataTypes.VARCHAR ||
-          dataType == DataTypes.BINARY) {
-        actualPage = new ByteBufferColumnPage(columnPageEncoderMeta, pageSize);
-      } else {
-        actualPage = new UnsafeVarLengthColumnPage(columnPageEncoderMeta, pageSize);
-      }
+      actualPage = new LVByteBufferColumnPage(columnPageEncoderMeta, pageSize);
       encodedPage = new UnsafeFixLengthColumnPage(
           new ColumnPageEncoderMeta(columnPageEncoderMeta.getColumnSpec(), BYTE_ARRAY,
               columnPageEncoderMeta.getCompressorName()),
@@ -199,7 +192,7 @@ public abstract class ColumnPage {
       } else if (dataType == DataTypes.STRING ||
           dataType == DataTypes.VARCHAR ||
           dataType == DataTypes.BINARY) {
-        instance = new ByteBufferColumnPage(columnPageEncoderMeta, pageSize);
+        instance = new LVByteBufferColumnPage(columnPageEncoderMeta, pageSize);
       } else if (dataType == BYTE_ARRAY) {
         instance = new UnsafeVarLengthColumnPage(columnPageEncoderMeta, pageSize);
       } else {
@@ -227,7 +220,7 @@ public abstract class ColumnPage {
       } else if (dataType == DataTypes.STRING ||
           dataType == DataTypes.VARCHAR ||
           dataType == DataTypes.BINARY) {
-        instance = new ByteBufferColumnPage(columnPageEncoderMeta, pageSize);
+        instance = new LVByteBufferColumnPage(columnPageEncoderMeta, pageSize);
       } else if (dataType == BYTE_ARRAY) {
         instance = new SafeVarLengthColumnPage(columnPageEncoderMeta, pageSize);
       } else {

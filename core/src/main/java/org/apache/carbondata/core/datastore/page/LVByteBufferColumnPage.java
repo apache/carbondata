@@ -37,7 +37,7 @@ import sun.nio.ch.DirectBuffer;
  * ColumnPage implementation backed by a ByteBuffer
  * All data added in this page is encoded as LV (Length-Value)
  */
-public class ByteBufferColumnPage extends ColumnPage {
+public class LVByteBufferColumnPage extends ColumnPage {
 
   // data of this page
   private ByteBuffer byteBuffer;
@@ -51,7 +51,7 @@ public class ByteBufferColumnPage extends ColumnPage {
   // the length of bytes added in the page
   protected int totalLength;
 
-  ByteBufferColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
+  LVByteBufferColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     super(columnPageEncoderMeta, pageSize);
     checkDataType(columnPageEncoderMeta);
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec.newInstance(
