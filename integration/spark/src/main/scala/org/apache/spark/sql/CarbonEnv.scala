@@ -358,7 +358,7 @@ object CarbonEnv {
         .locationUri.toString
     // for default database and db ends with .db
     // check whether the carbon store and hive store is same or different.
-    if ((!EnvHelper.isCloud(sparkSession)) &&
+    if ((!EnvHelper.isLegacy(sparkSession)) &&
         (dbName.equals("default") || databaseLocation.endsWith(".db"))) {
       val carbonStorePath = FileFactory.getUpdatedFilePath(CarbonProperties.getStorePath())
       val hiveStorePath = FileFactory.getUpdatedFilePath(
@@ -411,7 +411,7 @@ object CarbonEnv {
     val path = location.getOrElse(
       CarbonEnv.newTablePath(databaseNameOp, tableName)(sparkSession))
     if (!isExternal && isTransactionalTable && location.isEmpty &&
-        (FileFactory.getCarbonFile(path).exists() || EnvHelper.isCloud(sparkSession))) {
+        (FileFactory.getCarbonFile(path).exists() || EnvHelper.isLegacy(sparkSession))) {
       path + "_" + tableId
     } else {
       path

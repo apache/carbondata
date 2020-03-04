@@ -52,7 +52,7 @@ object DDLHelper {
   ): CreateDatabaseCommand = {
     ThreadLocalSessionInfo
       .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
-    if (!EnvHelper.isCloud(sparkSession)) {
+    if (!EnvHelper.isLegacy(sparkSession)) {
       val databaseName = createDatabaseCommand.databaseName
       val dbLocation = try {
         CarbonEnv.getDatabaseLocation(databaseName, sparkSession)

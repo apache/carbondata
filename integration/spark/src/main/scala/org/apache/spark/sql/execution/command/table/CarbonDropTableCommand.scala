@@ -158,7 +158,7 @@ case class CarbonDropTableCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     // clear driver side index and dictionary cache
-    if (!EnvHelper.isCloud(sparkSession)
+    if (!EnvHelper.isLegacy(sparkSession)
         && carbonTable != null
         && !(carbonTable.isChildTableForMV && !dropChildTable)) {
       // delete the table folder

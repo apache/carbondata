@@ -133,7 +133,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       case createTable: CreateTableCommand
         if isCarbonFileHiveTable(createTable.table) =>
         // CREATE TABLE STORED AS carbon
-        if (EnvHelper.isCloud(sparkSession)) {
+        if (EnvHelper.isLegacy(sparkSession)) {
           Nil
         } else {
           ExecutedCommandExec(DDLHelper.createCarbonFileHiveTable(createTable, sparkSession)) :: Nil
@@ -147,7 +147,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       case ctas: CreateHiveTableAsSelectCommand
         if isCarbonFileHiveTable(ctas.tableDesc) =>
         // CREATE TABLE STORED AS carbon AS SELECT
-        if (EnvHelper.isCloud(sparkSession)) {
+        if (EnvHelper.isLegacy(sparkSession)) {
           Nil
         } else {
           DataWritingCommandExec(

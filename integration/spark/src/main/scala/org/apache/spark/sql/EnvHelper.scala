@@ -26,17 +26,17 @@ import org.apache.carbondata.core.metadata.DatabaseLocationProvider
  */
 object EnvHelper {
 
-  def isCloud(sparkSession: SparkSession): Boolean = false
+  def isLegacy(sparkSession: SparkSession): Boolean = false
 
   def isPrivacy(sparkSession: SparkSession, isExternal: Boolean): Boolean = {
-    (!isExternal) && isCloud(sparkSession)
+    (!isExternal) && isLegacy(sparkSession)
   }
 
   def setDefaultHeader(
       sparkSession: SparkSession,
       optionsFinal: java.util.Map[String, String]
   ): Unit = {
-    if (isCloud(sparkSession)) {
+    if (isLegacy(sparkSession)) {
       val fileHeader = optionsFinal.get("fileheader")
       val header = optionsFinal.get("header")
       if (StringUtils.isEmpty(fileHeader) && StringUtils.isEmpty(header)) {
@@ -46,7 +46,7 @@ object EnvHelper {
   }
 
   def isRetainData(sparkSession: SparkSession, retainData: Boolean): Boolean = {
-    if (isCloud(sparkSession)) {
+    if (isLegacy(sparkSession)) {
       retainData
     } else {
       true

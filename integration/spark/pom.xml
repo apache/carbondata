@@ -464,14 +464,6 @@
 
   <profiles>
     <profile>
-      <id>build-all</id>
-      <properties>
-        <spark.version>2.3.4</spark.version>
-        <scala.binary.version>2.11</scala.binary.version>
-        <scala.version>2.11.8</scala.version>
-      </properties>
-    </profile>
-    <profile>
       <id>sdvtest</id>
       <properties>
         <maven.test.skip>true</maven.test.skip>
