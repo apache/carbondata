@@ -26,7 +26,6 @@ import org.apache.carbondata.core.metadata.datatype.Field
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.sdk.file.{CarbonSchemaReader, CarbonWriterBuilder, Schema}
 
-@Ignore
 class TestSIWithAddSegment extends QueryTest with BeforeAndAfterAll {
 
   val newSegmentPath: String = warehouse + "/newsegment/"
@@ -64,14 +63,14 @@ class TestSIWithAddSegment extends QueryTest with BeforeAndAfterAll {
     assert(d.queryExecution.executedPlan.isInstanceOf[BroadCastSIFilterPushJoin])
   }
 
-  ignore("compare results of SI and NI after adding segments") {
+  test("compare results of SI and NI after adding segments") {
     val siResult = sql("select * from maintable where c = 'm'")
     val niResult = sql("select * from maintable where ni(c = 'm')")
     assert(!niResult.queryExecution.executedPlan.isInstanceOf[BroadCastSIFilterPushJoin])
     checkAnswer(siResult, niResult)
   }
 
-  ignore("test SI creation after adding segments") {
+  test("test SI creation after adding segments") {
     sql("create table maintable1(a string, b int, c string) stored as carbondata")
     sql("insert into maintable1 select 'k',1,'k'")
     sql("insert into maintable1 select 'l',2,'l'")
@@ -93,7 +92,7 @@ class TestSIWithAddSegment extends QueryTest with BeforeAndAfterAll {
     checkAnswer(siResult, niResult)
   }
 
-  ignore("test query on SI with all external segments") {
+  test("test query on SI with all external segments") {
     sql("drop table if exists maintable1")
     sql("create table maintable1(a string, b int, c string) stored as carbondata")
     sql("CREATE INDEX maintable1_si  on table maintable1 (c) as 'carbondata'")

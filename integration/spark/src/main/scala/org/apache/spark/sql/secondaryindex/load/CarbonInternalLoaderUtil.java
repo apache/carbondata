@@ -308,17 +308,17 @@ public class CarbonInternalLoaderUtil {
    */
   public static boolean checkMainTableSegEqualToSISeg(String carbonTablePath,
       String indexTablePath) {
-    List<String> mainList =
-        getListOfValidSlices(SegmentStatusManager.readLoadMetadata(carbonTablePath));
+    List<String> mainTableSegmentsList =
+        getListOfValidSlices(SegmentStatusManager.readCarbonMetaData(carbonTablePath));
     List<String> indexList =
         getListOfValidSlices(SegmentStatusManager.readLoadMetadata(indexTablePath));
-    Collections.sort(mainList);
+    Collections.sort(mainTableSegmentsList);
     Collections.sort(indexList);
-    if (indexList.size() != mainList.size()) {
+    if (indexList.size() != mainTableSegmentsList.size()) {
       return false;
     }
     for (int i = 0; i < indexList.size(); i++) {
-      if (!indexList.get(i).equalsIgnoreCase(mainList.get(i))) {
+      if (!indexList.get(i).equalsIgnoreCase(mainTableSegmentsList.get(i))) {
         return false;
       }
     }
