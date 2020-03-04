@@ -39,7 +39,7 @@ private[sql] case class CarbonShowTablesCommand ( databaseName: Option[String],
     // instead of calling tables in sparkSession.
     val catalog = sparkSession.sessionState.catalog
     val db = databaseName.getOrElse(catalog.getCurrentDatabase)
-    var tables =
+    val tables =
       tableIdentifierPattern.map(catalog.listTables(db, _)).getOrElse(catalog.listTables(db))
     val externalCatalog = sparkSession.sharedState.externalCatalog
     // this method checks whether the table is mainTable or datamap based on property "isVisible"

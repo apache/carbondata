@@ -55,15 +55,16 @@ case class RegisterIndexTableCommand(dbName: Option[String], indexTableName: Str
     setAuditTable(databaseName, indexTableName)
     setAuditInfo(Map("Parent TableName" -> parentTable))
     // 1. check if the main and index table exist
-    val tables: Seq[TableIdentifier] = sparkSession.sessionState.catalog.listTables(databaseName)
-    if (!tables.exists(_.table.equalsIgnoreCase(parentTable))) {
+    if (!sparkSession.sessionState.catalog.tableExists(
+      TableIdentifier(parentTable, Some(databaseName)))) {
       val message: String = s"Secondary Index Table registration for table [$indexTableName] with" +
         s" table" +
         s" [$databaseName.$parentTable] failed." +
         s"Table [$parentTable] does not exists under database [$databaseName]"
       CarbonException.analysisException(message)
     }
-    if (!tables.exists(_.table.equalsIgnoreCase(indexTableName))) {
+    if (!sparkSession.sessionState.catalog.tableExists(
+      TableIdentifier(indexTableName, Some(databaseName)))) {
       val message: String = s"Secondary Index Table registration for table [$indexTableName] with" +
         s" table" +
         s" [$databaseName.$parentTable] failed." +

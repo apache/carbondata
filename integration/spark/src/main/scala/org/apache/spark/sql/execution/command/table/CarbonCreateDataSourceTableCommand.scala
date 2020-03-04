@@ -40,17 +40,7 @@ case class CarbonCreateDataSourceTableCommand(
     assert(table.tableType != CatalogTableType.VIEW)
     assert(table.provider.isDefined)
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    val sessionState = sparkSession.sessionState
-    val db = table.identifier.database.getOrElse(sessionState.catalog.getCurrentDatabase)
-    val existingTables = sessionState.catalog.listTables(db)
-    var tableExist = false
-    existingTables.foreach { tid =>
-      if (tid.table.equalsIgnoreCase(table.identifier.table)
-          && tid.database.getOrElse("").equalsIgnoreCase(db)) {
-        tableExist = true
-      }
-    }
-    if (tableExist) {
+    if (sparkSession.sessionState.catalog.tableExists(table.identifier)) {
       if (ignoreIfExists) {
         return Seq.empty[Row]
       } else {
