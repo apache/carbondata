@@ -34,20 +34,20 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class CarbondataColumnConstraint {
   private final String name;
-  private final boolean invertedindexed;
+  private final boolean invertedIndexed;
   private Optional<Domain> domain;
 
   @JsonCreator public CarbondataColumnConstraint(@JsonProperty("name") String name,
       @JsonProperty("domain") Optional<Domain> domain,
-      @JsonProperty("invertedindexed") boolean invertedindexed) {
+      @JsonProperty("invertedIndexed") boolean invertedIndexed) {
     this.name = requireNonNull(name, "name is null");
-    this.invertedindexed = requireNonNull(invertedindexed, "invertedIndexed is null");
+    this.invertedIndexed = requireNonNull(invertedIndexed, "invertedIndexed is null");
     this.domain = requireNonNull(domain, "domain is null");
   }
 
   @JsonProperty
-  public boolean isInvertedindexed() {
-    return invertedindexed;
+  public boolean isInvertedIndexed() {
+    return invertedIndexed;
   }
 
   @JsonProperty
@@ -67,7 +67,7 @@ public class CarbondataColumnConstraint {
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, domain, invertedindexed);
+    return Objects.hash(name, domain, invertedIndexed);
   }
 
   @Override
@@ -82,12 +82,12 @@ public class CarbondataColumnConstraint {
 
     CarbondataColumnConstraint other = (CarbondataColumnConstraint) obj;
     return Objects.equals(this.name, other.name) && Objects.equals(this.domain, other.domain)
-        && Objects.equals(this.invertedindexed, other.invertedindexed);
+        && Objects.equals(this.invertedIndexed, other.invertedIndexed);
   }
 
   @Override
   public String toString() {
-    return toStringHelper(this).add("name", this.name).add("invertedindexed", this.invertedindexed)
+    return toStringHelper(this).add("name", this.name).add("invertedindexed", this.invertedIndexed)
         .add("domain", this.domain).toString();
   }
 }

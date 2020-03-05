@@ -43,22 +43,22 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   private CarbonColumnVector dictionaryVector;
 
-  private BitSet nullBitset;
+  private BitSet nullBitSet;
 
   ColumnarVectorWrapperDirect(CarbonColumnVectorImpl columnVector) {
     this.columnVector = columnVector;
     this.dictionaryVector = columnVector.getDictionaryVector();
-    this.nullBitset = new BitSet();
+    this.nullBitSet = new BitSet();
   }
 
   @Override
   public void setNullBits(BitSet nullBits) {
-    this.nullBitset = nullBits;
+    this.nullBitSet = nullBits;
   }
 
   @Override
   public void putBoolean(int rowId, boolean value) {
-    if (nullBitset.get(rowId)) {
+    if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
       columnVector.putBoolean(rowId, value);
@@ -67,7 +67,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putFloat(int rowId, float value) {
-    if (nullBitset.get(rowId)) {
+    if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
       columnVector.putFloat(rowId, value);
@@ -76,7 +76,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putShort(int rowId, short value) {
-    if (nullBitset.get(rowId)) {
+    if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
       columnVector.putShort(rowId, value);
@@ -91,7 +91,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putInt(int rowId, int value) {
-    if (nullBitset.get(rowId)) {
+    if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
       columnVector.putInt(rowId, value);
@@ -105,7 +105,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putLong(int rowId, long value) {
-    if (nullBitset.get(rowId)) {
+    if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
       columnVector.putLong(rowId, value);
@@ -119,7 +119,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putDecimal(int rowId, BigDecimal value, int precision) {
-    if (nullBitset.get(rowId)) {
+    if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
       columnVector.putDecimal(rowId, value, precision);
@@ -129,7 +129,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
   @Override
   public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
     for (int i = 0; i < count; i++) {
-      if (nullBitset.get(rowId)) {
+      if (nullBitSet.get(rowId)) {
         columnVector.putNull(rowId);
       } else {
         columnVector.putDecimal(rowId, value, precision);
@@ -140,7 +140,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putDouble(int rowId, double value) {
-    if (nullBitset.get(rowId)) {
+    if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
       columnVector.putDouble(rowId, value);
@@ -154,7 +154,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putByteArray(int rowId, byte[] value) {
-    if (nullBitset.get(rowId)) {
+    if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
       columnVector.putByteArray(rowId, value);
@@ -170,7 +170,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putByteArray(int rowId, int offset, int length, byte[] value) {
-    if (nullBitset.get(rowId)) {
+    if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
       columnVector.putByteArray(rowId, offset, length, value);
@@ -263,7 +263,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
   @Override
   public void putFloats(int rowId, int count, float[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
-      if (nullBitset.get(rowId)) {
+      if (nullBitSet.get(rowId)) {
         columnVector.putNull(rowId);
       } else {
         columnVector.putFloat(rowId, src[i]);
@@ -275,7 +275,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
   @Override
   public void putShorts(int rowId, int count, short[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
-      if (nullBitset.get(rowId)) {
+      if (nullBitSet.get(rowId)) {
         columnVector.putNull(rowId);
       } else {
         columnVector.putShort(rowId, src[i]);
@@ -287,7 +287,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
   @Override
   public void putInts(int rowId, int count, int[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
-      if (nullBitset.get(rowId)) {
+      if (nullBitSet.get(rowId)) {
         columnVector.putNull(rowId);
       } else {
         columnVector.putInt(rowId, src[i]);
@@ -299,7 +299,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
   @Override
   public void putLongs(int rowId, int count, long[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
-      if (nullBitset.get(rowId)) {
+      if (nullBitSet.get(rowId)) {
         columnVector.putNull(rowId);
       } else {
         columnVector.putLong(rowId, src[i]);
@@ -311,7 +311,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
   @Override
   public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
-      if (nullBitset.get(rowId)) {
+      if (nullBitSet.get(rowId)) {
         columnVector.putNull(rowId);
       } else {
         columnVector.putDouble(rowId, src[i]);
@@ -323,7 +323,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
   @Override
   public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
-      if (nullBitset.get(rowId)) {
+      if (nullBitSet.get(rowId)) {
         columnVector.putNull(rowId);
       } else {
         columnVector.putByte(rowId, src[i]);
