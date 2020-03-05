@@ -27,6 +27,8 @@ import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{DeleteSegmentByIdPostEvent, Event, OperationContext, OperationEventListener}
 
 class DeleteSegmentByIdListener extends OperationEventListener with Logging {
@@ -49,8 +51,13 @@ class DeleteSegmentByIdListener extends OperationEventListener with Logging {
           val table = metastore
             .lookupRelation(Some(carbonTable.getDatabaseName), tableName)(sparkSession)
             .asInstanceOf[CarbonRelation].carbonTable
-          CarbonStore
-            .deleteLoadById(loadIds, carbonTable.getDatabaseName, table.getTableName, table)
+          val tableStatusFilePath = CarbonTablePath.getTableStatusFilePath(table.getTablePath)
+          // this check is added to verify if the table status file for the index table exists
+          // or not. Delete on index tables is only to be called if the table status file exists.
+          if (FileFactory.isFileExist(tableStatusFilePath)) {
+            CarbonStore
+              .deleteLoadById(loadIds, carbonTable.getDatabaseName, table.getTableName, table)
+          }
         }
     }
   }
