@@ -95,7 +95,11 @@ case class CarbonAddLoadCommand(
 
     // If a path is already added then we should block the adding of the same path again.
     val allSegments = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
-    if (allSegments.exists(a => a.getPath != null && a.getPath.equalsIgnoreCase(inputPath))) {
+    // If the segment has been already loaded from the same path and its status is SUCCESS or
+    // PARTIALLY_SUCCESS, throw an exception as we should block the adding of the same path again.
+    if (allSegments.exists(a => a.getPath != null && a.getPath.equalsIgnoreCase(inputPath) &&
+      (a.getSegmentStatus == SegmentStatus.SUCCESS ||
+        a.getSegmentStatus == SegmentStatus .LOAD_PARTIAL_SUCCESS))) {
       throw new AnalysisException(s"path already exists in table status file, can not add same " +
                                   s"segment path repeatedly: $inputPath")
     }

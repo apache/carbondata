@@ -262,6 +262,39 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 
+
+  test("Test delete by id for added parquet segment") {
+    sql("drop table if exists addsegment1")
+    sql("drop table if exists addsegment2")
+    sql("drop table if exists addsegment3")
+    createCarbonTable()
+    createParquetTable
+    sql("select * from addsegment2").show()
+    val table = SparkSQLUtil.sessionState(sqlContext.sparkSession).catalog
+      .getTableMetadata(TableIdentifier("addsegment2"))
+    val path = table.location
+    val newPath = storeLocation + "/" + "addsegtest"
+    FileFactory.deleteAllFilesOfDir(new File(newPath))
+    copy(path.toString, newPath)
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
+    sql(
+      """
+        | CREATE TABLE addsegment3 (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int, empno int)
+        | STORED AS carbondata
+      """.stripMargin)
+    sql("create index one_one on table addsegment3(designation) as 'carbondata'")
+    sql(s"alter table addsegment3 add segment options('path'='$newPath', 'format'='parquet')").show()
+    sql("show segments for table addsegment3").show(100, false)
+    sql("delete from table addsegment1 where segment.id in(0)")
+    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(0)))
+    sql("clean files for table addsegment1")
+    FileFactory.deleteAllFilesOfDir(new File(newPath))
+  }
+
+
   test("Test delete by id for added segment") {
     createCarbonTable()
     createParquetTable
@@ -288,6 +321,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(20)))
     sql("show segments for table addsegment1").show(100, false)
     sql("delete from table addsegment1 where segment.id in(0,1)")
+    sql("show segments for table addsegment1").show(100, false)
+
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(0)))
     sql("clean files for table addsegment1")
     FileFactory.deleteAllFilesOfDir(new File(newPath))
