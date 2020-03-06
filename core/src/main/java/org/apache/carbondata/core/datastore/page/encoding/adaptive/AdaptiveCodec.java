@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorage;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoDictionary;
+import org.apache.carbondata.core.datastore.columnar.ObjectArrayBlockIndexerStorage;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ColumnPageValueConverter;
@@ -235,7 +235,7 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
             input.getColumnPageEncoderMeta().getCompressorName()), input.getPageSize());
     if (isInvertedIndex) {
       indexStorage =
-          new BlockIndexerStorageForNoDictionary(getPageBasedOnDataType(input), input.getDataType(),
+          new ObjectArrayBlockIndexerStorage(getPageBasedOnDataType(input), input.getDataType(),
               isInvertedIndex);
     }
     ColumnPage columnPage = getSortedColumnPageIfRequired(input);

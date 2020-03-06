@@ -18,27 +18,60 @@
 package org.apache.carbondata.core.datastore.columnar;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.ByteUtil;
 
 public abstract class BlockIndexerStorage<T> {
 
-  public abstract short[] getRowIdPage();
+  protected short[] rowIdPage;
 
-  public abstract int getRowIdPageLengthInBytes();
+  protected short[] rowIdRlePage;
 
-  public abstract short[] getRowIdRlePage();
+  protected T dataPage;
 
-  public abstract int getRowIdRlePageLengthInBytes();
+  protected short[] dataRlePage;
 
-  public abstract T getDataPage();
+  public short[] getRowIdPage() {
+    return rowIdPage;
+  }
 
-  public abstract short[] getDataRlePage();
+  public int getRowIdPageLengthInBytes() {
+    if (rowIdPage != null) {
+      return rowIdPage.length * CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
+    } else {
+      return 0;
+    }
+  }
 
-  public abstract int getDataRlePageLengthInBytes();
+  public short[] getRowIdRlePage() {
+    return rowIdRlePage;
+  }
+
+  public int getRowIdRlePageLengthInBytes() {
+    if (rowIdRlePage != null) {
+      return rowIdRlePage.length * CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
+    } else {
+      return 0;
+    }
+  }
+
+  public T getDataPage() {
+    return dataPage;
+  }
+
+  public short[] getDataRlePage() {
+    return dataRlePage;
+  }
+
+  public int getDataRlePageLengthInBytes() {
+    if (dataRlePage != null) {
+      return dataRlePage.length * CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
+    } else {
+      return 0;
+    }
+  }
 
   /**
    * It compresses depends up on the sequence numbers.
@@ -50,9 +83,7 @@ public abstract class BlockIndexerStorage<T> {
    *
    * @param rowIds
    */
-  protected Map<String, short[]> rleEncodeOnRowId(short[] rowIds) {
-    short[] rowIdPage;
-    short[] rowIdRlePage;
+  protected void encodeAndSetRowId(short[] rowIds) {
     List<Short> list = new ArrayList<Short>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     List<Short> map = new ArrayList<Short>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     int k = 0;
@@ -78,25 +109,58 @@ public abstract class BlockIndexerStorage<T> {
     } else {
       list.add(rowIds[i - 1]);
     }
-    int compressionPercentage = (((list.size() + map.size()) * 100) / rowIds.length);
-    if (compressionPercentage > 70) {
-      rowIdPage = rowIds;
+    if ((((list.size() + map.size()) * 100) / rowIds.length) > 70) {
+      this.rowIdPage = rowIds;
+      this.rowIdRlePage = new short[0];
     } else {
-      rowIdPage = convertToArray(list);
+      this.rowIdPage = convertToArray(list);
+      this.rowIdRlePage = convertToArray(map);
     }
-    if (rowIds.length == rowIdPage.length) {
-      rowIdRlePage = new short[0];
-    } else {
-      rowIdRlePage = convertToArray(map);
-    }
-    Map<String, short[]> rowIdAndRowRleIdPages = new HashMap<>(2);
-    rowIdAndRowRleIdPages.put("rowIdPage", rowIdPage);
-    rowIdAndRowRleIdPages.put("rowRlePage", rowIdRlePage);
-    return rowIdAndRowRleIdPages;
   }
 
-  protected short[] convertToArray(List<Short> list) {
+  /**
+   * apply RLE(run-length encoding) on byte array data page
+   */
+  protected byte[][] rleEncodeOnData(byte[][] dataPage) {
+    List<Short> map = new ArrayList<>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    List<byte[]> list = new ArrayList<>(dataPage.length / 2);
+    list.add(dataPage[0]);
+    short counter = 1;
+    short startIdx = 0;
+    for (int i = 1; i < dataPage.length; i++) {
+      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataPage[i - 1], dataPage[i]) != 0) {
+        list.add(dataPage[i]);
+        map.add(startIdx);
+        map.add(counter);
+        startIdx += counter;
+        counter = 1;
+        continue;
+      }
+      counter++;
+    }
+    map.add(startIdx);
+    map.add(counter);
+    // if rle is index size is more than 70% then rle wont give any benefit
+    // so better to avoid rle index and write data as it is
+    if ((((list.size() + map.size()) * 100) / dataPage.length) > 70) {
+      this.dataRlePage = new short[0];
+      return dataPage;
+    } else {
+      this.dataRlePage = convertToArray(map);
+      return convertToDataPage(list);
+    }
+  }
+
+  private short[] convertToArray(List<Short> list) {
     short[] shortArray = new short[list.size()];
+    for (int i = 0; i < shortArray.length; i++) {
+      shortArray[i] = list.get(i);
+    }
+    return shortArray;
+  }
+
+  private byte[][] convertToDataPage(List<byte[]> list) {
+    byte[][] shortArray = new byte[list.size()][];
     for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = list.get(i);
     }

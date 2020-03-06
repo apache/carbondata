@@ -19,35 +19,30 @@ package org.apache.carbondata.core.datastore.columnar;
 
 import java.util.Arrays;
 
-import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 
-public class ColumnWithRowId<T> implements Comparable<ColumnWithRowId<T>> {
-  protected byte[] column;
+public class ByteArrayColumnWithRowId implements Comparable<ByteArrayColumnWithRowId> {
+  private byte[] column;
 
-  private T index;
+  private short rowId;
 
-  ColumnWithRowId(byte[] column, T index) {
+  ByteArrayColumnWithRowId(byte[] column, short rowId) {
     this.column = column;
-    this.index = index;
+    this.rowId = rowId;
   }
 
-  /**
-   * @return the column
-   */
   public byte[] getColumn() {
     return column;
   }
 
-  /**
-   * @return the index
-   */
-  public T getIndex() {
-    return index;
+  public short getRowId() {
+    return rowId;
   }
 
   @Override
-  public int compareTo(ColumnWithRowId o) {
-    return ByteUtil.UnsafeComparer.INSTANCE.compareTo(column, o.column);
+  public int compareTo(ByteArrayColumnWithRowId o) {
+    return UnsafeComparer.INSTANCE
+        .compareTo(column, 2, column.length - 2, o.column, 2, o.column.length - 2);
   }
 
   @Override
@@ -55,12 +50,12 @@ public class ColumnWithRowId<T> implements Comparable<ColumnWithRowId<T>> {
     if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
-    ColumnWithRowId o = (ColumnWithRowId)obj;
-    return Arrays.equals(column, o.column) && index == o.index;
+    ByteArrayColumnWithRowId o = (ByteArrayColumnWithRowId)obj;
+    return Arrays.equals(column, o.column) && rowId == o.rowId;
   }
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(column) + index.hashCode();
+    return Arrays.hashCode(column) + Short.hashCode(rowId);
   }
 }

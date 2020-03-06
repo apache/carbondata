@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorage;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForShort;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort;
+import org.apache.carbondata.core.datastore.columnar.ByteArrayBlockIndexerStorage;
+import org.apache.carbondata.core.datastore.columnar.ByteArrayBlockIndexerStorageWithoutRowId;
 import org.apache.carbondata.core.datastore.columnar.DummyBlockIndexerStorage;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -63,8 +63,8 @@ public class PlainDimensionIndexCodec extends IndexStorageCodec {
         if (isInvertedIndex || isDictionary) {
           byte[][] byteArray = input.getByteArrayPage();
           indexStorage = isInvertedIndex ?
-            new BlockIndexerStorageForShort(byteArray, isDictionary, !isDictionary, isSort) :
-            new BlockIndexerStorageForNoInvertedIndexForShort(byteArray, true);
+            new ByteArrayBlockIndexerStorage(byteArray, isDictionary, !isDictionary, isSort) :
+            new ByteArrayBlockIndexerStorageWithoutRowId(byteArray, true);
           byte[] compressInput = ByteUtil.flatten(indexStorage.getDataPage());
           super.compressedDataPage = compressor.compressByte(compressInput);
         } else {

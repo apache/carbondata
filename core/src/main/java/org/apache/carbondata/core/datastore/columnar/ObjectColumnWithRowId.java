@@ -20,23 +20,29 @@ package org.apache.carbondata.core.datastore.columnar;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
-public class ColumnWithRowIdForNoDictionary<T>
-    implements Comparable<ColumnWithRowIdForNoDictionary<T>> {
+public class ObjectColumnWithRowId implements Comparable<ObjectColumnWithRowId> {
+  private Object column;
 
-  Object column;
+  private short rowId;
 
-  T index;
+  private DataType dataType;
 
-  DataType dataType;
-
-  ColumnWithRowIdForNoDictionary(Object column, T index, DataType dataType) {
+  ObjectColumnWithRowId(Object column, short rowId, DataType dataType) {
     this.column = column;
-    this.index = index;
+    this.rowId = rowId;
     this.dataType = dataType;
   }
 
+  public Object getColumn() {
+    return column;
+  }
+
+  public short getRowId() {
+    return rowId;
+  }
+
   @Override
-  public int compareTo(ColumnWithRowIdForNoDictionary o) {
+  public int compareTo(ObjectColumnWithRowId o) {
     // use the data type based comparator for the no dictionary encoded columns
     SerializableComparator comparator =
         org.apache.carbondata.core.util.comparator.Comparator.getComparator(dataType);
@@ -48,27 +54,12 @@ public class ColumnWithRowIdForNoDictionary<T>
     if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
-    ColumnWithRowIdForNoDictionary o = (ColumnWithRowIdForNoDictionary)obj;
-    return column.equals(o.column) && getIndex() == o.getIndex();
+    ObjectColumnWithRowId o = (ObjectColumnWithRowId)obj;
+    return column.equals(o.column) && rowId == o.rowId;
   }
 
   @Override
   public int hashCode() {
-    return getColumn().hashCode() + getIndex().hashCode();
+    return column.hashCode() + Short.hashCode(rowId);
   }
-
-  /**
-   * @return the index
-   */
-  public T getIndex() {
-    return index;
-  }
-
-  /**
-   * @return the column
-   */
-  public Object getColumn() {
-    return column;
-  }
-
 }

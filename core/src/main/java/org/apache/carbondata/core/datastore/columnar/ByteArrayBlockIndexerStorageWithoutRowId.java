@@ -17,34 +17,44 @@
 
 package org.apache.carbondata.core.datastore.columnar;
 
-import java.util.Arrays;
+/**
+ * Below class will be used to for no inverted index
+ * Support to encode on data
+ */
+public class ByteArrayBlockIndexerStorageWithoutRowId extends BlockIndexerStorage<byte[][]> {
 
-import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
-
-public class ColumnWithRowIdForHighCard<T> extends ColumnWithRowId<T>
-    implements Comparable<ColumnWithRowId<T>> {
-
-  ColumnWithRowIdForHighCard(byte[] column, T index) {
-    super(column, index);
-  }
-
-  @Override
-  public int compareTo(ColumnWithRowId o) {
-    return UnsafeComparer.INSTANCE
-        .compareTo(column, 2, column.length - 2, o.column, 2, o.column.length - 2);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (obj == null || getClass() != obj.getClass()) {
-      return false;
+  public ByteArrayBlockIndexerStorageWithoutRowId(byte[][] dataPage, boolean rleOnData) {
+    if (rleOnData) {
+      this.dataPage = rleEncodeOnData(dataPage);
+    } else {
+      this.dataPage = dataPage;
     }
-    ColumnWithRowIdForHighCard o = (ColumnWithRowIdForHighCard)obj;
-    return Arrays.equals(column, o.column) && getIndex() == o.getIndex();
   }
 
-  @Override
-  public int hashCode() {
-    return Arrays.hashCode(column) + getIndex().hashCode();
+  /**
+   * no use
+   *
+   * @return
+   */
+  public short[] getRowIdPage() {
+    return new short[0];
   }
+
+  public int getRowIdPageLengthInBytes() {
+    return 0;
+  }
+
+  /**
+   * no use
+   *
+   * @return
+   */
+  public short[] getRowIdRlePage() {
+    return new short[0];
+  }
+
+  public int getRowIdRlePageLengthInBytes() {
+    return 0;
+  }
+
 }
