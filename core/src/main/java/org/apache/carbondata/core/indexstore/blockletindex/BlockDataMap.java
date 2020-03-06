@@ -103,6 +103,10 @@ public class BlockDataMap extends CoarseGrainDataMap
    * partition table and non transactional table
    */
   protected boolean isFilePathStored;
+  /**
+   * flag to be used for partition table
+   */
+  protected boolean isPartitionTable;
 
   @Override
   public void init(DataMapModel dataMapModel) throws IOException {
@@ -125,8 +129,8 @@ public class BlockDataMap extends CoarseGrainDataMap
     // store file path only in case of partition table, non transactional table and flat folder
     // structure
     byte[] filePath;
-    boolean isPartitionTable = blockletDataMapInfo.getCarbonTable().isHivePartitionTable();
-    if (isPartitionTable || !blockletDataMapInfo.getCarbonTable().isTransactionalTable() ||
+    this.isPartitionTable = blockletDataMapInfo.getCarbonTable().isHivePartitionTable();
+    if (this.isPartitionTable || !blockletDataMapInfo.getCarbonTable().isTransactionalTable() ||
         blockletDataMapInfo.getCarbonTable().isSupportFlatFolder() ||
         // if the segment data is written in tablepath then no need to store whole path of file.
         !blockletDataMapInfo.getFilePath().startsWith(
@@ -785,7 +789,9 @@ public class BlockDataMap extends CoarseGrainDataMap
       byte[][] minValue, boolean[] minMaxFlag, String filePath, int blockletId) {
     BitSet bitSet = null;
     if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
-      String uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1);
+      String uniqueBlockPath = !isPartitionTable ?
+                filePath.substring(filePath.lastIndexOf("/Part") + 1) :
+                filePath;
       // this case will come in case of old store where index file does not contain the
       // blocklet information
       if (blockletId != -1) {
