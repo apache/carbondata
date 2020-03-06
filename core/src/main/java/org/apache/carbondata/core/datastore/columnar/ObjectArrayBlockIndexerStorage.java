@@ -18,31 +18,25 @@
 package org.apache.carbondata.core.datastore.columnar;
 
 import java.util.Arrays;
-import java.util.Map;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
-public class BlockIndexerStorageForNoDictionary extends BlockIndexerStorage<Object[]> {
-
-  private short[] rowIdPage;
-
-  private short[] rowIdRlePage;
-
-  private Object[] dataPage;
+/**
+ * Support to encode on rowId
+ */
+public class ObjectArrayBlockIndexerStorage extends BlockIndexerStorage<Object[]> {
 
   private DataType dataType;
 
-  public BlockIndexerStorageForNoDictionary(Object[] dataPage, DataType dataType,
-      boolean isSortRequired) {
+  public ObjectArrayBlockIndexerStorage(Object[] dataPage, DataType dataType,
+                                        boolean isSortRequired) {
     this.dataType = dataType;
-    ColumnWithRowIdForNoDictionary<Short>[] dataWithRowId = createColumnWithRowId(dataPage);
+    ObjectColumnWithRowId[] dataWithRowId = createColumnWithRowId(dataPage);
     if (isSortRequired) {
       Arrays.sort(dataWithRowId);
     }
     short[] rowIds = extractDataAndReturnRowId(dataWithRowId, dataPage);
-    Map<String, short[]> rowIdAndRleRowIdPages = rleEncodeOnRowId(rowIds);
-    rowIdPage = rowIdAndRleRowIdPages.get("rowIdPage");
-    rowIdRlePage = rowIdAndRleRowIdPages.get("rowRlePage");
+    encodeAndSetRowId(rowIds);
   }
 
   /**
@@ -50,60 +44,24 @@ public class BlockIndexerStorageForNoDictionary extends BlockIndexerStorage<Obje
    *
    * @return
    */
-  private ColumnWithRowIdForNoDictionary<Short>[] createColumnWithRowId(Object[] dataPage) {
-    ColumnWithRowIdForNoDictionary<Short>[] columnWithIndexs =
-        new ColumnWithRowIdForNoDictionary[dataPage.length];
+  private ObjectColumnWithRowId[] createColumnWithRowId(Object[] dataPage) {
+    ObjectColumnWithRowId[] columnWithIndexs =
+        new ObjectColumnWithRowId[dataPage.length];
     for (short i = 0; i < columnWithIndexs.length; i++) {
-      columnWithIndexs[i] = new ColumnWithRowIdForNoDictionary<>(dataPage[i], i, dataType);
+      columnWithIndexs[i] = new ObjectColumnWithRowId(dataPage[i], i, dataType);
     }
     return columnWithIndexs;
   }
 
-  private short[] extractDataAndReturnRowId(ColumnWithRowIdForNoDictionary<Short>[] dataWithRowId,
+  private short[] extractDataAndReturnRowId(ObjectColumnWithRowId[] dataWithRowId,
       Object[] dataPage) {
     short[] indexes = new short[dataWithRowId.length];
     for (int i = 0; i < indexes.length; i++) {
-      indexes[i] = dataWithRowId[i].getIndex();
+      indexes[i] = dataWithRowId[i].getRowId();
       dataPage[i] = dataWithRowId[i].getColumn();
     }
     this.dataPage = dataPage;
     return indexes;
-  }
-
-  /**
-   * @return the rowIdPage
-   */
-  @Override
-  public short[] getRowIdPage() {
-    return rowIdPage;
-  }
-
-  @Override
-  public int getRowIdPageLengthInBytes() {
-    if (rowIdPage != null) {
-      return rowIdPage.length * 2;
-    } else {
-      return 0;
-    }
-  }
-
-  @Override
-  public short[] getRowIdRlePage() {
-    return rowIdRlePage;
-  }
-
-  @Override
-  public int getRowIdRlePageLengthInBytes() {
-    if (rowIdRlePage != null) {
-      return rowIdRlePage.length * 2;
-    } else {
-      return 0;
-    }
-  }
-
-  @Override
-  public Object[] getDataPage() {
-    return dataPage;
   }
 
   @Override

@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorage;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForShort;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort;
+import org.apache.carbondata.core.datastore.columnar.ByteArrayBlockIndexerStorage;
+import org.apache.carbondata.core.datastore.columnar.ByteArrayBlockIndexerStorageWithoutRowId;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -50,9 +50,9 @@ public class DirectDictDimensionIndexCodec extends IndexStorageCodec {
         BlockIndexerStorage<byte[][]> indexStorage;
         byte[][] data = inputPage.getByteArrayPage();
         if (isInvertedIndex) {
-          indexStorage = new BlockIndexerStorageForShort(data, false, false, isSort);
+          indexStorage = new ByteArrayBlockIndexerStorage(data, false, false, isSort);
         } else {
-          indexStorage = new BlockIndexerStorageForNoInvertedIndexForShort(data, false);
+          indexStorage = new ByteArrayBlockIndexerStorageWithoutRowId(data, false);
         }
         byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
         Compressor compressor = CompressorFactory.getInstance().getCompressor(
