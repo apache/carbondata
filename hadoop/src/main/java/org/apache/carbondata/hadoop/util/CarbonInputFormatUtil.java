@@ -22,7 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datamap.DataMapUtil;
+import org.apache.carbondata.core.datamap.IndexUtil;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
@@ -59,14 +59,14 @@ public class CarbonInputFormatUtil {
   }
 
   /**
-   * This method set DataMapJob if configured
+   * This method set IndexJob if configured
    *
    * @param conf
    * @throws IOException
    */
   public static void setDataMapJobIfConfigured(Configuration conf) throws IOException {
-    String className = "org.apache.carbondata.indexserver.EmbeddedDataMapJob";
-    DataMapUtil.setDataMapJob(conf, DataMapUtil.createDataMapJob(className));
+    String className = "org.apache.carbondata.indexserver.EmbeddedIndexJob";
+    IndexUtil.setDataMapJob(conf, IndexUtil.createDataMapJob(className));
   }
 
   public static String createJobTrackerID(java.util.Date date) {

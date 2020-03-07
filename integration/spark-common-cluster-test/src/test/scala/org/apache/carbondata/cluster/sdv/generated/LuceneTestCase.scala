@@ -34,7 +34,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_main")
   }
 
-  //Create Lucene DataMap With DMProperties(String DataType) on MainTable
+  //Create Lucene Index With DMProperties(String DataType) on MainTable
   test("LuceneDataMap_TC001", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
     sql(
@@ -51,7 +51,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists lucene_datamap on table datamap_main")
   }
 
-  //Create Lucene DataMap With DMProperties(Other DataTypes) on MainTable
+  //Create Lucene Index With DMProperties(Other DataTypes) on MainTable
   test("LuceneDataMap_TC002", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
     sql(
@@ -69,7 +69,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       .contains("Only String column is supported, column 'id' is INT type."))
   }
 
-  //Create Lucene DataMap With DMProperties on MainTable and Load Data and Query
+  //Create Lucene Index With DMProperties on MainTable and Load Data and Query
   ignore("LuceneDataMap_TC003", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
     sql(
@@ -90,7 +90,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists lucene_datamap on table datamap_main")
   }
 
-  //Create Different Lucene DataMap With DMProperties on MainTable and filter using 'like','AND'
+  //Create Different Lucene Index With DMProperties on MainTable and filter using 'like','AND'
   // & 'OR'
   ignore("LuceneDataMap_TC004", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
@@ -121,7 +121,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists lucene_datamap on table datamap_main")
   }
 
-  //Create Different Lucene DataMap With DMProperties on MainTable and check Datamap after Delete
+  //Create Different Lucene Index With DMProperties on MainTable and check Datamap after Delete
   // Segment
   ignore("LuceneDataMap_TC005", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")
@@ -146,7 +146,7 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists lucene_datamap on table datamap_main")
   }
 
-  //Create Different Lucene DataMap With DMProperties on MainTable with different 'TBLProperties'
+  //Create Different Lucene Index With DMProperties on MainTable with different 'TBLProperties'
   // and Load Data with Differnt OPTIONS & Verify
   ignore("LuceneDataMap_TC006", Include) {
     sql("DROP TABLE IF EXISTS datamap_main")

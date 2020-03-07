@@ -27,7 +27,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 
 /**
  * A serializer/deserializer for {@link FineGrainBlocklet}, it is used after prune the data
- * by {@link org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap}
+ * by {@link FineGrainIndex}
  */
 @InterfaceAudience.Internal
 public class BlockletSerializer {

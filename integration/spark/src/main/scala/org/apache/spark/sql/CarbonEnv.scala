@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
@@ -46,6 +45,7 @@ import org.apache.carbondata.geo.InPolygonUDF
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
+import org.apache.carbondata.view.MaterializedViewManagerInSpark
 
 /**
  * Carbon Environment for unified context
@@ -136,7 +136,7 @@ class CarbonEnv {
     dataMapSchemas.asScala.foreach {
       dataMapSchema =>
         if (null != dataMapSchema.getRelationIdentifier &&
-            !dataMapSchema.isIndexDataMap) {
+            !dataMapSchema.isIndex) {
           val isTableExists = try {
             sparkSession.sessionState
               .catalog
@@ -161,6 +161,35 @@ class CarbonEnv {
                   .getRelationIdentifier
                   .getTablePath))
               }
+            }
+          }
+        }
+    }
+    val viewManager = MaterializedViewManagerInSpark.get(sparkSession)
+    val viewSchemas = viewManager.getSchemas
+    viewSchemas.asScala.foreach {
+      schema =>
+        val isTableExists = try {
+          sparkSession.sessionState.catalog
+            .tableExists(TableIdentifier(schema.getIdentifier.getTableName,
+              Some(schema.getIdentifier.getDatabaseName)))
+        } catch {
+          // we need to take care of cleanup when the table does not exists, if table exists and
+          // some other user tries to access the table, it might fail, that time no need to handle
+          case exception: Exception =>
+            LOGGER.error("Error while checking the table existence", exception)
+            return
+        }
+        if (!isTableExists) {
+          try {
+            viewManager.deleteSchema(schema.getIdentifier.getDatabaseName,
+              schema.getIdentifier.getTableName)
+          } catch {
+            case exception: IOException => throw exception
+          } finally {
+            if (FileFactory.isFileExist(schema.getIdentifier.getTablePath)) {
+              CarbonUtil.deleteFoldersAndFilesSilent(
+                FileFactory.getCarbonFile(schema.getIdentifier.getTablePath))
             }
           }
         }
@@ -206,29 +235,29 @@ object CarbonEnv {
   def initListeners(): Unit = {
     OperationListenerBus.getInstance()
       .addListener(classOf[IndexServerLoadEvent], PrePrimingEventListener)
-      .addListener(classOf[LoadTablePreExecutionEvent], LoadMVTablePreListener)
-      .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
-        AlterDataMaptableCompactionPostListener)
+//      .addListener(classOf[LoadTablePreExecutionEvent], LoadMVTablePreListener)
+//      .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
+//        AlterDataMaptableCompactionPostListener)
       .addListener(classOf[LoadTablePreStatusUpdateEvent], new MergeIndexEventListener)
-      .addListener(classOf[LoadTablePostExecutionEvent], LoadPostDataMapListener)
-      .addListener(classOf[UpdateTablePostEvent], LoadPostDataMapListener )
-      .addListener(classOf[DeleteFromTablePostEvent], LoadPostDataMapListener )
+//      .addListener(classOf[LoadTablePostExecutionEvent], LoadPostDataMapListener)
+//      .addListener(classOf[UpdateTablePostEvent], LoadPostDataMapListener )
+//      .addListener(classOf[DeleteFromTablePostEvent], LoadPostDataMapListener )
       .addListener(classOf[AlterTableMergeIndexEvent], new MergeIndexEventListener)
       .addListener(classOf[BuildDataMapPostExecutionEvent], new MergeBloomIndexEventListener)
-      .addListener(classOf[DropTableCacheEvent], DropCacheDataMapEventListener)
+      .addListener(classOf[DropTableCacheEvent], DropCacheMVEventListener)
       .addListener(classOf[DropTableCacheEvent], DropCacheBloomEventListener)
       .addListener(classOf[ShowTableCacheEvent], ShowCachePreMVEventListener)
       .addListener(classOf[ShowTableCacheEvent], ShowCacheDataMapEventListener)
-      .addListener(classOf[DeleteSegmentByIdPreEvent], DataMapDeleteSegmentPreListener)
-      .addListener(classOf[DeleteSegmentByDatePreEvent], DataMapDeleteSegmentPreListener)
-      .addListener(classOf[AlterTableDropColumnPreEvent], DataMapDropColumnPreListener)
-      .addListener(classOf[AlterTableColRenameAndDataTypeChangePreEvent],
-        DataMapChangeDataTypeorRenameColumnPreListener)
-      .addListener(classOf[AlterTableAddColumnPreEvent], DataMapAddColumnsPreListener)
-      .addListener(classOf[AlterTableDropPartitionMetaEvent],
-        DataMapAlterTableDropPartitionMetaListener)
-      .addListener(classOf[AlterTableDropPartitionPreStatusEvent],
-        DataMapAlterTableDropPartitionPreStatusListener)
+//      .addListener(classOf[DeleteSegmentByIdPreEvent], MVDeleteSegmentPreListener)
+//      .addListener(classOf[DeleteSegmentByDatePreEvent], MVDeleteSegmentPreListener)
+//      .addListener(classOf[AlterTableDropColumnPreEvent], MVDropColumnPreListener)
+//      .addListener(classOf[AlterTableColRenameAndDataTypeChangePreEvent],
+//        MVChangeDataTypeorRenameColumnPreListener)
+//      .addListener(classOf[AlterTableAddColumnPreEvent], MVAddColumnsPreListener)
+//      .addListener(classOf[AlterTableDropPartitionMetaEvent],
+//        MVAlterTableDropPartitionMetaListener)
+//      .addListener(classOf[AlterTableDropPartitionPreStatusEvent],
+//        MVAlterTableDropPartitionPreStatusListener)
       .addListener(classOf[LoadTablePreStatusUpdateEvent], new SILoadEventListener)
       .addListener(classOf[LoadTablePostStatusUpdateEvent],
         new SILoadEventListenerForFailedSegments)
@@ -256,6 +285,21 @@ object CarbonEnv {
       .addListener(classOf[DeleteFromTablePreEvent], new DeleteFromTableEventListener)
       .addListener(classOf[DropTableCacheEvent], DropCacheSIEventListener)
       .addListener(classOf[ShowTableCacheEvent], ShowCacheSIEventListener)
+      // For materialized view
+      .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent], MVCompactionPostEventListener)
+      .addListener(classOf[LoadTablePreExecutionEvent], MVLoadPreEventListener)
+      .addListener(classOf[LoadTablePostExecutionEvent], MVLoadPostEventListener)
+      .addListener(classOf[UpdateTablePostEvent], MVLoadPostEventListener)
+      .addListener(classOf[DeleteFromTablePostEvent], MVLoadPostEventListener)
+      .addListener(classOf[DeleteSegmentByIdPreEvent], MVDeleteSegmentPreEventListener)
+      .addListener(classOf[DeleteSegmentByDatePreEvent], MVDeleteSegmentPreEventListener)
+      .addListener(classOf[AlterTableAddColumnPreEvent], MVAddColumnsPreEventListener)
+      .addListener(classOf[AlterTableDropColumnPreEvent], MVDropColumnPreEventListener)
+      .addListener(classOf[AlterTableColRenameAndDataTypeChangePreEvent],
+        MVAlterColumnPreEventListener)
+      .addListener(classOf[AlterTableDropPartitionMetaEvent], MVDropPartitionMetaEventListener)
+      .addListener(classOf[AlterTableDropPartitionPreStatusEvent], MVDropPartitionPreEventListener)
+      .addListener(classOf[DropTablePreEvent], MVDropTablePreEventListener)
   }
 
   /**

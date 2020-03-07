@@ -20,7 +20,7 @@ package org.apache.spark.sql.listeners
 import scala.collection.JavaConverters._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.DistributableDataMapFormat
+import org.apache.carbondata.core.datamap.IndexInputFormat
 import org.apache.carbondata.events.{Event, IndexServerLoadEvent, OperationContext, OperationEventListener}
 import org.apache.carbondata.indexserver.IndexServer
 
@@ -33,7 +33,7 @@ object PrePrimingEventListener extends OperationEventListener {
       operationContext: OperationContext): Unit = {
     val prePrimingEvent = event.asInstanceOf[IndexServerLoadEvent]
     val carbonTable = prePrimingEvent.carbonTable
-    val dataMapFormat = new DistributableDataMapFormat(carbonTable,
+    val dataMapFormat = new IndexInputFormat(carbonTable,
       null,
       prePrimingEvent.segment.asJava,
       prePrimingEvent.invalidsegment.asJava,

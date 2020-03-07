@@ -41,6 +41,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.util.DataTypeConverterUtil
+import org.apache.carbondata.view.MaterializedViewManagerInSpark
 
 object DDLHelper {
 
@@ -379,13 +380,17 @@ object DDLHelper {
           throw new MalformedCarbonCommandException(
             "Streaming property value is incorrect")
         }
-        if (carbonTable.hasMVCreated) {
+        if (carbonTable.isMaterializedView) {
+          throw new MalformedCarbonCommandException(
+            "Datamap table does not support set streaming property")
+        }
+        if (MaterializedViewManagerInSpark.get(sparkSession).hasSchemaOnTable(carbonTable)) {
           throw new MalformedCarbonCommandException(
             "The table which has materialized view does not support set streaming property")
         }
-        if (carbonTable.isChildTableForMV) {
+        if (carbonTable.hasMVCreated) {
           throw new MalformedCarbonCommandException(
-            "Datamap table does not support set streaming property")
+            "The table which has materialized view does not support set streaming property")
         }
       }
     }

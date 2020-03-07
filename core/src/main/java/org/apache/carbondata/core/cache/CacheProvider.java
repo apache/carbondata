@@ -23,7 +23,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.indexstore.BlockletDataMapIndexStore;
+import org.apache.carbondata.core.indexstore.BlockletIndexStore;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 import org.apache.log4j.Logger;
@@ -131,7 +131,7 @@ public class CacheProvider {
   private void createBlockletDataMapCache(CacheType cacheType) {
     Cache cacheObject = null;
     if (cacheType.equals(cacheType.DRIVER_BLOCKLET_DATAMAP)) {
-      cacheObject = new BlockletDataMapIndexStore(carbonLRUCache);
+      cacheObject = new BlockletIndexStore(carbonLRUCache);
     }
     cacheTypeToCacheMap.put(cacheType, cacheObject);
   }

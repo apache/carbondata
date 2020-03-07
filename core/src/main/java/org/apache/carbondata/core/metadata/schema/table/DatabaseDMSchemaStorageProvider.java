@@ -32,7 +32,7 @@ public class DatabaseDMSchemaStorageProvider implements DataMapSchemaStorageProv
 
   @Override
   public void saveSchema(DataMapSchema dataMapSchema) {
-    throw new UnsupportedOperationException("not support saving DataMap schema into database");
+    throw new UnsupportedOperationException("not support saving Index schema into database");
   }
 
   @Override
@@ -53,6 +53,6 @@ public class DatabaseDMSchemaStorageProvider implements DataMapSchemaStorageProv
 
   @Override
   public void dropSchema(String dataMapName) {
-    throw new UnsupportedOperationException("not support dropping DataMap schema from database");
+    throw new UnsupportedOperationException("not support dropping Index schema from database");
   }
 }

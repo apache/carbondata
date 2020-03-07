@@ -460,7 +460,7 @@ public final class CarbonCommonConstants {
   public static final String LOCAL_DICTIONARY_EXCLUDE = "local_dictionary_exclude";
 
   /**
-   * DMPROPERTY for Index DataMap, like lucene, bloomfilter DataMap,
+   * DMPROPERTY for Index Index, like lucene, bloomfilter Index,
    * to indicate a list of column name to be indexed
    */
   public static final String INDEX_COLUMNS = "INDEX_COLUMNS";
@@ -2265,6 +2265,11 @@ public final class CarbonCommonConstants {
    */
   public static final String PARENT_TABLES = "parent_tables";
 
+  /**
+   * This property will be used to store table name's associated with mv
+   */
+  public static final String ASSOCIATED_TABLES = "associated_tables";
+
   public static final String LOAD_SYNC_TIME = "load_sync_time";
 
   public static final String CARBON_INDEX_SERVER_JOBNAME_LENGTH =
@@ -2421,5 +2426,10 @@ public final class CarbonCommonConstants {
    */
   public static final int INDEX_CACHE_EXPIRATION_TIME_IN_SECONDS_DEFAULT = Integer.MAX_VALUE;
 
+  /**
+   * Materialized view thread context properties
+   */
+  @CarbonProperty
+  public static final String DISABLE_SQL_REWRITE = "disable_sql_rewrite";
 
 }

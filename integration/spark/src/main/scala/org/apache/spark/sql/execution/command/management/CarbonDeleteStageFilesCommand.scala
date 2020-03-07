@@ -59,8 +59,8 @@ case class CarbonDeleteStageFilesCommand(
     if (!table.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
-    if (table.isChildTableForMV) {
-      throw new MalformedCarbonCommandException("Unsupported operation on MV table")
+    if (table.isMaterializedView) {
+      throw new MalformedCarbonCommandException("Unsupported operation on materialized view")
     }
     val tablePath = table.getTablePath
     val startTime = System.currentTimeMillis()

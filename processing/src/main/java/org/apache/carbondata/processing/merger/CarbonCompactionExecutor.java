@@ -28,7 +28,7 @@ import java.util.Set;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.DataMapFilter;
+import org.apache.carbondata.core.datamap.IndexFilter;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.block.TaskBlockInfo;
@@ -130,7 +130,7 @@ public class CarbonCompactionExecutor {
               .enableForcedDetailRawQuery();
     } else {
       builder = new QueryModelBuilder(carbonTable).projectAllColumns()
-          .filterExpression(new DataMapFilter(carbonTable, filterExpr))
+          .filterExpression(new IndexFilter(carbonTable, filterExpr))
           .dataConverter(dataTypeConverter).enableForcedDetailRawQuery()
           .convertToRangeFilter(false);
     }

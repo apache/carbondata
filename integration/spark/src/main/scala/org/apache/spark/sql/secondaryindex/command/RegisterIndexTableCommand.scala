@@ -74,7 +74,7 @@ case class RegisterIndexTableCommand(dbName: Option[String], indexTableName: Str
     // 2. Read TableInfo
     val tableInfo = SchemaReader.getTableInfo(absoluteTableIdentifier)
     val columns: List[String] = getIndexColumn(tableInfo)
-    val secondaryIndex = SecondaryIndex(dbName, parentTable.toLowerCase, columns,
+    val secondaryIndex = IndexModel(dbName, parentTable.toLowerCase, columns,
       indexTableName.toLowerCase)
     // 3. Call the create index command with isCreateSIndex = false
     // (do not create the si table in store path)

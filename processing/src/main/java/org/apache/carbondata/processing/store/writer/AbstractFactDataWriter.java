@@ -51,7 +51,7 @@ import org.apache.carbondata.core.writer.CarbonIndexFileWriter;
 import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.IndexHeader;
-import org.apache.carbondata.processing.datamap.DataMapWriterListener;
+import org.apache.carbondata.processing.datamap.IndexWriterListener;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 
 import static org.apache.carbondata.core.constants.SortScopeOptions.SortScope.NO_SORT;
@@ -139,7 +139,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
   /**
    * listener to write data map
    */
-  protected DataMapWriterListener listener;
+  protected IndexWriterListener listener;
   /**
    * Whether directly write fact data to store path
    */
@@ -189,7 +189,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     thriftColumnSchemaList = getColumnSchemaListAndCardinality(this.model.getWrapperColumnSchema());
     blockletMetadata = new ArrayList<BlockletInfo3>();
     blockletIndex = new ArrayList<>();
-    listener = this.model.getDataMapWriterlistener();
+    listener = this.model.getIndexWriterlistener();
     if (model.getColumnLocalDictGenMap().size() > 0) {
       int numberOfCores = 1;
       if (model.getNumberOfCores() > 1) {

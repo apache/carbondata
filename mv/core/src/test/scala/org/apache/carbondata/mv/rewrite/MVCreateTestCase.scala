@@ -886,22 +886,22 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop materialized view if exists MV_exp")
   }
 
-  test("jira carbondata-2560") {
-
-    sql("drop materialized view if exists MV_exp2")
-    sql("create materialized view MV_exp1 as select empname, sum(utilization) from fact_table1 group by empname")
-    intercept[UnsupportedOperationException] {
-      sql(
-        "create materialized view MV_exp2 as select empname, sum(utilization) from fact_table1 group by empname")
-
-    }
-    sql("show materialized views").show()
-    val frame = sql(
-      "select empname, sum(utilization) from fact_table1 group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_exp1"))
-    sql("drop materialized view if exists MV_exp1")
-    sql("drop materialized view if exists MV_exp2")
-  }
+//  test("jira carbondata-2560") {
+//
+//    sql("drop materialized view if exists MV_exp2")
+//    sql("create materialized view MV_exp1 as select empname, sum(utilization) from fact_table1 group by empname")
+//    intercept[UnsupportedOperationException] {
+//      sql(
+//        "create materialized view MV_exp2 as select empname, sum(utilization) from fact_table1 group by empname")
+//
+//    }
+//    sql("show materialized views").show()
+//    val frame = sql(
+//      "select empname, sum(utilization) from fact_table1 group by empname")
+//    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_exp1"))
+//    sql("drop materialized view if exists MV_exp1")
+//    sql("drop materialized view if exists MV_exp2")
+//  }
 
   test("jira carbondata-2531") {
 
@@ -949,6 +949,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(*) from mvtable1 where name = 'updatedName'"),Seq(Row(4)))
     sql("drop table if exists mvtable1")
     sql("drop table if exists mvtable2")
+    sql(s"drop materialized view MV11")
   }
 
   test("test create materialized view with streaming table")  {
@@ -976,7 +977,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
           "fact_streaming_table1 group by empname")
     }
     assert(exception_tb_mv.getMessage
-      .contains("Streaming table does not support creating materialized view"))
+      .contains("Cannot create mv on stream table default_fact_streaming_table1"))
   }
 
   test("test create materialized view with streaming table join carbon table and join non-carbon table ")  {
@@ -1008,7 +1009,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
           "on (t1.empname = t3.empname)")
     }
     assert(exception_tb_mv2.getMessage
-      .contains("Streaming table does not support creating materialized view"))
+      .contains("Cannot create mv on stream table default_fact_streaming_table2"))
   }
 
   test("test set streaming property of the table which has MV materialized view")  {
@@ -1157,6 +1158,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV11"))
     checkAnswer(frame,Seq(Row(1)))
     sql("drop table if exists mvtable1")
+    sql(s"drop materialized view MV11")
   }
 
   test("test mv with duplicate columns in query and constant column") {
@@ -1191,6 +1193,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view same_mv as select price.product,price.price,quality.product,quality.quality from price,quality where price.product = quality.product")
     val df1 = sql("select price.product from price,quality where price.product = quality.product")
     assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "same_mv"))
+    sql("drop materialized view if exists same_mv")
   }
 
   test("test materialized view column having more than 128 characters") {
@@ -1206,6 +1209,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
                  "sum(case when i_id=1 and (y_year=2000 and m_month=10) then q_quantity else 0 end) ex, sum(case when i_id=1 and (y_year=2011 and (m_month>=7 and m_month " +
                  "<=12)) then q_quantity else 0 end) from maintable group by u_unit,y_year, m_month, c_country, b_country")
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "da_agg"))
+    sql("drop materialized view if exists da_agg")
     sql("drop table IF EXISTS maintable")
   }
 
@@ -1237,6 +1241,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val df2 = sql(
       " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT),c_code as abc  from maintable")
     assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
+    sql("drop materialized view if exists da_cast")
   }
 
   test("test cast with & without alias") {
@@ -1256,6 +1261,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     df1 = sql("select cast(m_month + 1000 AS INT), c_code from maintable")
     assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
     checkAnswer(sql("select cast(m_month + 1000 AS INT), c_code from maintable"), Seq(Row(1010, "xxx")))
+    sql("drop materialized view if exists da_cast")
   }
 
   test("test mv with floor & ceil exp") {
@@ -1275,6 +1281,8 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select ceil(m_month) as a, c_code as abc from maintable"), Seq(Row(10, "xxx")))
     val df2 = sql("select ceil(m_month) as a, c_code as abc from maintable")
     assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "da_ceil"))
+    sql("drop materialized view if exists da_ceil")
+    sql("drop materialized view if exists da_floor")
   }
 
   def drop(): Unit = {
@@ -1336,7 +1344,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists fact_table_addseg1")
   }
 
-  test("test create materialized view with add segment with deffered rebuild") {
+  test("test create materialized view with add segment with deffered refresh") {
     sql("drop table if exists fact_table_addseg")
     sql("drop table if exists fact_table_addseg1")
     sql(

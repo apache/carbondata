@@ -20,11 +20,11 @@ package org.apache.carbondata.mv.rewrite
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.status.DataMapSegmentStatusUtil
+import org.apache.carbondata.core.datamap.status.MVSegmentStatusUtil
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.util.CarbonProperties
 
 
 /**
@@ -62,10 +62,10 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql(s"refresh materialized view datamap1")
     val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "datamap1_table"
+      "datamap1"
     )
     var loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    var segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
+    var segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0")
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
@@ -75,7 +75,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     loadDataToFactTable("test_table1")
     sql(s"refresh materialized view datamap1")
     loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
+    segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
     segmentList.clear()
     segmentList.add("1")
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
@@ -108,9 +108,9 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql(s"refresh materialized view datamap1")
     val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "datamap1_table")
+      "datamap1")
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    val segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
+    val segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("1")
     segmentList.add("2")
@@ -142,13 +142,13 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("update testtable set(a) = ('aaa') where b = 'abc'").show(false)
     val dataMapTable = CarbonEnv.getCarbonTable(
       Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
-      "datamap1_table")(sqlContext.sparkSession)
+      "datamap1")(sqlContext.sparkSession)
     var loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
     assert(loadMetadataDetails(0).getSegmentStatus == SegmentStatus.MARKED_FOR_DELETE)
     checkAnswer(sql("select * from main_table"), sql("select * from testtable"))
     sql(s"refresh materialized view datamap1")
     loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    val segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
+    val segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0")
     segmentList.add("1")
@@ -174,21 +174,21 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql(s"refresh materialized view datamap1")
     loadDataToFactTable("test_table")
     sql(s"refresh materialized view datamap1")
-    sql("alter table datamap1_table compact 'major'")
+    sql("alter table datamap1 compact 'major'")
     val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "datamap1_table"
+      "datamap1"
     )
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    val segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(3).getExtraInfo)
+    val segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(3).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0")
     segmentList.add("1")
     segmentList.add("2")
     segmentList.add("3")
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
-    checkExistence(sql("show segments for table datamap1_table"), true, "0.1")
-    sql("clean files for table datamap1_table")
+    checkExistence(sql("show segments for table datamap1"), true, "0.1")
+    sql("clean files for table datamap1")
     sql("drop table IF EXISTS test_table")
   }
 
@@ -212,13 +212,13 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql(s"refresh materialized view datamap1")
     loadDataToFactTable("test_table")
     sql(s"refresh materialized view datamap1")
-    sql("clean files for table datamap1_table")
+    sql("clean files for table datamap1")
     sql("clean files for table test_table")
     val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "datamap1_table")
+      "datamap1")
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    val segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(2).getExtraInfo)
+    val segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(2).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0.1")
     segmentList.add("4")
@@ -241,13 +241,13 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("insert overwrite table test_table select 'd','abc',3")
     val dataMapTable = CarbonEnv.getCarbonTable(
       Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
-      "datamap1_table")(sqlContext.sparkSession)
+      "datamap1")(sqlContext.sparkSession)
     var loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
     assert(loadMetadataDetails(0).getSegmentStatus == SegmentStatus.MARKED_FOR_DELETE)
     checkAnswer(sql(" select a, sum(b) from test_table  group by a"), Seq(Row("d", null)))
     sql(s"refresh materialized view datamap1")
     loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    val segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
+    val segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("2")
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
@@ -337,14 +337,14 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("insert into main_table values('a','abc',1)")
     sql("insert into main_table values('b','bcd',2)")
     sql("refresh materialized view datamap1")
-    sql("alter table datamap1_table compact 'custom' where segment.id in (0,1)")
+    sql("alter table datamap1 compact 'custom' where segment.id in (0,1)")
     val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "datamap1_table")
+      "datamap1")
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
     assert(loadMetadataDetails(0).getSegmentStatus == SegmentStatus.COMPACTED)
     assert(loadMetadataDetails(1).getSegmentStatus == SegmentStatus.COMPACTED)
-    var segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(2).getExtraInfo)
+    var segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(2).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0")
     segmentList.add("1")
@@ -387,10 +387,10 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     val query: String = "select empname from test_table"
     val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "datamap1_table"
+      "datamap1"
     )
     var loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    var segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
+    var segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0")
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
@@ -399,7 +399,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     loadDataToFactTable("test_table")
     loadDataToFactTable("test_table1")
     loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
-    segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
+    segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
     segmentList.clear()
     segmentList.add("1")
     assert(segmentList.containsAll( segmentMap.get("default.test_table")))
@@ -434,10 +434,10 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("update testtable set(a) = ('aaa') where b = 'abc'").show(false)
     val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "datamap1_table")
+      "datamap1")
     var loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
     assert(loadMetadataDetails(0).getSegmentStatus == SegmentStatus.MARKED_FOR_DELETE)
-    var segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
+    var segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0")
     segmentList.add("1")
@@ -469,10 +469,10 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("delete from  testtable  where b = 'abc'").show(false)
     val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "datamap1_table")
+      "datamap1")
     var loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
     assert(loadMetadataDetails(0).getSegmentStatus == SegmentStatus.MARKED_FOR_DELETE)
-    var segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
+    var segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(1).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0")
     segmentList.add("1")
@@ -496,7 +496,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("insert into main_table values('d','bcd',2)")
     sql("alter table main_table compact 'major'")
     checkExistence(sql("show segments for table main_table"), true, "0.1")
-    checkExistence(sql("show segments for table datamap1_table"), true, "0.1")
+    checkExistence(sql("show segments for table datamap1"), true, "0.1")
     sql("drop table IF EXISTS main_table")
   }
 
@@ -509,7 +509,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("delete from  main_table  where b = 'abc'").show(false)
     val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "datamap1_table")
+      "datamap1")
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
     assert(loadMetadataDetails.length == 1)
     assert(loadMetadataDetails(0).getSegmentStatus == SegmentStatus.MARKED_FOR_DELETE)
@@ -522,7 +522,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql("drop materialized view if exists datamap1")
     sql("create materialized view datamap1  as select a,b from main_table")
     sql("insert into main_table values('b','abcd',1)")
-    sql("SET carbon.input.segments.default.datamap1_table=0")
+    sql("SET carbon.input.segments.default.datamap1=0")
     assert(sql("select a,b from main_table").collect().length == 1)
     sql("drop table IF EXISTS main_table")
   }
@@ -541,16 +541,22 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     sql(s"refresh materialized view datamap1")
     val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      "datamap1_table")
+      "datamap1")
     val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(dataMapTable.getMetadataPath)
     assert(loadMetadataDetails.length == 1)
-    var segmentMap = DataMapSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
+    var segmentMap = MVSegmentStatusUtil.getSegmentMap(loadMetadataDetails(0).getExtraInfo)
     val segmentList = new java.util.ArrayList[String]()
     segmentList.add("0.1")
     assert(segmentList.containsAll(segmentMap.get("default.test_table")))
   }
 
   test("test auto compaction with threshold") {
+    // Initialize session parameters.
+    val sessionParams =
+      CarbonEnv.getInstance(sqlContext.sparkSession).carbonSessionInfo.getSessionParams
+    sessionParams.removeProperty("carbon.input.segments.default.datamap1")
+    printConfiguration()
+
     sql(s"drop table IF EXISTS test_table")
     sql(
       s"""
@@ -562,7 +568,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     loadDataToFactTable("test_table")
     sql("drop materialized view if exists datamap1")
-    sql("create materialized view datamap_com  as select empname, designation from test_table")
+    sql("create materialized view datamap1  as select empname, designation from test_table")
     for (i <- 0 to 16) {
       loadDataToFactTable("test_table")
     }
@@ -573,9 +579,9 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select empname, designation from test_table"),
       sql("select empname, designation from test_table1"))
     val result = sql("show materialized views on table test_table").collectAsList()
-    assert(result.get(0).get(6).toString.contains("\"default.test_table\":\"12.1\""))
+    assert(result.get(0).get(5).toString.contains("'associated_tables'='test_table'"))
     val df = sql(s""" select empname, designation from test_table""".stripMargin)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_com"))
+    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
   }
 
   test("test all aggregate functions") {
@@ -583,7 +589,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     createTableFactTable("test_table1")
     loadDataToFactTable("test_table")
     loadDataToFactTable("test_table1")
-    sql("drop materialized view if exists datamap1")
+    sql("drop materialized view if exists datamap_agg")
     sql(
       "create materialized view datamap_agg  as select variance(workgroupcategory),var_samp" +
       "(projectcode), var_pop(projectcode), stddev(projectcode),stddev_samp(workgroupcategory)," +
@@ -617,7 +623,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     Seq("carbon.enable.auto.load.merge",
       "carbon.input.segments.default.main_table",
       "carbon.input.segments.default.test_table",
-      "carbon.input.segments.default.datamap1_table").foreach { key =>
+      "carbon.input.segments.default.datamap1").foreach { key =>
       sqlContext.sparkSession.conf.unset(key)
     }
     sql("drop table if exists products")

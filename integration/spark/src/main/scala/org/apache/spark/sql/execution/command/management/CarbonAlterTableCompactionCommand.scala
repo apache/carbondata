@@ -46,13 +46,14 @@ import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatusManage
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.core.view.{MaterializedViewSchema, MaterializedViewStatus}
 import org.apache.carbondata.events._
-import org.apache.carbondata.processing.loading.events.LoadEvents.LoadMetadataEvent
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, StreamHandoffRDD}
 import org.apache.carbondata.streaming.segment.StreamSegment
+import org.apache.carbondata.view.MaterializedViewManagerInSpark
 
 /**
  * Command for the compaction in alter table command
@@ -354,6 +355,14 @@ case class CarbonAlterTableCompactionCommand(
           updateLock.unlock()
         }
         DataMapStatusManager.disableAllLazyDataMaps(carbonTable)
+        val viewManager = MaterializedViewManagerInSpark.get(sqlContext.sparkSession)
+        val viewSchemas = new util.ArrayList[MaterializedViewSchema]()
+        for (viewSchema <- viewManager.getSchemasOnTable(carbonTable).asScala) {
+          if (viewSchema.isRefreshOnManual) {
+            viewSchemas.add(viewSchema)
+          }
+        }
+        viewManager.setStatus(viewSchemas, MaterializedViewStatus.DISABLED)
       }
     }
   }

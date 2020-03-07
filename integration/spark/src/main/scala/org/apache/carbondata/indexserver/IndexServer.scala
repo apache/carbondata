@@ -18,8 +18,8 @@ package org.apache.carbondata.indexserver
 
 import java.net.InetSocketAddress
 import java.security.PrivilegedAction
-import java.util.concurrent.{Executors, ExecutorService}
 import java.util.UUID
+import java.util.concurrent.{Executors, ExecutorService}
 
 import scala.collection.JavaConverters._
 
@@ -36,7 +36,7 @@ import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DistributableDataMapFormat
+import org.apache.carbondata.core.datamap.IndexInputFormat
 import org.apache.carbondata.core.indexstore.{ExtendedBlockletWrapperContainer, SegmentWrapperContainer}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
@@ -50,7 +50,7 @@ trait ServerInterface {
   /**
    * Used to prune and cache the datamaps for the table.
    */
-  def getSplits(request: DistributableDataMapFormat): ExtendedBlockletWrapperContainer
+  def getSplits(request: IndexInputFormat): ExtendedBlockletWrapperContainer
 
   /**
    * Get the cache size for the specified tables.
@@ -63,9 +63,9 @@ trait ServerInterface {
   def invalidateSegmentCache(carbonTable: CarbonTable,
   segmentIds: Array[String], jobGroupId: String = "", isFallBack: Boolean = false): Unit
 
-  def getCount(request: DistributableDataMapFormat): LongWritable
+  def getCount(request: IndexInputFormat): LongWritable
 
-  def getPrunedSegments(request: DistributableDataMapFormat): SegmentWrapperContainer
+  def getPrunedSegments(request: IndexInputFormat): SegmentWrapperContainer
 
 }
 
@@ -121,7 +121,7 @@ object IndexServer extends ServerInterface {
     })
   }
 
-  def getCount(request: DistributableDataMapFormat): LongWritable = {
+  def getCount(request: IndexInputFormat): LongWritable = {
     doAs {
       val sparkSession = SparkSQLUtil.getSparkSession
       var currentUser: String = null
@@ -153,7 +153,7 @@ object IndexServer extends ServerInterface {
     }
   }
 
-  def getSplits(request: DistributableDataMapFormat): ExtendedBlockletWrapperContainer = {
+  def getSplits(request: IndexInputFormat): ExtendedBlockletWrapperContainer = {
     doAs {
       val sparkSession = SparkSQLUtil.getSparkSession
       if (!request.isFallbackJob) {
@@ -224,7 +224,7 @@ object IndexServer extends ServerInterface {
     }
   }
 
-  override def getPrunedSegments(request: DistributableDataMapFormat): SegmentWrapperContainer =
+  override def getPrunedSegments(request: IndexInputFormat): SegmentWrapperContainer =
     doAs {
       val sparkSession = SparkSQLUtil.getSparkSession
       sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)

@@ -325,23 +325,19 @@ trait Printers {
   def asOneLineString(t: Fragment): String = render(t, newSQLFragmentOneLinePrinter)
 
   def newSQLFragmentCompactPrinter(writer: PrintWriter): SQLFragmentCompactPrinter = {
-    new SQLFragmentCompactPrinter(
-      writer)
+    new SQLFragmentCompactPrinter(writer)
   }
 
   def newSQLFragmentCompactPrinter(stream: OutputStream): SQLFragmentCompactPrinter = {
-    newSQLFragmentCompactPrinter(
-      new PrintWriter(stream))
+    newSQLFragmentCompactPrinter(new PrintWriter(stream))
   }
 
   def newSQLFragmentOneLinePrinter(writer: PrintWriter): SQLFragmentOneLinePrinter = {
-    new SQLFragmentOneLinePrinter(
-      writer)
+    new SQLFragmentOneLinePrinter(writer)
   }
 
   def newSQLFragmentOneLinePrinter(stream: OutputStream): SQLFragmentOneLinePrinter = {
-    newSQLFragmentOneLinePrinter(
-      new PrintWriter(stream))
+    newSQLFragmentOneLinePrinter(new PrintWriter(stream))
   }
 
   def formatUDF(select: Seq[NamedExpression]): String = {

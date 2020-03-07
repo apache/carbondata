@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.indexstore.row.DataMapRow;
+import org.apache.carbondata.core.indexstore.row.IndexRow;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.stream.ExtendedByteArrayOutputStream;
@@ -62,8 +62,8 @@ public class ExtendedBlocklet extends Blocklet {
     return this.inputSplit.getDetailInfo();
   }
 
-  public void setDataMapRow(DataMapRow dataMapRow) {
-    this.inputSplit.setDataMapRow(dataMapRow);
+  public void setDataMapRow(IndexRow indexRow) {
+    this.inputSplit.setIndexRow(indexRow);
   }
 
   public String[] getLocations() {

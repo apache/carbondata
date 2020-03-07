@@ -21,8 +21,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.immutable
 
-import org.apache.spark.sql.CarbonToSparkAdapter
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSet, Cast, Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, AttributeSet, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.rules.{Rule, RuleExecutor}
 import org.apache.spark.sql.types.Metadata
 
@@ -118,7 +117,7 @@ class SQLBuilder private(
                 if (i > -1) {
                   // this is a walk around for mystery of spark qualifier
                   if (aliasMap.nonEmpty && aliasMap(i).nonEmpty) {
-                    CarbonToSparkAdapter.createAttributeReference(
+                    ExpressionBuilder.createReference(
                       ref.name, ref.dataType, nullable = true, metadata = Metadata.empty,
                       exprId = ref.exprId, qualifier = Some(aliasMap(i)))
                   } else {
@@ -127,9 +126,9 @@ class SQLBuilder private(
                 } else {
                   attrMap.get(ref) match {
                     case Some(alias) =>
-                      CarbonToSparkAdapter.createAttributeReference(
+                      AttributeReference(
                         alias.child.asInstanceOf[AttributeReference].name,
-                        ref.dataType, nullable = true, metadata = Metadata.empty,
+                        ref.dataType, nullable = true, metadata = Metadata.empty)(
                         exprId = ref.exprId,
                         alias.child.asInstanceOf[AttributeReference].qualifier)
                     case None => ref
@@ -157,15 +156,16 @@ class SQLBuilder private(
             var list: List[(Int, String)] = List()
             var newS = s.copy()
             s.children.zipWithIndex.filterNot { _._1.isInstanceOf[modular.LeafNode] }.foreach {
-              case (child: ModularPlan, index) if (!s.aliasMap.contains(index)) =>
+              case (child: ModularPlan, index) if !s.aliasMap.contains(index) =>
                 val subqueryName = newSubqueryName()
-                val windowAttributeSet = if (child.isInstanceOf[Select]) {
-                  val windowExprs = child.asInstanceOf[Select].windowSpec
-                    .map { case Seq(expr) => expr.asInstanceOf[Seq[NamedExpression]] }
-                    .foldLeft(Seq.empty.asInstanceOf[Seq[NamedExpression]])(_ ++ _)
-                  SQLBuilder.collectAttributeSet(windowExprs)
-                } else {
-                  AttributeSet.empty
+                val windowAttributeSet = child match {
+                  case select: Select =>
+                    val windowExprs = select.windowSpec
+                      .map { case Seq(expr) => expr.asInstanceOf[Seq[NamedExpression]] }
+                      .foldLeft(Seq.empty.asInstanceOf[Seq[NamedExpression]])(_ ++ _)
+                    SQLBuilder.collectAttributeSet(windowExprs)
+                  case _ =>
+                    AttributeSet.empty
                 }
                 val subqueryAttributeSet = child.outputSet ++ windowAttributeSet
                 //              TODO: how to use alias to avoid duplicate names with distinct
@@ -180,12 +180,12 @@ class SQLBuilder private(
                 }
                 list = list :+ ((index, subqueryName))
                 newS = newS.transformExpressions {
-                  case ref: Attribute if (subqueryAttributeSet.contains(ref)) =>
-                    CarbonToSparkAdapter.createAttributeReference(
+                  case ref: Attribute if subqueryAttributeSet.contains(ref) =>
+                    ExpressionBuilder.createReference(
                       ref.name, ref.dataType, nullable = true, Metadata.empty,
                       ref.exprId, Some(subqueryName))
-                  case alias: Alias if (subqueryAttributeSet.contains(alias.toAttribute)) =>
-                    CarbonToSparkAdapter.createAliasRef(
+                  case alias: Alias if subqueryAttributeSet.contains(alias.toAttribute) =>
+                    ExpressionBuilder.createAlias(
                       alias.child, alias.name, alias.exprId, Some(subqueryName))
                 }
 
@@ -198,7 +198,7 @@ class SQLBuilder private(
               newS
             }
 
-          case g@modular.GroupBy(_, _, _, _, _, _, _, _) if (!g.rewritten && g.alias.isEmpty) =>
+          case g@modular.GroupBy(_, _, _, _, _, _, _, _) if !g.rewritten && g.alias.isEmpty =>
             val newG = if (g.outputList.isEmpty) {
               val ol = g.predicateList.map { case a: Attribute => a }
               g.copy(outputList = ol)
@@ -213,12 +213,12 @@ class SQLBuilder private(
               }")
             }
             newG.transformExpressions {
-              case ref: AttributeReference if (subqueryAttributeSet.contains(ref)) =>
-                CarbonToSparkAdapter.createAttributeReference(
+              case ref: AttributeReference if subqueryAttributeSet.contains(ref) =>
+                ExpressionBuilder.createReference(
                   ref.name, ref.dataType, nullable = true, Metadata.empty,
                   ref.exprId, Some(subqueryName))
-              case alias: Alias if (subqueryAttributeSet.contains(alias.toAttribute)) =>
-                CarbonToSparkAdapter.createAliasRef(
+              case alias: Alias if subqueryAttributeSet.contains(alias.toAttribute) =>
+                ExpressionBuilder.createAlias(
                   alias.child, alias.name, alias.exprId, Some(subqueryName))
             }.copy(alias = Some(subqueryName))
         }

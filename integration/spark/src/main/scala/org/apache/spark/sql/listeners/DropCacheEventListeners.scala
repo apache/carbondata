@@ -20,6 +20,7 @@ package org.apache.spark.sql.listeners
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
+import org.apache.log4j.Logger
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.cache.{CacheUtil, CarbonDropCacheCommand}
@@ -31,15 +32,12 @@ import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.events.{DropTableCacheEvent, Event, OperationContext, OperationEventListener}
 
-object DropCacheDataMapEventListener extends OperationEventListener {
+object DropCacheMVEventListener extends OperationEventListener {
 
-  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+  val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   /**
    * Called on a specified event occurrence
-   *
-   * @param event
-   * @param operationContext
    */
   override protected def onEvent(event: Event, operationContext: OperationContext): Unit = {
     event match {
@@ -47,7 +45,7 @@ object DropCacheDataMapEventListener extends OperationEventListener {
         val carbonTable = dropCacheEvent.carbonTable
         val sparkSession = dropCacheEvent.sparkSession
         val internalCall = dropCacheEvent.internalCall
-        if (carbonTable.isChildTableForMV && !internalCall) {
+        if (carbonTable.isMaterializedView && !internalCall) {
           throw new UnsupportedOperationException("Operation not allowed on child table.")
         }
 
@@ -55,7 +53,7 @@ object DropCacheDataMapEventListener extends OperationEventListener {
           val childrenSchemas = DataMapStoreManager.getInstance
             .getDataMapSchemasOfTable(carbonTable).asScala
             .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                     !dataMapSchema.isIndexDataMap)
+                                     !dataMapSchema.isIndex)
           dropCacheForChildTables(sparkSession, childrenSchemas)
         }
     }
@@ -87,13 +85,10 @@ object DropCacheDataMapEventListener extends OperationEventListener {
 
 object DropCacheBloomEventListener extends OperationEventListener {
 
-  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+  val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   /**
    * Called on a specified event occurrence
-   *
-   * @param event
-   * @param operationContext
    */
   override protected def onEvent(event: Event, operationContext: OperationContext): Unit = {
     event match {

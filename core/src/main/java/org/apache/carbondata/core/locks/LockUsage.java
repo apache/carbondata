@@ -35,6 +35,7 @@ public class LockUsage {
   public static final String DROP_TABLE_LOCK = "droptable.lock";
   public static final String STREAMING_LOCK = "streaming.lock";
   public static final String DATAMAP_STATUS_LOCK = "datamapstatus.lock";
+  public static final String MATERIALIZED_VIEW_STATUS_LOCK = "mvstatus.lock";
   public static final String CONCURRENT_LOAD_LOCK = "concurrentload.lock";
   public static final String UPDATE_LOCK = "update.lock";
   public static final String INGEST_LOCK = "ingest.lock";

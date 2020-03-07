@@ -1005,8 +1005,8 @@ public final class CarbonProperties {
   }
 
   public void print() {
-    LOGGER.info("------Using Carbon.properties --------");
-    LOGGER.info(carbonProperties.toString());
+    LOGGER.error("------Using Carbon.properties --------");
+    LOGGER.error(carbonProperties.toString());
   }
 
   /**
@@ -1593,6 +1593,24 @@ public final class CarbonProperties {
       systemLocation = FileFactory.getUpdatedFilePath(systemLocation);
     }
     return systemLocation + CarbonCommonConstants.FILE_SEPARATOR + "_system";
+  }
+
+  /**
+   * Get the configured system folder location.
+   * @return
+   */
+  public String getSystemFolderLocation(String databaseName) {
+    String systemLocation = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION);
+    if (systemLocation == null) {
+      systemLocation = getStorePath();
+    }
+    if (systemLocation != null) {
+      systemLocation = CarbonUtil.checkAndAppendFileSystemURIScheme(systemLocation);
+      systemLocation = FileFactory.getUpdatedFilePath(systemLocation);
+    }
+    return systemLocation + CarbonCommonConstants.FILE_SEPARATOR +
+        databaseName + CarbonCommonConstants.FILE_SEPARATOR + "_system";
   }
 
   /**

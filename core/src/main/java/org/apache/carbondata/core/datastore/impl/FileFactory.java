@@ -689,4 +689,39 @@ public final class FileFactory {
       CarbonUtil.closeStreams(fileReader, bufferedReader);
     }
   }
+
+  public static void touchFile(CarbonFile file) throws IOException {
+    if (file.exists()) {
+      return;
+    }
+    touchDirectory(file.getParentFile());
+    file.createNewFile();
+  }
+
+  public static void touchFile(CarbonFile file, FsPermission permission) throws IOException {
+    if (file.exists()) {
+      return;
+    }
+    touchDirectory(file.getParentFile(), permission);
+    file.createNewFile(permission);
+  }
+
+  public static void touchDirectory(CarbonFile directory)
+      throws IOException {
+    if (directory.exists()) {
+      return;
+    }
+    touchDirectory(directory.getParentFile());
+    directory.mkdirs();
+  }
+
+  public static void touchDirectory(CarbonFile directory, FsPermission permission)
+      throws IOException {
+    if (directory.exists()) {
+      return;
+    }
+    touchDirectory(directory.getParentFile(), permission);
+    FileFactory.createDirectoryAndSetPermission(directory.getCanonicalPath(), permission);
+  }
+
 }

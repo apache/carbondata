@@ -29,11 +29,12 @@ import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRe
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.cache.{CarbonDropCacheCommand, CarbonShowCacheCommand}
-import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDataMapRebuildCommand, CarbonDataMapShowCommand, CarbonDropDataMapCommand}
+import org.apache.spark.sql.execution.command.index.{CarbonCreateIndexCommand, CarbonDropIndexCommand, CarbonRefreshIndexCommand, CarbonShowIndexCommand}
 import org.apache.spark.sql.execution.command.management._
 import org.apache.spark.sql.execution.command.schema.CarbonAlterTableDropColumnCommand
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
+import org.apache.spark.sql.execution.command.view.{CarbonCreateMaterializedViewCommand, CarbonDropMaterializedViewCommand, CarbonRefreshMaterializedViewCommand, CarbonShowMaterializedViewCommand}
 import org.apache.spark.sql.secondaryindex.command._
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.util.CarbonException
@@ -76,7 +77,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   }
 
 
-  protected lazy val start: Parser[LogicalPlan] = startCommand | extendedSparkSyntax
+  protected lazy val start: Parser[LogicalPlan] =
+    startCommand | extendedSparkSyntax | materializedViewCommands
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
@@ -100,6 +102,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val extendedSparkSyntax: Parser[LogicalPlan] =
     loadDataNew | explainPlan | alterTableColumnRenameAndModifyDataType |
     alterTableAddColumns
+
+  protected lazy val materializedViewCommands: Parser[LogicalPlan] =
+    createMaterializedView | dropMaterializedView | showMaterializedView | refreshMaterializedView
 
   protected lazy val alterTable: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (COMPACT ~ stringLit) ~
@@ -175,7 +180,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     (AS ~> restInput).? <~ opt(";") ^^ {
       case ifnotexists ~ dmname ~ tableIdent ~ dmProviderName ~ deferred ~ dmprops ~ query =>
         val map = dmprops.getOrElse(List[(String, String)]()).toMap[String, String]
-        CarbonCreateDataMapCommand(dmname, tableIdent, dmProviderName, map, query,
+        CarbonCreateIndexCommand(dmname, tableIdent, dmProviderName, map, query,
           ifnotexists.isDefined, deferred.isDefined)
     }
 
@@ -192,7 +197,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val dropDataMap: Parser[LogicalPlan] =
     DROP ~> DATAMAP ~> opt(IF ~> EXISTS) ~ ident ~ opt(ontable) <~ opt(";")  ^^ {
       case ifexists ~ dmname ~ tableIdent =>
-        CarbonDropDataMapCommand(dmname, ifexists.isDefined, tableIdent)
+        CarbonDropIndexCommand(dmname, ifexists.isDefined, tableIdent)
     }
 
   /**
@@ -202,7 +207,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val showDataMap: Parser[LogicalPlan] =
     SHOW ~> DATAMAP ~> opt(ontable) <~ opt(";") ^^ {
       case tableIdent =>
-        CarbonDataMapShowCommand(tableIdent)
+        CarbonShowIndexCommand(tableIdent)
     }
 
   /**
@@ -212,7 +217,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val refreshDataMap: Parser[LogicalPlan] =
     REBUILD ~> DATAMAP ~> ident ~ opt(ontable) <~ opt(";") ^^ {
       case datamap ~ tableIdent =>
-        CarbonDataMapRebuildCommand(datamap, tableIdent)
+        CarbonRefreshIndexCommand(datamap, tableIdent)
     }
 
   protected lazy val alterDataMap: Parser[LogicalPlan] =
@@ -651,7 +656,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           tableProperties)
         validateColumnCompressorProperty(tableProperties
           .getOrElse(CarbonCommonConstants.COMPRESSOR, null))
-        val indexTableModel = SecondaryIndex(dbName,
+        val indexTableModel = IndexModel(dbName,
           tableName.toLowerCase,
           tableColumns,
           indexTableName.toLowerCase)
@@ -815,4 +820,62 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       None
     }
   }
+
+  // For materialized view
+  /**
+   * CREATE MATERIALIZED VIEW [IF NOT EXISTS] mv_name
+   * [WITH DEFERRED REFRESH]
+   * [PROPERTIES('KEY'='VALUE')]
+   * AS mv_query_statement
+   */
+  private lazy val createMaterializedView: Parser[LogicalPlan] =
+    CREATE ~> MATERIALIZED ~> VIEW ~> opt(IF ~> NOT ~> EXISTS) ~ (ident <~ ".").? ~ ident ~
+    opt(WITH ~> DEFERRED ~> REFRESH) ~
+    (PROPERTIES ~> "(" ~> repsep(options, ",") <~ ")").? ~
+    AS ~ query <~ opt(";") ^^ {
+      case ifNotExists ~ databaseName ~ name ~ deferredRefresh ~ properties ~ _ ~ query =>
+        CarbonCreateMaterializedViewCommand(
+          databaseName,
+          name,
+          properties.getOrElse(List[(String, String)]()).toMap[String, String],
+          query,
+          ifNotExists.isDefined,
+          deferredRefresh.isDefined)
+    }
+
+  /**
+   * DROP MATERIALIZED VIEW [IF EXISTS] mv_name
+   */
+  private lazy val dropMaterializedView: Parser[LogicalPlan] =
+    DROP ~> MATERIALIZED ~> VIEW ~> opt(IF ~> EXISTS) ~ (ident <~ ".").? ~ ident <~ opt(";") ^^ {
+      case ifExits ~ databaseName ~ name =>
+        CarbonDropMaterializedViewCommand(databaseName, name, ifExits.isDefined)
+    }
+
+  /**
+   * SHOW MATERIALIZED VIEWS [ON TABLE table_name]
+   */
+  private lazy val showMaterializedView: Parser[LogicalPlan] =
+    SHOW ~> MATERIALIZED ~> VIEWS ~> opt(ontable) <~ opt(";") ^^ {
+      case table =>
+        CarbonShowMaterializedViewCommand(None, table)
+    }
+
+  /**
+   * REFRESH MATERIALIZED VIEW mv_name
+   */
+  private lazy val refreshMaterializedView: Parser[LogicalPlan] =
+    REFRESH ~> MATERIALIZED ~> VIEW ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
+      case databaseName ~ name =>
+        CarbonRefreshMaterializedViewCommand(databaseName, name)
+    }
+
+  // Returns the rest of the input string that are not parsed yet
+  private lazy val query: Parser[String] = new Parser[String] {
+    def apply(in: Input): ParseResult[String] =
+      Success(
+        in.source.subSequence(in.offset, in.source.length()).toString,
+        in.drop(in.source.length()))
+  }
+
 }

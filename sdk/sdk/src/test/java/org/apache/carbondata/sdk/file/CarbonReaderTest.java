@@ -68,7 +68,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -164,7 +164,7 @@ public class CarbonReaderTest extends TestCase {
   @Test public void testReadWithZeroBatchSize() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance().clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+    DataMapStoreManager.getInstance().clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -189,7 +189,7 @@ public class CarbonReaderTest extends TestCase {
   public void testReadBatchWithZeroBatchSize() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance().clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+    DataMapStoreManager.getInstance().clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -213,7 +213,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     String path1 = path + "/0testdir";
     String path2 = path + "/testdir";
 
@@ -260,7 +260,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -297,7 +297,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[3];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -340,7 +340,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[3];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -383,7 +383,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[3];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -426,7 +426,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[3];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -469,7 +469,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[3];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -519,7 +519,7 @@ public class CarbonReaderTest extends TestCase {
 
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
     LessThanExpression lessThanExpression = new LessThanExpression(columnExpression,
         new LiteralExpression("13.5", DataTypes.DOUBLE));
@@ -555,7 +555,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[3];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -600,9 +600,9 @@ public class CarbonReaderTest extends TestCase {
     FileUtils.deleteDirectory(new File(path1));
     FileUtils.deleteDirectory(new File(path2));
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path1), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path1), false);
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path2), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path2), false);
     Field[] fields = new Field[] { new Field("c1", "string"),
          new Field("c2", "int") };
     Schema schema = new Schema(fields);
@@ -664,7 +664,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -701,7 +701,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -737,7 +737,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -778,7 +778,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -808,7 +808,7 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     DataMapStoreManager.getInstance()
-        .clearDataMapCache(AbsoluteTableIdentifier.from(path), false);
+        .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);

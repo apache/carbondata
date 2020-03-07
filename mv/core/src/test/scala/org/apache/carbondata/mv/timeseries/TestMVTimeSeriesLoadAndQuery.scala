@@ -46,7 +46,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       "create materialized view datamap1 as " +
       "select timeseries(projectjoindate,'minute'), sum(projectcode) from maintable where timeseries(projectjoindate,'minute') = '2016-02-23 09:17:00' group by timeseries(projectjoindate,'minute')")
 
-    sql("select * from datamap1_table").show(false)
+    sql("select * from datamap1").show(false)
     val df1 = sql("select timeseries(projectjoindate,'minute'),sum(projectcode) from maintable where timeseries(projectjoindate,'minute') = '2016-02-23 09:17:00'" +
                   "group by timeseries(projectjoindate,'minute')")
     assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap1"))
@@ -106,28 +106,28 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     val df6 = sql("select timeseries(projectjoindate,'year'), sum(salary) from maintable group by timeseries(projectjoindate,'year')")
     checkPlan("datamap6", df6)
     val result = sql("show materialized views on table maintable").collect()
-    result.find(_.get(0).toString.contains("datamap1")) match {
-      case Some(row) => assert(row.get(5).toString.contains("ENABLED"))
+    result.find(_.get(1).toString.contains("datamap1")) match {
+      case Some(row) => assert(row.get(2).toString.contains("ENABLED"))
       case None => assert(false)
     }
-    result.find(_.get(0).toString.contains("datamap2")) match {
-      case Some(row) => assert(row.get(5).toString.contains("ENABLED"))
+    result.find(_.get(1).toString.contains("datamap2")) match {
+      case Some(row) => assert(row.get(2).toString.contains("ENABLED"))
       case None => assert(false)
     }
-    result.find(_.get(0).toString.contains("datamap3")) match {
-      case Some(row) => assert(row.get(5).toString.contains("ENABLED"))
+    result.find(_.get(1).toString.contains("datamap3")) match {
+      case Some(row) => assert(row.get(2).toString.contains("ENABLED"))
       case None => assert(false)
     }
-    result.find(_.get(0).toString.contains("datamap4")) match {
-      case Some(row) => assert(row.get(5).toString.contains("ENABLED"))
+    result.find(_.get(1).toString.contains("datamap4")) match {
+      case Some(row) => assert(row.get(2).toString.contains("ENABLED"))
       case None => assert(false)
     }
-    result.find(_.get(0).toString.contains("datamap5")) match {
-      case Some(row) => assert(row.get(5).toString.contains("ENABLED"))
+    result.find(_.get(1).toString.contains("datamap5")) match {
+      case Some(row) => assert(row.get(2).toString.contains("ENABLED"))
       case None => assert(false)
     }
-    result.find(_.get(0).toString.contains("datamap6")) match {
-      case Some(row) => assert(row.get(5).toString.contains("ENABLED"))
+    result.find(_.get(1).toString.contains("datamap6")) match {
+      case Some(row) => assert(row.get(2).toString.contains("ENABLED"))
       case None => assert(false)
     }
     dropDataMap("datamap1")

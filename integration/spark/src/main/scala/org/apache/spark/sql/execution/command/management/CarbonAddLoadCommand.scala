@@ -41,17 +41,18 @@ import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.indexstore.{PartitionSpec => CarbonPartitionSpec}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.datatype.Field
-import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.core.view.{MaterializedViewSchema, MaterializedViewStatus}
 import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.sdk.file.Schema
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory.clearDataMapFiles
+import org.apache.carbondata.view.MaterializedViewManagerInSpark
 
 
 /**
@@ -81,7 +82,7 @@ case class CarbonAddLoadCommand(
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
-    if (carbonTable.isChildTableForMV) {
+    if (carbonTable.isMaterializedView) {
       throw new MalformedCarbonCommandException("Unsupported operation on MV table")
     }
     // if insert overwrite in progress, do not allow add segment
@@ -231,7 +232,7 @@ case class CarbonAddLoadCommand(
     operationContext.setProperty("isOverwrite", false)
     OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
     // Add pre event listener for index datamap
-    val tableDataMaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable)
+    val tableDataMaps = DataMapStoreManager.getInstance().getAllIndexes(carbonTable)
     val dataMapOperationContext = new OperationContext()
     if (tableDataMaps.size() > 0) {
       val dataMapNames: mutable.Buffer[String] =
@@ -329,6 +330,14 @@ case class CarbonAddLoadCommand(
       throw new Exception("Data load failed due to failure in table status updation.")
     }
     DataMapStatusManager.disableAllLazyDataMaps(carbonTable)
+    val viewManager = MaterializedViewManagerInSpark.get(sparkSession)
+    val viewSchemas = new util.ArrayList[MaterializedViewSchema]()
+    for (viewSchema <- viewManager.getSchemasOnTable(carbonTable).asScala) {
+      if (viewSchema.isRefreshOnManual) {
+        viewSchemas.add(viewSchema)
+      }
+    }
+    viewManager.setStatus(viewSchemas, MaterializedViewStatus.DISABLED)
     val loadTablePostExecutionEvent: LoadTablePostExecutionEvent =
       new LoadTablePostExecutionEvent(
         carbonTable.getCarbonTableIdentifier,

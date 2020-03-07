@@ -26,7 +26,7 @@ import org.scalatest.BeforeAndAfterAll
  */
 class TestBroadCastSIFilterPushJoinWithUDF extends QueryTest with BeforeAndAfterAll {
 
-  val testSecondaryIndexForORFilterPushDown = new TestSecondaryIndexForORFilterPushDown
+  val testSecondaryIndexForORFilterPushDown = new TestIndexModelForORFilterPushDown
   var carbonQuery: DataFrame = null
   var hiveQuery: DataFrame = null
 

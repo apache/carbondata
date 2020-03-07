@@ -81,7 +81,7 @@ private object CarbonFileMetastore {
       if (isSchemaModified) {
         CarbonMetadata.getInstance().removeTable(absoluteTableIdentifier
           .getCarbonTableIdentifier.getTableUniqueName)
-        DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier)
+        DataMapStoreManager.getInstance().clearIndex(absoluteTableIdentifier)
         true
       } else {
         localTimeStamp != newTime
@@ -130,7 +130,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
             CarbonRelation(database, tableName, t)
           }
         } else {
-          DataMapStoreManager.getInstance().clearDataMaps(absIdentifier)
+          DataMapStoreManager.getInstance().clearIndex(absIdentifier)
           CarbonMetadata.getInstance().removeTable(
             absIdentifier.getCarbonTableIdentifier.getTableUniqueName)
           readCarbonSchema(absIdentifier, parameters, sparkSession)
@@ -461,7 +461,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val dbName = absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName
     val tableName = absoluteTableIdentifier.getCarbonTableIdentifier.getTableName
     // Clear both driver and executor cache.
-    DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier)
+    DataMapStoreManager.getInstance().clearIndex(absoluteTableIdentifier)
     CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
     // discard cached table info in cachedDataSourceTables
     val tableIdentifier = TableIdentifier(tableName, Option(dbName))

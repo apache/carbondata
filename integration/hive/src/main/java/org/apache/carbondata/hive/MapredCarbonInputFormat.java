@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datamap.DataMapFilter;
+import org.apache.carbondata.core.datamap.IndexFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
@@ -185,7 +185,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
         return;
       }
       LOGGER.debug("carbon expression:" + expression.getString());
-      DataMapFilter filter = new DataMapFilter(carbonTable, expression, true);
+      IndexFilter filter = new IndexFilter(carbonTable, expression, true);
       CarbonInputFormat.setFilterPredicates(configuration, filter);
     } catch (Exception e) {
       throw new RuntimeException("Error while reading filter expression", e);

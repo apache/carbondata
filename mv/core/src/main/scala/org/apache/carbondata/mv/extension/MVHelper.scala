@@ -27,14 +27,13 @@ import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Coalesce, Expression, Literal, NamedExpression, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Average}
-import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Join, Limit, LogicalPlan, Project}
 import org.apache.spark.sql.execution.command.{Field, PartitionerField, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{ArrayType, DateType, MapType, StructType}
 
-import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedIndexCommandException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
@@ -221,14 +220,14 @@ object MVHelper {
       }
     }
 
-    val mvTableIdentifier = TableIdentifier(
+    val viewTableIdentifier = TableIdentifier(
       dataMapSchema.getDataMapName + "_table", mainTables.head.identifier.database)
 
     // prepare table model of the collected tokens
-    val mvTableModel: TableModel = CarbonParserUtil.prepareTableModel(
+    val viewTableModel: TableModel = CarbonParserUtil.prepareTableModel(
       ifNotExistPresent = ifNotExistsSet,
-      CarbonParserUtil.convertDbNameToLowerCase(mvTableIdentifier.database),
-      mvTableIdentifier.table.toLowerCase,
+      CarbonParserUtil.convertDbNameToLowerCase(viewTableIdentifier.database),
+      viewTableIdentifier.table.toLowerCase,
       fields,
       partitionerFields,
       tableProperties,
@@ -236,13 +235,13 @@ object MVHelper {
       isAlterFlow = false,
       None)
 
-    val mvTablePath = if (properties.contains("path")) {
+    val viewTablePath = if (properties.contains("path")) {
       properties("path")
     } else {
-      CarbonEnv.getTablePath(mvTableModel.databaseNameOp, mvTableModel.tableName)(sparkSession)
+      CarbonEnv.getTablePath(viewTableModel.databaseNameOp, viewTableModel.tableName)(sparkSession)
     }
-    CarbonCreateTableCommand(TableNewProcessor(mvTableModel),
-      mvTableModel.ifNotExistsSet, Some(mvTablePath), isVisible = false).run(sparkSession)
+    CarbonCreateTableCommand(TableNewProcessor(viewTableModel),
+      viewTableModel.ifNotExistsSet, Some(viewTablePath), isVisible = false).run(sparkSession)
 
     // Map list of main table columns mapped to MV table and add to dataMapSchema
     val mainTableToColumnsMap = new java.util.HashMap[String, util.Set[String]]()
@@ -271,9 +270,9 @@ object MVHelper {
     }
     dataMapSchema.setRelationIdentifier(
       new RelationIdentifier(
-        mvTableIdentifier.database.get,
-        mvTableIdentifier.table,
-        CarbonEnv.getCarbonTable(mvTableIdentifier)(sparkSession).getTableId))
+        viewTableIdentifier.database.get,
+        viewTableIdentifier.table,
+        CarbonEnv.getCarbonTable(viewTableIdentifier)(sparkSession).getTableId))
 
     val parentIdents = mainTables.map { table =>
       val relationIdentifier = new RelationIdentifier(table.database, table.identifier.table, "")
@@ -281,7 +280,7 @@ object MVHelper {
       relationIdentifier.setProvider(table.provider.get)
       relationIdentifier
     }
-    dataMapSchema.getRelationIdentifier.setTablePath(mvTablePath)
+    dataMapSchema.getRelationIdentifier.setTablePath(viewTablePath)
     dataMapSchema.setParentTables(new util.ArrayList[RelationIdentifier](parentIdents.asJava))
     dataMapSchema.getProperties.put(DataMapProperty.FULL_REFRESH, isNeedFullRebuild.toString)
     try {
@@ -303,7 +302,7 @@ object MVHelper {
       logicalPlan: LogicalPlan): ModularPlan = {
     val dataMapProvider = DataMapManager.get().getDataMapProvider(null,
       new DataMapSchema("", DataMapClassProvider.MV.getShortName), sparkSession)
-    var catalog = DataMapStoreManager.getInstance().getDataMapCatalog(dataMapProvider,
+    var catalog = DataMapStoreManager.getInstance().getMVCatalog(dataMapProvider,
       DataMapClassProvider.MV.getShortName, false).asInstanceOf[SummaryDatasetCatalog]
     if (catalog == null) {
       catalog = new SummaryDatasetCatalog(sparkSession)
@@ -631,7 +630,7 @@ object MVHelper {
       val newLongStringColumn = longStringColumn.get.split(",").map(_.trim).map { colName =>
         val newColName = parentTable.getTableName.toLowerCase() + "_" + colName
         if (!fieldNames.contains(newColName)) {
-          throw new MalformedDataMapCommandException(
+          throw new MalformedIndexCommandException(
             CarbonCommonConstants.LONG_STRING_COLUMNS.toUpperCase() + ":" + colName
             + " does not in datamap")
         }

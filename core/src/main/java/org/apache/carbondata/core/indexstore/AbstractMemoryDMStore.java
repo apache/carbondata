@@ -19,12 +19,12 @@ package org.apache.carbondata.core.indexstore;
 
 import java.io.Serializable;
 
-import org.apache.carbondata.core.indexstore.row.DataMapRow;
+import org.apache.carbondata.core.indexstore.row.IndexRow;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 /**
- * Store the data map row @{@link DataMapRow}
+ * Store the data map row @{@link IndexRow}
  */
 public abstract class AbstractMemoryDMStore implements Serializable {
 
@@ -34,9 +34,9 @@ public abstract class AbstractMemoryDMStore implements Serializable {
 
   protected final String taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
-  public abstract void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow);
+  public abstract void addIndexRow(CarbonRowSchema[] schema, IndexRow indexRow);
 
-  public abstract DataMapRow getDataMapRow(CarbonRowSchema[] schema, int index);
+  public abstract IndexRow getDataMapRow(CarbonRowSchema[] schema, int index);
 
   public abstract void freeMemory();
 

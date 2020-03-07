@@ -212,7 +212,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         DDLHelper.showTables(showTables, sparkSession)
       case CreateIndexTable(indexModel, tableProperties, isCreateSIndex) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(TableIdentifier(indexModel.tableName, indexModel.databaseName))(
+          .tableExists(TableIdentifier(indexModel.tableName, indexModel.dbName))(
             sparkSession)
         if (isCarbonTable) {
           ExecutedCommandExec(CreateIndexTable(indexModel, tableProperties,

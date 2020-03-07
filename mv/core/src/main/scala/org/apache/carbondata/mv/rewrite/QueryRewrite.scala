@@ -232,10 +232,10 @@ class QueryRewrite private (
    */
   private def updateDataMap(subsumer: ModularPlan, rewrite: QueryRewrite): ModularPlan = {
     subsumer match {
-      case s: Select if s.dataMapTableRelation.isDefined =>
+      case s: Select if s.modularPlan.isDefined =>
         val relation =
-          s.dataMapTableRelation.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
-        val outputList = getUpdatedOutputList(relation.outputList, s.dataMapTableRelation)
+          s.modularPlan.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
+        val outputList = getUpdatedOutputList(relation.outputList, s.modularPlan)
         // when the output list contains multiple projection of same column, but relation
         // contains distinct columns, mapping may go wrong with columns, so select distinct
         val mappings = s.outputList.distinct zip outputList
@@ -243,11 +243,11 @@ class QueryRewrite private (
           if (o1.name != o2.name) Alias(o2, o1.name)(exprId = o1.exprId) else o2
         }
         relation.copy(outputList = oList).setRewritten()
-      case g: GroupBy if g.dataMapTableRelation.isDefined =>
+      case g: GroupBy if g.modularPlan.isDefined =>
         val relation =
-          g.dataMapTableRelation.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
+          g.modularPlan.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
         val in = relation.asInstanceOf[Select].outputList
-        val outputList = getUpdatedOutputList(relation.outputList, g.dataMapTableRelation)
+        val outputList = getUpdatedOutputList(relation.outputList, g.modularPlan)
         val mappings = g.outputList zip outputList
         val oList = for ((left, right) <- mappings) yield {
           left match {
@@ -311,13 +311,13 @@ class QueryRewrite private (
           inputList = in,
           predicateList = updatedPredicates,
           child = relation,
-          dataMapTableRelation = None).setRewritten()
+          modularPlan = None).setRewritten()
 
       case select: Select =>
         select.children match {
-          case Seq(g: GroupBy) if g.dataMapTableRelation.isDefined =>
+          case Seq(g: GroupBy) if g.modularPlan.isDefined =>
             val relation =
-              g.dataMapTableRelation.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
+              g.modularPlan.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
             val aliasMap = getAttributeMap(relation.outputList, g.outputList)
             // Update the flagspec as per the mv table attributes.
             val updatedFlagSpec: Seq[Seq[Any]] = updateFlagSpec(
@@ -325,8 +325,8 @@ class QueryRewrite private (
               select,
               relation,
               aliasMap)
-            if (isFullRefresh(g.dataMapTableRelation.get.asInstanceOf[MVPlanWrapper])) {
-              val outputList = getUpdatedOutputList(relation.outputList, g.dataMapTableRelation)
+            if (isFullRefresh(g.modularPlan.get.asInstanceOf[MVPlanWrapper])) {
+              val outputList = getUpdatedOutputList(relation.outputList, g.modularPlan)
               val mappings = g.outputList zip outputList
               val oList = for ((o1, o2) <- mappings) yield {
                 if (o1.name != o2.name) Alias(o2, o1.name)(exprId = o1.exprId) else o2
