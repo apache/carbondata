@@ -23,7 +23,7 @@ import scala.collection.mutable
 import org.apache.spark.sql._
 import org.apache.spark.sql.execution.command._
 
-import org.apache.carbondata.common.exceptions.sql.MalformedMaterializedViewException
+import org.apache.carbondata.common.exceptions.sql.MalformedMaterializedViewCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
@@ -63,7 +63,7 @@ case class CreateMaterializedViewCommand(
     if (DataMapStoreManager.getInstance().getAllDataMapSchemas.asScala
       .exists(_.getDataMapName.equalsIgnoreCase(dataMapSchema.getDataMapName))) {
       if (!ifNotExistsSet) {
-        throw new MalformedMaterializedViewException(
+        throw new MalformedMaterializedViewCommandException(
           s"Materialized view with name ${dataMapSchema.getDataMapName} already exists")
       } else {
         return Seq.empty

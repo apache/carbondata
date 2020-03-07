@@ -34,7 +34,7 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
-import org.apache.carbondata.core.datamap.DataMapFilter;
+import org.apache.carbondata.core.datamap.IndexFilter;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
@@ -62,7 +62,7 @@ import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
-import org.apache.carbondata.core.util.BlockletDataMapUtil;
+import org.apache.carbondata.core.util.BlockletIndexUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -145,8 +145,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // and measure column start index
     queryProperties.filterMeasures = new HashSet<>();
     queryProperties.complexFilterDimension = new HashSet<>();
-    if (queryModel.getDataMapFilter() != null) {
-      QueryUtil.getAllFilterDimensionsAndMeasures(queryModel.getDataMapFilter().getResolver(),
+    if (queryModel.getIndexFilter() != null) {
+      QueryUtil.getAllFilterDimensionsAndMeasures(queryModel.getIndexFilter().getResolver(),
           queryProperties.complexFilterDimension, queryProperties.filterMeasures);
     }
 
@@ -248,7 +248,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     }
     // First validate the schema of the carbondata file if the same column name have different
     // datatype
-    boolean sameColumnSchemaList = BlockletDataMapUtil
+    boolean sameColumnSchemaList = BlockletIndexUtil
         .isSameColumnAndDifferentDatatypeInSchema(columnsInTable,
             queryModel.getTable().getTableInfo().getFactTable().getListOfColumns());
     if (!sameColumnSchemaList) {
@@ -305,11 +305,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   }
 
   private void createFilterExpression(QueryModel queryModel, SegmentProperties properties) {
-    if (queryModel.getDataMapFilter() != null) {
-      if (!queryModel.getDataMapFilter().isResolvedOnSegment(properties)) {
-        DataMapFilter expression = new DataMapFilter(properties, queryModel.getTable(),
-            queryModel.getDataMapFilter().getExpression());
-        queryModel.setDataMapFilter(expression);
+    if (queryModel.getIndexFilter() != null) {
+      if (!queryModel.getIndexFilter().isResolvedOnSegment(properties)) {
+        IndexFilter expression = new IndexFilter(properties, queryModel.getTable(),
+            queryModel.getIndexFilter().getExpression());
+        queryModel.setIndexFilter(expression);
       }
     }
   }
@@ -485,13 +485,13 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             projectDimensions,
             segmentProperties.getDimensionOrdinalToChunkMapping(),
             queryProperties.complexFilterDimension));
-    if (null != queryModel.getDataMapFilter()) {
+    if (null != queryModel.getIndexFilter()) {
       FilterResolverIntf filterResolverIntf;
       if (!filePath.startsWith(queryModel.getTable().getTablePath())) {
-        filterResolverIntf = queryModel.getDataMapFilter().getExternalSegmentResolver();
+        filterResolverIntf = queryModel.getIndexFilter().getExternalSegmentResolver();
       } else {
         // loading the filter executor tree for filter evaluation
-        filterResolverIntf = queryModel.getDataMapFilter().getResolver();
+        filterResolverIntf = queryModel.getIndexFilter().getResolver();
       }
       blockExecutionInfo.setFilterExecuterTree(
           FilterUtil.getFilterExecuterTree(filterResolverIntf, segmentProperties,

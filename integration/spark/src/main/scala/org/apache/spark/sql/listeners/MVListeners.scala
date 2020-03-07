@@ -67,7 +67,7 @@ object AlterDataMaptableCompactionPostListener extends OperationEventListener {
     val allDataMapSchemas = DataMapStoreManager.getInstance
       .getDataMapSchemasOfTable(carbonTable).asScala
       .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                               !dataMapSchema.isIndexDataMap)
+                               !dataMapSchema.isIndex)
     if (!allDataMapSchemas.asJava.isEmpty) {
       allDataMapSchemas.foreach { dataMapSchema =>
         val childRelationIdentifier = dataMapSchema.getRelationIdentifier
@@ -97,7 +97,7 @@ object LoadMVTablePreListener extends OperationEventListener {
     val carbonLoadModel = loadEvent.getCarbonLoadModel
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val isInternalLoadCall = carbonLoadModel.isAggLoadRequest
-    if (table.isChildTableForMV && !isInternalLoadCall) {
+    if (table.isMaterializedView && !isInternalLoadCall) {
       throw new UnsupportedOperationException("Cannot insert data directly into MV table")
     }
   }
@@ -145,7 +145,7 @@ object LoadPostDataMapListener extends OperationEventListener {
       val allDataMapSchemas = DataMapStoreManager.getInstance
         .getDataMapSchemasOfTable(carbonTable).asScala
         .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                 !dataMapSchema.isIndexDataMap)
+                                 !dataMapSchema.isIndex)
       if (!allDataMapSchemas.asJava.isEmpty) {
         allDataMapSchemas.foreach { dataMapSchema =>
           if (!dataMapSchema.isLazy) {
@@ -169,7 +169,7 @@ object LoadPostDataMapListener extends OperationEventListener {
  * Listeners to block operations like delete segment on id or by date on tables
  * having an mv datamap or on mv datamap tables
  */
-object DataMapDeleteSegmentPreListener extends OperationEventListener {
+object MVDeleteSegmentPreListener extends OperationEventListener {
   /**
    * Called on a specified event occurrence
    *
@@ -188,7 +188,7 @@ object DataMapDeleteSegmentPreListener extends OperationEventListener {
         throw new UnsupportedOperationException(
           "Delete segment operation is not supported on tables having child datamap")
       }
-      if (carbonTable.isChildTableForMV) {
+      if (carbonTable.isMaterializedView) {
         throw new UnsupportedOperationException(
           "Delete segment operation is not supported on datamap table")
       }
@@ -196,7 +196,7 @@ object DataMapDeleteSegmentPreListener extends OperationEventListener {
   }
 }
 
-object DataMapAddColumnsPreListener extends OperationEventListener {
+object MVAddColumnsPreListener extends OperationEventListener {
   /**
    * Called on a specified event occurrence
    *
@@ -206,16 +206,16 @@ object DataMapAddColumnsPreListener extends OperationEventListener {
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     val dataTypeChangePreListener = event.asInstanceOf[AlterTableAddColumnPreEvent]
     val carbonTable = dataTypeChangePreListener.carbonTable
-    if (carbonTable.isChildTableForMV) {
+    if (carbonTable.isMaterializedView) {
       throw new UnsupportedOperationException(
-        s"Cannot add columns in a DataMap table " +
+        s"Cannot add columns in a Index table " +
         s"${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
     }
   }
 }
 
 
-object DataMapDropColumnPreListener extends OperationEventListener {
+object MVDropColumnPreListener extends OperationEventListener {
   /**
    * Called on a specified event occurrence
    *
@@ -231,7 +231,7 @@ object DataMapDropColumnPreListener extends OperationEventListener {
       val dataMapSchemaList = DataMapStoreManager.getInstance
         .getDataMapSchemasOfTable(carbonTable).asScala
       for (dataMapSchema <- dataMapSchemaList) {
-        if (null != dataMapSchema && !dataMapSchema.isIndexDataMap) {
+        if (null != dataMapSchema && !dataMapSchema.isIndex) {
           val listOfColumns = DataMapListeners.getDataMapTableColumns(dataMapSchema, carbonTable)
           val columnExistsInChild = listOfColumns.collectFirst {
             case parentColumnName if columnsToBeDropped.contains(parentColumnName.toLowerCase) =>
@@ -246,7 +246,7 @@ object DataMapDropColumnPreListener extends OperationEventListener {
         }
       }
     }
-    if (carbonTable.isChildTableForMV) {
+    if (carbonTable.isMaterializedView) {
       throw new UnsupportedOperationException(
         s"Cannot drop columns present in a datamap table ${ carbonTable.getDatabaseName }." +
         s"${ carbonTable.getTableName }")
@@ -254,7 +254,7 @@ object DataMapDropColumnPreListener extends OperationEventListener {
   }
 }
 
-object DataMapChangeDataTypeorRenameColumnPreListener
+object MVChangeDataTypeorRenameColumnPreListener
   extends OperationEventListener {
   /**
    * Called on a specified event occurrence
@@ -273,7 +273,7 @@ object DataMapChangeDataTypeorRenameColumnPreListener
       val dataMapSchemaList = DataMapStoreManager.getInstance
         .getDataMapSchemasOfTable(carbonTable).asScala
       for (dataMapSchema <- dataMapSchemaList) {
-        if (null != dataMapSchema && !dataMapSchema.isIndexDataMap) {
+        if (null != dataMapSchema && !dataMapSchema.isIndex) {
           val listOfColumns = DataMapListeners.getDataMapTableColumns(dataMapSchema, carbonTable)
           if (listOfColumns.contains(columnToBeAltered.toLowerCase)) {
             throw new UnsupportedOperationException(
@@ -283,7 +283,7 @@ object DataMapChangeDataTypeorRenameColumnPreListener
         }
       }
     }
-    if (carbonTable.isChildTableForMV) {
+    if (carbonTable.isMaterializedView) {
       throw new UnsupportedOperationException(
         s"Cannot change data type or rename column for columns present in mv datamap table " +
         s"${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
@@ -291,7 +291,7 @@ object DataMapChangeDataTypeorRenameColumnPreListener
   }
 }
 
-object DataMapAlterTableDropPartitionMetaListener extends OperationEventListener {
+object MVAlterTableDropPartitionMetaListener extends OperationEventListener {
   /**
    * Called on a specified event occurrence
    *
@@ -367,7 +367,7 @@ object DataMapAlterTableDropPartitionMetaListener extends OperationEventListener
         operationContext.setProperty("dropPartitionCommands", childDropPartitionCommands)
         childDropPartitionCommands.foreach(_.processMetadata(SparkSession.getActiveSession.get))
       }
-    } else if (parentCarbonTable.isChildTableForMV) {
+    } else if (parentCarbonTable.isMaterializedView) {
       if (operationContext.getProperty("isInternalDropCall") == null) {
         throw new UnsupportedOperationException("Cannot drop partition directly on child table")
       }
@@ -375,7 +375,7 @@ object DataMapAlterTableDropPartitionMetaListener extends OperationEventListener
   }
 }
 
-object DataMapAlterTableDropPartitionPreStatusListener extends OperationEventListener {
+object MVAlterTableDropPartitionPreStatusListener extends OperationEventListener {
   /**
    * Called on a specified event occurrence
    *

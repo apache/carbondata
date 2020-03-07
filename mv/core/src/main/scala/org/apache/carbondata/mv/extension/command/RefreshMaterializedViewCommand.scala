@@ -21,7 +21,7 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.DataCommand
 
-import org.apache.carbondata.common.exceptions.sql.MalformedMaterializedViewException
+import org.apache.carbondata.common.exceptions.sql.MalformedMaterializedViewCommandException
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
@@ -41,7 +41,8 @@ case class RefreshMaterializedViewCommand(
     val schemas = DataMapStoreManager.getInstance().getAllDataMapSchemas
     val schemaOption = schemas.asScala.find(p => p.getDataMapName.equalsIgnoreCase(mvName))
     if (schemaOption.isEmpty) {
-        throw new MalformedMaterializedViewException(s"Materialized view $mvName does not exist")
+        throw new MalformedMaterializedViewCommandException(
+          s"Materialized view $mvName does not exist")
     }
     val mvSchema = schemaOption.get
     val mvTable = CarbonEnv.getCarbonTable(

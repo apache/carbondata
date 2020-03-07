@@ -25,7 +25,7 @@ import java.util.Objects;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datamap.DataMapFilter;
+import org.apache.carbondata.core.datamap.IndexFilter;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
@@ -385,7 +385,7 @@ class CarbondataPageSource implements ConnectorPageSource {
       conf.set("query.id", queryId);
       JobConf jobConf = new JobConf(conf);
       CarbonTableInputFormat carbonTableInputFormat = createInputFormat(jobConf, carbonTable,
-          new DataMapFilter(carbonTable,
+          new IndexFilter(carbonTable,
               PrestoFilterUtil.parseFilterExpression(carbondataSplit.getEffectivePredicate())),
           carbonProjection);
       TaskAttemptContextImpl hadoopAttemptContext =
@@ -411,12 +411,12 @@ class CarbondataPageSource implements ConnectorPageSource {
   /**
    * @param conf
    * @param carbonTable
-   * @param dataMapFilter
+   * @param indexFilter
    * @param projection
    * @return
    */
   private CarbonTableInputFormat<Object> createInputFormat(Configuration conf,
-      CarbonTable carbonTable, DataMapFilter dataMapFilter, CarbonProjection projection) {
+      CarbonTable carbonTable, IndexFilter indexFilter, CarbonProjection projection) {
 
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     CarbonTableInputFormat format = new CarbonTableInputFormat<Object>();
@@ -430,7 +430,7 @@ class CarbondataPageSource implements ConnectorPageSource {
     } catch (Exception e) {
       throw new RuntimeException("Unable to create the CarbonTableInputFormat", e);
     }
-    CarbonTableInputFormat.setFilterPredicates(conf, dataMapFilter);
+    CarbonTableInputFormat.setFilterPredicates(conf, indexFilter);
     CarbonTableInputFormat.setColumnProjection(conf, projection);
 
     return format;

@@ -36,6 +36,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSch
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events.{AlterTableRenamePostEvent, AlterTableRenamePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.SchemaEvolutionEntry
+import org.apache.carbondata.view.MaterializedViewManagerInSpark
 
 private[sql] case class CarbonAlterTableRenameCommand(
     alterTableRenameModel: AlterTableRenameModel)
@@ -81,7 +82,8 @@ private[sql] case class CarbonAlterTableRenameCommand(
       throw new MalformedCarbonCommandException("alter rename is not supported for index datamap")
     }
     // if table have created MV, not support table rename
-    if (oldCarbonTable.hasMVCreated || oldCarbonTable.isChildTableForMV) {
+    if (MaterializedViewManagerInSpark.get(sparkSession).hasSchemaOnTable(oldCarbonTable) ||
+        oldCarbonTable.hasMVCreated || oldCarbonTable.isMaterializedView) {
       throw new MalformedCarbonCommandException(
         "alter rename is not supported for datamap table or for tables which have child datamap")
     }
@@ -107,7 +109,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
       }
       // invalid data map for the old table, see CARBON-1690
       val oldAbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-      DataMapStoreManager.getInstance().clearDataMaps(oldAbsoluteTableIdentifier)
+      DataMapStoreManager.getInstance().clearIndex(oldAbsoluteTableIdentifier)
       // get the latest carbon table and check for column existence
       val operationContext = new OperationContext
       // TODO: Pass new Table Path in pre-event.

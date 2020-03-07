@@ -114,7 +114,7 @@ public class DiskBasedDataMapStatusProvider implements DataMapStatusStorageProvi
       locked = carbonTableStatusLock.lockWithRetries();
       if (locked) {
         LOG.info("Datamap status lock has been successfully acquired.");
-        if (dataMapStatus == DataMapStatus.ENABLED && !dataMapSchemas.get(0).isIndexDataMap()) {
+        if (dataMapStatus == DataMapStatus.ENABLED && !dataMapSchemas.get(0).isIndex()) {
           // Enable datamap only if datamap tables and main table are in sync
           if (!DataMapSyncStatus.canDataMapBeEnabled(dataMapSchemas.get(0))) {
             return;

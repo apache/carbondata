@@ -32,7 +32,8 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapFilter
+import org.apache.carbondata.core.datamap.IndexFilter
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -50,7 +51,7 @@ case class CarbonDatasourceHadoopRelation(
 
   val caseInsensitiveMap: Map[String, String] = parameters.map(f => (f._1.toLowerCase, f._2))
   lazy val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
-    paths.head,
+    FileFactory.getUpdatedFilePath(paths.head),
     CarbonEnv.getDatabaseName(caseInsensitiveMap.get("dbname"))(sparkSession),
     caseInsensitiveMap("tablename"))
   CarbonUtils.updateSessionInfoToCurrentThread(sparkSession)
@@ -95,7 +96,7 @@ case class CarbonDatasourceHadoopRelation(
     new CarbonScanRDD(
       sparkSession,
       projection,
-      filterExpression.map(new DataMapFilter(carbonTable, _, true)).orNull,
+      filterExpression.map(new IndexFilter(carbonTable, _, true)).orNull,
       identifier,
       carbonTable.getTableInfo.serialize(),
       carbonTable.getTableInfo,

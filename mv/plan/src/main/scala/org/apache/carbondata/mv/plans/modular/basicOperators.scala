@@ -23,7 +23,7 @@ import org.apache.spark.sql.catalyst.plans.JoinType
 import org.apache.carbondata.mv.plans._
 import org.apache.carbondata.mv.plans.modular.Flags._
 
-private[mv] trait Matchable extends ModularPlan {
+trait Matchable extends ModularPlan {
   def outputList: Seq[NamedExpression]
 
   def predicateList: Seq[Expression]
@@ -37,7 +37,7 @@ case class GroupBy(
     child: ModularPlan,
     flags: FlagSet,
     flagSpec: Seq[Seq[Any]],
-    dataMapTableRelation: Option[ModularPlan] = None) extends UnaryNode with Matchable {
+    modularPlan: Option[ModularPlan] = None) extends UnaryNode with Matchable {
   override def output: Seq[Attribute] = outputList.map(_.toAttribute)
 
   override def makeCopy(newArgs: Array[AnyRef]): GroupBy = {
@@ -57,7 +57,7 @@ case class Select(
     flags: FlagSet,
     flagSpec: Seq[Seq[Any]],
     windowSpec: Seq[Seq[Any]],
-    dataMapTableRelation: Option[ModularPlan] = None) extends ModularPlan with Matchable {
+    modularPlan: Option[ModularPlan] = None) extends ModularPlan with Matchable {
   override def output: Seq[Attribute] = outputList.map(_.toAttribute)
 
   override def adjacencyList: scala.collection.immutable.Map[Int, Seq[(Int, JoinType)]] = {

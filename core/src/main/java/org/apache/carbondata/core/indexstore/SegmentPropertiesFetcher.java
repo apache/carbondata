@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.datamap.dev.Index;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 
 /**
@@ -41,5 +41,5 @@ public interface SegmentPropertiesFetcher {
   SegmentProperties getSegmentProperties(Segment segment, List<PartitionSpec> partitionSpecs)
       throws IOException;
 
-  SegmentProperties getSegmentPropertiesFromDataMap(DataMap coarseGrainDataMap);
+  SegmentProperties getSegmentPropertiesFromDataMap(Index coarseGrainIndex);
 }

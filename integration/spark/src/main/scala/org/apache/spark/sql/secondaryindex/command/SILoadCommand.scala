@@ -31,13 +31,16 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 
-case class SecondaryIndex(var databaseName: Option[String], tableName: String,
-    columnNames: List[String], indexTableName: String)
+case class IndexModel(
+    var dbName: Option[String],
+    tableName: String,
+    columnNames: List[String],
+    indexName: String)
 
 case class SecondaryIndexModel(sqlContext: SQLContext,
     carbonLoadModel: CarbonLoadModel,
     carbonTable: CarbonTable,
-    secondaryIndex: SecondaryIndex,
+    secondaryIndex: IndexModel,
     validSegments: List[String],
     segmentIdToLoadStartTimeMapping: scala.collection.mutable.Map[String, java.lang.Long])
 
@@ -45,15 +48,15 @@ case class SecondaryIndexModel(sqlContext: SQLContext,
  * Runnable Command for creating secondary index for the specified columns
  *
  */
-private[sql] case class LoadDataForSecondaryIndex(indexModel: SecondaryIndex) extends
+private[sql] case class LoadDataForSecondaryIndex(indexModel: IndexModel) extends
   RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     val tableName = indexModel.tableName
-    val databaseName = CarbonEnv.getDatabaseName(indexModel.databaseName)(sparkSession)
+    val databaseName = CarbonEnv.getDatabaseName(indexModel.dbName)(sparkSession)
     val relation =
       CarbonEnv.getInstance(sparkSession).carbonMetaStore
-        .lookupRelation(indexModel.databaseName, tableName)(sparkSession)
+        .lookupRelation(indexModel.dbName, tableName)(sparkSession)
         .asInstanceOf[CarbonRelation]
     if (relation == null) {
       sys.error(s"Table $databaseName.$tableName does not exist")
@@ -84,7 +87,7 @@ private[sql] case class LoadDataForSecondaryIndex(indexModel: SecondaryIndex) ex
   }
 
   def createSecondaryIndex(sparkSession: SparkSession,
-      secondaryIndex: SecondaryIndex,
+      secondaryIndex: IndexModel,
       carbonLoadModel: CarbonLoadModel): Unit = {
     var details: Array[LoadMetadataDetails] = null
     val segmentToSegmentTimestampMap: java.util.Map[String, String] = new java.util
@@ -97,7 +100,7 @@ private[sql] case class LoadDataForSecondaryIndex(indexModel: SecondaryIndex) ex
     if (!carbonLoadModel.getLoadMetadataDetails.isEmpty) {
       try {
         val indexCarbonTable = CarbonEnv.getCarbonTable(Some(carbonLoadModel.getDatabaseName),
-            secondaryIndex.indexTableName)(sparkSession)
+            secondaryIndex.indexName)(sparkSession)
         // get list of valid segments for which secondary index need to be created
         val validSegments = CarbonInternalLoaderUtil
           .getListOfValidSlices(getSegmentsToBeLoadedToSI(details, indexCarbonTable).asScala

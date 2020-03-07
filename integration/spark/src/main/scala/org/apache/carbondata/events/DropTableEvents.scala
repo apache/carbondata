@@ -30,7 +30,8 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 case class DropTablePreEvent(
     carbonTable: CarbonTable,
     ifExistsSet: Boolean,
-    sparkSession: SparkSession)
+    sparkSession: SparkSession,
+    isInternalCall: Boolean = false)
   extends Event with DropTableEventInfo
 
 

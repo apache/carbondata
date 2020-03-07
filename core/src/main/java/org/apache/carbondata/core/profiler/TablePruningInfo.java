@@ -18,7 +18,7 @@
 package org.apache.carbondata.core.profiler;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.core.datamap.dev.expr.DataMapWrapperSimpleInfo;
+import org.apache.carbondata.core.datamap.dev.expr.IndexWrapperSimpleInfo;
 
 /**
  * Used for EXPLAIN command
@@ -34,11 +34,11 @@ public class TablePruningInfo {
   private int numBlocksAfterDefaultPruning;
   private int numBlockletsAfterDefaultPruning = 0;
 
-  private DataMapWrapperSimpleInfo cgDataMap;
+  private IndexWrapperSimpleInfo cgDataMap;
   private int numBlocksAfterCGPruning;
   private int numBlockletsAfterCGPruning;
 
-  private DataMapWrapperSimpleInfo fgDataMap;
+  private IndexWrapperSimpleInfo fgDataMap;
   private int numBlocksAfterFGPruning;
   private int numBlockletsAfterFGPruning;
 
@@ -71,16 +71,16 @@ public class TablePruningInfo {
     this.numBlockletsAfterDefaultPruning += numBlocklets;
   }
 
-  void setNumBlockletsAfterCGPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
+  void setNumBlockletsAfterCGPruning(IndexWrapperSimpleInfo indexWrapperSimpleInfo,
       int numBlocklets, int numBlocks) {
-    this.cgDataMap = dataMapWrapperSimpleInfo;
+    this.cgDataMap = indexWrapperSimpleInfo;
     this.numBlocksAfterCGPruning = numBlocks;
     this.numBlockletsAfterCGPruning = numBlocklets;
   }
 
-  void setNumBlockletsAfterFGPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
+  void setNumBlockletsAfterFGPruning(IndexWrapperSimpleInfo indexWrapperSimpleInfo,
       int numBlocklets, int numBlocks) {
-    this.fgDataMap = dataMapWrapperSimpleInfo;
+    this.fgDataMap = indexWrapperSimpleInfo;
     this.numBlocksAfterFGPruning = numBlocks;
     this.numBlockletsAfterFGPruning = numBlocklets;
   }
@@ -96,14 +96,14 @@ public class TablePruningInfo {
       int skipBlocks = totalBlocks - numBlocksAfterDefaultPruning;
       int skipBlocklets = totalBlocklets - numBlockletsAfterDefaultPruning;
       builder
-          .append(" - pruned by Main DataMap").append("\n")
+          .append(" - pruned by Main Index").append("\n")
           .append("    - skipped: ").append(skipBlocks).append(" blocks, ")
           .append(skipBlocklets).append(" blocklets").append("\n");
       if (cgDataMap != null) {
         skipBlocks = numBlocksAfterDefaultPruning - numBlocksAfterCGPruning;
         skipBlocklets = numBlockletsAfterDefaultPruning - numBlockletsAfterCGPruning;
         builder
-            .append(" - pruned by CG DataMap").append("\n")
+            .append(" - pruned by CG Index").append("\n")
             .append("    - name: ").append(cgDataMap.getDataMapWrapperName()).append("\n")
             .append("    - provider: ").append(cgDataMap.getDataMapWrapperProvider()).append("\n")
             .append("    - skipped: ").append(skipBlocks).append(" blocks, ")
@@ -118,7 +118,7 @@ public class TablePruningInfo {
           skipBlocklets = numBlockletsAfterDefaultPruning - numBlockletsAfterFGPruning;
         }
         builder
-            .append(" - pruned by FG DataMap").append("\n")
+            .append(" - pruned by FG Index").append("\n")
             .append("    - name: ").append(fgDataMap.getDataMapWrapperName()).append("\n")
             .append("    - provider: ").append(fgDataMap.getDataMapWrapperProvider()).append("\n")
             .append("    - skipped: ").append(skipBlocks).append(" blocks, ")

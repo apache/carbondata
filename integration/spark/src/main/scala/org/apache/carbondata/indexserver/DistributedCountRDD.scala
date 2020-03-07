@@ -30,8 +30,8 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, DistributableDataMapFormat}
-import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, IndexInputFormat}
+import org.apache.carbondata.core.datamap.dev.expr.IndexInputSplitWrapper
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonThreadFactory}
 import org.apache.carbondata.spark.rdd.CarbonRDD
@@ -39,15 +39,15 @@ import org.apache.carbondata.spark.rdd.CarbonRDD
 /**
  * An RDD which will get the count for the table.
  */
-class DistributedCountRDD(@transient ss: SparkSession, dataMapFormat: DistributableDataMapFormat)
+class DistributedCountRDD(@transient ss: SparkSession, dataMapFormat: IndexInputFormat)
   extends CarbonRDD[(String, String)](ss, Nil) {
 
   @transient private val LOGGER = LogServiceFactory.getLogService(classOf[DistributedPruneRDD]
     .getName)
 
   override protected def getPreferredLocations(split: Partition): Seq[String] = {
-    if (split.asInstanceOf[DataMapRDDPartition].getLocations != null) {
-      split.asInstanceOf[DataMapRDDPartition].getLocations.toSeq
+    if (split.asInstanceOf[IndexRDDPartition].getLocations != null) {
+      split.asInstanceOf[IndexRDDPartition].getLocations.toSeq
     } else {
       Seq()
     }
@@ -58,7 +58,7 @@ class DistributedCountRDD(@transient ss: SparkSession, dataMapFormat: Distributa
     val attemptId = new TaskAttemptID(DistributedRDDUtils.generateTrackerId,
       id, TaskType.MAP, split.index, 0)
     val attemptContext = new TaskAttemptContextImpl(FileFactory.getConfiguration, attemptId)
-    val inputSplits = split.asInstanceOf[DataMapRDDPartition].inputSplit
+    val inputSplits = split.asInstanceOf[IndexRDDPartition].inputSplit
     val numOfThreads = CarbonProperties.getInstance().getNumOfThreadsForExecutorPruning
     val service = Executors
       .newFixedThreadPool(numOfThreads, new CarbonThreadFactory("IndexPruningPool", true))
@@ -100,14 +100,14 @@ class DistributedCountRDD(@transient ss: SparkSession, dataMapFormat: Distributa
     (implicit executionContext: ExecutionContext) = {
     Future {
       val segments = split.map { inputSplit =>
-        val distributable = inputSplit.asInstanceOf[DataMapDistributableWrapper]
+        val distributable = inputSplit.asInstanceOf[IndexInputSplitWrapper]
         distributable.getDistributable.getSegment
           .setReadCommittedScope(dataMapFormat.getReadCommittedScope)
         distributable.getDistributable.getSegment
       }
       val defaultDataMap = DataMapStoreManager.getInstance
-        .getDataMap(dataMapFormat.getCarbonTable, split.head
-          .asInstanceOf[DataMapDistributableWrapper].getDistributable.getDataMapSchema)
+        .getIndex(dataMapFormat.getCarbonTable, split.head
+          .asInstanceOf[IndexInputSplitWrapper].getDistributable.getDataMapSchema)
       defaultDataMap.getBlockRowCount(segments.toList.asJava, dataMapFormat
         .getPartitions, defaultDataMap).asScala
     }

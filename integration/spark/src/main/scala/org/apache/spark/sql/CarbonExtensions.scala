@@ -24,21 +24,11 @@ import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStr
 import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonPreInsertionCasts}
 import org.apache.spark.sql.parser.CarbonExtensionSqlParser
 
-class CarbonExtensions extends ((SparkSessionExtensions) => Unit) {
+import org.apache.carbondata.view.{MaterializedViewUDF, TimeSeriesFunction}
+
+class CarbonExtensions extends (SparkSessionExtensions => Unit) {
 
   override def apply(extensions: SparkSessionExtensions): Unit = {
-    // Try to initialize MV extension before carbon extension
-    // It may fail if MVExtension class is not in class path
-    try {
-      val clazz = Class.forName("org.apache.carbondata.mv.extension.MVExtension")
-      val method = clazz.getMethod("apply", classOf[SparkSessionExtensions])
-      val mvExtension = clazz.newInstance()
-      method.invoke(mvExtension, extensions)
-    } catch {
-      case _: Throwable =>
-        // If MVExtension initialization failed, ignore it
-    }
-
     // Carbon internal parser
     extensions
       .injectParser((sparkSession: SparkSession, parser: ParserInterface) =>
@@ -76,6 +66,11 @@ case class CarbonOptimizerRule(session: SparkSession) extends Rule[LogicalPlan] 
       self.synchronized {
         if (notAdded) {
           notAdded = false
+
+          session.udf.register(MaterializedViewUDF.DUMMY_FUNCTION, () => "")
+          // added for handling timeseries function like hour, minute, day, month, year
+          session.udf.register(MaterializedViewUDF.TIME_SERIES_FUNCTION, new TimeSeriesFunction)
+
           val sessionState = session.sessionState
           val field = sessionState.getClass.getDeclaredField("optimizer")
           field.setAccessible(true)

@@ -56,6 +56,8 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
   }
 
   override def afterEach(): Unit = {
+    sql("drop materialized view if exists dm_mv ")
+    sql("drop materialized view if exists dm_pre ")
     sql("drop table IF EXISTS maintable")
     sql("drop table IF EXISTS testtable")
     sql("drop table if exists par_table")
@@ -70,8 +72,8 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
 
   test("test alter add column on datamaptable") {
     intercept[ProcessMetaDataException] {
-      sql("alter table dm1_table add columns(d int)")
-    }.getMessage.contains("Cannot add columns in a materialized view table default.dm1_table")
+      sql("alter table dm1 add columns(d int)")
+    }.getMessage.contains("Cannot add columns in a materialized view table default.dm1")
   }
 
   test("test drop column on maintable") {
@@ -86,8 +88,8 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
 
   test("test alter drop column on datamaptable") {
     intercept[ProcessMetaDataException] {
-      sql("alter table dm1_table drop columns(maintable_name)")
-    }.getMessage.contains("Cannot drop columns present in a materialized view table default.dm1_table")
+      sql("alter table dm1 drop columns(maintable_name)")
+    }.getMessage.contains("Cannot drop columns present in a materialized view table default.dm1")
   }
 
   test("test rename column on maintable") {
@@ -102,9 +104,9 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
 
   test("test alter rename column on datamaptable") {
     intercept[ProcessMetaDataException] {
-      sql("alter table dm1_table change sum_price sum_cost int")
+      sql("alter table dm1 change sum_price sum_cost int")
     }.getMessage.contains("Cannot change data type or rename column for columns " +
-                          "present in mv materialized view table default.dm1_table")
+                          "present in mv materialized view table default.dm1")
   }
 
   test("test alter rename table") {
@@ -114,7 +116,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     }.getMessage.contains("alter rename is not supported for materialized view table or for tables which have child materialized view")
     //check rename datamaptable
     intercept[MalformedCarbonCommandException] {
-      sql("alter table dm1_table rename to dm11_table")
+      sql("alter table dm1 rename to dm11")
     }.getMessage.contains("alter rename is not supported for materialized view table or for tables which have child materialized view")
   }
 
@@ -128,20 +130,20 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     checkResult()
     //change datatype for column present in materialized view table
     intercept[ProcessMetaDataException] {
-      sql("alter table dm1_table change sum_price sum_price bigint")
+      sql("alter table dm1 change sum_price sum_price bigint")
     }.getMessage.contains("Cannot change data type or rename column for columns " +
-                          "present in mv materialized view table default.dm1_table")
+                          "present in mv materialized view table default.dm1")
   }
 
   test("test properties") {
     sql("drop materialized view if exists dm1")
     sql("create materialized view dm1 with deferred refresh properties" +
         "('LOCAL_DICTIONARY_ENABLE'='false') as select name,price from maintable")
-    checkExistence(sql("describe formatted dm1_table"), true, "Local Dictionary Enabled false")
+    checkExistence(sql("describe formatted dm1"), true, "Local Dictionary Enabled false")
     sql("drop materialized view if exists dm1")
     sql("create materialized view dm1 with deferred refresh properties('TABLE_BLOCKSIZE'='256 MB') " +
         "as select name,price from maintable")
-    checkExistence(sql("describe formatted dm1_table"), true, "Table Block Size  256 MB")
+    checkExistence(sql("describe formatted dm1"), true, "Table Block Size  256 MB")
   }
 
   test("test table properties") {
@@ -149,21 +151,21 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("create table maintable(name string, c_code int, price int) STORED AS carbondata tblproperties('LOCAL_DICTIONARY_ENABLE'='false')")
     sql("drop materialized view if exists dm1")
     sql("create materialized view dm1 with deferred refresh as select name,price from maintable")
-    checkExistence(sql("describe formatted dm1_table"), true, "Local Dictionary Enabled false")
+    checkExistence(sql("describe formatted dm1"), true, "Local Dictionary Enabled false")
     sql("drop table IF EXISTS maintable")
     sql("create table maintable(name string, c_code int, price int) STORED AS carbondata tblproperties('TABLE_BLOCKSIZE'='256 MB')")
     sql("drop materialized view if exists dm1")
     sql("create materialized view dm1 with deferred refresh as select name,price from maintable")
-    checkExistence(sql("describe formatted dm1_table"), true, "Table Block Size  256 MB")
+    checkExistence(sql("describe formatted dm1"), true, "Table Block Size  256 MB")
   }
 
   test("test delete segment by id on main table") {
+    sql("drop materialized view if exists dm1")
     sql("drop table IF EXISTS maintable")
     sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
     sql("insert into table maintable select 'abc',21,2000")
     sql("insert into table maintable select 'abc',21,2000")
     sql("Delete from table maintable where segment.id in (0)")
-    sql("drop materialized view if exists dm1")
     sql("create materialized view dm1 with deferred refresh as select name,sum(price) " +
         "from maintable group by name")
     sql("refresh materialized view dm1")
@@ -171,7 +173,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
       sql("Delete from table maintable where segment.id in (1)")
     }.getMessage.contains("Delete segment operation is not supported on tables which have mv materialized view")
     intercept[UnsupportedOperationException] {
-      sql("Delete from table dm1_table where segment.id in (0)")
+      sql("Delete from table dm1 where segment.id in (0)")
     }.getMessage.contains("Delete segment operation is not supported on mv table")
   }
 
@@ -189,7 +191,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
       sql("DELETE FROM TABLE maintable WHERE SEGMENT.STARTTIME BEFORE '2017-06-01 12:05:06'")
     }.getMessage.contains("Delete segment operation is not supported on tables which have mv materialized view")
     intercept[UnsupportedOperationException] {
-      sql("DELETE FROM TABLE dm1_table WHERE SEGMENT.STARTTIME BEFORE '2017-06-01 12:05:06'")
+      sql("DELETE FROM TABLE dm1 WHERE SEGMENT.STARTTIME BEFORE '2017-06-01 12:05:06'")
     }.getMessage.contains("Delete segment operation is not supported on mv table")
   }
 
@@ -202,7 +204,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
         "from maintable")
     sql("refresh materialized view dm1")
     intercept[UnsupportedOperationException] {
-      sql("insert into dm1_table select 2")
+      sql("insert into dm1 select 2")
     }.getMessage.contains("Cannot insert data directly into MV table")
     sql("drop table IF EXISTS maintable")
   }
@@ -253,18 +255,18 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     checkExistence(sql("show materialized views on table maintable"), true, "DISABLED")
     sql("refresh materialized view dm1")
     var result = sql("show materialized views on table maintable").collectAsList()
-    assert(result.get(0).get(0).toString.equalsIgnoreCase("dm1"))
-    assert(result.get(0).get(1).toString.equalsIgnoreCase("default.dm1_table"))
-    assert(result.get(0).get(2).toString.equalsIgnoreCase("manual"))
-    assert(result.get(0).get(3).toString.equalsIgnoreCase("true"))
-    assert(result.get(0).get(5).toString.equalsIgnoreCase("ENABLED"))
-    assert(result.get(0).get(6).toString.contains("{\"default.maintable\":\"0\""))
+    assert(result.get(0).get(0).toString.equalsIgnoreCase("default"))
+    assert(result.get(0).get(1).toString.equalsIgnoreCase("dm1"))
+    assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
+    assert(result.get(0).get(3).toString.equalsIgnoreCase("incremental"))
+    assert(result.get(0).get(4).toString.equalsIgnoreCase("on_manual"))
+    assert(result.get(0).get(5).toString.contains("'associated_tables'='maintable'"))
     sql("insert into table maintable select 'abc',21,2000")
     checkExistence(sql("show materialized views on table maintable"), true, "DISABLED")
     sql("refresh materialized view dm1")
     result = sql("show materialized views on table maintable").collectAsList()
-    assert(result.get(0).get(5).toString.equalsIgnoreCase("ENABLED"))
-    assert(result.get(0).get(6).toString.contains("{\"default.maintable\":\"1\""))
+    assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
+    assert(result.get(0).get(5).toString.contains("'associated_tables'='maintable'"))
     sql("drop materialized view if exists dm1 ")
     sql("drop table IF EXISTS maintable")
   }
@@ -285,20 +287,20 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     checkExistence(sql("show materialized views on table sales"), true, "DISABLED")
     sql("refresh materialized view innerjoin")
     var result = sql("show materialized views on table products").collectAsList()
-    assert(result.get(0).get(2).toString.equalsIgnoreCase("manual"))
-    assert(result.get(0).get(3).toString.equalsIgnoreCase("false"))
-    assert(result.get(0).get(5).toString.equalsIgnoreCase("ENABLED"))
-    assert(result.get(0).get(6).toString.contains("\"default.products\":\"0\",\"default.sales\":\"0\"}"))
+    assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
+    assert(result.get(0).get(3).toString.equalsIgnoreCase("full"))
+    assert(result.get(0).get(4).toString.equalsIgnoreCase("on_manual"))
+    assert(result.get(0).get(5).toString.contains("'associated_tables'='products,sales'"))
     result = sql("show materialized views on table sales").collectAsList()
-    assert(result.get(0).get(5).toString.equalsIgnoreCase("ENABLED"))
-    assert(result.get(0).get(6).toString.contains("\"default.products\":\"0\",\"default.sales\":\"0\"}"))
+    assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
+    assert(result.get(0).get(5).toString.contains("'associated_tables'='products,sales'"))
     sql(s"load data INPATH '$resourcesPath/sales_data.csv' into table sales")
     checkExistence(sql("show materialized views on table products"), true, "DISABLED")
     checkExistence(sql("show materialized views on table sales"), true, "DISABLED")
     sql("refresh materialized view innerjoin")
     result = sql("show materialized views on table sales").collectAsList()
-    assert(result.get(0).get(5).toString.equalsIgnoreCase("ENABLED"))
-    assert(result.get(0).get(6).toString.contains("\"default.products\":\"0\",\"default.sales\":\"1\"}"))
+    assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
+    assert(result.get(0).get(5).toString.contains("'associated_tables'='products,sales'"))
     sql("drop materialized view if exists innerjoin ")
     sql(
       "Create materialized view innerjoin as Select p.product, p.amount, " +
@@ -308,9 +310,9 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     checkExistence(sql("show materialized views on table sales"), true, "ENABLED")
     sql("show materialized views").show(false)
     result = sql("show materialized views on table products").collectAsList()
-    assert(result.get(0).get(2).toString.equalsIgnoreCase("auto"))
-    assert(result.get(0).get(3).toString.equalsIgnoreCase("false"))
-    assert(result.get(0).get(5).toString.equalsIgnoreCase("ENABLED"))
+    assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
+    assert(result.get(0).get(3).toString.equalsIgnoreCase("full"))
+    assert(result.get(0).get(4).toString.equalsIgnoreCase("on_commit"))
     sql("drop materialized view if exists innerjoin ")
 
     sql("drop table if exists products")
@@ -324,7 +326,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop materialized view if exists dm1 ")
     sql("create materialized view dm1 with deferred refresh as select price from maintable")
     intercept[ProcessMetaDataException] {
-      sql("drop table dm1_table")
+      sql("drop table dm1")
     }.getMessage.contains("Child table which is associated with materialized view cannot be dropped, use DROP materialized view command to drop")
     sql("drop table IF EXISTS maintable")
   }
@@ -336,8 +338,8 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop materialized view if exists dm1 ")
     sql("create materialized view dm1  as select name, price from maintable")
     intercept[Exception] {
-      sql("create materialized view dm_agg  as select maintable_name, sum(maintable_price) from dm1_table group by maintable_name")
-    }.getMessage.contains("Cannot create materialized view on child table default.dm1_table")
+      sql("create materialized view dm_agg  as select maintable_name, sum(maintable_price) from dm1 group by maintable_name")
+    }.getMessage.contains("Cannot create materialized view on child table default.dm1")
   }
 
   test("create materialized view if already exists") {
@@ -381,7 +383,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop materialized view if exists dm ")
     sql("create materialized view dm  as select name from maintable")
     intercept[MalformedCarbonCommandException] {
-      sql("ALTER TABLE dm_table SET TBLPROPERTIES('streaming'='true')")
+      sql("ALTER TABLE dm SET TBLPROPERTIES('streaming'='true')")
     }.getMessage.contains("materialized view table does not support set streaming property")
     sql("drop table IF EXISTS maintable")
   }
@@ -424,9 +426,9 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("create materialized view dm  as select max(to_date(dob)) , min(to_date(dob)) from maintable where to_date(dob)='1975-06-11' or to_date(dob)='1975-06-23'")
     checkExistence(sql("select max(to_date(dob)) , min(to_date(dob)) from maintable where to_date(dob)='1975-06-11' or to_date(dob)='1975-06-23'"), true, "1975-06-11 1975-06-11")
     sql("drop materialized view if exists dm2 ")
-    sql("create materialized view dm2 as select to_date(dob) from maintable where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =120 or DECIMAL_COLUMN1 = 4.34 or Double_COLUMN1 =12345  or INTEGER_COLUMN1 IS NULL")
-    checkExistence(sql("select to_date(DOB) from maintable where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =120 or DECIMAL_COLUMN1 = 4.34 or Double_COLUMN1 =12345  or INTEGER_COLUMN1 IS NULL"), true, "1975-06-11")
-    val df = sql("select to_date(DOB) from maintable where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =120 or DECIMAL_COLUMN1 = 4.34 or Double_COLUMN1 =12345  or INTEGER_COLUMN1 IS NULL")
+    sql("create materialized view dm2 as select to_date(DOB) from maintable where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =120 or DECIMAL_COLUMN1 = 4.34 or Double_COLUMN1 =12345  or INTEGER_COLUMN1 IS NULL")
+    checkExistence(sql("select to_date(DOB) from maintable where CUST_ID IS NULL or dob IS NOT NULL or BIGINT_COLUMN1 =120 or DECIMAL_COLUMN1 = 4.34 or Double_COLUMN1 =12345  or INTEGER_COLUMN1 IS NULL"), true, "1975-06-11")
+    val df = sql("select to_date(dob) from maintable where CUST_ID IS NULL or dob IS NOT NULL or BIGINT_COLUMN1 =120 or DECIMAL_COLUMN1 = 4.34 or Double_COLUMN1 =12345  or INTEGER_COLUMN1 IS NULL")
     TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "dm2")
     sql("drop table IF EXISTS maintable")
   }
@@ -439,7 +441,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("create materialized view dm_mv  as select name, sum(price) from maintable group by name")
     sql("drop materialized view if exists dm_pre ")
     sql("insert into table maintable select 'abcd',21,20002")
-    checkAnswer(sql("select count(*) from dm_mv_table"), Seq(Row(2)))
+    checkAnswer(sql("select count(*) from dm_mv"), Seq(Row(2)))
     sql("drop table IF EXISTS maintable")
   }
 
@@ -449,7 +451,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop materialized view if exists dm ")
     sql("create materialized view dm  as select name, sum(price) from maintable group by name")
-    checkExistence(sql("describe formatted dm_table"), true, "Inverted Index Columns maintable_name")
+    checkExistence(sql("describe formatted dm"), true, "Inverted Index Columns maintable_name")
     checkAnswer(sql("select name, sum(price) from maintable group by name"), Seq(Row("abc", 2000)))
     sql("drop table IF EXISTS maintable")
   }
@@ -460,7 +462,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop materialized view if exists dm_mv ")
     sql("create materialized view dm_mv as select name, sum(price) from maintable group by name")
-    val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "dm_mv_table")
+    val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "dm_mv")
     assert(dataMapTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR).equalsIgnoreCase("zstd"))
     sql("drop table IF EXISTS maintable")
   }
@@ -470,7 +472,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("create table maintable(name string, c_code int, price int) STORED AS carbondata tblproperties('sort_columns'='name')")
     sql("insert into table maintable select 'abc',21,2000")
     sql("create materialized view dm_mv as select name, sum(price) from maintable group by name")
-    checkExistence(sql("describe formatted dm_mv_table"), true, "Sort Scope LOCAL_SORT")
+    checkExistence(sql("describe formatted dm_mv"), true, "Sort Scope LOCAL_SORT")
     sql("drop table IF EXISTS maintable")
   }
 
@@ -480,7 +482,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("insert into table maintable select 'abc',21,2000")
     checkExistence(sql("describe formatted maintable"), true, "Inverted Index Columns name")
     sql("create materialized view dm_mv as select name, sum(price) from maintable group by name")
-    checkExistence(sql("describe formatted dm_mv_table"), true, "Inverted Index Columns maintable_name")
+    checkExistence(sql("describe formatted dm_mv"), true, "Inverted Index Columns maintable_name")
     sql("drop table IF EXISTS maintable")
   }
 
@@ -497,7 +499,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("insert into table maintable select 'abc',21,2000")
     sql("create materialized view dm_mv as select name, sum(price) from maintable group by name")
     intercept[UnsupportedOperationException] {
-      sql("delete from dm_mv_table where maintable_name='abc'")
+      sql("delete from dm_mv where maintable_name='abc'")
     }.getMessage.contains("Delete operation is not supported for materialized view table")
     sql("drop table IF EXISTS maintable")
   }
@@ -510,10 +512,10 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("create materialized view dm  as select name, sum(price) from maintable group by name")
     sql("select name, sum(price) from maintable group by name").collect()
     intercept[UnsupportedOperationException] {
-      sql("show metacache on table dm_table").show(false)
+      sql("show metacache on table dm").show(false)
     }.getMessage.contains("Operation not allowed on child table.")
     intercept[UnsupportedOperationException] {
-      sql("drop metacache on table dm_table").show(false)
+      sql("drop metacache on table dm").show(false)
     }.getMessage.contains("Operation not allowed on child table.")
   }
 
@@ -644,7 +646,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     val dbPath = CarbonEnv
       .getDatabaseLocation(tableIdentifier.database.get, sqlContext.sparkSession)
     val tablePath = carbonTable.getTablePath
-    val mvPath = dbPath + CarbonCommonConstants.FILE_SEPARATOR + "dm_table" +
+    val mvPath = dbPath + CarbonCommonConstants.FILE_SEPARATOR + "dm" +
                  CarbonCommonConstants.FILE_SEPARATOR
 
     // Check if table index entries are dropped

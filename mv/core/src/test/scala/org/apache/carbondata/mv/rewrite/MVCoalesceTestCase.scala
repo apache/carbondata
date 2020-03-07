@@ -88,6 +88,6 @@ object TestUtil {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get
     }
-    tables.exists(_.identifier.table.equalsIgnoreCase(dataMapName+"_table"))
+    tables.exists(_.identifier.table.equalsIgnoreCase(dataMapName))
   }
 }

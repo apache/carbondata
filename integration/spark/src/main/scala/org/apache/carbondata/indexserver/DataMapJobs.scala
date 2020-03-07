@@ -25,7 +25,7 @@ import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.SizeEstimator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{AbstractDataMapJob, DistributableDataMapFormat}
+import org.apache.carbondata.core.datamap.{AbstractIndexJob, IndexInputFormat}
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.scan.expression.BinaryExpression
@@ -39,11 +39,11 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil.logTime
  * Spark job to execute datamap job and prune all the datamaps distributable. This job will prune
  * and cache the appropriate datamaps in executor LRUCache.
  */
-class DistributedDataMapJob extends AbstractDataMapJob {
+class DistributedIndexJob extends AbstractIndexJob {
 
   val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  override def execute(dataMapFormat: DistributableDataMapFormat): util.List[ExtendedBlocklet] = {
+  override def execute(dataMapFormat: IndexInputFormat): util.List[ExtendedBlocklet] = {
     if (LOGGER.isDebugEnabled) {
       val messageSize = SizeEstimator.estimate(dataMapFormat)
       LOGGER.debug(s"Size of message sent to Index Server: $messageSize")
@@ -105,7 +105,7 @@ class DistributedDataMapJob extends AbstractDataMapJob {
     filterInf
   }
 
-  override def executeCountJob(dataMapFormat: DistributableDataMapFormat): java.lang.Long = {
+  override def executeCountJob(dataMapFormat: IndexInputFormat): java.lang.Long = {
     IndexServer.getClient.getCount(dataMapFormat).get()
   }
 }
@@ -114,9 +114,9 @@ class DistributedDataMapJob extends AbstractDataMapJob {
  * Spark job to execute datamap job and prune all the datamaps distributable. This job will just
  * prune the datamaps but will not cache in executors.
  */
-class EmbeddedDataMapJob extends AbstractDataMapJob {
+class EmbeddedIndexJob extends AbstractIndexJob {
 
-  override def execute(dataMapFormat: DistributableDataMapFormat): util.List[ExtendedBlocklet] = {
+  override def execute(dataMapFormat: IndexInputFormat): util.List[ExtendedBlocklet] = {
     val spark = SparkSQLUtil.getSparkSession
     val originalJobDesc = spark.sparkContext.getLocalProperty("spark.job.description")
     dataMapFormat.setIsWriteToFile(false)
@@ -132,7 +132,7 @@ class EmbeddedDataMapJob extends AbstractDataMapJob {
     splits
   }
 
-  override def executeCountJob(dataMapFormat: DistributableDataMapFormat): java.lang.Long = {
+  override def executeCountJob(dataMapFormat: IndexInputFormat): java.lang.Long = {
     dataMapFormat.setFallbackJob()
     IndexServer.getCount(dataMapFormat).get()
   }

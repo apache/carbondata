@@ -25,7 +25,7 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
  * It saves/serializes the array of {{@link DataMapStatusDetail}} to database folder.
  * It ensures the data consistance while concurrent write through write lock. It saves the status
  * to the datamapstatus under the database folder.
- * Now the implement not finished, it used to disable DataMap in multi-tenant scenario.
+ * Now the implement not finished, it used to disable Index in multi-tenant scenario.
  */
 public class DatabaseDataMapStatusProvider implements DataMapStatusStorageProvider {
 

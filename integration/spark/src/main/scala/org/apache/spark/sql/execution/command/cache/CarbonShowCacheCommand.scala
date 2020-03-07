@@ -31,8 +31,8 @@ import org.apache.spark.sql.types.StringType
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory
+import org.apache.carbondata.core.indexstore.BlockletIndexWrapper
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
@@ -170,7 +170,7 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       tableIdent =>
         try {
           val carbonTable = CarbonEnv.getCarbonTable(tableIdent)(sparkSession)
-          if (!carbonTable.isChildTableForMV) {
+          if (!carbonTable.isMaterializedView) {
             carbonTables += carbonTable
           }
         } catch {
@@ -254,13 +254,13 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
         .getTableUniqueName, carbonTable.getTableId) match {
         case list =>
           val parentCache = list
-            .filter(_._4.equalsIgnoreCase(BlockletDataMapFactory.DATA_MAP_SCHEMA
+            .filter(_._4.equalsIgnoreCase(BlockletIndexFactory.DATA_MAP_SCHEMA
               .getProviderName)) match {
             case Nil => ("", 0, 0L, "")
             case head :: _ => head
           }
           val dataMapList = list
-            .filter(!_._4.equalsIgnoreCase(BlockletDataMapFactory.DATA_MAP_SCHEMA
+            .filter(!_._4.equalsIgnoreCase(BlockletIndexFactory.DATA_MAP_SCHEMA
               .getProviderName))
           (parentCache, dataMapList)
         case Nil => (("", 0, 0L, ""), Nil)
@@ -409,7 +409,7 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
     cache.getCacheMap.asScala.foreach {
       case (key, cacheable) =>
         cacheable match {
-          case _: BlockletDataMapIndexWrapper =>
+          case _: BlockletIndexWrapper =>
             allIndexSize += cacheable.getMemorySize
             if (tablePaths.exists { path => key.startsWith(path) }) {
               dbIndexSize += cacheable.getMemorySize
@@ -423,20 +423,20 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
 
   private def collectDriverMetaCacheInfo(tableName: String,
       tableId: String): List[(String, Int, Long, String)] = {
-    val dataMaps = DataMapStoreManager.getInstance().getAllDataMaps.asScala
+    val dataMaps = DataMapStoreManager.getInstance().getTableIndexForAllTables.asScala
     dataMaps.collect {
       case (table, tableDataMaps) if table.isEmpty ||
                                      (tableId.nonEmpty && tableId.equalsIgnoreCase(table)) =>
         val sizeAndIndexLengths = tableDataMaps.asScala
           .collect { case dataMap if
           dataMap.getDataMapSchema.getDataMapName.equalsIgnoreCase(tableName) ||
-          dataMap.getDataMapFactory.getCarbonTable.getTableUniqueName.equalsIgnoreCase(tableName) =>
-            if (dataMap.getDataMapFactory.isInstanceOf[BlockletDataMapFactory]) {
-              s"$tableName:${ dataMap.getDataMapFactory.getCacheSize }:${
+          dataMap.getIndexFactory.getCarbonTable.getTableUniqueName.equalsIgnoreCase(tableName) =>
+            if (dataMap.getIndexFactory.isInstanceOf[BlockletIndexFactory]) {
+              s"$tableName:${ dataMap.getIndexFactory.getCacheSize }:${
                 dataMap.getDataMapSchema.getProviderName}"
             } else {
               s"${ dataMap.getDataMapSchema.getDataMapName }:${
-                dataMap.getDataMapFactory.getCacheSize
+                dataMap.getIndexFactory.getCacheSize
               }:${ dataMap.getDataMapSchema.getProviderName }"
             }
           }

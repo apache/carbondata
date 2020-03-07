@@ -203,7 +203,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     }
 
     // initialize filter
-    if (null != model.getDataMapFilter()) {
+    if (null != model.getIndexFilter()) {
       initializeFilter();
     } else if (projection.length == 0) {
       skipScanData = true;
@@ -218,7 +218,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     SegmentProperties segmentProperties = new SegmentProperties(wrapperColumnSchemaList);
     Map<Integer, GenericQueryType> complexDimensionInfoMap = new HashMap<>();
 
-    FilterResolverIntf resolverIntf = model.getDataMapFilter().getResolver();
+    FilterResolverIntf resolverIntf = model.getIndexFilter().getResolver();
     filter = FilterUtil.getFilterExecuterTree(
         resolverIntf, segmentProperties, complexDimensionInfoMap, true);
     // for row filter, we need update column index

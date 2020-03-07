@@ -35,6 +35,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events._
 import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.view.MaterializedViewManagerInSpark
 
 /**
  * Clean data in table
@@ -53,7 +54,7 @@ case class CarbonCleanFilesCommand(
   extends AtomicRunnableCommand {
 
   var carbonTable: CarbonTable = _
-  var cleanFileCommands: List[CarbonCleanFilesCommand] = _
+  var cleanFileCommands: List[CarbonCleanFilesCommand] = List.empty
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName.get)(sparkSession)
@@ -65,7 +66,7 @@ case class CarbonCleanFilesCommand(
       val allDataMapSchemas = DataMapStoreManager.getInstance
         .getDataMapSchemasOfTable(carbonTable).asScala
         .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                 !dataMapSchema.isIndexDataMap)
+                                 !dataMapSchema.isIndex)
       cleanFileCommands = allDataMapSchemas.map {
         dataMapSchema =>
           val relationIdentifier = dataMapSchema.getRelationIdentifier
@@ -74,6 +75,20 @@ case class CarbonCleanFilesCommand(
             isInternalCleanCall = true)
       }.toList
       cleanFileCommands.foreach(_.processMetadata(sparkSession))
+    }
+    val viewSchemas =
+      MaterializedViewManagerInSpark.get(sparkSession).getSchemasOnTable(carbonTable)
+    if (!viewSchemas.isEmpty) {
+      val commands = viewSchemas.asScala.map {
+        schema =>
+          val relationIdentifier = schema.getIdentifier
+          CarbonCleanFilesCommand(
+            Some(relationIdentifier.getDatabaseName),
+            Some(relationIdentifier.getTableName),
+            isInternalCleanCall = true)
+      }.toList
+      commands.foreach(_.processMetadata(sparkSession))
+      cleanFileCommands = cleanFileCommands ++ commands
     }
     Seq.empty
   }

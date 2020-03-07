@@ -41,6 +41,7 @@ import org.apache.carbondata.geo.InPolygonUDF
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
+import org.apache.carbondata.view.MaterializedViewManagerInSpark
 
 /**
  * Carbon Environment for unified context
@@ -160,29 +161,29 @@ object CarbonEnv {
   def initListeners(): Unit = {
     OperationListenerBus.getInstance()
       .addListener(classOf[IndexServerLoadEvent], PrePrimingEventListener)
-      .addListener(classOf[LoadTablePreExecutionEvent], LoadMVTablePreListener)
-      .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
-        AlterDataMaptableCompactionPostListener)
+//      .addListener(classOf[LoadTablePreExecutionEvent], LoadMVTablePreListener)
+//      .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
+//        AlterDataMaptableCompactionPostListener)
       .addListener(classOf[LoadTablePreStatusUpdateEvent], new MergeIndexEventListener)
-      .addListener(classOf[LoadTablePostExecutionEvent], LoadPostDataMapListener)
-      .addListener(classOf[UpdateTablePostEvent], LoadPostDataMapListener )
-      .addListener(classOf[DeleteFromTablePostEvent], LoadPostDataMapListener )
+//      .addListener(classOf[LoadTablePostExecutionEvent], LoadPostDataMapListener)
+//      .addListener(classOf[UpdateTablePostEvent], LoadPostDataMapListener )
+//      .addListener(classOf[DeleteFromTablePostEvent], LoadPostDataMapListener )
       .addListener(classOf[AlterTableMergeIndexEvent], new MergeIndexEventListener)
       .addListener(classOf[BuildDataMapPostExecutionEvent], new MergeBloomIndexEventListener)
-      .addListener(classOf[DropTableCacheEvent], DropCacheDataMapEventListener)
+      .addListener(classOf[DropTableCacheEvent], DropCacheMVEventListener)
       .addListener(classOf[DropTableCacheEvent], DropCacheBloomEventListener)
       .addListener(classOf[ShowTableCacheEvent], ShowCachePreMVEventListener)
       .addListener(classOf[ShowTableCacheEvent], ShowCacheDataMapEventListener)
-      .addListener(classOf[DeleteSegmentByIdPreEvent], DataMapDeleteSegmentPreListener)
-      .addListener(classOf[DeleteSegmentByDatePreEvent], DataMapDeleteSegmentPreListener)
-      .addListener(classOf[AlterTableDropColumnPreEvent], DataMapDropColumnPreListener)
-      .addListener(classOf[AlterTableColRenameAndDataTypeChangePreEvent],
-        DataMapChangeDataTypeorRenameColumnPreListener)
-      .addListener(classOf[AlterTableAddColumnPreEvent], DataMapAddColumnsPreListener)
-      .addListener(classOf[AlterTableDropPartitionMetaEvent],
-        DataMapAlterTableDropPartitionMetaListener)
-      .addListener(classOf[AlterTableDropPartitionPreStatusEvent],
-        DataMapAlterTableDropPartitionPreStatusListener)
+//      .addListener(classOf[DeleteSegmentByIdPreEvent], MVDeleteSegmentPreListener)
+//      .addListener(classOf[DeleteSegmentByDatePreEvent], MVDeleteSegmentPreListener)
+//      .addListener(classOf[AlterTableDropColumnPreEvent], MVDropColumnPreListener)
+//      .addListener(classOf[AlterTableColRenameAndDataTypeChangePreEvent],
+//        MVChangeDataTypeorRenameColumnPreListener)
+//      .addListener(classOf[AlterTableAddColumnPreEvent], MVAddColumnsPreListener)
+//      .addListener(classOf[AlterTableDropPartitionMetaEvent],
+//        MVAlterTableDropPartitionMetaListener)
+//      .addListener(classOf[AlterTableDropPartitionPreStatusEvent],
+//        MVAlterTableDropPartitionPreStatusListener)
       .addListener(classOf[LoadTablePreStatusUpdateEvent], new SILoadEventListener)
       .addListener(classOf[LoadTablePostStatusUpdateEvent],
         new SILoadEventListenerForFailedSegments)
@@ -210,6 +211,21 @@ object CarbonEnv {
       .addListener(classOf[DeleteFromTablePreEvent], new DeleteFromTableEventListener)
       .addListener(classOf[DropTableCacheEvent], DropCacheSIEventListener)
       .addListener(classOf[ShowTableCacheEvent], ShowCacheSIEventListener)
+      // For materialized view
+      .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent], MVCompactionPostEventListener)
+      .addListener(classOf[LoadTablePreExecutionEvent], MVLoadPreEventListener)
+      .addListener(classOf[LoadTablePostExecutionEvent], MVLoadPostEventListener)
+      .addListener(classOf[UpdateTablePostEvent], MVLoadPostEventListener)
+      .addListener(classOf[DeleteFromTablePostEvent], MVLoadPostEventListener)
+      .addListener(classOf[DeleteSegmentByIdPreEvent], MVDeleteSegmentPreEventListener)
+      .addListener(classOf[DeleteSegmentByDatePreEvent], MVDeleteSegmentPreEventListener)
+      .addListener(classOf[AlterTableAddColumnPreEvent], MVAddColumnsPreEventListener)
+      .addListener(classOf[AlterTableDropColumnPreEvent], MVDropColumnPreEventListener)
+      .addListener(classOf[AlterTableColRenameAndDataTypeChangePreEvent],
+        MVAlterColumnPreEventListener)
+      .addListener(classOf[AlterTableDropPartitionMetaEvent], MVDropPartitionMetaEventListener)
+      .addListener(classOf[AlterTableDropPartitionPreStatusEvent], MVDropPartitionPreEventListener)
+      .addListener(classOf[DropTablePreEvent], MVDropTablePreEventListener)
   }
 
   /**

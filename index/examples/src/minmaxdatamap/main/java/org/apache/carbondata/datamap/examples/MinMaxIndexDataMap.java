@@ -115,7 +115,7 @@ public class MinMaxIndexDataMap extends CoarseGrainDataMap {
   }
 
   /**
-   * Block Prunning logic for Min Max DataMap.
+   * Block Prunning logic for Min Max Index.
    *
    * @param filterExp
    * @param segmentProperties

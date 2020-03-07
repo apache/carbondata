@@ -478,11 +478,11 @@ public class LocalCarbonFile implements CarbonFile {
       return false;
     }
     LocalCarbonFile that = (LocalCarbonFile) o;
-    return Objects.equals(file, that.file);
+    return Objects.equals(file.getAbsolutePath(), that.file.getAbsolutePath());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(file);
+    return Objects.hash(file.getAbsolutePath());
   }
 }

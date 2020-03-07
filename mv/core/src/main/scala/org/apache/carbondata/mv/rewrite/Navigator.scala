@@ -242,13 +242,13 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
     val updatedSubsumer = subsumer match {
       // In case of order by it adds extra select but that can be ignored while doing selection.
       case s@Select(_, _, _, _, _, Seq(g: GroupBy), _, _, _, _) =>
-        s.copy(children = Seq(g.copy(dataMapTableRelation = Some(dataMapRelation))),
+        s.copy(children = Seq(g.copy(modularPlan = Some(dataMapRelation))),
           outputList = updateDuplicateColumns(s.outputList))
       case s: Select => s
-        .copy(dataMapTableRelation = Some(dataMapRelation),
+        .copy(modularPlan = Some(dataMapRelation),
           outputList = updateDuplicateColumns(s.outputList))
       case g: GroupBy => g
-        .copy(dataMapTableRelation = Some(dataMapRelation),
+        .copy(modularPlan = Some(dataMapRelation),
           outputList = updateDuplicateColumns(g.outputList))
       case other => other
     }

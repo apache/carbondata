@@ -25,7 +25,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 
 /**
- * The class provides the map of table blocks already submitted for DataMap load
+ * The class provides the map of table blocks already submitted for Index load
  */
 public class CarbonBlockLoaderHelper {
 
@@ -63,7 +63,7 @@ public class CarbonBlockLoaderHelper {
 
   /**
    * The method check the tableBlockMap to know weather the block is already submitted/ considered
-   * for the DataMap loading.
+   * for the Index loading.
    *
    * @param uniqueBlockId <String> Uniquely identify the block
    * @return <false> if uniqueSegmentId is mapped to any of the key present in the
@@ -78,7 +78,7 @@ public class CarbonBlockLoaderHelper {
 
   /**
    * This api is used to clear the tableBlockMap so that if there is cache mis then the
-   * the table blocks should be considered as not already submitted for the DataMap load.
+   * the table blocks should be considered as not already submitted for the Index load.
    *
    * @param absoluteTableIdentifier Identifies table uniquely
    * @param uniqueBlockId           Set<String> Set of blockId

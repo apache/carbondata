@@ -21,46 +21,46 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.indexstore.row.DataMapRow;
+import org.apache.carbondata.core.indexstore.row.IndexRow;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
- * Store the data map row @{@link DataMapRow} data to memory.
+ * Store the data map row @{@link IndexRow} data to memory.
  */
 public class SafeMemoryDMStore extends AbstractMemoryDMStore {
 
   /**
    * holds all blocklets metadata in memory
    */
-  private List<DataMapRow> dataMapRows =
+  private List<IndexRow> indexRows =
       new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   private int runningLength;
 
   /**
-   * Add the index row to dataMapRows, basically to in memory.
+   * Add the index row to indexRows, basically to in memory.
    *
    * @param indexRow
    * @return
    */
   @Override
-  public void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow) {
-    dataMapRows.add(indexRow);
+  public void addIndexRow(CarbonRowSchema[] schema, IndexRow indexRow) {
+    indexRows.add(indexRow);
     runningLength += indexRow.getTotalSizeInBytes();
   }
 
   @Override
-  public DataMapRow getDataMapRow(CarbonRowSchema[] schema, int index) {
-    assert (index < dataMapRows.size());
-    return dataMapRows.get(index);
+  public IndexRow getDataMapRow(CarbonRowSchema[] schema, int index) {
+    assert (index < indexRows.size());
+    return indexRows.get(index);
   }
 
   @Override
   public void freeMemory() {
     if (!isMemoryFreed) {
-      if (null != dataMapRows) {
-        dataMapRows.clear();
+      if (null != indexRows) {
+        indexRows.clear();
       }
       isMemoryFreed = true;
     }
@@ -73,16 +73,16 @@ public class SafeMemoryDMStore extends AbstractMemoryDMStore {
 
   @Override
   public int getRowCount() {
-    return dataMapRows.size();
+    return indexRows.size();
   }
 
   @Override
   public UnsafeMemoryDMStore convertToUnsafeDMStore(CarbonRowSchema[] schema) {
     setSchemaDataType(schema);
     UnsafeMemoryDMStore unsafeMemoryDMStore = new UnsafeMemoryDMStore();
-    for (DataMapRow dataMapRow : dataMapRows) {
-      dataMapRow.setSchemas(schema);
-      unsafeMemoryDMStore.addIndexRow(schema, dataMapRow);
+    for (IndexRow indexRow : indexRows) {
+      indexRow.setSchemas(schema);
+      unsafeMemoryDMStore.addIndexRow(schema, indexRow);
     }
     unsafeMemoryDMStore.finishWriting();
     return unsafeMemoryDMStore;

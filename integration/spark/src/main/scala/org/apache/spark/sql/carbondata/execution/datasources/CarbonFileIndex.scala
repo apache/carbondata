@@ -30,7 +30,7 @@ import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.types.{AtomicType, StructType}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapFilter
+import org.apache.carbondata.core.datamap.IndexFilter
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, HDFSCarbonFile}
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope
 import org.apache.carbondata.core.scan.expression.{Expression => CarbonExpression}
@@ -129,7 +129,7 @@ case class CarbonFileIndex(
       filter match {
         case Some(c) => CarbonInputFormat
           .setFilterPredicates(hadoopConf,
-            new DataMapFilter(model.getCarbonDataLoadSchema.getCarbonTable, c, true))
+            new IndexFilter(model.getCarbonDataLoadSchema.getCarbonTable, c, true))
         case None => None
       }
       val format: CarbonFileInputFormat[Object] = new CarbonFileInputFormat[Object]

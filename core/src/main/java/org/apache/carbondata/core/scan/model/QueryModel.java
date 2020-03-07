@@ -20,7 +20,7 @@ package org.apache.carbondata.core.scan.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.core.datamap.DataMapFilter;
+import org.apache.carbondata.core.datamap.IndexFilter;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -55,7 +55,7 @@ public class QueryModel {
   /**
    * filter expression tree
    */
-  private DataMapFilter dataMapFilter;
+  private IndexFilter indexFilter;
 
   /**
    * table block information in which query will be executed
@@ -271,12 +271,12 @@ public class QueryModel {
     this.tableBlockInfos = tableBlockInfos;
   }
 
-  public DataMapFilter getDataMapFilter() {
-    return dataMapFilter;
+  public IndexFilter getIndexFilter() {
+    return indexFilter;
   }
 
-  public void setDataMapFilter(DataMapFilter dataMapFilter) {
-    this.dataMapFilter = dataMapFilter;
+  public void setIndexFilter(IndexFilter indexFilter) {
+    this.indexFilter = indexFilter;
   }
 
   /**
@@ -394,7 +394,7 @@ public class QueryModel {
     return String.format("scan on table %s.%s, %d projection columns with filter (%s)",
         table.getDatabaseName(), table.getTableName(),
         projection.getDimensions().size() + projection.getMeasures().size(),
-        dataMapFilter.getExpression().toString());
+        indexFilter.getExpression().toString());
   }
 
   public boolean isFreeUnsafeMemory() {

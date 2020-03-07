@@ -58,7 +58,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
     setAuditTable(table)
     setAuditInfo(Map("partition" -> partitionSpecsAndLocs.mkString(", ")))
     if (table.isHivePartitionTable) {
-      if (table.isChildTableForMV) {
+      if (table.isMaterializedView) {
         throw new UnsupportedOperationException("Cannot add partition directly on child tables")
       }
       val partitionWithLoc = partitionSpecsAndLocs.filter(_._2.isDefined)

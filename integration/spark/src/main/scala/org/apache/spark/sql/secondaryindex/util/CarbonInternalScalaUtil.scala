@@ -27,7 +27,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalogUtil}
-import org.apache.spark.sql.secondaryindex.command.{SecondaryIndex, SecondaryIndexModel}
+import org.apache.spark.sql.secondaryindex.command.{IndexModel, SecondaryIndexModel}
 import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
 import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
 import org.apache.spark.sql.secondaryindex.rdd.SecondaryIndexCreator
@@ -251,7 +251,7 @@ object CarbonInternalScalaUtil {
     carbonLoadModel: CarbonLoadModel,
     indexTableName: String,
     isLoadToFailedSISegments: Boolean,
-    secondaryIndex: SecondaryIndex,
+    secondaryIndex: IndexModel,
     carbonTable: CarbonTable,
     indexTable: CarbonTable,
     failedLoadMetaDataDetils: java.util.List[LoadMetadataDetails] = null): Unit = {

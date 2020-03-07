@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.mv.plans.util
 
-import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.optimizer._
@@ -124,8 +123,9 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
     //    Batch("LocalRelation", fixedPoint,
     //      ConvertToLocalRelation,
     //      PropagateEmptyRelation) ::
-    Batch(
-      "OptimizeCodegen", Once, CarbonToSparkAdapter.getOptimizeCodegenRule(): _*) ::
+    // As per SPARK-22520 OptimizeCodegen is removed in 2.3.1
+    //    Batch(
+    //      "OptimizeCodegen", Once, CarbonToSparkAdapter.getOptimizeCodegenRule(): _*) ::
     Batch(
       "RewriteSubquery", Once,
       RewritePredicateSubquery,
@@ -155,10 +155,11 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
 
 /**
  * Push Aggregate through join to fact table.
- * Pushes down [[Aggregate]] operators where the `grouping` and `aggregate` expressions can
- * be evaluated using only the attributes of the fact table, the left or right side of a
- * star-join.
- * Other [[Aggregate]] expressions stay in the original [[Aggregate]].
+ * Pushes down [[org.apache.spark.sql.catalyst.plans.logical.Aggregate]] operators where the
+ * `grouping` and `aggregate` expressions can be evaluated using only the attributes of the fact
+ * table, the left or right side of a star-join.
+ * Other [[org.apache.spark.sql.catalyst.plans.logical.Aggregate]] expressions stay in the
+ * original [[org.apache.spark.sql.catalyst.plans.logical.Aggregate]].
  *
  * Check 'Aggregate Pushdown Over Join: Design & Preliminary Results' by LiTao for more details
  */
