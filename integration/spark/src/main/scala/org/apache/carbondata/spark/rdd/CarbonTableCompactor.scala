@@ -52,6 +52,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
 import org.apache.carbondata.spark.MergeResultImpl
+import org.apache.carbondata.view.MVManagerInSpark
 
 /**
  * This class is used to perform compaction on carbon table.
@@ -185,7 +186,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         mergedLoadName)
     OperationListenerBus.getInstance.fireEvent(alterTableCompactionPreEvent, operationContext)
     // Add pre event listener for index datamap
-    val tableDataMaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable)
+    val tableDataMaps = DataMapStoreManager.getInstance().getAllIndexes(carbonTable)
     val dataMapOperationContext = new OperationContext()
     if (null != tableDataMaps) {
       val dataMapNames: mutable.Buffer[String] =
@@ -311,7 +312,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           mergedLoadNumber,
           carbonLoadModel,
           compactionType,
-          segmentFileName)
+          segmentFileName,
+          MVManagerInSpark.get(sc.sparkSession))
 
       if (compactionType != CompactionType.IUD_DELETE_DELTA &&
           compactionType != CompactionType.IUD_UPDDEL_DELTA) {

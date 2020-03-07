@@ -20,7 +20,7 @@ package org.apache.carbondata.core.metadata.schema.datamap;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 
 /**
- * Property that can be specified when creating DataMap
+ * Property that can be specified when creating Index
  */
 @InterfaceAudience.Internal
 public class DataMapProperty {

@@ -658,8 +658,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     //2. Datamap creation
     exception = intercept[MalformedCarbonCommandException] {
       sql(
-        "CREATE DATAMAP agg_sdkOutputTable ON TABLE sdkOutputTable USING \"preaggregate\" AS " +
-        "SELECT name, sum(age) FROM sdkOutputTable GROUP BY name,age")
+        "CREATE INDEX index ON TABLE sdkOutputTable (name) AS 'bloomfilter'")
     }
     assert(exception.getMessage()
       .contains("Unsupported operation on non transactional table"))

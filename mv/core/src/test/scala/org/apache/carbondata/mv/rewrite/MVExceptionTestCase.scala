@@ -16,8 +16,8 @@
  */
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException, MalformedMaterializedViewException}
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedMVCommandException}
+import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -28,18 +28,18 @@ class MVExceptionTestCase  extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test mv no base table") {
-    val ex = intercept[NoSuchTableException] {
-      sql("create datamap main_table_mv on table main_table_error using 'mv' as select sum(age),name from main_table_error group by name")
+    val ex = intercept[AnalysisException] {
+      sql("create materialized view main_table_mv as select sum(age),name from main_table_error group by name")
     }
-    assertResult("Table or view 'main_table_error' not found in database 'default';")(ex.getMessage())
+    assert(ex.getMessage().contains("Table or view not found: main_table_error"))
   }
 
   test("test mv reduplicate mv table") {
-    val ex = intercept[MalformedMaterializedViewException] {
+    val ex = intercept[MalformedMVCommandException] {
       sql("create materialized view main_table_mv1 as select sum(age),name from main_table group by name")
       sql("create materialized view main_table_mv1 as select sum(age),name from main_table group by name")
     }
-    assertResult("Materialized view with name main_table_mv1 already exists")(ex.getMessage)
+    assertResult("Materialized view with name default.main_table_mv1 already exists")(ex.getMessage)
   }
 
   test("test mv creation with limit in query") {

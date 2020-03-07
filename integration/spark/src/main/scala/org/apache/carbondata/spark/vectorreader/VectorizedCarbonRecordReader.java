@@ -302,9 +302,9 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
    */
   private boolean isUseLazyLoad() {
     boolean useLazyLoad = false;
-    if (queryModel.getDataMapFilter() != null) {
+    if (queryModel.getIndexFilter() != null) {
       Expression expression =
-          queryModel.getDataMapFilter().getExpression();
+          queryModel.getIndexFilter().getExpression();
       useLazyLoad = true;
       // In case of join queries only not null filter would e pushed down so check and disable the
       // lazy load in that case.

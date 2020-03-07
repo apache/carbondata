@@ -134,7 +134,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
         case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
           l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
       }
-      if (tableRelation.nonEmpty && tableRelation.head.carbonTable.isChildTableForMV) {
+      if (tableRelation.nonEmpty && tableRelation.head.carbonTable.isMV) {
         return filter
       }
 

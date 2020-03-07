@@ -79,7 +79,7 @@ abstract class ModularPlan
   /**
    * Marks this plan as already rewritten.
    */
-  private[mv] def setRewritten(): ModularPlan = {
+  def setRewritten(): ModularPlan = {
     _rewritten = true
     children.foreach(_.setRewritten())
     this
@@ -99,7 +99,7 @@ abstract class ModularPlan
   /**
    * Marks this plan as rolledup plan
    */
-  private[mv] def setRolledUp(): ModularPlan = {
+  def setRolledUp(): ModularPlan = {
     rolledUp = true
     children.foreach(_.setRolledUp())
     this
@@ -114,7 +114,7 @@ abstract class ModularPlan
 
   private var _skip: Boolean = false
 
-  private[mv] def setSkip(): ModularPlan = {
+  def setSkip(): ModularPlan = {
     _skip = true
     children.foreach(_.setSkip())
     this

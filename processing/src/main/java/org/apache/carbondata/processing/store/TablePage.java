@@ -429,7 +429,7 @@ public class TablePage {
         return measurePages[i];
       }
     }
-    throw new IllegalArgumentException("DataMap: must have '" + columnName + "' column in schema");
+    throw new IllegalArgumentException("Index: must have '" + columnName + "' column in schema");
   }
 
   public boolean isLastPage() {

@@ -175,7 +175,7 @@ public class StoreCreator {
    * Method to clear the data maps
    */
   public void clearDataMaps() {
-    DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier);
+    DataMapStoreManager.getInstance().clearIndex(absoluteTableIdentifier);
   }
 
   public CarbonLoadModel createTableAndLoadModel(boolean deleteOldStore) throws Exception {

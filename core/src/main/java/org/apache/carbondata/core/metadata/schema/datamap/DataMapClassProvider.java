@@ -18,26 +18,20 @@
 package org.apache.carbondata.core.metadata.schema.datamap;
 
 /**
- * type for create datamap
- * The syntax of datamap creation is as follows.
- * CREATE DATAMAP IF NOT EXISTS dataMapName ON TABLE tableName USING 'DataMapClassProvider'
- * DMPROPERTIES('KEY'='VALUE') AS SELECT COUNT(COL1) FROM tableName
- *
  * Please refer {{org.apache.spark.sql.parser.CarbonSpark2SqlParser}}
  */
-
 public enum DataMapClassProvider {
-  LUCENE("org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory", "lucene"),
-  BLOOMFILTER("org.apache.carbondata.datamap.bloom.BloomCoarseGrainDataMapFactory", "bloomfilter"),
+  LUCENE("org.apache.carbondata.datamap.lucene.LuceneFineGrainIndexFactory", "lucene"),
+  BLOOMFILTER("org.apache.carbondata.datamap.bloom.BloomCoarseGrainIndexFactory", "bloomfilter"),
   MV("org.apache.carbondata.core.datamap.MVDataMap", "mv");
 
   /**
-   * Fully qualified class name of datamap
+   * Fully qualified class name of index
    */
   private String className;
 
   /**
-   * Short name representation of datamap
+   * Short name representation of index
    */
   private String shortName;
 
@@ -57,16 +51,16 @@ public enum DataMapClassProvider {
   private boolean isEqual(String dataMapClass) {
     return (dataMapClass != null &&
         (dataMapClass.equals(className) ||
-        dataMapClass.equalsIgnoreCase(shortName)));
+            dataMapClass.equalsIgnoreCase(shortName)));
   }
 
-  public static DataMapClassProvider getDataMapProviderOnName(String dataMapShortname) {
-    if (LUCENE.isEqual(dataMapShortname)) {
+  public static DataMapClassProvider get(String indexProviderName) {
+    if (LUCENE.isEqual(indexProviderName)) {
       return LUCENE;
-    } else if (BLOOMFILTER.isEqual(dataMapShortname)) {
+    } else if (BLOOMFILTER.isEqual(indexProviderName)) {
       return BLOOMFILTER;
     } else {
-      throw new UnsupportedOperationException("Unknown datamap provider" + dataMapShortname);
+      throw new UnsupportedOperationException("Unknown index provider" + indexProviderName);
     }
   }
 }

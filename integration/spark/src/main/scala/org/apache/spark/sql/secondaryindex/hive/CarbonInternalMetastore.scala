@@ -78,7 +78,7 @@ object CarbonInternalMetastore {
           // clear parent table from meta store cache as it is also required to be
           // refreshed when SI table is dropped
           DataMapStoreManager.getInstance()
-            .clearDataMaps(indexCarbonTable.getAbsoluteTableIdentifier)
+            .clearIndex(indexCarbonTable.getAbsoluteTableIdentifier)
           removeTableFromMetadataCache(dbName, indexCarbonTable.getTableName)(sparkSession)
           removeTableFromMetadataCache(dbName, parentTableName)(sparkSession)
         }

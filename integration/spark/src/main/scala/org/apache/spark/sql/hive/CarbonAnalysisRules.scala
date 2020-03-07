@@ -36,6 +36,8 @@ import org.apache.spark.util.CarbonReflectionUtils
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
+import org.apache.carbondata.core.view.MVStatus
+import org.apache.carbondata.view.MVManagerInSpark
 
 case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
@@ -65,12 +67,22 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
       val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
       val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
       if (carbonTable != null) {
+        val viewManager = MVManagerInSpark.get(sparkSession)
+        val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
+        if (!viewSchemas.isEmpty) {
+          viewSchemas.asScala.foreach { schema =>
+            viewManager.setStatus(
+              schema.getIdentifier,
+              MVStatus.DISABLED
+            )
+          }
+        }
         val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
         if (carbonTable.hasMVCreated) {
           val allDataMapSchemas = DataMapStoreManager.getInstance
             .getDataMapSchemasOfTable(carbonTable).asScala
             .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                     !dataMapSchema.isIndexDataMap).asJava
+                                     !dataMapSchema.isIndex).asJava
           allDataMapSchemas.asScala.foreach { dataMapSchema =>
             DataMapStatusManager.disableDataMap(dataMapSchema.getDataMapName)
           }
@@ -78,7 +90,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
           throw new UnsupportedOperationException(
             "Update operation is not supported for table which has index datamaps")
         }
-        if (carbonTable.isChildTableForMV) {
+        if (carbonTable.isMV) {
           throw new UnsupportedOperationException(
             "Update operation is not supported for mv datamap table")
         }
@@ -207,16 +219,26 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
         val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
         val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
         if (carbonTable != null) {
-          if (carbonTable.isChildTableForMV) {
+          if (carbonTable.isMV) {
             throw new UnsupportedOperationException(
               "Delete operation is not supported for datamap table")
+          }
+          val viewManager = MVManagerInSpark.get(sparkSession)
+          val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
+          if (!viewSchemas.isEmpty) {
+            viewSchemas.asScala.foreach { schema =>
+              viewManager.setStatus(
+                schema.getIdentifier,
+                MVStatus.DISABLED
+              )
+            }
           }
           val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
           if (carbonTable.hasMVCreated) {
             val allDataMapSchemas = DataMapStoreManager.getInstance
               .getDataMapSchemasOfTable(carbonTable).asScala
               .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                       !dataMapSchema.isIndexDataMap).asJava
+                                       !dataMapSchema.isIndex).asJava
             allDataMapSchemas.asScala.foreach { dataMapSchema =>
               DataMapStatusManager.disableDataMap(dataMapSchema.getDataMapName)
             }

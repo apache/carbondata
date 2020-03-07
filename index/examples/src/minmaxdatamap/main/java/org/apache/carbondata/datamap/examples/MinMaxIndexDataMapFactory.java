@@ -46,7 +46,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
 /**
- * Min Max DataMap Factory
+ * Min Max Index Factory
  */
 public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
   private static final Logger LOGGER = LogServiceFactory.getLogService(
@@ -97,7 +97,7 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
   }
 
   /**
-   * getDataMaps Factory method Initializes the Min Max Data Map and returns.
+   * getIndexes Factory method Initializes the Min Max Data Map and returns.
    *
    * @param segment
    * @return
@@ -132,7 +132,7 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
   }
 
   /**
-   * Clear the DataMap.
+   * Clear the Index.
    *
    * @param segment
    */

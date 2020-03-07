@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.mv.plans.modular
 
-import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.rules._
@@ -31,8 +30,6 @@ import org.apache.carbondata.mv.plans.modular.Flags._
 abstract class Harmonizer(conf: SQLConf)
   extends RuleExecutor[ModularPlan] {
 
-  //  protected val fixedPoint = FixedPoint(conf.getConfString("spark.mv.harmonizer
-  // .maxIterations").toInt)
   protected val fixedPoint = FixedPoint(conf.optimizerMaxIterations)
 
   def batches: Seq[Batch] = {
@@ -72,8 +69,8 @@ object HarmonizeDimensionTable extends Rule[ModularPlan] with PredicateHelper {
       case s@Select(_, _, _, _, jedges, fact :: dims, _, _, _, _) if
       jedges.forall(e => e.joinType == LeftOuter || e.joinType == Inner) &&
       fact.isInstanceOf[ModularRelation] &&
-      dims.filterNot(_.isInstanceOf[modular.LeafNode]).nonEmpty &&
-      dims.forall(d => (d.isInstanceOf[ModularRelation] || HarmonizedRelation.canHarmonize(d))) => {
+      dims.exists(!_.isInstanceOf[modular.LeafNode]) &&
+      dims.forall(d => d.isInstanceOf[ModularRelation] || HarmonizedRelation.canHarmonize(d)) =>
         var tPullUpPredicates = Seq.empty[Expression]
         val tChildren = fact :: dims.map {
           case m: ModularRelation => m
@@ -84,7 +81,7 @@ object HarmonizeDimensionTable extends Rule[ModularPlan] with PredicateHelper {
           _,
           s1@Select(_, _, _, _, _, dim :: Nil, NoFlags, Nil, Nil, _),
           NoFlags,
-          Nil, _) if (dim.isInstanceOf[ModularRelation]) => {
+          Nil, _) if dim.isInstanceOf[ModularRelation] =>
             val rAliasMap = AttributeMap(h.outputList.collect {
                 case a: Alias  if a.child.isInstanceOf[Attribute] =>
                 (a.child.asInstanceOf[Attribute], a.toAttribute) })
@@ -96,7 +93,6 @@ object HarmonizeDimensionTable extends Rule[ModularPlan] with PredicateHelper {
             } else {
               h
             }
-          }
           // case _ =>
         }
         if (tChildren.forall(_.isInstanceOf[modular.LeafNode])) {
@@ -104,7 +100,6 @@ object HarmonizeDimensionTable extends Rule[ModularPlan] with PredicateHelper {
         } else {
           s
         }
-      }
       //        s.withNewChildren(fact :: dims.map { case m: modular.ModularRelation => m; case h
       // => HarmonizedRelation(h) })}
       //        s.copy(predicateList = predicateList ++ moveUpPredicates, children = tChildren)}
@@ -125,9 +120,9 @@ object HarmonizeFactTable extends Rule[ModularPlan] with PredicateHelper with Ag
            jedges.forall(e => e.joinType == Inner) && // !s.flags.hasFlag(DISTINCT) &&
            fact.isInstanceOf[ModularRelation] &&
            (fact :: dims).forall(_.isInstanceOf[modular.LeafNode]) &&
-           dims.nonEmpty => {
+           dims.nonEmpty =>
         val selAliasMap = AttributeMap(s.outputList.collect {
-          case a: Alias if (a.child.isInstanceOf[Attribute]) => (a.toAttribute, a.child
+          case a: Alias if a.child.isInstanceOf[Attribute] => (a.toAttribute, a.child
             .asInstanceOf[Attribute])
         })
         val aggTransMap = findPushThroughAggregates(
@@ -135,7 +130,7 @@ object HarmonizeFactTable extends Rule[ModularPlan] with PredicateHelper with Ag
           selAliasMap,
           fact.asInstanceOf[ModularRelation])
 
-        val constraintsAttributeSet = dims.flatMap(s.extractEvaluableConditions(_))
+        val constraintsAttributeSet = dims.flatMap(s.extractEvaluableConditions)
           .map(_.references)
           .foldLeft(AttributeSet.empty)(_ ++ _)
         val groupingAttributeSet = g.predicateList.map(_.references)
@@ -147,7 +142,7 @@ object HarmonizeFactTable extends Rule[ModularPlan] with PredicateHelper with Ag
             !constraintsAttributeSet.subsetOf(groupingAttributeSet)) {
           g
         } else {
-          val starJExprs = dims.flatMap(dim => s.extractJoinConditions(fact, dim)).toSeq
+          val starJExprs = dims.flatMap(dim => s.extractJoinConditions(fact, dim))
           val gJAttributes = starJExprs.map(expr => expr.references)
             .foldLeft(AttributeSet.empty)(_ ++ _).filter(fact.outputSet.contains(_))
           val fExprs = s.extractEvaluableConditions(fact)
@@ -158,7 +153,7 @@ object HarmonizeFactTable extends Rule[ModularPlan] with PredicateHelper with Ag
             .foldLeft(AttributeSet.empty)(_ ++ _).filter(fact.outputSet.contains(_))
           val gAttributes = (gJAttributes ++ gFAttributes ++ gGAttributes).toSeq
 
-          val oAggregates = aggTransMap.map(_._2).flatMap(_._2).toSeq
+          val oAggregates = aggTransMap.values.flatMap(_._2).toSeq
 
           val tAliasMap = (aliasm.get(0) match {
             case Some(name) => Seq((0, name));
@@ -192,16 +187,18 @@ object HarmonizeFactTable extends Rule[ModularPlan] with PredicateHelper with Ag
           }_${ fact.asInstanceOf[ModularRelation].tableName }"
           val hAliasMap = (aliasm - 0) + (0 -> hFactName)
           val hInputList = gAttributes ++ oAggregates.map(_.toAttribute) ++
-                           dims.flatMap(_.asInstanceOf[modular.LeafNode].output).toSeq
-          // val hPredicateList = s.predicateList
-          val attrOutputList = s.outputList.filter(expr => (expr.isInstanceOf[Attribute]) ||
+                           dims.flatMap(_.asInstanceOf[modular.LeafNode].output)
+          val attrOutputList = s.outputList.filter(expr => expr.isInstanceOf[Attribute] ||
                                                            (expr.isInstanceOf[Alias] &&
                                                             expr.asInstanceOf[Alias].child
                                                               .isInstanceOf[Attribute]))
           val aggOutputList = aggTransMap.values.flatMap(t => t._2)
             .map { ref =>
-              CarbonToSparkAdapter.createAttributeReference(
-                ref.name, ref.dataType, nullable = true, Metadata.empty,
+              ExpressionHelper.createReference(
+                ref.name,
+                ref.dataType,
+                nullable = true,
+                Metadata.empty,
                 ref.exprId, Some(hFactName))
             }
           val hFactOutputSet = hFact.outputSet
@@ -209,9 +206,13 @@ object HarmonizeFactTable extends Rule[ModularPlan] with PredicateHelper with Ag
           val hOutputList = (attrOutputList ++ aggOutputList).map {attr =>
             attr.transform {
               case ref: Attribute if hFactOutputSet.contains(ref) =>
-                CarbonToSparkAdapter.createAttributeReference(
-                  ref.name, ref.dataType, nullable = true, Metadata.empty,
-                  ref.exprId, Some(hFactName))
+                ExpressionHelper.createReference(
+                  ref.name,
+                  ref.dataType,
+                  nullable = true,
+                  Metadata.empty,
+                  ref.exprId,
+                  Some(hFactName))
             }
           }.asInstanceOf[Seq[NamedExpression]]
 
@@ -219,7 +220,7 @@ object HarmonizeFactTable extends Rule[ModularPlan] with PredicateHelper with Ag
           val hPredList = s.predicateList.map{ pred =>
             pred.transform {
               case ref: Attribute if hFactOutputSet.contains(ref) =>
-                CarbonToSparkAdapter.createAttributeReference(
+                ExpressionHelper.createReference(
                   ref.name, ref.dataType, nullable = true, Metadata.empty,
                   ref.exprId, Some(hFactName))
             }
@@ -243,12 +244,11 @@ object HarmonizeFactTable extends Rule[ModularPlan] with PredicateHelper with Ag
           val wip = g.copy(outputList = gOutputList, inputList = hInputList, child = hSel)
           wip.transformExpressions {
             case ref: Attribute if hFactOutputSet.contains(ref) =>
-              CarbonToSparkAdapter.createAttributeReference(
+              ExpressionHelper.createReference(
                 ref.name, ref.dataType, nullable = true, Metadata.empty,
                 ref.exprId, Some(hFactName))
           }
         }
-      }
     }
   }
 }

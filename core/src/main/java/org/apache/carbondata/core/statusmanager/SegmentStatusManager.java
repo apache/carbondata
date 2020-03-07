@@ -49,6 +49,7 @@ import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
@@ -222,6 +223,24 @@ public class SegmentStatusManager {
     } catch (IOException e) {
       return new LoadMetadataDetails[0];
     }
+  }
+
+  /**
+   * Returns valid segment list for a given RelationIdentifier
+   *
+   * @param relationIdentifier get list of segments for relation identifier
+   * @return list of valid segment id's
+   */
+  public static List<String> getValidSegmentList(RelationIdentifier relationIdentifier)
+      throws IOException {
+    List<String> segmentList = new ArrayList<>();
+    List<Segment> validSegments = new SegmentStatusManager(AbsoluteTableIdentifier
+        .from(relationIdentifier.getTablePath(), relationIdentifier.getDatabaseName(),
+            relationIdentifier.getTableName())).getValidAndInvalidSegments().getValidSegments();
+    for (Segment segment : validSegments) {
+      segmentList.add(segment.getSegmentNo());
+    }
+    return segmentList;
   }
 
   /**

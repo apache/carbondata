@@ -27,7 +27,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalogUtil}
-import org.apache.spark.sql.secondaryindex.command.{SecondaryIndex, SecondaryIndexModel}
+import org.apache.spark.sql.secondaryindex.command.{IndexModel, SecondaryIndexModel}
 import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
 import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
 import org.apache.spark.sql.secondaryindex.rdd.SecondaryIndexCreator
@@ -209,24 +209,16 @@ object CarbonInternalScalaUtil {
    * Get the column compressor for the index table. Check first in the index table tableproperties
    * and then fall back to main table at last to the default compressor
    */
-  def getCompressorForIndexTable(databaseName: String,
-    indexTableName: String,
-    mainTableName: String)
-    (sparkSession: SparkSession): String = {
-    val relation = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-      .lookupRelation(Some(databaseName), mainTableName)(sparkSession)
-      .asInstanceOf[CarbonRelation]
-    val indexTableRelation = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-      .lookupRelation(Some(databaseName), indexTableName)(sparkSession)
-      .asInstanceOf[CarbonRelation]
+  def getCompressorForIndexTable(
+      indexTable: CarbonTable,
+      parentTable: CarbonTable) : String = {
     // get the compressor from the index table (table properties)
-    var columnCompressor: String = indexTableRelation.carbonTable.getTableInfo.getFactTable
-      .getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
+    var columnCompressor = indexTable.getTableInfo.getFactTable.getTableProperties.get(
+      CarbonCommonConstants.COMPRESSOR)
     if (null == columnCompressor) {
       // if nothing is set to index table then fall to the main table compressor
-      columnCompressor = relation.carbonTable.getTableInfo.getFactTable
-        .getTableProperties
-        .get(CarbonCommonConstants.COMPRESSOR)
+      columnCompressor = parentTable.getTableInfo.getFactTable.getTableProperties.get(
+        CarbonCommonConstants.COMPRESSOR)
       if (null == columnCompressor) {
         // if main table compressor is also not set then choose the default compressor
         columnCompressor = CompressorFactory.getInstance.getCompressor.getName
@@ -234,6 +226,7 @@ object CarbonInternalScalaUtil {
     }
     columnCompressor
   }
+
 
   def getIndexCarbonTables(carbonTable: CarbonTable,
       sparkSession: SparkSession): Seq[CarbonTable] = {
@@ -251,7 +244,7 @@ object CarbonInternalScalaUtil {
     carbonLoadModel: CarbonLoadModel,
     indexTableName: String,
     isLoadToFailedSISegments: Boolean,
-    secondaryIndex: SecondaryIndex,
+    secondaryIndex: IndexModel,
     carbonTable: CarbonTable,
     indexTable: CarbonTable,
     failedLoadMetaDataDetils: java.util.List[LoadMetadataDetails] = null): Unit = {

@@ -21,22 +21,22 @@ import java.util
 
 import scala.collection.JavaConverters._
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.CarbonMetadata
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.junit.Assert
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class CarbonIndexFileMergeTestCase
   extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -459,9 +459,9 @@ class CarbonIndexFileMergeTestCase
 
   private def mergeFileNameIsNull(segmentId: String, dbName: String, tableName: String): Boolean = {
     val carbonTable = CarbonEnv.getCarbonTable(Option(dbName), tableName)(sqlContext.sparkSession)
-    val dataMapFactory = DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable)
-      .getDataMapFactory
-    val method = classOf[BlockletDataMapFactory]
+    val dataMapFactory = DataMapStoreManager.getInstance().getDefaultIndex(carbonTable)
+      .getIndexFactory
+    val method = classOf[BlockletIndexFactory]
       .getDeclaredMethod("getTableBlockIndexUniqueIdentifiers", classOf[Segment])
     method.setAccessible(true)
     val segment = new Segment(segmentId)

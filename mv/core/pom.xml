@@ -37,6 +37,11 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-spark</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-mv-plan</artifactId>
       <version>${project.version}</version>
     </dependency>

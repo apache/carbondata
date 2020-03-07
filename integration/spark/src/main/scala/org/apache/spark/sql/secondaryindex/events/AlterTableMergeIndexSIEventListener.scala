@@ -28,7 +28,7 @@ import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.execution.command.Auditable
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.secondaryindex.command.SecondaryIndex
+import org.apache.spark.sql.secondaryindex.command.IndexModel
 import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
 import org.apache.spark.sql.util.CarbonException
 
@@ -72,7 +72,7 @@ class AlterTableMergeIndexSIEventListener
           })
           if (null != indexTablesList && indexTablesList.nonEmpty) {
             indexTablesList.foreach { indexTableAndColumns =>
-              val secondaryIndex = SecondaryIndex(Some(carbonMainTable.getDatabaseName),
+              val secondaryIndex = IndexModel(Some(carbonMainTable.getDatabaseName),
                 carbonMainTable.getTableName,
                 indexTableAndColumns._2.asScala.toList,
                 indexTableAndColumns._1)
@@ -80,7 +80,7 @@ class AlterTableMergeIndexSIEventListener
                 .carbonMetaStore
               val indexCarbonTable = metastore
                 .lookupRelation(Some(carbonMainTable.getDatabaseName),
-                  secondaryIndex.indexTableName)(sparkSession).asInstanceOf[CarbonRelation]
+                  secondaryIndex.indexName)(sparkSession).asInstanceOf[CarbonRelation]
                 .carbonTable
               setAuditTable(indexCarbonTable)
               setAuditInfo(Map("compactionType" -> compactionType))

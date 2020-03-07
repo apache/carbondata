@@ -73,7 +73,7 @@ case class CarbonInsertFromStageCommand(
     if (!table.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
-    if (table.isChildTableForMV) {
+    if (table.isMV) {
       throw new MalformedCarbonCommandException("Unsupported operation on MV table")
     }
 

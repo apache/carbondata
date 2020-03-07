@@ -31,7 +31,7 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.execution.command.NodeInfo
 import org.apache.spark.sql.hive.DistributionUtil
-import org.apache.spark.sql.secondaryindex.command.SecondaryIndex
+import org.apache.spark.sql.secondaryindex.command.IndexModel
 import org.apache.spark.sql.secondaryindex.query.{CarbonSecondaryIndexExecutor, SecondaryIndexQueryResultProcessor}
 import org.apache.spark.sql.secondaryindex.util.{SecondaryIndexCreationResult, SecondaryIndexUtil}
 
@@ -56,7 +56,7 @@ class CarbonSecondaryIndexRDD[K, V](
     @transient ss: SparkSession,
     result: SecondaryIndexCreationResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    secondaryIndex: SecondaryIndex,
+    secondaryIndex: IndexModel,
     segmentId: String,
     confExecutorsTemp: String,
     indexCarbonTable: CarbonTable,
@@ -80,7 +80,7 @@ class CarbonSecondaryIndexRDD[K, V](
     .getCarbonTableIdentifier
     .getTableId
   private val indexTable: CarbonTable = CarbonEnv.getCarbonTable(Some(databaseName),
-    secondaryIndex.indexTableName)(ss)
+    secondaryIndex.indexName)(ss)
   val factToIndexColumnMapping: Array[Int] = SecondaryIndexUtil
     .prepareColumnMappingOfFactToIndexTable(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
       indexTable, isDictColsAlone = false)
@@ -134,7 +134,7 @@ class CarbonSecondaryIndexRDD[K, V](
         carbonLoadModel.setSegmentId(segmentId)
         val tempLocationKey = CarbonDataProcessorUtil
           .getTempStoreLocationKey(carbonLoadModel.getDatabaseName,
-            secondaryIndex.indexTableName,
+            secondaryIndex.indexName,
             carbonLoadModel.getSegmentId,
             carbonLoadModel.getTaskNo,
             false,

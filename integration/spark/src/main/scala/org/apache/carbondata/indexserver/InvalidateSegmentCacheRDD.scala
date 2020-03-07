@@ -44,8 +44,8 @@ class InvalidateSegmentCacheRDD(@transient private val ss: SparkSession, carbonT
   }
 
   override protected def getPreferredLocations(split: Partition): Seq[String] = {
-    if (split.asInstanceOf[DataMapRDDPartition].getLocations != null) {
-      split.asInstanceOf[DataMapRDDPartition].getLocations.toSeq
+    if (split.asInstanceOf[IndexRDDPartition].getLocations != null) {
+      split.asInstanceOf[IndexRDDPartition].getLocations.toSeq
     } else {
       Seq()
     }
@@ -60,7 +60,7 @@ class InvalidateSegmentCacheRDD(@transient private val ss: SparkSession, carbonT
           // create a dummy split for each executor to accumulate the cache size.
           val dummySplit = new CarbonInputSplit()
           dummySplit.setLocation(Array(executor))
-          new DataMapRDDPartition(id, idx, List(dummySplit), Array(executor))
+          new IndexRDDPartition(id, idx, List(dummySplit), Array(executor))
       }
     }
   }

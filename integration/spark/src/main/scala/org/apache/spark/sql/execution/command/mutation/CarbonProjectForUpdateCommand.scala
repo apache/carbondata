@@ -43,6 +43,7 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, UpdateTablePostEvent, UpdateTablePreEvent}
 import org.apache.carbondata.processing.loading.FailureCauses
+import org.apache.carbondata.view.MVManagerInSpark
 
 private[sql] case class CarbonProjectForUpdateCommand(
     plan: LogicalPlan,
@@ -203,10 +204,18 @@ private[sql] case class CarbonProjectForUpdateCommand(
       val allDataMapSchemas = DataMapStoreManager.getInstance
         .getDataMapSchemasOfTable(carbonTable).asScala
         .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                 !dataMapSchema.isIndexDataMap).asJava
+                                 !dataMapSchema.isIndex).asJava
       if (!allDataMapSchemas.isEmpty) {
         DataMapStatusManager.truncateDataMap(allDataMapSchemas)
       }
+
+      // Truncate materialized views on the current table.
+      val viewManager = MVManagerInSpark.get(sparkSession)
+      val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
+      if (!viewSchemas.isEmpty) {
+        viewManager.onTruncate(viewSchemas)
+      }
+
       // trigger event for Update table
       val updateTablePostEvent: UpdateTablePostEvent =
         UpdateTablePostEvent(sparkSession, carbonTable)

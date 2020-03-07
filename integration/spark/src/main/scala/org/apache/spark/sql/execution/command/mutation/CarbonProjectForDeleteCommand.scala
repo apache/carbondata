@@ -35,8 +35,9 @@ import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.events.{DeleteFromTablePostEvent, DeleteFromTablePreEvent, IndexServerLoadEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{DeleteFromTablePostEvent, DeleteFromTablePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.FailureCauses
+import org.apache.carbondata.view.MVManagerInSpark
 
 /**
  * IUD update delete and compaction framework.
@@ -136,9 +137,16 @@ private[sql] case class CarbonProjectForDeleteCommand(
       val allDataMapSchemas = DataMapStoreManager.getInstance
         .getDataMapSchemasOfTable(carbonTable).asScala
         .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                 !dataMapSchema.isIndexDataMap).asJava
+                                 !dataMapSchema.isIndex).asJava
       if (!allDataMapSchemas.isEmpty) {
         DataMapStatusManager.truncateDataMap(allDataMapSchemas)
+      }
+
+      // Truncate materialized views on the current table.
+      val viewManager = MVManagerInSpark.get(sparkSession)
+      val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
+      if (!viewSchemas.isEmpty) {
+        viewManager.onTruncate(viewSchemas)
       }
 
       // prepriming for delete command

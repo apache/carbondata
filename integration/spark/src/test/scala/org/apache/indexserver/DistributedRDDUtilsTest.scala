@@ -2,13 +2,13 @@ package org.apache.indexserver
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.scalatest.{BeforeAndAfterEach, FunSuite}
 import scala.collection.JavaConverters._
-import scala.util.Random
+
+import org.scalatest.{BeforeAndAfterEach, FunSuite}
 
 import org.apache.carbondata.core.datamap.Segment
-import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
+import org.apache.carbondata.core.datamap.dev.expr.IndexInputSplitWrapper
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexInputSplit
 import org.apache.carbondata.indexserver.DistributedRDDUtils
 
 class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
@@ -77,9 +77,9 @@ class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
       i =>
         val segment = new Segment(i.toString)
         segment.setIndexSize(1)
-        val blockletDataMapDistributable = new BlockletDataMapDistributable(i.toString)
+        val blockletDataMapDistributable = new BlockletIndexInputSplit(i.toString)
         blockletDataMapDistributable.setSegment(segment)
-        new DataMapDistributableWrapper("", blockletDataMapDistributable)
+        new IndexInputSplitWrapper("", blockletDataMapDistributable)
     }
 
     DistributedRDDUtils
@@ -101,9 +101,9 @@ class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
       i =>
         val segment = new Segment(i.toString)
         segment.setIndexSize(111)
-        val blockletDataMapDistributable = new BlockletDataMapDistributable(i.toString)
+        val blockletDataMapDistributable = new BlockletIndexInputSplit(i.toString)
         blockletDataMapDistributable.setSegment(segment)
-        new DataMapDistributableWrapper("", blockletDataMapDistributable)
+        new IndexInputSplitWrapper("", blockletDataMapDistributable)
     }
 
     DistributedRDDUtils

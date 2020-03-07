@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.mv.plans.util
 
-import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.optimizer._
@@ -79,9 +78,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
         EliminateOuterJoin,
         PushPredicateThroughJoin,
         PushDownPredicate,
-        //      LimitPushDown(conf),
         ColumnPruning,
-        //      InferFiltersFromConstraints(conf),
         // Operator combine
         CollapseRepartition,
         CollapseProject,
@@ -92,7 +89,6 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
         // Constant folding and strength reduction
         NullPropagation,
         FoldablePropagation,
-        //      OptimizeIn(conf),
         ConstantFolding,
         ReorderAssociativeOperator,
         // No need to apply LikeSimplification rule while creating datamap
@@ -102,7 +98,6 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
         SimplifyConditionals,
         RemoveDispensableExpressions,
         SimplifyBinaryComparison,
-        //      PruneFilters(conf),
         EliminateSorts,
         SimplifyCasts,
         SimplifyCaseConversionExpressions,
@@ -113,19 +108,10 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
     Batch(
       "Check Cartesian Products", Once,
       CheckCartesianProducts) ::
-    //    Batch("Join Reorder", Once,
-    //      CostBasedJoinReorder(conf)) ::
-    //    Batch("Decimal Optimizations", fixedPoint,
-    //      DecimalAggregates(conf)) ::
     Batch(
       "Object Expressions Optimization", fixedPoint,
       EliminateMapObjects,
       CombineTypedFilters) ::
-    //    Batch("LocalRelation", fixedPoint,
-    //      ConvertToLocalRelation,
-    //      PropagateEmptyRelation) ::
-    Batch(
-      "OptimizeCodegen", Once, CarbonToSparkAdapter.getOptimizeCodegenRule(): _*) ::
     Batch(
       "RewriteSubquery", Once,
       RewritePredicateSubquery,
@@ -152,46 +138,3 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
     Nil
   }
 }
-
-/**
- * Push Aggregate through join to fact table.
- * Pushes down [[Aggregate]] operators where the `grouping` and `aggregate` expressions can
- * be evaluated using only the attributes of the fact table, the left or right side of a
- * star-join.
- * Other [[Aggregate]] expressions stay in the original [[Aggregate]].
- *
- * Check 'Aggregate Pushdown Over Join: Design & Preliminary Results' by LiTao for more details
- */
-// case class PushAggregateThroughJoin(conf: SQLConf) extends Rule[LogicalPlan] with
-// PredicateHelper {
-//
-//  val tableCluster = {
-//    val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
-//    val tableClusterString = conf.getConfString("spark.mv.tableCluster")
-//    mapper.readValue(tableClusterString, classOf[TableCluster])
-//  }
-//
-//  def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-//
-//    // Push down aggregate expressions through Join
-//    case a @ Aggregate(grouping, aggregate, Project(projectList, Join(left, right, jt, cond)))
-//        if (left.isInstanceOf[LeafNode] && => {
-//      val fTables: Set[String] = tableCluster.getFact
-//      val dTables: Set[String] = tableCluster.getDimension
-// //      if canPushThrough(left,a)
-//
-//      if (fTables.contains(s"${left.databaseName}.${left.tableName}")
-//          Aggregate(newGrouping, newAggregate, Project(projectList, Join(Aggregate(_,_,Project
-// (projectList1, left)), right, jt, cond)))
-//      }
-//    }
-//
-//  private def canPushThrough(join: Join): Boolean = join match {
-//    case Join(left : LeafNode, right: LeafNode, Inner, EqualTo(l: AttributeReference,
-// r: AttributeReference)) => true
-//
-//
-//  }
-//
-//
-// }

@@ -34,9 +34,9 @@ import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.util.BitSetGroup;
 
 /**
- * Used for returning matched rows after pruned by {@link FineGrainDataMap}
+ * Used for returning matched rows after pruned by {@link FineGrainIndex}
  */
-@InterfaceAudience.Developer("DataMap")
+@InterfaceAudience.Developer("Index")
 @InterfaceStability.Evolving
 public class FineGrainBlocklet extends Blocklet implements Serializable {
 

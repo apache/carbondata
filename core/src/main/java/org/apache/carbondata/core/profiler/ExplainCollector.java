@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.dev.expr.DataMapWrapperSimpleInfo;
+import org.apache.carbondata.core.datamap.dev.expr.IndexWrapperSimpleInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
@@ -122,19 +122,19 @@ public class ExplainCollector {
     }
   }
 
-  public static void recordCGDataMapPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
+  public static void recordCGDataMapPruning(IndexWrapperSimpleInfo indexWrapperSimpleInfo,
       int numBlocklets, int numBlocks) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
-      scan.setNumBlockletsAfterCGPruning(dataMapWrapperSimpleInfo, numBlocklets, numBlocks);
+      scan.setNumBlockletsAfterCGPruning(indexWrapperSimpleInfo, numBlocklets, numBlocks);
     }
   }
 
-  public static void recordFGDataMapPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
+  public static void recordFGDataMapPruning(IndexWrapperSimpleInfo indexWrapperSimpleInfo,
       int numBlocklets, int numBlocks) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
-      scan.setNumBlockletsAfterFGPruning(dataMapWrapperSimpleInfo, numBlocklets, numBlocks);
+      scan.setNumBlockletsAfterFGPruning(indexWrapperSimpleInfo, numBlocklets, numBlocks);
     }
   }
 
@@ -183,7 +183,7 @@ public class ExplainCollector {
     StringBuilder builder = new StringBuilder();
     for (int i = 0; i < olapDataMapProviders.size(); i++) {
       if (i == 0) {
-        builder.append("Query rewrite based on DataMap:").append("\n");
+        builder.append("Query rewrite based on Index:").append("\n");
       }
       builder.append(" - ").append(olapDataMapNames.get(i)).append(" (")
           .append(olapDataMapProviders.get(i)).append(")").append("\n");

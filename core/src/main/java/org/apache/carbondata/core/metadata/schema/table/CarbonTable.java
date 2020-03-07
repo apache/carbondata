@@ -30,14 +30,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
-import org.apache.carbondata.core.datamap.TableDataMap;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.TableIndex;
+import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -879,10 +879,29 @@ public class CarbonTable implements Serializable, Writable {
   /**
    * Return true if this table is a MV table (child table of other table)
    */
+  public boolean isMVTable() {
+    String parentTables = tableInfo.getFactTable().getTableProperties()
+        .get(CarbonCommonConstants.PARENT_TABLES);
+    return null != parentTables && !parentTables.isEmpty();
+  }
+
+  /**
+   * Return true if this table is a MV table (child table of other table)
+   */
   public boolean isChildTableForMV() {
     return null != tableInfo.getFactTable().getTableProperties()
         .get(CarbonCommonConstants.PARENT_TABLES) && !tableInfo.getFactTable().getTableProperties()
         .get(CarbonCommonConstants.PARENT_TABLES).isEmpty();
+  }
+
+  /**
+   * Return true if this table is a MV table (child table of other table)
+   */
+  public boolean isMV() {
+    return tableInfo.getFactTable().getTableProperties()
+        .get(CarbonCommonConstants.MV_RELATED_TABLES) != null &&
+        !tableInfo.getFactTable().getTableProperties()
+        .get(CarbonCommonConstants.MV_RELATED_TABLES).isEmpty();
   }
 
   /**
@@ -940,15 +959,15 @@ public class CarbonTable implements Serializable, Writable {
    */
   public boolean canAllow(CarbonTable carbonTable, TableOperation operation, Object... targets) {
     try {
-      List<TableDataMap> datamaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
-      if (!datamaps.isEmpty()) {
-        for (TableDataMap dataMap : datamaps) {
-          DataMapFactory factoryClass = DataMapStoreManager.getInstance()
+      List<TableIndex> indexes = DataMapStoreManager.getInstance().getAllIndexes(carbonTable);
+      if (!indexes.isEmpty()) {
+        for (TableIndex dataMap : indexes) {
+          IndexFactory factoryClass = DataMapStoreManager.getInstance()
               .getDataMapFactoryClass(carbonTable, dataMap.getDataMapSchema());
           if (factoryClass.willBecomeStale(operation)) {
             return false;
           }
-          // check whether the operation is blocked for datamap
+          // check whether the operation is blocked for index
           if (factoryClass.isOperationBlocked(operation, targets)) {
             return false;
           }
@@ -967,23 +986,34 @@ public class CarbonTable implements Serializable, Writable {
    * Get all index columns specified by dataMapSchema
    */
   public List<CarbonColumn> getIndexedColumns(DataMapSchema dataMapSchema)
-      throws MalformedDataMapCommandException {
+      throws MalformedIndexCommandException {
     String[] columns = dataMapSchema.getIndexColumns();
     List<CarbonColumn> indexColumn = new ArrayList<>(columns.length);
     for (String column : columns) {
       CarbonColumn carbonColumn = getColumnByName(column.trim().toLowerCase());
       if (carbonColumn == null) {
-        throw new MalformedDataMapCommandException(String
-            .format("column '%s' does not exist in table. Please check create DataMap statement.",
+        throw new MalformedIndexCommandException(String
+            .format("column '%s' does not exist in table. Please check create index statement.",
                 column));
       }
       if (carbonColumn.getColName().isEmpty()) {
-        throw new MalformedDataMapCommandException(
+        throw new MalformedIndexCommandException(
             CarbonCommonConstants.INDEX_COLUMNS + " contains invalid column name");
       }
       indexColumn.add(carbonColumn);
     }
     return indexColumn;
+  }
+
+  /**
+   * is index exist
+   * @return true if exist, else return false
+   */
+  public boolean isIndexExist(String indexName) throws IOException {
+    List<DataMapSchema> schemas = DataMapStoreManager.getInstance().getAllDataMapSchemas();
+    return schemas.stream().anyMatch(schema ->
+        schema.getDataMapName().equalsIgnoreCase(indexName) &&
+            schema.getRelationIdentifier().getTableId().equals(getTableId()));
   }
 
   /**

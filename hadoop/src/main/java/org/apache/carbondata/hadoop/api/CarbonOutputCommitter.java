@@ -236,7 +236,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     List<Segment> segmentDeleteList = Segment.toSegmentList(segmentsToBeDeleted.split(","), null);
     Set<Segment> segmentSet = new HashSet<>(
         new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(),
-            context.getConfiguration()).getValidAndInvalidSegments(carbonTable.isChildTableForMV())
+            context.getConfiguration()).getValidAndInvalidSegments(carbonTable.isMV())
             .getValidSegments());
     if (updateTime != null) {
       CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, updateTime, true,
@@ -264,7 +264,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     OperationContext operationContext = (OperationContext) getOperationContext();
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     String uuid = "";
-    if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildTableForMV()
+    if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isMV()
         && operationContext != null) {
       uuid = operationContext.getProperty("uuid").toString();
     }
@@ -322,7 +322,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     if (partitionSpecs != null && partitionSpecs.size() > 0) {
       List<Segment> validSegments =
           new SegmentStatusManager(table.getAbsoluteTableIdentifier())
-              .getValidAndInvalidSegments(table.isChildTableForMV()).getValidSegments();
+              .getValidAndInvalidSegments(table.isMV()).getValidSegments();
       String uniqueId = String.valueOf(System.currentTimeMillis());
       List<String> tobeUpdatedSegs = new ArrayList<>();
       List<String> tobeDeletedSegs = new ArrayList<>();

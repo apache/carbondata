@@ -73,7 +73,7 @@ class TestCreateIndexWithLoadAndCompaction extends QueryTest with BeforeAndAfter
         "TABLE load_after_index OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE')")
     checkAnswer(sql("select count(*) from load_after_index"),
       sql("select count(*) from index_no_dictionary"))
-//    sql("drop table if exists load_after_index")
+    sql("drop table if exists load_after_index")
   }
 
   test("test create index table with load before index table creation") {

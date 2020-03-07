@@ -95,7 +95,7 @@ class CarbonSession(@transient val sc: SparkContext,
    * Return true if the specified sql statement will hit the datamap
    * This API is for test purpose only
    */
-  @InterfaceAudience.Developer(Array("DataMap"))
+  @InterfaceAudience.Developer(Array("Index"))
   def isDataMapHit(sqlStatement: String, dataMapName: String): Boolean = {
     // explain command will output the dataMap information only if enable.query.statistics = true
     val message = sql(s"EXPLAIN $sqlStatement").collect()

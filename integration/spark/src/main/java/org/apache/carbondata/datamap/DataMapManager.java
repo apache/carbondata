@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.datamap;
 
-import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.core.datamap.DataMapProvider;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -43,7 +43,7 @@ public class DataMapManager {
    * Return a DataMapClassProvider instance for specified dataMapSchema.
    */
   public DataMapProvider getDataMapProvider(CarbonTable mainTable, DataMapSchema dataMapSchema,
-      SparkSession sparkSession) throws MalformedDataMapCommandException {
+      SparkSession sparkSession) throws MalformedIndexCommandException {
     DataMapProvider provider;
     if (dataMapSchema.getProviderName().equalsIgnoreCase(DataMapClassProvider.MV.toString())) {
       provider = (DataMapProvider) CarbonScalaUtil.createDataMapProvider(
@@ -52,7 +52,7 @@ public class DataMapManager {
               mainTable,
               dataMapSchema);
     } else {
-      provider = new IndexDataMapProvider(mainTable, dataMapSchema, sparkSession);
+      provider = new IndexProvider(mainTable, dataMapSchema, sparkSession);
     }
     return provider;
   }

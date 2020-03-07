@@ -68,7 +68,7 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
          | OPTIONS('header'='false')
        """.stripMargin)
 
-    sql(s"show datamap on table $minMaxDMSampleTable").show(false)
+    sql(s"show indexes on table $minMaxDMSampleTable").show(false)
     // not that the table will use default dimension as sort_columns, so for the following cases,
     // the pruning result will differ.
     // 1 blocklet

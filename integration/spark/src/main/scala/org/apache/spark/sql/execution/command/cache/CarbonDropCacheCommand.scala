@@ -25,10 +25,11 @@ import org.apache.spark.sql.execution.command.MetadataCommand
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, DataMapUtil}
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, IndexUtil}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{DropTableCacheEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.view.MVManagerInSpark
 
 case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall: Boolean = false)
   extends MetadataCommand {
@@ -53,11 +54,23 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall
     if (CarbonProperties.getInstance().isDistributedPruningEnabled(carbonTable.getDatabaseName,
       carbonTable.getTableName)) {
       LOGGER.info("Clearing cache from IndexServer")
-      DataMapUtil.executeClearDataMapJob(carbonTable, DataMapUtil.DISTRIBUTED_JOB_NAME)
+      IndexUtil.executeClearIndexJob(carbonTable, IndexUtil.DISTRIBUTED_JOB_NAME)
     }
     if (cache != null) {
       LOGGER.info("Clearing cache from driver side")
-      DataMapStoreManager.getInstance().clearDataMaps(carbonTable.getAbsoluteTableIdentifier)
+      DataMapStoreManager.getInstance().clearIndex(carbonTable.getAbsoluteTableIdentifier)
+    }
+    val viewManager = MVManagerInSpark.get(sparkSession)
+    val viewsOnTable = viewManager.getSchemasOnTable(carbonTable)
+    if (!viewsOnTable.isEmpty) {
+      viewsOnTable.asScala.foreach {
+        viewSchema =>
+          val viewIdentifier = new TableIdentifier(
+            viewSchema.getIdentifier.getTableName,
+            Option(viewSchema.getIdentifier.getDatabaseName)
+          )
+          CarbonDropCacheCommand(viewIdentifier, internalCall = true).run(sparkSession)
+      }
     }
     LOGGER.info("Drop cache request served for table " + carbonTable.getTableUniqueName)
   }

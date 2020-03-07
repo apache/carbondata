@@ -18,7 +18,6 @@
 package org.apache.spark.sql.execution.command.partition
 
 import java.util
-import java.util.UUID
 
 import scala.collection.JavaConverters._
 
@@ -29,7 +28,6 @@ import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, Al
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.util.AlterTableUtil
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.indexstore.PartitionSpec
@@ -101,7 +99,8 @@ case class CarbonAlterTableDropHivePartitionCommand(
           table)
         OperationListenerBus.getInstance()
           .fireEvent(preAlterTableHivePartitionCommandEvent, operationContext)
-        val metaEvent = AlterTableDropPartitionMetaEvent(table, specs, ifExists, purge, retainData)
+        val metaEvent =
+          AlterTableDropPartitionMetaEvent(table, specs, ifExists, purge, retainData, sparkSession)
         OperationListenerBus.getInstance()
           .fireEvent(metaEvent, operationContext)
         // Drop the partitions from hive.
@@ -162,7 +161,7 @@ case class CarbonAlterTableDropHivePartitionCommand(
       // If normal table then set uuid to ""
       val uuid = "";
       val segments = new SegmentStatusManager(table.getAbsoluteTableIdentifier)
-        .getValidAndInvalidSegments(table.isChildTableForMV).getValidSegments
+        .getValidAndInvalidSegments(table.isMV).getValidSegments
       // First drop the partitions from partition mapper files of each segment
       val tuples = new CarbonDropPartitionRDD(sparkSession,
         table.getTablePath,
@@ -179,7 +178,7 @@ case class CarbonAlterTableDropHivePartitionCommand(
           tobeDeletedSegs.add(tobeDeleted.split(",")(0))
         }
       }
-      val preStatusEvent = AlterTableDropPartitionPreStatusEvent(table)
+      val preStatusEvent = AlterTableDropPartitionPreStatusEvent(table, sparkSession)
       OperationListenerBus.getInstance().fireEvent(preStatusEvent, operationContext)
 
       SegmentFileStore.commitDropPartitions(table, uniqueId, tobeUpdatedSegs, tobeDeletedSegs, uuid)
@@ -187,7 +186,7 @@ case class CarbonAlterTableDropHivePartitionCommand(
       val postStatusEvent = AlterTableDropPartitionPostStatusEvent(table)
       OperationListenerBus.getInstance().fireEvent(postStatusEvent, operationContext)
 
-      DataMapStoreManager.getInstance().clearDataMaps(table.getAbsoluteTableIdentifier)
+      DataMapStoreManager.getInstance().clearIndex(table.getAbsoluteTableIdentifier)
     } finally {
       AlterTableUtil.releaseLocks(locks)
       SegmentFileStore.cleanSegments(table, null, true)

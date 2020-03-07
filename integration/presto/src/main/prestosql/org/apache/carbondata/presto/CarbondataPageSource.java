@@ -25,7 +25,7 @@ import java.util.Objects;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datamap.DataMapFilter;
+import org.apache.carbondata.core.datamap.IndexFilter;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
@@ -395,7 +395,7 @@ class CarbondataPageSource implements ConnectorPageSource {
       CarbonTableInputFormat carbonTableInputFormat = createInputFormat(
           jobConf,
           carbonTable,
-          new DataMapFilter(
+          new IndexFilter(
               carbonTable,
               PrestoFilterUtil.parseFilterExpression(hiveTable.getCompactEffectivePredicate())),
           carbonProjection);
@@ -427,7 +427,7 @@ class CarbondataPageSource implements ConnectorPageSource {
    * @return
    */
   private CarbonTableInputFormat<Object> createInputFormat(Configuration conf,
-      CarbonTable carbonTable, DataMapFilter dataMapFilter, CarbonProjection projection) {
+      CarbonTable carbonTable, IndexFilter dataMapFilter, CarbonProjection projection) {
 
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     CarbonTableInputFormat format = new CarbonTableInputFormat<Object>();

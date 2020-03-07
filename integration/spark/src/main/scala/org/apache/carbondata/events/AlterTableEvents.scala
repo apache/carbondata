@@ -233,9 +233,11 @@ case class AlterTableDropPartitionMetaEvent(parentCarbonTable: CarbonTable,
     specs: Seq[TablePartitionSpec],
     ifExists: Boolean,
     purge: Boolean,
-    retainData: Boolean)
+    retainData: Boolean,
+    sparkSession: SparkSession)
   extends Event with AlterTableDropPartitionEventInfo
 
-case class AlterTableDropPartitionPreStatusEvent(carbonTable: CarbonTable) extends Event
+case class AlterTableDropPartitionPreStatusEvent(carbonTable: CarbonTable,
+    sparkSession: SparkSession) extends Event
 
 case class AlterTableDropPartitionPostStatusEvent(carbonTable: CarbonTable) extends Event

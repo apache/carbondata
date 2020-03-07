@@ -34,7 +34,7 @@ import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, RDD}
-import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.execution.command.{CompactionModel, ExecutionErrors, UpdateTableModel}
 import org.apache.spark.sql.execution.command.management.CommonLoadUtils
@@ -61,6 +61,7 @@ import org.apache.carbondata.core.segmentmeta.{SegmentMetaDataInfo, SegmentMetaD
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.core.view.{MVSchema, MVStatus}
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.indexserver.{DistributedRDDUtils, IndexServer}
 import org.apache.carbondata.processing.loading.FailureCauses
@@ -73,6 +74,7 @@ import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoa
 import org.apache.carbondata.spark.{DataLoadResultImpl, _}
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
+import org.apache.carbondata.view.MVManagerInSpark
 
 /**
  * This is the factory class which can create different RDD depends on user needs.
@@ -571,7 +573,7 @@ object CarbonDataRDDFactory {
       // as no record loaded in new segment, new segment should be deleted
       val newEntryLoadStatus =
         if (carbonLoadModel.isCarbonTransactionalTable &&
-            !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildTableForMV &&
+            !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isMV &&
             !CarbonLoaderUtil.isValidSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)) {
           LOGGER.warn("Cannot write load metadata file as there is no data to load")
           SegmentStatus.MARKED_FOR_DELETE
@@ -604,6 +606,7 @@ object CarbonDataRDDFactory {
       OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
       val (done, writtenSegment) =
         updateTableStatus(
+          sqlContext.sparkSession,
           status,
           carbonLoadModel,
           newEntryLoadStatus,
@@ -681,8 +684,8 @@ object CarbonDataRDDFactory {
   def clearDataMapFiles(carbonTable: CarbonTable, segmentId: String): Unit = {
     try {
       val segments = List(new Segment(segmentId)).asJava
-      DataMapStoreManager.getInstance().getAllDataMap(carbonTable).asScala
-        .filter(_.getDataMapSchema.isIndexDataMap)
+      DataMapStoreManager.getInstance().getAllIndexes(carbonTable).asScala
+        .filter(_.getDataMapSchema.isIndex)
         .foreach(_.deleteDatamapData(segments))
     } catch {
       case ex : Exception =>
@@ -978,6 +981,7 @@ object CarbonDataRDDFactory {
    *         the segment metadata that written into the segment status file
    */
   private def updateTableStatus(
+      session: SparkSession,
       status: Array[(String, (LoadMetadataDetails, ExecutionErrors))],
       carbonLoadModel: CarbonLoadModel,
       newEntryLoadStatus: SegmentStatus,
@@ -1011,13 +1015,24 @@ object CarbonDataRDDFactory {
       throw new Exception(errorMessage)
     } else {
       DataMapStatusManager.disableAllLazyDataMaps(carbonTable)
+      val viewManager = MVManagerInSpark.get(session)
+      val viewSchemas = new util.ArrayList[MVSchema]()
+      for (viewSchema <- viewManager.getSchemasOnTable(carbonTable).asScala) {
+        if (viewSchema.isRefreshOnManual) {
+          viewSchemas.add(viewSchema)
+        }
+      }
+      viewManager.setStatus(viewSchemas, MVStatus.DISABLED)
       if (overwriteTable) {
         val allDataMapSchemas = DataMapStoreManager.getInstance
           .getDataMapSchemasOfTable(carbonTable).asScala
           .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                   !dataMapSchema.isIndexDataMap).asJava
+                                   !dataMapSchema.isIndex).asJava
         if (!allDataMapSchemas.isEmpty) {
           DataMapStatusManager.truncateDataMap(allDataMapSchemas)
+        }
+        if (!viewSchemas.isEmpty) {
+          viewManager.onTruncate(viewSchemas)
         }
       }
     }

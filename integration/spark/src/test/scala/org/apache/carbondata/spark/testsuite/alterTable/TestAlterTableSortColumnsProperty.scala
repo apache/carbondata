@@ -211,10 +211,10 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
   private def createBloomDataMap(tableName: String, dataMapName: String): Unit = {
     sql(
       s"""
-         | CREATE DATAMAP $dataMapName ON TABLE $tableName
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='smallIntField,floatField,timestampField,dateField,stringField',
+         | CREATE INDEX $dataMapName
+         | ON TABLE $tableName (smallIntField,floatField,timestampField,dateField,stringField)
+         | AS 'bloomfilter'
+         | PROPERTIES(
          | 'BLOOM_SIZE'='6400',
          | 'BLOOM_FPP'='0.001',
          | 'BLOOM_COMPRESS'='TRUE')
@@ -549,7 +549,7 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     val dataMapName = "alter_sc_bloom_dm1"
     val baseTableName = "alter_sc_bloom_base"
     loadData(tableName, baseTableName)
-    checkExistence(sql(s"SHOW DATAMAP ON TABLE $tableName"), true, "bloomfilter", dataMapName)
+    checkExistence(sql(s"SHOW INDEXES ON TABLE $tableName"), true, "bloomfilter", dataMapName)
     checkExistence(sql(s"EXPLAIN SELECT * FROM $tableName WHERE smallIntField = 3"), true, "bloomfilter", dataMapName)
     checkAnswer(sql(s"select * from $tableName where smallIntField = 3 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 3 order by floatField"))
 

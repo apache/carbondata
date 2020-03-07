@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.execution.datasources.FindDataSourceTable
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.DataMapCatalog
+import org.apache.carbondata.core.datamap.MVCatalog
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.mv.extension.{MVHelper, MVParser}
@@ -52,7 +52,7 @@ case class MVPlanWrapper(plan: ModularPlan, dataMapSchema: DataMapSchema) extend
 }
 
 private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
-  extends DataMapCatalog[SummaryDataset] {
+  extends MVCatalog[SummaryDataset] {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 

@@ -30,8 +30,8 @@ import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation, SubqueryAlias}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.ExplainCommand
-import org.apache.spark.sql.hive.HiveExternalCatalog
-import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule}
+import org.apache.spark.sql.hive.{CarbonMVRules, HiveExternalCatalog}
+import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonUDFTransformRule, MVRewriteRule}
 import org.apache.spark.sql.secondaryindex.optimizer.CarbonSITransformationRule
 import org.apache.spark.sql.types.{DataType, Metadata}
 
@@ -67,6 +67,10 @@ object CarbonToSparkAdapter {
     AttributeReference(attrName, attr.dataType)(
       exprId = attr.exprId,
       qualifier = Some(newSubsume))
+  }
+
+  def getTheLastQualifier(attribute: Attribute): String = {
+    attribute.qualifier.head
   }
 
   def getOutput(subQueryAlias: SubqueryAlias): Seq[Attribute] = {
@@ -150,6 +154,9 @@ class CarbonOptimizer(
     catalog: SessionCatalog,
     optimizer: Optimizer) extends Optimizer(catalog) {
 
+  private lazy val mvRules = Seq(Batch("Materialized View Optimizers", Once,
+    Seq(new MVRewriteRule(session)): _*))
+
   private lazy val iudRule = Batch("IUD Optimizers", fixedPoint,
     Seq(new CarbonIUDRule(), new CarbonUDFTransformRule(), new CarbonFileIndexReplaceRule()): _*)
 
@@ -157,7 +164,7 @@ class CarbonOptimizer(
     Seq(new CarbonSITransformationRule(session)): _*)
 
   override def batches: Seq[Batch] = {
-    convertedBatch() :+ iudRule :+ secondaryIndexRule
+    mvRules ++ convertedBatch() :+ iudRule :+ secondaryIndexRule
   }
 
   def convertedBatch(): Seq[Batch] = {

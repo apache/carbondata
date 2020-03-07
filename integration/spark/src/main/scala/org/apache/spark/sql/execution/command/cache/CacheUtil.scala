@@ -32,7 +32,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSch
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.datamap.bloom.{BloomCacheKeyValue, BloomCoarseGrainDataMapFactory}
+import org.apache.carbondata.datamap.bloom.{BloomCacheKeyValue, BloomCoarseGrainIndexFactory}
 import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 
@@ -51,7 +51,7 @@ object CacheUtil {
     if (carbonTable.isTransactionalTable) {
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       val validAndInvalidSegmentsInfo = new SegmentStatusManager(absoluteTableIdentifier)
-        .getValidAndInvalidSegments(carbonTable.isChildTableForMV)
+        .getValidAndInvalidSegments(carbonTable.isMV)
       // Fire a job to clear the invalid segments cached in the executors.
       if (CarbonProperties.getInstance().isDistributedPruningEnabled(carbonTable.getDatabaseName,
         carbonTable.getTableName)) {
@@ -95,7 +95,7 @@ object CacheUtil {
     // Generate shard Path for the datamap
     val shardPaths = segments.flatMap {
       segment =>
-        BloomCoarseGrainDataMapFactory.getAllShardPaths(carbonTable.getTablePath,
+        BloomCoarseGrainIndexFactory.getAllShardPaths(carbonTable.getTablePath,
           segment.getSegmentNo, datamap.getDataMapName).asScala
     }
 
