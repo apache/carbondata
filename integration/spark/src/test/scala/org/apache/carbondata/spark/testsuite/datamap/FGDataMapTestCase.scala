@@ -29,7 +29,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapModel, DataMapWriter}
-import org.apache.carbondata.core.datamap.dev.fgdatamap.{FineGrainBlocklet, FineGrainDataMap, FineGrainDataMapFactory, FineGrainIndexFactory}
+import org.apache.carbondata.core.datamap.dev.fgdatamap.{FineGrainBlocklet, FineGrainIndex, FineGrainDataMapFactory, FineGrainIndexFactory}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor
@@ -63,13 +63,13 @@ class FGIndexFactory(carbonTable: CarbonTable,
   /**
    * Get the datamap for segmentId
    */
-  override def getDataMaps(segment: Segment): java.util.List[FineGrainDataMap] = {
+  override def getDataMaps(segment: Segment): java.util.List[FineGrainIndex] = {
     val path = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segment.getSegmentNo)
     val file = FileFactory.getCarbonFile(path+ "/" +dataMapSchema.getDataMapName)
 
     val files = file.listFiles()
     files.map { f =>
-      val dataMap: FineGrainDataMap = new FGDataMap()
+      val dataMap: FineGrainIndex = new FGIndex()
       dataMap.init(new DataMapModel(f.getCanonicalPath, new Configuration(false)))
       dataMap
     }.toList.asJava
@@ -78,9 +78,9 @@ class FGIndexFactory(carbonTable: CarbonTable,
   /**
    * Get datamap for distributable object.
    */
-  override def getDataMaps(distributable: DataMapDistributable): java.util.List[FineGrainDataMap]= {
+  override def getDataMaps(distributable: DataMapDistributable): java.util.List[FineGrainIndex]= {
     val mapDistributable = distributable.asInstanceOf[BlockletDataMapDistributable]
-    val dataMap: FineGrainDataMap = new FGDataMap()
+    val dataMap: FineGrainIndex = new FGIndex()
     dataMap.init(new DataMapModel(mapDistributable.getFilePath, new Configuration(false)))
     Seq(dataMap).asJava
   }
@@ -156,12 +156,12 @@ class FGIndexFactory(carbonTable: CarbonTable,
    * Get the datamap for segmentId
    */
   override def getDataMaps(segment: Segment,
-      partitions: java.util.List[PartitionSpec]): java.util.List[FineGrainDataMap] = {
+      partitions: java.util.List[PartitionSpec]): java.util.List[FineGrainIndex] = {
     getDataMaps(segment)
   }
 }
 
-class FGDataMap extends FineGrainDataMap {
+class FGIndex extends FineGrainIndex {
 
   var maxMin: ArrayBuffer[(Int, (Array[Byte], Array[Byte]), Long, Int)] = _
   var FileReader: FileReader = _

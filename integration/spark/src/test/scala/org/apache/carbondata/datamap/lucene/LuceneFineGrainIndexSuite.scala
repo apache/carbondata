@@ -32,7 +32,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 
-class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
+class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
   val originDistributedDatamapStatus = CarbonProperties.getInstance().getProperty(
     CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
@@ -45,7 +45,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
-    LuceneFineGrainDataMapSuite.createFile(file2)
+    LuceneFineGrainIndexSuite.createFile(file2)
     sql("create database if not exists lucene")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP, "true")
@@ -566,7 +566,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     val file1 = resourcesPath + "/main.csv"
-    LuceneFineGrainDataMapSuite.createFile(file1, 1000000)
+    LuceneFineGrainIndexSuite.createFile(file1, 1000000)
 
     sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE main OPTIONS('header'='false')")
 
@@ -589,7 +589,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
           |    - skipped: 1 blocks, 1 blocklets
           |""".stripMargin)(rows(0).getString(0))
     } finally {
-      LuceneFineGrainDataMapSuite.deleteFile(file1)
+      LuceneFineGrainIndexSuite.deleteFile(file1)
       sql("drop datamap dm on table main")
       CarbonProperties.getInstance().addProperty(
         CarbonCommonConstants.BLOCKLET_SIZE, CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
@@ -889,7 +889,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   override protected def afterAll(): Unit = {
-    LuceneFineGrainDataMapSuite.deleteFile(file2)
+    LuceneFineGrainIndexSuite.deleteFile(file2)
     sql("DROP TABLE IF EXISTS normal_test")
     sql("DROP TABLE IF EXISTS datamap_test")
     sql("DROP TABLE IF EXISTS source_table")
@@ -917,7 +917,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
   }
 }
 
-object LuceneFineGrainDataMapSuite {
+object LuceneFineGrainIndexSuite {
   def createFile(fileName: String, line: Int = 10000, start: Int = 0) = {
     val write = new PrintWriter(new File(fileName))
     for (i <- start until (start + line)) {

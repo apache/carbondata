@@ -28,7 +28,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainBlocklet;
-import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap;
+import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -60,13 +60,13 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.solr.store.hdfs.HdfsDirectory;
 
 @InterfaceAudience.Internal
-public class LuceneFineGrainDataMap extends FineGrainDataMap {
+public class LuceneFineGrainIndex extends FineGrainIndex {
 
   /**
    * log information
    */
   private static final Logger LOGGER =
-      LogServiceFactory.getLogService(LuceneFineGrainDataMap.class.getName());
+      LogServiceFactory.getLogService(LuceneFineGrainIndex.class.getName());
 
   /**
    * search limit will help in deciding the size of priority queue which is used by lucene to store
@@ -95,7 +95,7 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
 
   private IndexReader indexReader;
 
-  LuceneFineGrainDataMap(Analyzer analyzer, DataMapSchema schema) {
+  LuceneFineGrainIndex(Analyzer analyzer, DataMapSchema schema) {
     this.analyzer = analyzer;
     writeCacheSize = LuceneIndexFactoryBase.validateAndGetWriteCacheSize(schema);
     storeBlockletWise = LuceneIndexFactoryBase.validateAndGetStoreBlockletWise(schema);

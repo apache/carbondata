@@ -25,7 +25,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
- *  Factory for {@link FineGrainDataMap}
+ *  Factory for {@link FineGrainIndex}
  *
  *  1. Any filter query which hits the table with datamap will call prune method of FGdatamap.
  *  2. The prune method of FGDatamap return list FineGrainBlocklet , these blocklets contain the
@@ -38,7 +38,7 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
  */
 @InterfaceAudience.Developer("DataMap")
 @InterfaceStability.Evolving
-public abstract class FineGrainIndexFactory extends IndexFactory<FineGrainDataMap> {
+public abstract class FineGrainIndexFactory extends IndexFactory<FineGrainIndex> {
 
   public FineGrainIndexFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
     super(carbonTable, dataMapSchema);

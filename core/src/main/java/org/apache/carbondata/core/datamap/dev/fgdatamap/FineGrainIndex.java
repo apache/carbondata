@@ -35,7 +35,7 @@ import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
  */
 @InterfaceAudience.Developer("DataMap")
 @InterfaceStability.Evolving
-public abstract class FineGrainDataMap implements DataMap<FineGrainBlocklet> {
+public abstract class FineGrainIndex implements DataMap<FineGrainBlocklet> {
 
   @Override
   public List<FineGrainBlocklet> prune(Expression filter, SegmentProperties segmentProperties,

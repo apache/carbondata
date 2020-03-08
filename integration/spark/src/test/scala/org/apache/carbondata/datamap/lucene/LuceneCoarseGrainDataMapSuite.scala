@@ -31,7 +31,7 @@ class LuceneCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
   override protected def beforeAll(): Unit = {
     //n should be about 5000000 of reset if size is default 1024
     val n = 15000
-    LuceneFineGrainDataMapSuite.createFile(file2, n * 4, n)
+    LuceneFineGrainIndexSuite.createFile(file2, n * 4, n)
     sql("DROP TABLE IF EXISTS normal_test")
     sql(
       """
@@ -65,7 +65,7 @@ class LuceneCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   override protected def afterAll(): Unit = {
-    LuceneFineGrainDataMapSuite.deleteFile(file2)
+    LuceneFineGrainIndexSuite.deleteFile(file2)
     sql("DROP TABLE IF EXISTS normal_test")
     sql("DROP TABLE IF EXISTS datamap_test")
   }

@@ -23,11 +23,12 @@ import java.io.IOException;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainBlocklet;
+import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainIndex;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 
 /**
  * A serializer/deserializer for {@link FineGrainBlocklet}, it is used after prune the data
- * by {@link org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap}
+ * by {@link FineGrainIndex}
  */
 @InterfaceAudience.Internal
 public class BlockletSerializer {

@@ -28,7 +28,7 @@ import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
-import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap;
+import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainIndex;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
@@ -39,7 +39,7 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
  * FG level of lucene DataMap
  */
 @InterfaceAudience.Internal
-public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrainDataMap> {
+public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrainIndex> {
 
   public LuceneFineGrainIndexFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
@@ -50,9 +50,9 @@ public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrai
    * Get the datamap for segmentId
    */
   @Override
-  public List<FineGrainDataMap> getDataMaps(Segment segment) throws IOException {
-    List<FineGrainDataMap> lstDataMap = new ArrayList<>();
-    FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer, getDataMapSchema());
+  public List<FineGrainIndex> getDataMaps(Segment segment) throws IOException {
+    List<FineGrainIndex> lstDataMap = new ArrayList<>();
+    FineGrainIndex dataMap = new LuceneFineGrainIndex(analyzer, getDataMapSchema());
     dataMap.init(new DataMapModel(
         DataMapWriter.getDefaultDataMapPath(tableIdentifier.getTablePath(),
             segment.getSegmentNo(), dataMapName), segment.getConfiguration()));
@@ -61,7 +61,7 @@ public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrai
   }
 
   @Override
-  public List<FineGrainDataMap> getDataMaps(Segment segment, List<PartitionSpec> partitions)
+  public List<FineGrainIndex> getDataMaps(Segment segment, List<PartitionSpec> partitions)
       throws IOException {
     return getDataMaps(segment);
   }
@@ -70,10 +70,10 @@ public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrai
    * Get datamaps for distributable object.
    */
   @Override
-  public List<FineGrainDataMap> getDataMaps(DataMapDistributable distributable)
+  public List<FineGrainIndex> getDataMaps(DataMapDistributable distributable)
       throws IOException {
-    List<FineGrainDataMap> lstDataMap = new ArrayList<>();
-    FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer, getDataMapSchema());
+    List<FineGrainIndex> lstDataMap = new ArrayList<>();
+    FineGrainIndex dataMap = new LuceneFineGrainIndex(analyzer, getDataMapSchema());
     String indexPath = ((LuceneDataMapDistributable) distributable).getIndexPath();
     dataMap.init(new DataMapModel(indexPath, FileFactory.getConfiguration()));
     lstDataMap.add(dataMap);
