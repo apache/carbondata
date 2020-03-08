@@ -29,7 +29,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.dev.DataMap
 import org.apache.carbondata.core.datamap.{DataMapChooser, DataMapFilter, DataMapStoreManager, Segment, TableDataMap}
 import org.apache.carbondata.core.indexstore.Blocklet
-import org.apache.carbondata.core.indexstore.blockletindex.{BlockDataMap, BlockIndex, BlockletDataMap, BlockletDataMapRowIndexes, BlockletIndex}
+import org.apache.carbondata.core.indexstore.blockletindex.{BlockIndex, BlockletDataMapRowIndexes, BlockletIndex}
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension

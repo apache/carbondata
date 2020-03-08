@@ -37,7 +37,7 @@ import org.apache.carbondata.core.datamap.{AbstractDataMapJob, DataMapStoreManag
 import org.apache.carbondata.core.datamap.dev.CacheableDataMap
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.indexstore.{BlockletDataMapIndexWrapper, TableBlockIndexUniqueIdentifier, TableBlockIndexUniqueIdentifierWrapper}
-import org.apache.carbondata.core.indexstore.blockletindex.{BlockDataMap, BlockIndex}
+import org.apache.carbondata.core.indexstore.blockletindex.BlockIndex
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.spark.rdd.CarbonRDD
