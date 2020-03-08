@@ -45,12 +45,12 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_C
 /**
  * Interface for datamap of index type, it is responsible for creating the datamap.
  */
-public abstract class DataMapFactory<T extends DataMap> {
+public abstract class IndexFactory<T extends DataMap> {
 
   private CarbonTable carbonTable;
   private DataMapSchema dataMapSchema;
 
-  public DataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
+  public IndexFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
     this.carbonTable = carbonTable;
     this.dataMapSchema = dataMapSchema;
   }

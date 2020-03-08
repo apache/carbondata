@@ -33,7 +33,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockDataMap;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapModel;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
@@ -292,7 +292,7 @@ public class BlockletDataMapIndexStore
     }
     BlockDataMap dataMap;
     synchronized (lock) {
-      dataMap = (BlockDataMap) BlockletDataMapFactory.createDataMap(carbonTable);
+      dataMap = (BlockDataMap) BlockletIndexFactory.createDataMap(carbonTable);
       final BlockletDataMapModel blockletDataMapModel = new BlockletDataMapModel(carbonTable,
           identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
               .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()),

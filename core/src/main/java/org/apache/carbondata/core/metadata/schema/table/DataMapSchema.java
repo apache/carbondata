@@ -59,7 +59,7 @@ public class DataMapSchema implements Serializable, Writable {
 
   /**
    * There are two kind of DataMaps:
-   * 1. Index DataMap: provider name is class name of implementation class of DataMapFactory
+   * 1. Index DataMap: provider name is class name of implementation class of IndexFactory
    * 2. MV DataMap: provider name is class name of {@code MVDataMapProvider}
    */
   // the old version the field name for providerName was className, so to de-serialization

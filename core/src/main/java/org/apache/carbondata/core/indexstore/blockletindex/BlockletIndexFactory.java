@@ -38,7 +38,7 @@ import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMapFactory;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndexFactory;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -64,7 +64,7 @@ import org.apache.carbondata.events.Event;
 /**
  * Table map for blocklet
  */
-public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
+public class BlockletIndexFactory extends CoarseGrainIndexFactory
     implements BlockletDetailsFetcher, SegmentPropertiesFetcher, CacheableDataMap {
 
   private static final String NAME = "clustered.btree.blocklet";
@@ -74,7 +74,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   public static final String CACHE_LEVEL_BLOCKLET = "BLOCKLET";
 
   public static final DataMapSchema DATA_MAP_SCHEMA =
-      new DataMapSchema(NAME, BlockletDataMapFactory.class.getName());
+      new DataMapSchema(NAME, BlockletIndexFactory.class.getName());
 
   private AbsoluteTableIdentifier identifier;
 
@@ -83,7 +83,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
 
   private Cache<TableBlockIndexUniqueIdentifierWrapper, BlockletDataMapIndexWrapper> cache;
 
-  public BlockletDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
+  public BlockletIndexFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
     super(carbonTable, dataMapSchema);
     this.identifier = carbonTable.getAbsoluteTableIdentifier();
     cache = CacheProvider.getInstance()
@@ -225,7 +225,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
 
   /**
    * Get the blocklet detail information based on blockletid, blockid and segmentId. This method is
-   * exclusively for BlockletDataMapFactory as detail information is only available in this
+   * exclusively for BlockletIndexFactory as detail information is only available in this
    * default datamap.
    */
   @Override

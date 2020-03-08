@@ -15,32 +15,37 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datamap.dev.cgdatamap;
+package org.apache.carbondata.core.datamap.dev.fgdatamap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datamap.DataMapLevel;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
- *  Factory for {@link CoarseGrainDataMap}
- *  1. Any filter query which hits the table with datamap will call prune method of CGdatamap.
- *  2. The prune method of CGDatamap return list Blocklet , these blocklets contain the
- *     information of block and blocklet.
- *  3. Based on the splits scanrdd schedule the tasks.
+ *  Factory for {@link FineGrainDataMap}
+ *
+ *  1. Any filter query which hits the table with datamap will call prune method of FGdatamap.
+ *  2. The prune method of FGDatamap return list FineGrainBlocklet , these blocklets contain the
+ *     information of block, blocklet, page and rowids information as well.
+ *  3. The pruned blocklets are internally wriitten to file and returns only the block ,
+ *    blocklet and filepath information as part of Splits.
+ *  4. Based on the splits scanrdd schedule the tasks.
+ *  5. In filterscanner we check the datamapwriterpath from split and reNoteads the
+ *     bitset if exists. And pass this bitset as input to it.
  */
 @InterfaceAudience.Developer("DataMap")
 @InterfaceStability.Evolving
-public abstract class CoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDataMap> {
+public abstract class FineGrainIndexFactory extends IndexFactory<FineGrainDataMap> {
 
-  public CoarseGrainDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
+  public FineGrainIndexFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
     super(carbonTable, dataMapSchema);
   }
 
   @Override
   public DataMapLevel getDataMapLevel() {
-    return DataMapLevel.CG;
+    return DataMapLevel.FG;
   }
 }

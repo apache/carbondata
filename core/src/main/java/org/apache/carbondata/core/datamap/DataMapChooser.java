@@ -76,7 +76,7 @@ public class DataMapChooser {
     for (TableDataMap visibleDataMap : visibleDataMaps) {
       DataMapStatusDetail status = map.get(visibleDataMap.getDataMapSchema().getDataMapName());
       if (status != null && status.isEnabled()) {
-        DataMapLevel level = visibleDataMap.getDataMapFactory().getDataMapLevel();
+        DataMapLevel level = visibleDataMap.getIndexFactory().getDataMapLevel();
         if (level == DataMapLevel.CG) {
           cgDataMaps.add(visibleDataMap);
         } else {
@@ -273,10 +273,10 @@ public class DataMapChooser {
       List<ColumnExpression> columnExpressions, Set<ExpressionType> expressionTypes) {
     List<DataMapTuple> tuples = new ArrayList<>();
     for (TableDataMap dataMap : allDataMap) {
-      if (null != dataMap.getDataMapFactory().getMeta() && contains(
-          dataMap.getDataMapFactory().getMeta(), columnExpressions, expressionTypes)) {
+      if (null != dataMap.getIndexFactory().getMeta() && contains(
+          dataMap.getIndexFactory().getMeta(), columnExpressions, expressionTypes)) {
         tuples.add(
-            new DataMapTuple(dataMap.getDataMapFactory().getMeta().getIndexedColumns().size(),
+            new DataMapTuple(dataMap.getIndexFactory().getMeta().getIndexedColumns().size(),
                 dataMap));
       }
     }

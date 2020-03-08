@@ -199,7 +199,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP dm12 ON TABLE datamap_test1
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainIndexFactory'
          | DMProperties('INDEX_COLUMNS'='Name , cIty')
       """.stripMargin)
 
@@ -230,7 +230,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP dm122 ON TABLE datamap_test2
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainIndexFactory'
          | DMProperties('INDEX_COLUMNS'='Name , cIty')
       """.stripMargin)
 
@@ -243,7 +243,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP dm123 ON TABLE datamap_test3
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainIndexFactory'
          | DMProperties('INDEX_COLUMNS'='Name , cIty')
       """.stripMargin)
 
@@ -607,7 +607,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP dm124 ON TABLE datamap_test7
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapFactory'
+         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainIndexFactory'
          | DMProperties('INDEX_COLUMNS'='name , city')
       """.stripMargin)
 

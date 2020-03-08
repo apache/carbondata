@@ -34,7 +34,7 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -56,10 +56,10 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
 /**
- * Base implementation for CG and FG lucene DataMapFactory.
+ * Base implementation for CG and FG lucene IndexFactory.
  */
 @InterfaceAudience.Internal
-abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactory<T> {
+abstract class LuceneIndexFactoryBase<T extends DataMap> extends IndexFactory<T> {
 
   /**
    * Size of the cache to maintain in Lucene writer, if specified then it tries to aggregate the
@@ -115,7 +115,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
 
   boolean storeBlockletWise;
 
-  public LuceneDataMapFactoryBase(CarbonTable carbonTable, DataMapSchema dataMapSchema)
+  public LuceneIndexFactoryBase(CarbonTable carbonTable, DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
     super(carbonTable, dataMapSchema);
     Objects.requireNonNull(carbonTable.getAbsoluteTableIdentifier());

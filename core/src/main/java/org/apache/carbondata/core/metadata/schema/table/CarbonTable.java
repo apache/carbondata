@@ -37,7 +37,7 @@ import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.TableDataMap;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -943,7 +943,7 @@ public class CarbonTable implements Serializable, Writable {
       List<TableDataMap> datamaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
       if (!datamaps.isEmpty()) {
         for (TableDataMap dataMap : datamaps) {
-          DataMapFactory factoryClass = DataMapStoreManager.getInstance()
+          IndexFactory factoryClass = DataMapStoreManager.getInstance()
               .getDataMapFactoryClass(carbonTable, dataMap.getDataMapSchema());
           if (factoryClass.willBecomeStale(operation)) {
             return false;

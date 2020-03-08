@@ -49,7 +49,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestBlockletDataMapFactory {
+public class TestBlockletIndexFactory {
 
   private CarbonTable carbonTable;
 
@@ -57,7 +57,7 @@ public class TestBlockletDataMapFactory {
 
   private TableInfo tableInfo;
 
-  private BlockletDataMapFactory blockletDataMapFactory;
+  private BlockletIndexFactory blockletDataMapFactory;
 
   private TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier;
 
@@ -85,7 +85,7 @@ public class TestBlockletDataMapFactory {
         return absoluteTableIdentifier;
       }
     };
-    blockletDataMapFactory = new BlockletDataMapFactory(carbonTable, new DataMapSchema());
+    blockletDataMapFactory = new BlockletIndexFactory(carbonTable, new DataMapSchema());
     Deencapsulation.setField(blockletDataMapFactory, "cache",
         CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_DATAMAP));
     tableBlockIndexUniqueIdentifier =
@@ -100,7 +100,7 @@ public class TestBlockletDataMapFactory {
       throws IOException, MemoryException, NoSuchMethodException, InvocationTargetException,
       IllegalAccessException {
     List<BlockDataMap> dataMaps = new ArrayList<>();
-    Method method = BlockletDataMapFactory.class
+    Method method = BlockletIndexFactory.class
         .getDeclaredMethod("cache", TableBlockIndexUniqueIdentifierWrapper.class,
             BlockletDataMapIndexWrapper.class);
     method.setAccessible(true);
@@ -122,7 +122,7 @@ public class TestBlockletDataMapFactory {
     List<DataMapDistributable> dataMapDistributables = new ArrayList<>(2);
     dataMapDistributables.add(blockletDataMapDistributable);
     dataMapDistributables.add(blockletDataMapDistributable1);
-    new MockUp<BlockletDataMapFactory>() {
+    new MockUp<BlockletIndexFactory>() {
       @Mock Set<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers(
           Segment segment) {
         TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier1 =

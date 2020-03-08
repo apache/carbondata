@@ -29,7 +29,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandExcept
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapWriter}
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory, CoarseGrainIndexFactory}
 import org.apache.carbondata.core.datamap.status.{DataMapStatus, DataMapStatusManager}
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
@@ -58,7 +58,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""create datamap statusdatamap on table datamapstatustest
-         |using '${classOf[TestDataMapFactory].getName}'
+         |using '${classOf[TestIndexFactory].getName}'
          |dmproperties('index_columns'='name')
          | """.stripMargin)
 
@@ -79,7 +79,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""create datamap statusdatamap on table datamapstatustest
-         |using '${classOf[TestDataMapFactory].getName}'
+         |using '${classOf[TestIndexFactory].getName}'
          |with deferred rebuild
          |dmproperties('index_columns'='name')
          | """.stripMargin)
@@ -101,7 +101,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""create datamap statusdatamap1 on table datamapstatustest1
-         |using '${classOf[TestDataMapFactory].getName}'
+         |using '${classOf[TestIndexFactory].getName}'
          |with deferred rebuild
          |dmproperties('index_columns'='name')
          | """.stripMargin)
@@ -128,7 +128,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""create datamap statusdatamap2 on table datamapstatustest2
-         |using '${classOf[TestDataMapFactory].getName}'
+         |using '${classOf[TestIndexFactory].getName}'
          |with deferred rebuild
          |dmproperties('index_columns'='name')
          | """.stripMargin)
@@ -163,7 +163,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     intercept[MalformedDataMapCommandException] {
       sql(
         s"""create datamap statusdatamap3
-           |using '${classOf[TestDataMapFactory].getName}'
+           |using '${classOf[TestIndexFactory].getName}'
            |dmproperties('index_columns'='name')
            | """.stripMargin)
 
@@ -180,7 +180,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""create datamap statusdatamap3 on table datamapstatustest3
-         |using '${classOf[TestDataMapFactory].getName}'
+         |using '${classOf[TestIndexFactory].getName}'
          |with deferred rebuild
          |dmproperties('index_columns'='name')
          | """.stripMargin)
@@ -221,9 +221,9 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
   }
 }
 
-class TestDataMapFactory(
+class TestIndexFactory(
     carbonTable: CarbonTable,
-    dataMapSchema: DataMapSchema) extends CoarseGrainDataMapFactory(carbonTable, dataMapSchema) {
+    dataMapSchema: DataMapSchema) extends CoarseGrainIndexFactory(carbonTable, dataMapSchema) {
 
   override def fireEvent(event: Event): Unit = ???
 

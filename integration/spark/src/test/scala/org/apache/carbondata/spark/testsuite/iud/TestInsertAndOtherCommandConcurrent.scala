@@ -31,7 +31,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapWriter}
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainIndexFactory}
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.exception.ConcurrentOperationException
@@ -56,7 +56,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     sql(
       s"""
          | create datamap test on table orders
-         | using '${classOf[WaitingDataMapFactory].getName}'
+         | using '${classOf[WaitingIndexFactory].getName}'
          | dmproperties('index_columns'='o_name')
        """.stripMargin)
 
@@ -118,7 +118,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     )
     while (!Global.loading && count < 1000) {
       Thread.sleep(10)
-      // to avoid dead loop in case WaitingDataMapFactory is not invoked
+      // to avoid dead loop in case WaitingIndexFactory is not invoked
       count += 1
     }
     future
@@ -219,7 +219,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     sql(
       s"""
          | create datamap dm_t1 on table t1
-         | using '${classOf[WaitingDataMapFactory].getName}'
+         | using '${classOf[WaitingIndexFactory].getName}'
          | dmproperties('index_columns'='o_name')
        """.stripMargin)
 
@@ -300,9 +300,9 @@ object Global {
   var loading = false
 }
 
-class WaitingDataMapFactory(
+class WaitingIndexFactory(
     carbonTable: CarbonTable,
-    dataMapSchema: DataMapSchema) extends CoarseGrainDataMapFactory(carbonTable, dataMapSchema) {
+    dataMapSchema: DataMapSchema) extends CoarseGrainIndexFactory(carbonTable, dataMapSchema) {
 
   override def fireEvent(event: Event): Unit = ???
 

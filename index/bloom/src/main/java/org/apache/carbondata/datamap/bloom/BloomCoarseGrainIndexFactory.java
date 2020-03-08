@@ -39,7 +39,7 @@ import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -63,9 +63,9 @@ import org.apache.log4j.Logger;
  * This class is for Bloom Filter for blocklet level
  */
 @InterfaceAudience.Internal
-public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDataMap> {
+public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainDataMap> {
   private static final Logger LOGGER = LogServiceFactory.getLogService(
-      BloomCoarseGrainDataMapFactory.class.getName());
+      BloomCoarseGrainIndexFactory.class.getName());
   /**
    * property for size of bloom filter
    */
@@ -102,7 +102,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   // segmentId -> list of index file
   private Map<String, Set<String>> segmentMap = new ConcurrentHashMap<>();
 
-  public BloomCoarseGrainDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
+  public BloomCoarseGrainIndexFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
     super(carbonTable, dataMapSchema);
     Objects.requireNonNull(carbonTable);

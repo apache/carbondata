@@ -29,7 +29,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedMaterializedViewExce
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapCatalog, DataMapProvider, DataMapStoreManager}
-import org.apache.carbondata.core.datamap.dev.{DataMap, DataMapFactory}
+import org.apache.carbondata.core.datamap.dev.{DataMap, IndexFactory}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.indexstore.Blocklet
 import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
@@ -200,7 +200,7 @@ class MVDataMapProvider(
   override def createDataMapCatalog : DataMapCatalog[SummaryDataset] =
     new SummaryDatasetCatalog(sparkSession)
 
-  override def getDataMapFactory: DataMapFactory[_ <: DataMap[_ <: Blocklet]] = {
+  override def getIndexFactory: IndexFactory[_ <: DataMap[_ <: Blocklet]] = {
     throw new UnsupportedOperationException
   }
 

@@ -28,7 +28,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapWriter}
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainIndexFactory}
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
@@ -40,9 +40,9 @@ import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
 
-class C2DataMapFactory(
+class C2IndexFactory(
     carbonTable: CarbonTable,
-    dataMapSchema: DataMapSchema) extends CoarseGrainDataMapFactory(carbonTable, dataMapSchema) {
+    dataMapSchema: DataMapSchema) extends CoarseGrainIndexFactory(carbonTable, dataMapSchema) {
 
   var identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
@@ -126,7 +126,7 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP test1 ON TABLE carbon1
-         | USING '${classOf[C2DataMapFactory].getName}'
+         | USING '${classOf[C2IndexFactory].getName}'
          | DMPROPERTIES('index_columns'='c2')
        """.stripMargin)
     val df = buildTestData(33000)
@@ -157,7 +157,7 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP test2 ON TABLE carbon2
-         | USING '${classOf[C2DataMapFactory].getName}'
+         | USING '${classOf[C2IndexFactory].getName}'
          | DMPROPERTIES('index_columns'='c2')
        """.stripMargin)
     CarbonProperties.getInstance()

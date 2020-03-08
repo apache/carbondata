@@ -31,11 +31,11 @@ import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandExcept
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
@@ -327,7 +327,7 @@ public final class DataMapStoreManager {
    * @return
    */
   public TableDataMap getDefaultDataMap(CarbonTable table) {
-    return getDataMap(table, BlockletDataMapFactory.DATA_MAP_SCHEMA);
+    return getDataMap(table, BlockletIndexFactory.DATA_MAP_SCHEMA);
   }
 
   /**
@@ -381,7 +381,7 @@ public final class DataMapStoreManager {
     // once a table is dropped and recreated with the same name again then because the dataMap
     // contains the stale carbon table schema mismatch exception is thrown. To avoid such scenarios
     // it is always better to update the carbon table object retrieved
-    dataMap.getDataMapFactory().setCarbonTable(table);
+    dataMap.getIndexFactory().setCarbonTable(table);
     return dataMap;
   }
 
@@ -401,11 +401,11 @@ public final class DataMapStoreManager {
    * Return a new datamap instance and registered in the store manager.
    * The datamap is created using datamap name, datamap factory class and table identifier.
    */
-  public DataMapFactory getDataMapFactoryClass(CarbonTable table, DataMapSchema dataMapSchema)
+  public IndexFactory getDataMapFactoryClass(CarbonTable table, DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
     try {
-      // try to create datamap by reflection to test whether it is a valid DataMapFactory class
-      return (DataMapFactory)
+      // try to create datamap by reflection to test whether it is a valid IndexFactory class
+      return (IndexFactory)
           Class.forName(dataMapSchema.getProviderName()).getConstructors()[0]
               .newInstance(table, dataMapSchema);
     } catch (ClassNotFoundException e) {
@@ -424,12 +424,12 @@ public final class DataMapStoreManager {
   // TODO: make it private
   public TableDataMap createAndRegisterDataMap(CarbonTable table,
       DataMapSchema dataMapSchema) throws MalformedDataMapCommandException {
-    DataMapFactory dataMapFactory  = getDataMapFactoryClass(table, dataMapSchema);
-    return registerDataMap(table, dataMapSchema, dataMapFactory);
+    IndexFactory indexFactory = getDataMapFactoryClass(table, dataMapSchema);
+    return registerDataMap(table, dataMapSchema, indexFactory);
   }
 
   public TableDataMap registerDataMap(CarbonTable table,
-      DataMapSchema dataMapSchema,  DataMapFactory dataMapFactory) {
+      DataMapSchema dataMapSchema,  IndexFactory indexFactory) {
     String tableUniqueName = table.getCarbonTableIdentifier().getTableUniqueName();
     // Just update the segmentRefreshMap with the table if not added.
     getTableSegmentRefresher(table);
@@ -447,14 +447,14 @@ public final class DataMapStoreManager {
 
     BlockletDetailsFetcher blockletDetailsFetcher;
     SegmentPropertiesFetcher segmentPropertiesFetcher = null;
-    if (dataMapFactory instanceof BlockletDetailsFetcher) {
-      blockletDetailsFetcher = (BlockletDetailsFetcher) dataMapFactory;
+    if (indexFactory instanceof BlockletDetailsFetcher) {
+      blockletDetailsFetcher = (BlockletDetailsFetcher) indexFactory;
     } else {
       blockletDetailsFetcher = getBlockletDetailsFetcher(table);
     }
     segmentPropertiesFetcher = (SegmentPropertiesFetcher) blockletDetailsFetcher;
     TableDataMap dataMap = new TableDataMap(table,
-        dataMapSchema, dataMapFactory, blockletDetailsFetcher, segmentPropertiesFetcher);
+        dataMapSchema, indexFactory, blockletDetailsFetcher, segmentPropertiesFetcher);
 
     tableIndices.add(dataMap);
     allDataMaps.put(table.getTableId(), tableIndices);
@@ -689,8 +689,8 @@ public final class DataMapStoreManager {
    * @return
    */
   private BlockletDetailsFetcher getBlockletDetailsFetcher(CarbonTable table) {
-    TableDataMap blockletMap = getDataMap(table, BlockletDataMapFactory.DATA_MAP_SCHEMA);
-    return (BlockletDetailsFetcher) blockletMap.getDataMapFactory();
+    TableDataMap blockletMap = getDataMap(table, BlockletIndexFactory.DATA_MAP_SCHEMA);
+    return (BlockletDetailsFetcher) blockletMap.getIndexFactory();
   }
 
   /**
@@ -809,7 +809,7 @@ public final class DataMapStoreManager {
 
   private boolean hasCGDataMap(CarbonTable carbonTable) throws IOException {
     for (TableDataMap tableDataMap : getAllVisibleDataMap(carbonTable)) {
-      if (tableDataMap.getDataMapFactory().getDataMapLevel().equals(DataMapLevel.CG)) {
+      if (tableDataMap.getIndexFactory().getDataMapLevel().equals(DataMapLevel.CG)) {
         return true;
       }
     }

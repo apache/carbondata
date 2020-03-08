@@ -34,7 +34,7 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.CacheableDataMap;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper;
@@ -87,9 +87,9 @@ public class DistributableBlockletDataMapLoader
   }
 
   @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
-    DataMapFactory dataMapFactory =
-        DataMapStoreManager.getInstance().getDefaultDataMap(table).getDataMapFactory();
-    CacheableDataMap factory = (CacheableDataMap) dataMapFactory;
+    IndexFactory indexFactory =
+        DataMapStoreManager.getInstance().getDefaultDataMap(table).getIndexFactory();
+    CacheableDataMap factory = (CacheableDataMap) indexFactory;
     List<DataMapDistributable> validDistributables =
         factory.getAllUncachedDistributables(validSegments, dataMapExprWrapper);
     if (!validSegments.isEmpty()) {

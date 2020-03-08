@@ -89,7 +89,7 @@ public abstract class DataMapWriter {
 
   /**
    * Add columnar page data to the datamap, order of field is same as `indexColumns` in
-   * DataMapMeta returned in DataMapFactory.
+   * DataMapMeta returned in IndexFactory.
    * Implementation should copy the content of it as needed, because its memory
    * may be freed after this method returns, in case of unsafe memory
    */

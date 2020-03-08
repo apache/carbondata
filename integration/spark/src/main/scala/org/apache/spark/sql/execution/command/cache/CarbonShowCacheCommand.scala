@@ -32,7 +32,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory
+import org.apache.carbondata.core.indexstore.blockletindex.{BlockletDataMapFactory, BlockletIndexFactory}
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
@@ -254,13 +254,13 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
         .getTableUniqueName, carbonTable.getTableId) match {
         case list =>
           val parentCache = list
-            .filter(_._4.equalsIgnoreCase(BlockletDataMapFactory.DATA_MAP_SCHEMA
+            .filter(_._4.equalsIgnoreCase(BlockletIndexFactory.DATA_MAP_SCHEMA
               .getProviderName)) match {
             case Nil => ("", 0, 0L, "")
             case head :: _ => head
           }
           val dataMapList = list
-            .filter(!_._4.equalsIgnoreCase(BlockletDataMapFactory.DATA_MAP_SCHEMA
+            .filter(!_._4.equalsIgnoreCase(BlockletIndexFactory.DATA_MAP_SCHEMA
               .getProviderName))
           (parentCache, dataMapList)
         case Nil => (("", 0, 0L, ""), Nil)
@@ -430,13 +430,13 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
         val sizeAndIndexLengths = tableDataMaps.asScala
           .collect { case dataMap if
           dataMap.getDataMapSchema.getDataMapName.equalsIgnoreCase(tableName) ||
-          dataMap.getDataMapFactory.getCarbonTable.getTableUniqueName.equalsIgnoreCase(tableName) =>
-            if (dataMap.getDataMapFactory.isInstanceOf[BlockletDataMapFactory]) {
-              s"$tableName:${ dataMap.getDataMapFactory.getCacheSize }:${
+          dataMap.getIndexFactory.getCarbonTable.getTableUniqueName.equalsIgnoreCase(tableName) =>
+            if (dataMap.getIndexFactory.isInstanceOf[BlockletIndexFactory]) {
+              s"$tableName:${ dataMap.getIndexFactory.getCacheSize }:${
                 dataMap.getDataMapSchema.getProviderName}"
             } else {
               s"${ dataMap.getDataMapSchema.getDataMapName }:${
-                dataMap.getDataMapFactory.getCacheSize
+                dataMap.getIndexFactory.getCacheSize
               }:${ dataMap.getDataMapSchema.getProviderName }"
             }
           }

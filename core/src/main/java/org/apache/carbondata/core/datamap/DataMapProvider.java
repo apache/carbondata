@@ -31,7 +31,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandExcept
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.datamap.status.DataMapSegmentStatusUtil;
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager;
 import org.apache.carbondata.core.locks.ICarbonLock;
@@ -409,7 +409,7 @@ public abstract class DataMapProvider {
     return null;
   }
 
-  public abstract DataMapFactory getDataMapFactory();
+  public abstract IndexFactory getIndexFactory();
 
   public abstract boolean supportRebuild();
 

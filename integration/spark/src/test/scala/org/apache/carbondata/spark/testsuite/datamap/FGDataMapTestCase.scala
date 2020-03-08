@@ -20,14 +20,16 @@ import java.io.{ByteArrayInputStream, DataOutputStream, ObjectInputStream, Objec
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
+
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapModel, DataMapWriter}
-import org.apache.carbondata.core.datamap.dev.fgdatamap.{FineGrainBlocklet, FineGrainDataMap, FineGrainDataMapFactory}
+import org.apache.carbondata.core.datamap.dev.fgdatamap.{FineGrainBlocklet, FineGrainDataMap, FineGrainDataMapFactory, FineGrainIndexFactory}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor
@@ -48,8 +50,8 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
-class FGDataMapFactory(carbonTable: CarbonTable,
-    dataMapSchema: DataMapSchema) extends FineGrainDataMapFactory(carbonTable, dataMapSchema) {
+class FGIndexFactory(carbonTable: CarbonTable,
+    dataMapSchema: DataMapSchema) extends FineGrainIndexFactory(carbonTable, dataMapSchema) {
 
   /**
    * Return a new write for this datamap
@@ -371,7 +373,7 @@ class FGDataMapWriter(carbonTable: CarbonTable,
 
   /**
    * Add the column pages row to the datamap, order of pages is same as `indexColumns` in
-   * DataMapMeta returned in DataMapFactory.
+   * DataMapMeta returned in IndexFactory.
    *
    * Implementation should copy the content of `pages` as needed, because `pages` memory
    * may be freed after this method returns, if using unsafe column page.
@@ -467,7 +469,7 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP ggdatamap ON TABLE datamap_test
-         | USING '${classOf[FGDataMapFactory].getName}'
+         | USING '${classOf[FGIndexFactory].getName}'
          | DMPROPERTIES('index_columns'='name')
        """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
@@ -488,13 +490,13 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE DATAMAP ggdatamap1 ON TABLE datamap_test
-         | USING '${classOf[FGDataMapFactory].getName}'
+         | USING '${classOf[FGIndexFactory].getName}'
          | DMPROPERTIES('index_columns'='name')
        """.stripMargin)
     sql(
       s"""
          | CREATE DATAMAP ggdatamap2 ON TABLE datamap_test
-         | USING '${classOf[FGDataMapFactory].getName}'
+         | USING '${classOf[FGIndexFactory].getName}'
          | DMPROPERTIES('index_columns'='city')
        """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
@@ -520,14 +522,14 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP $dataMapName1
          | ON TABLE $tableName
-         | USING '${classOf[FGDataMapFactory].getName}'
+         | USING '${classOf[FGIndexFactory].getName}'
          | DMPROPERTIES('index_columns'='name')
       """.stripMargin)
     sql(
       s"""
          | CREATE DATAMAP $dataMapName2
          | ON TABLE $tableName
-         | USING '${classOf[FGDataMapFactory].getName}'
+         | USING '${classOf[FGIndexFactory].getName}'
          | DMPROPERTIES('index_columns'='city')
        """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE $tableName OPTIONS('header'='false')")

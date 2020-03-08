@@ -51,7 +51,7 @@ class SparkBlockletDataMapLoaderJob extends AbstractDataMapJob {
       .asInstanceOf[DistributableBlockletDataMapLoader]
     val dataMapIndexWrappers = new DataMapLoaderRDD(SparkSQLUtil.getSparkSession, loader).collect()
     val cacheableDataMap = DataMapStoreManager.getInstance.getDefaultDataMap(carbonTable)
-      .getDataMapFactory.asInstanceOf[CacheableDataMap]
+      .getIndexFactory.asInstanceOf[CacheableDataMap]
     val tableBlockIndexUniqueIdentifiers = dataMapIndexWrappers.map {
       case (tableBlockIndexUniqueIdentifier, _) => tableBlockIndexUniqueIdentifier
     }

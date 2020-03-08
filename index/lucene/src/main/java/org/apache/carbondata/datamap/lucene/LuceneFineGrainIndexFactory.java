@@ -39,9 +39,9 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
  * FG level of lucene DataMap
  */
 @InterfaceAudience.Internal
-public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<FineGrainDataMap> {
+public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrainDataMap> {
 
-  public LuceneFineGrainDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
+  public LuceneFineGrainIndexFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
     super(carbonTable, dataMapSchema);
   }

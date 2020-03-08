@@ -29,7 +29,7 @@ import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -76,7 +76,7 @@ public class DataMapWriterListener {
       // register it only if it is not lazy datamap, for lazy datamap, user
       // will rebuild the datamap manually
       if (!tableDataMap.getDataMapSchema().isLazy()) {
-        DataMapFactory factory = tableDataMap.getDataMapFactory();
+        IndexFactory factory = tableDataMap.getIndexFactory();
         register(factory, segmentId, taskNo, segmentProperties);
       }
     }
@@ -85,7 +85,7 @@ public class DataMapWriterListener {
   /**
    * Register a DataMapWriter
    */
-  private void register(DataMapFactory factory, String segmentId,
+  private void register(IndexFactory factory, String segmentId,
       String taskNo, SegmentProperties segmentProperties) {
     assert (factory != null);
     assert (segmentId != null);

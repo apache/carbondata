@@ -35,7 +35,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.BlockletSerializer;
 import org.apache.carbondata.core.datamap.dev.DataMap;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainBlocklet;
@@ -64,7 +64,7 @@ import org.apache.log4j.Logger;
  * Index at the table level, user can add any number of DataMap for one table, by
  * {@code
  *   CREATE DATAMAP dm ON TABLE table
- *   USING 'class name of DataMapFactory implementation'
+ *   USING 'class name of IndexFactory implementation'
  * }
  * Depends on the filter condition it can prune the data (blocklet or row level).
  */
@@ -77,7 +77,7 @@ public final class TableDataMap extends OperationEventListener {
 
   private DataMapSchema dataMapSchema;
 
-  private DataMapFactory dataMapFactory;
+  private IndexFactory indexFactory;
 
   private BlockletDetailsFetcher blockletDetailsFetcher;
 
@@ -90,12 +90,12 @@ public final class TableDataMap extends OperationEventListener {
    * It is called to initialize and load the required table datamap metadata.
    */
   TableDataMap(CarbonTable table, DataMapSchema dataMapSchema,
-      DataMapFactory dataMapFactory, BlockletDetailsFetcher blockletDetailsFetcher,
+      IndexFactory indexFactory, BlockletDetailsFetcher blockletDetailsFetcher,
       SegmentPropertiesFetcher segmentPropertiesFetcher) {
     this.identifier = table.getAbsoluteTableIdentifier();
     this.table = table;
     this.dataMapSchema = dataMapSchema;
-    this.dataMapFactory = dataMapFactory;
+    this.indexFactory = indexFactory;
     this.blockletDetailsFetcher = blockletDetailsFetcher;
     this.segmentPropertiesFetcher = segmentPropertiesFetcher;
   }
@@ -121,9 +121,9 @@ public final class TableDataMap extends OperationEventListener {
     List<Segment> segments = getCarbonSegments(allsegments);
     final Map<Segment, List<DataMap>> dataMaps;
     if (table.isHivePartitionTable() && filter != null && !filter.isEmpty() && partitions != null) {
-      dataMaps = dataMapFactory.getDataMaps(segments, partitions);
+      dataMaps = indexFactory.getDataMaps(segments, partitions);
     } else {
-      dataMaps = dataMapFactory.getDataMaps(segments);
+      dataMaps = indexFactory.getDataMaps(segments);
     }
 
     if (dataMaps.isEmpty()) {
@@ -407,14 +407,14 @@ public final class TableDataMap extends OperationEventListener {
     List<DataMapDistributable> distributables = new ArrayList<>();
     List<Segment> segments = getCarbonSegments(allsegments);
     for (Segment segment : segments) {
-      distributables.addAll(dataMapFactory.toDistributable(segment));
+      distributables.addAll(indexFactory.toDistributable(segment));
     }
     return distributables;
   }
 
   public DataMapDistributableWrapper toDistributableSegment(Segment segment, String uniqueId)
       throws IOException {
-    return dataMapFactory.toDistributableSegment(segment, dataMapSchema, identifier, uniqueId);
+    return indexFactory.toDistributableSegment(segment, dataMapSchema, identifier, uniqueId);
   }
 
   /**
@@ -425,7 +425,7 @@ public final class TableDataMap extends OperationEventListener {
    * @throws IOException
    */
   public List<DataMap> getTableDataMaps(DataMapDistributable distributable) throws IOException {
-    return dataMapFactory.getDataMaps(distributable);
+    return indexFactory.getDataMaps(distributable);
   }
 
   /**
@@ -453,13 +453,13 @@ public final class TableDataMap extends OperationEventListener {
     String writePath =
         identifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + dataMapSchema
             .getDataMapName();
-    if (dataMapFactory.getDataMapLevel() == DataMapLevel.FG) {
+    if (indexFactory.getDataMapLevel() == DataMapLevel.FG) {
       FileFactory.mkdirs(writePath);
     }
     for (Blocklet blocklet : blocklets) {
       ExtendedBlocklet detailedBlocklet = blockletDetailsFetcher
           .getExtendedBlocklet(blocklet, distributable.getSegment());
-      if (dataMapFactory.getDataMapLevel() == DataMapLevel.FG) {
+      if (indexFactory.getDataMapLevel() == DataMapLevel.FG) {
         String blockletwritePath =
             writePath + CarbonCommonConstants.FILE_SEPARATOR + System.nanoTime();
         detailedBlocklet.setDataMapWriterPath(blockletwritePath);
@@ -477,7 +477,7 @@ public final class TableDataMap extends OperationEventListener {
    */
   public void clear(List<String> segmentIds) {
     for (String segment: segmentIds) {
-      dataMapFactory.clear(segment);
+      indexFactory.clear(segment);
     }
   }
 
@@ -485,8 +485,8 @@ public final class TableDataMap extends OperationEventListener {
    * Clears all datamap
    */
   public void clear() {
-    if (null != dataMapFactory) {
-      dataMapFactory.clear();
+    if (null != indexFactory) {
+      indexFactory.clear();
     }
   }
 
@@ -496,7 +496,7 @@ public final class TableDataMap extends OperationEventListener {
   public void deleteDatamapData(List<Segment> allsegments) throws IOException {
     List<Segment> segments = getCarbonSegments(allsegments);
     for (Segment segment: segments) {
-      dataMapFactory.deleteDatamapData(segment);
+      indexFactory.deleteDatamapData(segment);
     }
   }
 
@@ -504,27 +504,27 @@ public final class TableDataMap extends OperationEventListener {
    * delete datamap data if any
    */
   public void deleteDatamapData() {
-    dataMapFactory.deleteDatamapData();
+    indexFactory.deleteDatamapData();
   }
 
   /**
    * delete datamap data for a segment if any
    */
   public void deleteSegmentDatamapData(String segmentNo) throws IOException {
-    dataMapFactory.deleteSegmentDatamapData(segmentNo);
+    indexFactory.deleteSegmentDatamapData(segmentNo);
   }
 
   public DataMapSchema getDataMapSchema() {
     return dataMapSchema;
   }
 
-  public DataMapFactory getDataMapFactory() {
-    return dataMapFactory;
+  public IndexFactory getIndexFactory() {
+    return indexFactory;
   }
 
   @Override
   public void onEvent(Event event, OperationContext opContext) {
-    dataMapFactory.fireEvent(event);
+    indexFactory.fireEvent(event);
   }
 
   /**
@@ -541,7 +541,7 @@ public final class TableDataMap extends OperationEventListener {
     List<Segment> segments = getCarbonSegments(allsegments);
     Map<String, Long> blockletToRowCountMap = new HashMap<>();
     for (Segment segment : segments) {
-      List<CoarseGrainDataMap> dataMaps = defaultDataMap.getDataMapFactory().getDataMaps(segment);
+      List<CoarseGrainDataMap> dataMaps = defaultDataMap.getIndexFactory().getDataMaps(segment);
       for (CoarseGrainDataMap dataMap : dataMaps) {
         dataMap.getRowCountForEachBlock(segment, partitions, blockletToRowCountMap);
       }
@@ -562,7 +562,7 @@ public final class TableDataMap extends OperationEventListener {
     List<Segment> segments = getCarbonSegments(allsegments);
     long totalRowCount = 0L;
     for (Segment segment : segments) {
-      List<CoarseGrainDataMap> dataMaps = defaultDataMap.getDataMapFactory().getDataMaps(segment);
+      List<CoarseGrainDataMap> dataMaps = defaultDataMap.getIndexFactory().getDataMaps(segment);
       for (CoarseGrainDataMap dataMap : dataMaps) {
         totalRowCount += dataMap.getRowCount(segment, partitions);
       }
@@ -578,7 +578,7 @@ public final class TableDataMap extends OperationEventListener {
       throws IOException {
     List<Segment> prunedSegments = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (Segment segment : segments) {
-      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segment);
+      List<DataMap> dataMaps = indexFactory.getDataMaps(segment);
       for (DataMap dataMap : dataMaps) {
         if (dataMap.isScanRequired(filterExp)) {
           // If any one task in a given segment contains the data that means the segment need to

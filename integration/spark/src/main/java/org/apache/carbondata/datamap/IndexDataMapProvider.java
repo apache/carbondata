@@ -29,7 +29,7 @@ import org.apache.carbondata.core.datamap.DataMapProvider;
 import org.apache.carbondata.core.datamap.DataMapRegistry;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.dev.DataMap;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
@@ -44,15 +44,15 @@ import org.apache.spark.sql.SparkSession;
 public class IndexDataMapProvider extends DataMapProvider {
 
   private SparkSession sparkSession;
-  private DataMapFactory<? extends DataMap> dataMapFactory;
+  private IndexFactory<? extends DataMap> indexFactory;
   private List<CarbonColumn> indexedColumns;
 
   IndexDataMapProvider(CarbonTable table, DataMapSchema schema, SparkSession sparkSession)
       throws MalformedDataMapCommandException {
     super(table, schema);
     this.sparkSession = sparkSession;
-    this.dataMapFactory = createDataMapFactory();
-    dataMapFactory.validate();
+    this.indexFactory = createDataMapFactory();
+    indexFactory.validate();
     this.indexedColumns = table.getIndexedColumns(schema);
   }
 
@@ -76,7 +76,7 @@ public class IndexDataMapProvider extends DataMapProvider {
     relationIdentifiers.add(relationIdentifier);
     dataMapSchema.setRelationIdentifier(relationIdentifier);
     dataMapSchema.setParentTables(relationIdentifiers);
-    DataMapStoreManager.getInstance().registerDataMap(mainTable, dataMapSchema, dataMapFactory);
+    DataMapStoreManager.getInstance().registerDataMap(mainTable, dataMapSchema, indexFactory);
     DataMapStoreManager.getInstance().saveDataMapSchema(dataMapSchema);
   }
 
@@ -104,35 +104,35 @@ public class IndexDataMapProvider extends DataMapProvider {
     return true;
   }
 
-  private DataMapFactory<? extends DataMap> createDataMapFactory()
+  private IndexFactory<? extends DataMap> createDataMapFactory()
       throws MalformedDataMapCommandException {
     CarbonTable mainTable = getMainTable();
     DataMapSchema dataMapSchema = getDataMapSchema();
-    DataMapFactory<? extends DataMap> dataMapFactory;
+    IndexFactory<? extends DataMap> indexFactory;
     try {
       // try to create DataMapClassProvider instance by taking providerName as class name
-      dataMapFactory = (DataMapFactory<? extends DataMap>)
+      indexFactory = (IndexFactory<? extends DataMap>)
           Class.forName(dataMapSchema.getProviderName()).getConstructors()[0]
               .newInstance(mainTable, dataMapSchema);
     } catch (ClassNotFoundException e) {
       // try to create DataMapClassProvider instance by taking providerName as short name
-      dataMapFactory =
+      indexFactory =
           DataMapRegistry.getDataMapFactoryByShortName(mainTable, dataMapSchema);
     } catch (Throwable e) {
       throw new MetadataProcessException(
           "failed to create DataMapClassProvider '" + dataMapSchema.getProviderName() + "'", e);
     }
-    return dataMapFactory;
+    return indexFactory;
   }
 
   @Override
-  public DataMapFactory getDataMapFactory() {
-    return dataMapFactory;
+  public IndexFactory getIndexFactory() {
+    return indexFactory;
   }
 
   @Override
   public boolean supportRebuild() {
-    return dataMapFactory.supportRebuild();
+    return indexFactory.supportRebuild();
   }
 
   @Override

@@ -560,7 +560,7 @@ public class SegmentFileStore {
     LOGGER.info(
         "clearing cache while updating segment file entry in table status file for segmentId: "
             + segmentId);
-    defaultDataMap.getDataMapFactory().clear(segmentId);
+    defaultDataMap.getIndexFactory().clear(segmentId);
   }
 
   private static CarbonFile[] getSegmentFiles(String segmentPath) {

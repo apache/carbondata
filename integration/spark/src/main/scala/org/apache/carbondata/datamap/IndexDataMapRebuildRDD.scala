@@ -40,7 +40,7 @@ import org.apache.carbondata.core.datamap.dev.DataMapBuilder
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
@@ -276,7 +276,7 @@ class IndexDataMapRebuildRDD[K, V](
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val carbonTable = CarbonTable.buildFromTableInfo(getTableInfo)
     val dataMapFactory = DataMapManager.get().getDataMapProvider(
-      carbonTable, dataMapSchema, session).getDataMapFactory
+      carbonTable, dataMapSchema, session).getIndexFactory
     var status = false
     val inputMetrics = new CarbonInputMetrics
     TaskMetricsMap.getInstance().registerThreadCallback()
@@ -300,7 +300,7 @@ class IndexDataMapRebuildRDD[K, V](
       var refresher: DataMapBuilder = null
       try {
         val segmentPropertiesFetcher = DataMapStoreManager.getInstance().getDataMap(carbonTable,
-          BlockletDataMapFactory.DATA_MAP_SCHEMA).getDataMapFactory
+          BlockletIndexFactory.DATA_MAP_SCHEMA).getIndexFactory
           .asInstanceOf[SegmentPropertiesFetcher]
         val segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment.get)
 

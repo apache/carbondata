@@ -97,8 +97,8 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
 
   LuceneFineGrainDataMap(Analyzer analyzer, DataMapSchema schema) {
     this.analyzer = analyzer;
-    writeCacheSize = LuceneDataMapFactoryBase.validateAndGetWriteCacheSize(schema);
-    storeBlockletWise = LuceneDataMapFactoryBase.validateAndGetStoreBlockletWise(schema);
+    writeCacheSize = LuceneIndexFactoryBase.validateAndGetWriteCacheSize(schema);
+    storeBlockletWise = LuceneIndexFactoryBase.validateAndGetStoreBlockletWise(schema);
   }
 
   /**

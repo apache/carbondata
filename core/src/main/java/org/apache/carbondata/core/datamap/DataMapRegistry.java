@@ -27,7 +27,7 @@ import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.datamap.dev.DataMap;
-import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
@@ -41,7 +41,7 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
  *  USING 'short-name-of-the-datamap'
  * }
  * otherwise, user should use the class name of the datamap implementation to create the datamap
- * (subclass of {@link DataMapFactory})
+ * (subclass of {@link IndexFactory})
  * <p>
  * {@code
  *  CREATE DATAMAP dm ON TABLE table
@@ -64,7 +64,7 @@ public class DataMapRegistry {
     return shortNameToClassName.get(shortName);
   }
 
-  public static DataMapFactory<? extends DataMap> getDataMapFactoryByShortName(
+  public static IndexFactory<? extends DataMap> getDataMapFactoryByShortName(
       CarbonTable table, DataMapSchema dataMapSchema) throws MalformedDataMapCommandException {
     String providerName = dataMapSchema.getProviderName();
     try {
@@ -74,11 +74,11 @@ public class DataMapRegistry {
     } catch (UnsupportedOperationException ex) {
       throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found", ex);
     }
-    DataMapFactory<? extends DataMap> dataMapFactory;
+    IndexFactory<? extends DataMap> indexFactory;
     String className = getDataMapClassName(providerName.toLowerCase());
     if (className != null) {
       try {
-        dataMapFactory = (DataMapFactory<? extends DataMap>)
+        indexFactory = (IndexFactory<? extends DataMap>)
             Class.forName(className).getConstructors()[0].newInstance(table, dataMapSchema);
       } catch (ClassNotFoundException ex) {
         throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found", ex);
@@ -91,6 +91,6 @@ public class DataMapRegistry {
     } else {
       throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found");
     }
-    return dataMapFactory;
+    return indexFactory;
   }
 }
