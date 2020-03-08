@@ -58,8 +58,8 @@ public class TestBlockletDataMap {
       }
     };
 
-    BlockDataMap blockletDataMap = new BlockletDataMap();
-    Method method = BlockDataMap.class
+    BlockIndex blockletDataMap = new BlockletIndex();
+    Method method = BlockIndex.class
         .getDeclaredMethod("addBlockBasedOnMinMaxValue", FilterExecuter.class, byte[][].class,
             byte[][].class, boolean[].class, String.class, int.class);
     method.setAccessible(true);

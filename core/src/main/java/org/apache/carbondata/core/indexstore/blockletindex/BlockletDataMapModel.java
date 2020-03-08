@@ -28,7 +28,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.hadoop.conf.Configuration;
 
 /**
- * It is the model object to keep the information to build or initialize BlockletDataMap.
+ * It is the model object to keep the information to build or initialize BlockletIndex.
  */
 public class BlockletDataMapModel extends DataMapModel {
 

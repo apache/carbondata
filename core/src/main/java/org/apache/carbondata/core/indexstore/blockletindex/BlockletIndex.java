@@ -46,7 +46,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 /**
  * Datamap implementation for blocklet.
  */
-public class BlockletDataMap extends BlockDataMap implements Serializable {
+public class BlockletIndex extends BlockIndex implements Serializable {
 
   private static final long serialVersionUID = -2170289352240810993L;
   // total block number in this datamap

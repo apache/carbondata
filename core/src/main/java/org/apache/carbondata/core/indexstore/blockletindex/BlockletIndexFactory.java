@@ -100,10 +100,10 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
     boolean cacheLevelBlock = BlockletDataMapUtil.isCacheLevelBlock(carbonTable);
     if (cacheLevelBlock) {
       // case1: when CACHE_LEVEL = BLOCK
-      return new BlockDataMap();
+      return new BlockIndex();
     } else {
       // case2: when CACHE_LEVEL = BLOCKLET
-      return new BlockletDataMap();
+      return new BlockletIndex();
     }
   }
 
@@ -283,12 +283,12 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
       throws IOException {
     for (TableBlockIndexUniqueIdentifierWrapper identifierWrapper : identifiersWrapper) {
       BlockletDataMapIndexWrapper wrapper = cache.get(identifierWrapper);
-      List<BlockDataMap> dataMaps = wrapper.getDataMaps();
+      List<BlockIndex> dataMaps = wrapper.getDataMaps();
       for (DataMap dataMap : dataMaps) {
-        if (((BlockDataMap) dataMap)
+        if (((BlockIndex) dataMap)
             .getTableTaskInfo(BlockletDataMapRowIndexes.SUMMARY_INDEX_FILE_NAME)
             .startsWith(blocklet.getFilePath())) {
-          return ((BlockDataMap) dataMap).getDetailedBlocklet(blocklet.getBlockletId());
+          return ((BlockIndex) dataMap).getDetailedBlocklet(blocklet.getBlockletId());
         }
       }
     }
@@ -326,7 +326,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
             new TableBlockIndexUniqueIdentifierWrapper(blockIndex, this.getCarbonTable());
         BlockletDataMapIndexWrapper wrapper = cache.getIfPresent(blockIndexWrapper);
         if (null != wrapper) {
-          List<BlockDataMap> dataMaps = wrapper.getDataMaps();
+          List<BlockIndex> dataMaps = wrapper.getDataMaps();
           for (DataMap dataMap : dataMaps) {
             if (dataMap != null) {
               cache.invalidate(blockIndexWrapper);
@@ -478,15 +478,15 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
     List<CoarseGrainDataMap> dataMaps = getDataMaps(segment, partitions);
     assert (dataMaps.size() > 0);
     CoarseGrainDataMap coarseGrainDataMap = dataMaps.get(0);
-    assert (coarseGrainDataMap instanceof BlockDataMap);
-    BlockDataMap dataMap = (BlockDataMap) coarseGrainDataMap;
+    assert (coarseGrainDataMap instanceof BlockIndex);
+    BlockIndex dataMap = (BlockIndex) coarseGrainDataMap;
     return dataMap.getSegmentProperties();
   }
 
   @Override
   public SegmentProperties getSegmentPropertiesFromDataMap(DataMap coarseGrainDataMap) {
-    assert (coarseGrainDataMap instanceof BlockDataMap);
-    BlockDataMap dataMap = (BlockDataMap) coarseGrainDataMap;
+    assert (coarseGrainDataMap instanceof BlockIndex);
+    BlockIndex dataMap = (BlockIndex) coarseGrainDataMap;
     return dataMap.getSegmentProperties();
   }
 

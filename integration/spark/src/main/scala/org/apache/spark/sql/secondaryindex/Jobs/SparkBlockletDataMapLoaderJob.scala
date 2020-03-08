@@ -19,7 +19,7 @@ package org.apache.spark.sql.secondaryindex.Jobs
 
 import java.{lang, util}
 import java.text.SimpleDateFormat
-import java.util.concurrent.{Callable, Executors, ExecutorService, TimeUnit}
+import java.util.concurrent.{Callable, ExecutorService, Executors, TimeUnit}
 import java.util.Date
 
 import scala.collection.JavaConverters._
@@ -37,7 +37,7 @@ import org.apache.carbondata.core.datamap.{AbstractDataMapJob, DataMapStoreManag
 import org.apache.carbondata.core.datamap.dev.CacheableDataMap
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.indexstore.{BlockletDataMapIndexWrapper, TableBlockIndexUniqueIdentifier, TableBlockIndexUniqueIdentifierWrapper}
-import org.apache.carbondata.core.indexstore.blockletindex.BlockDataMap
+import org.apache.carbondata.core.indexstore.blockletindex.{BlockDataMap, BlockIndex}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.spark.rdd.CarbonRDD
@@ -107,7 +107,7 @@ class DataMapCacher(
   override def call(): Unit = {
     // if schema is modified then populate the segmentProperties cache
     if (carbonTable.getTableInfo.isSchemaModified) {
-      val dataMaps: util.List[BlockDataMap] = dataMapIndexWrapper._2.getBlockletDataMapIndexWrapper
+      val dataMaps: util.List[BlockIndex] = dataMapIndexWrapper._2.getBlockletDataMapIndexWrapper
         .getDataMaps
       val wrapper = SegmentPropertiesAndSchemaHolder.getInstance()
         .addSegmentProperties(carbonTable,

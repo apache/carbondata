@@ -99,7 +99,7 @@ public class TestBlockletIndexFactory {
   @Test public void addDataMapToCache()
       throws IOException, MemoryException, NoSuchMethodException, InvocationTargetException,
       IllegalAccessException {
-    List<BlockDataMap> dataMaps = new ArrayList<>();
+    List<BlockIndex> dataMaps = new ArrayList<>();
     Method method = BlockletIndexFactory.class
         .getDeclaredMethod("cache", TableBlockIndexUniqueIdentifierWrapper.class,
             BlockletDataMapIndexWrapper.class);

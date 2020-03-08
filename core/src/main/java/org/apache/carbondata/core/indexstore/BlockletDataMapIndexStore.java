@@ -32,7 +32,7 @@ import org.apache.carbondata.core.cache.CarbonLRUCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockDataMap;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockIndex;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapModel;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
@@ -86,7 +86,7 @@ public class BlockletDataMapIndexStore
     String lruCacheKey = identifier.getUniqueTableSegmentIdentifier();
     BlockletDataMapIndexWrapper blockletDataMapIndexWrapper =
         (BlockletDataMapIndexWrapper) lruCache.get(lruCacheKey);
-    List<BlockDataMap> dataMaps = new ArrayList<>();
+    List<BlockIndex> dataMaps = new ArrayList<>();
     if (blockletDataMapIndexWrapper == null) {
       try {
         SegmentIndexFileStore indexFileStore =
@@ -110,7 +110,7 @@ public class BlockletDataMapIndexStore
           Map<String, BlockMetaInfo> blockMetaInfoMap = BlockletDataMapUtil
               .getBlockMetaInfoMap(identifierWrapper, indexFileStore, filesRead,
                   carbonDataFileBlockMetaInfoMapping, indexInfos);
-          BlockDataMap blockletDataMap =
+          BlockIndex blockletDataMap =
               loadAndGetDataMap(identifier, indexFileStore, blockMetaInfoMap,
                   identifierWrapper.getCarbonTable(),
                   identifierWrapper.isAddToUnsafe(),
@@ -132,7 +132,7 @@ public class BlockletDataMapIndexStore
                     identifierWrapper.getCarbonTable()), indexFileStore, filesRead,
                 carbonDataFileBlockMetaInfoMapping, indexInfos);
             if (!blockMetaInfoMap.isEmpty()) {
-              BlockDataMap blockletDataMap =
+              BlockIndex blockletDataMap =
                   loadAndGetDataMap(blockIndexUniqueIdentifier, indexFileStore, blockMetaInfoMap,
                       identifierWrapper.getCarbonTable(),
                       identifierWrapper.isAddToUnsafe(),
@@ -192,7 +192,7 @@ public class BlockletDataMapIndexStore
       }
     } catch (Throwable e) {
       if (null != blockletDataMapIndexWrapper) {
-        List<BlockDataMap> dataMaps = blockletDataMapIndexWrapper.getDataMaps();
+        List<BlockIndex> dataMaps = blockletDataMapIndexWrapper.getDataMaps();
         for (DataMap dataMap : dataMaps) {
           dataMap.clear();
         }
@@ -229,7 +229,7 @@ public class BlockletDataMapIndexStore
         getIfPresent(tableSegmentUniqueIdentifierWrapper);
     if (null != blockletDataMapIndexWrapper) {
       // clear the segmentProperties cache
-      List<BlockDataMap> dataMaps = blockletDataMapIndexWrapper.getDataMaps();
+      List<BlockIndex> dataMaps = blockletDataMapIndexWrapper.getDataMaps();
       if (null != dataMaps && !dataMaps.isEmpty()) {
         String segmentId =
             tableSegmentUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier().getSegmentId();
@@ -252,9 +252,9 @@ public class BlockletDataMapIndexStore
     // in the cache need to be overwritten then use the invalidate interface
     // and then use the put interface
     if (null == getIfPresent(tableBlockIndexUniqueIdentifierWrapper)) {
-      List<BlockDataMap> dataMaps = wrapper.getDataMaps();
+      List<BlockIndex> dataMaps = wrapper.getDataMaps();
       try {
-        for (BlockDataMap blockletDataMap : dataMaps) {
+        for (BlockIndex blockletDataMap : dataMaps) {
           blockletDataMap.convertToUnsafeDMStore();
         }
         // Locking is not required here because in LRU cache map add method is synchronized to add
@@ -280,7 +280,7 @@ public class BlockletDataMapIndexStore
    * @return map of taks id to segment mapping
    * @throws IOException
    */
-  private BlockDataMap loadAndGetDataMap(TableBlockIndexUniqueIdentifier identifier,
+  private BlockIndex loadAndGetDataMap(TableBlockIndexUniqueIdentifier identifier,
       SegmentIndexFileStore indexFileStore, Map<String, BlockMetaInfo> blockMetaInfoMap,
       CarbonTable carbonTable, boolean addTableBlockToUnsafe, Configuration configuration,
       boolean serializeDmStore, List<DataFileFooter> indexInfos) throws IOException {
@@ -290,9 +290,9 @@ public class BlockletDataMapIndexStore
     if (lock == null) {
       lock = addAndGetSegmentLock(uniqueTableSegmentIdentifier);
     }
-    BlockDataMap dataMap;
+    BlockIndex dataMap;
     synchronized (lock) {
-      dataMap = (BlockDataMap) BlockletIndexFactory.createDataMap(carbonTable);
+      dataMap = (BlockIndex) BlockletIndexFactory.createDataMap(carbonTable);
       final BlockletDataMapModel blockletDataMapModel = new BlockletDataMapModel(carbonTable,
           identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
               .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()),
@@ -331,7 +331,7 @@ public class BlockletDataMapIndexStore
       List<TableBlockIndexUniqueIdentifierWrapper> tableSegmentUniqueIdentifiersWrapper) {
     for (TableBlockIndexUniqueIdentifierWrapper
              identifierWrapper : tableSegmentUniqueIdentifiersWrapper) {
-      BlockDataMap cacheable = (BlockDataMap) lruCache.get(
+      BlockIndex cacheable = (BlockIndex) lruCache.get(
           identifierWrapper.getTableBlockIndexUniqueIdentifier().getUniqueTableSegmentIdentifier());
       cacheable.clear();
     }

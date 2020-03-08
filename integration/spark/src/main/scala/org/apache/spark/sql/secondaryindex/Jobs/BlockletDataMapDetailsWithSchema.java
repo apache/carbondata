@@ -22,7 +22,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexWrapper;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockDataMap;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockIndex;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
@@ -42,7 +42,7 @@ public class BlockletDataMapDetailsWithSchema implements Serializable {
   public BlockletDataMapDetailsWithSchema(
       BlockletDataMapIndexWrapper blockletDataMapIndexWrapper, boolean isSchemaModified) {
     this.blockletDataMapIndexWrapper = blockletDataMapIndexWrapper;
-    List<BlockDataMap> dataMaps = blockletDataMapIndexWrapper.getDataMaps();
+    List<BlockIndex> dataMaps = blockletDataMapIndexWrapper.getDataMaps();
     if (!dataMaps.isEmpty()) {
       // In one task all dataMaps will have the same cardinality and schema therefore
       // segmentPropertyIndex can be fetched from one dataMap

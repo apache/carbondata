@@ -74,11 +74,11 @@ import org.apache.log4j.Logger;
 /**
  * Datamap implementation for block.
  */
-public class BlockDataMap extends CoarseGrainDataMap
+public class BlockIndex extends CoarseGrainDataMap
     implements BlockletDataMapRowIndexes, Serializable {
 
   private static final Logger LOGGER =
-      LogServiceFactory.getLogService(BlockDataMap.class.getName());
+      LogServiceFactory.getLogService(BlockIndex.class.getName());
 
   protected static final long serialVersionUID = -2170289352240810993L;
   /**
@@ -681,7 +681,7 @@ public class BlockDataMap extends CoarseGrainDataMap
       // Remove B-tree jump logic as start and end key prepared is not
       // correct for old store scenarios
       int entryIndex = 0;
-      // flag to be used for deciding whether use min/max in executor pruning for BlockletDataMap
+      // flag to be used for deciding whether use min/max in executor pruning for BlockletIndex
       boolean useMinMaxForPruning = useMinMaxForExecutorPruning(filterExp);
       if (!validateSegmentProperties(segmentProperties)) {
         filterExecuter = FilterUtil
