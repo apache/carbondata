@@ -79,10 +79,10 @@
         </module>
         <!-- TODO: 11/09/15 disabled - the lengths are currently > 100 in many places -->
 
-        <module name="LineLength">
-            <property name="max" value="100"/>
-            <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
-        </module>
+<!--        <module name="LineLength">-->
+<!--            <property name="max" value="100"/>-->
+<!--            <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>-->
+<!--        </module>-->
 
         <module name="NoLineWrap"/>
         <module name="EmptyBlock">
@@ -142,11 +142,11 @@
 
         <!-- TODO: 11/09/15 disabled - order is currently wrong in many places -->
 
-        <module name="ImportOrder">
-            <property name="separated" value="true"/>
-            <!--<property name="ordered" value="true"/>-->
-            <property name="groups" value="/^javax?\./,org.apache.carbondata,*"/>
-        </module>
+<!--        <module name="ImportOrder">-->
+<!--            <property name="separated" value="true"/>-->
+<!--            &lt;!&ndash;<property name="ordered" value="true"/>&ndash;&gt;-->
+<!--            <property name="groups" value="/^javax?\./,org.apache.carbondata,*"/>-->
+<!--        </module>-->
 
         <module name="MethodParamPad"/>
         <module name="AnnotationLocation">
@@ -165,7 +165,7 @@
             <property name="exceptionVariableName" value="expected"/>
         </module>
         <module name="CommentsIndentation"/>
-        <module name="UnusedImports"/>
+<!--        <module name="UnusedImports"/>-->
 
         <module name="ParenPad"/>
         <module name="WhitespaceAround"/>

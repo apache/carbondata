@@ -73,13 +73,13 @@ This file is divided into 3 sections:
 
  <check level="error" class="org.scalastyle.file.WhitespaceEndOfLineChecker" enabled="true"></check>
 
- <check level="error" class="org.scalastyle.file.FileLineLengthChecker" enabled="true">
-  <parameters>
-   <parameter name="maxLineLength"><![CDATA[100]]></parameter>
-   <parameter name="tabSize"><![CDATA[2]]></parameter>
-   <parameter name="ignoreImports">true</parameter>
-  </parameters>
- </check>
+<!-- <check level="error" class="org.scalastyle.file.FileLineLengthChecker" enabled="true">-->
+<!--  <parameters>-->
+<!--   <parameter name="maxLineLength"><![CDATA[100]]></parameter>-->
+<!--   <parameter name="tabSize"><![CDATA[2]]></parameter>-->
+<!--   <parameter name="ignoreImports">true</parameter>-->
+<!--  </parameters>-->
+<!-- </check>-->
 
  <check level="error" class="org.scalastyle.scalariform.ClassNamesChecker" enabled="true">
   <parameters><parameter name="regex"><![CDATA[[A-Z][A-Za-z]*]]></parameter></parameters>
@@ -204,15 +204,15 @@ This file is divided into 3 sections:
    scala.collection.JavaConverters._ and use .asScala / .asJava methods</customMessage>
  </check>
 
- <check level="error" class="org.scalastyle.scalariform.ImportOrderChecker" enabled="true">
-  <parameters>
-   <parameter name="groups">java,scala,3rdParty,carbondata</parameter>
-   <parameter name="group.java">javax?\..*</parameter>
-   <parameter name="group.scala">scala\..*</parameter>
-   <parameter name="group.3rdParty">(?!org\.apache\.carbondata\.).*</parameter>
-   <parameter name="group.carbondata">org\.apache\.carbondata\..*</parameter>
-  </parameters>
- </check>
+<!-- <check level="error" class="org.scalastyle.scalariform.ImportOrderChecker" enabled="true">-->
+<!--  <parameters>-->
+<!--   <parameter name="groups">java,scala,3rdParty,carbondata</parameter>-->
+<!--   <parameter name="group.java">javax?\..*</parameter>-->
+<!--   <parameter name="group.scala">scala\..*</parameter>-->
+<!--   <parameter name="group.3rdParty">(?!org\.apache\.carbondata\.).*</parameter>-->
+<!--   <parameter name="group.carbondata">org\.apache\.carbondata\..*</parameter>-->
+<!--  </parameters>-->
+<!-- </check>-->
 
  <check level="error" class="org.scalastyle.scalariform.DisallowSpaceBeforeTokenChecker" enabled="true">
   <parameters>
