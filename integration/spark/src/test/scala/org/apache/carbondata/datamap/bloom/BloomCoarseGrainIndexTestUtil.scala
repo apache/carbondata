@@ -8,7 +8,7 @@ import scala.util.Random
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.DataFrame
 
-object BloomCoarseGrainDataMapTestUtil extends QueryTest {
+object BloomCoarseGrainIndexTestUtil extends QueryTest {
 
   def createFile(fileName: String, line: Int = 10000, start: Int = 0): Unit = {
     if (!new File(fileName).exists()) {

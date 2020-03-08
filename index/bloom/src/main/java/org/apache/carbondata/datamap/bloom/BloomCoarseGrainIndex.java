@@ -68,9 +68,9 @@ import org.apache.log4j.Logger;
  * More information of the index file can be found in the corresponding datamap writer.
  */
 @InterfaceAudience.Internal
-public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
+public class BloomCoarseGrainIndex extends CoarseGrainDataMap {
   private static final Logger LOGGER =
-      LogServiceFactory.getLogService(BloomCoarseGrainDataMap.class.getName());
+      LogServiceFactory.getLogService(BloomCoarseGrainIndex.class.getName());
   private Map<String, CarbonColumn> name2Col;
   private Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache;
   private String shardName;
@@ -171,14 +171,14 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         }
         if (scanRequired) {
           if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("BloomCoarseGrainDataMap: Need to scan -> blocklet#%s",
+            LOGGER.debug(String.format("BloomCoarseGrainIndex: Need to scan -> blocklet#%s",
                 String.valueOf(bloomFilter.getBlockletNo())));
           }
           Blocklet blocklet = new Blocklet(bloomFilter.getShardName(),
               String.valueOf(bloomFilter.getBlockletNo()));
           tempHitBlockletsResult.add(blocklet);
         } else if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug(String.format("BloomCoarseGrainDataMap: Skip scan -> blocklet#%s",
+          LOGGER.debug(String.format("BloomCoarseGrainIndex: Skip scan -> blocklet#%s",
               String.valueOf(bloomFilter.getBlockletNo())));
         }
         // get intersect result between query models

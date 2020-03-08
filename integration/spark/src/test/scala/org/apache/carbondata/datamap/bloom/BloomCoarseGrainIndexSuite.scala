@@ -31,7 +31,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 
-class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
+class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
   val carbonSession = sqlContext.sparkSession
   val bigFile = s"$resourcesPath/bloom_datamap_input_big.csv"
   val smallFile = s"$resourcesPath/bloom_datamap_input_small.csv"

@@ -13,9 +13,9 @@ import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonV3Data
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.datamap.bloom.BloomCoarseGrainDataMapTestUtil.{checkBasicQuery, createFile, deleteFile}
+import org.apache.carbondata.datamap.bloom.BloomCoarseGrainIndexTestUtil.{checkBasicQuery, createFile, deleteFile}
 
-class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
+class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
   val bigFile = s"$resourcesPath/bloom_datamap_function_test_big.csv"
   val normalTable = "carbon_normal"
   val bloomDMSampleTable = "carbon_bloom"

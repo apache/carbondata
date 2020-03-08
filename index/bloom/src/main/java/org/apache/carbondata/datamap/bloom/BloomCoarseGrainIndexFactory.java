@@ -270,7 +270,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainDataMa
             filteredShards.contains(new File(shard).getName())) {
           // Filter out the tasks which are filtered through Main datamap.
           // for merge shard, shard pruning delay to be done before pruning blocklet
-          BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
+          BloomCoarseGrainIndex bloomDM = new BloomCoarseGrainIndex();
           bloomDM.init(new BloomDataMapModel(shard, cache, segment.getConfiguration()));
           bloomDM.initIndexColumnConverters(getCarbonTable(), dataMapMeta.getIndexedColumns());
           bloomDM.setFilteredShard(filteredShards);
@@ -294,7 +294,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainDataMa
     List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
     String indexPath = ((BloomDataMapDistributable) distributable).getIndexPath();
     Set<String> filteredShards = ((BloomDataMapDistributable) distributable).getFilteredShards();
-    BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
+    BloomCoarseGrainIndex bloomDM = new BloomCoarseGrainIndex();
     bloomDM.init(new BloomDataMapModel(indexPath, cache, FileFactory.getConfiguration()));
     bloomDM.initIndexColumnConverters(getCarbonTable(), dataMapMeta.getIndexedColumns());
     bloomDM.setFilteredShard(filteredShards);
