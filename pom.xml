@@ -138,7 +138,7 @@
     <hdfs.url>local</hdfs.url>
     <presto.jdbc.url>localhost:8086</presto.jdbc.url>
     <!--    prestosql by default-->
-    <presto.version>316</presto.version>
+    <presto.version>330</presto.version>
     <presto.groupid>io.prestosql</presto.groupid>
     <presto.hadoop.groupid>io.prestosql.hadoop</presto.hadoop.groupid>
     <presto.hadoop.artifactid>hadoop-apache</presto.hadoop.artifactid>
@@ -718,7 +718,7 @@
         <activeByDefault>true</activeByDefault>
       </activation>
       <properties>
-        <presto.version>316</presto.version>
+        <presto.version>330</presto.version>
         <scala.version>2.11.8</scala.version>
         <airlift.version>0.36</airlift.version>
         <presto.groupid>io.prestosql</presto.groupid>

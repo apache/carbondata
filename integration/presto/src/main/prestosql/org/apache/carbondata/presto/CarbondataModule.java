@@ -73,6 +73,7 @@ import io.prestosql.spi.connector.ConnectorNodePartitioningProvider;
 import io.prestosql.spi.connector.ConnectorPageSinkProvider;
 import io.prestosql.spi.connector.ConnectorPageSourceProvider;
 import io.prestosql.spi.connector.ConnectorSplitManager;
+import io.prestosql.spi.connector.SystemTable;
 
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static io.airlift.configuration.ConfigBinder.configBinder;
@@ -90,6 +91,10 @@ public class CarbondataModule extends HiveModule {
 
   public CarbondataModule(String connectorId) {
     this.connectorId = requireNonNull(connectorId, "connector id is null");
+  }
+
+  public CarbondataModule() {
+    connectorId = "carbondata";
   }
 
   @Override
@@ -112,12 +117,11 @@ public class CarbondataModule extends HiveModule {
     newExporter(binder).export(NamenodeStats.class)
         .as(generatedNameOf(NamenodeStats.class, connectorId));
 
-    Multibinder<HiveRecordCursorProvider> recordCursorProviderBinder =
-        newSetBinder(binder, HiveRecordCursorProvider.class);
-    recordCursorProviderBinder.addBinding().to(GenericHiveRecordCursorProvider.class)
-        .in(Scopes.SINGLETON);
-
+    Multibinder.newSetBinder(binder, HiveRecordCursorProvider.class);
+    binder.bind(GenericHiveRecordCursorProvider.class).in(Scopes.SINGLETON);
+    Multibinder.newSetBinder(binder, SystemTable.class);
     binder.bind(HiveWriterStats.class).in(Scopes.SINGLETON);
+
     newExporter(binder).export(HiveWriterStats.class)
         .as(generatedNameOf(HiveWriterStats.class, connectorId));
 

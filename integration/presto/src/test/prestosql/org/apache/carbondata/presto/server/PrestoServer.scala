@@ -30,7 +30,7 @@ import io.prestosql.jdbc.PrestoStatement
 import io.prestosql.metadata.SessionPropertyManager
 import io.prestosql.spi.`type`.TimeZoneKey.UTC_KEY
 import io.prestosql.spi.security.Identity
-import io.prestosql.tests.DistributedQueryRunner
+import io.prestosql.testing.DistributedQueryRunner
 import org.slf4j.{Logger, LoggerFactory}
 
 import org.apache.carbondata.presto.CarbondataPlugin
@@ -46,7 +46,10 @@ class PrestoServer {
   val prestoProperties: util.Map[String, String] = Map(("http-server.http.port", "8086")).asJava
   val carbonProperties: util.Map[String, String] = new util.HashMap[String, String]()
   createSession
-  lazy val queryRunner = new DistributedQueryRunner(createSession, 4, prestoProperties)
+  val builder = DistributedQueryRunner.builder(createSession)
+  builder.setExtraProperties(prestoProperties)
+  builder.setNodeCount(4)
+  val queryRunner = builder.build()
   var dbName : String = null
   var statement : PrestoStatement = _
 
@@ -86,8 +89,7 @@ class PrestoServer {
     Try {
       queryRunner.installPlugin(new CarbondataPlugin)
       val carbonProperties = ImmutableMap.builder[String, String]
-        .putAll(this.carbonProperties)
-        .put("carbon.unsafe.working.memory.in.mb", "512").build
+        .putAll(this.carbonProperties).build
 
       // CreateCatalog will create a catalog for CarbonData in etc/catalog.
       queryRunner.createCatalog(CARBONDATA_CATALOG, CARBONDATA_CONNECTOR, carbonProperties)
