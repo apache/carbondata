@@ -36,7 +36,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.BlockletSerializer;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.IndexFactory;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndex;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainBlocklet;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -541,8 +541,8 @@ public final class TableDataMap extends OperationEventListener {
     List<Segment> segments = getCarbonSegments(allsegments);
     Map<String, Long> blockletToRowCountMap = new HashMap<>();
     for (Segment segment : segments) {
-      List<CoarseGrainDataMap> dataMaps = defaultDataMap.getIndexFactory().getDataMaps(segment);
-      for (CoarseGrainDataMap dataMap : dataMaps) {
+      List<CoarseGrainIndex> dataMaps = defaultDataMap.getIndexFactory().getDataMaps(segment);
+      for (CoarseGrainIndex dataMap : dataMaps) {
         dataMap.getRowCountForEachBlock(segment, partitions, blockletToRowCountMap);
       }
     }
@@ -562,8 +562,8 @@ public final class TableDataMap extends OperationEventListener {
     List<Segment> segments = getCarbonSegments(allsegments);
     long totalRowCount = 0L;
     for (Segment segment : segments) {
-      List<CoarseGrainDataMap> dataMaps = defaultDataMap.getIndexFactory().getDataMaps(segment);
-      for (CoarseGrainDataMap dataMap : dataMaps) {
+      List<CoarseGrainIndex> dataMaps = defaultDataMap.getIndexFactory().getDataMaps(segment);
+      for (CoarseGrainIndex dataMap : dataMaps) {
         totalRowCount += dataMap.getRowCount(segment, partitions);
       }
     }

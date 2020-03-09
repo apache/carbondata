@@ -33,7 +33,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -74,7 +74,7 @@ import org.apache.log4j.Logger;
 /**
  * Datamap implementation for block.
  */
-public class BlockIndex extends CoarseGrainDataMap
+public class BlockIndex extends CoarseGrainIndex
     implements BlockletDataMapRowIndexes, Serializable {
 
   private static final Logger LOGGER =

@@ -29,19 +29,19 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainIndex, CoarseGrainIndexFactory}
 import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapModel, DataMapWriter}
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainIndexFactory}
+import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
-import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
+import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, DiskBasedDMSchemaStorageProvider}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter
@@ -66,14 +66,14 @@ class CGIndexFactory(
   /**
    * Get the datamap for segmentId
    */
-  override def getDataMaps(segment: Segment): java.util.List[CoarseGrainDataMap] = {
+  override def getDataMaps(segment: Segment): java.util.List[CoarseGrainIndex] = {
     val path = identifier.getTablePath
     val file = FileFactory.getCarbonFile(
       path+ "/" +dataMapSchema.getDataMapName + "/" + segment.getSegmentNo)
 
     val files = file.listFiles()
     files.map {f =>
-      val dataMap: CoarseGrainDataMap = new CGDataMap()
+      val dataMap: CoarseGrainIndex = new CGIndex()
       dataMap.init(new DataMapModel(f.getCanonicalPath, new Configuration(false)))
       dataMap
     }.toList.asJava
@@ -83,9 +83,9 @@ class CGIndexFactory(
   /**
    * Get datamaps for distributable object.
    */
-  override def getDataMaps(distributable: DataMapDistributable): java.util.List[CoarseGrainDataMap] = {
+  override def getDataMaps(distributable: DataMapDistributable): java.util.List[CoarseGrainIndex] = {
     val mapDistributable = distributable.asInstanceOf[BlockletDataMapDistributable]
-    val dataMap: CoarseGrainDataMap = new CGDataMap()
+    val dataMap: CoarseGrainIndex = new CGIndex()
     dataMap.init(new DataMapModel(mapDistributable.getFilePath, new
         Configuration(false)))
     Seq(dataMap).asJava
@@ -160,12 +160,12 @@ class CGIndexFactory(
    * Get the datamap for segmentId and partitionSpecs
    */
   override def getDataMaps(segment: Segment,
-      partitions: java.util.List[PartitionSpec]): java.util.List[CoarseGrainDataMap] = {
+      partitions: java.util.List[PartitionSpec]): java.util.List[CoarseGrainIndex] = {
     getDataMaps(segment);
   }
 }
 
-class CGDataMap extends CoarseGrainDataMap {
+class CGIndex extends CoarseGrainIndex {
 
   var maxMin: ArrayBuffer[(Int, (Array[Byte], Array[Byte]))] = _
   var FileReader: FileReader = _

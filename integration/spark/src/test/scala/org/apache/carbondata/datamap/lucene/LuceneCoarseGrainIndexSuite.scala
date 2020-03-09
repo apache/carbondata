@@ -24,7 +24,7 @@ import org.scalatest.{BeforeAndAfterAll, Ignore}
  * Ignored test class as CG datamap is not supported yet
  */
 @Ignore
-class LuceneCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
+class LuceneCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
   val file2 = resourcesPath + "/datamap_input.csv"
 

@@ -21,14 +21,14 @@ import java.util
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainIndex, CoarseGrainIndexFactory}
 import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapWriter}
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainIndexFactory}
+import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
@@ -50,9 +50,9 @@ class C2IndexFactory(
 
   override def clear(): Unit = {}
 
-  override def getDataMaps(distributable: DataMapDistributable): util.List[CoarseGrainDataMap] = ???
+  override def getDataMaps(distributable: DataMapDistributable): util.List[CoarseGrainIndex] = ???
 
-  override def getDataMaps(segment: Segment): util.List[CoarseGrainDataMap] = ???
+  override def getDataMaps(segment: Segment): util.List[CoarseGrainIndex] = ???
 
   override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): DataMapWriter =
     DataMapWriterSuite.dataMapWriterC2Mock(identifier, "testdm", segment, shardName)
@@ -98,7 +98,7 @@ class C2IndexFactory(
    * Get the datamap for segmentId and partitionSpecs
    */
   override def getDataMaps(segment: Segment,
-      partitions: util.List[PartitionSpec]): util.List[CoarseGrainDataMap] = {
+      partitions: util.List[PartitionSpec]): util.List[CoarseGrainIndex] = {
     ???
   }
 }

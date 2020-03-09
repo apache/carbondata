@@ -36,7 +36,7 @@ import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
  */
 @InterfaceAudience.Developer("DataMap")
 @InterfaceStability.Evolving
-public abstract class CoarseGrainDataMap implements DataMap<Blocklet> {
+public abstract class CoarseGrainIndex implements DataMap<Blocklet> {
 
   @Override
   public List<Blocklet> prune(Expression expression, SegmentProperties segmentProperties,

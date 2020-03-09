@@ -29,7 +29,7 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndex;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.features.TableOperation;
@@ -89,11 +89,11 @@ public abstract class IndexFactory<T extends DataMap> {
   /**
    * Get the datamap for all segments
    */
-  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments)
+  public Map<Segment, List<CoarseGrainIndex>> getDataMaps(List<Segment> segments)
       throws IOException {
-    Map<Segment, List<CoarseGrainDataMap>> dataMaps = new HashMap<>();
+    Map<Segment, List<CoarseGrainIndex>> dataMaps = new HashMap<>();
     for (Segment segment : segments) {
-      dataMaps.put(segment, (List<CoarseGrainDataMap>) this.getDataMaps(segment));
+      dataMaps.put(segment, (List<CoarseGrainIndex>) this.getDataMaps(segment));
     }
     return dataMaps;
   }
@@ -102,11 +102,11 @@ public abstract class IndexFactory<T extends DataMap> {
    * Get the datamap for all segments with matched partitions. Load datamaps to cache, only if it
    * matches the partition.
    */
-  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments,
+  public Map<Segment, List<CoarseGrainIndex>> getDataMaps(List<Segment> segments,
       List<PartitionSpec> partitionSpecs) throws IOException {
-    Map<Segment, List<CoarseGrainDataMap>> dataMaps = new HashMap<>();
+    Map<Segment, List<CoarseGrainIndex>> dataMaps = new HashMap<>();
     for (Segment segment : segments) {
-      dataMaps.put(segment, (List<CoarseGrainDataMap>) this.getDataMaps(segment, partitionSpecs));
+      dataMaps.put(segment, (List<CoarseGrainIndex>) this.getDataMaps(segment, partitionSpecs));
     }
     return dataMaps;
   }

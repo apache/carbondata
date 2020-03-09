@@ -30,7 +30,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
@@ -68,7 +68,7 @@ import org.apache.log4j.Logger;
  * More information of the index file can be found in the corresponding datamap writer.
  */
 @InterfaceAudience.Internal
-public class BloomCoarseGrainIndex extends CoarseGrainDataMap {
+public class BloomCoarseGrainIndex extends CoarseGrainIndex {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(BloomCoarseGrainIndex.class.getName());
   private Map<String, CarbonColumn> name2Col;

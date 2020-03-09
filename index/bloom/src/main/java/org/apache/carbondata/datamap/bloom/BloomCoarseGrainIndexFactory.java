@@ -41,7 +41,7 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
 import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -63,7 +63,7 @@ import org.apache.log4j.Logger;
  * This class is for Bloom Filter for blocklet level
  */
 @InterfaceAudience.Internal
-public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainDataMap> {
+public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex> {
   private static final Logger LOGGER = LogServiceFactory.getLogService(
       BloomCoarseGrainIndexFactory.class.getName());
   /**
@@ -255,8 +255,8 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainDataMa
   }
 
   @Override
-  public List<CoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
-    List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
+  public List<CoarseGrainIndex> getDataMaps(Segment segment) throws IOException {
+    List<CoarseGrainIndex> dataMaps = new ArrayList<>();
     try {
       Set<String> shardPaths = segmentMap.get(segment.getSegmentNo());
       if (shardPaths == null) {
@@ -284,14 +284,14 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainDataMa
   }
 
   @Override
-  public List<CoarseGrainDataMap> getDataMaps(Segment segment, List<PartitionSpec> partitionSpecs)
+  public List<CoarseGrainIndex> getDataMaps(Segment segment, List<PartitionSpec> partitionSpecs)
       throws IOException {
     return getDataMaps(segment);
   }
 
   @Override
-  public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable) {
-    List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
+  public List<CoarseGrainIndex> getDataMaps(DataMapDistributable distributable) {
+    List<CoarseGrainIndex> dataMaps = new ArrayList<>();
     String indexPath = ((BloomDataMapDistributable) distributable).getIndexPath();
     Set<String> filteredShards = ((BloomDataMapDistributable) distributable).getFilteredShards();
     BloomCoarseGrainIndex bloomDM = new BloomCoarseGrainIndex();

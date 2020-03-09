@@ -25,7 +25,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
- *  Factory for {@link CoarseGrainDataMap}
+ *  Factory for {@link CoarseGrainIndex}
  *  1. Any filter query which hits the table with datamap will call prune method of CGdatamap.
  *  2. The prune method of CGDatamap return list Blocklet , these blocklets contain the
  *     information of block and blocklet.
@@ -33,7 +33,7 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
  */
 @InterfaceAudience.Developer("DataMap")
 @InterfaceStability.Evolving
-public abstract class CoarseGrainIndexFactory extends IndexFactory<CoarseGrainDataMap> {
+public abstract class CoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex> {
 
   public CoarseGrainIndexFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
     super(carbonTable, dataMapSchema);

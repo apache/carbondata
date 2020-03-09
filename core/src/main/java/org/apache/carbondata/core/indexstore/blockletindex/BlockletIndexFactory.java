@@ -37,7 +37,7 @@ import org.apache.carbondata.core.datamap.dev.CacheableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndex;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndexFactory;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
@@ -122,7 +122,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   /**
    * Get the datamap for all segments
    */
-  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments)
+  public Map<Segment, List<CoarseGrainIndex>> getDataMaps(List<Segment> segments)
       throws IOException {
     return getDataMaps(segments, null);
   }
@@ -130,11 +130,11 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   /**
    * Get the datamap for all segments
    */
-  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments,
+  public Map<Segment, List<CoarseGrainIndex>> getDataMaps(List<Segment> segments,
       List<PartitionSpec> partitionsToPrune) throws IOException {
     List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers =
         new ArrayList<>();
-    Map<Segment, List<CoarseGrainDataMap>> dataMaps = new HashMap<>();
+    Map<Segment, List<CoarseGrainIndex>> dataMaps = new HashMap<>();
     Map<String, Segment> segmentMap = new HashMap<>();
     for (Segment segment : segments) {
       segmentMap.put(segment.getSegmentNo(), segment);
@@ -148,9 +148,9 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
         cache.getAll(tableBlockIndexUniqueIdentifierWrappers);
     for (BlockletDataMapIndexWrapper wrapper : blockletDataMapIndexWrappers) {
       Segment segment = segmentMap.get(wrapper.getSegmentId());
-      List<CoarseGrainDataMap> datamapList = dataMaps.get(segment);
+      List<CoarseGrainIndex> datamapList = dataMaps.get(segment);
       if (null == datamapList) {
-        datamapList = new ArrayList<CoarseGrainDataMap>();
+        datamapList = new ArrayList<CoarseGrainIndex>();
       }
       datamapList.addAll(wrapper.getDataMaps());
       dataMaps.put(segment, datamapList);
@@ -187,14 +187,14 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   }
 
   @Override
-  public List<CoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
+  public List<CoarseGrainIndex> getDataMaps(Segment segment) throws IOException {
     return getDataMaps(segment, null);
   }
 
   @Override
-  public List<CoarseGrainDataMap> getDataMaps(Segment segment,
+  public List<CoarseGrainIndex> getDataMaps(Segment segment,
       List<PartitionSpec> partitionsToPrune) throws IOException {
-    List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
+    List<CoarseGrainIndex> dataMaps = new ArrayList<>();
     Set<TableBlockIndexUniqueIdentifier> identifiers =
         getTableBlockIndexUniqueIdentifiers(segment);
     List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers =
@@ -366,7 +366,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   }
 
   @Override
-  public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable)
+  public List<CoarseGrainIndex> getDataMaps(DataMapDistributable distributable)
       throws IOException {
     BlockletDataMapDistributable mapDistributable = (BlockletDataMapDistributable) distributable;
     List<TableBlockIndexUniqueIdentifierWrapper> identifiersWrapper;
@@ -377,7 +377,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
       identifiersWrapper =
           getTableBlockIndexUniqueIdentifier(mapDistributable.getFilePath(), segmentNo);
     }
-    List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
+    List<CoarseGrainIndex> dataMaps = new ArrayList<>();
     try {
       List<BlockletDataMapIndexWrapper> wrappers = cache.getAll(identifiersWrapper);
       for (BlockletDataMapIndexWrapper wrapper : wrappers) {
@@ -475,11 +475,11 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   @Override
   public SegmentProperties getSegmentProperties(Segment segment, List<PartitionSpec> partitions)
       throws IOException {
-    List<CoarseGrainDataMap> dataMaps = getDataMaps(segment, partitions);
+    List<CoarseGrainIndex> dataMaps = getDataMaps(segment, partitions);
     assert (dataMaps.size() > 0);
-    CoarseGrainDataMap coarseGrainDataMap = dataMaps.get(0);
-    assert (coarseGrainDataMap instanceof BlockIndex);
-    BlockIndex dataMap = (BlockIndex) coarseGrainDataMap;
+    CoarseGrainIndex coarseGrainIndex = dataMaps.get(0);
+    assert (coarseGrainIndex instanceof BlockIndex);
+    BlockIndex dataMap = (BlockIndex) coarseGrainIndex;
     return dataMap.getSegmentProperties();
   }
 
@@ -494,8 +494,8 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   public List<Blocklet> getAllBlocklets(Segment segment, List<PartitionSpec> partitions)
       throws IOException {
     List<Blocklet> blocklets = new ArrayList<>();
-    List<CoarseGrainDataMap> dataMaps = getDataMaps(segment, partitions);
-    for (CoarseGrainDataMap dataMap : dataMaps) {
+    List<CoarseGrainIndex> dataMaps = getDataMaps(segment, partitions);
+    for (CoarseGrainIndex dataMap : dataMaps) {
       blocklets.addAll(dataMap
           .prune((FilterResolverIntf) null, getSegmentProperties(segment, partitions), partitions,
               null));
