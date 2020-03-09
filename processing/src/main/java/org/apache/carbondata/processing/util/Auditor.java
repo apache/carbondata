@@ -25,6 +25,7 @@ import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.impl.AuditLevel;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -58,19 +59,13 @@ public class Auditor {
     }
   }
 
-  private static boolean enable = true;
-
-  public static void enable(boolean bool) {
-    enable = bool;
-  }
-
   /**
    * call this method to record audit log when operation is triggered
    * @param opName operation name
    * @param opId operation unique id
    */
   public static void logOperationStart(String opName, String opId) {
-    if (enable) {
+    if (CarbonProperties.isAuditEnabled()) {
       Objects.requireNonNull(opName);
       Objects.requireNonNull(opId);
       OpStartMessage message = new OpStartMessage(opName, opId);
@@ -91,7 +86,7 @@ public class Auditor {
    */
   public static void logOperationEnd(String opName, String opId, boolean success, String table,
       String opTime, Map<String, String> extraInfo) {
-    if (enable) {
+    if (CarbonProperties.isAuditEnabled()) {
       Objects.requireNonNull(opName);
       Objects.requireNonNull(opId);
       Objects.requireNonNull(opTime);

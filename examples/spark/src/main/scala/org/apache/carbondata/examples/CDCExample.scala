@@ -26,6 +26,7 @@ import scala.util.Random
 import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.util.Auditor
 
 /**
@@ -213,7 +214,7 @@ object CDCExample {
   }
 
   def main(args: Array[String]): Unit = {
-    Auditor.enable(false);
+    CarbonProperties.setAuditEnabled(false);
     val spark = createSession
     spark.sparkContext.setLogLevel("error")
 

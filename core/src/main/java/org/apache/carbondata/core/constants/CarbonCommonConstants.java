@@ -2243,6 +2243,13 @@ public final class CarbonCommonConstants {
       500;
 
   /**
+   * Set it to true to enable audit
+   */
+  public static final String CARBON_ENABLE_AUDIT = "carbon.audit.enabled";
+
+  public static final String CARBON_ENABLE_AUDIT_DEFAULT = "true";
+
+  /**
    * This property will be used to store datamap name
    */
   public static final String DATAMAP_NAME = "datamap_name";
