@@ -27,7 +27,7 @@ public class CarbondataPlugin implements Plugin {
 
   @Override
   public Iterable<ConnectorFactory> getConnectorFactories() {
-    return ImmutableList.of(new CarbondataConnectorFactory("carbondata", getClassLoader()));
+    return ImmutableList.of(new CarbondataConnectorFactory("carbondata", CarbondataModule.class));
   }
 
   private static ClassLoader getClassLoader() {

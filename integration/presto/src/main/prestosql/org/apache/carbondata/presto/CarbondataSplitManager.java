@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import static com.google.common.collect.Maps.transformValues;
 import static java.util.Objects.requireNonNull;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -46,6 +47,7 @@ import org.apache.carbondata.presto.impl.CarbonTableCacheModel;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
 
 import com.google.common.collect.ImmutableList;
+import com.sun.javafx.scene.control.behavior.OptionalBoolean;
 import io.prestosql.plugin.hive.CoercionPolicy;
 import io.prestosql.plugin.hive.DirectoryLister;
 import io.prestosql.plugin.hive.ForHive;
@@ -58,7 +60,9 @@ import io.prestosql.plugin.hive.HiveSplit;
 import io.prestosql.plugin.hive.HiveSplitManager;
 import io.prestosql.plugin.hive.HiveTableHandle;
 import io.prestosql.plugin.hive.HiveTransactionHandle;
+import io.prestosql.plugin.hive.HiveTypeName;
 import io.prestosql.plugin.hive.NamenodeStats;
+import io.prestosql.plugin.hive.authentication.HiveIdentity;
 import io.prestosql.plugin.hive.metastore.SemiTransactionalHiveMetastore;
 import io.prestosql.plugin.hive.metastore.Table;
 import io.prestosql.spi.HostAddress;
@@ -117,7 +121,7 @@ public class CarbondataSplitManager extends HiveSplitManager {
     SemiTransactionalHiveMetastore metastore =
         metastoreProvider.apply((HiveTransactionHandle) transactionHandle);
     Table table =
-        metastore.getTable(schemaTableName.getSchemaName(), schemaTableName.getTableName())
+        metastore.getTable(new HiveIdentity(session), schemaTableName.getSchemaName(), schemaTableName.getTableName())
             .orElseThrow(() -> new TableNotFoundException(schemaTableName));
     if (!table.getStorage().getStorageFormat().getInputFormat().contains("carbon")) {
       return super.getSplits(transactionHandle, session, tableHandle, splitSchedulingStrategy);
@@ -173,10 +177,9 @@ public class CarbondataSplitManager extends HiveSplitManager {
         properties.setProperty("queryId", queryId);
         properties.setProperty("index", String.valueOf(index));
         cSplits.add(new HiveSplit(schemaTableName.getSchemaName(), schemaTableName.getTableName(),
-            schemaTableName.getTableName(), cache.getCarbonTable().getTablePath(), 0, 0, 0,
-            properties, new ArrayList(), getHostAddresses(split.getLocations()),
-            OptionalInt.empty(), false, new HashMap<>(),
-            Optional.empty(), false));
+            schemaTableName.getTableName(), cache.getCarbonTable().getTablePath(), 0, 0, 0, 0,
+            properties, new ArrayList<>(), getHostAddresses(split.getLocations()),
+            OptionalInt.empty(), false, new HashMap<>(), Optional.empty(), false));
       }
 
       statisticRecorder.logStatisticsAsTableDriver();

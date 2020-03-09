@@ -36,6 +36,7 @@ import io.prestosql.plugin.hive.DirectoryLister;
 import io.prestosql.plugin.hive.DynamicConfigurationProvider;
 import io.prestosql.plugin.hive.FileFormatDataSourceStats;
 import io.prestosql.plugin.hive.GenericHiveRecordCursorProvider;
+import io.prestosql.plugin.hive.HdfsConfig;
 import io.prestosql.plugin.hive.HdfsConfiguration;
 import io.prestosql.plugin.hive.HdfsConfigurationInitializer;
 import io.prestosql.plugin.hive.HdfsEnvironment;
@@ -61,20 +62,23 @@ import io.prestosql.plugin.hive.HiveTypeTranslator;
 import io.prestosql.plugin.hive.HiveWriterStats;
 import io.prestosql.plugin.hive.LocationService;
 import io.prestosql.plugin.hive.NamenodeStats;
-import io.prestosql.plugin.hive.OrcFileWriterConfig;
-import io.prestosql.plugin.hive.OrcFileWriterFactory;
-import io.prestosql.plugin.hive.ParquetFileWriterConfig;
 import io.prestosql.plugin.hive.PartitionUpdate;
 import io.prestosql.plugin.hive.RcFileFileWriterFactory;
 import io.prestosql.plugin.hive.TransactionalMetadata;
 import io.prestosql.plugin.hive.TypeTranslator;
+import io.prestosql.plugin.hive.orc.OrcFileWriterFactory;
 import io.prestosql.plugin.hive.orc.OrcPageSourceFactory;
+import io.prestosql.plugin.hive.orc.OrcReaderConfig;
+import io.prestosql.plugin.hive.orc.OrcWriterConfig;
 import io.prestosql.plugin.hive.parquet.ParquetPageSourceFactory;
+import io.prestosql.plugin.hive.parquet.ParquetReaderConfig;
+import io.prestosql.plugin.hive.parquet.ParquetWriterConfig;
 import io.prestosql.plugin.hive.rcfile.RcFilePageSourceFactory;
 import io.prestosql.spi.connector.ConnectorNodePartitioningProvider;
 import io.prestosql.spi.connector.ConnectorPageSinkProvider;
 import io.prestosql.spi.connector.ConnectorPageSourceProvider;
 import io.prestosql.spi.connector.ConnectorSplitManager;
+import io.prestosql.spi.connector.SystemTable;
 
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static io.airlift.configuration.ConfigBinder.configBinder;
@@ -94,18 +98,26 @@ public class CarbondataModule extends HiveModule {
     this.connectorId = requireNonNull(connectorId, "connector id is null");
   }
 
+  public CarbondataModule() {
+    connectorId = "carbondata";
+  }
+
   @Override
   public void configure(Binder binder) {
     binder.bind(TypeTranslator.class).toInstance(new HiveTypeTranslator());
     binder.bind(CoercionPolicy.class).to(HiveCoercionPolicy.class).in(Scopes.SINGLETON);
-
+    binder.bind(HdfsConfig.class).in(Scopes.SINGLETON);
     binder.bind(HdfsConfigurationInitializer.class).in(Scopes.SINGLETON);
     newSetBinder(binder, DynamicConfigurationProvider.class);
+    binder.bind(HdfsConfiguration.class).to(HiveHdfsConfiguration.class).in(Scopes.SINGLETON);
     binder.bind(HdfsConfiguration.class).to(HiveHdfsConfiguration.class).in(Scopes.SINGLETON);
     binder.bind(HdfsEnvironment.class).in(Scopes.SINGLETON);
     binder.bind(DirectoryLister.class).to(CachingDirectoryLister.class).in(Scopes.SINGLETON);
     configBinder(binder).bindConfig(HiveConfig.class);
-
+    binder.bind(OrcReaderConfig.class).in(Scopes.SINGLETON);
+    binder.bind(OrcWriterConfig.class).in(Scopes.SINGLETON);
+    binder.bind(ParquetReaderConfig.class).in(Scopes.SINGLETON);
+    binder.bind(ParquetWriterConfig.class).in(Scopes.SINGLETON);
     binder.bind(HiveSessionProperties.class).in(Scopes.SINGLETON);
     binder.bind(HiveTableProperties.class).in(Scopes.SINGLETON);
     binder.bind(HiveAnalyzeProperties.class).in(Scopes.SINGLETON);
@@ -114,12 +126,11 @@ public class CarbondataModule extends HiveModule {
     newExporter(binder).export(NamenodeStats.class)
         .as(generatedNameOf(NamenodeStats.class, connectorId));
 
-    Multibinder<HiveRecordCursorProvider> recordCursorProviderBinder =
-        newSetBinder(binder, HiveRecordCursorProvider.class);
-    recordCursorProviderBinder.addBinding().to(GenericHiveRecordCursorProvider.class)
-        .in(Scopes.SINGLETON);
-
+    Multibinder.newSetBinder(binder, HiveRecordCursorProvider.class);
+    binder.bind(GenericHiveRecordCursorProvider.class).in(Scopes.SINGLETON);
+    Multibinder.newSetBinder(binder, SystemTable.class);
     binder.bind(HiveWriterStats.class).in(Scopes.SINGLETON);
+
     newExporter(binder).export(HiveWriterStats.class)
         .as(generatedNameOf(HiveWriterStats.class, connectorId));
 
@@ -158,12 +169,9 @@ public class CarbondataModule extends HiveModule {
     binder.bind(OrcFileWriterFactory.class).in(Scopes.SINGLETON);
     newExporter(binder).export(OrcFileWriterFactory.class)
         .as(generatedNameOf(OrcFileWriterFactory.class, connectorId));
-    configBinder(binder).bindConfig(OrcFileWriterConfig.class);
     fileWriterFactoryBinder.addBinding().to(OrcFileWriterFactory.class).in(Scopes.SINGLETON);
     fileWriterFactoryBinder.addBinding().to(RcFileFileWriterFactory.class).in(Scopes.SINGLETON);
     binder.bind(CarbonTableReader.class).in(Scopes.SINGLETON);
-
-    configBinder(binder).bindConfig(ParquetFileWriterConfig.class);
 
     // configure carbon properties
     CarbonProperties.getInstance()
