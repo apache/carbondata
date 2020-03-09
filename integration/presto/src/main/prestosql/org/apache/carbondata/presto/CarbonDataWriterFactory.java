@@ -34,7 +34,6 @@ import io.prestosql.plugin.hive.HiveWriterFactory;
 import io.prestosql.plugin.hive.HiveWriterStats;
 import io.prestosql.plugin.hive.LocationHandle;
 import io.prestosql.plugin.hive.LocationService;
-import io.prestosql.plugin.hive.OrcFileWriterFactory;
 import io.prestosql.plugin.hive.metastore.HivePageSinkMetadataProvider;
 import io.prestosql.plugin.hive.metastore.SortingColumn;
 import io.prestosql.spi.NodeManager;
@@ -60,13 +59,12 @@ public class CarbonDataWriterFactory extends HiveWriterFactory {
       DataSize sortBufferSize, int maxOpenSortFiles, boolean immutablePartitions,
       ConnectorSession session, NodeManager nodeManager, EventClient eventClient,
       HiveSessionProperties hiveSessionProperties, HiveWriterStats hiveWriterStats,
-      OrcFileWriterFactory orcFileWriterFactory, Map<String, String> additionalJobConf) {
+      Map<String, String> additionalJobConf) {
     super(fileWriterFactories, schemaName, tableName, isCreateTable, inputColumns,
         tableStorageFormat, partitionStorageFormat, additionalTableParameters, bucketCount,
         sortedBy, locationHandle, locationService, queryId, pageSinkMetadataProvider, typeManager,
         hdfsEnvironment, pageSorter, sortBufferSize, maxOpenSortFiles, immutablePartitions, session,
-        nodeManager, eventClient, hiveSessionProperties, hiveWriterStats, orcFileWriterFactory);
-
+        nodeManager, eventClient, hiveSessionProperties, hiveWriterStats);
     this.additionalJobConf = requireNonNull(additionalJobConf, "Additional jobConf is null");
   }
 

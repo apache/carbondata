@@ -23,8 +23,8 @@ import java.util.Properties;
 
 import com.google.inject.Inject;
 import io.prestosql.plugin.hive.FileFormatDataSourceStats;
+import io.prestosql.plugin.hive.FileWriter;
 import io.prestosql.plugin.hive.HdfsEnvironment;
-import io.prestosql.plugin.hive.HiveFileWriter;
 import io.prestosql.plugin.hive.HiveFileWriterFactory;
 import io.prestosql.plugin.hive.NodeVersion;
 import io.prestosql.plugin.hive.metastore.StorageFormat;
@@ -58,7 +58,7 @@ public class CarbonDataFileWriterFactory implements HiveFileWriterFactory {
   }
 
   @Override
-  public Optional<HiveFileWriter> createFileWriter(Path path, List<String> inputColumnNames,
+  public Optional<FileWriter> createFileWriter(Path path, List<String> inputColumnNames,
       StorageFormat storageFormat, Properties schema, JobConf configuration,
       ConnectorSession session) {
     try {

@@ -34,6 +34,8 @@
     <httpcore.version>4.4.9</httpcore.version>
     <dev.path>${basedir}/../../dev</dev.path>
     <jacoco.append>true</jacoco.append>
+    <jackson.core.version>2.10.0</jackson.core.version>
+    <airlift.bootstrap.version>0.193</airlift.bootstrap.version>
   </properties>
 
   <dependencies>
@@ -41,7 +43,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.10.0</version>
+      <version>${jackson.core.version}</version>
       <exclusions>
         <exclusion>
           <groupId>com.fasterxml.jackson.core</groupId>
@@ -53,7 +55,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>2.10.0</version>
+      <version>${jackson.core.version}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -249,7 +251,7 @@
     <dependency>
       <groupId>io.airlift</groupId>
       <artifactId>bootstrap</artifactId>
-      <version>0.144</version>
+      <version>${airlift.bootstrap.version}</version>
       <!--<scope>provided</scope>-->
       <exclusions>
         <exclusion>
@@ -294,8 +296,7 @@
     <dependency>
       <groupId>io.airlift</groupId>
       <artifactId>json</artifactId>
-      <version>0.144</version>
-      <!--<scope>provided</scope>-->
+      <version>${airlift.bootstrap.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -333,8 +334,8 @@
     <dependency>
       <groupId>io.airlift</groupId>
       <artifactId>units</artifactId>
-      <version>1.0</version>
-      <scope>provided</scope>
+      <version>1.6</version>
+      <scope>${presto.depndency.scope}</scope>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -367,6 +368,17 @@
           <artifactId>jackson-databind</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.google.inject.extensions</groupId>
+      <artifactId>guice-multibindings</artifactId>
+      <version>4.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <version>4.0.1</version>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>${presto.hadoop.groupid}</groupId>

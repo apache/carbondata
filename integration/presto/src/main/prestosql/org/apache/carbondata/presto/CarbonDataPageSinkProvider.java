@@ -33,14 +33,15 @@ import io.airlift.units.DataSize;
 import io.prestosql.plugin.hive.HdfsEnvironment;
 import io.prestosql.plugin.hive.HiveConfig;
 import io.prestosql.plugin.hive.HiveFileWriterFactory;
+import io.prestosql.plugin.hive.HiveMetastoreClosure;
 import io.prestosql.plugin.hive.HivePageSink;
 import io.prestosql.plugin.hive.HivePageSinkProvider;
 import io.prestosql.plugin.hive.HiveSessionProperties;
 import io.prestosql.plugin.hive.HiveWritableTableHandle;
 import io.prestosql.plugin.hive.HiveWriterStats;
 import io.prestosql.plugin.hive.LocationService;
-import io.prestosql.plugin.hive.OrcFileWriterFactory;
 import io.prestosql.plugin.hive.PartitionUpdate;
+import io.prestosql.plugin.hive.authentication.HiveIdentity;
 import io.prestosql.plugin.hive.metastore.HiveMetastore;
 import io.prestosql.plugin.hive.metastore.HivePageSinkMetadataProvider;
 import io.prestosql.plugin.hive.metastore.SortingColumn;
@@ -55,7 +56,7 @@ import io.prestosql.spi.type.TypeManager;
 
 import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
-import static io.prestosql.plugin.hive.metastore.CachingHiveMetastore.memoizeMetastore;
+import static io.prestosql.plugin.hive.metastore.cache.CachingHiveMetastore.memoizeMetastore;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
@@ -78,7 +79,6 @@ public class CarbonDataPageSinkProvider extends HivePageSinkProvider {
   private final EventClient eventClient;
   private final HiveSessionProperties hiveSessionProperties;
   private final HiveWriterStats hiveWriterStats;
-  private final OrcFileWriterFactory orcFileWriterFactory;
   private final long perTransactionMetastoreCacheMaximumSize;
 
   @Inject
@@ -87,10 +87,10 @@ public class CarbonDataPageSinkProvider extends HivePageSinkProvider {
       PageIndexerFactory pageIndexerFactory, TypeManager typeManager, HiveConfig config,
       LocationService locationService, JsonCodec<PartitionUpdate> partitionUpdateCodec,
       NodeManager nodeManager, EventClient eventClient, HiveSessionProperties hiveSessionProperties,
-      HiveWriterStats hiveWriterStats, OrcFileWriterFactory orcFileWriterFactory) {
+      HiveWriterStats hiveWriterStats) {
     super(fileWriterFactories, hdfsEnvironment, pageSorter, metastore, pageIndexerFactory,
         typeManager, config, locationService, partitionUpdateCodec, nodeManager, eventClient,
-        hiveSessionProperties, hiveWriterStats, orcFileWriterFactory);
+        hiveSessionProperties, hiveWriterStats);
     this.fileWriterFactories =
         ImmutableSet.copyOf(requireNonNull(fileWriterFactories, "fileWriterFactories is null"));
     this.hdfsEnvironment = requireNonNull(hdfsEnvironment, "hdfsEnvironment is null");
@@ -114,8 +114,6 @@ public class CarbonDataPageSinkProvider extends HivePageSinkProvider {
     this.hiveSessionProperties =
         requireNonNull(hiveSessionProperties, "hiveSessionProperties is null");
     this.hiveWriterStats = requireNonNull(hiveWriterStats, "stats is null");
-    this.orcFileWriterFactory =
-        requireNonNull(orcFileWriterFactory, "orcFileWriterFactory is null");
     this.perTransactionMetastoreCacheMaximumSize =
         config.getPerTransactionMetastoreCacheMaximumSize();
   }
@@ -150,8 +148,13 @@ public class CarbonDataPageSinkProvider extends HivePageSinkProvider {
         handle.getLocationHandle(),
         locationService,
         session.getQueryId(),
-        new HivePageSinkMetadataProvider(handle.getPageSinkMetadata(),
-            memoizeMetastore(metastore, perTransactionMetastoreCacheMaximumSize)),
+        new HivePageSinkMetadataProvider(
+            handle.getPageSinkMetadata(),
+            new HiveMetastoreClosure(
+                memoizeMetastore(
+                    metastore,
+                    perTransactionMetastoreCacheMaximumSize)),
+            new HiveIdentity(session)),
         typeManager,
         hdfsEnvironment,
         pageSorter,
@@ -163,7 +166,6 @@ public class CarbonDataPageSinkProvider extends HivePageSinkProvider {
         eventClient,
         hiveSessionProperties,
         hiveWriterStats,
-        orcFileWriterFactory,
         additionalConf
     );
 
@@ -172,7 +174,6 @@ public class CarbonDataPageSinkProvider extends HivePageSinkProvider {
         handle.getInputColumns(),
         handle.getBucketProperty(),
         pageIndexerFactory,
-        typeManager,
         hdfsEnvironment,
         maxOpenPartitions,
         writeVerificationExecutor,

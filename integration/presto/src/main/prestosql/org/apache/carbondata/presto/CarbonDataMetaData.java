@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.Properties;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
 import org.apache.carbondata.hive.MapredCarbonOutputCommitter;
@@ -32,7 +31,9 @@ import org.apache.carbondata.presto.impl.CarbonTableConfig;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
 import com.google.common.collect.ImmutableMap;
+import io.airlift.json.JsonCodec;
 import io.airlift.slice.Slice;
+import io.prestosql.plugin.base.CatalogName;
 import io.prestosql.plugin.hive.HdfsEnvironment;
 import io.prestosql.plugin.hive.HiveInsertTableHandle;
 import io.prestosql.plugin.hive.HiveMetadata;
@@ -40,6 +41,7 @@ import io.prestosql.plugin.hive.HivePartitionManager;
 import io.prestosql.plugin.hive.LocationService;
 import io.prestosql.plugin.hive.PartitionUpdate;
 import io.prestosql.plugin.hive.TypeTranslator;
+import io.prestosql.plugin.hive.authentication.HiveIdentity;
 import io.prestosql.plugin.hive.metastore.MetastoreUtil;
 import io.prestosql.plugin.hive.metastore.SemiTransactionalHiveMetastore;
 import io.prestosql.plugin.hive.metastore.Table;
@@ -59,7 +61,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobContextImpl;
 import org.apache.hadoop.mapred.JobID;
 
-import org.apache.hadoop.mapred.TaskAttemptContextImpl;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTimeZone;
 
@@ -73,18 +74,27 @@ public class CarbonDataMetaData extends HiveMetadata {
   private MapredCarbonOutputCommitter carbonOutputCommitter;
   private JobContextImpl jobContext;
 
-  public CarbonDataMetaData(SemiTransactionalHiveMetastore metastore,
-      HdfsEnvironment hdfsEnvironment, HivePartitionManager partitionManager, DateTimeZone timeZone,
-      boolean allowCorruptWritesForTesting, boolean writesToNonManagedTablesEnabled,
-      boolean createsOfNonManagedTablesEnabled, TypeManager typeManager,
+  public CarbonDataMetaData(
+      CatalogName catalogName,
+      SemiTransactionalHiveMetastore metastore,
+      HdfsEnvironment hdfsEnvironment,
+      HivePartitionManager partitionManager,
+      DateTimeZone timeZone,
+      boolean allowCorruptWritesForTesting,
+      boolean writesToNonManagedTablesEnabled,
+      boolean createsOfNonManagedTablesEnabled,
+      boolean translateHiveViews, TypeManager typeManager,
       LocationService locationService,
-      io.airlift.json.JsonCodec<PartitionUpdate> partitionUpdateCodec,
-      TypeTranslator typeTranslator, String prestoVersion,
-      HiveStatisticsProvider hiveStatisticsProvider, AccessControlMetadata accessControlMetadata) {
-    super(metastore, hdfsEnvironment, partitionManager, timeZone, allowCorruptWritesForTesting,
-        true, createsOfNonManagedTablesEnabled, typeManager,
-        locationService, partitionUpdateCodec, typeTranslator, prestoVersion,
-        hiveStatisticsProvider, accessControlMetadata);
+      JsonCodec<PartitionUpdate> partitionUpdateCodec,
+      TypeTranslator typeTranslator,
+      String prestoVersion,
+      HiveStatisticsProvider hiveStatisticsProvider,
+      AccessControlMetadata accessControlMetadata) {
+    super(catalogName, metastore, hdfsEnvironment, partitionManager, timeZone,
+        allowCorruptWritesForTesting, writesToNonManagedTablesEnabled,
+        createsOfNonManagedTablesEnabled, translateHiveViews, typeManager, locationService,
+        partitionUpdateCodec, typeTranslator, prestoVersion, hiveStatisticsProvider,
+        accessControlMetadata);
     this.hdfsEnvironment = hdfsEnvironment;
     this.metastore = metastore;
   }
@@ -94,8 +104,8 @@ public class CarbonDataMetaData extends HiveMetadata {
       ConnectorTableHandle tableHandle) {
     HiveInsertTableHandle hiveInsertTableHandle = super.beginInsert(session, tableHandle);
     SchemaTableName tableName = hiveInsertTableHandle.getSchemaTableName();
-    Optional<Table> table =
-        this.metastore.getTable(tableName.getSchemaName(), tableName.getTableName());
+    Optional<Table> table = this.metastore
+        .getTable(new HiveIdentity(session), tableName.getSchemaName(), tableName.getTableName());
     Path outputPath =
         new Path(hiveInsertTableHandle.getLocationHandle().getJsonSerializableTargetPath());
     JobConf jobConf = ConfigurationUtils.toJobConf(this.hdfsEnvironment

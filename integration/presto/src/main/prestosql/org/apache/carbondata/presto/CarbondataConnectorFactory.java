@@ -19,79 +19,26 @@ package org.apache.carbondata.presto;
 
 import java.lang.reflect.*;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 
-import static java.util.Objects.requireNonNull;
-
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
-import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
 import org.apache.carbondata.hive.CarbonHiveSerDe;
 import org.apache.carbondata.hive.MapredCarbonInputFormat;
 import org.apache.carbondata.hive.MapredCarbonOutputFormat;
-import org.apache.carbondata.presto.impl.CarbonTableConfig;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.TypeLiteral;
-import io.airlift.bootstrap.Bootstrap;
-import io.airlift.bootstrap.LifeCycleManager;
-import io.airlift.event.client.EventModule;
-import io.airlift.json.JsonModule;
+import com.google.inject.Module;
 import io.airlift.units.DataSize;
-import io.prestosql.plugin.base.jmx.MBeanServerModule;
-import io.prestosql.plugin.hive.ConnectorObjectNameGeneratorModule;
-import io.prestosql.plugin.hive.HiveAnalyzeProperties;
-import io.prestosql.plugin.hive.HiveCatalogName;
-import io.prestosql.plugin.hive.HiveConnector;
 import io.prestosql.plugin.hive.HiveConnectorFactory;
-import io.prestosql.plugin.hive.HiveMetadataFactory;
-import io.prestosql.plugin.hive.HiveProcedureModule;
-import io.prestosql.plugin.hive.HiveSchemaProperties;
-import io.prestosql.plugin.hive.HiveSessionProperties;
 import io.prestosql.plugin.hive.HiveStorageFormat;
-import io.prestosql.plugin.hive.HiveTableProperties;
-import io.prestosql.plugin.hive.HiveTransactionManager;
-import io.prestosql.plugin.hive.NodeVersion;
-import io.prestosql.plugin.hive.authentication.HiveAuthenticationModule;
-import io.prestosql.plugin.hive.gcs.HiveGcsModule;
-import io.prestosql.plugin.hive.metastore.HiveMetastoreModule;
-import io.prestosql.plugin.hive.s3.HiveS3Module;
-import io.prestosql.plugin.hive.security.HiveSecurityModule;
-import io.prestosql.plugin.hive.security.SystemTableAwareAccessControl;
-import io.prestosql.spi.NodeManager;
-import io.prestosql.spi.PageIndexerFactory;
-import io.prestosql.spi.PageSorter;
-import io.prestosql.spi.VersionEmbedder;
-import io.prestosql.spi.classloader.ThreadContextClassLoader;
 import io.prestosql.spi.connector.Connector;
-import io.prestosql.spi.connector.ConnectorAccessControl;
 import io.prestosql.spi.connector.ConnectorContext;
-import io.prestosql.spi.connector.ConnectorHandleResolver;
-import io.prestosql.spi.connector.ConnectorNodePartitioningProvider;
-import io.prestosql.spi.connector.ConnectorPageSinkProvider;
-import io.prestosql.spi.connector.ConnectorPageSourceProvider;
-import io.prestosql.spi.connector.ConnectorSplitManager;
-import io.prestosql.spi.connector.classloader.ClassLoaderSafeConnectorPageSinkProvider;
-import io.prestosql.spi.connector.classloader.ClassLoaderSafeConnectorPageSourceProvider;
-import io.prestosql.spi.connector.classloader.ClassLoaderSafeConnectorSplitManager;
-import io.prestosql.spi.connector.classloader.ClassLoaderSafeNodePartitioningProvider;
-import io.prestosql.spi.procedure.Procedure;
-import io.prestosql.spi.type.TypeManager;
-import org.weakref.jmx.guice.MBeanModule;
-import sun.reflect.ConstructorAccessor;
+import sun.misc.Unsafe;
 
-import static com.google.common.base.Throwables.throwIfUnchecked;
-import static io.airlift.configuration.ConfigBinder.configBinder;
+import static io.airlift.units.DataSize.Unit.MEGABYTE;
 
 /**
  * Build Carbondata Connector
  * It will be called by CarbondataPlugin
  */
 public class CarbondataConnectorFactory extends HiveConnectorFactory {
-
-  private final ClassLoader classLoader;
 
   static {
     try {
@@ -101,127 +48,89 @@ public class CarbondataConnectorFactory extends HiveConnectorFactory {
     }
   }
 
-  public CarbondataConnectorFactory(String connectorName, ClassLoader classLoader) {
-    super(connectorName, classLoader, Optional.empty());
-    this.classLoader = requireNonNull(classLoader, "classLoader is null");
+  public CarbondataConnectorFactory(String connectorName) {
+    this(connectorName, EmptyModule.class);
   }
 
+  public CarbondataConnectorFactory(String connectorName, Class<? extends Module> module) {
+    super(connectorName, module);
+  }
+
+
   @Override
-  public Connector create(String catalogName, Map<String, String> config,
+  public Connector create(
+      String catalogName,
+      Map<String, String> config,
       ConnectorContext context) {
-    requireNonNull(config, "config is null");
-
-    try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-      Bootstrap app = new Bootstrap(
-          new EventModule(),
-          new MBeanModule(),
-          new ConnectorObjectNameGeneratorModule(catalogName),
-          new JsonModule(),
-          new CarbondataModule(catalogName),
-          new HiveS3Module(),
-          new HiveGcsModule(),
-          new HiveMetastoreModule(Optional.ofNullable(null)),
-          new HiveSecurityModule(),
-          new HiveAuthenticationModule(),
-          new HiveProcedureModule(),
-          new MBeanServerModule(),
-          binder -> {
-            binder.bind(NodeVersion.class).toInstance(
-                new NodeVersion(context.getNodeManager().getCurrentNode().getVersion()));
-            binder.bind(NodeManager.class).toInstance(context.getNodeManager());
-            binder.bind(VersionEmbedder.class).toInstance(context.getVersionEmbedder());
-            binder.bind(TypeManager.class).toInstance(context.getTypeManager());
-            binder.bind(PageIndexerFactory.class).toInstance(context.getPageIndexerFactory());
-            binder.bind(PageSorter.class).toInstance(context.getPageSorter());
-            binder.bind(HiveCatalogName.class).toInstance(new HiveCatalogName(catalogName));
-            configBinder(binder).bindConfig(CarbonTableConfig.class);
-          });
-
-      Injector injector = app
-          .strictConfig()
-          .doNotInitializeLogging()
-          .setRequiredConfigurationProperties(config)
-          .initialize();
-
-      LifeCycleManager lifeCycleManager = injector.getInstance(LifeCycleManager.class);
-      HiveMetadataFactory metadataFactory = injector.getInstance(HiveMetadataFactory.class);
-      HiveTransactionManager transactionManager =
-          injector.getInstance(HiveTransactionManager.class);
-      ConnectorSplitManager splitManager = injector.getInstance(ConnectorSplitManager.class);
-      ConnectorPageSourceProvider connectorPageSource =
-          injector.getInstance(ConnectorPageSourceProvider.class);
-      ConnectorPageSinkProvider pageSinkProvider =
-          injector.getInstance(ConnectorPageSinkProvider.class);
-      ConnectorNodePartitioningProvider connectorDistributionProvider =
-          injector.getInstance(ConnectorNodePartitioningProvider.class);
-      HiveSessionProperties hiveSessionProperties =
-          injector.getInstance(HiveSessionProperties.class);
-      HiveTableProperties hiveTableProperties = injector.getInstance(HiveTableProperties.class);
-      HiveAnalyzeProperties hiveAnalyzeProperties =
-          injector.getInstance(HiveAnalyzeProperties.class);
-      ConnectorAccessControl accessControl =
-          new SystemTableAwareAccessControl(injector.getInstance(ConnectorAccessControl.class));
-      Set<Procedure> procedures = injector.getInstance(Key.get(new TypeLiteral<Set<Procedure>>() {
-      }));
-
-      return new HiveConnector(lifeCycleManager, metadataFactory, transactionManager,
-          new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader),
-          new ClassLoaderSafeConnectorPageSourceProvider(connectorPageSource, classLoader),
-          new ClassLoaderSafeConnectorPageSinkProvider(pageSinkProvider, classLoader),
-          new ClassLoaderSafeNodePartitioningProvider(connectorDistributionProvider, classLoader),
-          ImmutableSet.of(), procedures, hiveSessionProperties.getSessionProperties(),
-          HiveSchemaProperties.SCHEMA_PROPERTIES, hiveTableProperties.getTableProperties(),
-          hiveAnalyzeProperties.getAnalyzeProperties(), accessControl, classLoader);
-    } catch (Exception e) {
-      throwIfUnchecked(e);
-      throw new RuntimeException(e);
-    }
+    return InternalCarbonDataConnectorFactory
+        .createConnector(catalogName, config, context, new EmptyModule());
   }
 
   /**
    * Set the Carbon format enum to HiveStorageFormat, its a hack but for time being it is best
    * choice to avoid lot of code change.
+   *
+   * @throws Exception
    */
   private static void setCarbonEnum() throws Exception {
+    for (HiveStorageFormat format : HiveStorageFormat.values()) {
+      if (format.name().equals("CARBON") || format.name().equals("ORG.APACHE.CARBONDATA.FORMAT")
+          || format.name().equals("CARBONDATA")) {
+        return;
+      }
+    }
     addHiveStorageFormatsForCarbondata("CARBON");
     addHiveStorageFormatsForCarbondata("ORG.APACHE.CARBONDATA.FORMAT");
     addHiveStorageFormatsForCarbondata("CARBONDATA");
   }
 
-  private static void addHiveStorageFormatsForCarbondata(String storedAs)
-      throws InstantiationException, InvocationTargetException, NoSuchFieldException,
-      IllegalAccessException, NoSuchMethodException {
-    Constructor<?>[] declaredConstructors = HiveStorageFormat.class.getDeclaredConstructors();
-    declaredConstructors[0].setAccessible(true);
-    Field constructorAccessorField = Constructor.class.getDeclaredField("constructorAccessor");
-    constructorAccessorField.setAccessible(true);
-    ConstructorAccessor ca =
-        (ConstructorAccessor) constructorAccessorField.get(declaredConstructors[0]);
-    if (ca == null) {
-      Method acquireConstructorAccessorMethod =
-          Constructor.class.getDeclaredMethod("acquireConstructorAccessor");
-      acquireConstructorAccessorMethod.setAccessible(true);
-      ca = (ConstructorAccessor) acquireConstructorAccessorMethod.invoke(declaredConstructors[0]);
-    }
-    Object instance = ca.newInstance(new Object[] { storedAs, HiveStorageFormat.values().length,
-        CarbonHiveSerDe.class.getName(), MapredCarbonInputFormat.class.getName(),
-        MapredCarbonOutputFormat.class.getName(), new DataSize(256.0D, DataSize.Unit.MEGABYTE) });
-    Field values = HiveStorageFormat.class.getDeclaredField("$VALUES");
-    values.setAccessible(true);
-    Field modifiersField = Field.class.getDeclaredField("modifiers");
-    modifiersField.setAccessible(true);
-    modifiersField.setInt(values, values.getModifiers() & ~Modifier.FINAL);
+  private static void addHiveStorageFormatsForCarbondata(String storedAs) throws Exception {
+    Constructor<?> constructor = Unsafe.class.getDeclaredConstructors()[0];
+    constructor.setAccessible(true);
+    Unsafe unsafe = (Unsafe) constructor.newInstance();
+    HiveStorageFormat enumValue =
+        (HiveStorageFormat) unsafe.allocateInstance(HiveStorageFormat.class);
 
+    Field nameField = Enum.class.getDeclaredField("name");
+    makeAccessible(nameField);
+    nameField.set(enumValue, storedAs);
+
+    Field ordinalField = Enum.class.getDeclaredField("ordinal");
+    makeAccessible(ordinalField);
+    ordinalField.setInt(enumValue, HiveStorageFormat.values().length);
+
+    Field serdeField = HiveStorageFormat.class.getDeclaredField("serde");
+    makeAccessible(serdeField);
+    serdeField.set(enumValue, CarbonHiveSerDe.class.getName());
+
+    Field inputFormatField = HiveStorageFormat.class.getDeclaredField("inputFormat");
+    makeAccessible(inputFormatField);
+    inputFormatField.set(enumValue, MapredCarbonInputFormat.class.getName());
+
+    Field outputFormatField = HiveStorageFormat.class.getDeclaredField("outputFormat");
+    makeAccessible(outputFormatField);
+    outputFormatField.set(enumValue, MapredCarbonOutputFormat.class.getName());
+
+    Field estimatedWriterSystemMemoryUsageField =
+        HiveStorageFormat.class.getDeclaredField("estimatedWriterSystemMemoryUsage");
+    makeAccessible(estimatedWriterSystemMemoryUsageField);
+    estimatedWriterSystemMemoryUsageField.set(enumValue, new DataSize((long) 256, MEGABYTE));
+
+    Field values = HiveStorageFormat.class.getDeclaredField("$VALUES");
+    makeAccessible(values);
     HiveStorageFormat[] hiveStorageFormats =
         new HiveStorageFormat[HiveStorageFormat.values().length + 1];
     HiveStorageFormat[] src = (HiveStorageFormat[]) values.get(null);
     System.arraycopy(src, 0, hiveStorageFormats, 0, src.length);
-    hiveStorageFormats[src.length] = (HiveStorageFormat) instance;
+    hiveStorageFormats[src.length] = enumValue;
     values.set(null, hiveStorageFormats);
   }
 
-  @Override
-  public ConnectorHandleResolver getHandleResolver() {
-    return new CarbonDataHandleResolver();
+  private static void makeAccessible(Field field) throws Exception {
+    field.setAccessible(true);
+    Field modifiersField = Field.class.getDeclaredField("modifiers");
+    modifiersField.setAccessible(true);
+    modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
   }
+
 }
