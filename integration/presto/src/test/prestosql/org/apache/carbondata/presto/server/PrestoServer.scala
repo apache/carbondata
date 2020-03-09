@@ -18,7 +18,7 @@ package org.apache.carbondata.presto.server
 
 import java.sql.{Connection, DriverManager, ResultSet}
 import java.util
-import java.util.{Locale, Optional, Properties}
+import java.util.{Locale, Properties}
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
@@ -29,8 +29,8 @@ import io.prestosql.execution.QueryIdGenerator
 import io.prestosql.jdbc.PrestoStatement
 import io.prestosql.metadata.SessionPropertyManager
 import io.prestosql.spi.`type`.TimeZoneKey.UTC_KEY
-import io.prestosql.spi.security.Identity
-import io.prestosql.tests.DistributedQueryRunner
+import io.prestosql.spi.security.Identity.Builder
+import io.prestosql.testing.DistributedQueryRunner
 import org.slf4j.{Logger, LoggerFactory}
 
 import org.apache.carbondata.presto.CarbondataPlugin
@@ -46,8 +46,11 @@ class PrestoServer {
   val prestoProperties: util.Map[String, String] = Map(("http-server.http.port", "8086")).asJava
   val carbonProperties: util.Map[String, String] = new util.HashMap[String, String]()
   createSession
-  lazy val queryRunner = new DistributedQueryRunner(createSession, 4, prestoProperties)
-  var dbName : String = null
+  val builder: DistributedQueryRunner.Builder = DistributedQueryRunner.builder(createSession)
+  builder.setExtraProperties(prestoProperties)
+  builder.setNodeCount(4)
+  lazy val queryRunner: DistributedQueryRunner = builder.build()
+  var dbName : String = _
   var statement : PrestoStatement = _
 
 
@@ -68,8 +71,8 @@ class PrestoServer {
    *
    * @param dbName the database name, if not a default database
    */
-  def startServer(dbName: String, properties: util.Map[String, String] = new util.HashMap[String, String]()): Unit = {
-
+  def startServer(dbName: String,
+      properties: util.Map[String, String] = new util.HashMap[String, String]()): Unit = {
     this.dbName = dbName
     carbonProperties.putAll(properties)
     LOGGER.info("======== STARTING PRESTO SERVER ========")
@@ -86,8 +89,7 @@ class PrestoServer {
     Try {
       queryRunner.installPlugin(new CarbondataPlugin)
       val carbonProperties = ImmutableMap.builder[String, String]
-        .putAll(this.carbonProperties)
-        .put("carbon.unsafe.working.memory.in.mb", "512").build
+        .putAll(this.carbonProperties).build
 
       // CreateCatalog will create a catalog for CarbonData in etc/catalog.
       queryRunner.createCatalog(CARBONDATA_CATALOG, CARBONDATA_CONNECTOR, carbonProperties)
@@ -127,7 +129,7 @@ class PrestoServer {
     }
   }
 
-  def execute(query: String) = {
+  def execute(query: String): Boolean = {
     Try {
       LOGGER.info(s"***** executing the query ***** \n $query")
       statement.execute(query)
@@ -193,7 +195,7 @@ class PrestoServer {
     LOGGER.info("\n Creating The Presto Server Session")
     Session.builder(new SessionPropertyManager)
       .setQueryId(new QueryIdGenerator().createNextQueryId)
-      .setIdentity(new Identity("user", Optional.empty()))
+      .setIdentity(new Builder("user").build())
       .setSource(CARBONDATA_SOURCE).setCatalog(CARBONDATA_CATALOG)
       .setTimeZoneKey(UTC_KEY).setLocale(Locale.ENGLISH)
       .setRemoteUserAddress("address")

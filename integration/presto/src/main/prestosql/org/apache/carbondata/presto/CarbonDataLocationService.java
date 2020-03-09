@@ -20,10 +20,10 @@ package org.apache.carbondata.presto;
 import com.google.inject.Inject;
 import io.prestosql.plugin.hive.HdfsEnvironment;
 import io.prestosql.plugin.hive.HiveLocationService;
-import io.prestosql.plugin.hive.HiveWriteUtils;
 import io.prestosql.plugin.hive.LocationHandle;
 import io.prestosql.plugin.hive.metastore.SemiTransactionalHiveMetastore;
 import io.prestosql.plugin.hive.metastore.Table;
+import io.prestosql.plugin.hive.util.HiveWriteUtils;
 import io.prestosql.spi.connector.ConnectorSession;
 import org.apache.hadoop.fs.Path;
 

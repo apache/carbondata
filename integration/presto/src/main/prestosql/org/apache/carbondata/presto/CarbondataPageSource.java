@@ -464,33 +464,30 @@ class CarbondataPageSource implements ConnectorPageSource {
   /**
    * Lazy Block Implementation for the Carbondata
    */
-  private final class CarbondataBlockLoader implements LazyBlockLoader<LazyBlock> {
+  private final class CarbondataBlockLoader implements LazyBlockLoader {
     private final int expectedBatchId = batchId;
     private final int columnIndex;
-    private boolean loaded;
 
     CarbondataBlockLoader(int columnIndex) {
       this.columnIndex = columnIndex;
     }
 
     @Override
-    public final void load(LazyBlock lazyBlock) {
-      if (loaded) {
-        return;
-      }
+    public final Block load() {
       checkState(batchId == expectedBatchId);
+      Block block;
       try {
         vectorReader.getColumnarBatch().column(columnIndex).loadPage();
         PrestoVectorBlockBuilder blockBuilder =
             (PrestoVectorBlockBuilder) vectorReader.getColumnarBatch().column(columnIndex);
-        blockBuilder.setBatchSize(lazyBlock.getPositionCount());
-        Block block = blockBuilder.buildBlock();
+        // set the number of rows for block builder
+        blockBuilder.setBatchSize(vectorReader.getColumnarBatch().numRows());
+        block = blockBuilder.buildBlock();
         sizeOfData += block.getSizeInBytes();
-        lazyBlock.setBlock(block);
       } catch (Exception e) {
         throw new CarbonDataLoadingException("Error in Reading Data from Carbondata ", e);
       }
-      loaded = true;
+      return block;
     }
   }
 
