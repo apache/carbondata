@@ -58,10 +58,12 @@ import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.util.BlockColumnMetaDataInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
-import org.apache.carbondata.core.util.SegmentMinMax;
+import org.apache.carbondata.core.util.SegmentMetaDataInfo;
+import org.apache.carbondata.core.util.SegmentMetaDataInfoStats;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
@@ -182,12 +184,12 @@ public class SegmentFileStore {
    * @param carbonTable CarbonTable
    * @param segmentId segment id
    * @param UUID      a UUID string used to construct the segment file name
-   * @param segmentMinMaxList list of block level min and max values for segment
+   * @param segmentMetaDataINfo list of block level min and max values for segment
    * @return segment file name
    */
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
-      List<SegmentMinMax> segmentMinMaxList) throws IOException {
-    return writeSegmentFile(carbonTable, segmentId, UUID, null, segmentMinMaxList);
+      SegmentMetaDataInfo segmentMetaDataINfo) throws IOException {
+    return writeSegmentFile(carbonTable, segmentId, UUID, null, segmentMetaDataINfo);
   }
 
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID)
@@ -204,8 +206,8 @@ public class SegmentFileStore {
    * @return segment file name
    */
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
-      String segPath, List<SegmentMinMax> segmentMinMaxList) throws IOException {
-    return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath, segmentMinMaxList);
+      String segPath, SegmentMetaDataInfo segmentMetaDataInfo) throws IOException {
+    return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath, segmentMetaDataInfo);
   }
 
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
@@ -327,7 +329,7 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
-      final String currentLoadTimeStamp, String absSegPath, List<SegmentMinMax> segmentMinMaxList)
+      final String currentLoadTimeStamp, String absSegPath, SegmentMetaDataInfo segmentMetaDataInfo)
       throws IOException {
     String tablePath = carbonTable.getTablePath();
     boolean supportFlatFolder = carbonTable.isSupportFlatFolder();
@@ -370,8 +372,8 @@ public class SegmentFileStore {
       }
       segmentFile.addPath(segmentRelativePath, folderDetails);
       // set segmentMinMax to segmentFile
-      if (null != segmentMinMaxList && !segmentMinMaxList.isEmpty()) {
-        segmentFile.setSegmentMinMax(segmentMinMaxList);
+      if (null != segmentMetaDataInfo) {
+        segmentFile.setSegmentMetaDataInfo(segmentMetaDataInfo);
       }
       String segmentFileFolder = CarbonTablePath.getSegmentFilesLocation(tablePath);
       CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFileFolder);
@@ -1241,9 +1243,9 @@ public class SegmentFileStore {
     private Map<String, String> options;
 
     /**
-     * Segment minMax List
+     * Segment minMax
      */
-    private String segmentMinMax;
+    private String segmentMetaDataInfo;
 
     SegmentFile() {
       locationMap = new HashMap<>();
@@ -1262,11 +1264,35 @@ public class SegmentFileStore {
             locationMap.put(entry.getKey(), entry.getValue());
           }
         }
-        if (segmentMinMax != null && !segmentFile.getSegmentMinMax().isEmpty()) {
-          List<SegmentMinMax> segmentMinMaxList = new ArrayList<>(
-              (List<SegmentMinMax>) ObjectSerializationUtil.convertStringToObject(segmentMinMax));
-          segmentMinMaxList.addAll(segmentFile.getSegmentMinMax());
-          segmentMinMax = ObjectSerializationUtil.convertObjectToString(segmentMinMaxList);
+        if (segmentMetaDataInfo != null) {
+          SegmentMetaDataInfo currentSegmentMetaDataInfo =
+              (SegmentMetaDataInfo) ObjectSerializationUtil
+                  .convertStringToObject(segmentMetaDataInfo);
+          if (null != segmentFile.getSegmentMetaDataInfo()) {
+            // get updated blockColumnMetaDataInfo based on comparing block min-max values
+            Map<String, BlockColumnMetaDataInfo> previousBlockColumnMetaDataInfo =
+                segmentFile.getSegmentMetaDataInfo().getSegmentMetaDataInfo();
+            for (Map.Entry<String, BlockColumnMetaDataInfo> entry : previousBlockColumnMetaDataInfo
+                .entrySet()) {
+              if (currentSegmentMetaDataInfo.getSegmentMetaDataInfo()
+                  .containsKey(entry.getKey())) {
+                BlockColumnMetaDataInfo currentBlockMinMaxInfo =
+                    currentSegmentMetaDataInfo.getSegmentMetaDataInfo().get(entry.getKey());
+                byte[] blockMaxValue = SegmentMetaDataInfoStats.getInstance()
+                    .compareAndUpdateMinMax(currentBlockMinMaxInfo.getBlockMaxValue(),
+                        entry.getValue().getBlockMaxValue(), false);
+                byte[] blockMinValue = SegmentMetaDataInfoStats.getInstance()
+                    .compareAndUpdateMinMax(currentBlockMinMaxInfo.getBlockMinValue(),
+                        entry.getValue().getBlockMinValue(), true);
+                currentSegmentMetaDataInfo.getSegmentMetaDataInfo().get(entry.getKey())
+                    .setBlockMaxValue(blockMaxValue);
+                currentSegmentMetaDataInfo.getSegmentMetaDataInfo().get(entry.getKey())
+                    .setBlockMinValue(blockMinValue);
+              }
+            }
+          }
+          segmentMetaDataInfo =
+              ObjectSerializationUtil.convertObjectToString(currentSegmentMetaDataInfo);
         }
       }
       if (locationMap == null) {
@@ -1294,22 +1320,19 @@ public class SegmentFileStore {
       this.options = options;
     }
 
-    public List<SegmentMinMax> getSegmentMinMax() {
-      List<SegmentMinMax> segmentMinMaxList = null;
+    public SegmentMetaDataInfo getSegmentMetaDataInfo() {
+      SegmentMetaDataInfo newSegmentMetaDataInfo = null;
       try {
-        segmentMinMaxList =
-            (List<SegmentMinMax>) ObjectSerializationUtil.convertStringToObject(segmentMinMax);
+        newSegmentMetaDataInfo = (SegmentMetaDataInfo) ObjectSerializationUtil
+            .convertStringToObject(segmentMetaDataInfo);
       } catch (IOException e) {
         LOGGER.error("Error while getting segment minmax");
       }
-      if (null == segmentMinMaxList) {
-        return new ArrayList<>();
-      }
-      return segmentMinMaxList;
+      return newSegmentMetaDataInfo;
     }
 
-    public void setSegmentMinMax(List<SegmentMinMax> segmentMinMax) throws IOException {
-      this.segmentMinMax = ObjectSerializationUtil.convertObjectToString(segmentMinMax);
+    public void setSegmentMetaDataInfo(SegmentMetaDataInfo segmentMetaDataINfo) throws IOException {
+      this.segmentMetaDataInfo = ObjectSerializationUtil.convertObjectToString(segmentMetaDataINfo);
     }
   }
 

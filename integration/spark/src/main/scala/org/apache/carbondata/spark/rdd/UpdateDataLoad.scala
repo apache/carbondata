@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.spark.rdd
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.TaskContext
@@ -27,7 +26,7 @@ import org.apache.spark.util.CollectionAccumulator
 import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
-import org.apache.carbondata.core.util.{SegmentMinMax, SegmentMinMaxStats, ThreadLocalTaskInfo}
+import org.apache.carbondata.core.util.{SegmentMetaDataInfo, ThreadLocalTaskInfo}
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, TableProcessingOperations}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.util.CommonUtil
@@ -43,7 +42,7 @@ object UpdateDataLoad {
       iter: Iterator[Row],
       carbonLoadModel: CarbonLoadModel,
       loadMetadataDetails: LoadMetadataDetails,
-      segmentMinMaxAccumulator: CollectionAccumulator[Map[String, List[SegmentMinMax]]]): Unit = {
+      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]]): Unit = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     try {
       val recordReaders = mutable.Buffer[CarbonIterator[Array[AnyRef]]]()
@@ -62,9 +61,9 @@ object UpdateDataLoad {
       val executor = new DataLoadExecutor
       TaskContext.get().addTaskCompletionListener { context =>
         // fill segment level minMax to accumulator
-      CarbonDataRDDFactory.fillSegmentMinMaxToAccumulator(carbonLoadModel.getTableName,
+      CarbonDataRDDFactory.fillSegmentMetaDataInfoToAccumulator(carbonLoadModel.getTableName,
           segId,
-          segmentMinMaxAccumulator)
+          segmentMetaDataAccumulator)
         executor.close()
         CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
       }

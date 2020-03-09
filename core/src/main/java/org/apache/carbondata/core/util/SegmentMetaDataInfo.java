@@ -23,18 +23,23 @@ import java.util.Map;
 /**
  *  Represent SegmentBlockMinMaxInfo for each block in a segment
  */
-public class SegmentMinMax implements Serializable {
+public class SegmentMetaDataInfo implements Serializable {
 
   /**
    * Map of Column id's and it's block level min,max and isSortColumn values
    */
-  private Map<String, SegmentBlockMinMaxInfo> segmentBlockMinMaxInfo;
+  private Map<String, BlockColumnMetaDataInfo> segmentMetaDataInfo;
 
-  SegmentMinMax(Map<String, SegmentBlockMinMaxInfo> segmentBlockMinMaxInfo) {
-    this.segmentBlockMinMaxInfo = segmentBlockMinMaxInfo;
+  SegmentMetaDataInfo(Map<String, BlockColumnMetaDataInfo> segmentMetaDataInfo) {
+    this.segmentMetaDataInfo = segmentMetaDataInfo;
   }
 
-  public Map<String, SegmentBlockMinMaxInfo> getSegmentBlockMinMaxInfo() {
-    return segmentBlockMinMaxInfo;
+  public Map<String, BlockColumnMetaDataInfo> getSegmentMetaDataInfo() {
+    return segmentMetaDataInfo;
+  }
+
+  public void setSegmentMetaDataInfo(
+      Map<String, BlockColumnMetaDataInfo> segmentMetaDataInfo) {
+    this.segmentMetaDataInfo = segmentMetaDataInfo;
   }
 }

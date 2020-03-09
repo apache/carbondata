@@ -40,7 +40,7 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICar
 import org.apache.carbondata.core.metadata.{ColumnarFormatVersion, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager, StageInput}
-import org.apache.carbondata.core.util.SegmentMinMax
+import org.apache.carbondata.core.util.SegmentMetaDataInfo
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.processing.loading.FailureCauses
@@ -298,7 +298,7 @@ case class CarbonInsertFromStageCommand(
           Option(dataFrame),
           None,
           loadModel,
-          spark.sqlContext.sparkContext.collectionAccumulator[Map[String, List[SegmentMinMax]]])
+          spark.sqlContext.sparkContext.collectionAccumulator[Map[String, SegmentMetaDataInfo]])
       }
       LOGGER.info(s"finish data loading, time taken ${System.currentTimeMillis() - start}ms")
 

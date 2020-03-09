@@ -17,10 +17,9 @@
 
 package org.apache.carbondata.core.indexstore;
 
-import java.util.List;
 import java.util.Set;
 
-import org.apache.carbondata.core.util.SegmentMinMax;
+import org.apache.carbondata.core.util.SegmentMetaDataInfo;
 
 /**
  * Holds tableBlockUniqueIdentifiers and block level minMax values for the segment
@@ -33,23 +32,23 @@ public class SegmentBlockIndexInfo {
   private Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers;
 
   /**
-   * List of block level min and max values
+   * segment level min and max values
    */
-  private List<SegmentMinMax> segmentMinMax;
+  private SegmentMetaDataInfo segmentMetaDataInfo;
 
   public SegmentBlockIndexInfo(
       Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers,
-      List<SegmentMinMax> segmentMinMax) {
+      SegmentMetaDataInfo segmentMetaDataInfo) {
     this.tableBlockIndexUniqueIdentifiers = tableBlockIndexUniqueIdentifiers;
-    this.segmentMinMax = segmentMinMax;
+    this.segmentMetaDataInfo = segmentMetaDataInfo;
   }
 
   public Set<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers() {
     return tableBlockIndexUniqueIdentifiers;
   }
 
-  public List<SegmentMinMax> getSegmentMinMax() {
-    return segmentMinMax;
+  public SegmentMetaDataInfo getSegmentMetaDataInfo() {
+    return segmentMetaDataInfo;
   }
 
 }

@@ -40,7 +40,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, DataTypeUtil, SegmentMinMax}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, DataTypeUtil, SegmentMetaDataInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses, TableProcessingOperations}
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator}
@@ -101,7 +101,7 @@ class NewCarbonDataLoadRDD[K, V](
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     blocksGroupBy: Array[(String, Array[BlockDetails])],
-    segmentMinMaxAccumulator: CollectionAccumulator[Map[String, List[SegmentMinMax]]])
+    segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]])
   extends CarbonRDD[(K, V)](ss, Nil) {
 
   ss.sparkContext.setLocalProperty("spark.scheduler.pool", "DDL")
@@ -150,7 +150,7 @@ class NewCarbonDataLoadRDD[K, V](
           .addTaskCompletionListener {
             new InsertTaskCompletionListener(executor,
               executionErrors,
-              segmentMinMaxAccumulator,
+              segmentMetaDataAccumulator,
               model.getTableName,
               model.getSegment.getSegmentNo)
           }
@@ -255,7 +255,7 @@ class NewDataFrameLoaderRDD[K, V](
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     prev: DataLoadCoalescedRDD[_],
-    segmentMinMaxAccumulator: CollectionAccumulator[Map[String, List[SegmentMinMax]]]
+    segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]]
     ) extends CarbonRDD[(K, V)](ss, prev) {
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
@@ -309,7 +309,7 @@ class NewDataFrameLoaderRDD[K, V](
         context
           .addTaskCompletionListener(new InsertTaskCompletionListener(executor,
             executionErrors,
-            segmentMinMaxAccumulator,
+            segmentMetaDataAccumulator,
             carbonLoadModel.getTableName,
             carbonLoadModel.getSegment.getSegmentNo))
         executor.execute(model, loader.storeLocation, recordReaders.toArray)

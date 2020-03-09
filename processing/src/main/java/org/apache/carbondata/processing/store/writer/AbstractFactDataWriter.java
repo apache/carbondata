@@ -43,13 +43,13 @@ import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.BlockColumnMetaDataInfo;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.OutputFilesInfoHolder;
-import org.apache.carbondata.core.util.SegmentBlockMinMaxInfo;
-import org.apache.carbondata.core.util.SegmentMinMaxStats;
+import org.apache.carbondata.core.util.SegmentMetaDataInfoStats;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileWriter;
 import org.apache.carbondata.format.BlockIndex;
@@ -396,7 +396,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     // get all block minmax and add to segmentMinMaxMap
     if (null != model.getSegmentId()) {
       for (BlockIndexInfo blockIndex : blockIndexInfoList) {
-        Map<String, SegmentBlockMinMaxInfo> segmentBlockMinMaxInfo = new LinkedHashMap<>();
+        Map<String, BlockColumnMetaDataInfo> blockLevelMetaDataInfoMap = new LinkedHashMap<>();
         byte[][] min = blockIndex.getBlockletIndex().getMinMaxIndex().getMinValues();
         byte[][] max = blockIndex.getBlockletIndex().getMinMaxIndex().getMaxValues();
         for (int i = 0; i < thriftColumnSchemaList.size(); i++) {
@@ -411,12 +411,12 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
               isColumnDrift = true;
             }
           }
-          segmentBlockMinMaxInfo.put(columnSchema.column_id,
-              new SegmentBlockMinMaxInfo(isSortColumn, min[i], max[i], isColumnDrift));
+          blockLevelMetaDataInfoMap.put(columnSchema.column_id,
+              new BlockColumnMetaDataInfo(isSortColumn, min[i], max[i], isColumnDrift));
         }
-        SegmentMinMaxStats.getInstance()
-            .setSegmentMinMaxList(model.getTableName(), model.getSegmentId(),
-                segmentBlockMinMaxInfo);
+        SegmentMetaDataInfoStats.getInstance()
+            .setBlockMetaDataInfo(model.getTableName(), model.getSegmentId(),
+                blockLevelMetaDataInfoMap);
       }
     }
     String indexFileName;

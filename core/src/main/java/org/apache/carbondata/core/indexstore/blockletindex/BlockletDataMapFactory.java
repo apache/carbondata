@@ -66,10 +66,10 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+import org.apache.carbondata.core.util.BlockColumnMetaDataInfo;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.SegmentBlockMinMaxInfo;
-import org.apache.carbondata.core.util.SegmentMinMax;
+import org.apache.carbondata.core.util.SegmentMetaDataInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
@@ -157,15 +157,15 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
         getTableBlockUniqueIdentifierWrappers(partitionsToPrune,
             tableBlockIndexUniqueIdentifierWrappers, identifiers);
       } else {
-        List<SegmentMinMax> segmentMinMaxList = segment.getSegmentMinMax();
-        boolean isLoadAllIndex = Boolean.parseBoolean(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.CARBON_LOAD_ALL_INDEX_TO_CACHE,
-                CarbonCommonConstants.CARBON_LOAD_ALL_INDEX_TO_CACHE_DEFAULT));
-        if (!isLoadAllIndex && null != segmentMinMaxList && !segmentMinMaxList.isEmpty()
-            && null != filter && !filter.isEmpty() && null != filter.getExpression()
-            && null == FilterUtil.getImplicitFilterExpression(filter.getExpression())) {
-          getTableBlockIndexUniqueIdentifierUsingSegmentMinMax(segment, segmentMinMaxList, filter,
-              identifiers, tableBlockIndexUniqueIdentifierWrappers);
+        SegmentMetaDataInfo segmentMetaDataInfoList = segment.getSegmentMetaDataINfo();
+        //        boolean isLoadAllIndex = Boolean.parseBoolean(CarbonProperties.getInstance()
+        //            .getProperty(CarbonCommonConstants.CARBON_LOAD_ALL_INDEX_TO_CACHE,
+        //                CarbonCommonConstants.CARBON_LOAD_ALL_INDEX_TO_CACHE_DEFAULT));
+        if (null != segmentMetaDataInfoList && null != filter && !filter
+            .isEmpty() && null != filter.getExpression() && null == FilterUtil
+            .getImplicitFilterExpression(filter.getExpression())) {
+          getTableBlockIndexUniqueIdentifierUsingSegmentMinMax(segment, segmentMetaDataInfoList,
+              filter, identifiers, tableBlockIndexUniqueIdentifierWrappers);
         } else {
           for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier : identifiers) {
             tableBlockIndexUniqueIdentifierWrappers.add(
@@ -221,87 +221,83 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
    * Using blockLevel minmax values, identify if segment has to be added for further pruning and to
    * load segment index info to cache
    * @param segment to be identified if needed for loading block datamaps
-   * @param segmentMinMaxList list of block level min max values
+   * @param segmentMetaDataINfo list of block level min max values
    * @param filter filter expression
    * @param identifiers tableBlockIndexUniqueIdentifiers
    * @param tableBlockIndexUniqueIdentifierWrappers to add tableBlockIndexUniqueIdentifiers
    */
   private void getTableBlockIndexUniqueIdentifierUsingSegmentMinMax(Segment segment,
-      List<SegmentMinMax> segmentMinMaxList, DataMapFilter filter,
+      SegmentMetaDataInfo segmentMetaDataINfo, DataMapFilter filter,
       Set<TableBlockIndexUniqueIdentifier> identifiers,
       List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers) {
     boolean isScanRequired = false;
-    for (SegmentMinMax segmentMinMax : segmentMinMaxList) {
-      Map<String, SegmentBlockMinMaxInfo> segmentBlockMinMaxInfoMap =
-          segmentMinMax.getSegmentBlockMinMaxInfo();
-      int length = segmentBlockMinMaxInfoMap.size();
-      // Add columnSchemas based on the columns present in segment
-      List<ColumnSchema> columnSchemas = new ArrayList<>();
-      byte[][] min = new byte[length][];
-      byte[][] max = new byte[length][];
-      boolean[] minMaxFlag = new boolean[length];
-      int i = 0;
+    Map<String, BlockColumnMetaDataInfo> segmentBlockMinMaxInfoMap =
+        segmentMetaDataINfo.getSegmentMetaDataInfo();
+    int length = segmentBlockMinMaxInfoMap.size();
+    // Add columnSchemas based on the columns present in segment
+    List<ColumnSchema> columnSchemas = new ArrayList<>();
+    byte[][] min = new byte[length][];
+    byte[][] max = new byte[length][];
+    boolean[] minMaxFlag = new boolean[length];
+    int i = 0;
 
-      // get current columnSchema list for the table
-      Map<String, ColumnSchema> tableColumnSchemas =
-          this.getCarbonTable().getTableInfo().getFactTable().getListOfColumns().stream()
-              .collect(Collectors.toMap(ColumnSchema::getColumnUniqueId, ColumnSchema::clone));
+    // get current columnSchema list for the table
+    Map<String, ColumnSchema> tableColumnSchemas =
+        this.getCarbonTable().getTableInfo().getFactTable().getListOfColumns().stream()
+            .collect(Collectors.toMap(ColumnSchema::getColumnUniqueId, ColumnSchema::clone));
 
-      // fill min,max and columnSchema values
-      for (Map.Entry<String, SegmentBlockMinMaxInfo> segmentBlockMinMaxInfo :
-          segmentBlockMinMaxInfoMap.entrySet()) {
-        ColumnSchema columnSchema = tableColumnSchemas.get(segmentBlockMinMaxInfo.getKey());
-        if (null != columnSchema) {
-          // get segment sort column and column drift info
-          boolean isSortColumnInBlock = segmentBlockMinMaxInfo.getValue().isSortColumn();
-          boolean isColumnDriftInBlock = segmentBlockMinMaxInfo.getValue().isColumnDrift();
-          if (null != columnSchema.getColumnProperties()) {
-            // get current sort column and column drift info
-            String isSortColumn =
-                columnSchema.getColumnProperties().get(CarbonCommonConstants.SORT_COLUMNS);
-            String isColumnDrift =
-                columnSchema.getColumnProperties().get(CarbonCommonConstants.COLUMN_DRIFT);
-            if (null != isSortColumn) {
-              if (isSortColumn.equalsIgnoreCase("true") && !isSortColumnInBlock) {
-                modifyColumnSchemaForSortColumn(columnSchema, isColumnDriftInBlock, isColumnDrift);
-              } else if (isSortColumn.equalsIgnoreCase("false") && isSortColumnInBlock) {
-                // modify column schema, if current columnSchema is changed
-                columnSchema.setSortColumn(true);
-                if (!columnSchema.isDimensionColumn()) {
-                  columnSchema.setDimensionColumn(true);
-                  columnSchema.getColumnProperties()
-                      .put(CarbonCommonConstants.COLUMN_DRIFT, "true");
-                }
-                columnSchema.getColumnProperties().put(CarbonCommonConstants.SORT_COLUMNS, "true");
-              }
-            } else {
+    // fill min,max and columnSchema values
+    for (Map.Entry<String, BlockColumnMetaDataInfo> segmentBlockMinMaxInfo :
+        segmentBlockMinMaxInfoMap.entrySet()) {
+      ColumnSchema columnSchema = tableColumnSchemas.get(segmentBlockMinMaxInfo.getKey());
+      if (null != columnSchema) {
+        // get segment sort column and column drift info
+        boolean isSortColumnInBlock = segmentBlockMinMaxInfo.getValue().isSortColumn();
+        boolean isColumnDriftInBlock = segmentBlockMinMaxInfo.getValue().isColumnDrift();
+        if (null != columnSchema.getColumnProperties()) {
+          // get current sort column and column drift info
+          String isSortColumn =
+              columnSchema.getColumnProperties().get(CarbonCommonConstants.SORT_COLUMNS);
+          String isColumnDrift =
+              columnSchema.getColumnProperties().get(CarbonCommonConstants.COLUMN_DRIFT);
+          if (null != isSortColumn) {
+            if (isSortColumn.equalsIgnoreCase("true") && !isSortColumnInBlock) {
               modifyColumnSchemaForSortColumn(columnSchema, isColumnDriftInBlock, isColumnDrift);
+            } else if (isSortColumn.equalsIgnoreCase("false") && isSortColumnInBlock) {
+              // modify column schema, if current columnSchema is changed
+              columnSchema.setSortColumn(true);
+              if (!columnSchema.isDimensionColumn()) {
+                columnSchema.setDimensionColumn(true);
+                columnSchema.getColumnProperties().put(CarbonCommonConstants.COLUMN_DRIFT, "true");
+              }
+              columnSchema.getColumnProperties().put(CarbonCommonConstants.SORT_COLUMNS, "true");
             }
+          } else {
+            modifyColumnSchemaForSortColumn(columnSchema, isColumnDriftInBlock, isColumnDrift);
           }
-          columnSchemas.add(columnSchema);
-          min[i] = segmentBlockMinMaxInfo.getValue().getBlockMinValue();
-          max[i] = segmentBlockMinMaxInfo.getValue().getBlockMaxValue();
-          minMaxFlag[i] = min[i].length != 0 && max[i].length != 0;
-          i++;
         }
+        columnSchemas.add(columnSchema);
+        min[i] = segmentBlockMinMaxInfo.getValue().getBlockMinValue();
+        max[i] = segmentBlockMinMaxInfo.getValue().getBlockMaxValue();
+        minMaxFlag[i] = min[i].length != 0 && max[i].length != 0;
+        i++;
       }
-      // get segmentProperties using created columnSchemas list
-      SegmentProperties segmentProperties = SegmentPropertiesAndSchemaHolder.getInstance()
-          .addSegmentProperties(this.getCarbonTable(), columnSchemas, segment.getSegmentNo())
-          .getSegmentProperties();
+    }
+    // get segmentProperties using created columnSchemas list
+    SegmentProperties segmentProperties = SegmentPropertiesAndSchemaHolder.getInstance()
+        .addSegmentProperties(this.getCarbonTable(), columnSchemas, segment.getSegmentNo())
+        .getSegmentProperties();
 
-      FilterResolverIntf resolver =
-          new DataMapFilter(segmentProperties, this.getCarbonTable(), filter.getExpression())
-              .getResolver();
-      // prepare filter executer using datmapFilter resolver
-      FilterExecuter filterExecuter =
-          FilterUtil.getFilterExecuterTree(resolver, segmentProperties, null, null, false);
-      // check if block has to be pruned based on segment minmax
-      BitSet scanRequired = filterExecuter.isScanRequired(max, min, minMaxFlag);
-      if (!scanRequired.isEmpty()) {
-        isScanRequired = true;
-        break;
-      }
+    FilterResolverIntf resolver =
+        new DataMapFilter(segmentProperties, this.getCarbonTable(), filter.getExpression())
+            .getResolver();
+    // prepare filter executer using datmapFilter resolver
+    FilterExecuter filterExecuter =
+        FilterUtil.getFilterExecuterTree(resolver, segmentProperties, null, null, false);
+    // check if block has to be pruned based on segment minmax
+    BitSet scanRequired = filterExecuter.isScanRequired(max, min, minMaxFlag);
+    if (!scanRequired.isEmpty()) {
+      isScanRequired = true;
     }
     if (isScanRequired) {
       for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier : identifiers) {
@@ -349,7 +345,8 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     SegmentBlockIndexInfo segmentBlockIndexInfo = segmentMap.get(segment.getSegmentNo());
     Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = null;
     if (null != segmentBlockIndexInfo) {
-      segment.setSegmentMinMax(segmentMap.get(segment.getSegmentNo()).getSegmentMinMax());
+      segment
+          .setSegmentMetaDataINfo(segmentMap.get(segment.getSegmentNo()).getSegmentMetaDataInfo());
       return segmentBlockIndexInfo.getTableBlockIndexUniqueIdentifiers();
     } else {
       tableBlockIndexUniqueIdentifiers =
@@ -357,7 +354,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       if (tableBlockIndexUniqueIdentifiers.size() > 0) {
         segmentMap.put(segment.getSegmentNo(),
             new SegmentBlockIndexInfo(tableBlockIndexUniqueIdentifiers,
-                segment.getSegmentMinMax()));
+                segment.getSegmentMetaDataINfo()));
       }
     }
     return tableBlockIndexUniqueIdentifiers;
@@ -569,7 +566,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       }
       segmentMap.put(distributable.getSegment().getSegmentNo(),
           new SegmentBlockIndexInfo(tableBlockIndexUniqueIdentifiers,
-              distributable.getSegment().getSegmentMinMax()));
+              distributable.getSegment().getSegmentMetaDataINfo()));
     } else {
       for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier :
           tableBlockIndexUniqueIdentifiers) {

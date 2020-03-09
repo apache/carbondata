@@ -22,17 +22,25 @@ import java.io.Serializable;
 /**
  * Represent min, max and alter sort column properties for each column in a block
  */
-public class SegmentBlockMinMaxInfo implements Serializable {
+public class BlockColumnMetaDataInfo implements Serializable {
 
   /**
    * true if column is a sort column
    */
   private boolean isSortColumn;
 
+  public void setBlockMinValue(byte[] blockMinValue) {
+    this.blockMinValue = blockMinValue;
+  }
+
   /**
    * block level  min value for a column
    */
   private byte[] blockMinValue;
+
+  public void setBlockMaxValue(byte[] blockMaxValue) {
+    this.blockMaxValue = blockMaxValue;
+  }
 
   /**
    * block level max value for a column
@@ -44,7 +52,7 @@ public class SegmentBlockMinMaxInfo implements Serializable {
    */
   private boolean isColumnDrift;
 
-  public SegmentBlockMinMaxInfo(boolean isSortColumn, byte[] blockMinValue, byte[] blockMaxValue,
+  public BlockColumnMetaDataInfo(boolean isSortColumn, byte[] blockMinValue, byte[] blockMaxValue,
       boolean isColumnDrift) {
     this.isSortColumn = isSortColumn;
     this.blockMinValue = blockMinValue;

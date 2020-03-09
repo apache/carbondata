@@ -2424,7 +2424,8 @@ public final class CarbonCommonConstants {
   /**
    * Load all indexes to carbon LRU cache
    */
-  public static final String CARBON_LOAD_ALL_INDEX_TO_CACHE = "carbon.load.all.indexes.to.cache";
+  public static final String CARBON_LOAD_ALL_INDEX_TO_CACHE =
+      "carbon.load.all.segment.indexes.to.cache";
 
   /**
    * Default value for loading cache is true
