@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockDataMap;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
@@ -36,7 +35,7 @@ public class SegmentMetaDataInfoStats {
     tableSegmentMetaDataInfoMap = new ConcurrentHashMap<>();
   }
 
-  public static SegmentMetaDataInfoStats getInstance() {
+  public static synchronized SegmentMetaDataInfoStats getInstance() {
     if (null == segmentMetaDataInfoStats) {
       segmentMetaDataInfoStats = new SegmentMetaDataInfoStats();
       return segmentMetaDataInfoStats;
@@ -95,12 +94,10 @@ public class SegmentMetaDataInfoStats {
       BlockColumnMetaDataInfo previousBlockColumnMetaInfo =
           this.tableSegmentMetaDataInfoMap.get(tableName).get(segmentId);
       // compare and get updated min and max values
-      byte[][] updatedMin = BlockDataMap
-          .compareAndUpdateMinMax(previousBlockColumnMetaInfo.getMin(),
-              currentBlockColumnMetaInfo.getMin(), true);
-      byte[][] updatedMax = BlockDataMap
-          .compareAndUpdateMinMax(previousBlockColumnMetaInfo.getMax(),
-              currentBlockColumnMetaInfo.getMax(), false);
+      byte[][] updatedMin = compareAndUpdateMinMax(previousBlockColumnMetaInfo.getMin(),
+          currentBlockColumnMetaInfo.getMin(), true);
+      byte[][] updatedMax = compareAndUpdateMinMax(previousBlockColumnMetaInfo.getMax(),
+          currentBlockColumnMetaInfo.getMax(), false);
       // set updated min and max to currentBlockMetaDataInfo
       currentBlockColumnMetaInfo.setMin(updatedMin);
       currentBlockColumnMetaInfo.setMax(updatedMax);
@@ -134,8 +131,8 @@ public class SegmentMetaDataInfoStats {
   /**
    * This method will do min/max comparison of values and update if required
    */
-  public byte[] compareAndUpdateMinMax(byte[] minMaxValueCompare1, byte[] minMaxValueCompare2,
-      boolean isMinValueComparison) {
+  public synchronized byte[] compareAndUpdateMinMax(byte[] minMaxValueCompare1,
+      byte[] minMaxValueCompare2, boolean isMinValueComparison) {
     // Compare and update min max values
     byte[] updatedMinMaxValues = new byte[minMaxValueCompare1.length];
     System.arraycopy(minMaxValueCompare1, 0, updatedMinMaxValues, 0, minMaxValueCompare1.length);
@@ -147,6 +144,25 @@ public class SegmentMetaDataInfoStats {
       }
     } else if (compare > 0) {
       updatedMinMaxValues = minMaxValueCompare2;
+    }
+    return updatedMinMaxValues;
+  }
+
+  private synchronized byte[][] compareAndUpdateMinMax(byte[][] minMaxValueCompare1,
+      byte[][] minMaxValueCompare2, boolean isMinValueComparison) {
+    // Compare and update min max values
+    byte[][] updatedMinMaxValues = new byte[minMaxValueCompare1.length][];
+    System.arraycopy(minMaxValueCompare1, 0, updatedMinMaxValues, 0, minMaxValueCompare1.length);
+    for (int i = 0; i < minMaxValueCompare1.length; i++) {
+      int compare = ByteUtil.UnsafeComparer.INSTANCE
+          .compareTo(minMaxValueCompare2[i], minMaxValueCompare1[i]);
+      if (isMinValueComparison) {
+        if (compare < 0) {
+          updatedMinMaxValues[i] = minMaxValueCompare2[i];
+        }
+      } else if (compare > 0) {
+        updatedMinMaxValues[i] = minMaxValueCompare2[i];
+      }
     }
     return updatedMinMaxValues;
   }

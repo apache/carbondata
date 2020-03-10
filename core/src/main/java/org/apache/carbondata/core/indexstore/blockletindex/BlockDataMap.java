@@ -524,7 +524,7 @@ public class BlockDataMap extends CoarseGrainDataMap
    * @param minMaxValueCompare2
    * @param isMinValueComparison
    */
-  public static byte[][] compareAndUpdateMinMax(byte[][] minMaxValueCompare1,
+  private byte[][] compareAndUpdateMinMax(byte[][] minMaxValueCompare1,
       byte[][] minMaxValueCompare2, boolean isMinValueComparison) {
     // Compare and update min max values
     byte[][] updatedMinMaxValues = new byte[minMaxValueCompare1.length][];

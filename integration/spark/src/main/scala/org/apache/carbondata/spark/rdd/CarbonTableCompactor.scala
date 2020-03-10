@@ -30,7 +30,7 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.{CarbonUtils, SparkSession, SQLContext}
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
 import org.apache.spark.sql.util.SparkSQLUtil
-import org.apache.spark.util.MergeIndexUtil
+import org.apache.spark.util.{CollectionAccumulator, MergeIndexUtil}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.constants.SortScopeOptions.SortScope
@@ -213,7 +213,10 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
                  !carbonTable.getSortColumns.isEmpty &&
                  carbonTable.getRangeColumn == null &&
                  CarbonUtil.isStandardCarbonTable(carbonTable)) {
-        compactSegmentsByGlobalSort(sc.sparkSession, carbonLoadModel, carbonMergerMapping)
+        compactSegmentsByGlobalSort(sc.sparkSession,
+          carbonLoadModel,
+          carbonMergerMapping,
+          segmentMetaDataAccumulator)
       } else {
         new CarbonMergerRDD(
           sc.sparkSession,
@@ -255,22 +258,22 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       } else {
         // Get the segment files each updated segment in case of IUD compaction
         if (compactionType == CompactionType.IUD_UPDDEL_DELTA) {
-          val segmentFilesList = loadsToMerge.asScala.map{seg =>
+          val segmentFilesList = loadsToMerge.asScala.map { seg =>
+            val segmentMetaDataInfo = new SegmentFileStore(carbonLoadModel.getTablePath,
+              seg.getSegmentFile).getSegmentFile.getSegmentMetaDataInfo
             val file = SegmentFileStore.writeSegmentFile(
               carbonTable,
               seg.getLoadName,
-              carbonLoadModel.getFactTimeStamp.toString)
+              carbonLoadModel.getFactTimeStamp.toString,
+              segmentMetaDataInfo)
             new Segment(seg.getLoadName, file)
           }.filter(_.getSegmentFileName != null).asJava
           segmentFilesForIUDCompact = new util.ArrayList[Segment](segmentFilesList)
         } else {
-          val segmentMetaDataInfo =
-            if (!segmentMetaDataAccumulator.isZero &&
-                segmentMetaDataAccumulator.value.get(0).contains(mergedLoadNumber)) {
-              segmentMetaDataAccumulator.value.get(0)(mergedLoadNumber)
-            } else {
-              null
-            }
+          // get segmentMetadata info from accumulator
+          val segmentMetaDataInfo = CarbonDataRDDFactory.getSegmentMetaDataInfoFromAccumulator(
+            mergedLoadNumber,
+            segmentMetaDataAccumulator)
           segmentFileName = SegmentFileStore.writeSegmentFile(
             carbonTable,
             mergedLoadNumber,
@@ -278,6 +281,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
             segmentMetaDataInfo)
         }
       }
+      // clear segmentMetaDataAccumulator
+      segmentMetaDataAccumulator.reset()
       // Used to inform the commit listener that the commit is fired from compaction flow.
       operationContext.setProperty("isCompaction", "true")
       // trigger event for compaction
@@ -377,7 +382,9 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
   def compactSegmentsByGlobalSort(
       sparkSession: SparkSession,
       carbonLoadModel: CarbonLoadModel,
-      carbonMergerMapping: CarbonMergerMapping): Array[(String, Boolean)] = {
+      carbonMergerMapping: CarbonMergerMapping,
+      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]])
+  : Array[(String, Boolean)] = {
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val splits = splitsOfSegments(
       sparkSession,
@@ -402,10 +409,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         Option(dataFrame),
         outputModel,
         SparkSQLUtil.sessionState(sparkSession).newHadoopConf(),
-        sparkSession
-          .sqlContext
-          .sparkContext
-          .collectionAccumulator[Map[String, SegmentMetaDataInfo]])
+        segmentMetaDataAccumulator)
         .map { row =>
           (row._1, FailureCauses.NONE == row._2._2.failureCauses)
         }

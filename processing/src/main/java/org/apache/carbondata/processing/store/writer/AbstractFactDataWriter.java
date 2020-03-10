@@ -40,6 +40,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.segmentmeta.BlockColumnMetaDataInfo;
 import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfoStats;
@@ -392,7 +393,9 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     // get the block index info thrift
     List<BlockIndex> blockIndexThrift = CarbonMetadataUtil.getBlockIndexInfo(blockIndexInfoList);
     // get all block minmax and add to segmentMinMaxMap
-    if (null != model.getSegmentId()) {
+    CarbonTable carbonTable = model.getTableSpec().getCarbonTable();
+    if (null != model.getSegmentId() && !carbonTable.isHivePartitionTable() && !carbonTable
+        .isIndexTable()) {
       for (BlockIndexInfo blockIndex : blockIndexInfoList) {
         byte[][] min = blockIndex.getBlockletIndex().getMinMaxIndex().getMinValues();
         byte[][] max = blockIndex.getBlockletIndex().getMinMaxIndex().getMaxValues();

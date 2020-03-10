@@ -89,7 +89,7 @@ public class Segment implements Serializable, Writable {
   /**
    * Segment level min and max values
    */
-  private SegmentMetaDataInfo segmentMetaDataINfo;
+  private SegmentMetaDataInfo segmentMetaDataInfo;
 
   public Segment() {
 
@@ -383,11 +383,11 @@ public class Segment implements Serializable, Writable {
     this.indexSize = in.readLong();
   }
 
-  public SegmentMetaDataInfo getSegmentColumnMetaDataINfo() {
-    return segmentMetaDataINfo;
+  public SegmentMetaDataInfo getSegmentMetaDataInfo() {
+    return segmentMetaDataInfo;
   }
 
-  public void setSegmentColumnMetaDataINfo(SegmentMetaDataInfo segmentMetaDataINfo) {
-    this.segmentMetaDataINfo = segmentMetaDataINfo;
+  public void setSegmentMetaDataInfo(SegmentMetaDataInfo segmentMetaDataInfo) {
+    this.segmentMetaDataInfo = segmentMetaDataInfo;
   }
 }

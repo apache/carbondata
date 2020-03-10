@@ -156,16 +156,10 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
         getTableBlockUniqueIdentifierWrappers(partitionsToPrune,
             tableBlockIndexUniqueIdentifierWrappers, identifiers);
       } else {
-        SegmentMetaDataInfo segmentMetaDataInfo = segment.getSegmentColumnMetaDataINfo();
+        SegmentMetaDataInfo segmentMetaDataInfo = segment.getSegmentMetaDataInfo();
         //        boolean isLoadAllIndex = Boolean.parseBoolean(CarbonProperties.getInstance()
         //            .getProperty(CarbonCommonConstants.CARBON_LOAD_ALL_INDEX_TO_CACHE,
         //                CarbonCommonConstants.CARBON_LOAD_ALL_INDEX_TO_CACHE_DEFAULT));
-        if (this.getCarbonTable().isTransactionalTable() && !this.getCarbonTable()
-            .isHivePartitionTable() && !this.getCarbonTable().isIndexTable()) {
-          if (null == segmentMetaDataInfo) {
-            throw new RuntimeException("Segment minmax not written");
-          }
-        }
         if (null != segmentMetaDataInfo && null != filter && !filter.isEmpty() && null != filter
             .getExpression() && null == FilterUtil
             .getImplicitFilterExpression(filter.getExpression())) {
@@ -350,7 +344,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     SegmentBlockIndexInfo segmentBlockIndexInfo = segmentMap.get(segment.getSegmentNo());
     Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = null;
     if (null != segmentBlockIndexInfo) {
-      segment.setSegmentColumnMetaDataINfo(
+      segment.setSegmentMetaDataInfo(
           segmentMap.get(segment.getSegmentNo()).getSegmentMetaDataInfo());
       return segmentBlockIndexInfo.getTableBlockIndexUniqueIdentifiers();
     } else {
@@ -359,7 +353,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       if (tableBlockIndexUniqueIdentifiers.size() > 0) {
         segmentMap.put(segment.getSegmentNo(),
             new SegmentBlockIndexInfo(tableBlockIndexUniqueIdentifiers,
-                segment.getSegmentColumnMetaDataINfo()));
+                segment.getSegmentMetaDataInfo()));
       }
     }
     return tableBlockIndexUniqueIdentifiers;
@@ -571,7 +565,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       }
       segmentMap.put(distributable.getSegment().getSegmentNo(),
           new SegmentBlockIndexInfo(tableBlockIndexUniqueIdentifiers,
-              distributable.getSegment().getSegmentColumnMetaDataINfo()));
+              distributable.getSegment().getSegmentMetaDataInfo()));
     } else {
       for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier :
           tableBlockIndexUniqueIdentifiers) {
