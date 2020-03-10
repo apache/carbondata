@@ -19,7 +19,7 @@ package org.apache.carbondata.core.indexstore;
 
 import java.util.Set;
 
-import org.apache.carbondata.core.util.SegmentMetaDataInfo;
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo;
 
 /**
  * Holds tableBlockUniqueIdentifiers and block level minMax values for the segment

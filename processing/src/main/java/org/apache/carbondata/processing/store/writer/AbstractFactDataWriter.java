@@ -23,9 +23,7 @@ import java.io.IOException;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -43,13 +41,13 @@ import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.BlockColumnMetaDataInfo;
+import org.apache.carbondata.core.segmentmeta.BlockColumnMetaDataInfo;
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfoStats;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.OutputFilesInfoHolder;
-import org.apache.carbondata.core.util.SegmentMetaDataInfoStats;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileWriter;
 import org.apache.carbondata.format.BlockIndex;
@@ -396,27 +394,13 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     // get all block minmax and add to segmentMinMaxMap
     if (null != model.getSegmentId()) {
       for (BlockIndexInfo blockIndex : blockIndexInfoList) {
-        Map<String, BlockColumnMetaDataInfo> blockLevelMetaDataInfoMap = new LinkedHashMap<>();
         byte[][] min = blockIndex.getBlockletIndex().getMinMaxIndex().getMinValues();
         byte[][] max = blockIndex.getBlockletIndex().getMinMaxIndex().getMaxValues();
-        for (int i = 0; i < thriftColumnSchemaList.size(); i++) {
-          org.apache.carbondata.format.ColumnSchema columnSchema = thriftColumnSchemaList.get(i);
-          boolean isSortColumn = false;
-          boolean isColumnDrift = false;
-          if (null != columnSchema.columnProperties && !columnSchema.columnProperties.isEmpty()) {
-            if (null != columnSchema.columnProperties.get(CarbonCommonConstants.SORT_COLUMNS)) {
-              isSortColumn = true;
-            }
-            if (null != columnSchema.columnProperties.get(CarbonCommonConstants.COLUMN_DRIFT)) {
-              isColumnDrift = true;
-            }
-          }
-          blockLevelMetaDataInfoMap.put(columnSchema.column_id,
-              new BlockColumnMetaDataInfo(isSortColumn, min[i], max[i], isColumnDrift));
-        }
+        BlockColumnMetaDataInfo blockColumnMetaDataInfo =
+            new BlockColumnMetaDataInfo(thriftColumnSchemaList, min, max);
         SegmentMetaDataInfoStats.getInstance()
             .setBlockMetaDataInfo(model.getTableName(), model.getSegmentId(),
-                blockLevelMetaDataInfoMap);
+                blockColumnMetaDataInfo);
       }
     }
     String indexFileName;

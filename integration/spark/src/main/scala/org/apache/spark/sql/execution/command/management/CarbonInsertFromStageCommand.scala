@@ -39,8 +39,8 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{ColumnarFormatVersion, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager, StageInput}
-import org.apache.carbondata.core.util.SegmentMetaDataInfo
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.processing.loading.FailureCauses
@@ -283,12 +283,17 @@ case class CarbonInsertFromStageCommand(
                   s"${table.getDatabaseName}.${table.getTableName}")
       val start = System.currentTimeMillis()
       val dataFrame = DataLoadProcessBuilderOnSpark.createInputDataFrame(spark, table, splits)
+      // accumulator to collect segment minmax
+      val segmentMetaDataAccumulator = spark.sqlContext
+        .sparkContext
+        .collectionAccumulator[Map[String, SegmentMetaDataInfo]]
       if (table.getBucketingInfo == null) {
         DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
           spark,
           Option(dataFrame),
           loadModel,
-          SparkSQLUtil.sessionState(spark).newHadoopConf()
+          SparkSQLUtil.sessionState(spark).newHadoopConf(),
+          segmentMetaDataAccumulator
         ).map { row =>
           (row._1, FailureCauses.NONE == row._2._2.failureCauses)
         }
@@ -298,7 +303,7 @@ case class CarbonInsertFromStageCommand(
           Option(dataFrame),
           None,
           loadModel,
-          spark.sqlContext.sparkContext.collectionAccumulator[Map[String, SegmentMetaDataInfo]])
+          segmentMetaDataAccumulator)
       }
       LOGGER.info(s"finish data loading, time taken ${System.currentTimeMillis() - start}ms")
 

@@ -15,31 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.util;
+package org.apache.carbondata.core.segmentmeta;
 
 import java.io.Serializable;
 import java.util.Map;
 
 /**
- *  Represent SegmentBlockMinMaxInfo for each block in a segment
+ * Represent segment metadata information
  */
 public class SegmentMetaDataInfo implements Serializable {
 
-  /**
-   * Map of Column id's and it's block level min,max and isSortColumn values
-   */
-  private Map<String, BlockColumnMetaDataInfo> segmentMetaDataInfo;
+  private Map<String, SegmentColumnMetaDataInfo> segmentColumnMetaDataInfoMap;
 
-  SegmentMetaDataInfo(Map<String, BlockColumnMetaDataInfo> segmentMetaDataInfo) {
-    this.segmentMetaDataInfo = segmentMetaDataInfo;
+  SegmentMetaDataInfo(Map<String, SegmentColumnMetaDataInfo> segmentColumnMetaDataInfoMap) {
+    this.segmentColumnMetaDataInfoMap = segmentColumnMetaDataInfoMap;
   }
 
-  public Map<String, BlockColumnMetaDataInfo> getSegmentMetaDataInfo() {
-    return segmentMetaDataInfo;
-  }
-
-  public void setSegmentMetaDataInfo(
-      Map<String, BlockColumnMetaDataInfo> segmentMetaDataInfo) {
-    this.segmentMetaDataInfo = segmentMetaDataInfo;
+  public Map<String, SegmentColumnMetaDataInfo> getSegmentColumnMetaDataInfoMap() {
+    return segmentColumnMetaDataInfoMap;
   }
 }

@@ -15,48 +15,40 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.util;
+package org.apache.carbondata.core.segmentmeta;
 
 import java.io.Serializable;
 
 /**
- * Represent min, max and alter sort column properties for each column in a block
+ * Represent segment level column metadata information
  */
-public class BlockColumnMetaDataInfo implements Serializable {
+public class SegmentColumnMetaDataInfo implements Serializable {
 
   /**
    * true if column is a sort column
    */
   private boolean isSortColumn;
 
-  public void setBlockMinValue(byte[] blockMinValue) {
-    this.blockMinValue = blockMinValue;
-  }
+  /**
+   * segment level  min value for a column
+   */
+  private byte[] columnMinValue;
 
   /**
-   * block level  min value for a column
+   * segment level max value for a column
    */
-  private byte[] blockMinValue;
-
-  public void setBlockMaxValue(byte[] blockMaxValue) {
-    this.blockMaxValue = blockMaxValue;
-  }
-
-  /**
-   * block level max value for a column
-   */
-  private byte[] blockMaxValue;
+  private byte[] columnMaxValue;
 
   /**
    * true if column measure if changed to dimension
    */
   private boolean isColumnDrift;
 
-  public BlockColumnMetaDataInfo(boolean isSortColumn, byte[] blockMinValue, byte[] blockMaxValue,
-      boolean isColumnDrift) {
+  public SegmentColumnMetaDataInfo(boolean isSortColumn, byte[] columnMinValue,
+      byte[] columnMaxValue, boolean isColumnDrift) {
     this.isSortColumn = isSortColumn;
-    this.blockMinValue = blockMinValue;
-    this.blockMaxValue = blockMaxValue;
+    this.columnMinValue = columnMinValue;
+    this.columnMaxValue = columnMaxValue;
     this.isColumnDrift = isColumnDrift;
   }
 
@@ -64,16 +56,24 @@ public class BlockColumnMetaDataInfo implements Serializable {
     return isSortColumn;
   }
 
-  public byte[] getBlockMinValue() {
-    return blockMinValue;
+  public byte[] getColumnMinValue() {
+    return columnMinValue;
   }
 
-  public byte[] getBlockMaxValue() {
-    return blockMaxValue;
+  public byte[] getColumnMaxValue() {
+    return columnMaxValue;
   }
 
   public boolean isColumnDrift() {
     return isColumnDrift;
+  }
+
+  public void setColumnMinValue(byte[] columnMinValue) {
+    this.columnMinValue = columnMinValue;
+  }
+
+  public void setColumnMaxValue(byte[] columnMaxValue) {
+    this.columnMaxValue = columnMaxValue;
   }
 }
 

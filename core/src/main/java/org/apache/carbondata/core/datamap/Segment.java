@@ -31,10 +31,10 @@ import java.util.Set;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
-import org.apache.carbondata.core.util.SegmentMetaDataInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.hadoop.conf.Configuration;
@@ -383,11 +383,11 @@ public class Segment implements Serializable, Writable {
     this.indexSize = in.readLong();
   }
 
-  public SegmentMetaDataInfo getSegmentMetaDataINfo() {
+  public SegmentMetaDataInfo getSegmentColumnMetaDataINfo() {
     return segmentMetaDataINfo;
   }
 
-  public void setSegmentMetaDataINfo(SegmentMetaDataInfo segmentMetaDataINfo) {
+  public void setSegmentColumnMetaDataINfo(SegmentMetaDataInfo segmentMetaDataINfo) {
     this.segmentMetaDataINfo = segmentMetaDataINfo;
   }
 }

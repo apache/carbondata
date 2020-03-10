@@ -38,6 +38,7 @@ import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.SegmentFileStore
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.CarbonUtil
@@ -194,6 +195,10 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       OperationListenerBus.getInstance().fireEvent(dataMapPreExecutionEvent,
         dataMapOperationContext)
     }
+    // accumulator to collect segment metadata
+    val segmentMetaDataAccumulator = sqlContext
+      .sparkContext
+      .collectionAccumulator[Map[String, SegmentMetaDataInfo]]
 
     val mergeStatus =
       if (CompactionType.IUD_UPDDEL_DELTA == compactionType) {
@@ -201,7 +206,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           sc.sparkSession,
           new MergeResultImpl(),
           carbonLoadModel,
-          carbonMergerMapping
+          carbonMergerMapping,
+          segmentMetaDataAccumulator
         ).collect
       } else if (SortScope.GLOBAL_SORT == carbonTable.getSortScope &&
                  !carbonTable.getSortColumns.isEmpty &&
@@ -213,7 +219,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           sc.sparkSession,
           new MergeResultImpl(),
           carbonLoadModel,
-          carbonMergerMapping
+          carbonMergerMapping,
+          segmentMetaDataAccumulator
         ).collect
       }
 
@@ -257,10 +264,18 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           }.filter(_.getSegmentFileName != null).asJava
           segmentFilesForIUDCompact = new util.ArrayList[Segment](segmentFilesList)
         } else {
+          val segmentMetaDataInfo =
+            if (!segmentMetaDataAccumulator.isZero &&
+                segmentMetaDataAccumulator.value.get(0).contains(mergedLoadNumber)) {
+              segmentMetaDataAccumulator.value.get(0)(mergedLoadNumber)
+            } else {
+              null
+            }
           segmentFileName = SegmentFileStore.writeSegmentFile(
             carbonTable,
             mergedLoadNumber,
-            carbonLoadModel.getFactTimeStamp.toString)
+            carbonLoadModel.getFactTimeStamp.toString,
+            segmentMetaDataInfo)
         }
       }
       // Used to inform the commit listener that the commit is fired from compaction flow.
@@ -386,7 +401,11 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         sparkSession,
         Option(dataFrame),
         outputModel,
-        SparkSQLUtil.sessionState(sparkSession).newHadoopConf())
+        SparkSQLUtil.sessionState(sparkSession).newHadoopConf(),
+        sparkSession
+          .sqlContext
+          .sparkContext
+          .collectionAccumulator[Map[String, SegmentMetaDataInfo]])
         .map { row =>
           (row._1, FailureCauses.NONE == row._2._2.failureCauses)
         }
