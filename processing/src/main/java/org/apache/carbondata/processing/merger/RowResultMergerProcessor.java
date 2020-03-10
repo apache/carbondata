@@ -20,6 +20,7 @@ package org.apache.carbondata.processing.merger;
 import java.io.IOException;
 import java.util.AbstractQueue;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -29,13 +30,14 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.exception.SliceMergerException;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
@@ -212,12 +214,61 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
    * @throws SliceMergerException
    */
   private void addRow(Object[] carbonTuple) throws SliceMergerException {
-    CarbonRow row = WriteStepRowUtil.fromMergerRow(carbonTuple, segprop, noDicAndComplexColumns);
+    CarbonRow row = fromMergerRow(carbonTuple, segprop, noDicAndComplexColumns);
     try {
       this.dataHandler.addDataToStore(row);
     } catch (CarbonDataWriterException e) {
       throw new SliceMergerException("Problem in merging the slice", e);
     }
+  }
+
+  private static CarbonRow fromMergerRow(Object[] row, SegmentProperties segmentProperties,
+      CarbonColumn[] noDicAndComplexColumns) {
+
+    ArrayList<Object> array = new ArrayList<>();
+    // dictionary dimension
+    byte[] mdk = ((ByteArrayWrapper) row[0]).getDictionaryKey();
+    int numDict = mdk.length / ByteUtil.dateBytesSize();
+    for (int i = 0; i < numDict; i++) {
+      array.add(ByteUtil.convertBytesToInt(mdk, i * ByteUtil.dateBytesSize()));
+    }
+
+    byte[][] noDictionaryKeys = ((ByteArrayWrapper) row[0]).getNoDictionaryKeys();
+    for (int i = 0; i < noDictionaryKeys.length; i++) {
+      // in case of compaction rows are collected from result collector and are in byte[].
+      // Convert the no dictionary columns to original data,
+      // as load expects the no dictionary column with original data.
+      if (DataTypeUtil.isPrimitiveColumn(noDicAndComplexColumns[i].getDataType())) {
+        Object value = DataTypeUtil
+            .getDataBasedOnDataTypeForNoDictionaryColumn(noDictionaryKeys[i],
+                noDicAndComplexColumns[i].getDataType());
+        // for timestamp the above method will give the original data, so it should be
+        // converted again to the format to be loaded (without micros)
+        if (null != value
+            && noDicAndComplexColumns[i].getDataType() == DataTypes.TIMESTAMP) {
+          array.add((long) value / 1000L);
+        } else {
+          array.add(value);
+        }
+      } else {
+        array.add(noDictionaryKeys[i]);
+      }
+    }
+
+    // For Complex Type Columns
+    byte[][] complexKeys = ((ByteArrayWrapper) row[0]).getComplexTypesKeys();
+    for (int i = segmentProperties.getNumberOfNoDictionaryDimension(), j = 0;
+         i < segmentProperties.getNumberOfNoDictionaryDimension() + segmentProperties
+             .getComplexDimensions().size(); i++) {
+      array.add(complexKeys[j++]);
+    }
+
+    // measure
+    int measureCount = row.length - 1;
+    Object[] measures = new Object[measureCount];
+    System.arraycopy(row, 1, measures, 0, measureCount);
+    array.addAll(Arrays.asList(measures));
+    return new CarbonRow(array.toArray());
   }
 
   /**

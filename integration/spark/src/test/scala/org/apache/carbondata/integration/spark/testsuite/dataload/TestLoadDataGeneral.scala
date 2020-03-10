@@ -162,7 +162,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
       sql("update load32000chardata_dup set(load32000chardata_dup.dim2)=(select concat(load32000chardata.dim2,'aaaa') from load32000chardata)").show()
     }
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false")
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT)
   }
 
   test("test load / insert / update with data more than 32000 bytes - dictionary_exclude") {

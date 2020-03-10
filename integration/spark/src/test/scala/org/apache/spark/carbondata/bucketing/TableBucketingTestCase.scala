@@ -909,7 +909,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
         |where t1.name = t2.name) temp
       """.stripMargin), Row(100))
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false")
+      CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT)
   }
 
   test("test insert into bucket table new insert flow") {

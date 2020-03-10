@@ -1217,7 +1217,7 @@ public final class CarbonCommonConstants {
   public static final String CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT =
       "carbon.enable.bad.record.handling.for.insert";
 
-  public static final String CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT = "false";
+  public static final String CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT = "true";
 
   //////////////////////////////////////////////////////////////////////////////////////////
   // Query parameter start here

@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.util;
+package org.apache.carbondata.processing.sort.sortdata;
 
-import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 
 /**
  * This is the utility class for No Dictionary changes.
@@ -26,9 +25,9 @@ public class NonDictionaryUtil {
 
   public static void prepareOutObj(Object[] out, int[] dimArray, Object[] byteBufferArr,
       Object[] measureArray) {
-    out[WriteStepRowUtil.DICTIONARY_DIMENSION] = dimArray;
-    out[WriteStepRowUtil.NO_DICTIONARY_AND_COMPLEX] = byteBufferArr;
-    out[WriteStepRowUtil.MEASURE] = measureArray;
+    out[SortStepRowUtil.DICTIONARY_DIMENSION] = dimArray;
+    out[SortStepRowUtil.NO_DICTIONARY_AND_COMPLEX] = byteBufferArr;
+    out[SortStepRowUtil.MEASURE] = measureArray;
 
   }
 }

@@ -17,8 +17,8 @@
 
 package org.apache.carbondata.processing.sort;
 
-import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
+import org.apache.carbondata.processing.sort.sortdata.SortStepRowUtil;
 
 /**
  * This class will be used when order is not change so not need to update the row
@@ -35,8 +35,8 @@ public class DummyRowUpdater implements SortTempRowUpdater {
   @Override
   public void updateOutputRow(Object[] out, int[] dimArray, Object[] noDictArray,
       Object[] measureArray) {
-    out[WriteStepRowUtil.DICTIONARY_DIMENSION] = dimArray;
-    out[WriteStepRowUtil.NO_DICTIONARY_AND_COMPLEX] = noDictArray;
-    out[WriteStepRowUtil.MEASURE] = measureArray;
+    out[SortStepRowUtil.DICTIONARY_DIMENSION] = dimArray;
+    out[SortStepRowUtil.NO_DICTIONARY_AND_COMPLEX] = noDictArray;
+    out[SortStepRowUtil.MEASURE] = measureArray;
   }
 }

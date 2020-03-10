@@ -365,25 +365,38 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     }
 
     private Object[] convertToNoDictionaryToBytes(Object[] data, DataField[] dataFields) {
-      Object[] newData = new Object[dataFields.length];
+      ArrayList<Object> noDict = new ArrayList<>();
+      ArrayList<Object> dict = new ArrayList<>();
+      ArrayList<Object> complex = new ArrayList<>();
+      ArrayList<Object> measure = new ArrayList<>();
+
       for (int i = 0; i < dataFields.length; i++) {
         if (dataFields[i].getColumn().isIndexColumn()) {
           continue;
         }
         if (i < noDictionaryMapping.length && noDictionaryMapping[i]) {
           if (DataTypeUtil.isPrimitiveColumn(dataTypes[i])) {
-            // keep the no dictionary measure column as original data
-            newData[i] = data[orderOfData[i]];
+            if (dataTypes[i] == DataTypes.TIMESTAMP) {
+              // keep the no dictionary measure column as original data
+              noDict.add(data[orderOfData[i]]);
+            } else {
+              // keep the no dictionary measure column as original data
+              if (dataFields[i].getColumn().isDimension()) {
+                noDict.add(data[orderOfData[i]]);
+              } else {
+                measure.add(data[orderOfData[i]]);
+              }
+            }
           } else {
-            newData[i] = DataTypeUtil
-                .getBytesDataDataTypeForNoDictionaryColumn(data[orderOfData[i]], dataTypes[i]);
+            noDict.add(DataTypeUtil
+                .getBytesDataDataTypeForNoDictionaryColumn(data[orderOfData[i]], dataTypes[i]));
           }
         } else {
-          // if this is a complex column then recursively comver the data into Byte Array.
+          // if this is a complex column then recursively convert the data into Byte Array.
           if (dataTypes[i].isComplexType() && isHivePartitionTable) {
-            newData[i] = data[orderOfData[i]];
+            complex.add(data[orderOfData[i]]);
           } else if (dataTypes[i].isComplexType()) {
-            getComplexTypeByteArray(newData, i, data, dataFields[i], orderOfData[i]);
+            complex.add(getComplexTypeByteArray(data, dataFields[i], orderOfData[i]));
           } else {
             DataType dataType = dataFields[i].getColumn().getDataType();
             if (dataType == DataTypes.DATE && data[orderOfData[i]] instanceof Long) {
@@ -391,25 +404,32 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
                 dateDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
                     .getDirectDictionaryGenerator(dataType, dataFields[i].getDateFormat());
               }
-              newData[i] = dateDictionaryGenerator.generateKey((long) data[orderOfData[i]]);
+              dict.add(dateDictionaryGenerator.generateKey((long) data[orderOfData[i]]));
             } else if (dataType == DataTypes.TIMESTAMP && data[orderOfData[i]] instanceof Long) {
               if (timestampDictionaryGenerator == null) {
                 timestampDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
                     .getDirectDictionaryGenerator(dataType, dataFields[i].getTimestampFormat());
               }
-              newData[i] = timestampDictionaryGenerator.generateKey((long) data[orderOfData[i]]);
+              dict.add(timestampDictionaryGenerator.generateKey((long) data[orderOfData[i]]));
             } else {
-              newData[i] = data[orderOfData[i]];
+              if (dataType == DataTypes.DATE) {
+                dict.add(data[orderOfData[i]]);
+              } else {
+                noDict.add(data[orderOfData[i]]);
+              }
             }
           }
         }
       }
-      return newData;
+      dict.addAll(noDict);
+      dict.addAll(complex);
+      dict.addAll(measure);
+      return dict.toArray();
     }
 
     private Object[] convertToNoDictionaryToBytesWithoutReArrange(Object[] data,
         DataField[] dataFields) {
-      Object[] newData = new Object[data.length];
+      /*Object[] newData = new Object[data.length];
       // now dictionary is removed, no need of no dictionary mapping
       for (int i = 0; i < data.length; i++) {
         if (dataFields[i].getColumn().isIndexColumn()) {
@@ -431,10 +451,11 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
               DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(data[i], dataTypes[i]);
         }
       }
-      return newData;
+      return newData;*/
+      return null;
     }
 
-    private void getComplexTypeByteArray(Object[] newData, int index, Object[] data,
+    private byte[] getComplexTypeByteArray(Object[] data,
         DataField dataField, int orderedIndex) {
       ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
       DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
@@ -443,7 +464,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
             dataFieldsWithComplexDataType.get(dataField.getColumn().getOrdinal());
         complextType.writeByteArray(data[orderedIndex], dataOutputStream, logHolder);
         dataOutputStream.close();
-        newData[index] = byteArray.toByteArray();
+        return byteArray.toByteArray();
       } catch (BadRecordFoundException e) {
         throw new CarbonDataLoadingException("Loading Exception: " + e.getMessage(), e);
       } catch (Exception e) {

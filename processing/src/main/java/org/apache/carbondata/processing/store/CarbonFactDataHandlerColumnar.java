@@ -41,12 +41,10 @@ import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
@@ -138,16 +136,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.model = model;
     initParameters(model);
     this.version = CarbonProperties.getInstance().getFormatVersion();
-    StringBuffer noInvertedIdxCol = new StringBuffer();
-    for (CarbonDimension cd : model.getSegmentProperties().getDimensions()) {
-      if (!cd.isUseInvertedIndex()) {
-        noInvertedIdxCol.append(cd.getColName()).append(",");
-      }
-    }
-
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Columns considered as NoInverted Index are " + noInvertedIdxCol.toString());
-    }
     this.complexIndexMapCopy = new HashMap<>();
     for (Map.Entry<Integer, GenericDataType> entry: model.getComplexIndexMap().entrySet()) {
       this.complexIndexMapCopy.put(entry.getKey(), entry.getValue().deepCopy());
@@ -226,7 +214,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             new int[model.getNoDictDataTypesList().size() + model.getNoDictAllComplexColumnDepth()];
       }
     }
-
     dataRows.add(row);
     this.entryCount++;
     // if entry count reaches to leaf node size then we are ready to write
@@ -276,6 +263,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private boolean needToCutThePage(CarbonRow row) {
     List<DataType> noDictDataTypesList = model.getNoDictDataTypesList();
     int totalNoDictPageCount = noDictDataTypesList.size() + model.getNoDictAllComplexColumnDepth();
+    int dictionaryCount = model.getDictDimensionCount();
     if (totalNoDictPageCount > 0) {
       int currentElementLength;
       int bucketCounter = 0;
@@ -286,12 +274,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             CarbonCommonConstants.TABLE_PAGE_SIZE_INMB_DEFAULT * 1024 * 1024;*/
         return false;
       }
-      Object[] nonDictArray = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       for (int i = 0; i < noDictDataTypesList.size(); i++) {
         DataType columnType = noDictDataTypesList.get(i);
         if ((columnType == DataTypes.STRING) || (columnType == DataTypes.VARCHAR) || (columnType
             == DataTypes.BINARY)) {
-          currentElementLength = ((byte[]) nonDictArray[i]).length;
+          currentElementLength = ((byte[]) row.getData()[dictionaryCount + i]).length;
           noDictColumnPageSize[bucketCounter] += currentElementLength;
           canSnappyHandleThisRow(noDictColumnPageSize[bucketCounter]);
           // If current page size is more than configured page size, cut the page here.
@@ -311,7 +298,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
               .get(i - model.getNoDictionaryCount() +
                   model.getSegmentProperties().getNumberOfPrimitiveDimensions());
           int depth = genericDataType.getDepth();
-          List<ArrayList<byte[]>> flatComplexColumnList = (List<ArrayList<byte[]>>) nonDictArray[i];
+          List<ArrayList<byte[]>> flatComplexColumnList =
+              (List<ArrayList<byte[]>>) row.getData()[dictionaryCount + i];
           for (int k = 0; k < depth; k++) {
             ArrayList<byte[]> children = flatComplexColumnList.get(k);
             // Add child element from inner list.
@@ -339,8 +327,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   private int setFlatCarbonRowForComplex(CarbonRow row) {
     int noDictTotalComplexChildDepth = 0;
-    Object[] noDictAndComplexDimension = WriteStepRowUtil.getNoDictAndComplexDimension(row);
-    for (int i = 0; i < noDictAndComplexDimension.length; i++) {
+    int dictionaryCount = model.getNoDictionaryCount();
+    for (int i = 0; i < model.getTableSpec().getNoDictionaryDimensionSpec().size(); i++) {
       // complex types starts after no dictionary dimensions
       if (i >= model.getNoDictionaryCount() && (model.getTableSpec().getNoDictionaryDimensionSpec()
           .get(i).getSchemaDataType().isComplexType())) {
@@ -356,7 +344,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         }
         // flatten the complex byteArray as per depth
         try {
-          ByteBuffer byteArrayInput = ByteBuffer.wrap((byte[])noDictAndComplexDimension[i]);
+          ByteBuffer byteArrayInput = ByteBuffer.wrap((byte[])row.getData()[dictionaryCount + i]);
           ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
           DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutput);
           genericDataType.parseComplexValue(byteArrayInput, dataOutputStream);
@@ -368,7 +356,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         }
         noDictTotalComplexChildDepth += flatComplexColumnList.size();
         // update the complex column data with the flat data
-        noDictAndComplexDimension[i] = flatComplexColumnList;
+        row.getData()[dictionaryCount + i] = flatComplexColumnList;
       }
     }
     return noDictTotalComplexChildDepth;

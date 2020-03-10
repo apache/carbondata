@@ -19,7 +19,6 @@ package org.apache.carbondata.processing.sort.sortdata;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -77,14 +76,14 @@ public class InMemorySortTempChunkHolder extends SortTempFileChunkHolder {
     Object[] row = this.rawResultIterator.next();
     //TODO add code to get directly Object[] Instead Of CarbonRow Object
     CarbonRow carbonRow =
-        WriteStepRowUtil.fromMergerRow(row, segmentProperties, noDicAndComplexColumns);
+        SortStepRowUtil.fromMergerRow(row, segmentProperties, noDicAndComplexColumns);
     Object[] data = carbonRow.getData();
-    Object[] measuresValue = (Object[]) data[WriteStepRowUtil.MEASURE];
+    Object[] measuresValue = (Object[]) data[SortStepRowUtil.MEASURE];
     for (int i = 0; i < measuresValue.length; i++) {
       measuresValue[i] = getConvertedMeasureValue(measuresValue[i], measureDataType[i]);
     }
-    returnRow = new IntermediateSortTempRow((int[]) data[WriteStepRowUtil.DICTIONARY_DIMENSION],
-        (Object[]) data[WriteStepRowUtil.NO_DICTIONARY_AND_COMPLEX], measuresValue);
+    returnRow = new IntermediateSortTempRow((int[]) data[SortStepRowUtil.DICTIONARY_DIMENSION],
+        (Object[]) data[SortStepRowUtil.NO_DICTIONARY_AND_COMPLEX], measuresValue);
 
   }
 

@@ -17,8 +17,8 @@
 
 package org.apache.carbondata.processing.sort;
 
-import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
+import org.apache.carbondata.processing.sort.sortdata.SortStepRowUtil;
 
 /**
  * Below class will be used to update the sort output row based on schema order during filnal merge
@@ -86,8 +86,8 @@ public class SchemaBasedRowUpdater implements SortTempRowUpdater {
       }
       noDictArray = noDictArrayNew;
     }
-    out[WriteStepRowUtil.DICTIONARY_DIMENSION] = dimArray;
-    out[WriteStepRowUtil.NO_DICTIONARY_AND_COMPLEX] = noDictArray;
-    out[WriteStepRowUtil.MEASURE] = measureArray;
+    out[SortStepRowUtil.DICTIONARY_DIMENSION] = dimArray;
+    out[SortStepRowUtil.NO_DICTIONARY_AND_COMPLEX] = noDictArray;
+    out[SortStepRowUtil.MEASURE] = measureArray;
   }
 }

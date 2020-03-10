@@ -41,7 +41,6 @@ import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCo
 import org.apache.carbondata.core.datastore.page.statistics.StringStatsCollector;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
-import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -162,11 +161,9 @@ public class TablePage {
       }
     }
     complexDimensionPages = new ComplexColumnPage[model.getComplexColumnCount()];
-    for (int i = 0; i < complexDimensionPages.length; i++) {
-      // here we still do not the depth of the complex column, it will be initialized when
-      // we get the first row.
-      complexDimensionPages[i] = null;
-    }
+    // here we still do not the depth of the complex column, it will be initialized when
+    // we get the first row.
+    Arrays.fill(complexDimensionPages, null);
     measurePages = new ColumnPage[model.getMeasureCount()];
     DataType[] dataTypes = model.getMeasureDataType();
     for (int i = 0; i < measurePages.length; i++) {
@@ -204,54 +201,42 @@ public class TablePage {
   // convert the input row object to columnar data and add to column pages
   private void convertToColumnarAndAddToPages(int rowId, CarbonRow row) {
     // 1. convert dictionary columns
-    int[] dictDimensions = WriteStepRowUtil.getDictDimension(row);
-    byte[][] keys = new byte[dictDimensions.length][];
-    for (int i = 0; i < dictDimensions.length; i++) {
-      keys[i] = ByteUtil.toBytes(dictDimensions[i]);
+    byte[][] keys = new byte[dictDimensionPages.length][];
+    for (int i = 0; i < dictDimensionPages.length; i++) {
+      keys[i] = ByteUtil.toBytes((int)row.getData()[i]);
     }
     for (int i = 0; i < dictDimensionPages.length; i++) {
       dictDimensionPages[i].putData(rowId, keys[i]);
     }
-
     // 2. convert noDictionary columns and complex columns and varchar, binary columns.
     int noDictionaryCount = noDictDimensionPages.length;
     int complexColumnCount = complexDimensionPages.length;
-    if (noDictionaryCount > 0 || complexColumnCount > 0) {
-      TableSpec tableSpec = model.getTableSpec();
-      List<TableSpec.DimensionSpec> noDictionaryDimensionSpec =
-          tableSpec.getNoDictionaryDimensionSpec();
-      Object[] noDictAndComplex = WriteStepRowUtil.getNoDictAndComplexDimension(row);
-      for (int i = 0; i < noDictAndComplex.length; i++) {
-        if (noDictionaryDimensionSpec.get(i).getSchemaDataType() == DataTypes.VARCHAR
-            || noDictionaryDimensionSpec.get(i).getSchemaDataType() == DataTypes.BINARY) {
-          noDictDimensionPages[i].putData(rowId, noDictAndComplex[i]);
-        } else if (i < noDictionaryCount) {
-          if (DataTypeUtil
-              .isPrimitiveColumn(noDictDimensionPages[i].getColumnSpec().getSchemaDataType())) {
-            // put the actual data to the row
-            Object value = noDictAndComplex[i];
-            // in compaction flow the measure with decimal type will come as Spark decimal.
-            // need to convert it to byte array.
-            if (DataTypes.isDecimal(noDictDimensionPages[i].getDataType()) && model
-                .isCompactionFlow() && value != null) {
-              value = DataTypeUtil.getDataTypeConverter().convertFromDecimalToBigDecimal(value);
-            }
-            noDictDimensionPages[i].putData(rowId, value);
-          } else {
-            noDictDimensionPages[i].putData(rowId, noDictAndComplex[i]);
-          }
+    if (noDictionaryCount > 0) {
+      for (int i = 0; i < noDictDimensionPages.length; i++) {
+        Object value = row.getData()[dictDimensionPages.length + i];
+        if (DataTypes.isDecimal(noDictDimensionPages[i].getDataType()) && model.isCompactionFlow()
+            && value != null) {
+          // In compaction flow the measure with decimal type will come as Spark decimal.
+          // need to convert it to byte array.
+          value = DataTypeUtil.getDataTypeConverter().convertFromDecimalToBigDecimal(value);
+          noDictDimensionPages[i].putData(rowId, value);
         } else {
-          // complex columns
-          addComplexColumn(i - noDictionaryCount, rowId,
-              (List<ArrayList<byte[]>>) noDictAndComplex[i]);
+          // put the actual data to the row
+          noDictDimensionPages[i].putData(rowId, value);
         }
       }
     }
-    // 3. convert measure columns
-    Object[] measureColumns = WriteStepRowUtil.getMeasure(row);
+    if (complexColumnCount > 0) {
+      for (int i = 0; i < complexDimensionPages.length; i++) {
+        // complex columns
+        addComplexColumn(i - noDictionaryCount, rowId,
+            (List<ArrayList<byte[]>>) row.getData()[i + noDictDimensionPages.length
+                + dictDimensionPages.length]);
+      }
+    }
     for (int i = 0; i < measurePages.length; i++) {
-      Object value = measureColumns[i];
-
+      Object value = row.getData()[i + noDictDimensionPages.length + dictDimensionPages.length
+          + complexDimensionPages.length];
       // in compaction flow the measure with decimal type will come as Spark decimal.
       // need to convert it to byte array.
       if (DataTypes.isDecimal(measurePages[i].getDataType()) &&
@@ -395,7 +380,7 @@ public class TablePage {
     }
 
     encodedDimensions.addAll(encodedComplexDimensions);
-    return encodedDimensions.toArray(new EncodedColumnPage[encodedDimensions.size()]);
+    return encodedDimensions.toArray(new EncodedColumnPage[0]);
   }
 
   /**
@@ -404,7 +389,7 @@ public class TablePage {
   public ColumnPage getColumnPage(String columnName) {
     int dictDimensionIndex = -1;
     int noDictDimensionIndex = -1;
-    ColumnPage page = null;
+    ColumnPage page;
     TableSpec spec = model.getTableSpec();
     int numDimensions = spec.getNumDimensions();
     for (int i = 0; i < numDimensions; i++) {

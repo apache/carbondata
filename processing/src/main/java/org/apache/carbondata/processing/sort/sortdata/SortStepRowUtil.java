@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.row;
+package org.apache.carbondata.processing.sort.sortdata;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
@@ -25,7 +26,7 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 // Utility to create and retrieve data from CarbonRow in write step.
-public class WriteStepRowUtil {
+public class SortStepRowUtil {
 
   // In write step, the element of CarbonRow is:
   // 0: Dictionary dimension columns, encoded as int for each column
