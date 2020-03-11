@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.hive.test.server;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.ServerSocket;
@@ -117,29 +116,16 @@ public class HiveEmbeddedServer2 {
     log.info("Setting The Hive Conf Variables");
     String scratchDir = SCRATCH_DIR;
 
-    File scratchDirFile = new File(scratchDir);
-    //TestUtils.delete(scratchDirFile);
-
     Configuration cfg = new Configuration();
     HiveConf conf = new HiveConf(cfg, HiveConf.class);
     conf.addToRestrictList("columns.comments");
     conf.set("hive.scratch.dir.permission", "777");
     conf.setVar(ConfVars.SCRATCHDIRPERMISSION, "777");
-    if (!scratchDirFile.exists()) {
-      if (!scratchDirFile.mkdirs()) {
-        throw new IllegalArgumentException("could not create the directory:" + scratchDir);
-      }
-      // also set the permissions manually since Hive doesn't do it...
-      if (!scratchDirFile.setWritable(true, false)) {
-        throw new IllegalArgumentException("could not set write permissions for the directory:" +
-            scratchDir);
-      }
-    }
 
     conf.set("hive.metastore.warehouse.dir", scratchDir + "/warehouse");
     conf.set("hive.metastore.metadb.dir", scratchDir + "/metastore_db");
     conf.set("hive.exec.scratchdir", scratchDir);
-    conf.set("fs.permissions.umask-mode", "022");
+    conf.set("fs.permissions.umask-mode", "000");
     conf.set("javax.jdo.option.ConnectionURL",
         "jdbc:derby:;databaseName=" + scratchDir + "/metastore_db" + ";create=true");
     conf.set("hive.metastore.local", "true");
