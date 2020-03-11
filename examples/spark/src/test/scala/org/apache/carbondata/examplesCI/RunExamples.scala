@@ -19,7 +19,6 @@ package org.apache.carbondata.examplesCI
 
 import java.io.File
 
-import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.SparkSqlAdapter
 import org.scalatest.BeforeAndAfterAll
@@ -121,10 +120,10 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
     DirectSQLExample.exampleBody(spark)
   }
 
-  test("HiveExample") {
+  //Ignoring because HiveExample depends on Hadoop ENV, but CI doesn't meet the running conditions.
+  ignore("HiveExample") {
     SparkSqlAdapter.initSparkSQL()
     HiveExample.createCarbonTable(spark)
     HiveExample.readFromHive
   }
-
 }

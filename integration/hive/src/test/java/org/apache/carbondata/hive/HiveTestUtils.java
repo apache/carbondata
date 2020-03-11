@@ -26,6 +26,8 @@ import org.apache.carbondata.hive.test.server.HiveEmbeddedServer2;
 
 import org.junit.Assert;
 
+import javax.validation.constraints.AssertTrue;
+
 /**
  * A utility class to start and stop the Hive Embedded Server.
  */
@@ -53,16 +55,21 @@ public abstract class HiveTestUtils {
 
   public boolean checkAnswer(ResultSet actual, ResultSet expected) throws SQLException {
     Assert.assertEquals("Row Count Mismatch: ", expected.getFetchSize(), actual.getFetchSize());
+    int rowCountExpected = 0;
     while (expected.next()) {
+      rowCountExpected ++;
       if (!actual.next()) {
         return false;
       }
-      int numOfColumns = expected.getMetaData().getColumnCount();
-      for (int i = 1; i <= numOfColumns; i++) {
+      int numOfColumnsExpected = expected.getMetaData().getColumnCount();
+      Assert.assertTrue(numOfColumnsExpected > 0);
+      Assert.assertEquals(actual.getMetaData().getColumnCount(), numOfColumnsExpected);
+      for (int i = 1; i <= numOfColumnsExpected; i++) {
         Assert.assertEquals(actual.getString(i), actual.getString(i));
       }
       System.out.println();
     }
+    Assert.assertTrue(rowCountExpected > 0);
     return true;
   }
 

@@ -18,11 +18,11 @@
 package org.apache.carbondata.hive;
 
 import java.io.IOException;
-import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -32,17 +32,17 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 import org.apache.hadoop.hive.common.type.HiveDecimal;
-import org.apache.hadoop.hive.serde2.io.DateWritable;
+import org.apache.hadoop.hive.serde2.io.*;
 import org.apache.hadoop.hive.serde2.io.DoubleWritable;
-import org.apache.hadoop.hive.serde2.io.HiveDecimalWritable;
 import org.apache.hadoop.hive.serde2.io.ShortWritable;
-import org.apache.hadoop.hive.serde2.io.TimestampWritable;
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.WritableTimestampObjectInspector;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
@@ -130,9 +130,8 @@ public class WritableReadSupport<T> implements CarbonReadSupport<T> {
       }
     }
     if (array.size() > 0) {
-      ArrayWritable subArray =
-          new ArrayWritable(Writable.class, (Writable[]) array.toArray(new Writable[array.size()]));
-      return new ArrayWritable(Writable.class, new Writable[] { subArray });
+      return new ArrayWritable(Writable.class,
+              (Writable[]) array.toArray(new Writable[array.size()]));
     }
     return null;
   }
@@ -171,11 +170,10 @@ public class WritableReadSupport<T> implements CarbonReadSupport<T> {
    * @return
    * @throws IOException
    */
-  private ArrayWritable createMap(Object obj, CarbonColumn carbonColumn) throws IOException {
+  private Writable createMap(Object obj, CarbonColumn carbonColumn) throws IOException {
     Object[] objArray = (Object[]) obj;
     List<CarbonDimension> childCarbonDimensions = null;
     CarbonDimension mapDimension = null;
-    List<ArrayWritable> writablesList = new ArrayList<>();
     if (carbonColumn.isDimension() && carbonColumn.getColumnSchema().getNumberOfChild() > 0) {
       childCarbonDimensions = ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // get the map dimension wrapped inside the carbon dimension
@@ -185,24 +183,19 @@ public class WritableReadSupport<T> implements CarbonReadSupport<T> {
         childCarbonDimensions = mapDimension.getListOfChildDimensions();
       }
     }
+    Map<Writable, Writable> rawMap = new HashMap<>();
     if (null != childCarbonDimensions && childCarbonDimensions.size() == 2) {
       Object[] keyObjects = (Object[]) objArray[0];
       Object[] valObjects = (Object[]) objArray[1];
       for (int i = 0; i < keyObjects.length; i++) {
         Writable keyWritable = createWritableObject(keyObjects[i], childCarbonDimensions.get(0));
         Writable valWritable = createWritableObject(valObjects[i], childCarbonDimensions.get(1));
-        Writable[] arr = new Writable[2];
-        arr[0] = keyWritable;
-        arr[1] = valWritable;
-        writablesList.add(new ArrayWritable(Writable.class, arr));
-      }
-      if (writablesList.size() > 0) {
-        final ArrayWritable subArray = new ArrayWritable(ArrayWritable.class,
-            writablesList.toArray(new ArrayWritable[writablesList.size()]));
-        return new ArrayWritable(Writable.class, new Writable[] {subArray});
+        rawMap.put(keyWritable, valWritable);
       }
     }
-    return null;
+    MapWritable mapWritable = new MapWritable();
+    mapWritable.putAll(rawMap);
+    return mapWritable;
   }
 
   /**
@@ -236,13 +229,10 @@ public class WritableReadSupport<T> implements CarbonReadSupport<T> {
     } else if (dataType == DataTypes.BINARY) {
       return new BytesWritable((byte[]) obj);
     } else if (dataType == DataTypes.DATE) {
-      Calendar c = Calendar.getInstance();
-      c.setTime(new Date(0));
-      c.add(Calendar.DAY_OF_YEAR, (Integer) obj);
-      Date date = new java.sql.Date(c.getTime().getTime());
-      return new DateWritable(date);
+      return new DateWritableV2((Integer) obj);
     } else if (dataType == DataTypes.TIMESTAMP) {
-      return new TimestampWritable(new Timestamp((long) obj / 1000));
+      WritableTimestampObjectInspector ins = new WritableTimestampObjectInspector();
+      return ins.getPrimitiveWritableObject(ins.create(new Timestamp((long) obj / 1000)));
     } else if (dataType == DataTypes.STRING) {
       return new Text(obj.toString());
     } else if (DataTypes.isArrayType(dataType)) {
