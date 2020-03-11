@@ -773,7 +773,7 @@ object CommonLoadUtils {
 
   def getTimeAndDateFormatFromLoadModel(loadModel: CarbonLoadModel): (SimpleDateFormat,
     SimpleDateFormat) = {
-    var timeStampformatString = loadModel.getTimestampformat
+    var timeStampformatString = loadModel.getTimestampFormat
     if (timeStampformatString.isEmpty) {
       timeStampformatString = loadModel.getDefaultTimestampFormat
     }

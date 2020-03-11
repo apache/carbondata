@@ -481,6 +481,10 @@ object CommonUtil {
     CSVInputFormat.setReadBufferSize(configuration, CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
         CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT))
+    val lineSeparator = carbonLoadModel.getLineSeparator
+    if (lineSeparator != null) {
+      CSVInputFormat.setLineSeparator(configuration, lineSeparator)
+    }
   }
 
   def configSplitMaxSize(context: SparkContext, filePaths: String,

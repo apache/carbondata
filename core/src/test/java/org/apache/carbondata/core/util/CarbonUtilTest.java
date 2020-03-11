@@ -287,8 +287,8 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToUnescapeChar() {
-    String[] input = { "\\001", "\\t", "\\r", "\\b", "\\n", "\\f" };
-    String[] output = { "\001", "\t", "\r", "\b", "\n", "\f" };
+    String[] input = { "\\001", "\\t", "\\r", "\\b", "\\n", "\\f", "\\r\\n", "\\\\" };
+    String[] output = { "\001", "\t", "\r", "\b", "\n", "\f", "\r\n", "\\" };
     for (int i = 0; i < input.length; i++) {
       assertEquals(CarbonUtil.unescapeChar(input[i]), output[i]);
     }

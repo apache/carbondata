@@ -288,8 +288,8 @@ public final class DataLoadProcessBuilder {
         dataField.setDateFormat(loadModel.getDateFormat());
         column.setDateFormat(loadModel.getDateFormat());
       } else if (column.getDataType() == DataTypes.TIMESTAMP) {
-        dataField.setTimestampFormat(loadModel.getTimestampformat());
-        column.setTimestampFormat(loadModel.getTimestampformat());
+        dataField.setTimestampFormat(loadModel.getTimestampFormat());
+        column.setTimestampFormat(loadModel.getTimestampFormat());
       }
       if (column.isComplex()) {
         complexDataFields.add(dataField);
@@ -299,7 +299,7 @@ public final class DataLoadProcessBuilder {
           if (childDimension.getDataType() == DataTypes.DATE) {
             childDimension.setDateFormat(loadModel.getDateFormat());
           } else if (childDimension.getDataType() == DataTypes.TIMESTAMP) {
-            childDimension.setTimestampFormat(loadModel.getTimestampformat());
+            childDimension.setTimestampFormat(loadModel.getTimestampFormat());
           }
         }
       } else {
@@ -339,7 +339,7 @@ public final class DataLoadProcessBuilder {
           if (childDimension.getDataType() == DataTypes.DATE) {
             childDimension.setDateFormat(loadModel.getDateFormat());
           } else if (childDimension.getDataType() == DataTypes.TIMESTAMP) {
-            childDimension.setTimestampFormat(loadModel.getTimestampformat());
+            childDimension.setTimestampFormat(loadModel.getTimestampFormat());
           }
         }
         if (partitionColumnSchemaList.size() != 0 && partitionColumnSchemaList
@@ -353,8 +353,8 @@ public final class DataLoadProcessBuilder {
           dataField.setDateFormat(loadModel.getDateFormat());
           column.setDateFormat(loadModel.getDateFormat());
         } else if (column.getDataType() == DataTypes.TIMESTAMP) {
-          dataField.setTimestampFormat(loadModel.getTimestampformat());
-          column.setTimestampFormat(loadModel.getTimestampformat());
+          dataField.setTimestampFormat(loadModel.getTimestampFormat());
+          column.setTimestampFormat(loadModel.getTimestampFormat());
         }
         if (partitionColumnSchemaList.size() != 0 && partitionColumnSchemaList
             .contains(column.getColumnSchema())) {
