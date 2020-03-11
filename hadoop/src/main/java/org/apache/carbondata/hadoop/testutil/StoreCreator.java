@@ -407,6 +407,7 @@ public class StoreCreator {
     CSVInputFormat.setNumberOfColumns(
         configuration, String.valueOf(loadModel.getCsvHeaderColumns().length));
     CSVInputFormat.setMaxColumns(configuration, "10");
+    CSVInputFormat.setLineSeparator(configuration, loadModel.getLineSeparator());
 
     TaskAttemptContextImpl hadoopAttemptContext =
         new TaskAttemptContextImpl(configuration, new TaskAttemptID("", 1, TaskType.MAP, 0, 0));

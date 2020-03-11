@@ -93,7 +93,9 @@ public class CarbonLoadModel implements Serializable {
    */
   private String commentChar;
 
-  private String timestampformat;
+  private String lineSeparator;
+
+  private String timestampFormat;
 
   private String dateFormat;
 
@@ -403,8 +405,9 @@ public class CarbonLoadModel implements Serializable {
     copy.badRecordsAction = badRecordsAction;
     copy.escapeChar = escapeChar;
     copy.quoteChar = quoteChar;
+    copy.lineSeparator = lineSeparator;
     copy.commentChar = commentChar;
-    copy.timestampformat = timestampformat;
+    copy.timestampFormat = timestampFormat;
     copy.dateFormat = dateFormat;
     copy.defaultTimestampFormat = defaultTimestampFormat;
     copy.maxColumns = maxColumns;
@@ -457,8 +460,9 @@ public class CarbonLoadModel implements Serializable {
     copyObj.badRecordsAction = badRecordsAction;
     copyObj.escapeChar = escapeChar;
     copyObj.quoteChar = quoteChar;
+    copyObj.lineSeparator = lineSeparator;
     copyObj.commentChar = commentChar;
-    copyObj.timestampformat = timestampformat;
+    copyObj.timestampFormat = timestampFormat;
     copyObj.dateFormat = dateFormat;
     copyObj.defaultTimestampFormat = defaultTimestampFormat;
     copyObj.maxColumns = maxColumns;
@@ -649,6 +653,14 @@ public class CarbonLoadModel implements Serializable {
     this.quoteChar = quoteChar;
   }
 
+  public String getLineSeparator() {
+    return lineSeparator;
+  }
+
+  public void setLineSeparator(String lineSeparator) {
+    this.lineSeparator = lineSeparator;
+  }
+
   public String getCommentChar() {
     return commentChar;
   }
@@ -753,12 +765,12 @@ public class CarbonLoadModel implements Serializable {
     this.badRecordsLocation = badRecordsLocation;
   }
 
-  public String getTimestampformat() {
-    return timestampformat;
+  public String getTimestampFormat() {
+    return timestampFormat;
   }
 
-  public void setTimestampformat(String timestampformat) {
-    this.timestampformat = timestampformat;
+  public void setTimestampFormat(String timestampFormat) {
+    this.timestampFormat = timestampFormat;
   }
 
   public String getSkipEmptyLine() {

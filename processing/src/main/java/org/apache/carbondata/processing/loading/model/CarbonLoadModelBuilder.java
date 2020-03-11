@@ -104,7 +104,7 @@ public class CarbonLoadModelBuilder {
               CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
     }
     model.setDateFormat(dateFormat);
-    model.setTimestampformat(timestampFormat);
+    model.setTimestampFormat(timestampFormat);
     validateAndSetColumnCompressor(model);
     validateAndSetBinaryDecoder(model);
     return model;
@@ -182,6 +182,10 @@ public class CarbonLoadModelBuilder {
     carbonLoadModel.setEscapeChar(checkDefaultValue(optionsFinal.get("escapechar"), "\\"));
     carbonLoadModel.setQuoteChar(checkDefaultValue(optionsFinal.get("quotechar"), "\""));
     carbonLoadModel.setCommentChar(checkDefaultValue(optionsFinal.get("commentchar"), "#"));
+    String lineSeparator = CarbonUtil.unescapeChar(options.get("line_separator"));
+    if (lineSeparator != null) {
+      carbonLoadModel.setLineSeparator(lineSeparator);
+    }
 
     // if there isn't file header in csv file and load sql doesn't provide FILEHEADER option,
     // we should use table schema to generate file header.
@@ -215,7 +219,7 @@ public class CarbonLoadModelBuilder {
 
     String binaryDecoder = options.get("binary_decoder");
     carbonLoadModel.setBinaryDecoder(binaryDecoder);
-    carbonLoadModel.setTimestampformat(timestampformat);
+    carbonLoadModel.setTimestampFormat(timestampformat);
     carbonLoadModel.setDateFormat(dateFormat);
     carbonLoadModel.setDefaultTimestampFormat(
         CarbonProperties.getInstance().getProperty(

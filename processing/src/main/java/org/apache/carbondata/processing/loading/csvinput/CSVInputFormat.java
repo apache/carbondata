@@ -76,6 +76,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   public static final String READ_BUFFER_SIZE_DEFAULT = "65536";
   public static final String MAX_COLUMNS = "carbon.csvinputformat.max.columns";
   public static final String NUMBER_OF_COLUMNS = "carbon.csvinputformat.number.of.columns";
+  public static final String LINE_SEPARATOR = "carbon.csvinputformat.line.separator";
   /**
    * support only one column index
    */
@@ -198,11 +199,22 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     configuration.set(NUMBER_OF_COLUMNS, numberOfColumns);
   }
 
+  public static void setLineSeparator(Configuration configuration, String lineSeparator) {
+    if (lineSeparator != null && !lineSeparator.isEmpty()) {
+      configuration.set(LINE_SEPARATOR, lineSeparator);
+    }
+  }
+
   public static CsvParserSettings extractCsvParserSettings(Configuration job) {
     CsvParserSettings parserSettings = new CsvParserSettings();
     parserSettings.getFormat().setDelimiter(job.get(DELIMITER, DELIMITER_DEFAULT).charAt(0));
     parserSettings.getFormat().setComment(job.get(COMMENT, COMMENT_DEFAULT).charAt(0));
-    parserSettings.setLineSeparatorDetectionEnabled(true);
+    String lineSeparator = job.get(LINE_SEPARATOR);
+    if (lineSeparator != null) {
+      parserSettings.getFormat().setLineSeparator(lineSeparator);
+    } else {
+      parserSettings.setLineSeparatorDetectionEnabled(true);
+    }
     parserSettings.setNullValue("");
     parserSettings.setEmptyValue("");
     parserSettings.setIgnoreLeadingWhitespaces(false);

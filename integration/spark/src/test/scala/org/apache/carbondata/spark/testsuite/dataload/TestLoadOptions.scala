@@ -23,7 +23,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 
-class TestLoadOptions extends QueryTest with BeforeAndAfterAll{
+class TestLoadOptions extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop table if exists TestLoadTableOptions")
@@ -34,7 +34,6 @@ class TestLoadOptions extends QueryTest with BeforeAndAfterAll{
   override def afterAll {
     sql("drop table if exists TestLoadTableOptions")
   }
-
 
   test("test load data with more than one char in quotechar option") {
     val errorMessage = intercept[MalformedCarbonCommandException] {
@@ -77,4 +76,69 @@ class TestLoadOptions extends QueryTest with BeforeAndAfterAll{
       Row(1, "2015/7/23", "ind", "aaa1", "phone197", "ASD69643a", 15000))
   }
 
+  test("test load data with different line separator option value") {
+    // line separator as '\n'
+    sql("drop table if exists carriage_return_in_string")
+    sql("""CREATE TABLE IF NOT EXISTS carriage_return_in_string(ID BigInt, name String,
+          |city String) STORED AS carbondata""".stripMargin.replace('\n', ' '))
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/carriage_return_in_string.csv' INTO TABLE
+         |carriage_return_in_string OPTIONS ('fileheader'='id, name, city', 'line_separator'='\\n')"""
+        .stripMargin.replace('\n', ' '));
+    checkAnswer(sql("select * from carriage_return_in_string where id = 1"),
+      Row(1, "2\r", "3"))
+
+    // without line separator
+    sql("drop table if exists carriage_return_in_string")
+    sql("""CREATE TABLE IF NOT EXISTS carriage_return_in_string(ID BigInt, name String,
+          |city String) STORED AS carbondata""".stripMargin.replace('\n', ' '))
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/carriage_return_in_string.csv' INTO TABLE
+           |carriage_return_in_string OPTIONS ('fileheader'='id, name, city')"""
+      .stripMargin.replace('\n', ' '));
+    checkAnswer(sql("select * from carriage_return_in_string where id = 1"),
+      Row(1, "2", null))
+
+    // line separator as '\r\n'
+    sql("drop table if exists carriage_return_in_string")
+    sql("""CREATE TABLE IF NOT EXISTS carriage_return_in_string(ID BigInt, name String,
+          |city String) STORED AS carbondata""".stripMargin.replace('\n', ' '))
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/carriage_return_in_string.csv' INTO TABLE
+           |carriage_return_in_string OPTIONS ('fileheader'='id, name, city',
+           |'line_separator'='\\r\\n')""".stripMargin.replace('\n', ' '));
+    checkAnswer(sql("select * from carriage_return_in_string where id = 1"),
+      Row(1, "2\r", "3\n4"))
+
+    // line separator as 'ab'
+    sql("drop table if exists carriage_return_in_string")
+    sql("""CREATE TABLE IF NOT EXISTS carriage_return_in_string(ID BigInt, name String,
+          |city String) STORED AS carbondata""".stripMargin.replace('\n', ' '))
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/carriage_return_in_string.csv' INTO TABLE
+           |carriage_return_in_string OPTIONS ('fileheader'='id, name, city',
+           |'line_separator'='ab')""".stripMargin.replace('\n', ' '));
+    checkAnswer(sql("select * from carriage_return_in_string where id = 1"),
+      Row(1, "2\r", "3\n4"))
+    sql("drop table if exists carriage_return_in_string")
+  }
+
+  test("test load data with invalidated line separator option value") {
+    sql("drop table if exists carriage_return_in_string")
+    sql("""CREATE TABLE IF NOT EXISTS carriage_return_in_string(ID BigInt, name String,
+          |city String) STORED AS carbondata""".stripMargin.replace('\n', ' '))
+
+    // line separator as ''
+    var exception = intercept[MalformedCarbonCommandException] {
+      sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/carriage_return_in_string.csv' INTO TABLE
+           |carriage_return_in_string OPTIONS ('fileheader'='id, name, city',
+           |'line_separator'='')""".stripMargin.replace('\n', ' '));
+    }
+    assert(exception.getMessage.contains("LINE_SEPARATOR can be only one or two characters."))
+
+    // line separator as '\r\na'
+    exception = intercept[MalformedCarbonCommandException] {
+      sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/carriage_return_in_string.csv' INTO TABLE
+             |carriage_return_in_string OPTIONS ('fileheader'='id, name, city',
+             |'line_separator'='\\r\\na')""".stripMargin.replace('\n', ' '));
+    }
+    assert(exception.getMessage.contains("LINE_SEPARATOR can be only one or two characters."))
+    sql("drop table if exists carriage_return_in_string")
+  }
 }

@@ -87,7 +87,7 @@ class CarbonAppendableStreamSink(
       carbonLoadModel.getSerializationNullFormat().split(",")(1))
     conf.set(
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      carbonLoadModel.getTimestampformat())
+      carbonLoadModel.getTimestampFormat())
     conf.set(
       CarbonCommonConstants.CARBON_DATE_FORMAT,
       carbonLoadModel.getDateFormat())

@@ -270,6 +270,7 @@ object CarbonDataStoreCreator {
     CSVInputFormat.setEscapeCharacter(configuration, loadModel.getEscapeChar)
     CSVInputFormat.setHeaderExtractionEnabled(configuration, true)
     CSVInputFormat.setQuoteCharacter(configuration, loadModel.getQuoteChar)
+    CSVInputFormat.setLineSeparator(configuration, loadModel.getLineSeparator)
     CSVInputFormat.setReadBufferSize(
       configuration,
       CarbonProperties.getInstance.getProperty(

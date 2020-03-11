@@ -382,7 +382,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
                 CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
                 CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)));
 
-    model.setTimestampformat(
+    model.setTimestampFormat(
         conf.get(
             TIMESTAMP_FORMAT,
             carbonProperty.getProperty(

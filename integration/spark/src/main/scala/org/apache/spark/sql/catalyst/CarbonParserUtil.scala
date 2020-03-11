@@ -927,7 +927,8 @@ object CarbonParserUtil {
       "LOAD_MIN_SIZE_INMB",
       "SCALE_FACTOR",
       "BINARY_DECODER",
-      "SORT_SCOPE"
+      "SORT_SCOPE",
+      "LINE_SEPARATOR"
     )
     var isSupported = true
     val invalidOptions = StringBuilder.newBuilder
@@ -957,6 +958,16 @@ object CarbonParserUtil {
       val commentChar: String = options.get("commentchar").get.head._2
       if (commentChar.length > 1) {
         throw new MalformedCarbonCommandException("COMMENTCHAR cannot be more than one character.")
+      }
+    }
+
+    // Validate LINE_SEPARATOR length
+    if (options.exists(_._1.equalsIgnoreCase("LINE_SEPARATOR"))) {
+      val line_separator: String = CarbonUtil.unescapeChar(
+        options.get("line_separator").get.head._2)
+      if (line_separator.isEmpty || line_separator.length > 2) {
+        throw new MalformedCarbonCommandException(
+          "LINE_SEPARATOR can be only one or two characters.")
       }
     }
 
