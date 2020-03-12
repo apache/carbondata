@@ -197,7 +197,7 @@ abstract class LuceneIndexFactoryBase<T extends DataMap> extends IndexFactory<T>
   public DataMapWriter createWriter(Segment segment, String shardName,
       SegmentProperties segmentProperties) {
     LOGGER.info("lucene data write to " + shardName);
-    return new LuceneDataMapWriter(getCarbonTable().getTablePath(), dataMapName,
+    return new LuceneIndexWriter(getCarbonTable().getTablePath(), dataMapName,
         dataMapMeta.getIndexedColumns(), segment, shardName, flushCacheSize,
         storeBlockletWise);
   }

@@ -33,9 +33,9 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
-import static org.apache.carbondata.datamap.lucene.LuceneDataMapWriter.addData;
-import static org.apache.carbondata.datamap.lucene.LuceneDataMapWriter.addToCache;
-import static org.apache.carbondata.datamap.lucene.LuceneDataMapWriter.flushCache;
+import static org.apache.carbondata.datamap.lucene.LuceneIndexWriter.addData;
+import static org.apache.carbondata.datamap.lucene.LuceneIndexWriter.addToCache;
+import static org.apache.carbondata.datamap.lucene.LuceneIndexWriter.flushCache;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -53,7 +53,7 @@ import org.roaringbitmap.RoaringBitmap;
 public class LuceneIndexBuilder implements IndexBuilder {
 
   private static final Logger LOGGER =
-      LogServiceFactory.getLogService(LuceneDataMapWriter.class.getName());
+      LogServiceFactory.getLogService(LuceneIndexWriter.class.getName());
 
   private String dataMapPath;
 
@@ -67,7 +67,7 @@ public class LuceneIndexBuilder implements IndexBuilder {
 
   private int writeCacheSize;
 
-  private Map<LuceneDataMapWriter.LuceneColumnKeys, Map<Integer, RoaringBitmap>> cache =
+  private Map<LuceneIndexWriter.LuceneColumnKeys, Map<Integer, RoaringBitmap>> cache =
       new HashMap<>();
 
   private ByteBuffer intBuffer = ByteBuffer.allocate(4);
@@ -139,8 +139,8 @@ public class LuceneIndexBuilder implements IndexBuilder {
       }
     }
     // add other fields
-    LuceneDataMapWriter.LuceneColumnKeys columns =
-        new LuceneDataMapWriter.LuceneColumnKeys(columnsCount);
+    LuceneIndexWriter.LuceneColumnKeys columns =
+        new LuceneIndexWriter.LuceneColumnKeys(columnsCount);
     for (int colIdx = 0; colIdx < columnsCount; colIdx++) {
       columns.getColValues()[colIdx] = values[colIdx];
     }

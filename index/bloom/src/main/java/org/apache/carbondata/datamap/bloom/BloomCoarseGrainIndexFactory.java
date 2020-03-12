@@ -212,7 +212,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     LOGGER.info(
         String.format("Data of BloomCoarseGranDataMap %s for table %s will be written to %s",
             this.dataMapName, getCarbonTable().getTableName() , shardName));
-    return new BloomDataMapWriter(getCarbonTable().getTablePath(), this.dataMapName,
+    return new BloomIndexWriter(getCarbonTable().getTablePath(), this.dataMapName,
         this.dataMapMeta.getIndexedColumns(), segment, shardName, segmentProperties,
         this.bloomFilterSize, this.bloomFilterFpp, bloomCompress);
   }

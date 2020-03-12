@@ -69,12 +69,12 @@ import org.roaringbitmap.RoaringBitmap;
  * Implementation to write lucene index while loading
  */
 @InterfaceAudience.Internal
-public class LuceneDataMapWriter extends DataMapWriter {
+public class LuceneIndexWriter extends DataMapWriter {
   /**
    * logger
    */
   private static final Logger LOGGER =
-      LogServiceFactory.getLogService(LuceneDataMapWriter.class.getName());
+      LogServiceFactory.getLogService(LuceneIndexWriter.class.getName());
 
   /**
    * index writer
@@ -100,7 +100,7 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
   private boolean storeBlockletWise;
 
-  LuceneDataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
+  LuceneIndexWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName, int flushSize,
       boolean storeBlockletWise) {
     super(tablePath, dataMapName, indexColumns, segment, shardName);
