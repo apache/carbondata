@@ -20,7 +20,7 @@ package org.apache.carbondata.spark.load
 import java.text.SimpleDateFormat
 import java.util.{Date, Locale}
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, WrappedArray}
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
@@ -42,7 +42,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.spark.adapter.CarbonToSparkAdapter
 import org.apache.carbondata.spark.util.CommonUtil
 
 object CsvRDDHelper {
@@ -94,7 +93,7 @@ object CsvRDDHelper {
     def closePartition(): Unit = {
       if (currentFiles.nonEmpty) {
         val newPartition =
-          CarbonToSparkAdapter.createFilePartition(
+          FilePartition(
             partitions.size,
             currentFiles)
         partitions += newPartition
