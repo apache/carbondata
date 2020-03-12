@@ -33,7 +33,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
  * Implementation for BloomFilter DataMap to rebuild the datamap for main table with existing data
  */
 @InterfaceAudience.Internal
-public class BloomIndexBuilder extends AbstractBloomDataMapWriter implements IndexBuilder {
+public class BloomIndexBuilder extends AbstractBloomIndexWriter implements IndexBuilder {
 
   BloomIndexBuilder(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName, SegmentProperties segmentProperties,

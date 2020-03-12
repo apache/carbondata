@@ -37,7 +37,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
  * of bloom index file will be equal to that of the blocks.
  */
 @InterfaceAudience.Internal
-public class BloomIndexWriter extends AbstractBloomDataMapWriter {
+public class BloomIndexWriter extends AbstractBloomIndexWriter {
 
   BloomIndexWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName, SegmentProperties segmentProperties,

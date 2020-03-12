@@ -85,4 +85,6 @@ object SparkTestQueryExecutor {
   FileFactory.getConfiguration.
     set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER")
   spark.sparkContext.setLogLevel("ERROR")
+
+  CarbonProperties.setAuditEnabled(false)
 }

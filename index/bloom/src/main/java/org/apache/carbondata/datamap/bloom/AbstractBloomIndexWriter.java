@@ -39,7 +39,7 @@ import org.apache.hadoop.util.bloom.Key;
 import org.apache.hadoop.util.hash.Hash;
 
 @InterfaceAudience.Internal
-public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
+public abstract class AbstractBloomIndexWriter extends DataMapWriter {
   private int bloomFilterSize;
   private double bloomFilterFpp;
   private boolean compressBloom;
@@ -48,7 +48,7 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
   private List<DataOutputStream> currentDataOutStreams;
   protected List<CarbonBloomFilter> indexBloomFilters;
 
-  AbstractBloomDataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
+  AbstractBloomIndexWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName, SegmentProperties segmentProperties,
       int bloomFilterSize, double bloomFilterFpp, boolean compressBloom)
       throws IOException {
