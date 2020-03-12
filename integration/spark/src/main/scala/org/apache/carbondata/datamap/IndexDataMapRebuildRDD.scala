@@ -36,7 +36,7 @@ import org.apache.spark.sql.types.Decimal
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
-import org.apache.carbondata.core.datamap.dev.DataMapBuilder
+import org.apache.carbondata.core.datamap.dev.IndexBuilder
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher
@@ -297,7 +297,7 @@ class IndexDataMapRebuildRDD[K, V](
       model.setRequiredRowId(true)
 
       var reader: CarbonRecordReader[Array[Object]] = null
-      var refresher: DataMapBuilder = null
+      var refresher: IndexBuilder = null
       try {
         val segmentPropertiesFetcher = DataMapStoreManager.getInstance().getDataMap(carbonTable,
           BlockletIndexFactory.DATA_MAP_SCHEMA).getIndexFactory

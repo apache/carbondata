@@ -28,7 +28,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainIndex, CoarseGrainIndexFactory}
-import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapWriter}
+import org.apache.carbondata.core.datamap.dev.{DataMapWriter, IndexBuilder}
 import org.apache.carbondata.core.datamap.status.{DataMapStatus, DataMapStatusManager}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datastore.block.SegmentProperties
@@ -287,8 +287,8 @@ class TestIndexFactory(
   }
 
   override def createBuilder(segment: Segment,
-      shardName: String, segmentProperties: SegmentProperties): DataMapBuilder = {
-    return new DataMapBuilder {
+      shardName: String, segmentProperties: SegmentProperties): IndexBuilder = {
+    return new IndexBuilder {
       override def initialize(): Unit = { }
 
       override def addRow(blockletId: Int,

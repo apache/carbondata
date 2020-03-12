@@ -27,7 +27,7 @@ import java.util.Map;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
+import org.apache.carbondata.core.datamap.dev.IndexBuilder;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -50,7 +50,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.solr.store.hdfs.HdfsDirectory;
 import org.roaringbitmap.RoaringBitmap;
 
-public class LuceneDataMapBuilder implements DataMapBuilder {
+public class LuceneIndexBuilder implements IndexBuilder {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(LuceneDataMapWriter.class.getName());
@@ -76,7 +76,7 @@ public class LuceneDataMapBuilder implements DataMapBuilder {
 
   private int currentBlockletId = -1;
 
-  LuceneDataMapBuilder(String tablePath, String dataMapName, Segment segment, String shardName,
+  LuceneIndexBuilder(String tablePath, String dataMapName, Segment segment, String shardName,
       List<CarbonColumn> indexColumns, int writeCacheSize, boolean storeBlockletWise) {
     this.dataMapPath = CarbonTablePath
         .getDataMapStorePathOnShardName(tablePath, segment.getSegmentNo(), dataMapName, shardName);
@@ -172,7 +172,6 @@ public class LuceneDataMapBuilder implements DataMapBuilder {
     }
   }
 
-  @Override
   public boolean isIndexForCarbonRawBytes() {
     return false;
   }

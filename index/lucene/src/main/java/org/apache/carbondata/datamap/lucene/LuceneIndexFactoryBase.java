@@ -33,7 +33,7 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMap;
-import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
+import org.apache.carbondata.core.datamap.dev.IndexBuilder;
 import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -203,9 +203,9 @@ abstract class LuceneIndexFactoryBase<T extends DataMap> extends IndexFactory<T>
   }
 
   @Override
-  public DataMapBuilder createBuilder(Segment segment, String shardName,
+  public IndexBuilder createBuilder(Segment segment, String shardName,
       SegmentProperties segmentProperties) {
-    return new LuceneDataMapBuilder(getCarbonTable().getTablePath(), dataMapName,
+    return new LuceneIndexBuilder(getCarbonTable().getTablePath(), dataMapName,
         segment, shardName, dataMapMeta.getIndexedColumns(), flushCacheSize, storeBlockletWise);
   }
 

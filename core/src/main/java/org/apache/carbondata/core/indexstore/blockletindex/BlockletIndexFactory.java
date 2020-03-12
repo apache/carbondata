@@ -35,7 +35,7 @@ import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.CacheableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMap;
-import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
+import org.apache.carbondata.core.datamap.dev.IndexBuilder;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndex;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndexFactory;
@@ -114,7 +114,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   }
 
   @Override
-  public DataMapBuilder createBuilder(Segment segment, String shardName,
+  public IndexBuilder createBuilder(Segment segment, String shardName,
       SegmentProperties segmentProperties) {
     throw new UnsupportedOperationException("not implemented");
   }

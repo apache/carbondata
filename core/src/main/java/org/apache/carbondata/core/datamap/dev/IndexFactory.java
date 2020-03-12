@@ -79,11 +79,11 @@ public abstract class IndexFactory<T extends DataMap> {
       SegmentProperties segmentProperties) throws IOException;
 
   /**
-   * Create a new DataMapBuilder for this datamap, to rebuild the specified
+   * Create a new IndexBuilder for this datamap, to rebuild the specified
    * segment and shard data in the main table.
    * TODO: refactor to unify with DataMapWriter
    */
-  public abstract DataMapBuilder createBuilder(Segment segment, String shardName,
+  public abstract IndexBuilder createBuilder(Segment segment, String shardName,
       SegmentProperties segmentProperties) throws IOException;
 
   /**

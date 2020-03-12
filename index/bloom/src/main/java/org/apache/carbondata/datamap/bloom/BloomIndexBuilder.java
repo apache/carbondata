@@ -22,7 +22,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
+import org.apache.carbondata.core.datamap.dev.IndexBuilder;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -33,9 +33,9 @@ import org.apache.carbondata.core.util.DataTypeUtil;
  * Implementation for BloomFilter DataMap to rebuild the datamap for main table with existing data
  */
 @InterfaceAudience.Internal
-public class BloomDataMapBuilder extends AbstractBloomDataMapWriter implements DataMapBuilder {
+public class BloomIndexBuilder extends AbstractBloomDataMapWriter implements IndexBuilder {
 
-  BloomDataMapBuilder(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
+  BloomIndexBuilder(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName, SegmentProperties segmentProperties,
       int bloomFilterSize, double bloomFilterFpp, boolean bloomCompress) throws IOException {
     super(tablePath, dataMapName, indexColumns, segment, shardName, segmentProperties,
@@ -92,7 +92,6 @@ public class BloomDataMapBuilder extends AbstractBloomDataMapWriter implements D
     releaseResouce();
   }
 
-  @Override
   public boolean isIndexForCarbonRawBytes() {
     return true;
   }

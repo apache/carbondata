@@ -30,7 +30,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainIndex, CoarseGrainIndexFactory}
-import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapModel, DataMapWriter}
+import org.apache.carbondata.core.datamap.dev.{IndexBuilder, DataMapModel, DataMapWriter}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
@@ -152,7 +152,7 @@ class CGIndexFactory(
   }
 
   override def createBuilder(segment: Segment,
-      shardName: String, segmentProperties: SegmentProperties): DataMapBuilder = {
+      shardName: String, segmentProperties: SegmentProperties): IndexBuilder = {
     ???
   }
 

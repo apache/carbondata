@@ -22,12 +22,12 @@ import java.io.IOException;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 
 /**
- * DataMapBuilder is used to implement REBUILD DATAMAP command, it reads all existing
+ * IndexBuilder is used to implement REBUILD DATAMAP command, it reads all existing
  * data in main table and load them into the DataMap. All existing index data will be deleted
  * if there are existing data in the datamap.
  */
 @InterfaceAudience.Developer("DataMap")
-public interface DataMapBuilder {
+public interface IndexBuilder {
   void initialize() throws IOException;
 
   void addRow(int blockletId, int pageId, int rowId, Object[] values) throws IOException;

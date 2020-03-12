@@ -38,7 +38,7 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
+import org.apache.carbondata.core.datamap.dev.IndexBuilder;
 import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndex;
@@ -218,9 +218,9 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
   }
 
   @Override
-  public DataMapBuilder createBuilder(Segment segment, String shardName,
+  public IndexBuilder createBuilder(Segment segment, String shardName,
       SegmentProperties segmentProperties) throws IOException {
-    return new BloomDataMapBuilder(getCarbonTable().getTablePath(), this.dataMapName,
+    return new BloomIndexBuilder(getCarbonTable().getTablePath(), this.dataMapName,
         this.dataMapMeta.getIndexedColumns(), segment, shardName, segmentProperties,
         this.bloomFilterSize, this.bloomFilterFpp, bloomCompress);
   }
