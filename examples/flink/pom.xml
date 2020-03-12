@@ -44,6 +44,17 @@
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-clients_${scala.binary.version}</artifactId>
       <version>${flink.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-all</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-all</artifactId>
+      <version>4.1.17.Final</version>
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
