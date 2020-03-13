@@ -131,8 +131,13 @@ object IndexServer extends ServerInterface {
       lazy val getCountTask = {
         if (!request.isFallbackJob) {
           sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", request.getTaskGroupId)
-          sparkSession.sparkContext
-            .setLocalProperty("spark.job.description", request.getTaskGroupDesc)
+          val taskGroupDesc = if (!request.ifAsyncCall()) {
+            request.getTaskGroupDesc
+          } else {
+            "PrePriming Job Fired for table: " + request.getCarbonTable.getDatabaseName +
+              CarbonCommonConstants.POINT + request.getCarbonTable.getTableName
+          }
+          sparkSession.sparkContext.setLocalProperty("spark.job.description", taskGroupDesc)
         }
         // Fire Generic Event like ACLCheck..etc
         val indexServerEvent = IndexServerEvent(sparkSession, request.getCarbonTable,
