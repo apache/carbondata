@@ -41,8 +41,6 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
 
   override protected def beforeAll(): Unit = {
     new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     createFile(bigFile, line = 50000)
     createFile(smallFile)
     sql(s"DROP TABLE IF EXISTS $normalTable")
@@ -374,6 +372,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
   }
 
   test("test bloom datamap: multiple datamaps with each on one column vs one datamap on multiple columns") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     val iterations = 1
     // 500000 lines will result to 3 blocklets and bloomfilter datamap will prune 2 blocklets.
     val datamap11 = "datamap11"
@@ -448,6 +447,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
 
     // we do not care about the datamap name here, only to validate the query results are them same
     checkQuery("fakeDm", shouldHit = false)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "false")
   }
 
   test("test create datamaps on different column but hit only one") {
@@ -610,6 +610,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
   }
 
   test("test create bloom datamap on newly added column") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     val datamap1 = "datamap1"
     val datamap2 = "datamap2"
     val datamap3 = "datamap3"
@@ -719,6 +720,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
         |    - provider: bloomfilter
         |    - skipped: 0 blocks, 0 blocklets""".stripMargin))
 
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "false")
   }
 
   test("test bloom datamap on all basic data types") {

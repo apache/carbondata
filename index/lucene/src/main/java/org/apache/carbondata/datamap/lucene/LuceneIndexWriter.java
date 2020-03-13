@@ -30,7 +30,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datamap.dev.IndexWriter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -57,7 +57,6 @@ import org.apache.lucene.document.IntRangeField;
 import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
@@ -69,7 +68,7 @@ import org.roaringbitmap.RoaringBitmap;
  * Implementation to write lucene index while loading
  */
 @InterfaceAudience.Internal
-public class LuceneIndexWriter extends DataMapWriter {
+public class LuceneIndexWriter extends IndexWriter {
   /**
    * logger
    */
@@ -79,7 +78,7 @@ public class LuceneIndexWriter extends DataMapWriter {
   /**
    * index writer
    */
-  private IndexWriter indexWriter = null;
+  private org.apache.lucene.index.IndexWriter indexWriter = null;
 
   private Analyzer analyzer = null;
 
@@ -123,7 +122,7 @@ public class LuceneIndexWriter extends DataMapWriter {
   }
 
   private RAMDirectory ramDir;
-  private IndexWriter ramIndexWriter;
+  private org.apache.lucene.index.IndexWriter ramIndexWriter;
 
   /**
    * Start of new blocklet notification.
@@ -141,7 +140,7 @@ public class LuceneIndexWriter extends DataMapWriter {
     }
     // save index data into ram, write into disk after one page finished
     ramDir = new RAMDirectory();
-    ramIndexWriter = new IndexWriter(ramDir, new IndexWriterConfig(analyzer));
+    ramIndexWriter = new org.apache.lucene.index.IndexWriter(ramDir, new IndexWriterConfig(analyzer));
 
     if (indexWriter != null) {
       return;
@@ -182,7 +181,7 @@ public class LuceneIndexWriter extends DataMapWriter {
           .setCodec(compressionCodec);
     }
 
-    indexWriter = new IndexWriter(indexDir, indexWriterConfig);
+    indexWriter = new org.apache.lucene.index.IndexWriter(indexDir, indexWriterConfig);
   }
 
   /**
@@ -379,7 +378,7 @@ public class LuceneIndexWriter extends DataMapWriter {
   }
 
   public static void addData(LuceneColumnKeys key, int rowId, int pageId, int blockletId,
-      ByteBuffer intBuffer, IndexWriter indexWriter, List<CarbonColumn> indexCols,
+      ByteBuffer intBuffer, org.apache.lucene.index.IndexWriter indexWriter, List<CarbonColumn> indexCols,
       boolean storeBlockletWise) throws IOException {
 
     Document document = new Document();
@@ -410,7 +409,7 @@ public class LuceneIndexWriter extends DataMapWriter {
   }
 
   public static void flushCache(Map<LuceneColumnKeys, Map<Integer, RoaringBitmap>> cache,
-      List<CarbonColumn> indexCols, IndexWriter indexWriter, boolean storeBlockletWise)
+      List<CarbonColumn> indexCols, org.apache.lucene.index.IndexWriter indexWriter, boolean storeBlockletWise)
       throws IOException {
     for (Map.Entry<LuceneColumnKeys, Map<Integer, RoaringBitmap>> entry : cache.entrySet()) {
       Document document = new Document();

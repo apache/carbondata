@@ -27,7 +27,7 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
-import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datamap.dev.IndexWriter;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainIndex;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.features.TableOperation;
@@ -54,7 +54,7 @@ public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrai
     List<FineGrainIndex> lstDataMap = new ArrayList<>();
     FineGrainIndex dataMap = new LuceneFineGrainIndex(analyzer, getDataMapSchema());
     dataMap.init(new DataMapModel(
-        DataMapWriter.getDefaultDataMapPath(tableIdentifier.getTablePath(),
+        IndexWriter.getDefaultDataMapPath(tableIdentifier.getTablePath(),
             segment.getSegmentNo(), dataMapName), segment.getConfiguration()));
     lstDataMap.add(dataMap);
     return lstDataMap;

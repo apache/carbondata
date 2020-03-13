@@ -36,7 +36,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
  */
 @InterfaceAudience.Developer("DataMap")
 @InterfaceStability.Evolving
-public abstract class DataMapWriter {
+public abstract class IndexWriter {
 
   protected String tablePath;
 
@@ -48,7 +48,7 @@ public abstract class DataMapWriter {
 
   private boolean isWritingFinished;
 
-  public DataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
+  public IndexWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName) {
     this.tablePath = tablePath;
     this.segmentId = segment.getSegmentNo();

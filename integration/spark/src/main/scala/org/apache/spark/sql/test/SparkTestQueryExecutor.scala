@@ -87,4 +87,5 @@ object SparkTestQueryExecutor {
   spark.sparkContext.setLogLevel("ERROR")
 
   CarbonProperties.setAuditEnabled(false)
+  CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "false")
 }

@@ -35,7 +35,7 @@ import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.IndexBuilder;
 import org.apache.carbondata.core.datamap.dev.IndexFactory;
-import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datamap.dev.IndexWriter;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
@@ -194,7 +194,7 @@ abstract class LuceneIndexFactoryBase<T extends DataMap> extends IndexFactory<T>
    * Return a new write for this datamap
    */
   @Override
-  public DataMapWriter createWriter(Segment segment, String shardName,
+  public IndexWriter createWriter(Segment segment, String shardName,
       SegmentProperties segmentProperties) {
     LOGGER.info("lucene data write to " + shardName);
     return new LuceneIndexWriter(getCarbonTable().getTablePath(), dataMapName,

@@ -27,7 +27,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainIndex, CoarseGrainIndexFactory}
-import org.apache.carbondata.core.datamap.dev.{DataMapWriter, IndexBuilder}
+import org.apache.carbondata.core.datamap.dev.{IndexWriter, IndexBuilder}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
@@ -54,8 +54,8 @@ class C2IndexFactory(
 
   override def getDataMaps(segment: Segment): util.List[CoarseGrainIndex] = ???
 
-  override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): DataMapWriter =
-    DataMapWriterSuite.dataMapWriterC2Mock(identifier, "testdm", segment, shardName)
+  override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): IndexWriter =
+    IndexWriterSuite.dataMapWriterC2Mock(identifier, "testdm", segment, shardName)
 
   override def getMeta: DataMapMeta =
     new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema), List(ExpressionType.EQUALS).asJava)
@@ -103,7 +103,7 @@ class C2IndexFactory(
   }
 }
 
-class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
+class IndexWriterSuite extends QueryTest with BeforeAndAfterAll {
   def buildTestData(numRows: Int): DataFrame = {
     import sqlContext.implicits._
     sqlContext.sparkContext.parallelize(1 to numRows, 1)
@@ -140,16 +140,16 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
 
-    assert(DataMapWriterSuite.callbackSeq.head.contains("block start"))
-    assert(DataMapWriterSuite.callbackSeq.last.contains("block end"))
+    assert(IndexWriterSuite.callbackSeq.head.contains("block start"))
+    assert(IndexWriterSuite.callbackSeq.last.contains("block end"))
     assert(
-      DataMapWriterSuite.callbackSeq.slice(1, DataMapWriterSuite.callbackSeq.length - 1) == Seq(
+      IndexWriterSuite.callbackSeq.slice(1, IndexWriterSuite.callbackSeq.length - 1) == Seq(
         "blocklet start 0",
         "add page data: blocklet 0, page 0",
         "add page data: blocklet 0, page 1",
         "blocklet end: 0"
       ))
-    DataMapWriterSuite.callbackSeq = Seq()
+    IndexWriterSuite.callbackSeq = Seq()
   }
 
   test("test write datamap 2 blocklet") {
@@ -178,12 +178,12 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
 
-    assert(DataMapWriterSuite.callbackSeq.head.contains("block start"))
-    assert(DataMapWriterSuite.callbackSeq.last.contains("block end"))
+    assert(IndexWriterSuite.callbackSeq.head.contains("block start"))
+    assert(IndexWriterSuite.callbackSeq.last.contains("block end"))
     // corrected test case the min "carbon.blockletgroup.size.in.mb" size could not be less than
     // 64 MB
     assert(
-      DataMapWriterSuite.callbackSeq.slice(1, DataMapWriterSuite.callbackSeq.length - 1) == Seq(
+      IndexWriterSuite.callbackSeq.slice(1, IndexWriterSuite.callbackSeq.length - 1) == Seq(
         "blocklet start 0",
         "add page data: blocklet 0, page 0",
         "add page data: blocklet 0, page 1",
@@ -197,7 +197,7 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
         "add page data: blocklet 0, page 9",
         "blocklet end: 0"
       ))
-    DataMapWriterSuite.callbackSeq = Seq()
+    IndexWriterSuite.callbackSeq = Seq()
   }
 
   override def afterAll {
@@ -205,13 +205,13 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
   }
 }
 
-object DataMapWriterSuite {
+object IndexWriterSuite {
 
   var callbackSeq: Seq[String] = Seq[String]()
 
   def dataMapWriterC2Mock(identifier: AbsoluteTableIdentifier, dataMapName:String, segment: Segment,
       shardName: String) =
-    new DataMapWriter(identifier.getTablePath, dataMapName, Seq().asJava, segment, shardName) {
+    new IndexWriter(identifier.getTablePath, dataMapName, Seq().asJava, segment, shardName) {
 
       override def onPageAdded(
           blockletId: Int,

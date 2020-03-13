@@ -25,7 +25,7 @@ import java.util.List;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datamap.dev.IndexWriter;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -39,7 +39,7 @@ import org.apache.hadoop.util.bloom.Key;
 import org.apache.hadoop.util.hash.Hash;
 
 @InterfaceAudience.Internal
-public abstract class AbstractBloomIndexWriter extends DataMapWriter {
+public abstract class AbstractBloomIndexWriter extends IndexWriter {
   private int bloomFilterSize;
   private double bloomFilterFpp;
   private boolean compressBloom;

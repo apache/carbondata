@@ -30,7 +30,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainIndex, CoarseGrainIndexFactory}
-import org.apache.carbondata.core.datamap.dev.{IndexBuilder, DataMapModel, DataMapWriter}
+import org.apache.carbondata.core.datamap.dev.{DataMapModel, IndexBuilder, IndexWriter}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
@@ -59,8 +59,8 @@ class CGIndexFactory(
   /**
    * Return a new write for this datamap
    */
-  override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): DataMapWriter = {
-    new CGDataMapWriter(carbonTable, segment, shardName, dataMapSchema)
+  override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): IndexWriter = {
+    new CGIndexWriter(carbonTable, segment, shardName, dataMapSchema)
   }
 
   /**
@@ -258,12 +258,12 @@ class CGIndex extends CoarseGrainIndex {
   override def getNumberOfEntries: Int = 1
 }
 
-class CGDataMapWriter(
+class CGIndexWriter(
     carbonTable: CarbonTable,
     segment: Segment,
     shardName: String,
     dataMapSchema: DataMapSchema)
-  extends DataMapWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
+  extends IndexWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
     carbonTable.getIndexedColumns(dataMapSchema), segment, shardName) {
 
   val blockletList = new ArrayBuffer[Array[Byte]]()

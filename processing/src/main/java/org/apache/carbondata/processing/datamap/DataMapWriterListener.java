@@ -30,7 +30,7 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.IndexFactory;
-import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datamap.dev.IndexWriter;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
@@ -49,7 +49,7 @@ public class DataMapWriterListener {
       DataMapWriterListener.class.getCanonicalName());
 
   // list indexed column -> list of data map writer
-  private Map<List<CarbonColumn>, List<DataMapWriter>> registry = new ConcurrentHashMap<>();
+  private Map<List<CarbonColumn>, List<IndexWriter>> registry = new ConcurrentHashMap<>();
   // table for this listener
   private CarbonTableIdentifier tblIdentifier;
 
@@ -83,7 +83,7 @@ public class DataMapWriterListener {
   }
 
   /**
-   * Register a DataMapWriter
+   * Register a IndexWriter
    */
   private void register(IndexFactory factory, String segmentId,
       String taskNo, SegmentProperties segmentProperties) {
@@ -95,12 +95,12 @@ public class DataMapWriterListener {
       return;
     }
     List<CarbonColumn> columns = factory.getMeta().getIndexedColumns();
-    List<DataMapWriter> writers = registry.get(columns);
-    DataMapWriter writer = null;
+    List<IndexWriter> writers = registry.get(columns);
+    IndexWriter writer = null;
     try {
       writer = factory.createWriter(new Segment(segmentId), taskNo, segmentProperties);
     } catch (IOException e) {
-      LOG.error("Failed to create DataMapWriter: " + e.getMessage(), e);
+      LOG.error("Failed to create IndexWriter: " + e.getMessage(), e);
       throw new DataMapWriterException(e);
     }
     if (writers != null) {
@@ -110,36 +110,36 @@ public class DataMapWriterListener {
       writers.add(writer);
       registry.put(columns, writers);
     }
-    LOG.info("DataMapWriter " + writer + " added");
+    LOG.info("IndexWriter " + writer + " added");
   }
 
   public void onBlockStart(String blockId) throws IOException {
-    for (List<DataMapWriter> writers : registry.values()) {
-      for (DataMapWriter writer : writers) {
+    for (List<IndexWriter> writers : registry.values()) {
+      for (IndexWriter writer : writers) {
         writer.onBlockStart(blockId);
       }
     }
   }
 
   public void onBlockEnd(String blockId) throws IOException {
-    for (List<DataMapWriter> writers : registry.values()) {
-      for (DataMapWriter writer : writers) {
+    for (List<IndexWriter> writers : registry.values()) {
+      for (IndexWriter writer : writers) {
         writer.onBlockEnd(blockId);
       }
     }
   }
 
   public void onBlockletStart(int blockletId) throws IOException {
-    for (List<DataMapWriter> writers : registry.values()) {
-      for (DataMapWriter writer : writers) {
+    for (List<IndexWriter> writers : registry.values()) {
+      for (IndexWriter writer : writers) {
         writer.onBlockletStart(blockletId);
       }
     }
   }
 
   public void onBlockletEnd(int blockletId) throws IOException {
-    for (List<DataMapWriter> writers : registry.values()) {
-      for (DataMapWriter writer : writers) {
+    for (List<IndexWriter> writers : registry.values()) {
+      for (IndexWriter writer : writers) {
         writer.onBlockletEnd(blockletId);
       }
     }
@@ -152,17 +152,17 @@ public class DataMapWriterListener {
    * @param tablePage  page data
    */
   public void onPageAdded(int blockletId, int pageId, TablePage tablePage) throws IOException {
-    Set<Map.Entry<List<CarbonColumn>, List<DataMapWriter>>> entries = registry.entrySet();
-    for (Map.Entry<List<CarbonColumn>, List<DataMapWriter>> entry : entries) {
+    Set<Map.Entry<List<CarbonColumn>, List<IndexWriter>>> entries = registry.entrySet();
+    for (Map.Entry<List<CarbonColumn>, List<IndexWriter>> entry : entries) {
       List<CarbonColumn> indexedColumns = entry.getKey();
       ColumnPage[] pages = new ColumnPage[indexedColumns.size()];
       for (int i = 0; i < indexedColumns.size(); i++) {
         pages[i] = tablePage.getColumnPage(indexedColumns.get(i).getColName());
       }
-      List<DataMapWriter> writers = entry.getValue();
+      List<IndexWriter> writers = entry.getValue();
       int pageSize = pages[0].getPageSize();
 
-      for (DataMapWriter writer : writers) {
+      for (IndexWriter writer : writers) {
         writer.onPageAdded(blockletId, pageId, pageSize, pages);
       }
     }
@@ -172,8 +172,8 @@ public class DataMapWriterListener {
    * Finish all datamap writers
    */
   public void finish() throws IOException {
-    for (List<DataMapWriter> writers : registry.values()) {
-      for (DataMapWriter writer : writers) {
+    for (List<IndexWriter> writers : registry.values()) {
+      for (IndexWriter writer : writers) {
         writer.finish();
       }
     }

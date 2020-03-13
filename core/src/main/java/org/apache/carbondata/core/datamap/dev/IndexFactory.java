@@ -75,13 +75,13 @@ public abstract class IndexFactory<T extends DataMap> {
   /**
    * Create a new write for this datamap, to write new data into the specified segment and shard
    */
-  public abstract DataMapWriter createWriter(Segment segment, String shardName,
+  public abstract IndexWriter createWriter(Segment segment, String shardName,
       SegmentProperties segmentProperties) throws IOException;
 
   /**
    * Create a new IndexBuilder for this datamap, to rebuild the specified
    * segment and shard data in the main table.
-   * TODO: refactor to unify with DataMapWriter
+   * TODO: refactor to unify with IndexWriter
    */
   public abstract IndexBuilder createBuilder(Segment segment, String shardName,
       SegmentProperties segmentProperties) throws IOException;

@@ -40,7 +40,7 @@ import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.IndexBuilder;
 import org.apache.carbondata.core.datamap.dev.IndexFactory;
-import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datamap.dev.IndexWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -207,7 +207,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
   }
 
   @Override
-  public DataMapWriter createWriter(Segment segment, String shardName,
+  public IndexWriter createWriter(Segment segment, String shardName,
       SegmentProperties segmentProperties) throws IOException {
     LOGGER.info(
         String.format("Data of BloomCoarseGranDataMap %s for table %s will be written to %s",

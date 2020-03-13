@@ -28,7 +28,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
-import org.apache.carbondata.core.datamap.dev.{DataMapModel, DataMapWriter, IndexBuilder}
+import org.apache.carbondata.core.datamap.dev.{DataMapModel, IndexWriter, IndexBuilder}
 import org.apache.carbondata.core.datamap.dev.fgdatamap.{FineGrainBlocklet, FineGrainIndex, FineGrainIndexFactory}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
@@ -56,8 +56,8 @@ class FGIndexFactory(carbonTable: CarbonTable,
   /**
    * Return a new write for this datamap
    */
-  override def createWriter(segment: Segment, dataWritePath: String, segmentProperties: SegmentProperties): DataMapWriter = {
-    new FGDataMapWriter(carbonTable, segment, dataWritePath, dataMapSchema)
+  override def createWriter(segment: Segment, dataWritePath: String, segmentProperties: SegmentProperties): IndexWriter = {
+    new FGIndexWriter(carbonTable, segment, dataWritePath, dataMapSchema)
   }
 
   /**
@@ -283,9 +283,9 @@ class FGIndex extends FineGrainIndex {
   override def getNumberOfEntries: Int = 1
 }
 
-class FGDataMapWriter(carbonTable: CarbonTable,
+class FGIndexWriter(carbonTable: CarbonTable,
     segment: Segment, shardName: String, dataMapSchema: DataMapSchema)
-  extends DataMapWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
+  extends IndexWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
     carbonTable.getIndexedColumns(dataMapSchema), segment, shardName) {
 
   var taskName: String = _
