@@ -606,12 +606,9 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
   }
 
   public ColumnSchema clone() {
-    try {
-      ByteArrayOutputStream bos = new ByteArrayOutputStream();
-      DataOutputStream dos = new DataOutputStream(bos);
+    try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(bos)) {
       this.write(dos);
-      dos.close();
-      bos.close();
       DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bos.toByteArray()));
       ColumnSchema columnSchema = (ColumnSchema) super.clone();
       columnSchema.readFields(dis);

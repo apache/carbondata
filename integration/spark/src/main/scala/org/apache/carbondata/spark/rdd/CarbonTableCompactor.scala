@@ -29,6 +29,7 @@ import org.apache.hadoop.mapreduce.{InputSplit, Job}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.{CarbonUtils, SparkSession, SQLContext}
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
+import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.{CollectionAccumulator, MergeIndexUtil}
 
@@ -271,7 +272,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           segmentFilesForIUDCompact = new util.ArrayList[Segment](segmentFilesList)
         } else {
           // get segmentMetadata info from accumulator
-          val segmentMetaDataInfo = CarbonDataRDDFactory.getSegmentMetaDataInfoFromAccumulator(
+          val segmentMetaDataInfo = CommonLoadUtils.getSegmentMetaDataInfoFromAccumulator(
             mergedLoadNumber,
             segmentMetaDataAccumulator)
           segmentFileName = SegmentFileStore.writeSegmentFile(

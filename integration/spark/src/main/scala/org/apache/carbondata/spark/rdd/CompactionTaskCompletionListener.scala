@@ -22,6 +22,7 @@ import java.util
 import org.apache.log4j.Logger
 import org.apache.spark.TaskContext
 import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.CarbonCompactionTaskCompletionListener
+import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.util.CollectionAccumulator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -55,8 +56,8 @@ class CompactionTaskCompletionListener(
       LOGGER.info("Closing compaction processor instance to clean up loading resources")
       processor.close()
     }
-    // fill segment level minMax to accumulator
-    CarbonDataRDDFactory.fillSegmentMetaDataInfoToAccumulator(carbonLoadModel.getTableName,
+    // fill segment metadata to accumulator
+    CommonLoadUtils.fillSegmentMetaDataInfoToAccumulator(carbonLoadModel.getTableName,
       carbonLoadModel.getSegmentId,
       segmentMetaDataAccumulator)
   }

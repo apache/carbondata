@@ -20,6 +20,7 @@ package org.apache.carbondata.spark.rdd
 import org.apache.spark.TaskContext
 import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.CarbonLoadTaskCompletionListener
 import org.apache.spark.sql.execution.command.ExecutionErrors
+import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.util.CollectionAccumulator
 
 import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
@@ -35,11 +36,12 @@ class InsertTaskCompletionListener(dataLoadExecutor: DataLoadExecutor,
   extends CarbonLoadTaskCompletionListener {
   override def onTaskCompletion(context: TaskContext): Unit = {
     try {
-      // fill segment level minMax to accumulator
-      CarbonDataRDDFactory.fillSegmentMetaDataInfoToAccumulator(tableName,
+      // fill segment metadata to accumulator
+      CommonLoadUtils.fillSegmentMetaDataInfoToAccumulator(
+        tableName,
         segmentId,
         segmentMetaDataAccumulator)
-      if(null != dataLoadExecutor) {
+      if (null != dataLoadExecutor) {
         dataLoadExecutor.close()
       }
     }

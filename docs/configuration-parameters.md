@@ -146,7 +146,7 @@ This section provides the details of all the configurations required for the Car
 | carbon.query.prefetch.enable | true | By default this property is true, so prefetch is used in query to read next blocklet asynchronously in other thread while processing current blocklet in main thread. This can help to reduce CPU idle time. Setting this property false will disable this prefetch feature in query. |
 | carbon.query.stage.input.enable | false | Stage input files are data files written by external applications (such as Flink), but have not been loaded into carbon table. Enabling this configuration makes query to include these files, thus makes query on latest data. However, since these files are not indexed, query maybe slower as full scan is required for these files. |
 | carbon.driver.pruning.multi.thread.enable.files.count | 100000 | To prune in multi-thread when total number of segment files for a query increases beyond the configured value. |
-| carbon.load.all.indexes.to.cache | true | Setting this configuration to false, will prune and load only matched segment indexes to cache using segment minmax information, which decreases the usage of driver memory.  |
+| carbon.load.all.segment.indexes.to.cache | true | Setting this configuration to false, will prune and load only matched segment indexes to cache using segment metadata information such as columnid and it's minmax values, which decreases the usage of driver memory.  |
 
 ## Data Mutation Configuration
 | Parameter | Default Value | Description |

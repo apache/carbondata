@@ -69,6 +69,7 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.segmentmeta.SegmentColumnMetaDataInfo;
 import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
@@ -157,11 +158,11 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
             tableBlockIndexUniqueIdentifierWrappers, identifiers);
       } else {
         SegmentMetaDataInfo segmentMetaDataInfo = segment.getSegmentMetaDataInfo();
-        //        boolean isLoadAllIndex = Boolean.parseBoolean(CarbonProperties.getInstance()
-        //            .getProperty(CarbonCommonConstants.CARBON_LOAD_ALL_INDEX_TO_CACHE,
-        //                CarbonCommonConstants.CARBON_LOAD_ALL_INDEX_TO_CACHE_DEFAULT));
-        if (null != segmentMetaDataInfo && null != filter && !filter.isEmpty() && null != filter
-            .getExpression() && null == FilterUtil
+        boolean isLoadAllIndex = Boolean.parseBoolean(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_LOAD_ALL_SEGMENT_INDEXES_TO_CACHE,
+                CarbonCommonConstants.CARBON_LOAD_ALL_SEGMENT_INDEXES_TO_CACHE_DEFAULT));
+        if (!isLoadAllIndex && null != segmentMetaDataInfo && null != filter && !filter.isEmpty()
+            && null != filter.getExpression() && null == FilterUtil
             .getImplicitFilterExpression(filter.getExpression())) {
           getTableBlockIndexUniqueIdentifierUsingSegmentMinMax(segment, segmentMetaDataInfo, filter,
               identifiers, tableBlockIndexUniqueIdentifierWrappers);
@@ -251,28 +252,27 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       ColumnSchema columnSchema = tableColumnSchemas.get(columnMetaData.getKey());
       if (null != columnSchema) {
         // get segment sort column and column drift info
-        boolean isSortColumnInBlock = columnMetaData.getValue().isSortColumn();
-        boolean isColumnDriftInBlock = columnMetaData.getValue().isColumnDrift();
+        boolean isSortColumnInSegment = columnMetaData.getValue().isSortColumn();
+        boolean isColumnDriftInSegment = columnMetaData.getValue().isColumnDrift();
         if (null != columnSchema.getColumnProperties()) {
-          // get current sort column and column drift info
+          // get current sort column and column drift info from current columnSchema
           String isSortColumn =
               columnSchema.getColumnProperties().get(CarbonCommonConstants.SORT_COLUMNS);
           String isColumnDrift =
               columnSchema.getColumnProperties().get(CarbonCommonConstants.COLUMN_DRIFT);
           if (null != isSortColumn) {
-            if (isSortColumn.equalsIgnoreCase("true") && !isSortColumnInBlock) {
-              modifyColumnSchemaForSortColumn(columnSchema, isColumnDriftInBlock, isColumnDrift);
-            } else if (isSortColumn.equalsIgnoreCase("false") && isSortColumnInBlock) {
-              // modify column schema, if current columnSchema is changed
-              columnSchema.setSortColumn(true);
-              if (!columnSchema.isDimensionColumn()) {
-                columnSchema.setDimensionColumn(true);
-                columnSchema.getColumnProperties().put(CarbonCommonConstants.COLUMN_DRIFT, "true");
-              }
-              columnSchema.getColumnProperties().put(CarbonCommonConstants.SORT_COLUMNS, "true");
+            if (isSortColumn.equalsIgnoreCase("true") && !isSortColumnInSegment) {
+              // Unset current column schema column properties
+              modifyColumnSchemaForSortColumn(columnSchema, isColumnDriftInSegment, isColumnDrift,
+                  false);
+            } else if (isSortColumn.equalsIgnoreCase("false") && isSortColumnInSegment) {
+              // set sort column to true in current column schema column properties
+              modifyColumnSchemaForSortColumn(columnSchema, isColumnDriftInSegment, isColumnDrift,
+                  true);
             }
           } else {
-            modifyColumnSchemaForSortColumn(columnSchema, isColumnDriftInBlock, isColumnDrift);
+            modifyColumnSchemaForSortColumn(columnSchema, isColumnDriftInSegment, isColumnDrift,
+                false);
           }
         }
         columnSchemas.add(columnSchema);
@@ -308,12 +308,22 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   }
 
   private void modifyColumnSchemaForSortColumn(ColumnSchema columnSchema, boolean columnDrift,
-      String isColumnDrift) {
-    if (null != isColumnDrift && isColumnDrift.equalsIgnoreCase("true") && !columnDrift) {
-      columnSchema.setDimensionColumn(false);
+      String isColumnDrift, boolean isSortColumnInSegment) {
+    if (!isSortColumnInSegment) {
+      if (null != isColumnDrift && isColumnDrift.equalsIgnoreCase("true") && !columnDrift) {
+        columnSchema.setDimensionColumn(false);
+      }
+      columnSchema.setSortColumn(false);
+      columnSchema.getColumnProperties().clear();
+    } else {
+      // modify column schema, if current columnSchema is changed
+      columnSchema.setSortColumn(true);
+      if (!columnSchema.isDimensionColumn()) {
+        columnSchema.setDimensionColumn(true);
+        columnSchema.getColumnProperties().put(CarbonCommonConstants.COLUMN_DRIFT, "true");
+      }
+      columnSchema.getColumnProperties().put(CarbonCommonConstants.SORT_COLUMNS, "true");
     }
-    columnSchema.setSortColumn(false);
-    columnSchema.getColumnProperties().clear();
   }
 
   @Override

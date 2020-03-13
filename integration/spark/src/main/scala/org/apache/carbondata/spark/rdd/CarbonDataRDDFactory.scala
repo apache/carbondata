@@ -579,7 +579,8 @@ object CarbonDataRDDFactory {
           loadStatus
         }
 
-      val segmentMetaDataInfo = getSegmentMetaDataInfoFromAccumulator(carbonLoadModel.getSegmentId,
+      val segmentMetaDataInfo = CommonLoadUtils.getSegmentMetaDataInfoFromAccumulator(
+        carbonLoadModel.getSegmentId,
         segmentMetaDataAccumulator)
       val segmentFileName =
         SegmentFileStore.writeSegmentFile(carbonTable, carbonLoadModel.getSegmentId,
@@ -1184,76 +1185,4 @@ object CarbonDataRDDFactory {
     ).collect()
   }
 
-  /**
-   * Fill segment level metadata to accumulator based on tableName and segmentId
-   */
-  def fillSegmentMetaDataInfoToAccumulator(
-      tableName: String,
-      segmentId: String,
-      segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]]): Unit = {
-    val segmentMetaDataInfo = SegmentMetaDataInfoStats.getInstance()
-      .getTableSegmentMetaDataInfo(tableName, segmentId)
-    if (null != segmentMetaDataInfo) {
-      segmentMetaDataAccumulator.add(scala.Predef
-        .Map(segmentId -> segmentMetaDataInfo))
-      SegmentMetaDataInfoStats.getInstance().clear(tableName, segmentId)
-    }
-  }
-
-  /**
-   * Collect segmentMetaDataInfo from all tasks and compare min-max values and prepare final
-   * segmentMetaDataInfo
-   *
-   * @param segmentId           collect the segmentMetaDataInfo for the corresponding segmentId
-   * @param metaDataAccumulator segmentMetaDataAccumulator
-   * @return segmentMetaDataInfo
-   */
-  def getSegmentMetaDataInfoFromAccumulator(
-      segmentId: String,
-      metaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]])
-  : SegmentMetaDataInfo = {
-    var segmentMetaDataInfo: SegmentMetaDataInfo = null
-    if (!metaDataAccumulator.isZero) {
-      val segmentMetaData = metaDataAccumulator.value.asScala
-      segmentMetaData.foreach { segmentColumnMetaDataInfo =>
-        val currentValue = segmentColumnMetaDataInfo.get(segmentId)
-        if (currentValue.isDefined) {
-          if (null == segmentMetaDataInfo) {
-            segmentMetaDataInfo = currentValue.get
-          } else if (segmentMetaDataInfo.getSegmentColumnMetaDataInfoMap.isEmpty) {
-            segmentMetaDataInfo = currentValue.get
-          } else {
-            val iterator = currentValue.get.getSegmentColumnMetaDataInfoMap
-              .entrySet()
-              .iterator()
-            while (iterator.hasNext) {
-              val currentSegmentColumnMetaDataMap = iterator.next()
-              if (segmentMetaDataInfo.getSegmentColumnMetaDataInfoMap
-                .containsKey(currentSegmentColumnMetaDataMap.getKey)) {
-                val currentMax = SegmentMetaDataInfoStats.getInstance()
-                  .compareAndUpdateMinMax(segmentMetaDataInfo
-                    .getSegmentColumnMetaDataInfoMap
-                    .get(currentSegmentColumnMetaDataMap.getKey)
-                    .getColumnMaxValue,
-                    currentSegmentColumnMetaDataMap.getValue.getColumnMaxValue,
-                    false)
-                val currentMin = SegmentMetaDataInfoStats.getInstance()
-                  .compareAndUpdateMinMax(segmentMetaDataInfo.getSegmentColumnMetaDataInfoMap
-                    .get(currentSegmentColumnMetaDataMap.getKey).getColumnMinValue,
-                    currentSegmentColumnMetaDataMap.getValue.getColumnMinValue,
-                    true)
-                segmentMetaDataInfo.getSegmentColumnMetaDataInfoMap
-                  .get(currentSegmentColumnMetaDataMap.getKey)
-                  .setColumnMaxValue(currentMax)
-                segmentMetaDataInfo.getSegmentColumnMetaDataInfoMap
-                  .get(currentSegmentColumnMetaDataMap.getKey)
-                  .setColumnMinValue(currentMin)
-              }
-            }
-          }
-        }
-      }
-    }
-    segmentMetaDataInfo
-  }
 }

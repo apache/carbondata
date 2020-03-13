@@ -134,8 +134,8 @@ public final class TableDataMap extends OperationEventListener {
     // for filter queries
     int totalFiles = 0;
     int datamapsCount = 0;
-    // In case if filter has matched partitions, then update the segments with datamap's
-    // segment list, as getDataMaps will return segments that matches the partition.
+    // In case if filter is present, then update the segments with datamap's segment list
+    // based on segment or partition pruning
     if (isFilterPresent) {
       segments = new ArrayList<>(dataMaps.keySet());
     }

@@ -152,8 +152,8 @@ class NewCarbonDataLoadRDD[K, V](
             new InsertTaskCompletionListener(executor,
               executionErrors,
               segmentMetaDataAccumulator,
-              model.getTableName,
-              model.getSegment.getSegmentNo)
+              carbonLoadModel.getTableName,
+              carbonLoadModel.getSegment.getSegmentNo)
           }
         executor.execute(model,
           loader.storeLocation,

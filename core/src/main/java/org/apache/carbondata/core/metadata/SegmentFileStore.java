@@ -1329,7 +1329,7 @@ public class SegmentFileStore {
         newSegmentMetaDataInfo = (SegmentMetaDataInfo) ObjectSerializationUtil
             .convertStringToObject(segmentMetaDataInfo);
       } catch (IOException e) {
-        LOGGER.error("Error while getting segment minmax");
+        LOGGER.error("Error while getting segment metadata info");
       }
       return newSegmentMetaDataInfo;
     }

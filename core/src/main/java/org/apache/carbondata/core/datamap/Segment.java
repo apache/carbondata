@@ -87,7 +87,7 @@ public class Segment implements Serializable, Writable {
   private transient Map<String, String> options;
 
   /**
-   * Segment level min and max values
+   * Segment metadata info
    */
   private SegmentMetaDataInfo segmentMetaDataInfo;
 

@@ -44,16 +44,13 @@ public class BlockColumnMetaDataInfo implements Serializable {
     return min;
   }
 
-  public void setMin(byte[][] min) {
+  public void setMinMax(byte[][] min, byte[][] max) {
     this.min = min;
+    this.max = max;
   }
 
   public byte[][] getMax() {
     return max;
-  }
-
-  public void setMax(byte[][] max) {
-    this.max = max;
   }
 
   public List<ColumnSchema> getColumnSchemas() {

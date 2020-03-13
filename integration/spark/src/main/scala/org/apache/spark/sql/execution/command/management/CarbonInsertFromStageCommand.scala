@@ -283,7 +283,7 @@ case class CarbonInsertFromStageCommand(
                   s"${table.getDatabaseName}.${table.getTableName}")
       val start = System.currentTimeMillis()
       val dataFrame = DataLoadProcessBuilderOnSpark.createInputDataFrame(spark, table, splits)
-      // accumulator to collect segment minmax
+      // accumulator to collect segment metadata info such as columnId and it's minMax values
       val segmentMetaDataAccumulator = spark.sqlContext
         .sparkContext
         .collectionAccumulator[Map[String, SegmentMetaDataInfo]]

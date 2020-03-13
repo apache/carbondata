@@ -27,7 +27,7 @@ class TestPruneUsingSegmentMinMax extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
     drop
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_LOAD_ALL_INDEX_TO_CACHE, "false")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_LOAD_ALL_SEGMENT_INDEXES_TO_CACHE, "false")
   }
 
   private def drop = {
@@ -114,8 +114,8 @@ class TestPruneUsingSegmentMinMax extends QueryTest with BeforeAndAfterAll {
   override def afterAll(): Unit = {
     drop
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_LOAD_ALL_INDEX_TO_CACHE,
-        CarbonCommonConstants.CARBON_LOAD_ALL_INDEX_TO_CACHE_DEFAULT)
+      .addProperty(CarbonCommonConstants.CARBON_LOAD_ALL_SEGMENT_INDEXES_TO_CACHE,
+        CarbonCommonConstants.CARBON_LOAD_ALL_SEGMENT_INDEXES_TO_CACHE_DEFAULT)
   }
 
 }

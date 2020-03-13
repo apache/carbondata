@@ -2424,12 +2424,12 @@ public final class CarbonCommonConstants {
   /**
    * Load all indexes to carbon LRU cache
    */
-  public static final String CARBON_LOAD_ALL_INDEX_TO_CACHE =
+  public static final String CARBON_LOAD_ALL_SEGMENT_INDEXES_TO_CACHE =
       "carbon.load.all.segment.indexes.to.cache";
 
   /**
    * Default value for loading cache is true
    * Make this false, to load index for the matched segments from filter expression
    */
-  public static final String CARBON_LOAD_ALL_INDEX_TO_CACHE_DEFAULT = "true";
+  public static final String CARBON_LOAD_ALL_SEGMENT_INDEXES_TO_CACHE_DEFAULT = "true";
 }

@@ -32,7 +32,7 @@ public class SegmentBlockIndexInfo {
   private Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers;
 
   /**
-   * segment level min and max values
+   * segment metadata info
    */
   private SegmentMetaDataInfo segmentMetaDataInfo;
 

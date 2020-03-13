@@ -20,7 +20,6 @@ package org.apache.carbondata.core.segmentmeta;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -32,7 +31,7 @@ import org.apache.carbondata.core.util.ByteUtil;
 public class SegmentMetaDataInfoStats {
 
   private SegmentMetaDataInfoStats() {
-    tableSegmentMetaDataInfoMap = new ConcurrentHashMap<>();
+    tableSegmentMetaDataInfoMap = new LinkedHashMap<>();
   }
 
   public static synchronized SegmentMetaDataInfoStats getInstance() {
@@ -61,7 +60,8 @@ public class SegmentMetaDataInfoStats {
     Map<String, SegmentColumnMetaDataInfo> segmentColumnMetaDataInfoMap = new LinkedHashMap<>();
     Map<String, BlockColumnMetaDataInfo> segmentMetaDataInfoMap =
         this.tableSegmentMetaDataInfoMap.get(tableName);
-    if (null != segmentMetaDataInfoMap && null != segmentMetaDataInfoMap.get(segmentId)) {
+    if (null != segmentMetaDataInfoMap && !segmentMetaDataInfoMap.isEmpty()
+        && null != segmentMetaDataInfoMap.get(segmentId)) {
       BlockColumnMetaDataInfo blockColumnMetaDataInfo = segmentMetaDataInfoMap.get(segmentId);
       for (int i = 0; i < blockColumnMetaDataInfo.getColumnSchemas().size(); i++) {
         org.apache.carbondata.format.ColumnSchema columnSchema =
@@ -88,8 +88,7 @@ public class SegmentMetaDataInfoStats {
       BlockColumnMetaDataInfo currentBlockColumnMetaInfo) {
     // check if tableName is present in tableSegmentMetaDataInfoMap
     if (!this.tableSegmentMetaDataInfoMap.isEmpty() && null != this.tableSegmentMetaDataInfoMap
-        .get(tableName) && !this.tableSegmentMetaDataInfoMap.get(tableName).isEmpty()
-        && null != this.tableSegmentMetaDataInfoMap.get(tableName).get(segmentId)) {
+        .get(tableName) && null != this.tableSegmentMetaDataInfoMap.get(tableName).get(segmentId)) {
       // get previous blockColumn metadata information
       BlockColumnMetaDataInfo previousBlockColumnMetaInfo =
           this.tableSegmentMetaDataInfoMap.get(tableName).get(segmentId);
@@ -98,11 +97,9 @@ public class SegmentMetaDataInfoStats {
           currentBlockColumnMetaInfo.getMin(), true);
       byte[][] updatedMax = compareAndUpdateMinMax(previousBlockColumnMetaInfo.getMax(),
           currentBlockColumnMetaInfo.getMax(), false);
-      // set updated min and max to currentBlockMetaDataInfo
-      currentBlockColumnMetaInfo.setMin(updatedMin);
-      currentBlockColumnMetaInfo.setMax(updatedMax);
       // update the segment
-      this.tableSegmentMetaDataInfoMap.get(tableName).put(segmentId, currentBlockColumnMetaInfo);
+      this.tableSegmentMetaDataInfoMap.get(tableName).get(segmentId)
+          .setMinMax(updatedMin, updatedMax);
     } else {
       Map<String, BlockColumnMetaDataInfo> segmentMinMaxMap = new HashMap<>();
       if (null != this.tableSegmentMetaDataInfoMap.get(tableName)
