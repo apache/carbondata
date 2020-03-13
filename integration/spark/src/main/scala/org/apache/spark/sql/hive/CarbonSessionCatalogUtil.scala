@@ -72,8 +72,8 @@ object CarbonSessionCatalogUtil {
       cols: Option[Seq[ColumnSchema]],
       sparkSession: SparkSession): Unit = {
     getClient(sparkSession)
-      .runSqlHive(s"ALTER TABLE ${ tableIdentifier.database.get }.${ tableIdentifier.table } " +
-                  s"SET TBLPROPERTIES(${ schemaParts })")
+      .runSqlHive(s"ALTER TABLE `${tableIdentifier.database.get}`.`${tableIdentifier.table}` " +
+                  s"SET TBLPROPERTIES($schemaParts)")
   }
 
   def alterTableProperties(

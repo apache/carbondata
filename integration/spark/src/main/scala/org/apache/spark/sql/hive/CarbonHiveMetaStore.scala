@@ -161,7 +161,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       .catalog
       .externalCatalog.asInstanceOf[HiveExternalCatalog]
       .client
-    hiveClient.runSqlHive(s"ALTER TABLE $dbName.$tableName SET SERDEPROPERTIES($schemaParts)")
+    hiveClient.runSqlHive(s"ALTER TABLE `$dbName`.`$tableName` SET SERDEPROPERTIES($schemaParts)")
 
     sparkSession.catalog.refreshTable(TableIdentifier(tableName, Some(dbName)).quotedString)
     removeTableFromMetadata(dbName, tableName)
