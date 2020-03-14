@@ -133,7 +133,7 @@ public class CarbondataSplitManager extends HiveSplitManager {
     try {
 
       List<CarbonLocalMultiBlockSplit> splits =
-          carbonTableReader.getInputSplits2(cache, filters, predicate, configuration);
+          carbonTableReader.getInputSplits(cache, filters, predicate, configuration);
 
       ImmutableList.Builder<ConnectorSplit> cSplits = ImmutableList.builder();
       long index = 0;
