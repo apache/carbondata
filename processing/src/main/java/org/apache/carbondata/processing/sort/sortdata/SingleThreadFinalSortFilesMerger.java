@@ -250,7 +250,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   public Object[] next() {
     if (hasNext()) {
       IntermediateSortTempRow sortTempRow = getSortedRecordFromFile();
-      return sortStepRowHandler.convertIntermediateSortTempRowTo3Parted(sortTempRow);
+      return sortStepRowHandler.convertToFlatRow(sortTempRow);
     } else {
       throw new NoSuchElementException("No more elements to return");
     }

@@ -199,7 +199,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    */
   public Object[] next() {
     if (hasNext()) {
-      return sortStepRowHandler.convertIntermediateSortTempRowTo3Parted(getSortedRecordFromFile());
+      return sortStepRowHandler.convertToFlatRow(getSortedRecordFromFile());
     } else {
       throw new NoSuchElementException("No more elements to return");
     }

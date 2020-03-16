@@ -229,7 +229,7 @@ public class TablePage {
     if (complexColumnCount > 0) {
       for (int i = 0; i < complexDimensionPages.length; i++) {
         // complex columns
-        addComplexColumn(i - noDictionaryCount, rowId,
+        addComplexColumn(i , rowId,
             (List<ArrayList<byte[]>>) row.getData()[i + noDictDimensionPages.length
                 + dictDimensionPages.length]);
       }

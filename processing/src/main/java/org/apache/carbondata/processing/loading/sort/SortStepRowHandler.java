@@ -24,6 +24,10 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
@@ -190,6 +194,16 @@ public class SortStepRowHandler implements Serializable {
         .prepareOutObj(out, sortTempRow.getDictSortDims(), sortTempRow.getNoDictSortDims(),
             sortTempRow.getMeasures());
     return out;
+  }
+
+  public Object[] convertToFlatRow(IntermediateSortTempRow sortTempRow) {
+    List<Object> out = new ArrayList<>();
+    for (int val : sortTempRow.getDictSortDims()) {
+      out.add(val);
+    }
+    out.addAll(Arrays.asList(sortTempRow.getNoDictSortDims()));
+    out.addAll(Arrays.asList(sortTempRow.getMeasures()));
+    return out.toArray();
   }
 
   /**

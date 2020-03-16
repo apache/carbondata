@@ -327,7 +327,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   private int setFlatCarbonRowForComplex(CarbonRow row) {
     int noDictTotalComplexChildDepth = 0;
-    int dictionaryCount = model.getNoDictionaryCount();
+    int dictionaryCount = model.getDictDimensionCount();
     for (int i = 0; i < model.getTableSpec().getNoDictionaryDimensionSpec().size(); i++) {
       // complex types starts after no dictionary dimensions
       if (i >= model.getNoDictionaryCount() && (model.getTableSpec().getNoDictionaryDimensionSpec()
