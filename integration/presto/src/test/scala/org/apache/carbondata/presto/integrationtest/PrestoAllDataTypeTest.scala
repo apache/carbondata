@@ -79,13 +79,13 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     prestoServer.execute("drop table if exists testdb.testtable")
     prestoServer.execute("drop schema if exists testdb")
     prestoServer.execute("create schema testdb")
-    prestoServer.execute(
-      "create table testdb.testtable(ID int, date date, country varchar, name varchar, phonetype " +
-      "varchar, serialname varchar,salary double, bonus decimal(10,4), monthlyBonus decimal(18,4)" +
-      ", dob timestamp, shortField smallint, iscurrentemployee boolean) with(format='CARBON') ")
+//    prestoServer.execute("create table testdb.testtable(ID int, date date, country varchar, name varchar, phonetype varchar, serialname varchar,salary double, bonus decimal(10,4), monthlyBonus decimal(18,4), dob timestamp, shortField smallint, iscurrentemployee boolean) with(format='CARBON') ")
+    val value = s"$rootPath/integration/presto/src/test/resources/alldatatype.csv"
+    //    prestoServer.execute(s"create table testdb.testtable(ID int, date date, country varchar, name varchar, phonetype varchar, serialname varchar,salary double, bonus decimal(10,4), monthlyBonus decimal(18,4), dob timestamp, shortField smallint, iscurrentemployee boolean) with(format='ORC',location = '$value' ) ")
+    prestoServer.execute("create table testdb.test(ID int, name varchar) with(format='CARBON') ")
     CarbonDataStoreCreator
       .createCarbonStore(storePath,
-        s"$rootPath/integration/presto/src/test/resources/alldatatype.csv")
+        value)
     logger.info(s"\nCarbon store is created at location: $storePath")
     cleanUp
   }
@@ -93,6 +93,18 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
   override def afterAll(): Unit = {
     prestoServer.stopServer()
     CarbonUtil.deleteFoldersAndFiles(FileFactory.getCarbonFile(storePath))
+  }
+
+  test("insert test") {
+    prestoServer.execute("insert into testdb.test values( 4,'akash')")
+    prestoServer.execute("insert into testdb.test values( 5,'suhas')")
+    prestoServer.execute("insert into testdb.test values( 6,'gj')")
+    prestoServer.execute("insert into testdb.test values( 7,'kushal')")
+    val actualResult: List[Map[String, Any]] = prestoServer
+      .executeQuery("select count(*) AS RESULT from testdb.test")
+    val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> 4))
+    println(actualResult.size)
+    assert(actualResult.equals(expectedResult))
   }
 
   test("test the result for count(*) in presto") {

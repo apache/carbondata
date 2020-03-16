@@ -127,7 +127,8 @@ public class CarbondataModule extends HiveModule {
         .in(Scopes.SINGLETON);
     binder.bind(HivePartitionManager.class).in(Scopes.SINGLETON);
     binder.bind(LocationService.class).to(HiveLocationService.class).in(Scopes.SINGLETON);
-    binder.bind(HiveMetadataFactory.class).in(Scopes.SINGLETON);
+    binder.bind(HiveLocationService.class).to(CarbonDataLocationService.class).in(Scopes.SINGLETON);
+    binder.bind(HiveMetadataFactory.class).to(CarbonMetadataFactory.class).in(Scopes.SINGLETON);
     binder.bind(new TypeLiteral<Supplier<TransactionalMetadata>>() {
     }).to(HiveMetadataFactory.class).in(Scopes.SINGLETON);
     binder.bind(HiveTransactionManager.class).in(Scopes.SINGLETON);
@@ -161,6 +162,7 @@ public class CarbondataModule extends HiveModule {
     configBinder(binder).bindConfig(OrcFileWriterConfig.class);
     fileWriterFactoryBinder.addBinding().to(OrcFileWriterFactory.class).in(Scopes.SINGLETON);
     fileWriterFactoryBinder.addBinding().to(RcFileFileWriterFactory.class).in(Scopes.SINGLETON);
+    fileWriterFactoryBinder.addBinding().to(CarbonDataFileWriterFactory.class).in(Scopes.SINGLETON);
     binder.bind(CarbonTableReader.class).in(Scopes.SINGLETON);
 
     configBinder(binder).bindConfig(ParquetFileWriterConfig.class);

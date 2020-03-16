@@ -18,7 +18,9 @@
 package org.apache.carbondata.hive;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 
@@ -43,6 +45,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
+import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.util.Progressable;
 
@@ -92,6 +95,11 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
     }
     String tablePath = FileFactory.getCarbonFile(carbonLoadModel.getTablePath()).getAbsolutePath();
     TaskAttemptID taskAttemptID = TaskAttemptID.forName(jc.get("mapred.task.id"));
+    if (taskAttemptID == null) {
+      SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmm");
+      String jobTrackerId = formatter.format(new Date());
+      taskAttemptID = new TaskAttemptID(jobTrackerId, 0, TaskType.MAP, 0, 0);
+    }
     TaskAttemptContextImpl context = new TaskAttemptContextImpl(jc, taskAttemptID);
     carbonLoadModel.setTaskNo("" + taskAttemptID.getTaskID().getId());
     final boolean isHivePartitionedTable =
