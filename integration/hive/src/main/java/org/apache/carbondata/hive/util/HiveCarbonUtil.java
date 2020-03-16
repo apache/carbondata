@@ -122,11 +122,12 @@ public class HiveCarbonUtil {
     CarbonLoadModel loadModel;
     CarbonTable carbonTable;
     try {
-      String schemaFilePath = CarbonTablePath.getSchemaFilePath(location);
+      String schemaFilePath = CarbonTablePath.getSchemaFilePath(location, configuration);
       AbsoluteTableIdentifier absoluteTableIdentifier =
           AbsoluteTableIdentifier.from(location, databaseName, tableName, "");
       if (FileFactory.getCarbonFile(schemaFilePath).exists()) {
         carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
+        carbonTable.setTransactionalTable(true);
       } else {
         String carbonDataFile = CarbonUtil.getFilePathExternalFilePath(location, configuration);
         if (carbonDataFile == null) {

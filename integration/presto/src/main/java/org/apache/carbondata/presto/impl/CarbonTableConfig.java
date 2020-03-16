@@ -40,6 +40,12 @@ public class CarbonTableConfig {
   private String endPoint;
   private String pushRowFilter;
 
+  /**
+   * Property to send load model from coordinator to worker in presto. This is internal constant
+   * and not exposed to user.
+   */
+  public static final String CARBON_PRESTO_LOAD_MODEL = "carbondata.presto.encoded.loadmodel";
+
   public String getUnsafeMemoryInMb() {
     return unsafeMemoryInMb;
   }

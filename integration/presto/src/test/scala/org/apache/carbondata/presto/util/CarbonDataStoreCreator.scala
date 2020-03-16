@@ -24,9 +24,6 @@ import java.util
 import java.util.{ArrayList, Date, UUID}
 import java.util.concurrent.atomic.AtomicInteger
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable
-
 import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
@@ -43,13 +40,12 @@ import org.apache.carbondata.core.fileoperations.{AtomicFileOperationFactory, At
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.{SchemaConverter, ThriftWrapperSchemaConverterImpl}
 import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
-import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, CarbonTableBuilder, TableSchemaBuilder}
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, CarbonTableBuilder, TableSchema, TableSchemaBuilder}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.ThriftWriter
+import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.processing.loading.DataLoadExecutor
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator, StringArrayWritable}
@@ -75,7 +71,9 @@ object CarbonDataStoreCreator {
         new CarbonTableIdentifier(dbName,
           tableName,
           UUID.randomUUID().toString))
-      val table: CarbonTable = createTable(absoluteTableIdentifier, useLocalDict)
+      val table: CarbonTable = createTable(absoluteTableIdentifier,
+        getCarbonTableSchema(absoluteTableIdentifier),
+        useLocalDict)
       val schema: CarbonDataLoadSchema = new CarbonDataLoadSchema(table)
       val loadModel: CarbonLoadModel = new CarbonLoadModel()
       import scala.collection.JavaConverters._
@@ -121,8 +119,9 @@ object CarbonDataStoreCreator {
         "," +
         "true")
       loadModel.setMaxColumns("15")
-      loadModel.setCsvHeader("ID,date,country,name,phonetype,serialname,salary,bonus," +
-                             "monthlyBonus,dob,shortField,isCurrentEmployee")
+      loadModel.setCsvHeader(
+        "ID,date,country,name,phonetype,serialname,salary,bonus,monthlyBonus,dob,shortField," +
+        "isCurrentEmployee")
       loadModel.setCsvHeaderColumns(loadModel.getCsvHeader.split(","))
       loadModel.setTaskNo("0")
       loadModel.setSegmentId("0")
@@ -135,29 +134,8 @@ object CarbonDataStoreCreator {
     }
   }
 
-  private def createTable(absoluteTableIdentifier: AbsoluteTableIdentifier,
+  def createTable(absoluteTableIdentifier: AbsoluteTableIdentifier, schema: TableSchema,
       useLocalDict: Boolean): CarbonTable = {
-
-    val integer = new AtomicInteger(0)
-    val schemaBuilder = new TableSchemaBuilder
-    schemaBuilder.addColumn(new StructField("ID", DataTypes.INT), integer, false, false)
-    schemaBuilder.addColumn(new StructField("date", DataTypes.DATE), integer, false, false)
-    schemaBuilder.addColumn(new StructField("country", DataTypes.STRING), integer, false, false)
-    schemaBuilder.addColumn(new StructField("name", DataTypes.STRING), integer, false, false)
-    schemaBuilder.addColumn(new StructField("phonetype", DataTypes.STRING), integer, false, false)
-    schemaBuilder.addColumn(new StructField("serialname", DataTypes.STRING), integer, false, false)
-    schemaBuilder.addColumn(new StructField("salary", DataTypes.DOUBLE), integer, false, false)
-    schemaBuilder.addColumn(new StructField("bonus", DataTypes.createDecimalType(10, 4)),
-      integer, false, true)
-    schemaBuilder.addColumn(new StructField("monthlyBonus", DataTypes.createDecimalType(18, 4)),
-      integer, false, true)
-    schemaBuilder.addColumn(new StructField("dob", DataTypes.TIMESTAMP), integer, false, true)
-    schemaBuilder.addColumn(new StructField("shortField", DataTypes.SHORT), integer, false, false)
-    schemaBuilder.addColumn(new StructField("isCurrentEmployee", DataTypes.BOOLEAN),
-      integer, false, true)
-    schemaBuilder.tableName(absoluteTableIdentifier.getTableName)
-    val schema = schemaBuilder.build()
-
     val builder = new CarbonTableBuilder
     builder.databaseName(absoluteTableIdentifier.getDatabaseName)
       .tableName(absoluteTableIdentifier.getTableName)
@@ -174,12 +152,12 @@ object CarbonDataStoreCreator {
     CarbonMetadata.getInstance.loadTableMetadata(tableInfo)
     val schemaConverter: SchemaConverter =
       new ThriftWrapperSchemaConverterImpl()
-    val thriftTableInfo: org.apache.carbondata.format.TableInfo =
+    val thriftTableInfo: TableInfo =
       schemaConverter.fromWrapperToExternalTableInfo(
         tableInfo,
         tableInfo.getDatabaseName,
         tableInfo.getFactTable.getTableName)
-    val schemaEvolutionEntry: org.apache.carbondata.format.SchemaEvolutionEntry =
+    val schemaEvolutionEntry: SchemaEvolutionEntry =
       new org.apache.carbondata.format.SchemaEvolutionEntry(
         tableInfo.getLastUpdatedTime)
     thriftTableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history
@@ -194,31 +172,104 @@ object CarbonDataStoreCreator {
     CarbonMetadata.getInstance.getCarbonTable(tableInfo.getTableUniqueName)
   }
 
-  private def addDictionaryValuesToDimensionSet(dims: util.List[CarbonDimension],
-      dimensionIndex: mutable.Buffer[Int],
-      dimensionSet: Array[util.List[String]],
-      data: Array[String],
-      index: Int) = {
-    if (isDictionaryDefaultMember(dims, dimensionSet, index)) {
-      dimensionSet(index).add(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
-      dimensionSet(index).add(data(dimensionIndex(index)))
-    }
-    else {
-      if (data.length == 1) {
-        dimensionSet(index).add("""\N""")
-      } else {
-        dimensionSet(index).add(data(dimensionIndex(index)))
-      }
-    }
+  def getCarbonTableSchema(absoluteTableIdentifier: AbsoluteTableIdentifier): TableSchema = {
+    val integer = new AtomicInteger(0)
+    val schemaBuilder = new TableSchemaBuilder
+    schemaBuilder.addColumn(new StructField("ID", DataTypes.INT), integer, false, false)
+    schemaBuilder.addColumn(new StructField("date", DataTypes.DATE), integer, false, false)
+    schemaBuilder.addColumn(new StructField("country", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("name", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("phonetype", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("serialname", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("salary", DataTypes.DOUBLE), integer, false, false)
+    schemaBuilder.addColumn(new StructField("bonus", DataTypes.createDecimalType(10, 4)),
+      integer,
+      false,
+      true)
+    schemaBuilder.addColumn(new StructField("monthlyBonus", DataTypes.createDecimalType(18, 4)),
+      integer,
+      false,
+      true)
+    schemaBuilder.addColumn(new StructField("dob", DataTypes.TIMESTAMP), integer, false, true)
+    schemaBuilder.addColumn(new StructField("shortField", DataTypes.SHORT), integer, false, false)
+    schemaBuilder.addColumn(new StructField("isCurrentEmployee", DataTypes.BOOLEAN),
+      integer,
+      false,
+      true)
+    schemaBuilder.tableName(absoluteTableIdentifier.getTableName)
+    val schema = schemaBuilder.build()
+    schema
   }
 
-  private def isDictionaryDefaultMember(dims: util.List[CarbonDimension],
-      dimensionSet: Array[util.List[String]],
-      index: Int) = {
-    val dimensions = dims.asScala
-    dimensionSet(index).isEmpty && dimensions(index).hasEncoding(Encoding.DICTIONARY) &&
-    !dimensions(index).hasEncoding(Encoding.DIRECT_DICTIONARY)
+  // TODO: need to refactor
+  def getCarbonTableSchemaForDecimal(absoluteTableIdentifier: AbsoluteTableIdentifier)
+      : TableSchema = {
+    val integer = new AtomicInteger(0)
+    val schemaBuilder = new TableSchemaBuilder
+    schemaBuilder.addColumn(new StructField("ID", DataTypes.INT), integer, false, false)
+    schemaBuilder.addColumn(new StructField("date", DataTypes.DATE), integer, false, false)
+    schemaBuilder.addColumn(new StructField("country", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("name", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("phonetype", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("serialname", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("salary", DataTypes.createDecimalType(6, 1)),
+      integer,
+      false,
+      false)
+    schemaBuilder.addColumn(new StructField("bonus", DataTypes.createDecimalType(8, 6)),
+      integer,
+      false,
+      true)
+    schemaBuilder.addColumn(new StructField("monthlyBonus", DataTypes.createDecimalType(5, 3)),
+      integer,
+      false,
+      true)
+    schemaBuilder.addColumn(new StructField("dob", DataTypes.TIMESTAMP), integer, false, true)
+    schemaBuilder.addColumn(new StructField("shortField", DataTypes.SHORT), integer, false, false)
+    schemaBuilder.addColumn(new StructField("isCurrentEmployee", DataTypes.BOOLEAN),
+      integer,
+      false,
+      true)
+    schemaBuilder.tableName(absoluteTableIdentifier.getTableName)
+    val schema = schemaBuilder.build()
+    schema
   }
+
+  def getCarbonTableSchemaForAllPrimitive(absoluteTableIdentifier: AbsoluteTableIdentifier)
+      : TableSchema = {
+    val integer = new AtomicInteger(0)
+    val schemaBuilder = new TableSchemaBuilder
+    schemaBuilder.addColumn(new StructField("ID", DataTypes.INT), integer, false, false)
+    schemaBuilder.addColumn(new StructField("date", DataTypes.DATE), integer, false, false)
+    schemaBuilder.addColumn(new StructField("name", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("salary", DataTypes.createDecimalType(6, 1)),
+      integer,
+      false,
+      false)
+    schemaBuilder.addColumn(new StructField("bonus", DataTypes.createDecimalType(8, 6)),
+      integer,
+      false,
+      true)
+    schemaBuilder.addColumn(new StructField("charfield", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("monthlyBonus", DataTypes.createDecimalType(5, 3)),
+      integer,
+      false,
+      true)
+    schemaBuilder.addColumn(new StructField("dob", DataTypes.TIMESTAMP), integer, false, true)
+    schemaBuilder.addColumn(new StructField("shortField", DataTypes.SHORT), integer, false, false)
+    schemaBuilder.addColumn(new StructField("finalsalary", DataTypes.DOUBLE), integer, false, false)
+    schemaBuilder.addColumn(new StructField("bigintfield", DataTypes.LONG), integer, false, false)
+    schemaBuilder.addColumn(new StructField("tinyfield", DataTypes.BYTE), integer, false, false)
+    schemaBuilder.addColumn(new StructField("isCurrentEmployee", DataTypes.BOOLEAN),
+      integer,
+      false,
+      true)
+    schemaBuilder.tableName(absoluteTableIdentifier.getTableName)
+    val schema = schemaBuilder.build()
+    schema
+  }
+
+
 
   /**
    * Execute graph which will further load data
@@ -297,15 +348,11 @@ object CarbonDataStoreCreator {
     new DataLoadExecutor()
       .execute(loadModel, Array(storeLocation), Array(readerIterator))
     writeLoadMetadata(loadModel.getCarbonDataLoadSchema,
-      loadModel.getTableName,
-      loadModel.getTableName,
       new ArrayList[LoadMetadataDetails]())
   }
 
   private def writeLoadMetadata(
       schema: CarbonDataLoadSchema,
-      databaseName: String,
-      tableName: String,
       listOfLoadFolderDetails: util.List[LoadMetadataDetails]): Unit = {
     try {
       val loadMetadataDetails: LoadMetadataDetails = new LoadMetadataDetails()

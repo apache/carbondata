@@ -18,7 +18,9 @@
 package org.apache.carbondata.hive;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 
@@ -43,6 +45,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
+import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.util.Progressable;
 
@@ -92,8 +95,20 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
     }
     String tablePath = FileFactory.getCarbonFile(carbonLoadModel.getTablePath()).getAbsolutePath();
     TaskAttemptID taskAttemptID = TaskAttemptID.forName(jc.get("mapred.task.id"));
+    // taskAttemptID will be null when the insert job is fired from presto. Presto send the JobConf
+    // and since presto does not use the MR framework for execution, the mapred.task.id will be
+    // null, so prepare a new ID.
+    if (taskAttemptID == null) {
+      SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmm");
+      String jobTrackerId = formatter.format(new Date());
+      taskAttemptID = new TaskAttemptID(jobTrackerId, 0, TaskType.MAP, 0, 0);
+      // update the app name here, as in this class by default it will written by Hive
+      CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "presto");
+    } else {
+      carbonLoadModel.setTaskNo("" + taskAttemptID.getTaskID().getId());
+    }
     TaskAttemptContextImpl context = new TaskAttemptContextImpl(jc, taskAttemptID);
-    carbonLoadModel.setTaskNo("" + taskAttemptID.getTaskID().getId());
     final boolean isHivePartitionedTable =
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().isHivePartitionTable();
     PartitionInfo partitionInfo =
