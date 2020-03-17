@@ -25,7 +25,7 @@
 * [Apache Thrift 0.9.3](http://archive.apache.org/dist/thrift/0.9.3/)
 
 ## Build command
-Build with different supported versions of Spark, by default using Spark 2.4.4
+Build with different supported versions of Spark, by default using Spark 2.4.5
 ```
 mvn -DskipTests -Pspark-2.4 clean package
 ```

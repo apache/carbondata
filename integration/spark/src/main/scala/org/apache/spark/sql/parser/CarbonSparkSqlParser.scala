@@ -23,7 +23,7 @@ import org.apache.spark.sql.{CarbonSession, CarbonUtils, SparkSession}
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, SqlBaseParser}
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.SparkSqlAstBuilder
+import org.apache.spark.sql.execution.{SparkSqlAstBuilder, SparkSqlParser}
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.util.CarbonException
@@ -36,10 +36,11 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
  * Concrete parser for Spark SQL statements and carbon specific
  * statements
  */
-class CarbonSparkSqlParser(conf: SQLConf, sparkSession: SparkSession) extends AbstractSqlParser {
+class CarbonSparkSqlParser(conf: SQLConf, sparkSession: SparkSession) extends SparkSqlParser(conf) {
 
   val parser = new CarbonSpark2SqlParser
-  val astBuilder = CarbonReflectionUtils.getAstBuilder(conf, parser, sparkSession)
+
+  override val astBuilder = CarbonReflectionUtils.getAstBuilder(conf, parser, sparkSession)
 
   private val substitutor = new VariableSubstitution(conf)
 

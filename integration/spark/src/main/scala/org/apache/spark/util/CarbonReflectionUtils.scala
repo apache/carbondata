@@ -28,10 +28,9 @@ import org.apache.spark.sql.catalyst.analysis.Analyzer
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Expression}
-import org.apache.spark.sql.catalyst.parser.AstBuilder
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.plans.physical.Partitioning
-import org.apache.spark.sql.execution.{RowDataSourceScanExec, SparkPlan}
+import org.apache.spark.sql.execution.{RowDataSourceScanExec, SparkPlan, SparkSqlAstBuilder}
 import org.apache.spark.sql.execution.command.AlterTableAddColumnsCommand
 import org.apache.spark.sql.execution.datasources.{DataSource, LogicalRelation}
 import org.apache.spark.sql.internal.HiveSerDe
@@ -133,13 +132,13 @@ object CarbonReflectionUtils {
 
   def getAstBuilder(conf: Object,
       sqlParser: Object,
-      sparkSession: SparkSession): AstBuilder = {
+      sparkSession: SparkSession): SparkSqlAstBuilder = {
     val className = sparkSession.sparkContext.conf.get(
       CarbonCommonConstants.CARBON_SQLASTBUILDER_CLASSNAME,
       CarbonCommonConstants.CARBON_SQLASTBUILDER_CLASSNAME_DEFAULT)
     createObject(className,
       conf,
-      sqlParser, sparkSession)._1.asInstanceOf[AstBuilder]
+      sqlParser, sparkSession)._1.asInstanceOf[SparkSqlAstBuilder]
   }
 
   def getSessionState(sparkContext: SparkContext,
