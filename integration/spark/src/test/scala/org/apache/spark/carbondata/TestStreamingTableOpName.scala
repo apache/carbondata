@@ -721,17 +721,17 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
 
     sql("alter table streaming.stream_table_filter compact 'minor'")
     Thread.sleep(5000)
-    val result1 = sql("show segments for table streaming.stream_table_filter").collect()
+    val result1 = sql("show segments for table streaming.stream_table_filter as select * from stream_table_filter_segments").collect()
     result1.foreach { row =>
       if (row.getString(0).equals("1")) {
         assertResult(SegmentStatus.STREAMING.getMessage)(row.getString(1))
-        assertResult(FileFormat.ROW_V1.toString)(row.getString(5).toLowerCase)
+        assertResult(FileFormat.ROW_V1.toString)(row.getString(8).toLowerCase)
       } else if (row.getString(0).equals("0.1")) {
         assertResult(SegmentStatus.SUCCESS.getMessage)(row.getString(1))
-        assertResult(FileFormat.COLUMNAR_V3.toString)(row.getString(5).toLowerCase)
+        assertResult(FileFormat.COLUMNAR_V3.toString)(row.getString(8).toLowerCase)
       } else {
         assertResult(SegmentStatus.COMPACTED.getMessage)(row.getString(1))
-        assertResult(FileFormat.COLUMNAR_V3.toString)(row.getString(5).toLowerCase)
+        assertResult(FileFormat.COLUMNAR_V3.toString)(row.getString(8).toLowerCase)
       }
     }
 
@@ -1242,7 +1242,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
 
     sql("alter table streaming.stream_table_reopen compact 'close_streaming'")
     val newSegments =
-      sql("show segments for table streaming.stream_table_reopen").collect()
+      sql("show segments for table streaming.stream_table_reopen as select * from stream_table_reopen_segments").collect()
     assert(newSegments.length == 8 || newSegments.length == 10 || newSegments.length == 12)
     assertResult(newSegments.length / 2)(newSegments.filter(_.getString(1).equals("Success")).length)
     assertResult(newSegments.length / 2)(newSegments.filter(_.getString(1).equals("Compacted")).length)
@@ -1250,7 +1250,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
     //Verify MergeTO column entry for compacted Segments
     newSegments.filter(_.getString(1).equals("Compacted")).foreach{ rw =>
       assertResult("Compacted")(rw.getString(1))
-      assert(Integer.parseInt(rw.getString(0)) < Integer.parseInt(rw.getString(4)))
+      assert(Integer.parseInt(rw.getString(0)) < Integer.parseInt(rw.getString(7)))
     }
     checkAnswer(
       sql("select count(*) from streaming.stream_table_reopen"),

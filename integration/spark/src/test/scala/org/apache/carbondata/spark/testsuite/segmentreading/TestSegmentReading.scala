@@ -250,14 +250,14 @@ class TestSegmentReading extends QueryTest with BeforeAndAfterAll {
       sql(
         s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE carbon_table_show_seg OPTIONS
             |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
-      val df = sql("SHOW SEGMENTS for table carbon_table_show_seg")
+      val df = sql("SHOW SEGMENTS for table carbon_table_show_seg as select * from carbon_table_show_seg_segments")
       val col = df.collect().map{
-        row => Row(row.getString(0),row.getString(1),row.getString(4))
+        row => Row(row.getString(0),row.getString(1),row.getString(7))
       }.toSeq
-      assert(col.equals(Seq(Row("2","Success","NA"),
+      assert(col.equals(Seq(Row("0","Compacted","0.1"),
         Row("1","Compacted","0.1"),
         Row("0.1","Success","NA"),
-        Row("0","Compacted","0.1"))))
+        Row("2","Success","NA"))))
     }
     finally {
       sql("SET carbon.input.segments.default.carbon_table=*")
