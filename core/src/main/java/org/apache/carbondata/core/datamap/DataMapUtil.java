@@ -195,9 +195,10 @@ public class DataMapUtil {
     if (!CarbonProperties.getInstance()
         .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName())
         && BlockletDataMapUtil.loadDataMapsParallel(carbonTable)) {
-      String clsName = "org.apache.carbondata.spark.rdd.SparkBlockletDataMapLoaderJob";
+      String clsName = "org.apache.spark.sql.secondaryindex.Jobs.SparkBlockletDataMapLoaderJob";
       DataMapJob dataMapJob = (DataMapJob) createDataMapJob(clsName);
-      String className = "org.apache.carbondata.hadoop.DistributableBlockletDataMapLoader";
+      String className =
+          "org.apache.spark.sql.secondaryindex.Jobs.DistributableBlockletDataMapLoader";
       SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
           getValidAndInvalidSegments(carbonTable, FileFactory.getConfiguration());
       List<Segment> invalidSegments = validAndInvalidSegmentsInfo.getInvalidSegments();

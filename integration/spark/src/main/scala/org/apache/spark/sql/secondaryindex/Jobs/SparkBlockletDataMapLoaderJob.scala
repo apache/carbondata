@@ -80,15 +80,12 @@ class SparkBlockletDataMapLoaderJob extends AbstractDataMapJob {
   private def addSegmentProperties(carbonTable: CarbonTable,
       dataMapIndexWrappers: Array[(TableBlockIndexUniqueIdentifier,
         BlockletDataMapDetailsWithSchema)]): Unit = {
-    val dataMapWrapperList = scala.collection.mutable.ArrayBuffer
-      .empty[(TableBlockIndexUniqueIdentifier,
-      BlockletDataMapDetailsWithSchema)]
     // use the carbon table schema only as this flow is called when schema is not modified
     val tableColumnSchema = CarbonUtil
       .getColumnSchemaList(carbonTable.getVisibleDimensions,
         carbonTable.getVisibleMeasures)
     // add segmentProperties in the segmentPropertyCache
-    dataMapWrapperList.foreach { entry =>
+    dataMapIndexWrappers.foreach { entry =>
       val segmentId = entry._1.getSegmentId
       val wrapper = SegmentPropertiesAndSchemaHolder.getInstance()
         .addSegmentProperties(carbonTable, tableColumnSchema, segmentId)
