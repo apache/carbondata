@@ -393,17 +393,17 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
 
     sql("alter table streaming1.stream_table_filter compact 'minor'")
     Thread.sleep(5000)
-    val result1 = sql("show segments for table streaming1.stream_table_filter").collect()
+    val result1 = sql("show segments for table streaming1.stream_table_filter as select * from stream_table_filter_segments").collect()
     result1.foreach { row =>
       if (row.getString(0).equals("1")) {
         assertResult(SegmentStatus.STREAMING.getMessage)(row.getString(1))
-        assertResult(FileFormat.ROW_V1.toString)(row.getString(5).toLowerCase)
+        assertResult(FileFormat.ROW_V1.toString)(row.getString(8).toLowerCase)
       } else if (row.getString(0).equals("0.1")) {
         assertResult(SegmentStatus.SUCCESS.getMessage)(row.getString(1))
-        assertResult(FileFormat.COLUMNAR_V3.toString)(row.getString(5).toLowerCase)
+        assertResult(FileFormat.COLUMNAR_V3.toString)(row.getString(8).toLowerCase)
       } else {
         assertResult(SegmentStatus.COMPACTED.getMessage)(row.getString(1))
-        assertResult(FileFormat.COLUMNAR_V3.toString)(row.getString(5).toLowerCase)
+        assertResult(FileFormat.COLUMNAR_V3.toString)(row.getString(8).toLowerCase)
       }
     }
 

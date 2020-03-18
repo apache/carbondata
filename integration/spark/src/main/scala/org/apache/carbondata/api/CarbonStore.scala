@@ -17,17 +17,14 @@
 
 package org.apache.carbondata.api
 
-import java.lang.Long
+import java.time.{Duration, Instant}
 
 import scala.collection.JavaConverters._
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
-import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.unsafe.types.UTF8String
 
-import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -38,126 +35,128 @@ import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.streaming.segment.StreamSegment
 
 object CarbonStore {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  def showSegments(
-      limit: Option[String],
-      tablePath: String,
-      showHistory: Boolean): Seq[Row] = {
+  def readSegments(tablePath: String, showHistory: Boolean): Array[LoadMetadataDetails] = {
     val metaFolder = CarbonTablePath.getMetadataPath(tablePath)
-    val loadMetadataDetailsArray = if (showHistory) {
+    val segmentsMetadataDetails = if (showHistory) {
       SegmentStatusManager.readLoadMetadata(metaFolder) ++
       SegmentStatusManager.readLoadHistoryMetadata(metaFolder)
     } else {
       SegmentStatusManager.readLoadMetadata(metaFolder)
     }
+    if (!showHistory) {
+      segmentsMetadataDetails.filter(_.getVisibility.equalsIgnoreCase("true"))
+    } else {
+      segmentsMetadataDetails
+    }
+  }
 
-    if (loadMetadataDetailsArray.nonEmpty) {
-      var loadMetadataDetailsSortedArray = loadMetadataDetailsArray.sortWith { (l1, l2) =>
-        java.lang.Double.parseDouble(l1.getLoadName) > java.lang.Double.parseDouble(l2.getLoadName)
-      }
-      if (!showHistory) {
-        loadMetadataDetailsSortedArray = loadMetadataDetailsSortedArray
-          .filter(_.getVisibility.equalsIgnoreCase("true"))
-      }
-      if (limit.isDefined) {
-        val limitLoads = limit.get
-        try {
-          val lim = Integer.parseInt(limitLoads)
-          loadMetadataDetailsSortedArray = loadMetadataDetailsSortedArray.slice(0, lim)
-        } catch {
-          case _: NumberFormatException =>
-            CarbonException.analysisException("Entered limit is not a valid Number")
-        }
-      }
-
-      loadMetadataDetailsSortedArray
-        .map { load =>
-          val mergedTo =
-            if (load.getMergedLoadName != null) {
-              load.getMergedLoadName
-            } else {
-              "NA"
-            }
-
-          val path =
-            if (StringUtils.isNotEmpty(load.getPath)) {
-              load.getPath
-            } else {
-              "NA"
-            }
-
-          val startTime =
-            if (load.getLoadStartTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
-              "NA"
-            } else {
-              new java.sql.Timestamp(load.getLoadStartTime).toString
-            }
-
-          val endTime =
-            if (load.getLoadEndTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
-              "NA"
-            } else {
-              new java.sql.Timestamp(load.getLoadEndTime).toString
-            }
-
-          val (dataSize, indexSize) = if (load.getFileFormat.equals(FileFormat.ROW_V1)) {
-            // for streaming segment, we should get the actual size from the index file
-            // since it is continuously inserting data
-            val segmentDir = CarbonTablePath.getSegmentPath(tablePath, load.getLoadName)
-            val indexPath = CarbonTablePath.getCarbonStreamIndexFilePath(segmentDir)
-            val indexFile = FileFactory.getCarbonFile(indexPath)
-            if (indexFile.exists()) {
-              val indices =
-                StreamSegment.readIndexFile(indexPath)
-              (indices.asScala.map(_.getFile_size).sum, indexFile.getSize)
-            } else {
-              (-1L, -1L)
-            }
-          } else {
-            // If the added segment is other than carbon segment then we can only display the data
-            // size and not index size, we can get the data size from table status file directly
-            if (!load.getFileFormat.isCarbonFormat) {
-              (if (load.getDataSize == null) -1L else load.getDataSize.toLong, -1L)
-            } else {
-              (if (load.getDataSize == null) -1L else load.getDataSize.toLong,
-                if (load.getIndexSize == null) -1L else load.getIndexSize.toLong)
-            }
-          }
-
-          if (showHistory) {
-            Row(
-              load.getLoadName,
-              load.getSegmentStatus.getMessage,
-              startTime,
-              endTime,
-              mergedTo,
-              load.getFileFormat.toString.toUpperCase,
-              load.getVisibility,
-              Strings.formatSize(dataSize.toFloat),
-              Strings.formatSize(indexSize.toFloat),
-              path)
-          } else {
-            Row(
-              load.getLoadName,
-              load.getSegmentStatus.getMessage,
-              startTime,
-              endTime,
-              mergedTo,
-              load.getFileFormat.toString.toUpperCase,
-              Strings.formatSize(dataSize.toFloat),
-              Strings.formatSize(indexSize.toFloat),
-              path)
-          }
-        }.toSeq
+  def getPartitions(tablePath: String, load: LoadMetadataDetails): Seq[String] = {
+    val segmentFile = SegmentFileStore.readSegmentFile(
+      CarbonTablePath.getSegmentFilePath(tablePath, load.getSegmentFile))
+    if (segmentFile == null) {
+      return Seq.empty
+    }
+    val locationMap = segmentFile.getLocationMap
+    if (locationMap != null) {
+      locationMap.asScala.map {
+        case (_, detail) =>
+          s"{${ detail.getPartitions.asScala.mkString(",") }}"
+      }.toSeq
     } else {
       Seq.empty
     }
+  }
+
+  def getMergeTo(load: LoadMetadataDetails): String = {
+    if (load.getMergedLoadName != null) {
+      load.getMergedLoadName
+    } else {
+      "NA"
+    }
+  }
+
+  def getExternalSegmentPath(load: LoadMetadataDetails): String = {
+    if (StringUtils.isNotEmpty(load.getPath)) {
+      load.getPath
+    } else {
+      "NA"
+    }
+  }
+
+  def getLoadStartTime(load: LoadMetadataDetails): String = {
+    val startTime =
+      if (load.getLoadStartTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
+        "NA"
+      } else {
+        new java.sql.Timestamp(load.getLoadStartTime).toString
+      }
+    startTime
+  }
+
+  def getLoadEndTime(load: LoadMetadataDetails): String = {
+    val endTime =
+      if (load.getLoadStartTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
+        "NA"
+      } else {
+        new java.sql.Timestamp(load.getLoadEndTime).toString
+      }
+    endTime
+  }
+
+  def getLoadTimeTaken(load: LoadMetadataDetails): String = {
+    if (load.getLoadEndTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
+      "NA"
+    } else {
+      Duration.between(
+        Instant.ofEpochMilli(load.getLoadEndTime),
+        Instant.ofEpochMilli(load.getLoadStartTime)
+      ).toString
+    }
+  }
+
+  def getLoadTimeTakenAsMillis(load: LoadMetadataDetails): Long = {
+    if (load.getLoadEndTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
+      // loading in progress
+      -1L
+    } else {
+      load.getLoadEndTime - load.getLoadStartTime
+    }
+  }
+
+  def getDataAndIndexSize(
+      tablePath: String,
+      load: LoadMetadataDetails): (Long, Long) = {
+    val (dataSize, indexSize) = if (load.getFileFormat.equals(FileFormat.ROW_V1)) {
+      // for streaming segment, we should get the actual size from the index file
+      // since it is continuously inserting data
+      val segmentDir = CarbonTablePath.getSegmentPath(tablePath, load.getLoadName)
+      val indexPath = CarbonTablePath.getCarbonStreamIndexFilePath(segmentDir)
+      val indexFile = FileFactory.getCarbonFile(indexPath)
+      if (indexFile.exists()) {
+        val indices =
+          StreamSegment.readIndexFile(indexPath)
+        (indices.asScala.map(_.getFile_size).sum, indexFile.getSize)
+      } else {
+        (-1L, -1L)
+      }
+    } else {
+      // If the added segment is other than carbon segment then we can only display the data
+      // size and not index size, we can get the data size from table status file directly
+      if (!load.getFileFormat.isCarbonFormat) {
+        (if (load.getDataSize == null) -1L else load.getDataSize.toLong, -1L)
+      } else {
+        (if (load.getDataSize == null) -1L else load.getDataSize.toLong,
+          if (load.getIndexSize == null) -1L else load.getIndexSize.toLong)
+      }
+    }
+    (dataSize, indexSize)
   }
 
   /**

@@ -233,8 +233,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     val descFormattedSize = sql("desc formatted addsegment1").collect().filter(_.get(0).toString.startsWith("Table Data Size")).head.get(1).toString
     val size = getDataSize(newPath)
     assert(descFormattedSize.split("KB")(0).toDouble > 0.0d)
-    assert(showSeg.get(0).get(6).toString.equalsIgnoreCase(size))
-    assert(showSeg.get(0).get(7).toString.equalsIgnoreCase("NA"))
+    assert(showSeg.get(0).get(5).toString.equalsIgnoreCase(size))
+    assert(showSeg.get(0).get(6).toString.equalsIgnoreCase("NA"))
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 
@@ -446,8 +446,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(30)))
 
     sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='PARQUET')").show()
-    checkExistence(sql(s"show segments for table addsegment1"), true, "spark/target/warehouse/addsegtest")
-    checkExistence(sql(s"show history segments for table addsegment1"), true, "spark/target/warehouse/addsegtest")
+    checkExistence(sql(s"show segments for table addsegment1 as select * from addsegment1_segments"), true, "spark/target/warehouse/addsegtest")
+    checkExistence(sql(s"show history segments for table addsegment1 as select * from addsegment1_segments"), true, "spark/target/warehouse/addsegtest")
     FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 
@@ -555,8 +555,8 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from carbon_table"), sql("select * from parquet_table"))
 
     // test show segment
-    checkExistence(sql(s"show segments for table carbon_table"), true, "spark/target/warehouse/parquet_table")
-    checkExistence(sql(s"show history segments for table carbon_table"), true, "spark/target/warehouse/parquet_table")
+    checkExistence(sql(s"show segments for table carbon_table as select * from carbon_table_segments"), true, "spark/target/warehouse/parquet_table")
+    checkExistence(sql(s"show history segments for table carbon_table as select * from carbon_table_segments"), true, "spark/target/warehouse/parquet_table")
 
     sql("drop table if exists parquet_table")
     sql("drop table if exists carbon_table")

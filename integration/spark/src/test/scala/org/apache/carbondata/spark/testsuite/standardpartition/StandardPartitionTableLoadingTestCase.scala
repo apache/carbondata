@@ -498,8 +498,8 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("insert into new_par select 1,'k'")
     val result = sql("show segments for table new_par").collectAsList()
     val dataAndIndexSize = getDataAndIndexSize(s"$storeLocation/new_par/b=k")
-    assert(result.get(0).get(6).equals(dataAndIndexSize._1))
-    assert(result.get(0).get(7).equals(dataAndIndexSize._2))
+    assert(result.get(0).get(5).equals(dataAndIndexSize._1))
+    assert(result.get(0).get(6).equals(dataAndIndexSize._2))
   }
 
   test("test partition with all sort scope") {

@@ -81,12 +81,13 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     startCommand | extendedSparkSyntax
 
   protected lazy val startCommand: Parser[LogicalPlan] =
-    loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
+    segmentManagement | alterTable | restructure | updateTable | deleteRecords |
     alterTableFinishStreaming | stream | cli |
     cacheManagement | insertStageData | indexCommands | mvCommands
 
-  protected lazy val loadManagement: Parser[LogicalPlan] =
-    deleteLoadsByID | deleteLoadsByLoadDate | deleteStage | cleanFiles | addLoad
+  protected lazy val segmentManagement: Parser[LogicalPlan] =
+    deleteSegmentByID | deleteSegmentByLoadDate | deleteStage | cleanFiles | addSegment |
+    showSegments
 
   protected lazy val restructure: Parser[LogicalPlan] = alterTableDropColumn
 
@@ -452,7 +453,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           databaseNameOp, tableName, optionsList, partitions, filePath, isOverwrite)
     }
 
-  protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
+  protected lazy val deleteSegmentByID: Parser[LogicalPlan] =
     DELETE ~> FROM ~ TABLE ~> (ident <~ ".").? ~ ident ~
     (WHERE ~> (SEGMENT ~ "." ~ ID) ~> IN ~> "(" ~> repsep(segmentId, ",")) <~ ")" ~
     opt(";") ^^ {
@@ -460,7 +461,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         CarbonDeleteLoadByIdCommand(loadids, dbName, tableName.toLowerCase())
     }
 
-  protected lazy val deleteLoadsByLoadDate: Parser[LogicalPlan] =
+  protected lazy val deleteSegmentByLoadDate: Parser[LogicalPlan] =
     DELETE ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
     (WHERE ~> (SEGMENT ~ "." ~ STARTTIME ~> BEFORE) ~ stringLit) <~
     opt(";") ^^ {
@@ -493,7 +494,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
    * schema list format: column_name:data_type
    * for example: 'partition'='a:int,b:string'
    */
-  protected lazy val addLoad: Parser[LogicalPlan] =
+  protected lazy val addSegment: Parser[LogicalPlan] =
     ALTER ~ TABLE ~> (ident <~ ".").? ~ ident ~ (ADD ~> SEGMENT) ~
     (OPTIONS ~> "(" ~> repsep(options, ",") <~ ")") <~ opt(";") ^^ {
       case dbName ~ tableName ~ segment ~ optionsList =>
@@ -529,16 +530,27 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         }
     }
 
-  protected lazy val showLoads: Parser[LogicalPlan] =
-    (SHOW ~> opt(HISTORY) <~ SEGMENTS <~ FOR <~ TABLE) ~ (ident <~ ".").? ~ ident ~
-    (LIMIT ~> numericLit).? <~
-    opt(";") ^^ {
-      case showHistory ~ databaseName ~ tableName ~ limit =>
-        CarbonShowLoadsCommand(
-          CarbonParserUtil.convertDbNameToLowerCase(databaseName),
-          tableName.toLowerCase(),
-          limit,
-          showHistory.isDefined)
+  /**
+   * SHOW [HISTORY] SEGMENTS
+   * [FOR TABLE | ON] [db_name.]table_name
+   * [AS (select query)]
+   */
+  protected lazy val showSegments: Parser[LogicalPlan] =
+    (SHOW ~> opt(HISTORY) <~ SEGMENTS <~ ((FOR <~ TABLE) | ON)) ~ (ident <~ ".").? ~ ident ~
+    (AS  ~> restInput).? <~ opt(";") ^^ {
+      case showHistory ~ databaseName ~ tableName ~ queryOp =>
+        if (queryOp.isEmpty) {
+          CarbonShowSegmentsCommand(
+            CarbonParserUtil.convertDbNameToLowerCase(databaseName),
+            tableName.toLowerCase(),
+            showHistory.isDefined)
+        } else {
+          CarbonShowSegmentsAsSelectCommand(
+            CarbonParserUtil.convertDbNameToLowerCase(databaseName),
+            tableName.toLowerCase(),
+            queryOp.get,
+            showHistory.isDefined)
+        }
     }
 
   protected lazy val showCache: Parser[LogicalPlan] =
