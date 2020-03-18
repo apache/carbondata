@@ -27,6 +27,12 @@ import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 public interface DimensionDataChunkStore {
 
   /**
+   * Initialize the vector, like setting the local dictionary in the vector
+   */
+  default void initVector(CarbonColumnVector vector) {
+  }
+
+  /**
    * Below method will be used to put the rows and its metadata in offheap
    *
    * @param invertedIndex        inverted index to be stored

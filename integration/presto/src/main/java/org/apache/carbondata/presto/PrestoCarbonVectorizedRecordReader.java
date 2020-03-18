@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.indexstore.columncache.ColumnChunkCache;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -106,7 +107,9 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     } else {
       throw new RuntimeException("unsupported input split type: " + inputSplit);
     }
-    List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
+    List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(
+        queryModel.getTable().getTableId(), splitList);
+    ColumnChunkCache.setCacheForTable(queryModel.getTable());
     queryModel.setTableBlockInfos(tableBlockInfoList);
     queryModel.setVectorReader(true);
     queryExecutor =

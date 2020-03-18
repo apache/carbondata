@@ -48,6 +48,11 @@ public class TableBlockInfo implements Distributable, Serializable {
   private static final long serialVersionUID = -6502868998599821172L;
 
   /**
+   * Table ID of this block belongs to
+   */
+  private String tableId;
+
+  /**
    * full qualified file path of the block
    */
   private String filePath;
@@ -105,6 +110,14 @@ public class TableBlockInfo implements Distributable, Serializable {
   public TableBlockInfo(String filePath, long blockOffset, String segmentId,
       String[] locations, long blockLength, ColumnarFormatVersion version,
       String[] deletedDeltaFilePath) {
+    this(null, filePath, blockOffset, segmentId,
+        locations, blockLength, version, deletedDeltaFilePath);
+  }
+
+  public TableBlockInfo(String tableId, String filePath, long blockOffset, String segmentId,
+      String[] locations, long blockLength, ColumnarFormatVersion version,
+      String[] deletedDeltaFilePath) {
+    this.tableId = tableId;
     this.filePath = FileFactory.getUpdatedFilePath(filePath);
     this.blockOffset = blockOffset;
     this.segment = Segment.toSegment(segmentId);
@@ -123,6 +136,7 @@ public class TableBlockInfo implements Distributable, Serializable {
    */
   public TableBlockInfo copy() {
     TableBlockInfo info = new TableBlockInfo();
+    info.tableId = tableId;
     info.filePath = filePath;
     info.blockOffset = blockOffset;
     info.blockLength = blockLength;
@@ -340,6 +354,10 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   public void setDataFileFooter(DataFileFooter dataFileFooter) {
     this.dataFileFooter = dataFileFooter;
+  }
+
+  public String getTableId() {
+    return tableId;
   }
 
   @Override

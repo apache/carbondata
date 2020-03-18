@@ -132,7 +132,7 @@ class CarbonMergerRDD[K, V](
         } else {
           broadCastSplits.value.getInputSplit
         }
-        val tableBlockInfoList = CarbonInputSplit.createBlocks(splitList)
+        val tableBlockInfoList = CarbonInputSplit.createBlocks(carbonTable.getTableId, splitList)
 
         Collections.sort(tableBlockInfoList)
 
@@ -453,7 +453,7 @@ class CarbonMergerRDD[K, V](
 
       try {
         dataFileFooter = CarbonUtil.readMetadataFile(
-          CarbonInputSplit.getTableBlockInfo(carbonInputSplit))
+          CarbonInputSplit.getTableBlockInfo(tableId, carbonInputSplit))
       } catch {
         case e: IOException =>
           logError("Exception in preparing the data file footer for compaction " + e.getMessage)
@@ -479,7 +479,7 @@ class CarbonMergerRDD[K, V](
         var dataFileFooter: DataFileFooter = null
         try {
           dataFileFooter = CarbonUtil.readMetadataFile(
-            CarbonInputSplit.getTableBlockInfo(split))
+            CarbonInputSplit.getTableBlockInfo(tableId, split))
         } catch {
           case e: IOException =>
             logError("Exception in preparing the data file footer for compaction " + e.getMessage)
@@ -514,7 +514,7 @@ class CarbonMergerRDD[K, V](
         // Check the cardinality of each columns and set the highest.
         try {
           dataFileFooter = CarbonUtil.readMetadataFile(
-            CarbonInputSplit.getTableBlockInfo(split))
+            CarbonInputSplit.getTableBlockInfo(tableId, split))
         } catch {
           case e: IOException =>
             logError("Exception in preparing the data file footer for compaction " + e.getMessage)
@@ -648,7 +648,7 @@ class CarbonMergerRDD[K, V](
         val multiBlockSplit = result.get(j).asInstanceOf[CarbonSparkPartition].split.value
         val splitList = multiBlockSplit.getAllSplits
         logInfo(s"Node: ${ multiBlockSplit.getLocations.mkString(",") }, No.Of Blocks: " +
-                s"${ CarbonInputSplit.createBlocks(splitList).size }")
+                s"${ CarbonInputSplit.createBlocks(carbonTable.getTableId, splitList).size }")
       }
     }
     result.toArray(new Array[Partition](result.size))

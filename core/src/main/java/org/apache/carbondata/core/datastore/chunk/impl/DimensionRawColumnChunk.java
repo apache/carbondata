@@ -143,16 +143,18 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
 
   @Override
   public void freeMemory() {
-    super.freeMemory();
-    if (null != dataChunks) {
-      for (int i = 0; i < dataChunks.length; i++) {
-        if (dataChunks[i] != null) {
-          dataChunks[i].freeMemory();
-          dataChunks[i] = null;
+    if (!isCached()) {
+      super.freeMemory();
+      if (null != dataChunks) {
+        for (int i = 0; i < dataChunks.length; i++) {
+          if (dataChunks[i] != null) {
+            dataChunks[i].freeMemory();
+            dataChunks[i] = null;
+          }
         }
       }
+      rawData = null;
     }
-    rawData = null;
   }
 
   public void setFileReader(FileReader fileReader) {

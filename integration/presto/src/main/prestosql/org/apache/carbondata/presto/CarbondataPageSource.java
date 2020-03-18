@@ -28,6 +28,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapFilter;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.indexstore.columncache.ColumnChunkCache;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -410,9 +411,10 @@ class CarbondataPageSource implements ConnectorPageSource {
       queryModel.setStatisticsRecorder(
           CarbonTimeStatisticsFactory.createExecutorRecorder(queryModel.getQueryId()));
 
-      List<TableBlockInfo> tableBlockInfoList =
-          CarbonInputSplit.createBlocks(carbonInputSplit.getAllSplits());
+      List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(
+          queryModel.getTable().getTableId(), carbonInputSplit.getAllSplits());
       queryModel.setTableBlockInfos(tableBlockInfoList);
+      ColumnChunkCache.setCacheForTable(queryModel.getTable());
       return queryModel;
     } catch (IOException e) {
       throw new RuntimeException("Unable to get the Query Model ", e);

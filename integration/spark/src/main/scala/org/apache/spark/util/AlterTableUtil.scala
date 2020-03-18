@@ -570,7 +570,8 @@ object AlterTableUtil {
       "SORT_COLUMNS",
       "GLOBAL_SORT_PARTITIONS",
       "LONG_STRING_COLUMNS",
-      "INDEX_CACHE_EXPIRATION_SECONDS")
+      "INDEX_CACHE_EXPIRATION_SECONDS",
+      "COLUMN_CACHE_ENABLE")
     supportedOptions.contains(propKey.toUpperCase)
   }
 

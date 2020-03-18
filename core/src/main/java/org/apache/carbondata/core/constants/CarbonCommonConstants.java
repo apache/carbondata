@@ -491,6 +491,12 @@ public final class CarbonCommonConstants {
   // default blocklet size value in MB
   public static final String TABLE_BLOCKLET_SIZE_DEFAULT = "64";
 
+  // table property to enable column chunk data cache in reader
+  public static final String COLUMN_CACHE_ENABLED = "column_cache_enable";
+
+  // default is disabled
+  public static final String COLUMN_CACHE_ENABLED_DEFAULT = "false";
+
   /**
    * set in column level to disable inverted index
    * @Deprecated :This property is deprecated, it is kept just for compatibility

@@ -17,11 +17,13 @@
 
 package org.apache.carbondata.spark.testsuite.allqueries
 
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{Row, SaveMode}
+import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.indexstore.columncache.ColumnChunkCache
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
@@ -42,6 +44,7 @@ class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table if not exists Carbon_automation_test_hive (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string,contractNumber int, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointId int,gamePointDescription string)row format delimited fields terminated by ','")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/100_olap.csv' INTO table Carbon_automation_test_hive""")
 
+    sql("alter table Carbon_automation_test set tblproperties ('column_cache_enable'='true')")
   }
 
   def clean {
@@ -51,6 +54,7 @@ class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
+    sql("alter table Carbon_automation_test set tblproperties ('column_cache_enable'='false')")
     clean
   }
 
@@ -59,7 +63,6 @@ class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select channelsId, sum(Latest_DAY+ 10) as a from Carbon_automation_test group by  channelsId"),
       Seq(Row("1", 132), Row("2", 110), Row("3", 176), Row("4", 132), Row("5", 132), Row("6", 209), Row("7", 198)))
-
   }
 
   test("select channelsId, Latest_DAY from Carbon_automation_test where count(channelsId) = 1") {

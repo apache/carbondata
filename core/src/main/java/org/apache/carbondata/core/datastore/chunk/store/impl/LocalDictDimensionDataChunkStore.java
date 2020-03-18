@@ -47,6 +47,11 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
     this.dataLength = dataLength;
   }
 
+  @Override
+  public void initVector(CarbonColumnVector vector) {
+    vector.setDictionary(dictionary);
+  }
+
   /**
    * Below method will be used to put the rows and its metadata in offheap
    *
@@ -64,10 +69,7 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
     int columnValueSize = dimensionDataChunkStore.getColumnValueSize();
     int rowsNum = dataLength / columnValueSize;
     CarbonColumnVector vector = vectorInfo.vector;
-    if (!dictionary.isDictionaryUsed()) {
-      vector.setDictionary(dictionary);
-      dictionary.setDictionaryUsed();
-    }
+    vector.setDictionary(dictionary);
     BitSet nullBitset = new BitSet();
     CarbonColumnVector dictionaryVector = ColumnarVectorWrapperDirectFactory
         .getDirectVectorWrapperFactory(vector.getDictionaryVector(), invertedIndex, nullBitset,
@@ -99,10 +101,6 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
 
   @Override
   public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
-    if (!dictionary.isDictionaryUsed()) {
-      vector.setDictionary(dictionary);
-      dictionary.setDictionaryUsed();
-    }
     int surrogate = dimensionDataChunkStore.getSurrogate(rowId);
     if (surrogate == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
       vector.putNull(vectorRow);

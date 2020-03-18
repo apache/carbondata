@@ -468,7 +468,7 @@ public class CarbonCompactionUtil {
       for (CarbonInputSplit split : carbonInputSplits) {
         DataFileFooter dataFileFooter = null;
         dataFileFooter =
-            CarbonUtil.readMetadataFile(CarbonInputSplit.getTableBlockInfo(split), true);
+            CarbonUtil.readMetadataFile(CarbonInputSplit.getTableBlockInfo(null, split), true);
 
         if (-1 == idx) {
           List<ColumnSchema> allColumns = dataFileFooter.getColumnInTable();

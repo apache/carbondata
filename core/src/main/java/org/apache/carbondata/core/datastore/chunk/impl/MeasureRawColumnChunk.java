@@ -127,16 +127,18 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
 
   @Override
   public void freeMemory() {
-    super.freeMemory();
-    if (null != columnPages) {
-      for (int i = 0; i < columnPages.length; i++) {
-        if (columnPages[i] != null) {
-          columnPages[i].freeMemory();
-          columnPages[i] = null;
+    if (!isCached()) {
+      super.freeMemory();
+      if (null != columnPages) {
+        for (int i = 0; i < columnPages.length; i++) {
+          if (columnPages[i] != null) {
+            columnPages[i].freeMemory();
+            columnPages[i] = null;
+          }
         }
       }
+      rawData = null;
     }
-    rawData = null;
   }
 
   public void setFileReader(FileReader fileReader) {

@@ -29,6 +29,7 @@ import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.indexstore.columncache.ColumnChunkCache;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.StructField;
@@ -107,7 +108,9 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     } else {
       throw new RuntimeException("unsupported input split type: " + inputSplit);
     }
-    List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
+    List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(
+        queryModel.getTable().getTableId(), splitList);
+    ColumnChunkCache.setCacheForTable(queryModel.getTable());
     queryModel.setTableBlockInfos(tableBlockInfoList);
     queryModel.setVectorReader(true);
     try {

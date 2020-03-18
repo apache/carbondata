@@ -119,7 +119,7 @@ class CarbonSecondaryIndexRDD[K, V](
         val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
         // sorting the table block info List.
         val splitList = carbonSparkPartition.split.value.getAllSplits
-        val tableBlockInfoList = CarbonInputSplit.createBlocks(splitList)
+        val tableBlockInfoList = CarbonInputSplit.createBlocks(tableId, splitList)
         Collections.sort(tableBlockInfoList)
         val taskAndBlockMapping: TaskBlockInfo =
           SecondaryIndexUtil.createTaskAndBlockMapping(tableBlockInfoList)
@@ -301,7 +301,7 @@ class CarbonSecondaryIndexRDD[K, V](
       for (j <- 0 until result.size) {
         val multiBlockSplit = result.get(j).asInstanceOf[CarbonSparkPartition].split.value
         val splitList = multiBlockSplit.getAllSplits
-        val tableBlocks: util.List[TableBlockInfo] = CarbonInputSplit.createBlocks(splitList)
+        val tableBlocks = CarbonInputSplit.createBlocks(tableId, splitList)
         val tableBlocksSize: Int = tableBlocks.size
         if (tableBlocksSize > 0) {
           // read the footer and get column cardinality which will be same for all tasks in a
@@ -310,7 +310,7 @@ class CarbonSecondaryIndexRDD[K, V](
             .readFileFooter(tableBlocks.get(tableBlocks.size() - 1))
         }
         logInfo(s"Node: ${ multiBlockSplit.getLocations.mkString(",") }, No.Of Blocks: " +
-                s"${ CarbonInputSplit.createBlocks(splitList).size }")
+                s"${ CarbonInputSplit.createBlocks(tableId, splitList).size }")
       }
       result.toArray(new Array[Partition](result.size))
     } else {

@@ -116,6 +116,7 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
   public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex) {
     ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
     CarbonColumnVector vector = columnVectorInfo.vector;
+    dataChunkStore.initVector(vector);
     int offset = columnVectorInfo.offset;
     int vectorOffset = columnVectorInfo.vectorOffset;
     int len = offset + columnVectorInfo.size;
@@ -140,6 +141,7 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
       int chunkIndex) {
     ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
     CarbonColumnVector vector = columnVectorInfo.vector;
+    dataChunkStore.initVector(vector);
     int offset = columnVectorInfo.offset;
     int vectorOffset = columnVectorInfo.vectorOffset;
     int len = offset + columnVectorInfo.size;

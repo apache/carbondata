@@ -846,6 +846,15 @@ public class CarbonTable implements Serializable, Writable {
     return tableInfo;
   }
 
+  public String getTableProperty(String propertyName) {
+    return getTableInfo().getFactTable().getTableProperties().get(propertyName);
+  }
+
+  public boolean isColumnCacheEnabled() {
+    String value = getTableProperty(CarbonCommonConstants.COLUMN_CACHE_ENABLED);
+    return value != null && value.equalsIgnoreCase("true");
+  }
+
   /**
    * Return true if this is a streaming table (table with property "streaming"="true" or "sink")
    */

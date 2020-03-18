@@ -26,6 +26,14 @@ import org.apache.carbondata.format.DataChunk3;
  */
 public abstract class AbstractRawColumnChunk {
 
+  /**
+   * Indicating weather this object is cached in
+   * {@link ColumnChunkCache}.
+   * If it is cached, memory will not be free when {@link #freeMemory()} is called.
+   * It will be free when it is evicted from the cache
+   */
+  protected boolean isCached;
+
   private byte[][] minValues;
 
   private byte[][] maxValues;
@@ -53,6 +61,15 @@ public abstract class AbstractRawColumnChunk {
     this.rawData = rawData;
     this.offSet = offSet;
     this.length = length;
+    this.isCached = false;
+  }
+
+  public boolean isCached() {
+    return isCached;
+  }
+
+  public void setCached(boolean cached) {
+    isCached = cached;
   }
 
   public byte[][] getMinValues() {
@@ -100,7 +117,9 @@ public abstract class AbstractRawColumnChunk {
   }
 
   public void freeMemory() {
-    rawData = null;
+    if (!isCached()) {
+      rawData = null;
+    }
   }
 
   public int getColumnIndex() {

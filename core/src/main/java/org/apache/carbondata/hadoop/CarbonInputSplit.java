@@ -291,12 +291,13 @@ public class CarbonInputSplit extends FileSplit
         dataMapWritePath);
   }
 
-  public static List<TableBlockInfo> createBlocks(List<CarbonInputSplit> splitList) {
+  public static List<TableBlockInfo> createBlocks(
+      String tableId, List<CarbonInputSplit> splitList) {
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
     for (CarbonInputSplit split : splitList) {
       try {
         TableBlockInfo blockInfo =
-            new TableBlockInfo(split.getFilePath(), split.getStart(),
+            new TableBlockInfo(tableId, split.getFilePath(), split.getStart(),
                 split.getSegment().toString(), split.getLocations(), split.getLength(),
                 split.getVersion(), split.getDeleteDeltaFiles());
         blockInfo.setDetailInfo(split.getDetailInfo());
@@ -312,10 +313,10 @@ public class CarbonInputSplit extends FileSplit
     return tableBlockInfoList;
   }
 
-  public static TableBlockInfo getTableBlockInfo(CarbonInputSplit inputSplit) {
+  public static TableBlockInfo getTableBlockInfo(String tableId, CarbonInputSplit inputSplit) {
     try {
       TableBlockInfo blockInfo =
-          new TableBlockInfo(inputSplit.getFilePath(),
+          new TableBlockInfo(tableId, inputSplit.getFilePath(),
               inputSplit.getStart(), inputSplit.getSegment().toString(), inputSplit.getLocations(),
               inputSplit.getLength(), inputSplit.getVersion(),
               inputSplit.getDeleteDeltaFiles());

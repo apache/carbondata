@@ -188,7 +188,7 @@ class CarbonSIRebuildRDD[K, V](
       try {
         // sorting the table block info List.
         val splitList = carbonSparkPartition.split.value.getAllSplits
-        val tableBlockInfoList = CarbonInputSplit.createBlocks(splitList)
+        val tableBlockInfoList = CarbonInputSplit.createBlocks(indexTableId, splitList)
         segmentId = tableBlockInfoList.get(0).getSegmentId
 
         Collections.sort(tableBlockInfoList)

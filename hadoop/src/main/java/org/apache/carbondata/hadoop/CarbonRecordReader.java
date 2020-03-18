@@ -27,6 +27,7 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.indexstore.columncache.ColumnChunkCache;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
@@ -110,9 +111,11 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     // It should use the exists tableBlockInfos if tableBlockInfos of queryModel is not empty
     // otherwise the prune is no use before this method
     if (!queryModel.isFG()) {
-      List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
+      List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(
+          queryModel.getTable().getTableId(), splitList);
       queryModel.setTableBlockInfos(tableBlockInfoList);
     }
+    ColumnChunkCache.setCacheForTable(queryModel.getTable());
     readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getTable());
     carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
   }
