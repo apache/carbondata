@@ -601,7 +601,7 @@ public class SegmentStatusManager {
     }
     // If process crashed during following write, table status file need to be
     // manually recovered.
-    writeStringIntoFile(tableStatusPath, content);
+    writeStringIntoFile(FileFactory.getUpdatedFilePath(tableStatusPath), content);
   }
 
   // a dummy func for mocking in testcase, which simulates IOException

@@ -28,6 +28,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
@@ -646,8 +647,8 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     val dbPath = CarbonEnv
       .getDatabaseLocation(tableIdentifier.database.get, sqlContext.sparkSession)
     val tablePath = carbonTable.getTablePath
-    val mvPath = dbPath + CarbonCommonConstants.FILE_SEPARATOR + "dm" +
-                 CarbonCommonConstants.FILE_SEPARATOR
+    val mvPath = FileFactory.getUpdatedFilePath(dbPath) + CarbonCommonConstants.FILE_SEPARATOR +
+                 "dm" + CarbonCommonConstants.FILE_SEPARATOR
 
     // Check if table index entries are dropped
     assert(droppedCacheKeys.asScala.exists(key => key.startsWith(tablePath)))
