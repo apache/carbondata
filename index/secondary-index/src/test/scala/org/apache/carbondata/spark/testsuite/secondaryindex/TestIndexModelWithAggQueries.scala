@@ -114,13 +114,15 @@ class TestIndexModelWithAggQueries extends QueryTest with BeforeAndAfterAll {
     sql("insert into test_si_1 select 1,'aa',23423.334,'2009-09-09','df'")
     sql("insert into test_si_1 select 2,'bb',4454.454,'2009-09-09','bang'")
     sql(
-      "CREATE DATAMAP dm_test_si_11 ON TABLE test_si_1 USING 'bloomfilter' DMPROPERTIES " +
-      "('INDEX_COLUMNS' = 'address', 'BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')")
+      "CREATE INDEX dm_test_si_11 " +
+      "ON TABLE test_si_1 (address) " +
+      "AS 'bloomfilter' PROPERTIES('BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')")
     sql("create index si_test_si_1 on table test_si_1(address) AS 'carbondata'")
     val exceptionMessage = intercept[ErrorMessage] {
       sql(
-        "CREATE DATAMAP dm_on_si ON TABLE si_test_si_1  USING 'bloomfilter' DMPROPERTIES " +
-        "('INDEX_COLUMNS' = 'address', 'BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')")
+        "CREATE INDEX dm_on_si " +
+        "ON TABLE si_test_si_1 (address)" +
+        "AS 'bloomfilter' DMPROPERTIES('BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')")
     }.getMessage
     assert(exceptionMessage.contains("Datamap creation on Secondary Index table is not supported"))
   }

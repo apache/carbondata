@@ -775,9 +775,10 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(
       s"""
-         | CREATE DATAMAP dm_test_dm_index ON TABLE test_dm_index
-         | USING 'bloomfilter'
-         | DMProperties('INDEX_COLUMNS'='a', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX dm_test_dm_index
+         | ON TABLE test_dm_index (a)
+         | AS 'bloomfilter'
+         | DMProperties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     assert(intercept[UnsupportedOperationException] {

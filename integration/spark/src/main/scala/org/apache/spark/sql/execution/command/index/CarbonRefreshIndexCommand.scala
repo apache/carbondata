@@ -89,5 +89,5 @@ case class CarbonRefreshIndexCommand(
     Seq.empty
   }
 
-  override protected def opName: String = "REBUILD DATAMAP"
+  override protected def opName: String = "REFRESH INDEX"
 }

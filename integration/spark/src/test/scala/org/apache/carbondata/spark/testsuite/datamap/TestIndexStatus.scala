@@ -57,9 +57,8 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
         | STORED AS carbondata TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
       """.stripMargin)
     sql(
-      s"""create datamap statusdatamap on table datamapstatustest
-         |using '${classOf[TestIndexFactory].getName}'
-         |dmproperties('index_columns'='name')
+      s"""create index statusdatamap on table datamapstatustest (name)
+         |as '${classOf[TestIndexFactory].getName}'
          | """.stripMargin)
 
     val details = DataMapStatusManager.readDataMapStatusDetails()
@@ -78,10 +77,10 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
         | STORED AS carbondata TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
       """.stripMargin)
     sql(
-      s"""create datamap statusdatamap on table datamapstatustest
-         |using '${classOf[TestIndexFactory].getName}'
-         |with deferred rebuild
-         |dmproperties('index_columns'='name')
+      s"""create index statusdatamap
+         |on table datamapstatustest (name)
+         |as '${classOf[TestIndexFactory].getName}'
+         |with deferred refresh
          | """.stripMargin)
 
     val details = DataMapStatusManager.readDataMapStatusDetails()
@@ -100,10 +99,10 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
         | STORED AS carbondata TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
       """.stripMargin)
     sql(
-      s"""create datamap statusdatamap1 on table datamapstatustest1
+      s"""create index statusdatamap1
+         |on table datamapstatustest1 (name)
          |using '${classOf[TestIndexFactory].getName}'
-         |with deferred rebuild
-         |dmproperties('index_columns'='name')
+         |with deferred refresh
          | """.stripMargin)
 
     var details = DataMapStatusManager.readDataMapStatusDetails()
@@ -119,7 +118,7 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamapstatustest1")
   }
 
-  test("datamap status with REBUILD DATAMAP") {
+  test("datamap status with REFRESH INDEX") {
     sql("DROP TABLE IF EXISTS datamapstatustest2")
     sql(
       """
@@ -127,10 +126,10 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
         | STORED AS carbondata TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
       """.stripMargin)
     sql(
-      s"""create datamap statusdatamap2 on table datamapstatustest2
+      s"""create index statusdatamap2
+         | on table datamapstatustest2 (name)
          |using '${classOf[TestIndexFactory].getName}'
-         |with deferred rebuild
-         |dmproperties('index_columns'='name')
+         |with deferred refresh
          | """.stripMargin)
 
     var details = DataMapStatusManager.readDataMapStatusDetails()
@@ -144,7 +143,7 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
     assert(details.length == 1)
     assert(details.exists(p => p.getDataMapName.equals("statusdatamap2") && p.getStatus == DataMapStatus.DISABLED))
 
-    sql(s"REBUILD DATAMAP statusdatamap2 on table datamapstatustest2")
+    sql(s"REFRESH INDEX statusdatamap2 on table datamapstatustest2")
 
     details = DataMapStatusManager.readDataMapStatusDetails()
     assert(details.length == 1)
@@ -162,16 +161,15 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     intercept[MalformedIndexCommandException] {
       sql(
-        s"""create datamap statusdatamap3
+        s"""create index statusdatamap3
            |using '${classOf[TestIndexFactory].getName}'
-           |dmproperties('index_columns'='name')
            | """.stripMargin)
 
     }
     sql("DROP TABLE IF EXISTS datamapstatustest3")
   }
 
-  test("rebuild datamap status") {
+  test("REFRESH INDEX status") {
     sql("DROP TABLE IF EXISTS datamapstatustest3")
     sql(
       """
@@ -179,10 +177,10 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
         | STORED AS carbondata TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
       """.stripMargin)
     sql(
-      s"""create datamap statusdatamap3 on table datamapstatustest3
+      s"""create index statusdatamap3
+         |on table datamapstatustest3 (name)
          |using '${classOf[TestIndexFactory].getName}'
-         |with deferred rebuild
-         |dmproperties('index_columns'='name')
+         |with deferred refresh
          | """.stripMargin)
 
     var details = DataMapStatusManager.readDataMapStatusDetails()
@@ -196,13 +194,11 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
     assert(details.length == 1)
     assert(details.exists(p => p.getDataMapName.equals("statusdatamap3") && p.getStatus == DataMapStatus.DISABLED))
 
-    sql(s"REBUILD DATAMAP statusdatamap3")
+    sql(s"REFRESH INDEX statusdatamap3 ON datamapstatustest3")
 
     details = DataMapStatusManager.readDataMapStatusDetails()
     assert(details.length == 1)
     assert(details.exists(p => p.getDataMapName.equals("statusdatamap3") && p.getStatus == DataMapStatus.ENABLED))
-
-    checkExistence(sql(s"show datamap"), true, "statusdatamap3")
 
     sql("DROP TABLE IF EXISTS datamapstatustest3")
   }

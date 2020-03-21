@@ -55,9 +55,9 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     createTable("orders_overwrite", testData.schema)
     sql(
       s"""
-         | create datamap test on table orders
-         | using '${classOf[WaitingIndexFactory].getName}'
-         | dmproperties('index_columns'='o_name')
+         | create index test
+         | on table orders (o_name)
+         | as '${classOf[WaitingIndexFactory].getName}'
        """.stripMargin)
 
     testData.write
@@ -218,9 +218,9 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
 
     sql(
       s"""
-         | create datamap dm_t1 on table t1
-         | using '${classOf[WaitingIndexFactory].getName}'
-         | dmproperties('index_columns'='o_name')
+         | create index dm_t1
+         | on table t1 (o_name)
+         | as '${classOf[WaitingIndexFactory].getName}'
        """.stripMargin)
 
     sql("insert into table t1 select * from orders_overwrite")
