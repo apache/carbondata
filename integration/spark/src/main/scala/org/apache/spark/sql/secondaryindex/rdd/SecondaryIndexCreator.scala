@@ -242,9 +242,7 @@ object SecondaryIndexCreator {
             loadMetadataDetails.toList.asJava,
             System.currentTimeMillis(),
             CarbonInternalScalaUtil
-              .getCompressorForIndexTable(indexCarbonTable.getDatabaseName,
-                indexCarbonTable.getTableName,
-                secondaryIndexModel.carbonTable.getTableName)(sc.sparkSession))
+              .getCompressorForIndexTable(indexCarbonTable, secondaryIndexModel.carbonTable))
 
         // merge the data files of the loaded segments and take care of
         // merging the index files inside this if needed
@@ -354,10 +352,14 @@ object SecondaryIndexCreator {
     copyObj.setDatabaseName(carbonLoadModel.getDatabaseName)
     copyObj.setLoadMetadataDetails(carbonLoadModel.getLoadMetadataDetails)
     copyObj.setCarbonDataLoadSchema(carbonLoadModel.getCarbonDataLoadSchema)
-    copyObj.setColumnCompressor(CarbonInternalScalaUtil
-      .getCompressorForIndexTable(carbonLoadModel.getDatabaseName,
-        secondaryIndexModel.secondaryIndex.indexName,
-        carbonLoadModel.getTableName)(secondaryIndexModel.sqlContext.sparkSession))
+
+    val indexTable = CarbonEnv.getCarbonTable(
+      Some(carbonLoadModel.getDatabaseName),
+      secondaryIndexModel.secondaryIndex.indexName)(secondaryIndexModel.sqlContext.sparkSession)
+
+    copyObj.setColumnCompressor(
+      CarbonInternalScalaUtil.getCompressorForIndexTable(
+        indexTable, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable))
     copyObj
   }
 

@@ -101,7 +101,7 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""create index statusdatamap1
          |on table datamapstatustest1 (name)
-         |using '${classOf[TestIndexFactory].getName}'
+         |as '${classOf[TestIndexFactory].getName}'
          |with deferred refresh
          | """.stripMargin)
 
@@ -128,7 +128,7 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""create index statusdatamap2
          | on table datamapstatustest2 (name)
-         |using '${classOf[TestIndexFactory].getName}'
+         |as '${classOf[TestIndexFactory].getName}'
          |with deferred refresh
          | """.stripMargin)
 
@@ -152,23 +152,6 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamapstatustest2")
   }
 
-  test("datamap create without on table test") {
-    sql("DROP TABLE IF EXISTS datamapstatustest3")
-    sql(
-      """
-        | CREATE TABLE datamapstatustest3(id int, name string, city string, age int)
-        | STORED AS carbondata TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
-      """.stripMargin)
-    intercept[MalformedIndexCommandException] {
-      sql(
-        s"""create index statusdatamap3
-           |using '${classOf[TestIndexFactory].getName}'
-           | """.stripMargin)
-
-    }
-    sql("DROP TABLE IF EXISTS datamapstatustest3")
-  }
-
   test("REFRESH INDEX status") {
     sql("DROP TABLE IF EXISTS datamapstatustest3")
     sql(
@@ -179,7 +162,7 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""create index statusdatamap3
          |on table datamapstatustest3 (name)
-         |using '${classOf[TestIndexFactory].getName}'
+         |as '${classOf[TestIndexFactory].getName}'
          |with deferred refresh
          | """.stripMargin)
 

@@ -231,7 +231,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE INDEX dm3
-         | ON TABLE bloomtable (ctiy, id)
+         | ON TABLE bloomtable (city, id)
          | AS 'bloomfilter'
          | Properties('BLOOM_SIZE'='640000')
       """.stripMargin)

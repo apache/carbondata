@@ -93,9 +93,9 @@ class TestIndexCommand extends QueryTest with BeforeAndAfterAll {
        """.stripMargin)
     var result = sql(s"show indexes on $tableName").cache()
     checkAnswer(sql(s"show indexes on $tableName"),
-      Seq(Row(datamapName, "bloomfilter", "a", "'_INDEX_COLUMNS'='a','bloom_fpp'='0.001','bloom_size'='32000'", "ENABLED", "NA"),
-        Row(datamapName2, "bloomfilter", "b", "'_INDEX_COLUMNS'='b'", "ENABLED", "NA"),
-        Row(datamapName3, "bloomfilter", "c", "'_INDEX_COLUMNS'='c'", "ENABLED", "NA")))
+      Seq(Row(datamapName, "bloomfilter", "a", "'INDEX_COLUMNS'='a','bloom_fpp'='0.001','bloom_size'='32000'", "ENABLED", "NA"),
+        Row(datamapName2, "bloomfilter", "b", "'INDEX_COLUMNS'='b'", "ENABLED", "NA"),
+        Row(datamapName3, "bloomfilter", "c", "'INDEX_COLUMNS'='c'", "ENABLED", "NA")))
     result.unpersist()
     sql(s"drop table if exists $tableName")
 
@@ -119,7 +119,7 @@ class TestIndexCommand extends QueryTest with BeforeAndAfterAll {
          | """.stripMargin)
 
     checkAnswer(sql(s"show indexes on $tableName"),
-      Seq(Row("agg10", "lucene", "name", "'_INDEX_COLUMNS'='name'", "ENABLED", "NA")))
+      Seq(Row("agg10", "lucene", "name", "'INDEX_COLUMNS'='name'", "ENABLED", "NA")))
 
     val e = intercept[MalformedIndexCommandException] {
       sql(
@@ -131,7 +131,7 @@ class TestIndexCommand extends QueryTest with BeforeAndAfterAll {
     }
     assert(e.getMessage.contains("Only String column is supported, column 'image' is BINARY type."))
     checkAnswer(sql(s"show indexes on table $tableName"),
-      Seq(Row("agg10", "lucene", "name", "'_INDEX_COLUMNS'='name'", "ENABLED", "NA")))
+      Seq(Row("agg10", "lucene", "name", "'INDEX_COLUMNS'='name'", "ENABLED", "NA")))
 
     val pre = sql(
       s"""

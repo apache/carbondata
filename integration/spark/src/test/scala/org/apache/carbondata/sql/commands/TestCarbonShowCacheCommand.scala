@@ -308,8 +308,8 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql("create table carbonTable(col1 int, col2 string,col3 string) stored as carbondata " +
         "tblproperties('index_cache_expiration_seconds'='1')")
     sql("insert into carbonTable select 1, 'ab', 'vf'")
-    sql("drop index if exists cache_2_bloom")
-    sql("CREATE INDEX IF NOT EXISTS cache_2_bloom ON TABLE carbonTable (col3) USING 'bloomfilter' ")
+    sql("drop index if exists cache_2_bloom on carbonTable")
+    sql("CREATE INDEX IF NOT EXISTS cache_2_bloom ON TABLE carbonTable (col3) AS 'bloomfilter' ")
     checkAnswer(sql("select count(*) from carbonTable where col3='vf'"), Seq(Row(1)))
     var showCache = sql("show metacache on table carbonTable").collect()
     assert(showCache(0).get(2).toString.equalsIgnoreCase("1/1 index files cached"))

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql.secondaryindex.command
 
 import java.util
@@ -40,7 +41,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
  * (do not create the si table in store path & avoid data load for si)
  */
 case class RegisterIndexTableCommand(dbName: Option[String], indexTableName: String,
-  parentTable: String)
+    parentTable: String)
   extends DataCommand {
 
   val LOGGER: Logger =
@@ -58,17 +59,16 @@ case class RegisterIndexTableCommand(dbName: Option[String], indexTableName: Str
     if (!sparkSession.sessionState.catalog.tableExists(
       TableIdentifier(parentTable, Some(databaseName)))) {
       val message: String = s"Secondary Index Table registration for table [$indexTableName] with" +
-        s" table" +
-        s" [$databaseName.$parentTable] failed." +
-        s"Table [$parentTable] does not exists under database [$databaseName]"
+                            s" table [$databaseName.$parentTable] failed." +
+                            s"Table [$parentTable] does not exists under database [$databaseName]"
       CarbonException.analysisException(message)
     }
     if (!sparkSession.sessionState.catalog.tableExists(
       TableIdentifier(indexTableName, Some(databaseName)))) {
       val message: String = s"Secondary Index Table registration for table [$indexTableName] with" +
-        s" table" +
-        s" [$databaseName.$parentTable] failed." +
-        s"Secondary Index Table [$indexTableName] does not exists under database [$databaseName]"
+                            s" table [$databaseName.$parentTable] failed." +
+                            s"Secondary Index Table [$indexTableName] does not exists under" +
+                            s" database [$databaseName]"
       CarbonException.analysisException(message)
     }
     // 2. Read TableInfo
@@ -78,24 +78,28 @@ case class RegisterIndexTableCommand(dbName: Option[String], indexTableName: Str
       indexTableName.toLowerCase)
     // 3. Call the create index command with isCreateSIndex = false
     // (do not create the si table in store path)
-    CreateIndexTable(indexModel = secondaryIndex,
+    CreateIndexTableCommand(
+      indexModel = secondaryIndex,
       tableProperties = tableInfo.getFactTable.getTableProperties.asScala,
+      ifNotExists = false,
+      isDeferredRefresh = false,
       isCreateSIndex = false).run(sparkSession)
-     LOGGER.info(s"Table [$indexTableName] registered as Secondary Index table with" +
-                       s" table [$databaseName.$parentTable] successfully.")
+    LOGGER.info(s"Table [$indexTableName] registered as Secondary Index table with" +
+                s" table [$databaseName.$parentTable] successfully.")
     Seq.empty
   }
 
   /**
    * The method return's the List of dimension columns excluding the positionReference dimension
-    *
+   *
    * @param tableInfo TableInfo object
    * @return List[String] List of dimension column names
    */
   def getIndexColumn(tableInfo: TableInfo) : List[String] = {
     val columns: util.List[ColumnSchema] = tableInfo.getFactTable.getListOfColumns
     columns.asScala.filter(f => f.isDimensionColumn &&
-      !f.getColumnName.equalsIgnoreCase(CarbonCommonConstants.POSITION_REFERENCE)
+                                !f.getColumnName.equalsIgnoreCase(
+                                  CarbonCommonConstants.POSITION_REFERENCE)
     ).map(column => column.getColumnName.toLowerCase()).toList
   }
 

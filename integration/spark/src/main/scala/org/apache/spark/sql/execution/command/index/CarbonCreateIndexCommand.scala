@@ -22,10 +22,11 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.secondaryindex.command.ErrorMessage
+import org.apache.spark.sql.secondaryindex.command.IndexModel
 
-import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedIndexCommandException, MalformedMaterializedViewCommandException}
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedIndexCommandException, NoSuchIndexException}
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
@@ -33,7 +34,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.datamap.{DataMapManager, IndexProvider}
+import org.apache.carbondata.datamap.IndexProvider
 import org.apache.carbondata.events._
 
 /**
@@ -41,192 +42,154 @@ import org.apache.carbondata.events._
  * and updating the parent table about the index information
  */
 case class CarbonCreateIndexCommand(
-    dataMapName: String,
-    tableIdentifier: Option[TableIdentifier],
-    dmProviderName: String,
-    dmProperties: Map[String, String],
-    queryString: Option[String],
+    indexModel: IndexModel,
+    indexProviderName: String,
+    properties: Map[String, String],
     ifNotExistsSet: Boolean = false,
     var deferredRebuild: Boolean = false)
   extends AtomicRunnableCommand {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-  private var dataMapProvider: IndexProvider = _
-  private var mainTable: CarbonTable = _
+  private var provider: IndexProvider = _
+  private var parentTable: CarbonTable = _
   private var dataMapSchema: DataMapSchema = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    // since streaming segment does not support building index and pre-aggregate yet,
-    // so streaming table does not support create datamap
-    mainTable = tableIdentifier match {
-      case Some(table) =>
-        CarbonEnv.getCarbonTable(table.database, table.table)(sparkSession)
-      case _ => null
-    }
+    // since streaming segment does not support building index yet,
+    // so streaming table does not support create index
+    parentTable = CarbonEnv.getCarbonTable(indexModel.dbName, indexModel.tableName)(sparkSession)
+    val indexName = indexModel.indexName
 
-    if (mainTable != null) {
-      setAuditTable(mainTable)
-    }
-    setAuditInfo(Map("provider" -> dmProviderName, "dmName" -> dataMapName) ++ dmProperties)
+    setAuditTable(parentTable)
+    setAuditInfo(Map("provider" -> indexProviderName, "indexName" -> indexName) ++ properties)
 
-    if (mainTable != null && !mainTable.getTableInfo.isTransactionalTable) {
+    if (!parentTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
-    if (mainTable != null && CarbonUtil.getFormatVersion(mainTable) != ColumnarFormatVersion.V3) {
+    if (DataMapStoreManager.getInstance().isDataMapExist(parentTable.getTableId, indexName)) {
+      if (!ifNotExistsSet) {
+        throw new NoSuchIndexException(indexName)
+      } else {
+        return Seq.empty
+      }
+    }
+
+    if (CarbonUtil.getFormatVersion(parentTable) != ColumnarFormatVersion.V3) {
       throw new MalformedCarbonCommandException(s"Unsupported operation on table with " +
                                                 s"V1 or V2 format data")
     }
 
-    dataMapSchema = new DataMapSchema(dataMapName, dmProviderName)
+    dataMapSchema = new DataMapSchema(indexName, indexProviderName)
 
-    val property = dmProperties.map(x => (x._1.trim, x._2.trim)).asJava
+    val property = properties.map(x => (x._1.trim, x._2.trim)).asJava
     val javaMap = new java.util.HashMap[String, String](property)
     javaMap.put(DataMapProperty.DEFERRED_REBUILD, deferredRebuild.toString)
+    javaMap.put(CarbonCommonConstants.INDEX_COLUMNS, indexModel.columnNames.mkString(","))
     dataMapSchema.setProperties(javaMap)
 
-    if (dataMapSchema.isIndex && mainTable == null) {
+    if (dataMapSchema.isIndex && parentTable == null) {
       throw new MalformedIndexCommandException(
-        "For this datamap, main table is required. Use `CREATE DATAMAP ... ON TABLE ...` ")
+        "To create index, main table is required. Use `CREATE INDEX ... ON TABLE ...` ")
     }
-    dataMapProvider = DataMapManager.get.getDataMapProvider(
-      mainTable, dataMapSchema, sparkSession).asInstanceOf[IndexProvider]
-    if (deferredRebuild && !dataMapProvider.supportRebuild()) {
+    provider = new IndexProvider(parentTable, dataMapSchema, sparkSession)
+    if (deferredRebuild && !provider.supportRebuild()) {
       throw new MalformedIndexCommandException(
-        s"DEFERRED REBUILD is not supported on this datamap $dataMapName" +
+        s"DEFERRED REFRESH is not supported on this index $indexName" +
         s" with provider ${dataMapSchema.getProviderName}")
     }
 
-    if (null != mainTable) {
-      if (mainTable.isMaterializedView) {
-        throw new MalformedIndexCommandException(
-          "Cannot create DataMap on child table " + mainTable.getTableUniqueName)
-      }
-    }
-    if (!dataMapSchema.isIndex) {
-      if (DataMapStoreManager.getInstance().getAllDataMapSchemas.asScala
-        .exists(_.getDataMapName.equalsIgnoreCase(dataMapSchema.getDataMapName))) {
-        if (!ifNotExistsSet) {
-          throw new MalformedIndexCommandException(
-            "DataMap with name " + dataMapSchema.getDataMapName + " already exists in storage")
-        } else {
-          return Seq.empty
-        }
-      }
+    if (parentTable.isMVTable) {
+      throw new MalformedIndexCommandException(
+        "Cannot create index on MV table " + parentTable.getTableUniqueName)
     }
 
-    val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
+    if (parentTable.isIndexTable) {
+      throw new MalformedIndexCommandException(
+        "Cannot create index on Secondary Index table")
+    }
+
+    val storeLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
     val operationContext: OperationContext = new OperationContext()
 
-    // If it is index datamap, check whether the column has datamap created already
-    dataMapProvider match {
-      case provider: IndexProvider =>
-        if (mainTable.isIndexTable) {
-          throw new ErrorMessage(
-            "Datamap creation on Secondary Index table is not supported")
-        }
-        val isBloomFilter = DataMapClassProvider.BLOOMFILTER.getShortName
-          .equalsIgnoreCase(dmProviderName)
-        val datamaps = DataMapStoreManager.getInstance.getAllIndexes(mainTable).asScala
-        val thisDmProviderName =
-          dataMapProvider.asInstanceOf[IndexProvider].getDataMapSchema.getProviderName
-        val existingIndexColumn4ThisProvider = datamaps.filter { datamap =>
-          thisDmProviderName.equalsIgnoreCase(datamap.getDataMapSchema.getProviderName)
-        }.flatMap { datamap =>
-          datamap.getDataMapSchema.getIndexColumns
-        }.distinct
+    // check whether the column has index created already
+    val isBloomFilter = DataMapClassProvider.BLOOMFILTER.getShortName
+      .equalsIgnoreCase(indexProviderName)
+    val indexes = DataMapStoreManager.getInstance.getAllIndexes(parentTable).asScala
+    val thisDmProviderName = provider.getDataMapSchema.getProviderName
+    val existingIndexColumn4ThisProvider = indexes.filter { index =>
+      thisDmProviderName.equalsIgnoreCase(index.getDataMapSchema.getProviderName)
+    }.flatMap { index =>
+      index.getDataMapSchema.getIndexColumns
+    }.distinct
 
-        provider.getIndexedColumns.asScala.foreach { column =>
-          if (existingIndexColumn4ThisProvider.contains(column.getColName)) {
-            throw new MalformedIndexCommandException(String.format(
-              "column '%s' already has %s index datamap created",
-              column.getColName, thisDmProviderName))
-          } else if (isBloomFilter) {
-            if (column.getDataType == DataTypes.BINARY) {
-              throw new MalformedIndexCommandException(
-                s"BloomFilter datamap does not support Binary datatype column: ${
-                  column.getColName
-                }")
-            }
-            // if datamap provider is bloomfilter,the index column datatype cannot be complex type
-            if (column.isComplex) {
-              throw new MalformedIndexCommandException(
-                s"BloomFilter datamap does not support complex datatype column: ${
-                  column.getColName
-                }")
-            }
-          }
+    provider.getIndexedColumns.asScala.foreach { column =>
+      if (existingIndexColumn4ThisProvider.contains(column.getColName)) {
+        throw new MalformedIndexCommandException(String.format(
+          "column '%s' already has %s index created",
+          column.getColName, thisDmProviderName))
+      } else if (isBloomFilter) {
+        if (column.getDataType == DataTypes.BINARY) {
+          throw new MalformedIndexCommandException(
+            s"BloomFilter does not support Binary datatype column: ${
+              column.getColName
+            }")
         }
-
-        val createDataMapPreExecutionEvent: CreateDataMapPreExecutionEvent =
-          new CreateDataMapPreExecutionEvent(sparkSession,
-            systemFolderLocation, tableIdentifier.get)
-        OperationListenerBus.getInstance().fireEvent(createDataMapPreExecutionEvent,
-          operationContext)
-        dataMapProvider.initMeta(queryString.orNull)
-        DataMapStatusManager.disableDataMap(dataMapName)
-      case _ =>
-        val createDataMapPreExecutionEvent: CreateDataMapPreExecutionEvent =
-          CreateDataMapPreExecutionEvent(sparkSession,
-            systemFolderLocation, tableIdentifier.orNull)
-        OperationListenerBus.getInstance().fireEvent(createDataMapPreExecutionEvent,
-          operationContext)
-        dataMapProvider.initMeta(queryString.orNull)
+        // For bloomfilter, the index column datatype cannot be complex type
+        if (column.isComplex) {
+          throw new MalformedIndexCommandException(
+            s"BloomFilter does not support complex datatype column: ${
+              column.getColName
+            }")
+        }
+      }
     }
-    val createDataMapPostExecutionEvent: CreateDataMapPostExecutionEvent =
-      CreateDataMapPostExecutionEvent(sparkSession,
-        systemFolderLocation, tableIdentifier, dmProviderName)
-    OperationListenerBus.getInstance().fireEvent(createDataMapPostExecutionEvent,
-      operationContext)
+
+    val table = TableIdentifier(indexModel.tableName, indexModel.dbName)
+    val preExecEvent = CreateDataMapPreExecutionEvent(sparkSession, storeLocation, table)
+    OperationListenerBus.getInstance().fireEvent(preExecEvent, operationContext)
+
+    provider.initMeta(null)
+    DataMapStatusManager.disableDataMap(indexName)
+
+    val postExecEvent = CreateDataMapPostExecutionEvent(sparkSession,
+      storeLocation, Some(table), indexProviderName)
+    OperationListenerBus.getInstance().fireEvent(postExecEvent, operationContext)
     Seq.empty
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    if (dataMapProvider != null) {
-      dataMapProvider.initData()
-      // TODO: remove these checks once the preaggregate and preaggregate timeseries are deprecated
-      if (mainTable != null && !deferredRebuild && dataMapSchema.isIndex) {
-        dataMapProvider.rebuild()
-        if (dataMapSchema.isIndex) {
-          val operationContext: OperationContext = new OperationContext()
-          val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
-          val updateDataMapPreExecutionEvent: UpdateDataMapPreExecutionEvent =
-            new UpdateDataMapPreExecutionEvent(sparkSession,
-              systemFolderLocation, tableIdentifier.get)
-          OperationListenerBus.getInstance().fireEvent(updateDataMapPreExecutionEvent,
-            operationContext)
-          DataMapStatusManager.enableDataMap(dataMapName)
-          val updateDataMapPostExecutionEvent: UpdateDataMapPostExecutionEvent =
-            new UpdateDataMapPostExecutionEvent(sparkSession,
-              systemFolderLocation, tableIdentifier.get)
-          OperationListenerBus.getInstance().fireEvent(updateDataMapPostExecutionEvent,
-            operationContext)
-        }
-      }
-      if (null != dataMapSchema.getRelationIdentifier && !dataMapSchema.isIndex &&
-          !dataMapSchema.isLazy) {
-        DataMapStatusManager.enableDataMap(dataMapName)
+    if (provider != null) {
+      provider.initData()
+      if (!deferredRebuild) {
+        provider.rebuild()
+        val table = TableIdentifier(indexModel.tableName, indexModel.dbName)
+        val operationContext = new OperationContext()
+        val storeLocation = CarbonProperties.getInstance().getSystemFolderLocation
+        val preExecEvent = UpdateDataMapPreExecutionEvent(sparkSession, storeLocation, table)
+        OperationListenerBus.getInstance().fireEvent(preExecEvent, operationContext)
+
+        DataMapStatusManager.enableDataMap(indexModel.indexName)
+
+        val postExecEvent = UpdateDataMapPostExecutionEvent(sparkSession, storeLocation, table)
+        OperationListenerBus.getInstance().fireEvent(postExecEvent, operationContext)
       }
     }
     Seq.empty
   }
 
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
-    if (dataMapProvider != null) {
-      val table =
-        if (mainTable != null) {
-          Some(TableIdentifier(mainTable.getTableName, Some(mainTable.getDatabaseName)))
-        } else {
-          None
-        }
-        CarbonDropIndexCommand(
-          dataMapName,
-          true,
-          table,
-          forceDrop = false).run(sparkSession)
+    if (provider != null) {
+      val table = TableIdentifier(parentTable.getTableName, Some(parentTable.getDatabaseName))
+      CarbonDropIndexCommand(
+        indexName = indexModel.indexName,
+        ifExistsSet = true,
+        table = table
+      ).run(sparkSession)
     }
     Seq.empty
   }
 
-  override protected def opName: String = "CREATE DATAMAP"
+  override protected def opName: String = "CREATE INDEX"
 }
+

@@ -20,12 +20,11 @@ package org.apache.spark.sql.secondaryindex.command
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.execution.command.{AlterTableModel, AtomicRunnableCommand}
-import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.secondaryindex.events.{LoadTableSIPostExecutionEvent, LoadTableSIPreExecutionEvent}
 import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
 import org.apache.spark.sql.secondaryindex.util.{CarbonInternalScalaUtil, SecondaryIndexUtil}
@@ -35,32 +34,24 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarFormatVersion}
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 
-case class SIRebuildSegmentCommand(
-  alterTableModel: AlterTableModel,
-  tableInfoOp: Option[TableInfo] = None,
-  operationContext: OperationContext = new OperationContext)
-  extends AtomicRunnableCommand {
+case class SIRebuildSegmentRunner(
+    parentTable: CarbonTable,
+    indexTable: CarbonTable,
+    segments: Option[List[String]]) {
 
   val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getName)
 
-  var indexTable: CarbonTable = _
+  def run(sparkSession: SparkSession): Unit = {
+    processMetadata(sparkSession)
+    processData(sparkSession)
+  }
 
-  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val tableName = alterTableModel.tableName.toLowerCase
-    val dbName = alterTableModel.dbName.getOrElse(sparkSession.catalog.currentDatabase)
-    indexTable = if (tableInfoOp.isDefined) {
-      CarbonTable.buildFromTableInfo(tableInfoOp.get)
-    } else {
-      val relation = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-        .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
-      relation.carbonTable
-    }
-    setAuditTable(indexTable)
+  private def processMetadata(sparkSession: SparkSession): Unit = {
     if (!indexTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
@@ -77,52 +68,35 @@ case class SIRebuildSegmentCommand(
         "V2 store segments")
     }
     // check if the list of given segments in the command are valid
-    val segmentIds: List[String] = {
-      if (alterTableModel.customSegmentIds.isDefined) {
-        alterTableModel.customSegmentIds.get
-      } else {
-        List.empty
-      }
-    }
+    val segmentIds = segments.getOrElse(List.empty)
     if (segmentIds.nonEmpty) {
       val segmentStatusManager = new SegmentStatusManager(indexTable.getAbsoluteTableIdentifier)
       val validSegments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala
         .map(_.getSegmentNo)
-      segmentIds.foreach(segmentId =>
+      segmentIds.foreach { segmentId =>
         if (!validSegments.contains(segmentId)) {
-          throw new RuntimeException(s"Rebuild index by segment id is failed. " +
+          throw new RuntimeException(s"Refresh index by segment id is failed. " +
                                      s"Invalid ID: $segmentId")
         }
-      )
+      }
     }
-    Seq.empty
   }
 
-  override def processData(sparkSession: SparkSession): Seq[Row] = {
+  private def processData(sparkSession: SparkSession): Unit = {
     LOGGER.info( s"SI segment compaction request received for table " +
                  s"${ indexTable.getDatabaseName}.${indexTable.getTableName}")
-    val metaStore = CarbonEnv.getInstance(sparkSession)
-      .carbonMetaStore
-    val mainTable = metaStore
-      .lookupRelation(Some(indexTable.getDatabaseName),
-        CarbonInternalScalaUtil.getParentTableName(indexTable))(sparkSession)
-      .asInstanceOf[CarbonRelation]
-      .carbonTable
     val lock = CarbonLockFactory.getCarbonLockObj(
-      mainTable.getAbsoluteTableIdentifier,
+      parentTable.getAbsoluteTableIdentifier,
       LockUsage.COMPACTION_LOCK)
 
-    var segmentList: List[String] = null
-    val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String, String]()
-    var segmentIdToLoadStartTimeMapping: scala.collection.mutable.Map[String, java.lang.Long] =
-      scala.collection.mutable.Map()
-
-    var loadMetadataDetails: Array[LoadMetadataDetails] = null
+    val segmentList = segments.orNull
+    val segmentFileNameMap = new util.HashMap[String, String]()
+    var segmentIdToLoadStartTimeMapping = mutable.Map[String, java.lang.Long]()
 
     try {
       if (lock.lockWithRetries()) {
         LOGGER.info("Acquired the compaction lock for table" +
-                    s" ${mainTable.getDatabaseName}.${mainTable.getTableName}")
+                    s" ${parentTable.getDatabaseName}.${parentTable.getTableName}")
 
         val operationContext = new OperationContext
         val loadTableSIPreExecutionEvent: LoadTableSIPreExecutionEvent =
@@ -130,40 +104,32 @@ case class SIRebuildSegmentCommand(
             new CarbonTableIdentifier(indexTable.getDatabaseName, indexTable.getTableName, ""),
             null,
             indexTable)
-        OperationListenerBus.getInstance
-          .fireEvent(loadTableSIPreExecutionEvent, operationContext)
+        OperationListenerBus.getInstance.fireEvent(loadTableSIPreExecutionEvent, operationContext)
 
-        if (alterTableModel.customSegmentIds.isDefined) {
-          segmentList = alterTableModel.customSegmentIds.get
-        }
-
-        SegmentStatusManager.readLoadMetadata(mainTable.getMetadataPath) collect {
+        SegmentStatusManager.readLoadMetadata(parentTable.getMetadataPath) collect {
           case loadDetails if null == segmentList ||
-                               segmentList.contains(loadDetails.getLoadName) =>
-            segmentFileNameMap
-              .put(loadDetails.getLoadName,
-                String.valueOf(loadDetails.getLoadStartTime))
+                              segmentList.contains(loadDetails.getLoadName) =>
+            segmentFileNameMap.put(
+              loadDetails.getLoadName, String.valueOf(loadDetails.getLoadStartTime))
         }
 
-        loadMetadataDetails = SegmentStatusManager
+        val loadMetadataDetails = SegmentStatusManager
           .readLoadMetadata(indexTable.getMetadataPath)
           .filter(loadMetadataDetail =>
             (null == segmentList || segmentList.contains(loadMetadataDetail.getLoadName)) &&
-            (loadMetadataDetail.getSegmentStatus ==
-             SegmentStatus.SUCCESS ||
-             loadMetadataDetail.getSegmentStatus ==
-             SegmentStatus.LOAD_PARTIAL_SUCCESS))
+            (loadMetadataDetail.getSegmentStatus == SegmentStatus.SUCCESS ||
+             loadMetadataDetail.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS))
 
         segmentIdToLoadStartTimeMapping = CarbonInternalLoaderUtil
           .getSegmentToLoadStartTimeMapping(loadMetadataDetails)
           .asScala
 
-        val carbonLoadModelForMergeDataFiles = SecondaryIndexUtil
-          .getCarbonLoadModel(indexTable,
+        val carbonLoadModelForMergeDataFiles =
+          SecondaryIndexUtil.getCarbonLoadModel(
+            indexTable,
             loadMetadataDetails.toList.asJava,
-            System.currentTimeMillis(), CarbonInternalScalaUtil
-              .getCompressorForIndexTable(indexTable.getDatabaseName, indexTable.getTableName,
-                mainTable.getTableName)(sparkSession))
+            System.currentTimeMillis(),
+            CarbonInternalScalaUtil.getCompressorForIndexTable(indexTable, parentTable))
 
         SecondaryIndexUtil.mergeDataFilesSISegments(segmentIdToLoadStartTimeMapping, indexTable,
           loadMetadataDetails.toList.asJava, carbonLoadModelForMergeDataFiles,
@@ -194,9 +160,6 @@ case class SIRebuildSegmentCommand(
     } finally {
       lock.unlock()
     }
-    Seq.empty
   }
-
-  override protected def opName: String = "SI Compact/Rebuild within segment"
 
 }

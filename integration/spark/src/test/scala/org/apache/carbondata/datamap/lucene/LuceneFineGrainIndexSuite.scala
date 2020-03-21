@@ -181,7 +181,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE INDEX dm12
          | ON datamap_test1 (name, city)
-         | as 'org.apache.carbondata.index.lucene.LuceneFineGrainIndexFactory'
+         | as 'lucene'
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test1 OPTIONS('header'='false')")
@@ -212,7 +212,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE INDEX dm122
          | ON datamap_test2 (name, city)
-         | AS 'org.apache.carbondata.index.lucene.LuceneFineGrainIndexFactory'
+         | AS 'lucene'
       """.stripMargin)
 
     sql(
@@ -225,7 +225,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE INDEX dm123
          | ON datamap_test3 (name, city)
-         | AS 'org.apache.carbondata.index.lucene.LuceneFineGrainIndexFactory'
+         | AS 'lucene'
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test2 OPTIONS('header'='false')")
@@ -588,7 +588,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE INDEX dm124
          | ON datamap_test7 (name,city)
-         | AS 'org.apache.carbondata.index.lucene.LuceneFineGrainIndexFactory'
+         | AS 'lucene'
       """.stripMargin)
 
     val ex1 = intercept[MalformedCarbonCommandException] {

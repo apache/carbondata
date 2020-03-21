@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -162,6 +163,17 @@ public final class DataMapStoreManager {
    */
   public List<DataMapSchema> getAllDataMapSchemas() throws IOException {
     return provider.retrieveAllSchemas();
+  }
+
+  /**
+   * Return first match of the specified index name in table
+   *
+   */
+  public Optional<DataMapSchema> getIndexInTable(CarbonTable carbonTable, String indexName)
+      throws IOException {
+    return provider.retrieveSchemas(carbonTable).stream()
+        .filter(schema -> schema.getDataMapName().equalsIgnoreCase(indexName))
+        .findFirst();
   }
 
   public DataMapSchema getDataMapSchema(String dataMapName)
