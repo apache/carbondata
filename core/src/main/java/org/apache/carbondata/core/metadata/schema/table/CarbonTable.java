@@ -993,7 +993,7 @@ public class CarbonTable implements Serializable, Writable {
       CarbonColumn carbonColumn = getColumnByName(column.trim().toLowerCase());
       if (carbonColumn == null) {
         throw new MalformedIndexCommandException(String
-            .format("column '%s' does not exist in table. Please check create Index statement.",
+            .format("column '%s' does not exist in table. Please check create index statement.",
                 column));
       }
       if (carbonColumn.getColName().isEmpty()) {
@@ -1003,6 +1003,17 @@ public class CarbonTable implements Serializable, Writable {
       indexColumn.add(carbonColumn);
     }
     return indexColumn;
+  }
+
+  /**
+   * is index exist
+   * @return true if exist, else return false
+   */
+  public boolean isIndexExist(String indexName) throws IOException {
+    List<DataMapSchema> schemas = DataMapStoreManager.getInstance().getAllDataMapSchemas();
+    return schemas.stream().anyMatch(schema ->
+        schema.getDataMapName().equalsIgnoreCase(indexName) &&
+            schema.getRelationIdentifier().getTableId().equals(getTableId()));
   }
 
   /**

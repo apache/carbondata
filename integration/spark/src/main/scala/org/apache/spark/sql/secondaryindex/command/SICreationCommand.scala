@@ -22,6 +22,7 @@ import java.util
 import java.util.UUID
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.language.implicitConversions
 
 import org.apache.log4j.Logger
@@ -42,33 +43,44 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICar
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry, SchemaReader}
+import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry,
+  SchemaReader}
 import org.apache.carbondata.core.metadata.schema.indextable.{IndexMetadata, IndexTableInfo}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.events.{CreateTablePostExecutionEvent, CreateTablePreExecutionEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{CreateTablePostExecutionEvent, CreateTablePreExecutionEvent,
+  OperationContext, OperationListenerBus}
 
 class ErrorMessage(message: String) extends Exception(message) {
 }
 
- /**
-  * Command for index table creation
-  * @param indexModel      SecondaryIndex model holding the index infomation
-  * @param tableProperties SI table properties
-  * @param isCreateSIndex  if false then will not create index table schema in the carbonstore
-   *                        and will avoid dataload for SI creation.
-  */
- private[sql] case class CreateIndexTable(indexModel: IndexModel,
-     tableProperties: scala.collection.mutable.Map[String, String],
-     var isCreateSIndex: Boolean = true)
-   extends DataCommand {
+/**
+ * Command for index table creation
+ *
+ * @param indexModel        SecondaryIndex model holding the index infomation
+ * @param tableProperties   SI table properties
+ * @param ifNotExists       true if IF NOT EXISTS is set
+ * @param isDeferredRefresh true if WITH DEFERRED REFRESH is set
+ * @param isCreateSIndex    if false then will not create index table schema in the carbonstore
+ *                          and will avoid dataload for SI creation.
+ */
+private[sql] case class CreateIndexTableCommand(
+    indexModel: IndexModel,
+    tableProperties: mutable.Map[String, String],
+    ifNotExists: Boolean,
+    isDeferredRefresh: Boolean,
+    var isCreateSIndex: Boolean = true)
+  extends DataCommand {
 
-   val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+  val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-   override def processData(sparkSession: SparkSession): Seq[Row] = {
+  override def processData(sparkSession: SparkSession): Seq[Row] = {
+    if (isDeferredRefresh) {
+      throw new UnsupportedOperationException("DEFERRED REFRESH is not supported")
+    }
     val databaseName = CarbonEnv.getDatabaseName(indexModel.dbName)(sparkSession)
     indexModel.dbName = Some(databaseName)
     val tableName = indexModel.tableName
@@ -77,13 +89,13 @@ class ErrorMessage(message: String) extends Exception(message) {
     val indexTableName = indexModel.indexName
 
     val tablePath = dbLocation + CarbonCommonConstants.FILE_SEPARATOR + indexTableName
-     setAuditTable(databaseName, indexTableName)
-     setAuditInfo(Map("Column names" -> indexModel.columnNames.toString(),
-       "Parent TableName" -> indexModel.tableName,
-       "SI Table Properties" -> tableProperties.toString()))
+    setAuditTable(databaseName, indexTableName)
+    setAuditInfo(Map(
+      "Column names" -> indexModel.columnNames.toString(),
+      "Parent TableName" -> indexModel.tableName,
+      "SI Table Properties" -> tableProperties.toString()))
     LOGGER.info(
       s"Creating Index with Database name [$databaseName] and Index name [$indexTableName]")
-    val catalog = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val identifier = TableIdentifier(tableName, indexModel.dbName)
     var carbonTable: CarbonTable = null
     var locks: List[ICarbonLock] = List()
@@ -118,14 +130,11 @@ class ErrorMessage(message: String) extends Exception(message) {
 
       locks = acquireLockForSecondaryIndexCreation(carbonTable.getAbsoluteTableIdentifier)
       if (locks.isEmpty) {
-        throw new ErrorMessage(s"Not able to acquire lock. Another Data Modification operation " +
-                 s"is already in progress for either ${
-                   carbonTable
-                     .getDatabaseName
-                 }. ${ carbonTable.getTableName } or ${
-                   carbonTable
-                     .getDatabaseName
-                 } or  ${ indexTableName }. Please try after some time")
+        throw new ErrorMessage(
+          s"Not able to acquire lock. Another Data Modification operation " +
+          s"is already in progress for either ${carbonTable.getDatabaseName}." +
+          s"${carbonTable.getTableName} or ${carbonTable.getDatabaseName} or " +
+          s"$indexTableName. Please try after some time")
       }
       // get carbon table again to reflect any changes during lock acquire.
       carbonTable =
@@ -148,31 +157,35 @@ class ErrorMessage(message: String) extends Exception(message) {
       val indexTableExistsInHive = sparkSession.sessionState.catalog
         .tableExists(TableIdentifier(indexTableName, indexModel.dbName))
       if (indexTableExistsInHive && isCreateSIndex) {
-        LOGGER.error(
-          s"Index creation with Database name [$databaseName] and index name " +
-          s"[$indexTableName] failed. " +
-          s"Index [$indexTableName] already exists under database [$databaseName]")
-        throw new ErrorMessage(
-          s"Index [$indexTableName] already exists under database [$databaseName]")
+        if (!ifNotExists) {
+          LOGGER.error(
+            s"Index creation with Database name [$databaseName] and index name " +
+            s"[$indexTableName] failed. " +
+            s"Index [$indexTableName] already exists under database [$databaseName]")
+          throw new ErrorMessage(
+            s"Index [$indexTableName] already exists under database [$databaseName]")
+        } else {
+          return Seq.empty
+        }
       } else if (((indexTableExistsInCarbon && !indexTableExistsInHive) ||
-        (!indexTableExistsInCarbon && indexTableExistsInHive)) && isCreateSIndex) {
+                  (!indexTableExistsInCarbon && indexTableExistsInHive)) && isCreateSIndex) {
         LOGGER.error(
           s"Index with [$indexTableName] under database [$databaseName] is present in " +
           s"stale state.")
         throw new ErrorMessage(
           s"Index with [$indexTableName] under database [$databaseName] is present in " +
-            s"stale state. Please use drop index if exists command to delete the index table")
+          s"stale state. Please use drop index if exists command to delete the index table")
       } else if (!indexTableExistsInCarbon && !indexTableExistsInHive && isCreateSIndex) {
         val indexTableStorePath = storePath + CarbonCommonConstants.FILE_SEPARATOR + databaseName +
-          CarbonCommonConstants.FILE_SEPARATOR + indexTableName
+                                  CarbonCommonConstants.FILE_SEPARATOR + indexTableName
         if (CarbonUtil.isFileExists(indexTableStorePath)) {
           LOGGER.error(
             s"Index with [$indexTableName] under database [$databaseName] is present in " +
             s"stale state.")
           throw new ErrorMessage(
             s"Index with [$indexTableName] under database [$databaseName] is present in " +
-              s"stale state. Please use drop index if exists command to delete the index " +
-              s"table")
+            s"stale state. Please use drop index if exists command to delete the index " +
+            s"table")
         }
       }
       val dims = carbonTable.getVisibleDimensions.asScala
@@ -193,8 +206,7 @@ class ErrorMessage(message: String) extends Exception(message) {
       if (indexModel.columnNames.exists(x => !dimNames.contains(x))) {
         throw new ErrorMessage(
           s"one or more specified index cols either does not exist or not a key column or complex" +
-            s" column in " +
-            s"table $databaseName.$tableName")
+          s" column in table $databaseName.$tableName")
       }
       // Only Key cols are allowed while creating index table
       val isInvalidColPresent = indexModel.columnNames.find(x => !dimNames.contains(x))
@@ -204,8 +216,7 @@ class ErrorMessage(message: String) extends Exception(message) {
       if (indexModel.columnNames.exists(x => !dimNames.contains(x))) {
         throw new ErrorMessage(
           s"one or more specified index cols does not exist or not a key column or complex column" +
-            s" in " +
-            s"table $databaseName.$tableName")
+          s" in table $databaseName.$tableName")
       }
       // Check for duplicate column names while creating index table
       indexModel.columnNames.groupBy(col => col).foreach(f => if (f._2.size > 1) {
@@ -215,7 +226,7 @@ class ErrorMessage(message: String) extends Exception(message) {
       // No. of index table cols are more than parent table key cols
       if (indexModel.columnNames.size > dims.size) {
         throw new ErrorMessage(s"Number of columns in Index table cannot be more than " +
-          "number of key columns in Source table")
+                               "number of key columns in Source table")
       }
 
       var isColsIndexedAsPerTable = true
@@ -241,105 +252,109 @@ class ErrorMessage(message: String) extends Exception(message) {
         oldIndexInfo = ""
       }
       val indexTableCols = indexModel.columnNames.asJava
-      val indexInfo = IndexTableUtil.checkAndAddIndexTable(oldIndexInfo,
-        new IndexTableInfo(databaseName, indexTableName,
+      val indexInfo = IndexTableUtil.checkAndAddIndexTable(
+        oldIndexInfo,
+        new IndexTableInfo(
+          databaseName, indexTableName,
           indexTableCols))
       val absoluteTableIdentifier = AbsoluteTableIdentifier.
         from(tablePath, databaseName, indexTableName)
       var tableInfo: TableInfo = null
       // if Register Index call then read schema file from the metastore
-       if (!isCreateSIndex && indexTableExistsInHive) {
-         tableInfo = SchemaReader.getTableInfo(absoluteTableIdentifier)
-       } else {
-         tableInfo = prepareTableInfo(carbonTable, databaseName,
-           tableName, indexTableName, absoluteTableIdentifier)
-       }
-        if (!isCreateSIndex && !indexTableExistsInHive) {
-          LOGGER.error(
-            s"Index registration with Database name [$databaseName] and index name " +
-            s"[$indexTableName] failed. " +
-            s"Index [$indexTableName] does not exists under database [$databaseName]")
-          throw new ErrorMessage(
-            s"Index [$indexTableName] does not exists under database [$databaseName]")
-        }
-        // Need to fill partitioner class when we support partition
-        val tableIdentifier = AbsoluteTableIdentifier
-          .from(tablePath, databaseName, indexTableName)
-        // Add Database to catalog and persist
-        val catalog = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-        //        val tablePath = tableIdentifier.getTablePath
-        val carbonSchemaString = catalog.generateTableSchemaString(tableInfo, tableIdentifier)
-        // set index information in index table
-        val indexTableMeta = new IndexMetadata(indexTableName, true, carbonTable.getTablePath)
-        tableInfo.getFactTable.getTableProperties
-          .put(tableInfo.getFactTable.getTableId, indexTableMeta.serialize)
-        // set index information in parent table
-        val parentIndexMetadata = if (
-          carbonTable.getTableInfo.getFactTable.getTableProperties
-            .get(carbonTable.getCarbonTableIdentifier.getTableId) != null) {
-          IndexMetadata.deserialize(carbonTable.getTableInfo.getFactTable.getTableProperties
-            .get(carbonTable.getCarbonTableIdentifier.getTableId))
-        } else {
-          new IndexMetadata(false)
-        }
-        parentIndexMetadata.addIndexTableInfo(indexTableName, indexTableCols)
+      if (!isCreateSIndex && indexTableExistsInHive) {
+        tableInfo = SchemaReader.getTableInfo(absoluteTableIdentifier)
+      } else {
+        tableInfo = prepareTableInfo(
+          carbonTable, databaseName,
+          tableName, indexTableName, absoluteTableIdentifier)
+      }
+      if (!isCreateSIndex && !indexTableExistsInHive) {
+        LOGGER.error(
+          s"Index registration with Database name [$databaseName] and index name " +
+          s"[$indexTableName] failed. " +
+          s"Index [$indexTableName] does not exists under database [$databaseName]")
+        throw new ErrorMessage(
+          s"Index [$indexTableName] does not exists under database [$databaseName]")
+      }
+      // Need to fill partitioner class when we support partition
+      val tableIdentifier = AbsoluteTableIdentifier
+        .from(tablePath, databaseName, indexTableName)
+      // Add Database to catalog and persist
+      val catalog = CarbonEnv.getInstance(sparkSession).carbonMetaStore
+      //        val tablePath = tableIdentifier.getTablePath
+      val carbonSchemaString = catalog.generateTableSchemaString(tableInfo, tableIdentifier)
+      // set index information in index table
+      val indexTableMeta = new IndexMetadata(indexTableName, true, carbonTable.getTablePath)
+      tableInfo.getFactTable.getTableProperties
+        .put(tableInfo.getFactTable.getTableId, indexTableMeta.serialize)
+      // set index information in parent table
+      val parentIndexMetadata = if (
         carbonTable.getTableInfo.getFactTable.getTableProperties
-          .put(carbonTable.getCarbonTableIdentifier.getTableId, parentIndexMetadata.serialize)
+          .get(carbonTable.getCarbonTableIdentifier.getTableId) != null) {
+        IndexMetadata.deserialize(carbonTable.getTableInfo.getFactTable.getTableProperties
+          .get(carbonTable.getCarbonTableIdentifier.getTableId))
+      } else {
+        new IndexMetadata(false)
+      }
+      parentIndexMetadata.addIndexTableInfo(indexTableName, indexTableCols)
+      carbonTable.getTableInfo.getFactTable.getTableProperties
+        .put(carbonTable.getCarbonTableIdentifier.getTableId, parentIndexMetadata.serialize)
 
-        val cols = tableInfo.getFactTable.getListOfColumns.asScala.filter(!_.isInvisible)
-        val fields = new Array[String](cols.size)
-        cols.foreach(col =>
-          fields(col.getSchemaOrdinal) =
-            col.getColumnName + ' ' + checkAndPrepareDecimal(col))
+      val cols = tableInfo.getFactTable.getListOfColumns.asScala.filter(!_.isInvisible)
+      val fields = new Array[String](cols.size)
+      cols.foreach(col =>
+        fields(col.getSchemaOrdinal) =
+          col.getColumnName + ' ' + checkAndPrepareDecimal(col))
 
-        val operationContext = new OperationContext
-        val createTablePreExecutionEvent: CreateTablePreExecutionEvent =
-          CreateTablePreExecutionEvent(sparkSession, tableIdentifier, Option(tableInfo))
-        OperationListenerBus.getInstance.fireEvent(createTablePreExecutionEvent, operationContext)
-        // do not create index table for register table call
-        // only the alter the existing table to set index related info
-        if (isCreateSIndex) {
-          try {
-            sparkSession.sql(
-              s"""CREATE TABLE $databaseName.$indexTableName
-                 |(${fields.mkString(",")})
-                 |USING carbondata OPTIONS (tableName "$indexTableName",
-                 |dbName "$databaseName", tablePath "$tablePath", path "$tablePath",
-                 |parentTablePath "${carbonTable.getTablePath}", isIndexTable "true",
-                 |isSITableEnabled "false", parentTableId
-                 |"${carbonTable.getCarbonTableIdentifier.getTableId}",
-                 |parentTableName "$tableName"$carbonSchemaString) """.stripMargin)
-              .collect()
-          } catch {
-            case e: IOException =>
-              if (FileFactory.isFileExist(tablePath)) {
-                val si_dir = FileFactory.getCarbonFile(tablePath)
-                CarbonUtil.deleteFoldersAndFilesSilent(si_dir)
-              }
-              throw e
-          }
-        } else {
+      val operationContext = new OperationContext
+      val createTablePreExecutionEvent: CreateTablePreExecutionEvent =
+        CreateTablePreExecutionEvent(sparkSession, tableIdentifier, Option(tableInfo))
+      OperationListenerBus.getInstance.fireEvent(createTablePreExecutionEvent, operationContext)
+      // do not create index table for register table call
+      // only the alter the existing table to set index related info
+      if (isCreateSIndex) {
+        try {
           sparkSession.sql(
-            s"""ALTER TABLE $databaseName.$indexTableName SET SERDEPROPERTIES (
+            s"""CREATE TABLE $databaseName.$indexTableName
+               |(${ fields.mkString(",") })
+               |USING carbondata OPTIONS (tableName "$indexTableName",
+               |dbName "$databaseName", tablePath "$tablePath", path "$tablePath",
+               |parentTablePath "${ carbonTable.getTablePath }", isIndexTable "true",
+               |isSITableEnabled "false", parentTableId
+               |"${ carbonTable.getCarbonTableIdentifier.getTableId }",
+               |parentTableName "$tableName"$carbonSchemaString) """.stripMargin)
+            .collect()
+        } catch {
+          case e: IOException =>
+            if (FileFactory.isFileExist(tablePath)) {
+              val si_dir = FileFactory.getCarbonFile(tablePath)
+              CarbonUtil.deleteFoldersAndFilesSilent(si_dir)
+            }
+            throw e
+        }
+      } else {
+        sparkSession.sql(
+          s"""ALTER TABLE $databaseName.$indexTableName SET SERDEPROPERTIES (
                 'parentTableName'='$tableName', 'isIndexTable' = 'true', 'isSITableEnabled' =
                 'false', 'parentTablePath' = '${carbonTable.getTablePath}',
                 'parentTableId' = '${carbonTable.getCarbonTableIdentifier.getTableId}')""")
-            .collect()
-        }
+          .collect()
+      }
 
-        CarbonInternalScalaUtil.addIndexTableInfo(carbonTable, indexTableName, indexTableCols)
+      CarbonInternalScalaUtil.addIndexTableInfo(carbonTable, indexTableName, indexTableCols)
 
       CarbonHiveMetadataUtil.refreshTable(databaseName, indexTableName, sparkSession)
 
-        sparkSession.sql(
-          s"""ALTER TABLE $databaseName.$tableName SET SERDEPROPERTIES ('indexInfo' =
-              |'$indexInfo')""".stripMargin).collect()
+      sparkSession.sql(
+        s"""ALTER TABLE $databaseName.$tableName SET SERDEPROPERTIES ('indexInfo' =
+           |'$indexInfo')""".stripMargin).collect()
 
       val tableIdent = TableIdentifier(tableName, Some(databaseName))
 
       // modify the tableProperties of mainTable by adding "indexTableExists" property
       CarbonInternalScalaUtil
-        .addOrModifyTableProperty(carbonTable,
+        .addOrModifyTableProperty(
+          carbonTable,
           Map("indexTableExists" -> "true"), needLock = false)(sparkSession)
 
       CarbonHiveMetadataUtil.refreshTable(databaseName, tableName, sparkSession)
@@ -386,8 +401,8 @@ class ErrorMessage(message: String) extends Exception(message) {
   }
 
   def prepareTableInfo(carbonTable: CarbonTable,
-    databaseName: String, tableName: String, indexTableName: String,
-    absoluteTableIdentifier: AbsoluteTableIdentifier): TableInfo = {
+      databaseName: String, tableName: String, indexTableName: String,
+      absoluteTableIdentifier: AbsoluteTableIdentifier): TableInfo = {
     var schemaOrdinal = -1
     var allColumns = indexModel.columnNames.map { indexCol =>
       val colSchema = carbonTable.getDimensionByName(indexCol).getColumnSchema
@@ -399,7 +414,8 @@ class ErrorMessage(message: String) extends Exception(message) {
 
     val encoders = new util.ArrayList[Encoding]()
     schemaOrdinal += 1
-    val blockletId: ColumnSchema = getColumnSchema(databaseName,
+    val blockletId: ColumnSchema = getColumnSchema(
+      databaseName,
       DataTypes.STRING,
       CarbonCommonConstants.POSITION_REFERENCE,
       encoders,
@@ -414,7 +430,8 @@ class ErrorMessage(message: String) extends Exception(message) {
     // reference
     blockletId.setLocalDictColumn(true)
     schemaOrdinal += 1
-    val dummyMeasure: ColumnSchema = getColumnSchema(databaseName,
+    val dummyMeasure: ColumnSchema = getColumnSchema(
+      databaseName,
       DataType.getDataType(DataType.DOUBLE_MEASURE_CHAR),
       CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
       encoders,
@@ -440,7 +457,8 @@ class ErrorMessage(message: String) extends Exception(message) {
       x => tablePropertiesMap.put(x._1, x._2)
     }
     // inherit and set the local dictionary properties from parent table
-    setLocalDictionaryConfigs(tablePropertiesMap,
+    setLocalDictionaryConfigs(
+      tablePropertiesMap,
       carbonTable.getTableInfo.getFactTable.getTableProperties, allColumns)
 
     // block SI creation when the parent table has flat folder structure
@@ -464,57 +482,64 @@ class ErrorMessage(message: String) extends Exception(message) {
     tableInfo
   }
 
-   /**
-    * This function inherits and sets the local dictionary properties from parent table to index
-    * table properties
-    */
-   def setLocalDictionaryConfigs(indexTblPropertiesMap: java.util.HashMap[String, String],
-     parentTblPropertiesMap: java.util.Map[String, String],
-     allColumns: List[ColumnSchema]): Unit = {
-     val isLocalDictEnabledFormainTable = parentTblPropertiesMap
-       .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)
-     indexTblPropertiesMap
-       .put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
-         isLocalDictEnabledFormainTable)
-     indexTblPropertiesMap
-       .put(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
-         parentTblPropertiesMap.asScala
-           .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
-             CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT))
-     var localDictColumns: scala.collection.mutable.Seq[String] = scala.collection.mutable.Seq()
-     allColumns.foreach(column =>
-       if (column.isLocalDictColumn) {
-         localDictColumns :+= column.getColumnName
-       }
-     )
-     if (isLocalDictEnabledFormainTable != null && isLocalDictEnabledFormainTable.toBoolean) {
-       indexTblPropertiesMap
-         .put(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE,
-           localDictColumns.mkString(","))
-     }
-   }
+  /**
+   * This function inherits and sets the local dictionary properties from parent table to index
+   * table properties
+   */
+  def setLocalDictionaryConfigs(indexTblPropertiesMap: java.util.HashMap[String, String],
+      parentTblPropertiesMap: java.util.Map[String, String],
+      allColumns: List[ColumnSchema]): Unit = {
+    val isLocalDictEnabledFormainTable = parentTblPropertiesMap
+      .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)
+    indexTblPropertiesMap
+      .put(
+        CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
+        isLocalDictEnabledFormainTable)
+    indexTblPropertiesMap
+      .put(
+        CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
+        parentTblPropertiesMap.asScala
+          .getOrElse(
+            CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
+            CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT))
+    var localDictColumns: scala.collection.mutable.Seq[String] = scala.collection.mutable.Seq()
+    allColumns.foreach(column =>
+      if (column.isLocalDictColumn) {
+        localDictColumns :+= column.getColumnName
+      }
+    )
+    if (isLocalDictEnabledFormainTable != null && isLocalDictEnabledFormainTable.toBoolean) {
+      indexTblPropertiesMap
+        .put(
+          CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE,
+          localDictColumns.mkString(","))
+    }
+  }
 
 
   def acquireLockForSecondaryIndexCreation(absoluteTableIdentifier: AbsoluteTableIdentifier):
   List[ICarbonLock] = {
     var configuredMdtPath = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
+      .getProperty(
+        CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
         CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER_DEFAULT).trim
     configuredMdtPath = CarbonUtil.checkAndAppendFileSystemURIScheme(configuredMdtPath)
     val metadataLock = CarbonLockFactory
-      .getCarbonLockObj(absoluteTableIdentifier,
+      .getCarbonLockObj(
+        absoluteTableIdentifier,
         LockUsage.METADATA_LOCK)
     val alterTableCompactionLock = CarbonLockFactory
-      .getCarbonLockObj(absoluteTableIdentifier,
+      .getCarbonLockObj(
+        absoluteTableIdentifier,
         LockUsage.COMPACTION_LOCK
       )
     val deleteSegmentLock =
       CarbonLockFactory
         .getCarbonLockObj(absoluteTableIdentifier, LockUsage.DELETE_SEGMENT_LOCK)
     if (metadataLock.lockWithRetries() && alterTableCompactionLock.lockWithRetries() &&
-      deleteSegmentLock.lockWithRetries()) {
+        deleteSegmentLock.lockWithRetries()) {
       logInfo("Successfully able to get the table metadata file, compaction and delete segment " +
-        "lock")
+              "lock")
       List(metadataLock, alterTableCompactionLock, deleteSegmentLock)
     }
     else {
@@ -536,8 +561,8 @@ class ErrorMessage(message: String) extends Exception(message) {
   }
 
   def getColumnSchema(databaseName: String, dataType: DataType, colName: String,
-    encoders: java.util.List[Encoding], isDimensionCol: Boolean,
-    precision: Integer, scale: Integer, schemaOrdinal: Int): ColumnSchema = {
+      encoders: java.util.List[Encoding], isDimensionCol: Boolean,
+      precision: Integer, scale: Integer, schemaOrdinal: Int): ColumnSchema = {
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
@@ -572,5 +597,5 @@ class ErrorMessage(message: String) extends Exception(message) {
     columnSchema
   }
 
-   override protected def opName: String = "SI Creation"
+  override protected def opName: String = "SI Creation"
 }

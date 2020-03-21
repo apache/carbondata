@@ -17,76 +17,84 @@
 
 package org.apache.spark.sql.execution.command.index
 
+import java.util.Optional
+
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.DataCommand
+import org.apache.spark.sql.secondaryindex.command.SIRebuildSegmentRunner
 
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.DataMapManager
 import org.apache.carbondata.events.{UpdateDataMapPostExecutionEvent, _}
 
 /**
- * Rebuild the datamaps through sync with main table data. After sync with parent table's it enables
- * the datamap.
+ * Rebuild the index through sync with main table data. After sync with parent table's it enables
+ * the index.
  */
 case class CarbonRefreshIndexCommand(
-    dataMapName: String,
-    tableIdentifier: Option[TableIdentifier]) extends DataCommand {
+    indexName: String,
+    parentTableIdent: TableIdentifier,
+    segments: Option[List[String]]) extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    import scala.collection.JavaConverters._
-    val schemaOption = CarbonShowIndexCommand(tableIdentifier).getAllDataMaps(sparkSession)
-      .asScala
-      .find(p => p.getDataMapName.equalsIgnoreCase(dataMapName))
-    if (schemaOption.isEmpty) {
-      if (tableIdentifier.isDefined) {
-        throw new MalformedIndexCommandException(
-          s"Datamap with name $dataMapName does not exist on table ${tableIdentifier.get.table}")
-      } else {
-        throw new MalformedIndexCommandException(
-          s"Datamap with name $dataMapName does not exist on any table")
+    val parentTable = CarbonEnv.getCarbonTable(parentTableIdent)(sparkSession)
+    setAuditTable(parentTable)
+    val indexOp = DataMapStoreManager.getInstance().getIndexInTable(parentTable, indexName)
+    if (!indexOp.isPresent) {
+      val indexTable = try {
+        CarbonEnv.getCarbonTable(parentTableIdent.database, indexName)(sparkSession)
+      } catch {
+        case t: NoSuchTableException =>
+          throw new MalformedIndexCommandException(
+            s"Index with name $indexName does not exist on table ${parentTableIdent.table}")
       }
+      refreshIndexTable(parentTable, indexTable, sparkSession)
+    } else {
+      refreshIndex(sparkSession, parentTable, indexOp)
     }
-    val schema = schemaOption.get
-    if (!schema.isLazy && schema.isIndex) {
+    Seq.empty
+  }
+
+  private def refreshIndexTable(
+      parentTable: CarbonTable,
+      indexTable: CarbonTable,
+      sparkSession: SparkSession): Unit = {
+    SIRebuildSegmentRunner(parentTable, indexTable, segments).run(sparkSession)
+  }
+
+  private def refreshIndex(
+      sparkSession: SparkSession,
+      parentTable: CarbonTable,
+      indexOp: Optional[DataMapSchema]): Unit = {
+    val schema = indexOp.get
+    if (!schema.isLazy) {
       throw new MalformedIndexCommandException(
-        s"Non-lazy datamap $dataMapName does not support rebuild")
+        s"Non-lazy index $indexName does not support manual refresh")
     }
 
-    val table = tableIdentifier match {
-      case Some(identifier) =>
-        CarbonEnv.getCarbonTable(identifier)(sparkSession)
-      case _ =>
-        CarbonEnv.getCarbonTable(
-          Option(schema.getRelationIdentifier.getDatabaseName),
-          schema.getRelationIdentifier.getTableName
-        )(sparkSession)
-    }
-
-    setAuditTable(table)
-
-    val provider = DataMapManager.get().getDataMapProvider(table, schema, sparkSession)
+    val provider = DataMapManager.get().getDataMapProvider(parentTable, schema, sparkSession)
     provider.rebuild()
 
-    // After rebuild successfully enable the datamap.
-    val operationContext: OperationContext = new OperationContext()
-    val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
-    val updateDataMapPreExecutionEvent: UpdateDataMapPreExecutionEvent =
-      new UpdateDataMapPreExecutionEvent(sparkSession,
-        systemFolderLocation,
-        new TableIdentifier(table.getTableName, Some(table.getDatabaseName)))
-    OperationListenerBus.getInstance().fireEvent(updateDataMapPreExecutionEvent,
-      operationContext)
-    DataMapStatusManager.enableDataMap(dataMapName)
-    val updateDataMapPostExecutionEvent: UpdateDataMapPostExecutionEvent =
-      new UpdateDataMapPostExecutionEvent(sparkSession,
-        systemFolderLocation,
-        new TableIdentifier(table.getTableName, Some(table.getDatabaseName)))
-    OperationListenerBus.getInstance().fireEvent(updateDataMapPostExecutionEvent,
-      operationContext)
-    Seq.empty
+    // After rebuild successfully enable the index.
+    val operationContext = new OperationContext()
+    val storeLocation = CarbonProperties.getInstance().getSystemFolderLocation
+    val preExecEvent = UpdateDataMapPreExecutionEvent(
+      sparkSession, storeLocation,
+      new TableIdentifier(parentTable.getTableName, Some(parentTable.getDatabaseName)))
+    OperationListenerBus.getInstance().fireEvent(preExecEvent, operationContext)
+
+    DataMapStatusManager.enableDataMap(indexName)
+
+    val postExecEvent = UpdateDataMapPostExecutionEvent(
+      sparkSession, storeLocation,
+      new TableIdentifier(parentTable.getTableName, Some(parentTable.getDatabaseName)))
+    OperationListenerBus.getInstance().fireEvent(postExecEvent, operationContext)
   }
 
   override protected def opName: String = "REFRESH INDEX"

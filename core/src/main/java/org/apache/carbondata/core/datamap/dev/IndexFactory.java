@@ -40,8 +40,6 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.events.Event;
 
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_COLUMNS;
-
 /**
  * Factory class for creating the index.
  */
@@ -198,7 +196,7 @@ public abstract class IndexFactory<T extends Index> {
       unique.add(indexColumn.getColName());
     }
     if (unique.size() != indexColumns.size()) {
-      throw new MalformedIndexCommandException(INDEX_COLUMNS + " has duplicate column");
+      throw new MalformedIndexCommandException("index column list has duplicate column");
     }
   }
 

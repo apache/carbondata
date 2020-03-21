@@ -93,10 +93,7 @@ object Compactor {
           .getCarbonLoadModel(indexCarbonTable,
             loadMetadataDetails.toList.asJava,
             System.currentTimeMillis(),
-            CarbonInternalScalaUtil
-              .getCompressorForIndexTable(indexCarbonTable.getDatabaseName,
-                indexCarbonTable.getTableName,
-                carbonMainTable.getTableName)(sqlContext.sparkSession))
+            CarbonInternalScalaUtil.getCompressorForIndexTable(indexCarbonTable, carbonMainTable))
 
         // merge the data files of the compacted segments and take care of
         // merging the index files inside this if needed

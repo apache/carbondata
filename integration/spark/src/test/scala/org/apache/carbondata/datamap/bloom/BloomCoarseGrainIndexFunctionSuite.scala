@@ -812,15 +812,15 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
     val carbonTable = CarbonEnv.getCarbonTable(Option("default"), bloomSampleTable)(SparkTestQueryExecutor.spark)
     import scala.collection.JavaConverters._
     (0 to 1).foreach { segId =>
-      val datamapPath = CarbonTablePath.getIndexStorePath(carbonTable.getTablePath, segId.toString, indexName)
+      val datamapPath = CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath, segId.toString, indexName)
       assert(FileUtils.listFiles(FileUtils.getFile(datamapPath), Array("bloomindexmerge"), true).asScala.nonEmpty)
     }
     // delete and clean the first segment, the corresponding index files should be cleaned too
     sql(s"DELETE FROM TABLE $bloomSampleTable WHERE SEGMENT.ID IN (0)")
     sql(s"CLEAN FILES FOR TABLE $bloomSampleTable")
-    var datamapPath = CarbonTablePath.getIndexStorePath(carbonTable.getTablePath, "0", indexName)
+    var datamapPath = CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath, "0", indexName)
     assert(!FileUtils.getFile(datamapPath).exists(), "index file of this segment has been deleted, should not exist")
-    datamapPath = CarbonTablePath.getIndexStorePath(carbonTable.getTablePath, "1", indexName)
+    datamapPath = CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath, "1", indexName)
     assert(FileUtils.listFiles(FileUtils.getFile(datamapPath), Array("bloomindexmerge"), true).asScala.nonEmpty)
   }
 

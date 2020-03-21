@@ -108,7 +108,7 @@ case class CarbonDropTableCommand(
           val command = CarbonDropIndexCommand(
             schema.getDataMapName,
             ifExistsSet,
-            Some(TableIdentifier(tableName, Some(dbName))),
+            TableIdentifier(tableName, Some(dbName)),
             forceDrop = true)
           command.dataMapSchema = schema
           command.mainTable = carbonTable
