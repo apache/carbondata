@@ -113,7 +113,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
          | 'BLOOM_COMPRESS'='TRUE')
        """.stripMargin)
     loadAllDataTypeTable(tableName)
-    checkExistence(sql(s"SHOW DATAMAP ON TABLE $tableName"), true, "bloomfilter", dataMapName)
+    checkExistence(sql(s"SHOW INDEXES ON TABLE $tableName"), true, "bloomfilter", dataMapName)
     checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName"), Seq(Row(16)))
     checkExistence(
       sql(s"EXPLAIN SELECT * FROM $tableName WHERE booleanField=false AND shortField=2 AND intField=12 AND bigintField=102 AND doubleField=42.4 AND stringField='string2' AND timestampField='2015-05-23 12:01:03' AND decimalField=23.45 AND dateField='2015-05-23' AND charField='bbb' AND floatField=2.5 AND stringDictField='dict2' AND stringSortField='sort2' AND stringLocalDictField= 'local_dict2' AND longStringField='longstring2'"),
@@ -169,7 +169,7 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
          | 'BLOOM_COMPRESS'='TRUE')
        """.stripMargin)
     loadAllDataTypeTable(tableName)
-    checkExistence(sql(s"SHOW DATAMAP ON TABLE $tableName"), true, "bloomfilter", dataMapName)
+    checkExistence(sql(s"SHOW INDEXES ON TABLE $tableName"), true, "bloomfilter", dataMapName)
     checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName"), Seq(Row(16)))
     checkExistence(
       sql(s"EXPLAIN SELECT * FROM $tableName WHERE booleanField=false AND shortField=2 AND intField=12 AND bigintField=102 AND doubleField=42.4 AND stringField='string2' AND timestampField='2015-05-23 12:01:03' AND decimalField=23.45 AND dateField='2015-05-23' AND charField='bbb' AND floatField=2.5 AND stringDictField='dict2' AND stringSortField='sort2' AND stringLocalDictField= 'local_dict2' AND longStringField='longstring2'"),
@@ -366,8 +366,8 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
 
     loadAllDataTypeTable(tableName1)
     loadAllDataTypeTable(tableName2)
-    assert(sql(s"SHOW DATAMAP ON TABLE $tableName1").collect().length == 1)
-    assert(sql(s"SHOW DATAMAP ON TABLE $tableName2").collect().length == 15)
+    assert(sql(s"SHOW INDEXES ON TABLE $tableName1").collect().length == 1)
+    assert(sql(s"SHOW INDEXES ON TABLE $tableName2").collect().length == 15)
     checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName1"), sql(s"SELECT COUNT(*) FROM $tableName2"))
     checkExistence(
       sql(s"EXPLAIN SELECT * FROM $tableName1 WHERE booleanField=false AND shortField=2 AND intField=12 AND bigintField=102 AND doubleField=42.4 AND stringField='string2' AND timestampField='2015-05-23 12:01:03' AND decimalField=23.45 AND dateField='2015-05-23' AND charField='bbb' AND floatField=2.5 AND stringDictField='dict2' AND stringSortField='sort2' AND stringLocalDictField= 'local_dict2' AND longStringField='longstring2'"),

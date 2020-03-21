@@ -21,7 +21,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, Ignore}
 
 /**
- * Ignored test class as CG datamap is not supported yet
+ * Ignored test class as CG index is not supported yet
  */
 @Ignore
 class LuceneCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
@@ -51,17 +51,17 @@ class LuceneCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
 
-      sql(
-        s"""
-           | CREATE DATAMAP dm ON TABLE datamap_test
-           | USING 'lucene'
-           | DMProperties('INDEX_COLUMNS'='name,city')
+    sql(
+      s"""
+         | CREATE INDEX dm
+         | ON datamap_test (name, city)
+         | AS 'lucene'
       """.stripMargin)
 
-     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
 
-     checkAnswer(sql("select * from datamap_test where name='n502670'"),
-     sql("select * from normal_test where name='n502670'"))
+    checkAnswer(sql("select * from datamap_test where name='n502670'"),
+      sql("select * from normal_test where name='n502670'"))
   }
 
   override protected def afterAll(): Unit = {
@@ -71,4 +71,3 @@ class LuceneCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
   }
 
 }
-

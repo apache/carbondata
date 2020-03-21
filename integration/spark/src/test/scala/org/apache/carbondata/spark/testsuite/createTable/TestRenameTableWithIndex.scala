@@ -49,9 +49,10 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
 
     sql(
       s"""
-         | CREATE DATAMAP dm_carbon_table_name ON TABLE carbon_table
-         | USING 'bloomfilter'
-         | DMProperties('INDEX_COLUMNS'='name,city', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX dm_carbon_table_name
+         | ON TABLE carbon_table (name, city)
+         | AS 'bloomfilter'
+         | Properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     (1 to 2).foreach { i =>
@@ -74,7 +75,7 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
 
     sql(
       s"""
-         | show datamap on table carbon_table
+         | show indexes on table carbon_table
        """.stripMargin).show(false)
 
     sql(
@@ -94,7 +95,7 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
 
     sql(
       s"""
-         | show datamap on table carbon_tb
+         | show indexes on table carbon_tb
        """.stripMargin).show(false)
 
     sql(
@@ -122,13 +123,13 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    sql("drop datamap if exists datamap1")
-    sql("create datamap datamap1 using 'mv' as select empname, designation from fact_table2")
-    sql(s"rebuild datamap datamap1")
+    sql("drop materialized view if exists datamap1")
+    sql("create materialized view datamap1 as select empname, designation from fact_table2")
+    sql(s"refresh materialized view datamap1")
 
     sql(
       s"""
-         | show datamap on table fact_table2
+         | show materialized views on table fact_table2
        """.stripMargin).show(false)
 
     val exception_tb_rename: Exception = intercept[Exception] {

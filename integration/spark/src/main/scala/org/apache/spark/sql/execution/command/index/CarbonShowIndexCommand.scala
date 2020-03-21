@@ -87,5 +87,5 @@ case class CarbonShowIndexCommand(tableIdentifier: Option[TableIdentifier])
     }
   }
 
-  override protected def opName: String = "SHOW DATAMAP"
+  override protected def opName: String = "SHOW INDEXES"
 }

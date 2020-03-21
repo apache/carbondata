@@ -145,9 +145,9 @@ object MVExample {
          |employee_salary group by name, address""".stripMargin)
 
     spark.sql(
-      s"""create datamap simple_agg_employee using 'mv' as
+      s"""create materialized view simple_agg_employee as
          | select id,sum(salary) from employee_salary group by id""".stripMargin)
-    spark.sql(s"""rebuild datamap simple_agg_employee""")
+    spark.sql(s"""refresh materialized view simple_agg_employee""")
 
     // Test performance of aggregate queries with mv datamap
     val timeWithOutMv = time(spark
@@ -173,10 +173,10 @@ object MVExample {
 
     // Tests performance of aggregate with join queries.
     spark.sql(
-      s"""create datamap simple_join_agg_employee using 'mv' as
+      s"""create materialized view simple_join_agg_employee as
          | select id,address, sum(salary) from employee_salary f join emp_address d
          | on f.name=d.name group by id,address""".stripMargin)
-    spark.sql(s"""rebuild datamap simple_join_agg_employee""")
+    spark.sql(s"""refresh materialized view simple_join_agg_employee""")
 
     val timeWithMVJoin =
       time(spark.sql(

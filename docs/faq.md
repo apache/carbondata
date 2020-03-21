@@ -44,7 +44,7 @@
 - [Failed to insert data on the cluster](#failed-to-insert-data-on-the-cluster)
 - [Failed to execute Concurrent Operations(Load,Insert,Update) on table by multiple workers](#failed-to-execute-concurrent-operations-on-table-by-multiple-workers)
 - [Failed to create a table with a single numeric column](#failed-to-create-a-table-with-a-single-numeric-column)
-- [Failed to create datamap and drop datamap is also not working](#failed-to-create-datamap-and-drop-datamap-is-also-not-working)
+- [Failed to create_index and drop index is also not working](#failed-to-create-index-and-drop-index-is-also-not-working)
 
 ## 
 
@@ -499,7 +499,7 @@ Note : Refrain from using "mvn clean package" without specifying the profile.
 
   A single column that can be considered as dimension is mandatory for table creation.
 
-## Failed to create datamap and drop datamap is also not working
+## Failed to create index and drop index is also not working
   
   **Symptom**
 
@@ -515,5 +515,4 @@ Note : Refrain from using "mvn clean package" without specifying the profile.
 
   **Procedure**
 
-  Drop that particular datamap using Drop Table command using table name as
-  parentTableName_datamapName so as to clear the stale folders.
+  Drop that particular index using Drop Index command so as to clear the stale folders.

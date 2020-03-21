@@ -469,9 +469,9 @@ class FGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     // register datamap writer
     sql(
       s"""
-         | CREATE DATAMAP ggdatamap ON TABLE datamap_test
-         | USING '${classOf[FGIndexFactory].getName}'
-         | DMPROPERTIES('index_columns'='name')
+         | CREATE INDEX ggdatamap
+         | ON TABLE datamap_test (name)
+         | AS '${classOf[FGIndexFactory].getName}'
        """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test where name='n502670'"),
@@ -490,15 +490,15 @@ class FGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     // register datamap writer
     sql(
       s"""
-         | CREATE DATAMAP ggdatamap1 ON TABLE datamap_test
-         | USING '${classOf[FGIndexFactory].getName}'
-         | DMPROPERTIES('index_columns'='name')
+         | CREATE INDEX ggdatamap1
+         | ON TABLE datamap_test (name)
+         | AS '${classOf[FGIndexFactory].getName}'
        """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ggdatamap2 ON TABLE datamap_test
-         | USING '${classOf[FGIndexFactory].getName}'
-         | DMPROPERTIES('index_columns'='city')
+         | CREATE INDEX ggdatamap2
+         | ON TABLE datamap_test (city)
+         | AS '${classOf[FGIndexFactory].getName}'
        """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test where name='n502670' and city='c2670'"),
@@ -521,17 +521,15 @@ class FGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     // register datamap writer
     sql(
       s"""
-         | CREATE DATAMAP $dataMapName1
-         | ON TABLE $tableName
-         | USING '${classOf[FGIndexFactory].getName}'
-         | DMPROPERTIES('index_columns'='name')
+         | CREATE INDEX $dataMapName1
+         | ON TABLE $tableName (name)
+         | AS '${classOf[FGIndexFactory].getName}'
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP $dataMapName2
-         | ON TABLE $tableName
-         | USING '${classOf[FGIndexFactory].getName}'
-         | DMPROPERTIES('index_columns'='city')
+         | CREATE INDEX $dataMapName2
+         | ON TABLE $tableName (city)
+         | AS '${classOf[FGIndexFactory].getName}'
        """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE $tableName OPTIONS('header'='false')")
     val df1 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()

@@ -160,7 +160,7 @@ is not supported:
 `ALTER TABLE RENAME`.
 
 **Note**: Adding a new column is supported, and for dropping columns and change datatype 
-command, CarbonData will check whether it will impact the lucene datamap, if not, the operation 
+command, CarbonData will check whether it will impact the lucene index, if not, the operation 
 is allowed, otherwise operation will be rejected by throwing exception.
 
 
@@ -168,9 +168,9 @@ is allowed, otherwise operation will be rejected by throwing exception.
 
 However, there is still way to support these operations on main table, in current CarbonData 
 release, user can do as following:
-1. Remove the lucene datamap by `DROP DATAMAP` command.
+1. Remove the lucene index by `DROP INDEX` command.
 2. Carry out the data management operation on main table.
-3. Create the lucene datamap again by `CREATE DATAMAP` command.
-Basically, user can manually trigger the operation by re-building the datamap.
+3. Create the lucene index again by `CREATE INDEX` command.
+Basically, user can manually trigger the operation by refreshing the index.
 
 

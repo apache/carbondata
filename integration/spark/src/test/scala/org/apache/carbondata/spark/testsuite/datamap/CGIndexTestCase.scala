@@ -379,7 +379,7 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE normal_test OPTIONS('header'='false')")
   }
 
-  test("test cg datamap") {
+  test("test cg index") {
     sql("DROP TABLE IF EXISTS datamap_test_cg")
     sql(
       """
@@ -387,15 +387,14 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
         | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
-    sql(s"create datamap cgdatamap on table datamap_test_cg " +
-        s"using '${classOf[CGIndexFactory].getName}' " +
-        s"DMPROPERTIES('index_columns'='name')")
+    sql(s"create index cgdatamap on table datamap_test_cg (name)" +
+        s"as '${classOf[CGIndexFactory].getName}' ")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_cg OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test_cg where name='n502670'"),
       sql("select * from normal_test where name='n502670'"))
   }
 
-  test("test cg datamap with 2 datamaps ") {
+  test("test cg index with 2 indexes ") {
     sql("DROP TABLE IF EXISTS datamap_test")
     sql(
       """
@@ -403,21 +402,19 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
         | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
-    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test")
-    // register datamap writer
-    sql(s"create datamap ggdatamap1 on table datamap_test using '${classOf[CGIndexFactory].getName}' DMPROPERTIES('index_columns'='name')")
-    sql(s"create datamap ggdatamap2 on table datamap_test using '${classOf[CGIndexFactory].getName}' DMPROPERTIES('index_columns'='city')")
+    sql(s"create index ggdatamap1 on table datamap_test (name) as '${classOf[CGIndexFactory].getName}' ")
+    sql(s"create index ggdatamap2 on table datamap_test (city) as '${classOf[CGIndexFactory].getName}' ")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test where name='n502670' and city='c2670'"),
       sql("select * from normal_test where name='n502670' and city='c2670'"))
   }
 
-  test("test invisible datamap during query") {
+  test("test invisible index during query") {
     val tableName = "datamap_test"
     val dataMapName1 = "datamap1"
     val dataMapName2 = "datamap2"
-    sql(s"DROP DATAMAP IF EXISTS $dataMapName1 ON TABLE $tableName")
-    sql(s"DROP DATAMAP IF EXISTS $dataMapName2 ON TABLE $tableName")
+    sql(s"DROP INDEX IF EXISTS $dataMapName1 ON TABLE $tableName")
+    sql(s"DROP INDEX IF EXISTS $dataMapName2 ON TABLE $tableName")
     sql(s"DROP TABLE IF EXISTS $tableName")
     sql(
       s"""
@@ -428,17 +425,15 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     // register datamap writer
     sql(
       s"""
-         | CREATE DATAMAP $dataMapName1
-         | ON TABLE $tableName
-         | USING '${classOf[CGIndexFactory].getName}'
-         | DMPROPERTIES('index_columns'='name')
+         | CREATE INDEX $dataMapName1
+         | ON TABLE $tableName (name)
+         | AS '${classOf[CGIndexFactory].getName}'
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP $dataMapName2
-         | ON TABLE $tableName
-         | USING '${classOf[CGIndexFactory].getName}'
-         | DMPROPERTIES('index_columns'='city')
+         | CREATE INDEX $dataMapName2
+         | ON TABLE $tableName (city)
+         | AS '${classOf[CGIndexFactory].getName}'
        """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE $tableName OPTIONS('header'='false')")
     val df1 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
@@ -484,7 +479,7 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     assert(e41.getMessage.contains("did not contain \"" + dataMapName2))
   }
 
-  test("test datamap storage in system folder") {
+  test("test index storage in system folder") {
     sql("DROP TABLE IF EXISTS datamap_store_test")
     sql(
       """
@@ -496,9 +491,9 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     val dataMapProvider = classOf[CGIndexFactory].getName
     sql(
       s"""
-         |create datamap test_cg_datamap on table datamap_store_test
-         |using '$dataMapProvider'
-         |dmproperties('index_columns'='name')
+         |create index test_cg_datamap
+         |on table datamap_store_test (name)
+         |as '$dataMapProvider'
        """.stripMargin)
 
     val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap")
@@ -506,7 +501,7 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     assert(FileFactory.isFileExist(loc))
   }
 
-  test("test datamap storage and drop in system folder") {
+  test("test index storage and drop in system folder") {
     sql("DROP TABLE IF EXISTS datamap_store_test1")
     sql(
       """
@@ -518,21 +513,21 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     val dataMapProvider = classOf[CGIndexFactory].getName
     sql(
       s"""
-         |create datamap test_cg_datamap1 on table datamap_store_test1
-         |using '$dataMapProvider'
-         |dmproperties('index_columns'='name')
+         |create index test_cg_datamap1
+         |on table datamap_store_test1 (name)
+         |as '$dataMapProvider'
        """.stripMargin)
 
     val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap1")
 
     assert(FileFactory.isFileExist(loc))
 
-    sql(s"drop datamap test_cg_datamap1 on table datamap_store_test1")
+    sql(s"drop index test_cg_datamap1 on table datamap_store_test1")
 
     assert(!FileFactory.isFileExist(loc))
   }
 
-  test("test show datamap storage") {
+  test("test show index storage") {
     sql("DROP TABLE IF EXISTS datamap_store_test2")
     sql(
       """
@@ -544,18 +539,18 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     val dataMapProvider = classOf[CGIndexFactory].getName
     sql(
       s"""
-         |create datamap test_cg_datamap2 on table datamap_store_test2
-         |using '$dataMapProvider'
-         |dmproperties('index_columns'='name')
+         |create index test_cg_datamap2
+         |on table datamap_store_test2 (name)
+         |as '$dataMapProvider'
        """.stripMargin)
 
     val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation,"test_cg_datamap2")
 
     assert(FileFactory.isFileExist(loc))
 
-    checkExistence(sql("show datamap"), true, "test_cg_datamap2")
+    checkExistence(sql("show indexes on datamap_store_test2"), true, "test_cg_datamap2")
 
-    sql(s"drop datamap test_cg_datamap2 on table datamap_store_test2")
+    sql(s"drop index test_cg_datamap2 on table datamap_store_test2")
 
     assert(!FileFactory.isFileExist(loc))
   }

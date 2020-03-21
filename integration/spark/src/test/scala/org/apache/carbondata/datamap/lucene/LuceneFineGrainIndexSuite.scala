@@ -70,96 +70,77 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
   }
 
-  test("validate INDEX_COLUMNS Index property") {
-    // require INDEX_COLUMNS
+  test("validate INDEX_COLUMNS property") {
+    // not exists
     var exception = intercept[MalformedIndexCommandException](sql(
       s"""
-         | CREATE DATAMAP dm1 ON TABLE datamap_test
-         | USING 'lucene'
-      """.stripMargin))
-
-    assert(exception.getMessage.contains("INDEX_COLUMNS DMPROPERTY is required"))
-
-    // illegal argumnet.
-    exception = intercept[MalformedIndexCommandException](sql(
-      s"""
-         | CREATE DATAMAP dm1 ON TABLE datamap_test
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name, ')
-      """.stripMargin))
-
-    assertResult("column '' does not exist in table. Please check create Index statement.")(exception.getMessage)
-
-    // not exists
-    exception = intercept[MalformedIndexCommandException](sql(
-      s"""
-         | CREATE DATAMAP dm1 ON TABLE datamap_test
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='city,school')
+         | CREATE INDEX dm1
+         | ON datamap_test (city, school)
+         | AS 'lucene'
     """.stripMargin))
 
-    assertResult("column 'school' does not exist in table. Please check create Index statement.")(exception.getMessage)
+    assertResult("column 'school' does not exist in table. Please check create index statement.")(exception.getMessage)
 
     // duplicate columns
     exception = intercept[MalformedIndexCommandException](sql(
       s"""
-         | CREATE DATAMAP dm1 ON TABLE datamap_test
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name,city,name')
+         | CREATE INDEX dm1
+         | ON datamap_test (name, city, name)
+         | AS 'lucene'
       """.stripMargin))
 
-    assertResult("INDEX_COLUMNS has duplicate column")(exception.getMessage)
+    assertResult("index column list has duplicate column")(exception.getMessage)
 
     // only support String DataType
     exception = intercept[MalformedIndexCommandException](sql(
-    s"""
-         | CREATE DATAMAP dm1 ON TABLE datamap_test
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='city,id')
+      s"""
+         | CREATE INDEX dm1
+         | ON datamap_test (city,id)
+         | AS 'lucene'
       """.stripMargin))
 
     assertResult("Only String column is supported, column 'id' is INT type. ")(exception.getMessage)
   }
 
   test("test lucene fine grain data map") {
-    sql("drop datamap if exists dm on table datamap_test")
+    sql("drop index if exists dm on table datamap_test")
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='Name , cIty')
+         | CREATE INDEX dm
+         | ON datamap_test (Name, cIty)
+         | AS 'lucene'
       """.stripMargin)
     checkAnswer(sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('name:n10')"), sql(s"select * from datamap_test where name='n10'"))
     checkAnswer(sql("SELECT * FROM datamap_test WHERE TEXT_MATCH('city:c020')"), sql(s"SELECT * FROM datamap_test WHERE city='c020'"))
 
-    sql("drop datamap dm on table datamap_test")
+    sql("drop index dm on table datamap_test")
   }
 
-  // for CARBONDATA-2820, we will first block deferred rebuild for lucene
+  // for CARBONDATA-2820, we will first block deferred refresh for lucene
   test("test block rebuild for lucene") {
     val deferredRebuildException = intercept[MalformedIndexCommandException] {
       sql(
         s"""
-           | CREATE DATAMAP dm ON TABLE datamap_test
-           | USING 'lucene'
-           | WITH DEFERRED REBUILD
-           | DMProperties('INDEX_COLUMNS'='city')
+           | CREATE INDEX index1
+           | ON datamap_test (city)
+           | AS 'lucene'
+           | WITH DEFERRED REFRESH
       """.stripMargin)
     }
     assert(deferredRebuildException.getMessage.contains(
-      s"DEFERRED REBUILD is not supported on this datamap dm with provider lucene"))
+      s"DEFERRED REFRESH is not supported on this index index1 with provider lucene"))
 
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='city')
+         | CREATE INDEX index1
+         | ON datamap_test (city)
+         | AS 'lucene'
       """.stripMargin)
     val exception = intercept[MalformedIndexCommandException] {
-      sql(s"REBUILD DATAMAP dm ON TABLE datamap_test")
+      sql(s"REFRESH INDEX index1 ON TABLE datamap_test")
     }
-    sql("drop datamap dm on table datamap_test")
-    assert(exception.getMessage.contains("Non-lazy datamap dm does not support rebuild"))
+    sql("drop index index1 on table datamap_test")
+    assert(exception.getMessage.contains("Non-lazy index index1 does not support manual refresh"))
   }
 
   ignore("test lucene rebuild data map") {
@@ -174,13 +155,13 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
     sql(
       s"""
-         | CREATE DATAMAP dm4 ON TABLE datamap_test4
-         | USING 'lucene'
-         | WITH DEFERRED REBUILD
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | CREATE INDEX dm4
+         | ON datamap_test4 (name, city)
+         | AS 'lucene'
+         | WITH DEFERRED REFRESH
       """.stripMargin)
 
-    sql("REBUILD DATAMAP dm4 ON TABLE datamap_test4")
+    sql("REFRESH INDEX dm4 ON TABLE datamap_test4")
 
     checkAnswer(sql("SELECT * FROM datamap_test4 WHERE TEXT_MATCH('name:n10')"), sql(s"select * from datamap_test where name='n10'"))
     checkAnswer(sql("SELECT * FROM datamap_test4 WHERE TEXT_MATCH('city:c020')"), sql(s"SELECT * FROM datamap_test4 WHERE city='c020'"))
@@ -198,9 +179,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm12 ON TABLE datamap_test1
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainIndexFactory'
-         | DMProperties('INDEX_COLUMNS'='Name , cIty')
+         | CREATE INDEX dm12
+         | ON datamap_test1 (name, city)
+         | as 'org.apache.carbondata.index.lucene.LuceneFineGrainIndexFactory'
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test1 OPTIONS('header'='false')")
@@ -208,10 +189,10 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("SELECT * FROM datamap_test1 WHERE TEXT_MATCH('name:n10')"), sql(s"select * from datamap_test1 where name='n10'"))
 
     intercept[Exception] {
-      sql("drop datamap dm12")
+      sql("drop index dm12")
     }
     val schema = DataMapStoreManager.getInstance().getDataMapSchema("dm12")
-    sql("drop datamap dm12 on table datamap_test1")
+    sql("drop index dm12 on table datamap_test1")
     intercept[Exception] {
       val schema = DataMapStoreManager.getInstance().getDataMapSchema("dm12")
     }
@@ -229,9 +210,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm122 ON TABLE datamap_test2
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainIndexFactory'
-         | DMProperties('INDEX_COLUMNS'='Name , cIty')
+         | CREATE INDEX dm122
+         | ON datamap_test2 (name, city)
+         | AS 'org.apache.carbondata.index.lucene.LuceneFineGrainIndexFactory'
       """.stripMargin)
 
     sql(
@@ -242,17 +223,16 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm123 ON TABLE datamap_test3
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainIndexFactory'
-         | DMProperties('INDEX_COLUMNS'='Name , cIty')
+         | CREATE INDEX dm123
+         | ON datamap_test3 (name, city)
+         | AS 'org.apache.carbondata.index.lucene.LuceneFineGrainIndexFactory'
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test2 OPTIONS('header'='false')")
 
     checkAnswer(sql("SELECT * FROM datamap_test2 WHERE TEXT_MATCH('name:n10')"), sql(s"select * from datamap_test2 where name='n10'"))
 
-    assert(sql("show datamap on table datamap_test2").count() == 1)
-    // assert(sql("show datamap").count() == 2)
+    assert(sql("show indexes on table datamap_test2").count() == 1)
     sql("DROP TABLE IF EXISTS datamap_test2")
     sql("DROP TABLE IF EXISTS datamap_test3")
   }
@@ -267,16 +247,16 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | CREATE INDEX dm
+         | ON datamap_test_table (name, city)
+         | AS 'lucene'
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n99*')"),
       sql("select * from datamap_test_table where name like 'n99%'"))
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n*9')"),
       sql(s"select * from datamap_test_table where name like 'n%9'"))
-    sql("drop datamap if exists dm on table datamap_test_table")
+    sql("drop index if exists dm on table datamap_test_table")
   }
 
   test("test lucene fine grain data map with TEXT_MATCH 'AND' Filter ") {
@@ -289,15 +269,15 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | CREATE INDEX dm
+         | ON datamap_test_table (name,city)
+         | AS 'lucene'
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql(
       "SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n0* AND city:c0*')"),
       sql("select * from datamap_test_table where name like 'n0%' and city like 'c0%'"))
-    sql("drop datamap if exists dm on table datamap_test_table")
+    sql("drop index if exists dm on table datamap_test_table")
   }
 
   test("test lucene fine grain data map with TEXT_MATCH 'OR' Filter ") {
@@ -310,15 +290,15 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | CREATE INDEX dm
+         | ON datamap_test_table (name,city)
+         | AS 'lucene'
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql(
       "SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n1* OR city:c01*')"),
       sql("select * from datamap_test_table where name like 'n1%' or city like 'c01%'"))
-    sql("drop datamap if exists dm on table datamap_test_table")
+    sql("drop index if exists dm on table datamap_test_table")
   }
 
   test("test lucene fine grain data map with TEXT_MATCH 'AND' and 'OR' Filter ") {
@@ -331,9 +311,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | CREATE INDEX dm
+         | ON datamap_test_table (name,city)
+         | AS 'lucene'
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql(
@@ -341,7 +321,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       sql(
         "select * from datamap_test_table where name like 'n1%' OR city like 'c01%' and city like" +
         " 'c02%'"))
-    sql("drop datamap if exists dm on table datamap_test_table")
+    sql("drop index if exists dm on table datamap_test_table")
   }
 
   test("test lucene fine grain data map with compaction-Major ") {
@@ -354,9 +334,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | CREATE INDEX dm
+         | ON datamap_test_table (name,city)
+         | AS 'lucene'
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n10')"),
@@ -366,7 +346,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("alter table datamap_test_table compact 'major'")
     checkAnswer(sql("SELECT COUNT(*) FROM datamap_test_table WHERE TEXT_MATCH('name:n10')"),
       sql("select COUNT(*) from datamap_test_table where name='n10'"))
-    sql("drop datamap if exists dm on table datamap_test_table")
+    sql("drop index if exists dm on table datamap_test_table")
   }
 
   test("test lucene fine grain data map with compaction-Minor ") {
@@ -379,9 +359,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | CREATE INDEX dm
+         | ON datamap_test_table (name,city)
+         | AS 'lucene'
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n10')"),
@@ -392,7 +372,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("alter table datamap_test_table compact 'minor'")
     checkAnswer(sql("SELECT COUNT(*) FROM datamap_test_table WHERE TEXT_MATCH('name:n10')"),
       sql("select count(*) from datamap_test_table where name='n10'"))
-    sql("drop datamap if exists dm on table datamap_test_table")
+    sql("drop index if exists dm on table datamap_test_table")
   }
 
   test("test lucene fine grain data map with GLOBAL_SORT_SCOPE ") {
@@ -405,9 +385,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name,city')
+         | CREATE INDEX dm
+         | ON datamap_test_table (name,city)
+         | AS 'lucene'
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false','GLOBAL_SORT_PARTITIONS'='2')")
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n10')"),
@@ -428,9 +408,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm2 ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | CREATE INDEX dm2
+         | ON datamap_test_table (name,city)
+         | AS 'lucene'
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
@@ -440,7 +420,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("SELECT count(*) FROM datamap_test_table WHERE TEXT_MATCH('name:n99*')"),
       sql("select count(*) from datamap_test_table where name like 'n99%'"))
     sql("clean files for table datamap_test_table")
-    sql("drop datamap if exists dm2 on table datamap_test_table")
+    sql("drop index if exists dm2 on table datamap_test_table")
   }
 
   test("test lucene fine grain data map with TEXT_MATCH 'NOT' Filter ") {
@@ -453,9 +433,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | CREATE INDEX dm
+         | ON datamap_test_table (name,city)
+         | AS 'lucene'
           """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     //check NOT filter with TEXTMATCH term-search
@@ -469,7 +449,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       "select *from datamap_test_table where TEXT_MATCH('name:n1* AND city:c01* NOT " +
       "c02*')"),
       sql("select *from datamap_test_table where name like'n1%' AND not city='c02%'"))
-    sql("drop datamap if exists dm on table datamap_test_table")
+    sql("drop index if exists dm on table datamap_test_table")
   }
 
   test("test lucene fine grain data map with CTAS") {
@@ -483,9 +463,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE source_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name,city')
+         | CREATE INDEX dm
+         | ON source_table (name,city)
+         | AS 'lucene'
           """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE source_table OPTIONS('header'='false')")
     sql(
@@ -511,15 +491,15 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test_limit
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | CREATE INDEX dm
+         | ON datamap_test_limit (name,city)
+         | AS 'lucene'
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_limit OPTIONS('header'='false')")
     checkAnswer(sql("select count(*) from datamap_test_limit where TEXT_MATCH_WITH_LIMIT('name:n10*',10)"),Seq(Row(10)))
     checkAnswer(sql("select count(*) from datamap_test_limit where TEXT_MATCH_WITH_LIMIT('name:n10*',50)"),Seq(Row(50)))
-    sql("drop datamap dm on table datamap_test_limit")
+    sql("drop index dm on table datamap_test_limit")
   }
 
   test("test lucene fine grain data map with InsertOverwrite") {
@@ -532,9 +512,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test_overwrite
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | CREATE INDEX dm
+         | ON datamap_test_overwrite (name,city)
+         | AS 'lucene'
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_overwrite OPTIONS('header'='false')")
@@ -546,10 +526,10 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql("INSERT OVERWRITE TABLE table1 select *from datamap_test_overwrite where TEXT_MATCH('name:n*')")
     checkAnswer(sql("select count(*) from table1"),Seq(Row(10000)))
-    sql("drop datamap dm on table datamap_test_overwrite")
+    sql("drop index dm on table datamap_test_overwrite")
   }
 
-  test("explain query with lucene datamap") {
+  test("explain query with lucene index") {
     sql("drop table if exists main")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE, "8")
     sql(
@@ -560,9 +540,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE main
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | CREATE INDEX dm
+         | ON main (name,city)
+         | AS 'lucene'
       """.stripMargin)
 
     val file1 = resourcesPath + "/main.csv"
@@ -573,7 +553,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("EXPLAIN SELECT * FROM main WHERE TEXT_MATCH('name:bob')").show(false)
     val rows = sql("EXPLAIN SELECT * FROM main WHERE TEXT_MATCH('name:bob')").collect()
     // sometimes the plan comparison is failing even in case of both the plan being same.
-    // once the failure happens the dropped datamap is not getting executed
+    // once the failure happens the dropped index is not getting executed
     // and due to this other test cases also failing.
     try {
       assertResult(
@@ -590,13 +570,13 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
           |""".stripMargin)(rows(0).getString(0))
     } finally {
       LuceneFineGrainIndexSuite.deleteFile(file1)
-      sql("drop datamap dm on table main")
+      sql("drop index dm on table main")
       CarbonProperties.getInstance().addProperty(
         CarbonCommonConstants.BLOCKLET_SIZE, CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
     }
   }
 
-  test("test lucene datamap creation for blocked features") {
+  test("test lucene index creation for blocked features") {
     sql("DROP TABLE IF EXISTS datamap_test7")
     sql(
       """
@@ -606,9 +586,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm124 ON TABLE datamap_test7
-         | USING 'org.apache.carbondata.datamap.lucene.LuceneFineGrainIndexFactory'
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | CREATE INDEX dm124
+         | ON datamap_test7 (name,city)
+         | AS 'org.apache.carbondata.index.lucene.LuceneFineGrainIndexFactory'
       """.stripMargin)
 
     val ex1 = intercept[MalformedCarbonCommandException] {
@@ -658,15 +638,15 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm_city ON TABLE datamap_test5
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='city')
+         | CREATE INDEX dm_city
+         | ON datamap_test5 (city)
+         | AS 'lucene'
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm_name ON TABLE datamap_test5
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='Name')
+         | CREATE INDEX dm_name
+         | ON datamap_test5 (name)
+         | AS 'lucene'
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test5 OPTIONS('header'='false')")
     checkAnswer(sql("SELECT * FROM datamap_test5 WHERE TEXT_MATCH('name:n10')"),
@@ -681,7 +661,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_test5")
   }
 
-  ignore("test lucene fine grain datamap rebuild") {
+  ignore("test lucene fine grain index rebuild") {
     sql("DROP TABLE IF EXISTS datamap_test5")
     sql(
       """
@@ -691,15 +671,15 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test5
-         | USING 'lucene'
-         | WITH DEFERRED REBUILD
-         | DMProperties('INDEX_COLUMNS'='city')
+         | CREATE INDEX dm
+         | ON datamap_test5 (city)
+         | AS 'lucene'
+         | WITH DEFERRED REFRESH
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test5 OPTIONS('header'='false')")
     val map = DataMapStatusManager.readDataMapStatusMap()
     assert(!map.get("dm").isEnabled)
-    sql("REBUILD DATAMAP dm ON TABLE datamap_test5")
+    sql("REFRESH INDEX dm ON TABLE datamap_test5")
     checkAnswer(sql("SELECT * FROM datamap_test5 WHERE TEXT_MATCH('city:c020')"),
       sql(s"SELECT * FROM datamap_test5 WHERE city='c020'"))
     sql("DROP TABLE IF EXISTS datamap_test5")
@@ -731,16 +711,17 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm_flush ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city', 'flush_cache'='true')
+         | CREATE INDEX dm_flush
+         | ON datamap_test_table (name,city)
+         | AS 'lucene'
+         | properties('flush_cache'='true')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n99*')"),
       sql("select * from datamap_test_table where name like 'n99%'"))
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n*9')"),
       sql(s"select * from datamap_test_table where name like 'n%9'"))
-    sql("drop datamap if exists dm_flush on table datamap_test_table")
+    sql("drop index if exists dm_flush on table datamap_test_table")
   }
 
   test("test lucene with split_blocklet as false ") {
@@ -753,16 +734,17 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm_split_false ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city', 'split_blocklet'='false')
+         | CREATE INDEX dm_split_false
+         | ON datamap_test_table (name,city)
+         | AS 'lucene'
+         | properties('split_blocklet'='false')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n99*')"),
       sql("select * from datamap_test_table where name like 'n99%'"))
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n*9')"),
       sql(s"select * from datamap_test_table where name like 'n%9'"))
-    sql("drop datamap if exists dm_split_false on table datamap_test_table")
+    sql("drop index if exists dm_split_false on table datamap_test_table")
   }
 
   test("test text_match filters with more than one text_match udf ") {
@@ -775,9 +757,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm_text ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | CREATE INDEX dm_text
+         | ON datamap_test_table (name,city)
+         | AS 'lucene'
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_table OPTIONS('header'='false')")
     val msg = intercept[MalformedCarbonCommandException] {
@@ -786,7 +768,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     }
     assert(msg.getMessage
       .contains("Specify all search filters for Lucene within a single text_match UDF"))
-    sql("drop datamap if exists dm_text on table datamap_test_table")
+    sql("drop index if exists dm_text on table datamap_test_table")
   }
 
   test("test lucene indexing english stop words") {
@@ -795,7 +777,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS, "false")
     sql("create table table_stop(suggestion string,goal string) STORED AS carbondata TBLPROPERTIES('CACHE_LEVEL'='BLOCKLET')")
     sql(
-      "create datamap stop_dm on table table_stop using 'lucene' DMPROPERTIES('index_columns'='suggestion')")
+      "create index stop_dm on table table_stop (suggestion) as 'lucene'")
     sql("insert into table_stop select 'The is the stop word','abcde'")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS, "true")
@@ -827,9 +809,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("insert into datamap_copy select * from datamap_test4")
     sql(
       s"""
-         | CREATE DATAMAP dm4 ON TABLE datamap_test4
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
+         | CREATE INDEX dm4
+         | ON datamap_test4 (name,city)
+         | AS 'lucene'
       """.stripMargin)
     checkAnswer(sql("SELECT * FROM datamap_test4 WHERE TEXT_MATCH('name:n*')"),
       sql(s"select * from datamap_copy where name like '%n%'"))
@@ -837,7 +819,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop table datamap_copy")
   }
 
-  test("test create datamap: unable to create same index datamap for one column") {
+  test("test create index: unable to create same index for one column") {
     sql("DROP TABLE IF EXISTS datamap_test_table")
     sql(
       """
@@ -848,22 +830,22 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     val exception_duplicate_column: Exception = intercept[MalformedIndexCommandException] {
       sql(
         s"""
-           | CREATE DATAMAP dm ON TABLE datamap_test_table
-           | USING 'lucene'
-           | DMProperties('INDEX_COLUMNS'='name')
+           | CREATE INDEX dm
+           | ON datamap_test_table (name)
+           | AS 'lucene'
       """.stripMargin)
       sql(
         s"""
-           | CREATE DATAMAP dm1 ON TABLE datamap_test_table
-           | USING 'lucene'
-           | DMProperties('INDEX_COLUMNS'='name')
+           | CREATE INDEX dm1
+           | ON datamap_test_table (name)
+           | AS 'lucene'
       """.stripMargin)
     }
-    assertResult("column 'name' already has lucene index datamap created")(exception_duplicate_column.getMessage)
+    assertResult("column 'name' already has lucene index created")(exception_duplicate_column.getMessage)
     sql("drop table if exists datamap_test_table")
   }
 
-  test("test create datamap: able to create different index datamap for one column") {
+  test("test create index: able to create different index for one column") {
     sql("DROP TABLE IF EXISTS datamap_test_table")
     sql(
       """
@@ -873,18 +855,18 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name')
+         | CREATE INDEX dm
+         | ON datamap_test_table (name)
+         | AS 'lucene'
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm1 ON TABLE datamap_test_table
-         | USING 'bloomfilter'
-         | DMProperties('INDEX_COLUMNS'='name')
+         | CREATE INDEX dm1
+         | ON datamap_test_table (name)
+         | AS 'bloomfilter'
       """.stripMargin)
-    sql("show datamap on table datamap_test_table").show(false)
-    checkExistence(sql("show datamap on table datamap_test_table"), true, "dm", "dm1", "lucene", "bloomfilter")
+    sql("show indexes on table datamap_test_table").show(false)
+    checkExistence(sql("show indexes on table datamap_test_table"), true, "dm", "dm1", "lucene", "bloomfilter")
     sql("drop table if exists datamap_test_table")
   }
 
@@ -927,9 +909,9 @@ object LuceneFineGrainIndexSuite {
   }
 
   def deleteFile(fileName: String): Unit = {
-      val file = new File(fileName)
-      if (file.exists()) {
-        file.delete()
-      }
+    val file = new File(fileName)
+    if (file.exists()) {
+      file.delete()
+    }
   }
 }

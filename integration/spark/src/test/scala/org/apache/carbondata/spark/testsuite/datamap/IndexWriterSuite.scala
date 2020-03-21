@@ -125,9 +125,9 @@ class IndexWriterSuite extends QueryTest with BeforeAndAfterAll {
     // register datamap writer
     sql(
       s"""
-         | CREATE DATAMAP test1 ON TABLE carbon1
-         | USING '${classOf[C2IndexFactory].getName}'
-         | DMPROPERTIES('index_columns'='c2')
+         | CREATE INDEX test1
+         | ON TABLE carbon1 (c2)
+         | AS '${classOf[C2IndexFactory].getName}'
        """.stripMargin)
     val df = buildTestData(33000)
 
@@ -156,9 +156,9 @@ class IndexWriterSuite extends QueryTest with BeforeAndAfterAll {
     sql(s"CREATE TABLE carbon2(c1 STRING, c2 STRING, c3 INT) STORED AS carbondata")
     sql(
       s"""
-         | CREATE DATAMAP test2 ON TABLE carbon2
-         | USING '${classOf[C2IndexFactory].getName}'
-         | DMPROPERTIES('index_columns'='c2')
+         | CREATE INDEX test2
+         | ON TABLE carbon2 (c2)
+         | AS '${classOf[C2IndexFactory].getName}'
        """.stripMargin)
     CarbonProperties.getInstance()
       .addProperty("carbon.blockletgroup.size.in.mb", "16")

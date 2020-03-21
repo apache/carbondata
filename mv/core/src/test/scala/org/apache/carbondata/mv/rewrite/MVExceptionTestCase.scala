@@ -29,7 +29,7 @@ class MVExceptionTestCase  extends QueryTest with BeforeAndAfterAll {
 
   test("test mv no base table") {
     val ex = intercept[NoSuchTableException] {
-      sql("create datamap main_table_mv on table main_table_error using 'mv' as select sum(age),name from main_table_error group by name")
+      sql("create materialized view main_table_mv as select sum(age),name from main_table_error group by name")
     }
     assertResult("Table or view 'main_table_error' not found in database 'default';")(ex.getMessage())
   }

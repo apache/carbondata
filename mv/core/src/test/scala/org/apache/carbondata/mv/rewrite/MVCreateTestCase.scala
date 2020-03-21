@@ -975,9 +975,10 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm_stream_bloom ON TABLE fact_streaming_table1
-         | USING 'bloomfilter'
-         | DMProperties('INDEX_COLUMNS'='empname,deptname', 'BLOOM_SIZE'='640000')
+         | CREATE INDEX dm_stream_bloom
+         | ON TABLE fact_streaming_table1 (EMPNAME, DEPTNAME)
+         | AS 'bloomfilter'
+         | Properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
     val exception_tb_mv: Exception = intercept[Exception] {
