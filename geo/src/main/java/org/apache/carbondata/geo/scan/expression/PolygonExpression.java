@@ -25,15 +25,20 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.UnknownExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpression;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+import org.apache.carbondata.core.scan.filter.resolver.RowLevelFilterResolverImpl;
 import org.apache.carbondata.core.util.CustomIndex;
+import org.apache.carbondata.geo.scan.filter.executor.PolygonFilterExecutorImpl;
 
 /**
  * InPolygon expression processor. It inputs the InPolygon string to the Geo implementation's
@@ -46,15 +51,16 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
   private CustomIndex<List<Long[]>> instance;
   private List<Long[]> ranges = new ArrayList<Long[]>();
   private ColumnExpression column;
-  private ExpressionResult trueExpRes;
-  private ExpressionResult falseExpRes;
+  private static final ExpressionResult trueExpRes =
+      new ExpressionResult(DataTypes.BOOLEAN, true);
+  private static final ExpressionResult falseExpRes =
+      new ExpressionResult(DataTypes.BOOLEAN, false);
+
 
   public PolygonExpression(String polygon, String columnName, CustomIndex indexInstance) {
     this.polygon = polygon;
     this.instance = indexInstance;
     this.column = new ColumnExpression(columnName, DataTypes.LONG);
-    this.trueExpRes = new ExpressionResult(DataTypes.BOOLEAN, true);
-    this.falseExpRes = new ExpressionResult(DataTypes.BOOLEAN, false);
   }
 
   private void validate(List<Long[]> ranges) {
@@ -77,6 +83,10 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public List<Long[]> getRanges() {
+    return ranges;
   }
 
   private boolean rangeBinarySearch(List<Long[]> ranges, long searchForNumber) {
@@ -147,8 +157,6 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
     instance = (CustomIndex<List<Long[]>>) in.readObject();
     column = (ColumnExpression) in.readObject();
     ranges = new ArrayList<Long[]>();
-    trueExpRes = new ExpressionResult(DataTypes.BOOLEAN, true);
-    falseExpRes = new ExpressionResult(DataTypes.BOOLEAN, false);
   }
 
   @Override
@@ -169,5 +177,15 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
   @Override
   public List<ExpressionResult> getLiterals() {
     return null;
+  }
+
+  @Override
+  public FilterExecuter getFilterExecuter(FilterResolverIntf resolver,
+      SegmentProperties segmentProperties) {
+    assert (resolver instanceof RowLevelFilterResolverImpl);
+    RowLevelFilterResolverImpl rowLevelResolver = (RowLevelFilterResolverImpl) resolver;
+    return new PolygonFilterExecutorImpl(rowLevelResolver.getDimColEvaluatorInfoList(),
+        rowLevelResolver.getMsrColEvalutorInfoList(), rowLevelResolver.getFilterExpresion(),
+        rowLevelResolver.getTableIdentifier(), segmentProperties, null);
   }
 }

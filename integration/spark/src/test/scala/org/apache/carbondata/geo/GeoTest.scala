@@ -10,6 +10,13 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
   val table1 = "geoTable1"
   val table2 = "geotable2"
+  val result = Seq(Row(116187332, 39979316),
+    Row(116362699, 39942444),
+    Row(116288955, 39999101),
+    Row(116325378, 39963129),
+    Row(116337069, 39951887),
+    Row(116285807, 40084087))
+
   override def beforeAll(): Unit = {
     drop()
   }
@@ -89,12 +96,7 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
     checkAnswer(
       sql(s"select longitude, latitude from $table1 where IN_POLYGON('116.321011 40.123503, " +
           s"116.137676 39.947911, 116.560993 39.935276, 116.321011 40.123503')"),
-      Seq(Row(116187332, 39979316),
-        Row(116362699, 39942444),
-        Row(116288955, 39999101),
-        Row(116325378, 39963129),
-        Row(116337069, 39951887),
-        Row(116285807, 40084087)))
+      result)
   }
 
   test("test insert into table select from another table") {
@@ -107,16 +109,10 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
     checkAnswer(
       sql(s"select longitude, latitude from $targetTable where IN_POLYGON('116.321011 40.123503, " +
           s"116.137676 39.947911, 116.560993 39.935276, 116.321011 40.123503')"),
-      Seq(Row(116187332, 39979316),
-        Row(116362699, 39942444),
-        Row(116288955, 39999101),
-        Row(116325378, 39963129),
-        Row(116337069, 39951887),
-        Row(116285807, 40084087)))
+      result)
   }
 
-  test("test insert into table select from another table with target table sort scope as global")
-  {
+  test("test insert into table select from another table with target table sort scope as global") {
     val sourceTable = table1;
     val targetTable = table2;
     createTable(sourceTable)
@@ -126,16 +122,28 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
     checkAnswer(
       sql(s"select longitude, latitude from $targetTable where IN_POLYGON('116.321011 40.123503, " +
           s"116.137676 39.947911, 116.560993 39.935276, 116.321011 40.123503')"),
-      Seq(Row(116187332, 39979316),
-        Row(116362699, 39942444),
-        Row(116288955, 39999101),
-        Row(116325378, 39963129),
-        Row(116337069, 39951887),
-        Row(116285807, 40084087)))
+      result)
   }
 
-  test("test polygon query on table partitioned by timevalue column")
-  {
+  test("test block pruning for polygon query") {
+    createTable()
+    sql(s"insert into $table1 select 1575428400000,116285807,40084087")
+    sql(s"insert into $table1 select 1575428400000,116372142,40129503")
+    sql(s"insert into $table1 select 1575428400000,116187332,39979316")
+    sql(s"insert into $table1 select 1575428400000,116337069,39951887")
+    sql(s"insert into $table1 select 1575428400000,116359102,40154684")
+    sql(s"insert into $table1 select 1575428400000,116736367,39970323")
+    sql(s"insert into $table1 select 1575428400000,116362699,39942444")
+    sql(s"insert into $table1 select 1575428400000,116325378,39963129")
+    sql(s"insert into $table1 select 1575428400000,116302895,39930753")
+    sql(s"insert into $table1 select 1575428400000,116288955,39999101")
+    val df = sql(s"select longitude, latitude from $table1 where IN_POLYGON('116.321011 " +
+                 s"40.123503, 116.137676 39.947911, 116.560993 39.935276, 116.321011 40.123503')")
+    assert(df.rdd.getNumPartitions == 6)
+    checkAnswer(df, result)
+  }
+
+  test("test polygon query on table partitioned by timevalue column") {
     sql(s"""
            | CREATE TABLE $table1(
            | longitude LONG,
@@ -156,12 +164,7 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
     checkAnswer(
       sql(s"select longitude, latitude from $table1 where IN_POLYGON('116.321011 40.123503, " +
           s"116.137676 39.947911, 116.560993 39.935276, 116.321011 40.123503')"),
-      Seq(Row(116187332, 39979316),
-        Row(116362699, 39942444),
-        Row(116288955, 39999101),
-        Row(116325378, 39963129),
-        Row(116337069, 39951887),
-        Row(116285807, 40084087)))
+      result)
   }
 
   override def afterEach(): Unit = {
