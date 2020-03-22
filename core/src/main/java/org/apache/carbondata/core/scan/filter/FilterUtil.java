@@ -49,6 +49,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.UnknownExpression;
 import org.apache.carbondata.core.scan.expression.conditional.*;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
@@ -188,6 +189,14 @@ public final class FilterUtil {
           return new FalseFilterExecutor();
         case ROWLEVEL:
         default:
+          if (filterExpressionResolverTree.getFilterExpression() instanceof UnknownExpression) {
+            FilterExecuter filterExecuter =
+                ((UnknownExpression) filterExpressionResolverTree.getFilterExpression())
+                    .getFilterExecuter(filterExpressionResolverTree, segmentProperties);
+            if (filterExecuter != null) {
+              return filterExecuter;
+            }
+          }
           return new RowLevelFilterExecuterImpl(
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
                   .getDimColEvaluatorInfoList(),

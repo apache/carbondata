@@ -70,7 +70,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   /**
    * it has index at which given dimension is stored in file
    */
-  int[] dimensionChunkIndex;
+  protected int[] dimensionChunkIndex;
 
   /**
    * it has index at which given measure is stored in file.
