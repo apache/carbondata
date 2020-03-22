@@ -17,15 +17,8 @@
 
 package org.apache.carbondata.sdk.file;
 
-import java.io.*;
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.util.*;
-
+import junit.framework.TestCase;
 import org.apache.avro.generic.GenericData;
-import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.log4j.Logger;
-
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -35,15 +28,42 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
-import org.apache.carbondata.core.scan.expression.conditional.*;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.GreaterThanExpression;
+import org.apache.carbondata.core.scan.expression.conditional.InExpression;
+import org.apache.carbondata.core.scan.expression.conditional.LessThanExpression;
+import org.apache.carbondata.core.scan.expression.conditional.NotEqualsExpression;
+import org.apache.carbondata.core.scan.expression.conditional.NotInExpression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.util.CarbonProperties;
-
-import junit.framework.TestCase;
 import org.apache.commons.io.FileUtils;
-import org.junit.*;
+import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.log4j.Logger;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.apache.carbondata.core.scan.filter.FilterUtil.prepareEqualToExpression;
+import static org.apache.carbondata.core.scan.filter.FilterUtil.prepareEqualToExpressionSet;
+import static org.apache.carbondata.core.scan.filter.FilterUtil.prepareOrExpression;
 
 public class CarbonReaderTest extends TestCase {
 
@@ -417,6 +437,157 @@ public class CarbonReaderTest extends TestCase {
     Assert.assertEquals(i, 17);
 
     reader.close();
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testReadWithFilterEqualSet() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+    DataMapStoreManager.getInstance()
+        .clearDataMaps(AbsoluteTableIdentifier.from(path));
+    Field[] fields = new Field[3];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
+
+    List<Object> values = new ArrayList<>();
+    values.add("robot7");
+    values.add("robot1");
+
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .projection(new String[]{"name", "age", "doubleField"})
+        .filter(prepareEqualToExpressionSet("name", "String", values))
+        .build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      if (((String) row[0]).contains("robot7")) {
+        assert (7 == ((int) (row[1]) % 10));
+        assert (0.5 == ((double) (row[2]) % 1));
+      } else if (((String) row[0]).contains("robot1")) {
+        assert (1 == ((int) (row[1]) % 10));
+        assert (0.5 == ((double) (row[2]) % 1));
+      } else {
+        Assert.assertTrue(false);
+      }
+      i++;
+    }
+    Assert.assertEquals(i, 40);
+
+    reader.close();
+
+    List<Object> values2 = new ArrayList<>();
+    values2.add(1);
+    values2.add(7);
+
+    CarbonReader reader2 = CarbonReader
+        .builder(path, "_temp")
+        .projection(new String[]{"name", "age", "doubleField"})
+        .filter(prepareEqualToExpressionSet("age", "int", values2))
+        .build();
+
+    i = 0;
+    while (reader2.hasNext()) {
+      Object[] row = (Object[]) reader2.readNextRow();
+      if (((String) row[0]).contains("robot7")) {
+        assert (7 == ((int) (row[1]) % 10));
+        assert (0.5 == ((double) (row[2]) % 1));
+      } else if (((String) row[0]).contains("robot1")) {
+        assert (1 == ((int) (row[1]) % 10));
+        assert (0.5 == ((double) (row[2]) % 1));
+      } else {
+        Assert.assertTrue(false);
+      }
+      i++;
+    }
+    Assert.assertEquals(i, 2);
+    reader2.close();
+
+
+    List<Object> values3 = new ArrayList<>();
+    values3.add(0.5);
+    values3.add(3.5);
+    CarbonReader reader3 = CarbonReader
+        .builder(path, "_temp")
+        .projection(new String[]{"name", "age", "doubleField"})
+        .filter(prepareEqualToExpressionSet("doubleField", "double", values3))
+        .build();
+
+    i = 0;
+    while (reader3.hasNext()) {
+      Object[] row = (Object[]) reader3.readNextRow();
+      if (((String) row[0]).contains("robot7")) {
+        assert (7 == ((int) (row[1]) % 10));
+        assert (0.5 == ((double) (row[2]) % 1));
+      } else if (((String) row[0]).contains("robot1")) {
+        assert (1 == ((int) (row[1]) % 10));
+        assert (0.5 == ((double) (row[2]) % 1));
+      } else {
+        Assert.assertTrue(false);
+      }
+      i++;
+    }
+    Assert.assertEquals(i, 2);
+    reader3.close();
+
+    CarbonReader reader4 = CarbonReader
+        .builder(path, "_temp")
+        .projection(new String[]{"name", "age", "doubleField"})
+        .filter(prepareEqualToExpression("name", "string", "robot7"))
+        .build();
+
+    i = 0;
+    while (reader4.hasNext()) {
+      Object[] row = (Object[]) reader4.readNextRow();
+      if (((String) row[0]).contains("robot7")) {
+        assert (7 == ((int) (row[1]) % 10));
+        assert (0.5 == ((double) (row[2]) % 1));
+      } else {
+        Assert.assertTrue(false);
+      }
+      i++;
+    }
+    Assert.assertEquals(i, 20);
+    reader4.close();
+
+    List<Expression> expressions = new ArrayList<>();
+    expressions.add(prepareEqualToExpression("name", "String", "robot1"));
+    expressions.add(prepareEqualToExpression("name", "String", "robot7"));
+    expressions.add(prepareEqualToExpression("age", "int", "2"));
+
+    CarbonReader reader5 = CarbonReader
+        .builder(path, "_temp")
+        .projection(new String[]{"name", "age", "doubleField"})
+        .filter(prepareOrExpression(expressions))
+        .build();
+
+    i = 0;
+    while (reader5.hasNext()) {
+      Object[] row = (Object[]) reader5.readNextRow();
+      if (((String) row[0]).contains("robot7")) {
+        assert (7 == ((int) (row[1]) % 10));
+        assert (0.5 == ((double) (row[2]) % 1));
+      } else if (((String) row[0]).contains("robot1")) {
+        assert (1 == ((int) (row[1]) % 10));
+        assert (0.5 == ((double) (row[2]) % 1));
+      } else if (((String) row[0]).contains("robot2")) {
+        assert (2 == ((int) (row[1]) % 10));
+        assert (0 == ((double) (row[2]) % 1));
+      } else {
+        Assert.assertTrue(false);
+      }
+      i++;
+    }
+    Assert.assertEquals(i, 41);
+
+    reader5.close();
+
 
     FileUtils.deleteDirectory(new File(path));
   }

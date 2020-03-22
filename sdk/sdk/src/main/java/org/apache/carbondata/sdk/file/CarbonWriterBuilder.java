@@ -63,6 +63,7 @@ import org.apache.hadoop.conf.Configuration;
 @InterfaceStability.Unstable
 public class CarbonWriterBuilder {
   private Schema schema;
+  private org.apache.avro.Schema  avroSchema;
   private String path;
   //initialize with empty array , as no columns should be selected for sorting in NO_SORT
   private String[] sortColumns = new String[0];
@@ -557,9 +558,21 @@ public class CarbonWriterBuilder {
    */
   public CarbonWriterBuilder withAvroInput(org.apache.avro.Schema avroSchema) {
     Objects.requireNonNull(avroSchema, "Avro schema should not be null");
-    if (this.schema != null) {
-      throw new IllegalArgumentException("schema should be set only once");
-    }
+    this.avroSchema = avroSchema;
+    this.schema = AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema);
+    this.writerType = WRITER_TYPE.AVRO;
+    return this;
+  }
+
+  /**
+   * to build a {@link CarbonWriter}, which accepts Avro object
+   *
+   * @param schema avro Schema object {org.apache.avro.Schema}
+   * @return CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder withAvroInput(String schema) {
+    this.avroSchema = new org.apache.avro.Schema.Parser().parse(schema);
+    Objects.requireNonNull(avroSchema, "Avro schema should not be null");
     this.schema = AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema);
     this.writerType = WRITER_TYPE.AVRO;
     return this;
@@ -647,7 +660,7 @@ public class CarbonWriterBuilder {
       // removed from the load. LoadWithoutConverter flag is going to point to the Loader Builder
       // which will skip Conversion Step.
       loadModel.setLoadWithoutConverterStep(true);
-      return new AvroCarbonWriter(loadModel, hadoopConf);
+      return new AvroCarbonWriter(loadModel, hadoopConf, this.avroSchema);
     } else if (this.writerType == WRITER_TYPE.JSON) {
       loadModel.setJsonFileLoad(true);
       return new JsonCarbonWriter(loadModel, hadoopConf);
