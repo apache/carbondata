@@ -104,7 +104,7 @@ public class MaterializedViewProvider {
         schemaProvider = this.schemaProviders.get(databaseNameUpper);
         if (schemaProvider == null) {
           String databaseLocation;
-          if (databaseNameUpper.equalsIgnoreCase("default")) {
+          if (databaseNameUpper.equalsIgnoreCase(CarbonCommonConstants.DATABASE_DEFAULT_NAME)) {
             databaseLocation = CarbonUtil.checkAndAppendHDFSUrl(this.storeLocation);
           } else {
             databaseLocation = CarbonUtil.checkAndAppendHDFSUrl(this.storeLocation +

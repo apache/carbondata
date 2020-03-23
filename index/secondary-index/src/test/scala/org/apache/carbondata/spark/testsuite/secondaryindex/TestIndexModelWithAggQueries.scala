@@ -16,9 +16,9 @@
  */
 package org.apache.carbondata.spark.testsuite.secondaryindex
 
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.spark.sql.{CarbonEnv, Row}
-import org.apache.spark.sql.secondaryindex.command.ErrorMessage
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -118,21 +118,22 @@ class TestIndexModelWithAggQueries extends QueryTest with BeforeAndAfterAll {
       "ON TABLE test_si_1 (address) " +
       "AS 'bloomfilter' PROPERTIES('BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')")
     sql("create index si_test_si_1 on table test_si_1(address) AS 'carbondata'")
-    val exceptionMessage = intercept[ErrorMessage] {
+    val exceptionMessage = intercept[MalformedIndexCommandException] {
       sql(
         "CREATE INDEX dm_on_si " +
         "ON TABLE si_test_si_1 (address)" +
-        "AS 'bloomfilter' DMPROPERTIES('BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')")
+        "AS 'bloomfilter' PROPERTIES('BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')")
     }.getMessage
-    assert(exceptionMessage.contains("Datamap creation on Secondary Index table is not supported"))
+    assert(exceptionMessage.contains("Cannot create index on Secondary Index table"))
   }
 
   test("test CTAS when use cast in select with SI table present on main table") {
     sql("drop table if exists cast_si")
+    sql("drop table if exists ctas_cast")
     sql("drop index if exists index5 on cast_si")
     sql("create table if not exists cast_si (RECORD_ID bigint,CDR_ID string,LOCATION_CODE int,USER_NUM string) STORED AS carbondata " +
         "TBLPROPERTIES('table_blocksize'='256','SORT_SCOPE'='NO_SORT')")
-    sql("create index index5 on table cast_si(USER_NUM) AS 'carbondata' tblproperties('table_blocksize' = '256')")
+    sql("create index index5 on table cast_si(USER_NUM) AS 'carbondata' properties('table_blocksize' = '256')")
     sql("insert into cast_si select  1, 'gb3e5135-5533-4ee7-51b3-F61F1355b471', 2, '26557544541'")
     sql("create table ctas_cast select cast(location_code as string) as location_code from cast_si where ((user_num in ('26557544541')))")
     checkAnswer(sql("select count(*) from cast_si where ((user_num in ('26557544541')))"), sql("select count(*) from ctas_cast"))

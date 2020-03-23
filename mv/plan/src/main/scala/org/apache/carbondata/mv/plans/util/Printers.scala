@@ -23,6 +23,7 @@ import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression, _
 import org.apache.spark.sql.catalyst.plans.JoinType
 import org.apache.spark.sql.catalyst.util.quoteIdentifier
 
+import org.apache.carbondata.mv.plans.modular.ExpressionHelper
 import org.apache.carbondata.mv.plans.modular.Flags._
 import org.apache.carbondata.mv.plans.util.SQLBuildDSL._
 
@@ -350,6 +351,20 @@ trait Printers {
         } else {
           child.sql
         }
+      case a@Alias(child: AttributeReference, _) =>
+        val qualifierPrefix = if (child.qualifier.nonEmpty) {
+          ExpressionHelper.getTheLastQualifier(child) + "."
+        } else {
+          ""
+        }
+        qualifierPrefix + quoteIdentifier(child.name) + " AS " + quoteIdentifier(a.name)
+      case reference@AttributeReference(_, _, _, _) =>
+        val qualifierPrefix = if (reference.qualifier.nonEmpty) {
+          ExpressionHelper.getTheLastQualifier(reference) + "."
+        } else {
+          ""
+        }
+        qualifierPrefix + quoteIdentifier(reference.name)
       case other =>
         other.sql
     }
@@ -371,7 +386,12 @@ trait Printers {
         if (attr.name.startsWith("gen_subsumer_")) {
           attr.name
         } else {
-          attr.sql
+          val qualifierPrefix = if (attr.qualifier.nonEmpty) {
+            ExpressionHelper.getTheLastQualifier(attr) + "."
+          } else {
+            ""
+          }
+          qualifierPrefix + quoteIdentifier(attr.name)
         }
       case literal: Literal =>
         if (literal.value.toString.startsWith("`") || literal.value.toString.startsWith("'")) {

@@ -195,10 +195,10 @@ object MaterializedViewRefresher {
         insertIntoCommand.run(session)
       } catch {
         case exception: Exception =>
-          // If load to dataMap table fails, disable the dataMap and if newLoad is still
+          // If load to mv table fails, disable the mv and if newLoad is still
           // in INSERT_IN_PROGRESS state, mark for delete the newLoad and update table status file
           viewManager.setStatus(viewSchema.getIdentifier, MaterializedViewStatus.DISABLED)
-          LOGGER.error("Data Load failed for DataMap: ", exception)
+          LOGGER.error("Data Load failed for mv: ", exception)
           CarbonLoaderUtil.updateTableStatusInCaseOfFailure(
             newLoadName,
             viewTable.getAbsoluteTableIdentifier,
@@ -215,38 +215,38 @@ object MaterializedViewRefresher {
   }
 
   /**
-   * This method will compare mainTable and dataMapTable segment List and loads only newly added
-   * segment from main table to dataMap table.
-   * In case if mainTable is compacted, then based on dataMap to mainTables segmentMapping, dataMap
+   * This method will compare main table and mv table segment List and loads only newly added
+   * segment from main table to mv table.
+   * In case if mainTable is compacted, then based on mv to main tables segmentMapping, mv
    * will be loaded
    * Eg:
-   * case 1: Consider mainTableSegmentList: {0, 1, 2}, dataMapToMainTable segmentMap:
+   * case 1: Consider mainTableSegmentList: {0, 1, 2}, mvToMainTable segmentMap:
    * { 0 -> 0, 1-> 1,2}. If (1, 2) segments of main table are compacted to 1.1 and new segment (3)
    * is loaded to main table, then mainTableSegmentList will be updated to{0, 1.1, 3}.
-   * In this case, segment (1) of dataMap table will be marked for delete, and new segment
-   * {2 -> 1.1, 3} will be loaded to dataMap table
-   * case 2: Consider mainTableSegmentList: {0, 1, 2, 3}, dataMapToMainTable segmentMap:
+   * In this case, segment (1) of mv table will be marked for delete, and new segment
+   * {2 -> 1.1, 3} will be loaded to mv table
+   * case 2: Consider mainTableSegmentList: {0, 1, 2, 3}, mvToMainTable segmentMap:
    * { 0 -> 0,1,2, 1-> 3}. If (1, 2) segments of main table are compacted to 1.1 and new segment
    * (4) is loaded to main table, then mainTableSegmentList will be updated to {0, 1.1, 3, 4}.
-   * In this case, segment (0) of dataMap table will be marked for delete and segment (0) of
-   * main table will be added to validSegmentList which needs to be loaded again. Now, new dataMap
-   * table segment (2) with main table segmentList{2 -> 1.1, 4, 0} will be loaded to dataMap table.
-   * dataMapToMainTable segmentMap will be updated to {1 -> 3, 2 -> 1.1, 4, 0} after rebuild
+   * In this case, segment (0) of mv table will be marked for delete and segment (0) of
+   * main table will be added to validSegmentList which needs to be loaded again. Now, new mv
+   * table segment (2) with main table segmentList{2 -> 1.1, 4, 0} will be loaded to mv table.
+   * mvToMainTable segmentMap will be updated to {1 -> 3, 2 -> 1.1, 4, 0} after rebuild
    */
   @throws[IOException]
   private def getSpecificSegmentsTobeLoaded(schema: MaterializedViewSchema,
       segmentMapping: util.Map[String, util.List[String]],
       listOfLoadFolderDetails: util.List[LoadMetadataDetails]): Boolean = {
     val relationIdentifiers: util.List[RelationIdentifier] = schema.getAssociatedTables
-    // invalidDataMapSegmentList holds segment list which needs to be marked for delete
-    val invalidDataMapSegmentList: util.HashSet[String] = new util.HashSet[String]
+    // invalidSegmentList holds segment list which needs to be marked for delete
+    val invalidSegmentList: util.HashSet[String] = new util.HashSet[String]
     if (listOfLoadFolderDetails.isEmpty) {
       // If segment Map is empty, load all valid segments from main tables to mv
       for (relationIdentifier <- relationIdentifiers.asScala) {
         val mainTableSegmentList: util.List[String] = SegmentStatusManager.getValidSegmentList(
           relationIdentifier)
         // If mainTableSegmentList is empty, no need to trigger load command
-        // TODO: handle in case of multiple tables load to datamap table
+        // TODO: handle in case of multiple tables load to mv table
         if (mainTableSegmentList.isEmpty) return false
         segmentMapping.put(relationIdentifier.getDatabaseName + CarbonCommonConstants.POINT +
                            relationIdentifier.getTableName, mainTableSegmentList)
@@ -254,7 +254,7 @@ object MaterializedViewRefresher {
     }
     else {
       for (relationIdentifier <- relationIdentifiers.asScala) {
-        val dataMapTableSegmentList: util.List[String] = new util.ArrayList[String]
+        val segmentList: util.List[String] = new util.ArrayList[String]
         // Get all segments for parent relationIdentifier
         val mainTableSegmentList: util.List[String] = SegmentStatusManager.getValidSegmentList(
           relationIdentifier)
@@ -272,11 +272,11 @@ object MaterializedViewRefresher {
             val table: String = relationIdentifier.getDatabaseName + CarbonCommonConstants.POINT +
                                 relationIdentifier.getTableName
             for (segmentId <- mainTableSegmentList.asScala) {
-              // In case if dataMap segment(0) is mapped
+              // In case if mv segment(0) is mapped
               // to mainTable segments{0,1,2} and if
               // {0,1,2} segments of mainTable are compacted to 0.1. Then,
-              // on next rebuild/load to dataMap, no need to load segment(0.1) again. Update the
-              // segmentMapping of dataMap segment from {0,1,2} to {0.1}
+              // on next rebuild/load to mv, no need to load segment(0.1) again. Update the
+              // segmentMapping of mv segment from {0,1,2} to {0.1}
               if (!checkIfSegmentsToBeReloaded(parentTableLoadMetaDataDetails,
                 segmentMaps.get(table),
                 segmentId)) {
@@ -284,21 +284,20 @@ object MaterializedViewRefresher {
                 // Update loadMetaDetail with updated segment info and clear old segmentMap
                 val updatedSegmentMap: util.Map[String, util.List[String]] =
                   new util.HashMap[String, util.List[String]]
-                val segmentList: util.List[String] = new util.ArrayList[String]
+                val segmentIdList: util.List[String] = new util.ArrayList[String]
+                segmentIdList.add(segmentId)
+                updatedSegmentMap.put(table, segmentIdList)
                 segmentList.add(segmentId)
-                updatedSegmentMap.put(table, segmentList)
-                dataMapTableSegmentList.add(segmentId)
                 loadMetaDetail.setExtraInfo(new Gson().toJson(updatedSegmentMap))
                 segmentMaps.get(table).clear()
               }
             }
-            dataMapTableSegmentList.addAll(segmentMaps.get(table))
+            segmentList.addAll(segmentMaps.get(table))
           }
         }
-        val dataMapSegmentList: util.List[String] =
-          new util.ArrayList[String](dataMapTableSegmentList)
-        dataMapTableSegmentList.removeAll(mainTableSegmentList)
-        mainTableSegmentList.removeAll(dataMapSegmentList)
+        val originSegmentList: util.List[String] = new util.ArrayList[String](segmentList)
+        segmentList.removeAll(mainTableSegmentList)
+        mainTableSegmentList.removeAll(originSegmentList)
         if (ifTableStatusUpdateRequired && mainTableSegmentList.isEmpty) {
           SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(
             schema.getIdentifier.getTablePath),
@@ -308,14 +307,14 @@ object MaterializedViewRefresher {
         } else if (mainTableSegmentList.isEmpty) {
           return false
         }
-        if (!dataMapTableSegmentList.isEmpty) {
+        if (!segmentList.isEmpty) {
           val invalidMainTableSegmentList: util.List[String] = new util.ArrayList[String]
           // validMainTableSegmentList holds segment list which needs to be loaded again
           val validMainTableSegmentList: util.HashSet[String] = new util.HashSet[String]
-          // For dataMap segments which are not in main table segment list(if main table
-          // is compacted), iterate over those segments and get dataMap segments which needs to
+          // For mv segments which are not in main table segment list(if main table
+          // is compacted), iterate over those segments and get mv segments which needs to
           // be marked for delete and main table segments which needs to be loaded again
-          for (segmentId <- dataMapTableSegmentList.asScala) {
+          for (segmentId <- segmentList.asScala) {
             for (loadMetaDetail <- listOfLoadFolderDetails.asScala) {
               if ((loadMetaDetail.getSegmentStatus eq SegmentStatus.SUCCESS) ||
                   (loadMetaDetail.getSegmentStatus eq SegmentStatus.INSERT_IN_PROGRESS)) {
@@ -328,7 +327,7 @@ object MaterializedViewRefresher {
                   segmentIds.remove(segmentId)
                   validMainTableSegmentList.addAll(segmentIds)
                   invalidMainTableSegmentList.add(segmentId)
-                  invalidDataMapSegmentList.add(loadMetaDetail.getLoadName)
+                  invalidSegmentList.add(loadMetaDetail.getLoadName)
                 }
               }
             }
@@ -344,10 +343,10 @@ object MaterializedViewRefresher {
                                 relationIdentifier.getTableName, mainTableSegmentList)
       }
     }
-    // Remove invalid datamap segments
-    if (!invalidDataMapSegmentList.isEmpty) {
+    // Remove invalid mv segments
+    if (!invalidSegmentList.isEmpty) {
       for (loadMetadataDetail <- listOfLoadFolderDetails.asScala) {
-        if (invalidDataMapSegmentList.contains(loadMetadataDetail.getLoadName)) {
+        if (invalidSegmentList.contains(loadMetadataDetail.getLoadName)) {
           loadMetadataDetail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE)
         }
       }
@@ -356,7 +355,7 @@ object MaterializedViewRefresher {
   }
 
   /**
-   * This method checks if dataMap table segment has to be reloaded again or not
+   * This method checks if mv table segment has to be reloaded again or not
    */
   private def checkIfSegmentsToBeReloaded(loadMetaDataDetails: Array[LoadMetadataDetails],
       segmentIds: util.List[String],
@@ -376,7 +375,7 @@ object MaterializedViewRefresher {
   }
 
   /**
-   * This method will set main table segments which needs to be loaded to mv dataMap
+   * This method will set main table segments which needs to be loaded to mv
    */
   private def setInputSegments(tableUniqueName: String,
       mainTableSegmentList: java.util.List[String]): Unit = {

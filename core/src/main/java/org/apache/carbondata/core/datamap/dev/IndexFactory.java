@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.carbondata.core.datamap.*;
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
+import org.apache.carbondata.core.datamap.*;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndex;
 import org.apache.carbondata.core.datamap.dev.expr.IndexInputSplitWrapper;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -174,7 +174,7 @@ public abstract class IndexFactory<T extends Index> {
   }
 
   /**
-   * This function should return true is the input operation enum will make the datamap become stale
+   * This function should return true is the input operation enum will make the index become stale
    */
   public abstract boolean willBecomeStale(TableOperation operation);
 

@@ -117,7 +117,7 @@ class SQLBuilder private(
                 if (i > -1) {
                   // this is a walk around for mystery of spark qualifier
                   if (aliasMap.nonEmpty && aliasMap(i).nonEmpty) {
-                    ExpressionBuilder.createReference(
+                    ExpressionHelper.createReference(
                       ref.name, ref.dataType, nullable = true, metadata = Metadata.empty,
                       exprId = ref.exprId, qualifier = Some(aliasMap(i)))
                   } else {
@@ -181,11 +181,11 @@ class SQLBuilder private(
                 list = list :+ ((index, subqueryName))
                 newS = newS.transformExpressions {
                   case ref: Attribute if subqueryAttributeSet.contains(ref) =>
-                    ExpressionBuilder.createReference(
+                    ExpressionHelper.createReference(
                       ref.name, ref.dataType, nullable = true, Metadata.empty,
                       ref.exprId, Some(subqueryName))
                   case alias: Alias if subqueryAttributeSet.contains(alias.toAttribute) =>
-                    ExpressionBuilder.createAlias(
+                    ExpressionHelper.createAlias(
                       alias.child, alias.name, alias.exprId, Some(subqueryName))
                 }
 
@@ -214,11 +214,11 @@ class SQLBuilder private(
             }
             newG.transformExpressions {
               case ref: AttributeReference if subqueryAttributeSet.contains(ref) =>
-                ExpressionBuilder.createReference(
+                ExpressionHelper.createReference(
                   ref.name, ref.dataType, nullable = true, Metadata.empty,
                   ref.exprId, Some(subqueryName))
               case alias: Alias if subqueryAttributeSet.contains(alias.toAttribute) =>
-                ExpressionBuilder.createAlias(
+                ExpressionHelper.createAlias(
                   alias.child, alias.name, alias.exprId, Some(subqueryName))
             }.copy(alias = Some(subqueryName))
         }

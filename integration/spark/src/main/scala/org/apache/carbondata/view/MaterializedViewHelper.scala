@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Expression, GetArrayItem, GetMapValue, GetStructField, NamedExpression, ScalaUDF, SortOrder}
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
@@ -313,8 +314,11 @@ object MaterializedViewHelper {
 
   def getUpdatedColumnName(attribute: Attribute, counter: Int): String = {
     val name = getUpdatedColumnName(attribute.name, counter)
-    val value = attribute.qualifier.map(qualifier => qualifier + "_" + name)
-    if (value.nonEmpty) value.head else name
+    if (attribute.qualifier.nonEmpty) {
+      CarbonToSparkAdapter.getTheLastQualifier(attribute) + "_" + name
+    } else {
+      name
+    }
   }
 
   private def getUpdatedColumnName(name: String, counter: Int): String = {

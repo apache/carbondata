@@ -29,7 +29,7 @@ import org.apache.spark.sql.catalyst.{CarbonParserUtil, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, Coalesce, Expression, Literal, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Average}
-import org.apache.spark.sql.catalyst.plans.logical.{Join, Limit, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{Join, Limit, LogicalPlan, Sort}
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, Field, PartitionerField, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -74,7 +74,6 @@ case class CarbonCreateMaterializedViewCommand(
     checkProperties(mutable.Map[String, String](properties.toSeq: _*))
     val viewManager = MaterializedViewManagerInSpark.get(session)
     val databaseName = databaseNameOption.getOrElse(session.sessionState.catalog.getCurrentDatabase)
-    // TODO MV DEFERRED_REFRESH
     if (viewManager.getSchema(databaseName, name) != null) {
       if (!ifNotExistsSet) {
         throw new MalformedMaterializedViewCommandException(
@@ -466,6 +465,25 @@ case class CarbonCreateMaterializedViewCommand(
                                                   "with limit")
       case _ =>
     }
+
+    // Order by columns needs to be present in projection list for creating mv. This is because,
+    // we have to perform order by on all segments during query, which requires the order by column
+    // data
+    logicalPlan.transform {
+      case sort@Sort(order, _, _) =>
+        order.map { orderByCol =>
+          orderByCol.child match {
+            case attr: AttributeReference =>
+              if (!logicalPlan.output.contains(attr.toAttribute)) {
+                throw new UnsupportedOperationException(
+                  "Order by column `" + attr.name + "` must be present in project columns")
+              }
+          }
+          order
+        }
+        sort
+    }
+
     val modularPlan =
       SimpleModularizer.modularize(BirdcageOptimizer.execute(logicalPlan)).next().semiHarmonized
     // Only queries which can be select , predicate , join, group by and having queries.

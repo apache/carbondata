@@ -94,15 +94,15 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
   test("validate column_meta_cache and cache_level on SI table") {
     sql("drop table if exists column_meta_cache")
     sql("create table column_meta_cache(c1 String, c2 String, c3 int, c4 double) STORED AS carbondata")
-    sql("create index indexCache on table column_meta_cache(c2,c1) AS 'carbondata' TBLPROPERTIES('COLUMN_meta_CachE'='c2','cache_level'='BLOCK')")
+    sql("create index indexCache on table column_meta_cache(c2,c1) AS 'carbondata' PROPERTIES('COLUMN_meta_CachE'='c2','cache_level'='BLOCK')")
     assert(isExpectedValueValid("default", "indexCache", "column_meta_cache", "c2"))
     assert(isExpectedValueValid("default", "indexCache", "cache_level", "BLOCK"))
     // set invalid values for SI table for column_meta_cache and cache_level and verify
     intercept[MalformedCarbonCommandException] {
-      sql("create index indexCache1 on table column_meta_cache(c2) AS 'carbondata' TBLPROPERTIES('COLUMN_meta_CachE'='abc')")
+      sql("create index indexCache1 on table column_meta_cache(c2) AS 'carbondata' PROPERTIES('COLUMN_meta_CachE'='abc')")
     }
     intercept[MalformedCarbonCommandException] {
-      sql("create index indexCache1 on table column_meta_cache(c2) AS 'carbondata' TBLPROPERTIES('cache_level'='abc')")
+      sql("create index indexCache1 on table column_meta_cache(c2) AS 'carbondata' PROPERTIES('cache_level'='abc')")
     }
     intercept[Exception] {
       sql("Alter table indexCache SET TBLPROPERTIES('column_meta_cache'='abc')")

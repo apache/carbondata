@@ -20,7 +20,7 @@ package org.apache.carbondata.mv.plans.modular
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, ExprId, Expression, NamedExpression}
 import org.apache.spark.sql.types.{DataType, Metadata}
 
-object ExpressionBuilder {
+object ExpressionHelper {
 
   def createReference(
      name: String,
@@ -30,17 +30,21 @@ object ExpressionBuilder {
      exprId: ExprId,
      qualifier: Option[String],
      attrRef : NamedExpression = null): AttributeReference = {
-    AttributeReference(name, dataType, nullable, metadata)(exprId, qualifier)
+    val qf = if (qualifier.nonEmpty) Seq(qualifier.get) else Seq.empty
+    AttributeReference(name, dataType, nullable, metadata)(exprId, qf)
   }
 
   def createAlias(
-       child: Expression,
-       name: String,
-       exprId: ExprId = NamedExpression.newExprId,
-       qualifier: Option[String] = None,
-       explicitMetadata: Option[Metadata] = None,
-       namedExpr : Option[NamedExpression] = None ) : Alias = {
-    Alias(child, name)(exprId, qualifier, explicitMetadata)
+      child: Expression,
+      name: String,
+      exprId: ExprId,
+      qualifier: Option[String]) : Alias = {
+    val qf = if (qualifier.nonEmpty) Seq(qualifier.get) else Seq.empty
+    Alias(child, name)(exprId, qf, None)
+  }
+
+  def getTheLastQualifier(reference: AttributeReference): String = {
+    reference.qualifier.reverse.head
   }
 
 }

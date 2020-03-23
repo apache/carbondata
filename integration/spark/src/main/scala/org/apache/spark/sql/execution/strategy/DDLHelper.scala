@@ -382,7 +382,7 @@ object DDLHelper {
         }
         if (carbonTable.isMaterializedView) {
           throw new MalformedCarbonCommandException(
-            "Datamap table does not support set streaming property")
+            "MV table does not support set streaming property")
         }
         if (MaterializedViewManagerInSpark.get(sparkSession).hasSchemaOnTable(carbonTable)) {
           throw new MalformedCarbonCommandException(

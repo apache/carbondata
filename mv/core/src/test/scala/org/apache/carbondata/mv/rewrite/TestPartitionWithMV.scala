@@ -597,7 +597,6 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
   test("Test data updation after compaction on Partition with mv tables") {
     // Set carbon.timestamp.format will cause heap overhead in this case.
     CarbonProperties.getInstance().removeProperty("carbon.timestamp.format")
-    printConfiguration()
     sql("drop table if exists partitionallcompaction")
     sql(
       "create table partitionallcompaction(empno int,empname String,designation String," +

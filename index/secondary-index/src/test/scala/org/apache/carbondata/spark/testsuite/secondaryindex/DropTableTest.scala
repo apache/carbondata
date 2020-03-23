@@ -71,7 +71,7 @@ class DropTableTest extends QueryTest with BeforeAndAfterAll {
     val exception = intercept[MalformedCarbonCommandException] {
       sql("drop index indTestDrop on testDrop")
     }
-    assert(exception.getMessage.contains("Index table [default.indtestdrop] does not exist on parent table [default.testdrop]"))
+    assert(exception.getMessage.contains("Index with name indtestdrop does not exist"))
     sql("drop table if exists testDrop")
   }
 }

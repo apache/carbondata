@@ -194,7 +194,7 @@ object HarmonizeFactTable extends Rule[ModularPlan] with PredicateHelper with Ag
                                                               .isInstanceOf[Attribute]))
           val aggOutputList = aggTransMap.values.flatMap(t => t._2)
             .map { ref =>
-              ExpressionBuilder.createReference(
+              ExpressionHelper.createReference(
                 ref.name,
                 ref.dataType,
                 nullable = true,
@@ -206,7 +206,7 @@ object HarmonizeFactTable extends Rule[ModularPlan] with PredicateHelper with Ag
           val hOutputList = (attrOutputList ++ aggOutputList).map {attr =>
             attr.transform {
               case ref: Attribute if hFactOutputSet.contains(ref) =>
-                ExpressionBuilder.createReference(
+                ExpressionHelper.createReference(
                   ref.name,
                   ref.dataType,
                   nullable = true,
@@ -220,7 +220,7 @@ object HarmonizeFactTable extends Rule[ModularPlan] with PredicateHelper with Ag
           val hPredList = s.predicateList.map{ pred =>
             pred.transform {
               case ref: Attribute if hFactOutputSet.contains(ref) =>
-                ExpressionBuilder.createReference(
+                ExpressionHelper.createReference(
                   ref.name, ref.dataType, nullable = true, Metadata.empty,
                   ref.exprId, Some(hFactName))
             }
@@ -244,7 +244,7 @@ object HarmonizeFactTable extends Rule[ModularPlan] with PredicateHelper with Ag
           val wip = g.copy(outputList = gOutputList, inputList = hInputList, child = hSel)
           wip.transformExpressions {
             case ref: Attribute if hFactOutputSet.contains(ref) =>
-              ExpressionBuilder.createReference(
+              ExpressionHelper.createReference(
                 ref.name, ref.dataType, nullable = true, Metadata.empty,
                 ref.exprId, Some(hFactName))
           }

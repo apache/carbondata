@@ -43,9 +43,8 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
       "serialname String,salary int ) STORED AS carbondata")
     sql(
       s"""
-         | CREATE DATAMAP lucene_datamap ON TABLE datamap_main
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='country')
+         | CREATE INDEX lucene_datamap ON TABLE datamap_main (country)
+         | AS 'lucene'
       """.stripMargin)
     checkExistence(sql("show indexes on table datamap_main"), true, "lucene_datamap")
     sql("drop index if exists lucene_datamap on table datamap_main")

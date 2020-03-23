@@ -69,6 +69,10 @@ object CarbonToSparkAdapter {
       qualifier = Some(newSubsume))
   }
 
+  def getTheLastQualifier(attribute: Attribute): String = {
+    attribute.qualifier.head
+  }
+
   def getOutput(subQueryAlias: SubqueryAlias): Seq[Attribute] = {
     subQueryAlias.output
   }

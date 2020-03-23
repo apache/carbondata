@@ -69,7 +69,9 @@ case class CarbonCreateIndexCommand(
 
     if (DataMapStoreManager.getInstance().isDataMapExist(parentTable.getTableId, indexName)) {
       if (!ifNotExistsSet) {
-        throw new NoSuchIndexException(indexName)
+        throw new MalformedIndexCommandException(
+          s"Index with name ${ indexName } on table " +
+            s"${parentTable.getDatabaseName}.${parentTable.getTableName} already exists")
       } else {
         return Seq.empty
       }

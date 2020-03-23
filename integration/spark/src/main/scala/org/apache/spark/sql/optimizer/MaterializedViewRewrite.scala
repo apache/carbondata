@@ -35,7 +35,7 @@ import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.core.preagg.TimeSeriesFunctionEnum
 import org.apache.carbondata.mv.expressions.modular.{ModularSubquery, ScalarModularSubquery}
-import org.apache.carbondata.mv.plans.modular.{ExpressionBuilder, GroupBy, HarmonizedRelation, LeafNode, Matchable, ModularPlan, ModularRelation, Select, SimpleModularizer}
+import org.apache.carbondata.mv.plans.modular.{ExpressionHelper, GroupBy, HarmonizedRelation, LeafNode, Matchable, ModularPlan, ModularRelation, Select, SimpleModularizer}
 import org.apache.carbondata.mv.plans.util.BirdcageOptimizer
 import org.apache.carbondata.view.{MaterializedViewCatalogInSpark, MaterializedViewPlanWrapper, MaterializedViewTimeGranularity, TimeSeriesFunction}
 
@@ -929,7 +929,7 @@ class MaterializedViewRewrite(catalog: MaterializedViewCatalogInSpark, logicalPl
         case Alias(aggregate: AggregateExpression, _) =>
           aggregate.aggregateFunction.collect {
             case reference: AttributeReference =>
-              ExpressionBuilder.createReference(reference.name,
+              ExpressionHelper.createReference(reference.name,
                 reference.dataType,
                 reference.nullable,
                 reference.metadata,

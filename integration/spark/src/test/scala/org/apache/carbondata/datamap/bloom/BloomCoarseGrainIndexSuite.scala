@@ -626,6 +626,9 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
   }
 
   test("test create bloom index on newly added column") {
+    // Fix the loading cores to ensure number of buckets.
+    CarbonProperties.getInstance().addProperty("carbon.number.of.cores.while.loading","1")
+
     val datamap1 = "datamap1"
     val datamap2 = "datamap2"
     val datamap3 = "datamap3"
