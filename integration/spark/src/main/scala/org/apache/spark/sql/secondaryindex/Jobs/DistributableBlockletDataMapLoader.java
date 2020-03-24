@@ -45,6 +45,7 @@ import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistri
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
@@ -134,8 +135,10 @@ public class DistributableBlockletDataMapLoader
             segmentDistributable.getTableBlockIndexUniqueIdentifier();
         Segment segment =
             Segment.toSegment(tableSegmentUniqueIdentifier.getSegmentId(), readCommittedScope);
+        String segmentFilePath =
+            CarbonTablePath.getSegmentFilePath(table.getTablePath(), segment.getSegmentFileName());
         iterator =
-            BlockletDataMapUtil.getTableBlockUniqueIdentifiers(segment).iterator();
+            BlockletDataMapUtil.getTableBlockUniqueIdentifiers(segment, segmentFilePath).iterator();
       }
 
       @Override public boolean nextKeyValue() throws IOException, InterruptedException {

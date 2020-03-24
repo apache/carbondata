@@ -464,8 +464,9 @@ class CarbonIndexFileMergeTestCase
     val method = classOf[BlockletDataMapFactory]
       .getDeclaredMethod("getTableBlockIndexUniqueIdentifiers", classOf[Segment])
     method.setAccessible(true)
-    val segment = new Segment(segmentId)
-    val identifiers = method.invoke(dataMapFactory, segment)
+    val ssm = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
+    val validSegments = ssm.getValidAndInvalidSegments().getValidSegments
+    val identifiers = method.invoke(dataMapFactory, validSegments.get(0))
       .asInstanceOf[util.Set[TableBlockIndexUniqueIdentifier]].asScala
     assert(identifiers.size == 1)
     identifiers.forall(identifier => identifier.getMergeIndexFileName == null)

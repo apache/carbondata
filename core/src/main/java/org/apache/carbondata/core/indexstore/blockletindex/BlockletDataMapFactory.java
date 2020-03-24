@@ -29,6 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
@@ -73,11 +74,16 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
+import org.apache.log4j.Logger;
+
 /**
  * Table map for blocklet
  */
 public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     implements BlockletDetailsFetcher, SegmentPropertiesFetcher, CacheableDataMap {
+
+  private static final Logger LOGGER =
+      LogServiceFactory.getLogService(BlockletDataMapFactory.class.getName());
 
   private static final String NAME = "clustered.btree.blocklet";
   /**
@@ -351,6 +357,10 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
 
   public Set<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers(Segment segment)
       throws IOException {
+    String latestSegmentFilePath =
+        CarbonTablePath.getSegmentFilePath(identifier.getTablePath(), segment.getSegmentFileName());
+    // check if the segment is updated to clear te old cache.
+    clearSegmentMapIfSegmentUpdated(latestSegmentFilePath, segment);
     SegmentBlockIndexInfo segmentBlockIndexInfo = segmentMap.get(segment.getSegmentNo());
     Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = null;
     if (null != segmentBlockIndexInfo) {
@@ -359,7 +369,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       return segmentBlockIndexInfo.getTableBlockIndexUniqueIdentifiers();
     } else {
       tableBlockIndexUniqueIdentifiers =
-          BlockletDataMapUtil.getTableBlockUniqueIdentifiers(segment);
+          BlockletDataMapUtil.getTableBlockUniqueIdentifiers(segment, latestSegmentFilePath);
       if (tableBlockIndexUniqueIdentifiers.size() > 0) {
         segmentMap.put(segment.getSegmentNo(),
             new SegmentBlockIndexInfo(tableBlockIndexUniqueIdentifiers,
@@ -367,6 +377,33 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       }
     }
     return tableBlockIndexUniqueIdentifiers;
+  }
+
+  /**
+   * This case is added for a case where, there are two applications running, and in one application
+   * operations happened like SI rebuild, update or delete case, then the cache should be updated as
+   * well. The cache updation happens for same application, but other application may fail to query
+   * or may give wrong result. Since we overwrite the segment file in these scenarios, check the
+   * timestamp, and if modified, clear from the cache.
+   */
+  private void clearSegmentMapIfSegmentUpdated(String latestSegmentFilePath, Segment segment) {
+    SegmentBlockIndexInfo segmentBlockIndexInfo = segmentMap.get(segment.getSegmentNo());
+    if (null != segmentBlockIndexInfo) {
+      Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
+          segmentBlockIndexInfo.getTableBlockIndexUniqueIdentifiers();
+      long latestSegmentFileTimeStamp =
+          FileFactory.getCarbonFile(latestSegmentFilePath).getLastModifiedTime();
+      if (tableBlockIndexUniqueIdentifiers != null) {
+        long oldSegmentFileTimeStamp =
+            tableBlockIndexUniqueIdentifiers.stream().findFirst().get().getSegmentFileTimeStamp();
+        if (latestSegmentFileTimeStamp != oldSegmentFileTimeStamp) {
+          LOGGER.info(
+              "Clearing the cache for: " + tableBlockIndexUniqueIdentifiers.stream().findFirst()
+                  .get().getSegmentFilePath());
+          clear(segment.getSegmentNo());
+        }
+      }
+    }
   }
 
   /**
@@ -521,12 +558,11 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       throws IOException {
     BlockletDataMapDistributable mapDistributable = (BlockletDataMapDistributable) distributable;
     List<TableBlockIndexUniqueIdentifierWrapper> identifiersWrapper;
-    String segmentNo = mapDistributable.getSegment().getSegmentNo();
     if (mapDistributable.getSegmentPath() != null) {
       identifiersWrapper = getTableBlockIndexUniqueIdentifier(distributable);
     } else {
-      identifiersWrapper =
-          getTableBlockIndexUniqueIdentifier(mapDistributable.getFilePath(), segmentNo);
+      identifiersWrapper = getTableBlockIndexUniqueIdentifier(mapDistributable.getFilePath(),
+          mapDistributable.getSegment());
     }
     List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
     try {
@@ -565,9 +601,11 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
           mergeIndexName = carbonFile.getName();
         }
         String parentPath = carbonFile.getParentFile().getAbsolutePath();
+        String segmentFilePath = CarbonTablePath.getSegmentFilePath(distributable.getTablePath(),
+            distributable.getSegment().getSegmentFileName());
         TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier =
             new TableBlockIndexUniqueIdentifier(parentPath, indexFileName, mergeIndexName,
-                distributable.getSegment().getSegmentNo());
+                distributable.getSegment().getSegmentNo(), segmentFilePath);
         identifiersWrapper.add(
             new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier,
                 this.getCarbonTable()));
@@ -588,22 +626,24 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   }
 
   private List<TableBlockIndexUniqueIdentifierWrapper> getTableBlockIndexUniqueIdentifier(
-      String indexFilePath, String segmentId) throws IOException {
+      String indexFilePath, Segment segment) throws IOException {
+    String segmentFilePath =
+        CarbonTablePath.getSegmentFilePath(identifier.getTablePath(), segment.getSegmentFileName());
     List<TableBlockIndexUniqueIdentifierWrapper> identifiersWrapper = new ArrayList<>();
     String parent = indexFilePath.substring(0, indexFilePath.lastIndexOf("/"));
     String name =
         indexFilePath.substring(indexFilePath.lastIndexOf("/") + 1, indexFilePath.length());
     if (indexFilePath.endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
       identifiersWrapper.add(new TableBlockIndexUniqueIdentifierWrapper(
-          new TableBlockIndexUniqueIdentifier(parent, name, null, segmentId),
-          this.getCarbonTable()));
+          new TableBlockIndexUniqueIdentifier(parent, name, null, segment.getSegmentNo(),
+              segmentFilePath), this.getCarbonTable()));
     } else if (indexFilePath.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
       SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
       List<String> indexFiles = fileStore.getIndexFilesFromMergeFile(indexFilePath);
       for (String indexFile : indexFiles) {
         identifiersWrapper.add(new TableBlockIndexUniqueIdentifierWrapper(
             new TableBlockIndexUniqueIdentifier(parent, indexFile, name,
-                segmentId), this.getCarbonTable()));
+                segment.getSegmentNo(), segmentFilePath), this.getCarbonTable()));
       }
     }
     return identifiersWrapper;

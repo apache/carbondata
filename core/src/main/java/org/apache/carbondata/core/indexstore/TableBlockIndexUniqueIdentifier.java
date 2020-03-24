@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 
 /**
  * Class holds the indexFile information to uniquely identitify the carbon index
@@ -39,13 +40,19 @@ public class TableBlockIndexUniqueIdentifier implements Serializable {
 
   private String uniqueName;
 
+  private String segmentFilePath;
+
+  private long segmentFileTimeStamp;
+
   public TableBlockIndexUniqueIdentifier(String indexFilePath, String indexFileName,
-      String mergeIndexFileName, String segmentId) {
+      String mergeIndexFileName, String segmentId, String segmentFilePath) {
     this.indexFilePath = indexFilePath;
     this.indexFileName = indexFileName;
     this.mergeIndexFileName = mergeIndexFileName;
     this.segmentId = segmentId;
     this.uniqueName = indexFilePath + CarbonCommonConstants.FILE_SEPARATOR + indexFileName;
+    this.segmentFilePath = segmentFilePath;
+    this.segmentFileTimeStamp = FileFactory.getCarbonFile(segmentFilePath).getLastModifiedTime();
   }
 
   public TableBlockIndexUniqueIdentifier(String segmentId) {
@@ -75,6 +82,14 @@ public class TableBlockIndexUniqueIdentifier implements Serializable {
 
   public String getSegmentId() {
     return segmentId;
+  }
+
+  public String getSegmentFilePath() {
+    return segmentFilePath;
+  }
+
+  public long getSegmentFileTimeStamp() {
+    return segmentFileTimeStamp;
   }
 
   @Override
