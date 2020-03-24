@@ -37,12 +37,15 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, SortScopeOptions}
 import org.apache.carbondata.core.datastore.block.{SegmentProperties, TaskBlockInfo}
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.core.util.path.CarbonTablePath.DataFileUtil
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.api.CarbonInputFormat
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
@@ -252,7 +255,7 @@ class CarbonSIRebuildRDD[K, V](
 
         // add task completion listener to clean up the resources
         context.addTaskCompletionListener { _ =>
-          close()
+          close(splitList)
         }
         try {
           // fire a query and get the results.
@@ -308,7 +311,7 @@ class CarbonSIRebuildRDD[K, V](
           throw e
       }
 
-      private def close(): Unit = {
+      private def close(splits: util.List[CarbonInputSplit]): Unit = {
         deleteLocalDataFolders()
         // close all the query executor service and clean up memory acquired during query processing
         if (null != exec) {
@@ -320,6 +323,26 @@ class CarbonSIRebuildRDD[K, V](
         if (null != processor) {
           LOGGER.info("Closing compaction processor instance to clean up loading resources")
           processor.close()
+        }
+
+        // delete all the old data files which are used for merging
+        splits.asScala.foreach { split =>
+          val carbonFile = FileFactory.getCarbonFile(split.getFilePath)
+          carbonFile.delete()
+        }
+
+        // delete the indexfile/merge index carbonFile of old data files
+        val segmentPath = FileFactory.getCarbonFile(indexTable.getSegmentPath(segmentId))
+        val indexFiles = segmentPath.listFiles(new CarbonFileFilter {
+          override def accept(carbonFile: CarbonFile): Boolean = {
+            (carbonFile.getName.endsWith(CarbonTablePath.INDEX_FILE_EXT) ||
+             carbonFile.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) &&
+            DataFileUtil.getTimeStampFromFileName(carbonFile.getAbsolutePath).toLong <
+            carbonLoadModelCopy.getFactTimeStamp
+          }
+        })
+        indexFiles.foreach { indexFile =>
+          indexFile.delete()
         }
       }
 
