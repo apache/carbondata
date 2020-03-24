@@ -81,7 +81,6 @@ class CarbonDataFileMergeTestCaseOnSI
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE indexmerge OPTIONS('header'='false', " +
         s"'GLOBAL_SORT_PARTITIONS'='100')")
     val rows = sql("""Select count(*) from indexmerge where name='n164419'""").collect()
-    sql("clean files for table indexmerge_index1")
     checkAnswer(sql("""Select count(*) from indexmerge where name='n164419'"""), rows)
     assert(getDataFileCount("indexmerge_index1", "0") < 7)
   }
@@ -108,7 +107,6 @@ class CarbonDataFileMergeTestCaseOnSI
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "true")
     sql("REFRESH INDEX nonindexmerge_index1 ON TABLE nonindexmerge").collect()
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
-    sql("clean files for table nonindexmerge_index1")
     assert(getDataFileCount("nonindexmerge_index1", "0") < 7)
     assert(getDataFileCount("nonindexmerge_index1", "1") < 7)
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
@@ -136,14 +134,11 @@ class CarbonDataFileMergeTestCaseOnSI
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "true")
     sql("REFRESH INDEX nonindexmerge_index2 ON TABLE nonindexmerge WHERE SEGMENT.ID IN(0)").collect()
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
-    sql("clean files for table nonindexmerge_index2")
     assert(getDataFileCount("nonindexmerge_index2", "0") < 7)
     assert(getDataFileCount("nonindexmerge_index2", "1") == 100)
     sql("REFRESH INDEX nonindexmerge_index2 ON TABLE nonindexmerge WHERE SEGMENT.ID IN(1)").collect()
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
-    sql("clean files for table nonindexmerge_index2")
     assert(getDataFileCount("nonindexmerge_index2", "1") < 7)
-    sql("clean files for table nonindexmerge_index2")
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
   }
 
@@ -192,7 +187,6 @@ class CarbonDataFileMergeTestCaseOnSI
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "true")
     sql("ALTER TABLE nonindexmerge COMPACT 'minor'").collect()
-    sql("clean files for table nonindexmerge_index3")
     assert(getDataFileCount("nonindexmerge_index3", "0.1") < 11)
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
     CarbonProperties.getInstance()
@@ -224,7 +218,6 @@ class CarbonDataFileMergeTestCaseOnSI
     sql(
     "CREATE INDEX nonindexmerge_index4 on table nonindexmerge (name) AS 'carbondata' " +
     "properties('table_blocksize'='1')")
-    sql("clean files for table nonindexmerge_index4")
     assert(getDataFileCount("nonindexmerge_index4", "0.2") < 15)
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
     CarbonProperties.getInstance()
