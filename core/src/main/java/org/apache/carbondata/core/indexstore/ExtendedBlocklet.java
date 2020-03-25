@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexRowIndexes;
 import org.apache.carbondata.core.indexstore.row.IndexRow;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -168,7 +169,7 @@ public class ExtendedBlocklet extends Blocklet {
       throws IOException {
     super.write(out);
     if (isCountJob) {
-      out.writeLong(inputSplit.getRowCount());
+      out.writeLong(inputSplit.getIndexRow().getInt(BlockletIndexRowIndexes.ROW_COUNT_INDEX));
       out.writeUTF(inputSplit.getSegmentId());
     } else {
       if (dataMapUniqueId == null) {
