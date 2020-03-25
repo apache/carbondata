@@ -735,6 +735,10 @@ public class CarbonInputSplit extends FileSplit
     return path;
   }
 
+  public IndexRow getIndexRow() {
+    return indexRow;
+  }
+
   public String getFilePath() {
     return this.filePath;
   }
