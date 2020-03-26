@@ -44,7 +44,7 @@ import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputForma
  * Its a custom implementation which uses carbon's driver pruning feature to prune carbondata files
  * using carbonindex.
  */
-class CarbonFileIndex(
+case class CarbonFileIndex(
     sparkSession: SparkSession,
     dataSchema: StructType,
     parameters: Map[String, String],
