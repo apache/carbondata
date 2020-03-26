@@ -868,7 +868,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     val sparkSession = relation.relation.sqlContext.sparkSession
     relation.catalogTable match {
       case Some(catalogTable) =>
-        val fileIndex = new CarbonFileIndex(sparkSession,
+        val fileIndex = CarbonFileIndex(sparkSession,
           catalogTable.schema,
           catalogTable.storage.properties,
           new CatalogFileIndex(
