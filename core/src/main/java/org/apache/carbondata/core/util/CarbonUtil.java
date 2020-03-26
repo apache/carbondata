@@ -2506,7 +2506,8 @@ public final class CarbonUtil {
   }
 
   // Get the total size of carbon data and the total size of carbon index
-  public static HashMap<String, Long> getDataSizeAndIndexSize(SegmentFileStore fileStore)
+  public static HashMap<String, Long> getDataSizeAndIndexSize(SegmentFileStore fileStore,
+      boolean isCarbonSegment)
       throws IOException {
     long carbonDataSize = 0L;
     long carbonIndexSize = 0L;
@@ -2524,8 +2525,15 @@ public final class CarbonUtil {
         }
       }
     }
-    dataAndIndexSize.put(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE, carbonDataSize);
-    dataAndIndexSize.put(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE, carbonIndexSize);
+    if (isCarbonSegment) {
+      dataAndIndexSize.put(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE, carbonDataSize);
+      dataAndIndexSize.put(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE, carbonIndexSize);
+    } else {
+      // In case of non-carbon segments all the dataSize is collected in carbonIndexSize because of
+      // listing behaviour of the SegmentFileStore.
+      dataAndIndexSize.put(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE, carbonIndexSize);
+      dataAndIndexSize.put(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE, 0L);
+    }
     return dataAndIndexSize;
   }
 
@@ -2574,7 +2582,7 @@ public final class CarbonUtil {
       Segment segment) throws IOException {
     if (segment.getSegmentFileName() != null) {
       SegmentFileStore fileStore = new SegmentFileStore(tablePath, segment.getSegmentFileName());
-      return getDataSizeAndIndexSize(fileStore);
+      return getDataSizeAndIndexSize(fileStore, segment.isCarbonSegment());
     } else {
       return getDataSizeAndIndexSize(tablePath, segment.getSegmentNo());
     }

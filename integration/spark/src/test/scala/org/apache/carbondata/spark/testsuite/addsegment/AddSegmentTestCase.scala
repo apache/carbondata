@@ -230,7 +230,9 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(20)))
     sql("show segments for table addsegment1").show(100, false)
     val showSeg = sql("show segments for table addsegment1").collectAsList()
+    val descFormattedSize = sql("desc formatted addsegment1").collect().filter(_.get(0).toString.startsWith("Table Data Size")).head.get(1).toString
     val size = getDataSize(newPath)
+    assert(descFormattedSize.split("KB")(0).toDouble > 0.0d)
     assert(showSeg.get(0).get(6).toString.equalsIgnoreCase(size))
     assert(showSeg.get(0).get(7).toString.equalsIgnoreCase("NA"))
     FileFactory.deleteAllFilesOfDir(new File(newPath))

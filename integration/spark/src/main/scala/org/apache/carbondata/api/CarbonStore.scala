@@ -123,7 +123,7 @@ object CarbonStore {
             // If the added segment is other than carbon segment then we can only display the data
             // size and not index size, we can get the data size from table status file directly
             if (!load.getFileFormat.isCarbonFormat) {
-              (if (load.getIndexSize == null) -1L else load.getIndexSize.toLong, -1L)
+              (if (load.getDataSize == null) -1L else load.getDataSize.toLong, -1L)
             } else {
               (if (load.getDataSize == null) -1L else load.getDataSize.toLong,
                 if (load.getIndexSize == null) -1L else load.getIndexSize.toLong)
