@@ -527,10 +527,11 @@ public class SegmentFileStore {
         for (LoadMetadataDetails detail : listOfLoadFolderDetailsArray) {
           // if the segments is in the list of marked for delete then update the status.
           if (segmentId.equals(detail.getLoadName())) {
+            detail.setLoadEndTime(System.currentTimeMillis());
             detail.setSegmentFile(segmentFile);
             if (segmentStatus != null) {
               HashMap<String, Long> dataSizeAndIndexSize =
-                  CarbonUtil.getDataSizeAndIndexSize(segmentFileStore);
+                  CarbonUtil.getDataSizeAndIndexSize(segmentFileStore, detail.isCarbonFormat());
               detail.setDataSize(
                   dataSizeAndIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE)
                       .toString());
