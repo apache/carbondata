@@ -52,7 +52,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
   }
 
-  test("test update operation with 0 rows updation.") {
+  test("test update operation with 0 rows updation and clean files operation") {
     sql("""drop table if exists iud.zerorows""").show
     sql("""create table iud.zerorows (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.zerorows""")
@@ -62,9 +62,12 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       sql("""select c1,c2,c3,c5 from iud.zerorows"""),
       Seq(Row("a",2,"aa","aaa"),Row("b",2,"bb","bbb"),Row("c",3,"cc","ccc"),Row("d",4,"dd","ddd"),Row("e",5,"ee","eee"))
     )
-    sql("""drop table iud.zerorows""").show
-
-
+    sql("""update zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'e'""").show()
+    sql("clean files for table iud.zerorows")
+    val carbonTable = CarbonEnv.getCarbonTable(Some("iud"), "zerorows")(sqlContext.sparkSession)
+    val segmentFileLocation = FileFactory.getCarbonFile(CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath))
+    assert(segmentFileLocation.listFiles().length == 1)
+    sql("""drop table iud.zerorows""")
   }
 
 

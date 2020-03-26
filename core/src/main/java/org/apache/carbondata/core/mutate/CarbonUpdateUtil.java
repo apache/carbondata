@@ -569,7 +569,8 @@ public class CarbonUpdateUtil {
             }
           }
           if (updateSegmentFile) {
-            segmentFilesToBeUpdated.add(Segment.toSegment(segment.getLoadName(), null));
+            segmentFilesToBeUpdated.add(
+                new Segment(segment.getLoadName(), segment.getSegmentFile(), null));
           }
         }
         // handle cleanup of merge index files and data files after small files merge happened for
@@ -579,10 +580,28 @@ public class CarbonUpdateUtil {
     }
     String UUID = String.valueOf(System.currentTimeMillis());
     List<Segment> segmentFilesToBeUpdatedLatest = new ArrayList<>();
+    CarbonFile segmentFilesLocation =
+        FileFactory.getCarbonFile(CarbonTablePath.getSegmentFilesLocation(table.getTablePath()));
     for (Segment segment : segmentFilesToBeUpdated) {
-      String file =
-          SegmentFileStore.writeSegmentFile(table, segment.getSegmentNo(), UUID);
-      segmentFilesToBeUpdatedLatest.add(new Segment(segment.getSegmentNo(), file));
+      SegmentFileStore fileStore =
+          new SegmentFileStore(table.getTablePath(), segment.getSegmentFileName());
+      segment.setSegmentMetaDataInfo(fileStore.getSegmentFile().getSegmentMetaDataInfo());
+      String updatedSegmentFile = SegmentFileStore
+          .writeSegmentFile(table, segment.getSegmentNo(), UUID,
+              CarbonTablePath.getSegmentPath(table.getTablePath(), segment.getSegmentNo()),
+              segment.getSegmentMetaDataInfo());
+      segmentFilesToBeUpdatedLatest.add(new Segment(segment.getSegmentNo(), updatedSegmentFile));
+
+      // delete the old segment files
+      CarbonFile[] invalidSegmentFiles = segmentFilesLocation.listFiles(new CarbonFileFilter() {
+        @Override
+        public boolean accept(CarbonFile file) {
+          return !file.getName().equalsIgnoreCase(updatedSegmentFile);
+        }
+      });
+      for (CarbonFile invalidSegmentFile : invalidSegmentFiles) {
+        invalidSegmentFile.delete();
+      }
     }
     if (segmentFilesToBeUpdated.size() > 0) {
       updateTableMetadataStatus(
