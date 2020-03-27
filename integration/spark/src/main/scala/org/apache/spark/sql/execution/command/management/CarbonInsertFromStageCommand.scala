@@ -606,6 +606,9 @@ object CarbonInsertFromStageCommand {
    */
   val BATCH_FILE_ORDER_DESC = "DESC"
 
-  val BATCH_FILE_ORDER_DEFAULT: String = BATCH_FILE_ORDER_KEY
+  /*
+  * Keep default ascending order. (Earliest first)
+  */
+  val BATCH_FILE_ORDER_DEFAULT: String = BATCH_FILE_ORDER_ASC
 
 }
