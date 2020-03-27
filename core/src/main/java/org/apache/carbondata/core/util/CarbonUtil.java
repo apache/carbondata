@@ -927,14 +927,22 @@ public final class CarbonUtil {
     AbstractDataFileFooterConverter footerConverter =
         DataFileFooterConverterFactory.getInstance().getDataFileFooterConverter(version);
     List<DataFileFooter> footers = footerConverter.getIndexInfo(indexFilePath, null, true);
-
+    DataFileFooter blockFooter = null;
     // find the footer of the input data file (tableBlockInfo)
-    for (DataFileFooter footer : footers) {
-      if (footer.getBlockInfo().getFilePath().equals(dataFilePath)) {
-        return footer;
+    for (DataFileFooter blockletFooter : footers) {
+      if (blockletFooter.getBlockInfo().getFilePath().equals(dataFilePath)) {
+        if (blockFooter == null) {
+          blockFooter = blockletFooter;
+        } else {
+          blockFooter.getBlockletList().addAll(blockletFooter.getBlockletList());
+        }
       }
     }
-    throw new RuntimeException("Footer not found in index file");
+    if (blockFooter == null) {
+      throw new RuntimeException("Footer not found in index file");
+    } else {
+      return blockFooter;
+    }
   }
 
   /**
