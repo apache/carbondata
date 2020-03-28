@@ -783,23 +783,18 @@ public class SegmentUpdateStatusManager {
 
   /**
    * Returns the invalid timestamp range of a segment.
-   * @param segmentId
-   * @return
    */
-  public UpdateVO getInvalidTimestampRange(String segmentId) {
+  public static UpdateVO getInvalidTimestampRange(LoadMetadataDetails loadMetadataDetails) {
     UpdateVO range = new UpdateVO();
-    for (LoadMetadataDetails segment : segmentDetails) {
-      if (segment.getLoadName().equalsIgnoreCase(segmentId)) {
-        range.setSegmentId(segmentId);
-        range.setFactTimestamp(segment.getLoadStartTime());
-        if (!segment.getUpdateDeltaStartTimestamp().isEmpty() && !segment
-            .getUpdateDeltaEndTimestamp().isEmpty()) {
-          range.setUpdateDeltaStartTimestamp(
-              CarbonUpdateUtil.getTimeStampAsLong(segment.getUpdateDeltaStartTimestamp()));
-          range.setLatestUpdateTimestamp(
-              CarbonUpdateUtil.getTimeStampAsLong(segment.getUpdateDeltaEndTimestamp()));
-        }
-        return range;
+    if (loadMetadataDetails != null) {
+      range.setSegmentId(loadMetadataDetails.getLoadName());
+      range.setFactTimestamp(loadMetadataDetails.getLoadStartTime());
+      if (!loadMetadataDetails.getUpdateDeltaStartTimestamp().isEmpty() && !loadMetadataDetails
+          .getUpdateDeltaEndTimestamp().isEmpty()) {
+        range.setUpdateDeltaStartTimestamp(CarbonUpdateUtil
+            .getTimeStampAsLong(loadMetadataDetails.getUpdateDeltaStartTimestamp()));
+        range.setLatestUpdateTimestamp(
+            CarbonUpdateUtil.getTimeStampAsLong(loadMetadataDetails.getUpdateDeltaEndTimestamp()));
       }
     }
     return range;

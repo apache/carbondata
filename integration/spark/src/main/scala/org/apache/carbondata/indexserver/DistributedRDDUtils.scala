@@ -381,7 +381,7 @@ object DistributedRDDUtils {
         // Adding valid segments to segments to be refreshed, so that the select query
         // goes in the same executor.
         DataMapStoreManager.getInstance
-          .getSegmentsToBeRefreshed(carbonTable, updateStatusManager, validSegments.toList.asJava)
+          .getSegmentsToBeRefreshed(carbonTable, validSegments.toList.asJava)
         val indexServerLoadEvent: IndexServerLoadEvent =
           IndexServerLoadEvent(
             sparkSession,

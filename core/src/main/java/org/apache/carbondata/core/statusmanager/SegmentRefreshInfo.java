@@ -21,12 +21,17 @@ import java.io.Serializable;
 
 public class SegmentRefreshInfo implements Serializable {
 
-  private Long segmentUpdatedTimestamp;
+  private Long segmentUpdatedTimestamp = 0L;
   private Integer countOfFileInSegment;
+  private Long segmentFileTimestamp = 0L;
 
-  public SegmentRefreshInfo(Long segmentUpdatedTimestamp, Integer countOfFileInSegment) {
-    this.segmentUpdatedTimestamp = segmentUpdatedTimestamp;
+  public SegmentRefreshInfo(Long segmentUpdatedTimestamp, Integer countOfFileInSegment,
+      Long segmentFileTimestamp) {
+    if (segmentUpdatedTimestamp != null) {
+      this.segmentUpdatedTimestamp = segmentUpdatedTimestamp;
+    }
     this.countOfFileInSegment = countOfFileInSegment;
+    this.segmentFileTimestamp = segmentFileTimestamp;
   }
 
   public Long getSegmentUpdatedTimestamp() {
@@ -37,24 +42,21 @@ public class SegmentRefreshInfo implements Serializable {
     this.segmentUpdatedTimestamp = segmentUpdatedTimestamp;
   }
 
-  public Integer getCountOfFileInSegment() {
-    return countOfFileInSegment;
-  }
-
   public void setCountOfFileInSegment(Integer countOfFileInSegment) {
     this.countOfFileInSegment = countOfFileInSegment;
+  }
+
+  public Long getSegmentFileTimestamp() {
+    return segmentFileTimestamp;
   }
 
   public boolean compare(Object o) {
     if (!(o instanceof SegmentRefreshInfo)) return false;
 
     SegmentRefreshInfo that = (SegmentRefreshInfo) o;
-
-    if (segmentUpdatedTimestamp > that.segmentUpdatedTimestamp || !countOfFileInSegment
-        .equals(that.countOfFileInSegment)) {
-      return true;
-    }
-    return false;
+    return segmentUpdatedTimestamp > that.segmentUpdatedTimestamp
+        || segmentFileTimestamp > that.segmentFileTimestamp || !countOfFileInSegment
+        .equals(that.countOfFileInSegment);
   }
 
   @Override

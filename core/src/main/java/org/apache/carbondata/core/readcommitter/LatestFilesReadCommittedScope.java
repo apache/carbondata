@@ -220,7 +220,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
         if (indexFileStore.get(timestamp) == null) {
           indexList = new ArrayList<>(1);
           segmentRefreshInfo =
-              new SegmentRefreshInfo(carbonIndexFiles[i].getLastModifiedTime(), 0);
+              new SegmentRefreshInfo(carbonIndexFiles[i].getLastModifiedTime(), 0, 0L);
           segmentTimestampUpdaterMap.put(timestamp, segmentRefreshInfo);
         } else {
           // Entry is already present.

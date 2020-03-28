@@ -337,7 +337,7 @@ object BroadCastSIFilterPushJoin {
       if (CarbonProperties.getInstance
         .isDistributedPruningEnabled(carbonTable.getDatabaseName, carbonTable.getTableName)) {
         val segmentsToBeRefreshed: util.List[String] = DataMapStoreManager.getInstance
-          .getSegmentsToBeRefreshed(carbonTable, updateStatusManager, validSegmentsToAccess)
+          .getSegmentsToBeRefreshed(carbonTable, validSegmentsToAccess)
         try {
           val dataMapFormat: DistributableDataMapFormat =
             new DistributableDataMapFormat(carbonTable,
