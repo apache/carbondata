@@ -359,13 +359,13 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           validSegments);
     } else {
       segmentsToBeRefreshed = DataMapStoreManager.getInstance()
-          .getSegmentsToBeRefreshed(carbonTable, updateStatusManager, validSegments);
+          .getSegmentsToBeRefreshed(carbonTable, validSegments);
     }
 
     numSegments = validSegments.size();
     List<InputSplit> result = new LinkedList<InputSplit>();
     UpdateVO invalidBlockVOForSegmentId = null;
-    boolean isIUDTable = false;
+    boolean isIUDTable;
 
     isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
 
@@ -378,8 +378,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
       // Get the UpdateVO for those tables on which IUD operations being performed.
       if (isIUDTable) {
-        invalidBlockVOForSegmentId =
-            updateStatusManager.getInvalidTimestampRange(inputSplit.getSegmentId());
+        invalidBlockVOForSegmentId = SegmentUpdateStatusManager
+            .getInvalidTimestampRange(inputSplit.getSegment().getLoadMetadataDetails());
       }
       String[] deleteDeltaFilePath = null;
       if (isIUDTable) {
@@ -453,13 +453,13 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     SDK is written one set of files with UUID, with same UUID it can write again.
     So, latest files content should reflect the new count by refreshing the segment */
     List<String> toBeCleanedSegments = new ArrayList<>();
-    for (Segment eachSegment : filteredSegment) {
+    for (Segment segment : filteredSegment) {
       boolean refreshNeeded = DataMapStoreManager.getInstance()
           .getTableSegmentRefresher(getOrCreateCarbonTable(job.getConfiguration()))
-          .isRefreshNeeded(eachSegment,
-              updateStatusManager.getInvalidTimestampRange(eachSegment.getSegmentNo()));
+          .isRefreshNeeded(segment, SegmentUpdateStatusManager
+              .getInvalidTimestampRange(segment.getLoadMetadataDetails()));
       if (refreshNeeded) {
-        toBeCleanedSegments.add(eachSegment.getSegmentNo());
+        toBeCleanedSegments.add(segment.getSegmentNo());
       }
     }
     for (Segment segment : allSegments.getInvalidSegments()) {

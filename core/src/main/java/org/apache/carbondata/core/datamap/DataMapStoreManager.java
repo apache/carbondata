@@ -34,6 +34,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory;
@@ -44,13 +45,14 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaFactory;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaStorageProvider;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
-import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonSessionInfo;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
 
@@ -502,11 +504,12 @@ public final class DataMapStoreManager {
   }
 
   public List<String> getSegmentsToBeRefreshed(CarbonTable carbonTable,
-      SegmentUpdateStatusManager updateStatusManager, List<Segment> filteredSegmentToAccess) {
+      List<Segment> filteredSegmentToAccess) {
     List<String> toBeCleanedSegments = new ArrayList<>();
     for (Segment filteredSegment : filteredSegmentToAccess) {
       boolean refreshNeeded = getTableSegmentRefresher(carbonTable).isRefreshNeeded(filteredSegment,
-          updateStatusManager.getInvalidTimestampRange(filteredSegment.getSegmentNo()));
+          SegmentUpdateStatusManager
+              .getInvalidTimestampRange(filteredSegment.getLoadMetadataDetails()));
       if (refreshNeeded) {
         toBeCleanedSegments.add(filteredSegment.getSegmentNo());
       }
@@ -518,7 +521,7 @@ public final class DataMapStoreManager {
       SegmentUpdateStatusManager updateStatusManager, List<Segment> filteredSegmentToAccess)
       throws IOException {
     List<String> toBeCleanedSegments =
-        getSegmentsToBeRefreshed(carbonTable, updateStatusManager, filteredSegmentToAccess);
+        getSegmentsToBeRefreshed(carbonTable, filteredSegmentToAccess);
     if (toBeCleanedSegments.size() > 0) {
       clearInvalidSegments(carbonTable, toBeCleanedSegments);
     }
@@ -739,17 +742,30 @@ public final class DataMapStoreManager {
     private Map<String, Boolean> manualSegmentRefresh = new HashMap<>();
 
     TableSegmentRefresher(CarbonTable table) {
-      SegmentUpdateStatusManager statusManager = new SegmentUpdateStatusManager(table);
-      SegmentUpdateDetails[] updateStatusDetails = statusManager.getUpdateStatusDetails();
-      for (SegmentUpdateDetails updateDetails : updateStatusDetails) {
-        UpdateVO updateVO = statusManager.getInvalidTimestampRange(updateDetails.getSegmentName());
+      SegmentStatusManager segmentStatusManager =
+          new SegmentStatusManager(table.getAbsoluteTableIdentifier());
+      List<Segment> validSegments;
+      try {
+        validSegments = segmentStatusManager.getValidAndInvalidSegments().getValidSegments();
+      } catch (IOException e) {
+        LOGGER.error("Error while getting the valid segments.", e);
+        throw new RuntimeException(e);
+      }
+      for (Segment segment : validSegments) {
+        UpdateVO updateVO =
+            SegmentUpdateStatusManager.getInvalidTimestampRange(segment.getLoadMetadataDetails());
         SegmentRefreshInfo segmentRefreshInfo;
-        if (updateVO != null && updateVO.getLatestUpdateTimestamp() != null) {
-          segmentRefreshInfo = new SegmentRefreshInfo(updateVO.getLatestUpdateTimestamp(), 0);
+        if (updateVO != null && updateVO.getLatestUpdateTimestamp() != null
+            || segment.getSegmentFileName() != null) {
+          long segmentFileTimeStamp = FileFactory.getCarbonFile(CarbonTablePath
+              .getSegmentFilePath(table.getTablePath(), segment.getSegmentFileName()))
+              .getLastModifiedTime();
+          segmentRefreshInfo =
+              new SegmentRefreshInfo(updateVO.getLatestUpdateTimestamp(), 0, segmentFileTimeStamp);
         } else {
-          segmentRefreshInfo = new SegmentRefreshInfo(0L, 0);
+          segmentRefreshInfo = new SegmentRefreshInfo(0L, 0, 0L);
         }
-        segmentRefreshTime.put(updateVO.getSegmentId(), segmentRefreshInfo);
+        segmentRefreshTime.put(segment.getSegmentNo(), segmentRefreshInfo);
       }
     }
 
@@ -757,14 +773,23 @@ public final class DataMapStoreManager {
       SegmentRefreshInfo segmentRefreshInfo =
           seg.getSegmentRefreshInfo(updateVo);
       String segmentId = seg.getSegmentNo();
-      if (segmentRefreshInfo.getSegmentUpdatedTimestamp() == null) {
+      if (segmentRefreshInfo.getSegmentUpdatedTimestamp() == null
+          && segmentRefreshInfo.getSegmentFileTimestamp() == 0) {
         return false;
       }
-      if (segmentRefreshTime.get(segmentId) == null
-          && segmentRefreshInfo.getSegmentUpdatedTimestamp() != 0) {
-        segmentRefreshTime.put(segmentId, segmentRefreshInfo);
-        return true;
+
+      if (segmentRefreshTime.get(segmentId) == null) {
+        if (segmentRefreshInfo.getSegmentUpdatedTimestamp() != null
+            && segmentRefreshInfo.getSegmentUpdatedTimestamp() != 0) {
+          segmentRefreshTime.put(segmentId, segmentRefreshInfo);
+          return true;
+        }
+        if (segmentRefreshInfo.getSegmentFileTimestamp() != 0) {
+          segmentRefreshTime.put(segmentId, segmentRefreshInfo);
+          return true;
+        }
       }
+
       if (manualSegmentRefresh.get(segmentId) != null && manualSegmentRefresh.get(segmentId)) {
         manualSegmentRefresh.put(segmentId, false);
         return true;

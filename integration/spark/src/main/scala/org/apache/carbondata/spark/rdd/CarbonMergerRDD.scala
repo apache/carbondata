@@ -371,24 +371,26 @@ class CarbonMergerRDD[K, V](
         .map(_.asInstanceOf[CarbonInputSplit])
         .filter { split => FileFormat.COLUMNAR_V3.equals(split.getFileFormat) }.toList.asJava
     }
-    val filteredSplits = splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).filter { entry =>
-      val segmentId = Segment.toSegment(entry.getSegmentId).getSegmentNo
-      val blockInfo = new TableBlockInfo(entry.getFilePath,
-        entry.getStart, entry.getSegmentId,
-        entry.getLocations, entry.getLength, entry.getVersion,
+    val filteredSplits = splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).filter { inputSplit =>
+      val segmentId = Segment.toSegment(inputSplit.getSegmentId).getSegmentNo
+      val blockInfo = new TableBlockInfo(inputSplit.getFilePath,
+        inputSplit.getStart, inputSplit.getSegmentId,
+        inputSplit.getLocations, inputSplit.getLength, inputSplit.getVersion,
         updateStatusManager.getDeleteDeltaFilePath(
-          entry.getFilePath,
+          inputSplit.getFilePath,
           segmentId)
       )
       if (updateStatusManager.getUpdateStatusDetails.length != 0) {
-        updateDetails = updateStatusManager.getInvalidTimestampRange(segmentId)
+        updateDetails = SegmentUpdateStatusManager.getInvalidTimestampRange(inputSplit
+          .getSegment
+          .getLoadMetadataDetails)
       }
       // filter splits with V3 data file format
       // if split is updated, then check for if it is valid segment based on update details
       (!updated ||
        (updated && (!CarbonUtil.isInvalidTableBlock(blockInfo.getSegmentId, blockInfo.getFilePath,
          updateDetails, updateStatusManager)))) &&
-      FileFormat.COLUMNAR_V3.equals(entry.getFileFormat)
+      FileFormat.COLUMNAR_V3.equals(inputSplit.getFileFormat)
     }
     if (rangeColumn != null) {
       totalTaskCount = totalTaskCount +
