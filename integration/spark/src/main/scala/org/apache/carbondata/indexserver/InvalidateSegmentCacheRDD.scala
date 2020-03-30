@@ -22,7 +22,7 @@ import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.hive.DistributionUtil
 
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.spark.rdd.CarbonRDD
@@ -39,7 +39,7 @@ class InvalidateSegmentCacheRDD(@transient private val ss: SparkSession, carbonT
 
   override def internalCompute(split: Partition,
       context: TaskContext): Iterator[String] = {
-    DataMapStoreManager.getInstance().clearInvalidSegments(carbonTable, invalidSegmentIds.asJava)
+    IndexStoreManager.getInstance().clearInvalidSegments(carbonTable, invalidSegmentIds.asJava)
     Iterator.empty
   }
 

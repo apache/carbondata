@@ -118,13 +118,13 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
     }
     if (null != timeSeriesUdf._2 && canDoRollUp) {
       // check for rollup and rewrite the plan
-      // collect all the datasets which contains timeseries datamap's
+      // collect all the datasets which contains timeseries MV's
       val dataSets = catalog.lookupFeasibleSummaryDatasets(rewrittenPlan)
       var granularity: java.util.List[TimeSeriesFunctionEnum] = new java.util
       .ArrayList[TimeSeriesFunctionEnum]()
       // Get all the lower granularities for the query from datasets
       dataSets.foreach { dataset =>
-        if (dataset.dataMapSchema.isTimeSeries) {
+        if (dataset.indexSchema.isTimeSeries) {
           dataset.plan.transformExpressions {
             case a@Alias(udf: ScalaUDF, _) =>
               if (udf.function.isInstanceOf[TimeSeriesFunction]) {
@@ -237,18 +237,18 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
   def unifySubsumer1(
       subsumer: ModularPlan,
       subsumee: ModularPlan,
-      dataMapRelation: ModularPlan): ModularPlan = {
-    // Update datamap table relation to the subsumer modular plan
+      mvRelation: ModularPlan): ModularPlan = {
+    // Update MV table relation to the subsumer modular plan
     val updatedSubsumer = subsumer match {
       // In case of order by it adds extra select but that can be ignored while doing selection.
       case s@Select(_, _, _, _, _, Seq(g: GroupBy), _, _, _, _) =>
-        s.copy(children = Seq(g.copy(modularPlan = Some(dataMapRelation))),
+        s.copy(children = Seq(g.copy(modularPlan = Some(mvRelation))),
           outputList = updateDuplicateColumns(s.outputList))
       case s: Select => s
-        .copy(modularPlan = Some(dataMapRelation),
+        .copy(modularPlan = Some(mvRelation),
           outputList = updateDuplicateColumns(s.outputList))
       case g: GroupBy => g
-        .copy(modularPlan = Some(dataMapRelation),
+        .copy(modularPlan = Some(mvRelation),
           outputList = updateDuplicateColumns(g.outputList))
       case other => other
     }

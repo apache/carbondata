@@ -37,9 +37,9 @@ import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, HadoopFsRelation, InMemoryFileIndex, LogicalRelation, SparkCarbonTableFormat}
 import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight}
 import org.apache.spark.sql.hive.MatchLogicalRelation
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
-import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types._
 import org.apache.spark.util.CarbonReflectionUtils
@@ -54,8 +54,8 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.datamap.{TextMatch, TextMatchLimit, TextMatchMaxDocUDF, TextMatchUDF}
 import org.apache.carbondata.geo.{InPolygon, InPolygonUDF}
+import org.apache.carbondata.index.{TextMatch, TextMatchLimit, TextMatchMaxDocUDF, TextMatchUDF}
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 /**
@@ -106,7 +106,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         CarbonCountStar(colAttr, relation.carbonTable, SparkSession.getActiveSession.get) :: Nil
       case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition,
       left, right)
-        if isCarbonPlan(left) && CarbonInternalScalaUtil.checkIsIndexTable(right) =>
+        if isCarbonPlan(left) && CarbonIndexUtil.checkIsIndexTable(right) =>
         LOGGER.info(s"pushing down for ExtractEquiJoinKeys:right")
         val carbon = apply(left).head
         // in case of SI Filter push join remove projection list from the physical plan
@@ -145,7 +145,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
       case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left,
       right)
-        if isCarbonPlan(right) && CarbonInternalScalaUtil.checkIsIndexTable(left) =>
+        if isCarbonPlan(right) && CarbonIndexUtil.checkIsIndexTable(left) =>
         LOGGER.info(s"pushing down for ExtractEquiJoinKeys:left")
         val carbon = planLater(right)
 

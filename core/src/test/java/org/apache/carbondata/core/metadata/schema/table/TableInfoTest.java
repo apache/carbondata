@@ -140,7 +140,7 @@ public class TableInfoTest extends TestCase {
     assertTrue(null != thriftTable);
   }
 
-  @Test public void testDataMapSchemaDesrializationWithClassName() {
+  @Test public void testIndexSchemaDeserializationWithClassName() {
     Map<String, String> properties = new HashMap<>();
     properties.put("carbonSchemaPartsNo", "1");
     properties.put("carbonSchema0", "{\"databaseName\":\"carbonversion_1_3\",\"tableUniqueName\":"

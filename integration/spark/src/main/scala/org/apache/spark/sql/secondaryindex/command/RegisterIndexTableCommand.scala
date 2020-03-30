@@ -78,7 +78,7 @@ case class RegisterIndexTableCommand(dbName: Option[String], indexTableName: Str
       indexTableName.toLowerCase)
     // 3. Call the create index command with isCreateSIndex = false
     // (do not create the si table in store path)
-    CreateIndexTableCommand(
+    CarbonCreateSecondaryIndexCommand(
       indexModel = secondaryIndex,
       tableProperties = tableInfo.getFactTable.getTableProperties.asScala,
       ifNotExists = false,

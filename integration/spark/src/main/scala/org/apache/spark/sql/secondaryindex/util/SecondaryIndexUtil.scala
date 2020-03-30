@@ -34,8 +34,8 @@ import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datastore.block.{TableBlockInfo, TaskBlockInfo}
+import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.metadata.datatype.DataType
@@ -232,7 +232,7 @@ object SecondaryIndexUtil {
             .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(tablePath),
               loadMetadataDetails)
 
-          // clear the datamap cache for the merged segments, as the index files and
+          // clear the indexSchema cache for the merged segments, as the index files and
           // data files are rewritten after compaction
           if (mergedSegments.size > 0) {
 
@@ -257,7 +257,7 @@ object SecondaryIndexUtil {
               }
             }
 
-            DataMapStoreManager.getInstance
+            IndexStoreManager.getInstance
               .clearInvalidSegments(indexCarbonTable, rebuiltSegments.toList.asJava)
           }
         }

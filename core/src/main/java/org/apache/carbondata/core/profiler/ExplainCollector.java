@@ -22,12 +22,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.dev.expr.IndexWrapperSimpleInfo;
+import org.apache.carbondata.core.index.dev.expr.IndexWrapperSimpleInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
@@ -40,8 +39,8 @@ public class ExplainCollector {
 
   private static ExplainCollector INSTANCE = null;
 
-  private List<String> olapDataMapProviders = new ArrayList<>();
-  private List<String> olapDataMapNames = new ArrayList<>();
+  private List<String> mvProviders = new ArrayList<>();
+  private List<String> mvNames = new ArrayList<>();
 
   // mapping of thread name to map of table name to pruning info
   private Map<String, Map<String, TablePruningInfo>> scans = new ConcurrentHashMap<>();
@@ -72,16 +71,6 @@ public class ExplainCollector {
     return INSTANCE;
   }
 
-  public static void recordMatchedOlapDataMap(String dataMapProvider, String dataMapName) {
-    if (enabled()) {
-      Objects.requireNonNull(dataMapProvider);
-      Objects.requireNonNull(dataMapName);
-      ExplainCollector profiler = get();
-      profiler.olapDataMapProviders.add(dataMapProvider);
-      profiler.olapDataMapNames.add(dataMapName);
-    }
-  }
-
   public static void addPruningInfo(String tableName) {
     if (enabled()) {
       ExplainCollector profiler = get();
@@ -108,21 +97,21 @@ public class ExplainCollector {
     }
   }
 
-  public static void addDefaultDataMapPruningHit(int numBlocklets) {
+  public static void addDefaultIndexPruningHit(int numBlocklets) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
       scan.addNumBlockletsAfterDefaultPruning(numBlocklets);
     }
   }
 
-  public static void setDefaultDataMapPruningBlockHit(int numBlocks) {
+  public static void setDefaultIndexPruningBlockHit(int numBlocks) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
       scan.setNumBlocksAfterDefaultPruning(numBlocks);
     }
   }
 
-  public static void recordCGDataMapPruning(IndexWrapperSimpleInfo indexWrapperSimpleInfo,
+  public static void recordCGIndexPruning(IndexWrapperSimpleInfo indexWrapperSimpleInfo,
       int numBlocklets, int numBlocks) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
@@ -130,7 +119,7 @@ public class ExplainCollector {
     }
   }
 
-  public static void recordFGDataMapPruning(IndexWrapperSimpleInfo indexWrapperSimpleInfo,
+  public static void recordFGIndexPruning(IndexWrapperSimpleInfo indexWrapperSimpleInfo,
       int numBlocklets, int numBlocks) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
@@ -181,12 +170,12 @@ public class ExplainCollector {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    for (int i = 0; i < olapDataMapProviders.size(); i++) {
+    for (int i = 0; i < mvProviders.size(); i++) {
       if (i == 0) {
         builder.append("Query rewrite based on Index:").append("\n");
       }
-      builder.append(" - ").append(olapDataMapNames.get(i)).append(" (")
-          .append(olapDataMapProviders.get(i)).append(")").append("\n");
+      builder.append(" - ").append(mvNames.get(i)).append(" (")
+          .append(mvProviders.get(i)).append(")").append("\n");
     }
     for (Map.Entry<String, Map<String, TablePruningInfo>> allThreads : scans.entrySet()) {
       for (Map.Entry<String, TablePruningInfo> entry : allThreads.getValue().entrySet()) {

@@ -30,15 +30,14 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
-import org.apache.carbondata.core.datamap.IndexInputSplit;
-import org.apache.carbondata.core.datamap.DataMapStoreManager;
-import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.CacheableIndex;
-import org.apache.carbondata.core.datamap.dev.IndexFactory;
-import org.apache.carbondata.core.datamap.dev.expr.IndexExprWrapper;
+import org.apache.carbondata.core.index.IndexInputSplit;
+import org.apache.carbondata.core.index.IndexStoreManager;
+import org.apache.carbondata.core.index.Segment;
+import org.apache.carbondata.core.index.dev.CacheableIndex;
+import org.apache.carbondata.core.index.dev.IndexFactory;
+import org.apache.carbondata.core.index.dev.expr.IndexExprWrapper;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.indexstore.BlockletIndexWrapper;
-import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifierWrapper;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexInputSplit;
@@ -78,9 +77,8 @@ public class BlockletIndexInputFormat
 
   private ReadCommittedScope readCommittedScope;
 
-  public BlockletIndexInputFormat(CarbonTable table,
-                                  IndexExprWrapper indexExprWrapper, List<Segment> validSegments,
-                                  List<Segment> invalidSegments, List<PartitionSpec> partitions, boolean isJobToClearDataMaps) {
+  public BlockletIndexInputFormat(CarbonTable table, IndexExprWrapper indexExprWrapper,
+      List<Segment> validSegments) {
     this.table = table;
     this.indexExprWrapper = indexExprWrapper;
     this.validSegments = validSegments;
@@ -88,7 +86,7 @@ public class BlockletIndexInputFormat
 
   @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
     IndexFactory indexFactory =
-        DataMapStoreManager.getInstance().getDefaultIndex(table).getIndexFactory();
+        IndexStoreManager.getInstance().getDefaultIndex(table).getIndexFactory();
     CacheableIndex factory = (CacheableIndex) indexFactory;
     List<IndexInputSplit> validDistributables =
         factory.getAllUncachedDistributables(validSegments, indexExprWrapper);
@@ -123,7 +121,7 @@ public class BlockletIndexInputFormat
       private TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier = null;
       private TableBlockIndexUniqueIdentifierWrapper tableBlockIndexUniqueIdentifierWrapper;
       Cache<TableBlockIndexUniqueIdentifierWrapper, BlockletIndexWrapper> cache =
-          CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);
+          CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_INDEX);
       private Iterator<TableBlockIndexUniqueIdentifier> iterator;
 
       @Override public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
@@ -168,7 +166,7 @@ public class BlockletIndexInputFormat
 
       @Override public void close() {
         if (null != tableBlockIndexUniqueIdentifierWrapper) {
-          if (null != wrapper && null != wrapper.getDataMaps() && !wrapper.getDataMaps()
+          if (null != wrapper && null != wrapper.getIndexes() && !wrapper.getIndexes()
               .isEmpty()) {
             String segmentId =
                 tableBlockIndexUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()
@@ -176,7 +174,7 @@ public class BlockletIndexInputFormat
             // as segmentId will be same for all the dataMaps and segmentProperties cache is
             // maintained at segment level so it need to be called only once for clearing
             SegmentPropertiesAndSchemaHolder.getInstance()
-                .invalidate(segmentId, wrapper.getDataMaps().get(0).getSegmentPropertiesWrapper(),
+                .invalidate(segmentId, wrapper.getIndexes().get(0).getSegmentPropertiesWrapper(),
                     tableBlockIndexUniqueIdentifierWrapper.isAddTableBlockToUnsafeAndLRUCache());
           }
         }

@@ -40,7 +40,7 @@ import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.processing.datamap.IndexWriterListener;
+import org.apache.carbondata.processing.index.IndexWriterListener;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
@@ -201,7 +201,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
   private void doExecute(Iterator<CarbonRowBatch> iterator, int iteratorIndex) {
     String[] storeLocation = getStoreLocation();
-    IndexWriterListener listener = getDataMapWriterListener(0);
+    IndexWriterListener listener = getIndexWriterListener(0);
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(
         configuration, storeLocation, 0, iteratorIndex, listener);
     model.setColumnLocalDictGenMap(localDictionaryGeneratorMap);

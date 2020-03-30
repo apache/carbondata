@@ -353,19 +353,19 @@ public final class CarbonCommonConstants {
   public static final String CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT_DEFAULT = "200";
 
   /**
-   * System older location to store system level data like datamap schema and status files.
+   * System older location to store system level data like index schema and status files.
    */
   @CarbonProperty
   public static final String CARBON_SYSTEM_FOLDER_LOCATION = "carbon.system.folder.location";
 
   @CarbonProperty
-  public static final String CARBON_DATAMAP_SCHEMA_STORAGE = "carbon.datamap.schema.storage";
+  public static final String CARBON_INDEX_SCHEMA_STORAGE = "carbon.index.schema.storage";
 
-  public static final String CARBON_DATAMAP_SCHEMA_STORAGE_DEFAULT = "DISK";
+  public static final String CARBON_INDEX_SCHEMA_STORAGE_DEFAULT = "DISK";
 
-  public static final String CARBON_DATAMAP_SCHEMA_STORAGE_DISK = "DISK";
+  public static final String CARBON_INDEX_SCHEMA_STORAGE_DISK = "DISK";
 
-  public static final String CARBON_DATAMAP_SCHEMA_STORAGE_DATABASE = "DATABASE";
+  public static final String CARBON_INDEX_SCHEMA_STORAGE_DATABASE = "DATABASE";
 
   /**
    * It is internal configuration and used only for test purpose.
@@ -1532,16 +1532,16 @@ public final class CarbonCommonConstants {
   public static final String CARBON_QUERY_STAGE_INPUT_DEFAULT = "false";
 
   //////////////////////////////////////////////////////////////////////////////////////////
-  // Datamap parameter start here
+  // Index parameter start here
   //////////////////////////////////////////////////////////////////////////////////////////
 
   /**
-   * key prefix for set command. 'carbon.datamap.visible.dbName.tableName.dmName = false' means
-   * that the query on 'dbName.table' will not use the datamap 'dmName'
+   * key prefix for set command. 'carbon.index.visible.dbName.tableName.indexName = false' means
+   * that the query on 'dbName.table' will not use the index 'indexName'
    */
   @InterfaceStability.Unstable
   @CarbonProperty(dynamicConfigurable = true)
-  public static final String CARBON_DATAMAP_VISIBLE = "carbon.datamap.visible.";
+  public static final String CARBON_INDEX_VISIBLE = "carbon.index.visible.";
 
   /**
    * Whether load/insert command is fired internally or by the user.
@@ -1553,24 +1553,13 @@ public final class CarbonCommonConstants {
   public static final String IS_INTERNAL_LOAD_CALL_DEFAULT = "false";
 
   @CarbonProperty
-  public static final String USE_DISTRIBUTED_DATAMAP = "carbon.enable.distributed.datamap";
+  public static final String USE_DISTRIBUTED_INDEX = "carbon.enable.distributed.index";
 
-  public static final String USE_DISTRIBUTED_DATAMAP_DEFAULT = "false";
+  public static final String USE_DISTRIBUTED_INDEX_DEFAULT = "false";
 
+  // Property to enable parallel index loading for a table
   @CarbonProperty(dynamicConfigurable = true)
-  public static final String SUPPORT_DIRECT_QUERY_ON_DATAMAP =
-      "carbon.query.directQueryOnDataMap.enabled";
-
-  public static final String SUPPORT_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE = "false";
-
-  @CarbonProperty
-  public static final String CARBON_SHOW_DATAMAPS = "carbon.query.show.datamaps";
-
-  public static final String CARBON_SHOW_DATAMAPS_DEFAULT = "true";
-
-  // Property to enable parallel datamap loading for a table
-  @CarbonProperty(dynamicConfigurable = true)
-  public static final String CARBON_LOAD_DATAMAPS_PARALLEL = "carbon.load.datamaps.parallel.";
+  public static final String CARBON_LOAD_INDEXES_PARALLEL = "carbon.load.indexes.parallel.";
 
   // by default lucene will not store or create index for stop words like "is","the", if this
   // property is set to true lucene will index for stop words also and gives result for the filter
@@ -2208,11 +2197,6 @@ public final class CarbonCommonConstants {
   public static final String FACT_FILE_UPDATED = "update";
 
   /**
-   * default value in size for cache size of bloom filter datamap.
-   */
-  public static final String CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE_DEFAULT_VAL = "512";
-
-  /**
    * The IP on which Index Server will be started.
    */
   @CarbonProperty
@@ -2261,12 +2245,12 @@ public final class CarbonCommonConstants {
   public static final String CARBON_ENABLE_AUDIT_DEFAULT = "true";
 
   /**
-   * This property will be used to store datamap name
+   * This property will be used to store mv name
    */
-  public static final String DATAMAP_NAME = "datamap_name";
+  public static final String MV_NAME = "mv_name";
 
   /**
-   * This property will be used to store parentable name's associated with datamap
+   * This property will be used to store parentable name's associated with mv
    */
   public static final String PARENT_TABLES = "parent_tables";
 
@@ -2442,6 +2426,17 @@ public final class CarbonCommonConstants {
    * Make this false, to load index for the matched segments from filter expression
    */
   public static final String CARBON_LOAD_ALL_SEGMENT_INDEXES_TO_CACHE_DEFAULT = "true";
+
+  /**
+   * Index properties
+   * Index_Provider is the name of CG or FG Index provider
+   */
+  public static final String INDEX_PROVIDER = "index_provider";
+
+  /**
+   * INDEX_STATUS defines the status of index. (Enabled / Disabled)
+   */
+  public static final String INDEX_STATUS = "index_status";
 
   /**
    * Materialized view thread context properties

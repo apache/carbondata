@@ -31,8 +31,8 @@ import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.IndexFilter;
-import org.apache.carbondata.core.datamap.DataMapStoreManager;
+import org.apache.carbondata.core.index.IndexFilter;
+import org.apache.carbondata.core.index.IndexStoreManager;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
@@ -65,8 +65,6 @@ import io.prestosql.spi.connector.SchemaTableName;
 import io.prestosql.spi.predicate.TupleDomain;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
@@ -151,8 +149,8 @@ public class CarbonTableReader {
           config).getLastModifiedTime();
       carbonTableCacheModel.setCurrentSchemaTime(latestTime);
       if (!carbonTableCacheModel.isValid()) {
-        // Invalidate datamaps
-        DataMapStoreManager.getInstance()
+        // Invalidate indexes
+        IndexStoreManager.getInstance()
             .clearIndex(carbonTableCacheModel.getCarbonTable().getAbsoluteTableIdentifier());
       }
     }
@@ -341,12 +339,12 @@ public class CarbonTableReader {
   }
 
   private CarbonTableInputFormat<Object> createInputFormat(Configuration conf,
-      AbsoluteTableIdentifier identifier, IndexFilter dataMapFilter,
+      AbsoluteTableIdentifier identifier, IndexFilter indexFilter,
       List<PartitionSpec> filteredPartitions) {
     CarbonTableInputFormat<Object> format = new CarbonTableInputFormat<>();
     CarbonTableInputFormat
         .setTablePath(conf, identifier.appendWithLocalPrefix(identifier.getTablePath()));
-    CarbonTableInputFormat.setFilterPredicates(conf, dataMapFilter);
+    CarbonTableInputFormat.setFilterPredicates(conf, indexFilter);
     if (filteredPartitions.size() != 0) {
       CarbonTableInputFormat.setPartitionsToPrune(conf, filteredPartitions);
     }

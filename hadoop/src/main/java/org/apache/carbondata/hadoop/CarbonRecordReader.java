@@ -23,10 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.index.IndexStoreManager;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
@@ -53,10 +53,10 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
   private InputMetricsStats inputMetricsStats;
 
   /**
-   * Whether to clear datamap when reader is closed. In some scenarios such as datamap rebuild,
-   * we will set it to true and will clear the datamap after rebuild
+   * Whether to clear Index when reader is closed. In some scenarios such as Index rebuild,
+   * we will set it to true and will clear the Index after rebuild
    */
-  private boolean skipClearDataMapAtClose = false;
+  private boolean skipClearIndexAtClose = false;
 
   public CarbonRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport,
       InputMetricsStats inputMetricsStats, Configuration configuration) {
@@ -159,9 +159,9 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
   @Override
   public void close() throws IOException {
     logStatistics(rowCount, queryModel.getStatisticsRecorder());
-    if (!skipClearDataMapAtClose) {
-      // Clear the datamap cache
-      DataMapStoreManager.getInstance().clearIndexCache(
+    if (!skipClearIndexAtClose) {
+      // Clear the Index cache
+      IndexStoreManager.getInstance().clearIndexCache(
           queryModel.getTable().getAbsoluteTableIdentifier(), false);
     }
     // close read support
@@ -174,7 +174,7 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     }
   }
 
-  public void setSkipClearDataMapAtClose(boolean skipClearDataMapAtClose) {
-    this.skipClearDataMapAtClose = skipClearDataMapAtClose;
+  public void setSkipClearIndexAtClose(boolean skipClearIndexAtClose) {
+    this.skipClearIndexAtClose = skipClearIndexAtClose;
   }
 }

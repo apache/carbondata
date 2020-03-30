@@ -51,7 +51,7 @@ public class SafeMemoryDMStore extends AbstractMemoryDMStore {
   }
 
   @Override
-  public IndexRow getDataMapRow(CarbonRowSchema[] schema, int index) {
+  public IndexRow getIndexRow(CarbonRowSchema[] schema, int index) {
     assert (index < indexRows.size());
     return indexRows.get(index);
   }

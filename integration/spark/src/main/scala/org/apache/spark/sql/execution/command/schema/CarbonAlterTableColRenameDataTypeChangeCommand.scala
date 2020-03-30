@@ -119,13 +119,13 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
           !carbonTable.canAllow(carbonTable, TableOperation.ALTER_CHANGE_DATATYPE,
             alterTableColRenameAndDataTypeChangeModel.columnName)) {
         throw new MalformedCarbonCommandException(
-          "alter table change datatype is not supported for index datamap")
+          "alter table change datatype is not supported for index indexSchema")
       }
       if (alterTableColRenameAndDataTypeChangeModel.isColumnRename &&
           !carbonTable.canAllow(carbonTable, TableOperation.ALTER_COLUMN_RENAME,
             alterTableColRenameAndDataTypeChangeModel.columnName)) {
         throw new MalformedCarbonCommandException(
-          "alter table column rename is not supported for index datamap")
+          "alter table column rename is not supported for index indexSchema")
       }
       // Do not allow index handler's source columns to be changed.
       AlterTableUtil.validateForIndexHandlerSources(carbonTable,

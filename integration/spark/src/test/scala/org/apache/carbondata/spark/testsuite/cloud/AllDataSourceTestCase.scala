@@ -43,8 +43,8 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
     // TODO these properties only work when running in idea.
     CarbonProperties.getInstance()
         .addProperty(
-          CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE,
-          CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DATABASE
+          CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE,
+          CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DATABASE
         )
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.DATABASE_LOCATION_PROVIDER,
       "org.apache.carbondata.spark.testsuite.cloud.TestProvider")
@@ -109,8 +109,8 @@ class AllDataSourceTestCase extends QueryTest with BeforeAndAfterAll {
     } finally {
       CarbonProperties.getInstance()
         .addProperty(
-          CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE,
-          CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DEFAULT
+          CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE,
+          CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DEFAULT
         )
       CarbonProperties.getInstance().removeProperty(CarbonCommonConstants.DATABASE_LOCATION_PROVIDER)
     }

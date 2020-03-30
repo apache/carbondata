@@ -20,7 +20,7 @@ package org.apache.carbondata.core.indexstore.blockletindex;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.datamap.dev.IndexModel;
+import org.apache.carbondata.core.index.dev.IndexModel;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;

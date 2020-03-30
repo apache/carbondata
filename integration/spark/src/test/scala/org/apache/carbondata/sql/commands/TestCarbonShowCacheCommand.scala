@@ -190,10 +190,10 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     // Make sure PreAgg tables are not in SHOW METADATA
     sql("use default").collect()
     val result3 = sql("show metacache").collect()
-    val dataMapCacheInfo = result3
+    val indexCacheInfo = result3
       .map(row => row.getString(1))
       .filter(table => table.equals("cache_4_cache_4_count"))
-    assertResult(0)(dataMapCacheInfo.length)
+    assertResult(0)(indexCacheInfo.length)
   }
 
   test("show metacache on table") {

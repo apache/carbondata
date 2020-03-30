@@ -18,7 +18,7 @@ package org.apache.carbondata.events
 
 import org.apache.spark.sql.SparkSession
 
-import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 // Event for Prepriming in cache

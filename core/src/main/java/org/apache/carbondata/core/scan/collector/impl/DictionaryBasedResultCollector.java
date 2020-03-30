@@ -90,7 +90,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
    * Fields of this Map of Parent Ordinal with the List is the Child Column Dimension and
    * the corresponding data buffer of that column.
    */
-  private Map<Integer, Map<CarbonDimension, ByteBuffer>> mergedComplexDimensionDataMap =
+  private Map<Integer, Map<CarbonDimension, ByteBuffer>> mergedComplexDimensionIndex =
       new HashMap<>();
 
   private boolean readOnlyDelta;
@@ -195,7 +195,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
   }
 
   private void fillComplexColumnDataBufferForThisRow() {
-    mergedComplexDimensionDataMap.clear();
+    mergedComplexDimensionIndex.clear();
     int noDictionaryComplexColumnIndex = 0;
     int complexTypeComplexColumnIndex = 0;
     for (int i = 0; i < queryDimensions.length; i++) {
@@ -203,10 +203,10 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       if (complexParentOrdinal != -1) {
         Map<CarbonDimension, ByteBuffer> childColumnByteBuffer;
         // Add the parent and the child ordinal to the parentToChildColumnsMap
-        if (mergedComplexDimensionDataMap.get(complexParentOrdinal) == null) {
+        if (mergedComplexDimensionIndex.get(complexParentOrdinal) == null) {
           childColumnByteBuffer = new HashMap<>();
         } else {
-          childColumnByteBuffer = mergedComplexDimensionDataMap.get(complexParentOrdinal);
+          childColumnByteBuffer = mergedComplexDimensionIndex.get(complexParentOrdinal);
         }
 
         // send the byte buffer for the complex columns. Currently expected columns for
@@ -234,7 +234,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
 
         childColumnByteBuffer
             .put(queryDimensions[i].getDimension(), buffer);
-        mergedComplexDimensionDataMap.put(complexParentOrdinal, childColumnByteBuffer);
+        mergedComplexDimensionIndex.put(complexParentOrdinal, childColumnByteBuffer);
       } else if (!queryDimensions[i].getDimension().isComplex()) {
         // If Dimension is not a Complex Column, then increment index for noDictionaryComplexColumn
         noDictionaryComplexColumnIndex++;
@@ -331,7 +331,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     if (childColumns.get(0).equals(queryDimensions[i].getDimension().getOrdinal())) {
       // Fill out Parent Column.
       row[order[i]] = complexDimensionInfoMap.get(complexParentOrdinal).getDataBasedOnColumnList(
-          mergedComplexDimensionDataMap.get(queryDimensions[i].getParentDimension().getOrdinal()),
+          mergedComplexDimensionIndex.get(queryDimensions[i].getParentDimension().getOrdinal()),
           queryDimensions[i].getParentDimension());
     } else {
       row[order[i]] = null;

@@ -54,7 +54,7 @@ import org.apache.carbondata.core.writer.CarbonIndexFileWriter;
 import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.IndexHeader;
-import org.apache.carbondata.processing.datamap.IndexWriterListener;
+import org.apache.carbondata.processing.index.IndexWriterListener;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 
 import static org.apache.carbondata.core.constants.SortScopeOptions.SortScope.NO_SORT;
@@ -236,22 +236,22 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     currentFileSize += blockletSizeToBeAdded;
   }
 
-  private void notifyDataMapBlockStart() {
+  private void notifyBlockStart() {
     if (listener != null) {
       try {
         listener.onBlockStart(carbonDataFileName);
       } catch (IOException e) {
-        throw new CarbonDataWriterException("Problem while writing datamap", e);
+        throw new CarbonDataWriterException("Problem while writing index", e);
       }
     }
   }
 
-  private void notifyDataMapBlockEnd() {
+  private void notifyBlockEnd() {
     if (listener != null) {
       try {
         listener.onBlockEnd(carbonDataFileName);
       } catch (IOException e) {
-        throw new CarbonDataWriterException("Problem while writing datamap", e);
+        throw new CarbonDataWriterException("Problem while writing index", e);
       }
     }
   }
@@ -261,7 +261,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    * @param copyInCurrentThread set to false if want to do data copy in a new thread
    */
   protected void commitCurrentFile(boolean copyInCurrentThread) {
-    notifyDataMapBlockEnd();
+    notifyBlockEnd();
     CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
     if (!enableDirectlyWriteDataToStorePath) {
       try {
@@ -297,7 +297,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
         .getFileName().equals(carbonDataFileName)) {
       // no need add this entry in index file
       blockIndexInfoList.remove(blockIndexInfoList.size() - 1);
-      // TODO: currently there is no implementation for notifyDataMapBlockEnd(),
+      // TODO: currently there is no implementation for notifyBlockEnd(),
       // hence no impact, once implementation is done. Need to undo it in this case.
     }
   }
@@ -343,7 +343,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       throw new CarbonDataWriterException(
           "Problem while getting the channel for fact data file", ex);
     }
-    notifyDataMapBlockStart();
+    notifyBlockStart();
   }
 
   /**

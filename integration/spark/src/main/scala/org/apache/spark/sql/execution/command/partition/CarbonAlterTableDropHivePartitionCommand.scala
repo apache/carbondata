@@ -29,7 +29,7 @@ import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.SegmentFileStore
@@ -186,7 +186,7 @@ case class CarbonAlterTableDropHivePartitionCommand(
       val postStatusEvent = AlterTableDropPartitionPostStatusEvent(table)
       OperationListenerBus.getInstance().fireEvent(postStatusEvent, operationContext)
 
-      DataMapStoreManager.getInstance().clearIndex(table.getAbsoluteTableIdentifier)
+      IndexStoreManager.getInstance().clearIndex(table.getAbsoluteTableIdentifier)
     } finally {
       AlterTableUtil.releaseLocks(locks)
       SegmentFileStore.cleanSegments(table, null, true)

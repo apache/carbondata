@@ -32,8 +32,8 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.IndexFilter
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.IndexFilter
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -91,7 +91,6 @@ case class CarbonDatasourceHadoopRelation(
       requiredColumns.foreach(projection.addColumn)
     }
 
-    CarbonUtils.threadUnset(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP)
     val inputMetricsStats: CarbonInputMetrics = new CarbonInputMetrics
     new CarbonScanRDD(
       sparkSession,

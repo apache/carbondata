@@ -33,7 +33,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object MVExample {
 
   def main(args: Array[String]) {
-    val spark = ExampleUtils.createSparkSession("MVDataMapExample")
+    val spark = ExampleUtils.createSparkSession("MVExample")
     exampleBody(spark)
     performanceTest(spark)
     spark.close()
@@ -114,10 +114,10 @@ object MVExample {
     spark.sql(s"""select id,address, sum(age) from mainTable inner join dimtable on mainTable
                  |.name=dimtable.name where id =1 group by id ,address""".stripMargin).explain(true)
 
-    // Show datamaps
+    // Show MV
     spark.sql("show materialized views").show(false)
 
-    // Drop datamap
+    // Drop MV
     spark.sql("drop materialized view if exists simple_agg_with_join")
 
     spark.sql("DROP TABLE IF EXISTS mainTable")
@@ -149,7 +149,7 @@ object MVExample {
          | select id,sum(salary) from employee_salary group by id""".stripMargin)
     spark.sql(s"""refresh materialized view simple_agg_employee""")
 
-    // Test performance of aggregate queries with mv datamap
+    // Test performance of aggregate queries with mv MV
     val timeWithOutMv = time(spark
       .sql("select id, name, sum(salary) from employee_salary_without_mv group by id,name")
       .collect())
@@ -199,7 +199,7 @@ object MVExample {
   private def createFactTable(spark: SparkSession, tableName: String): Unit = {
     import spark.implicits._
     val rand = new Random()
-    // Create fact table with datamap
+    // Create fact table with MV
     val df = spark.sparkContext.parallelize(1 to 1000000)
       .map(x => (x % 1000, "name" + x % 1000, "city" + x % 100, rand.nextInt()))
       .toDF("id", "name", "city", "salary")

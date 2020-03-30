@@ -22,11 +22,14 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.command.{IndexModel, SecondaryIndexModel}
 import org.apache.spark.sql.secondaryindex.rdd.SecondaryIndexCreator
-import org.apache.spark.sql.secondaryindex.util.{CarbonInternalScalaUtil, SecondaryIndexUtil}
+import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
@@ -45,15 +48,22 @@ object Compactor {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val carbonMainTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     // get list from carbonTable.getIndexes method
-    if (null == CarbonInternalScalaUtil.getIndexesMap(carbonMainTable)) {
+    val indexProviderMap = carbonMainTable.getIndexesMap
+    if (null == indexProviderMap) {
       throw new Exception("Secondary index load failed")
     }
-    val indexTablesList = CarbonInternalScalaUtil.getIndexesMap(carbonMainTable).asScala
-    indexTablesList.foreach { indexTableAndColumns =>
+    val iterator = if (null != indexProviderMap.get(IndexType.SI.getIndexProviderName)) {
+      indexProviderMap.get(IndexType.SI.getIndexProviderName).entrySet().iterator()
+    } else {
+      java.util.Collections.emptyIterator()
+    }
+    while (iterator.hasNext) {
+      val index = iterator.next()
+      val indexColumns = index.getValue.get(CarbonCommonConstants.INDEX_COLUMNS).split(",").toList
       val secondaryIndex = IndexModel(Some(carbonLoadModel.getDatabaseName),
         carbonLoadModel.getTableName,
-        indexTableAndColumns._2.asScala.toList,
-        indexTableAndColumns._1)
+        indexColumns,
+        index.getKey)
       val secondaryIndexModel = SecondaryIndexModel(sqlContext,
         carbonLoadModel,
         carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
@@ -93,7 +103,7 @@ object Compactor {
           .getCarbonLoadModel(indexCarbonTable,
             loadMetadataDetails.toList.asJava,
             System.currentTimeMillis(),
-            CarbonInternalScalaUtil.getCompressorForIndexTable(indexCarbonTable, carbonMainTable))
+            CarbonIndexUtil.getCompressorForIndexTable(indexCarbonTable, carbonMainTable))
 
         // merge the data files of the compacted segments and take care of
         // merging the index files inside this if needed

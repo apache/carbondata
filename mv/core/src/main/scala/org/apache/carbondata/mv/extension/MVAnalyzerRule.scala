@@ -28,25 +28,25 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
+import org.apache.carbondata.core.index.IndexStoreManager
+import org.apache.carbondata.core.metadata.schema.index.IndexClassProvider
+import org.apache.carbondata.core.metadata.schema.table.IndexSchema
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
-import org.apache.carbondata.datamap.DataMapManager
+import org.apache.carbondata.index.IndexManager
 import org.apache.carbondata.mv.plans.modular.{ModularPlan, Select}
 import org.apache.carbondata.mv.rewrite.{MVUdf, SummaryDataset, SummaryDatasetCatalog}
 
 /**
- * Analyzer rule to rewrite the query for MV datamap
+ * Analyzer rule to rewrite the query for MV indexSchema
  *
  * @param sparkSession
  */
 class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
   // TODO Find way better way to get the provider.
-  private val dataMapProvider =
-    DataMapManager.get().getDataMapProvider(null,
-      new DataMapSchema("", DataMapClassProvider.MV.getShortName), sparkSession)
+  private val indexProvider =
+    IndexManager.get().getIndexProvider(null,
+      new IndexSchema("", IndexClassProvider.MV.getShortName), sparkSession)
 
   private val LOGGER = LogServiceFactory.getLogService(classOf[MVAnalyzerRule].getName)
 
@@ -84,14 +84,14 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
         Aggregate(grp, aExp, child)
     }
     if (needAnalysis) {
-      var catalog = DataMapStoreManager.getInstance().getMVCatalog(dataMapProvider,
-        DataMapClassProvider.MV.getShortName, false).asInstanceOf[SummaryDatasetCatalog]
-      // when first time DataMapCatalogs are initialized, it stores session info also,
+      var catalog = IndexStoreManager.getInstance().getMVCatalog(indexProvider,
+        IndexClassProvider.MV.getShortName, false).asInstanceOf[SummaryDatasetCatalog]
+      // when first time MV catalog are initialized, it stores session info also,
       // but when carbon session is newly created, catalog map will not be cleared,
       // so if session info is different, remove the entry from map.
       if (catalog != null && !catalog.mvSession.sparkSession.equals(sparkSession)) {
-        catalog = DataMapStoreManager.getInstance().getMVCatalog(dataMapProvider,
-          DataMapClassProvider.MV.getShortName, true).asInstanceOf[SummaryDatasetCatalog]
+        catalog = IndexStoreManager.getInstance().getMVCatalog(indexProvider,
+          IndexClassProvider.MV.getShortName, true).asInstanceOf[SummaryDatasetCatalog]
       }
       if (catalog != null && isValidPlan(plan, catalog)) {
         val modularPlan = catalog.mvSession.sessionState.rewritePlan(plan).withMVTable
@@ -117,16 +117,16 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
    *
    * SELECT gen_subsumer_0.`UDF:timeseries(projectjoindate, hour)` AS `UDF:timeseries(projectjoi...
    * FROM
-   * (SELECT datamap1_table.`UDF:timeseries_projectjoindate_hour` AS `UDF:timeseries(projectjoin...
+   * (SELECT mv_table.`UDF:timeseries_projectjoindate_hour` AS `UDF:timeseries(projectjoin...
    * FROM
-   *     default.datamap1_table
-   * GROUP BY datamap1_table.`UDF:timeseries_projectjoindate_hour`) gen_subsumer_0
+   *     default.mv_table
+   * GROUP BY mv_table.`UDF:timeseries_projectjoindate_hour`) gen_subsumer_0
    * WHERE
    * (UDF:timeseries(projectjoindate, hour) = TIMESTAMP('2016-02-23 09:00:00.0'))
    *
    * Here for Where filter expression is of type ScalaUDF, so when we do .sql() to prepare SQL, we
    * get without qualifier name(Refer org.apache.spark.sql.catalyst.expressions.NonSQLExpression)
-   * which is 'gen_subsumer_0', so this funtion rewrites with qualifier name and returns, so that
+   * which is 'gen_subsumer_0', so this function rewrites with qualifier name and returns, so that
    * parsing does not fail in spark, for rewritten MV query.
    * @param plan Modular Plan
    * @param compactSQL compactSQL generated from Modular plan
@@ -159,13 +159,13 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
   }
 
   /**
-   * Whether the plan is valid for doing modular plan matching and datamap replacing.
+   * Whether the plan is valid for doing modular plan matching and indexSchema replacing.
    */
   def isValidPlan(plan: LogicalPlan, catalog: SummaryDatasetCatalog): Boolean = {
     if (!plan.isInstanceOf[Command]  && !plan.isInstanceOf[DeserializeToObject]) {
       val catalogs = extractCatalogs(plan)
-      !isDataMapReplaced(catalog.listAllValidSchema(), catalogs) &&
-      isDataMapExists(catalog.listAllValidSchema(), catalogs) &&
+      !isIndexReplaced(catalog.listAllValidSchema(), catalogs) &&
+      isMVExists(catalog.listAllValidSchema(), catalogs) &&
       !isSegmentSetForMainTable(catalogs)
     } else {
       false
@@ -173,17 +173,17 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
   }
   /**
-   * Check whether datamap table already updated in the query.
+   * Check whether indexSchema table already updated in the query.
    *
    * @param mvdataSetArray Array of available mvdataset which include modular plans
-   * @return Boolean whether already datamap replaced in the plan or not
+   * @return Boolean whether already indexSchema replaced in the plan or not
    */
-  def isDataMapReplaced(
+  def isIndexReplaced(
       mvdataSetArray: Array[SummaryDataset],
       catalogs: Seq[Option[CatalogTable]]): Boolean = {
     catalogs.exists { c =>
       mvdataSetArray.exists { mv =>
-        val identifier = mv.dataMapSchema.getRelationIdentifier
+        val identifier = mv.indexSchema.getRelationIdentifier
         identifier.getTableName.equals(c.get.identifier.table) &&
         identifier.getDatabaseName.equals(c.get.database)
       }
@@ -191,16 +191,16 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
   }
 
   /**
-   * Check whether any suitable datamaps(like datamap which parent tables are present in the plan)
+   * Check whether any suitable indexes(like index which parent tables are present in the plan)
    * exists for this plan.
    *
    * @param mvs
    * @return
    */
-  def isDataMapExists(mvs: Array[SummaryDataset], catalogs: Seq[Option[CatalogTable]]): Boolean = {
+  def isMVExists(mvs: Array[SummaryDataset], catalogs: Seq[Option[CatalogTable]]): Boolean = {
     catalogs.exists { c =>
       mvs.exists { mv =>
-        mv.dataMapSchema.getParentTables.asScala.exists { identifier =>
+        mv.indexSchema.getParentTables.asScala.exists { identifier =>
           identifier.getTableName.equals(c.get.identifier.table) &&
           identifier.getDatabaseName.equals(c.get.database)
         }
@@ -217,7 +217,7 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
   /**
    * Check if any segments are set for main table for Query. If any segments are set, then
-   * skip mv datamap table for query
+   * skip mv indexSchema table for query
    */
   def isSegmentSetForMainTable(catalogs: Seq[Option[CatalogTable]]): Boolean = {
     catalogs.foreach { c =>

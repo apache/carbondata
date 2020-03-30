@@ -94,7 +94,7 @@ case class CarbonInsertIntoWithDf(databaseNameOp: Option[String],
     var isUpdateTableStatusRequired = false
     val uuid = ""
     try {
-      val (tableDataMaps, dataMapOperationContext) =
+      val (tableIndexes, indexOperationContext) =
         CommonLoadUtils.firePreLoadEvents(
           sparkSession = sparkSession,
           carbonLoadModel = carbonLoadModel,
@@ -157,8 +157,8 @@ case class CarbonInsertIntoWithDf(databaseNameOp: Option[String],
       val info = CommonLoadUtils.makeAuditInfo(loadResult)
       CommonLoadUtils.firePostLoadEvents(sparkSession,
         carbonLoadModel,
-        tableDataMaps,
-        dataMapOperationContext,
+        tableIndexes,
+        indexOperationContext,
         table,
         operationContext)
     } catch {

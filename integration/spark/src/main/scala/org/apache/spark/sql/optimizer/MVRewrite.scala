@@ -137,7 +137,7 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
     }
     if (null != timeSeriesFunction._2 && canRollUp) {
       // check for rollup and rewrite the plan
-      // collect all the datasets which contains timeseries datamap's
+      // collect all the datasets which contains timeseries MV's
       val viewSchemaWrappers = catalog.lookupFeasibleSchemas(modularPlan)
       var granularityList: java.util.List[TimeSeriesFunctionEnum] =
         new java.util.ArrayList[TimeSeriesFunctionEnum]()
@@ -240,23 +240,23 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
         // For example:
         // Given User query:
         // SELECT timeseries(col,'day') from maintable group by timeseries(col,'day')
-        // If plan is rewritten as per 'hour' granularity of datamap1,
+        // If plan is rewritten as per 'hour' granularity of mv1,
         // then rewritten query will be like,
-        // SELECT datamap1_table.`UDF:timeseries_projectjoindate_hour` AS `UDF:timeseries
+        // SELECT mv1.`UDF:timeseries_projectjoindate_hour` AS `UDF:timeseries
         // (projectjoindate, hour)`
         // FROM
-        // default.datamap1_table
-        // GROUP BY datamap1_table.`UDF:timeseries_projectjoindate_hour`
+        // default.mv1
+        // GROUP BY mv1.`UDF:timeseries_projectjoindate_hour`
         //
         // Now, rewrite the rewritten plan as per the 'day' granularity
         // SELECT timeseries(gen_subsumer_0.`UDF:timeseries(projectjoindate, hour)`,'day' ) AS
         // `UDF:timeseries(projectjoindate, day)`
         //  FROM
-        //  (SELECT datamap2_table.`UDF:timeseries_projectjoindate_hour` AS `UDF:timeseries
+        //  (SELECT mv2.`UDF:timeseries_projectjoindate_hour` AS `UDF:timeseries
         //  (projectjoindate, hour)`
         //  FROM
-        //    default.datamap2_table
-        //  GROUP BY datamap2_table.`UDF:timeseries_projectjoindate_hour`) gen_subsumer_0
+        //    default.mv2
+        //  GROUP BY mv2.`UDF:timeseries_projectjoindate_hour`) gen_subsumer_0
         // GROUP BY timeseries(gen_subsumer_0.`UDF:timeseries(projectjoindate, hour)`,'day' )
         harmonizedPlan match {
           case select: Select =>
@@ -433,7 +433,7 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
         case (Nil, Nil) => None
         case (r, e) if r.forall(_.isInstanceOf[LeafNode]) && e.forall(_.isInstanceOf[LeafNode]) =>
           val matchesPlans =
-            MVMatchMaker$.execute(subsumer, subsumee, None, subqueryNameGenerator)
+            MVMatchMaker.execute(subsumer, subsumee, None, subqueryNameGenerator)
           if (matchesPlans.hasNext) {
             Some(matchesPlans.next)
           } else {
@@ -443,9 +443,9 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
           val compensation = rewriteWithSchemaWrapper0(subsumerChild, subsumeeChild)
           val matchesPlans = compensation.map {
             case comp if comp.eq(subsumerChild) =>
-              MVMatchMaker$.execute(subsumer, subsumee, None, subqueryNameGenerator)
+              MVMatchMaker.execute(subsumer, subsumee, None, subqueryNameGenerator)
             case _ =>
-              MVMatchMaker$.execute(subsumer, subsumee, compensation,
+              MVMatchMaker.execute(subsumer, subsumee, compensation,
                 subqueryNameGenerator)
           }
           if (matchesPlans.isDefined && matchesPlans.get.hasNext) {
@@ -557,7 +557,7 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
       subsumer: ModularPlan,
       subsumee: ModularPlan,
       modularPlan: ModularPlan): ModularPlan = {
-    // Update datamap table relation to the subsumer modular plan
+    // Update MV table relation to the subsumer modular plan
     val updatedSubsumer = subsumer match {
       // In case of order by it adds extra select but that can be ignored while doing selection.
       case select@Select(_, _, _, _, _, Seq(g: GroupBy), _, _, _, _) =>

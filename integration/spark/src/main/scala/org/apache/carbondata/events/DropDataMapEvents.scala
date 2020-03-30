@@ -18,37 +18,37 @@ package org.apache.carbondata.events
 
 import org.apache.spark.sql.SparkSession
 
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.metadata.schema.table.IndexSchema
 
 
 /**
- * This event is fired before creating datamap
+ * This event is fired before creating index
  * @param ifExistsSet
  * @param sparkSession
  */
-case class DropDataMapPreEvent(
-    dataMapSchema: Option[DataMapSchema],
+case class DropIndexPreEvent(
+    indexSchema: Option[IndexSchema],
     ifExistsSet: Boolean,
     sparkSession: SparkSession) extends Event
 
 
 /**
- * This event is fired after creating datamap.
+ * This event is fired after creating index.
  * @param ifExistsSet
  * @param sparkSession
  */
-case class DropDataMapPostEvent(
-    dataMapSchema: Option[DataMapSchema],
+case class DropIndexPostEvent(
+    indexSchema: Option[IndexSchema],
     ifExistsSet: Boolean,
     sparkSession: SparkSession) extends Event
 
 
 /**
- * This event is fired when any abort operation during datamap creation.
+ * This event is fired when any abort operation during index creation.
  * @param ifExistsSet
  * @param sparkSession
  */
-case class DropDataMapAbortEvent(
-    dataMapSchema: Option[DataMapSchema],
+case class DropIndexAbortEvent(
+    indexSchema: Option[IndexSchema],
     ifExistsSet: Boolean,
     sparkSession: SparkSession) extends Event

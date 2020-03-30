@@ -28,8 +28,8 @@ import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.exception.ConcurrentOperationException
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
@@ -62,20 +62,6 @@ case class CarbonCleanFilesCommand(
     setAuditInfo(Map(
       "force" -> forceTableClean.toString,
       "internal" -> isInternalCleanCall.toString))
-    if (carbonTable.hasMVCreated) {
-      val allDataMapSchemas = DataMapStoreManager.getInstance
-        .getDataMapSchemasOfTable(carbonTable).asScala
-        .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                 !dataMapSchema.isIndex)
-      cleanFileCommands = allDataMapSchemas.map {
-        dataMapSchema =>
-          val relationIdentifier = dataMapSchema.getRelationIdentifier
-          CarbonCleanFilesCommand(
-            Some(relationIdentifier.getDatabaseName), Some(relationIdentifier.getTableName),
-            isInternalCleanCall = true)
-      }.toList
-      cleanFileCommands.foreach(_.processMetadata(sparkSession))
-    }
     val viewSchemas =
       MVManagerInSpark.get(sparkSession).getSchemasOnTable(carbonTable)
     if (!viewSchemas.isEmpty) {

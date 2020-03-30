@@ -177,7 +177,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     if (exp instanceof MatchExpression) {
       BitSetGroup bitSetGroup = rawBlockletColumnChunks.getBitSetGroup();
       if (bitSetGroup == null) {
-        // It means there are no datamap created on this table
+        // It means there are no index created on this table
         throw new FilterUnsupportedException(String.format("%s is not supported on table %s",
             exp.getFilterExpressionType().name(), tableIdentifier.getTableName()));
       }

@@ -24,12 +24,14 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.execution.command.AlterTableDataTypeChangeModel
 import org.apache.spark.sql.execution.command.schema.CarbonAlterTableColRenameDataTypeChangeCommand
-import org.apache.spark.sql.hive.CarbonHiveMetadataUtil
-import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo
 import org.apache.carbondata.events._
 import org.apache.carbondata.events.exception.PostEventException
@@ -78,12 +80,19 @@ class AlterTableColumnRenameEventListener extends OperationEventListener with Lo
           .filter(!_.isInvisible)
         val carbonColumn = carbonColumns.filter(_.getColName.equalsIgnoreCase(oldColumnName))
         var indexTablesToRenameColumn: Seq[String] = Seq.empty
-        CarbonInternalScalaUtil.getIndexesMap(carbonTable).asScala.foreach(
-          indexTable =>
-            indexTable._2.asScala.foreach(column =>
+        val secondaryIndexMap =
+          carbonTable.getIndexesMap.get(IndexType.SI.getIndexProviderName)
+        if (null != secondaryIndexMap) {
+          val iterator = secondaryIndexMap.entrySet().iterator()
+          while (iterator.hasNext) {
+            val indexTable = iterator.next()
+            val indexCols = indexTable.getValue.get(CarbonCommonConstants.INDEX_COLUMNS).split(",")
+            indexCols.foreach(column =>
               if (oldColumnName.equalsIgnoreCase(column)) {
-                indexTablesToRenameColumn ++= Seq(indexTable._1)
-              }))
+                indexTablesToRenameColumn ++= Seq(indexTable.getKey)
+              })
+          }
+        }
         val indexTablesRenamedSuccess = indexTablesToRenameColumn
           .takeWhile { indexTable =>
             val alterTableColRenameAndDataTypeChangeModel =
@@ -149,7 +158,7 @@ class AlterTableColumnRenameEventListener extends OperationEventListener with Lo
             CarbonEnv.getInstance(sparkSession).carbonMetaStore
               .removeTableFromMetadata(carbonTable.getDatabaseName, carbonTable.getTableName)
           }
-          CarbonHiveMetadataUtil.refreshTable(database, carbonTable.getTableName, sparkSession)
+          CarbonHiveIndexMetadataUtil.refreshTable(database, carbonTable.getTableName, sparkSession)
         }
       case _ =>
     }

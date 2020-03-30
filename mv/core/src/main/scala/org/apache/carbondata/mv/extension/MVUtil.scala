@@ -31,7 +31,7 @@ import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, ModularRela
 import org.apache.carbondata.spark.util.CommonUtil
 
 /**
- * Utility class for keeping all the utility method for mv datamap
+ * Utility class for keeping all the utility method for the MV
  */
 class MVUtil {
 
@@ -40,7 +40,7 @@ class MVUtil {
   /**
    * Below method will be used to validate and get the required fields from select plan
    */
-  def getFieldsAndDataMapFieldsFromPlan(
+  def getFieldsAndMVFieldsFromPlan(
       plan: ModularPlan,
       relations: Seq[Relation]): mutable.LinkedHashMap[Field, MVField] = {
     plan match {
@@ -62,7 +62,7 @@ class MVUtil {
   }
 
   /**
-   * Create's main table to datamap table field relation map by using modular plan generated from
+   * Create's main table to MV table field relation map by using modular plan generated from
    * user query
    * @param outputList of the modular plan
    * @param predicateList of the modular plan
@@ -73,8 +73,8 @@ class MVUtil {
       outputList: Seq[NamedExpression],
       predicateList: Seq[Expression],
       relations: Seq[Relation]): mutable.LinkedHashMap[Field, MVField] = {
-    var fieldToDataMapFieldMap = scala.collection.mutable.LinkedHashMap.empty[Field, MVField]
-    fieldToDataMapFieldMap ++== getFieldsFromProject(outputList, relations)
+    var fieldToMVFieldMap = scala.collection.mutable.LinkedHashMap.empty[Field, MVField]
+    fieldToMVFieldMap ++== getFieldsFromProject(outputList, relations)
     var finalPredicateList: Seq[NamedExpression] = Seq.empty
     predicateList.map { p =>
       p.collect {
@@ -82,14 +82,14 @@ class MVUtil {
           finalPredicateList = finalPredicateList.:+(attr)
       }
     }
-    fieldToDataMapFieldMap ++== getFieldsFromProject(finalPredicateList.distinct, relations)
-    fieldToDataMapFieldMap
+    fieldToMVFieldMap ++== getFieldsFromProject(finalPredicateList.distinct, relations)
+    fieldToMVFieldMap
   }
 
   private def getFieldsFromProject(
       projectList: Seq[NamedExpression],
       relations: Seq[Relation]): mutable.LinkedHashMap[Field, MVField] = {
-    var fieldToDataMapFieldMap = scala.collection.mutable.LinkedHashMap.empty[Field, MVField]
+    var fieldToMVFieldMap = scala.collection.mutable.LinkedHashMap.empty[Field, MVField]
     projectList.map {
       case attr: AttributeReference =>
         val catalogTable = getCatalogTable(relations, attr)
@@ -110,8 +110,8 @@ class MVUtil {
               attr.qualifier.lastOption
             }
           }
-          fieldToDataMapFieldMap +=
-          getFieldToDataMapFields(
+          fieldToMVFieldMap +=
+          getFieldToMVFields(
             attr.name,
             attr.dataType,
             qualifier.lastOption,
@@ -130,8 +130,8 @@ class MVUtil {
           if (null != relation) {
             arrayBuffer += relation
           }
-          fieldToDataMapFieldMap +=
-          getFieldToDataMapFields(name, attr.dataType, None, "", arrayBuffer, "")
+          fieldToMVFieldMap +=
+          getFieldToMVFields(name, attr.dataType, None, "", arrayBuffer, "")
         }
 
       case a@Alias(agg: AggregateExpression, _) =>
@@ -150,8 +150,8 @@ class MVUtil {
               }
             }
         }
-        fieldToDataMapFieldMap +=
-        getFieldToDataMapFields(a.name,
+        fieldToMVFieldMap +=
+        getFieldToMVFields(a.name,
           a.dataType,
           None,
           agg.aggregateFunction.nodeName,
@@ -174,10 +174,10 @@ class MVUtil {
               }
             }
         }
-        fieldToDataMapFieldMap +=
-        getFieldToDataMapFields(a.name, a.dataType, None, "arithmetic", arrayBuffer, "")
+        fieldToMVFieldMap +=
+        getFieldToMVFields(a.name, a.dataType, None, "arithmetic", arrayBuffer, "")
     }
-    fieldToDataMapFieldMap
+    fieldToMVFieldMap
   }
 
   /**
@@ -213,7 +213,7 @@ class MVUtil {
   /**
    * Below method will be used to get the fields object for mv table
    */
-  private def getFieldToDataMapFields(
+  private def getFieldToMVFields(
       name: String,
       dataType: DataType,
       qualifier: Option[String],
@@ -232,7 +232,7 @@ class MVUtil {
       }
     }
     val rawSchema = '`' + actualColumnName + '`' + ' ' + dataType.typeName
-    val dataMapField = MVField(aggregateType, columnTableRelationList)
+    val mvField = MVField(aggregateType, columnTableRelationList)
     if (dataType.typeName.startsWith("decimal")) {
       val (precision, scale) = CommonUtil.getScaleAndPrecision(dataType.catalogString)
       (Field(column = actualColumnName,
@@ -241,13 +241,13 @@ class MVUtil {
         children = None,
         precision = precision,
         scale = scale,
-        rawSchema = rawSchema), dataMapField)
+        rawSchema = rawSchema), mvField)
     } else {
       (Field(column = actualColumnName,
         dataType = Some(dataType.typeName),
         name = Some(actualColumnName),
         children = None,
-        rawSchema = rawSchema), dataMapField)
+        rawSchema = rawSchema), mvField)
     }
   }
 
@@ -255,7 +255,7 @@ class MVUtil {
     if (a.child.isInstanceOf[GetMapValue] || a.child.isInstanceOf[GetStructField] ||
         a.child.isInstanceOf[GetArrayItem]) {
       throw new UnsupportedOperationException(
-        s"MV datamap is not supported for complex datatype child columns and complex datatype " +
+        s"MV is not supported for complex datatype child columns and complex datatype " +
         s"return types of function :" + a.child.simpleString)
     }
   }
@@ -269,7 +269,7 @@ class MVUtil {
     if (unsupportedProps.nonEmpty) {
       throw new MalformedMVCommandException(
         "DMProperties " + unsupportedProps.keySet.mkString(",") +
-        " are not allowed for this datamap")
+        " are not allowed for this MV")
     }
   }
 

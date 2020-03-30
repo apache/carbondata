@@ -35,9 +35,9 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util._
-import org.apache.carbondata.datamap.{TextMatchMaxDocUDF, TextMatchUDF}
 import org.apache.carbondata.events._
 import org.apache.carbondata.geo.InPolygonUDF
+import org.apache.carbondata.index.{TextMatchMaxDocUDF, TextMatchUDF}
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
@@ -76,8 +76,8 @@ class CarbonEnv {
     sparkSession.udf.register("getPositionId", () => "")
     sparkSession.udf.register("NI", (anyRef: AnyRef) => true)
 
-    // register for lucene datamap
-    // TODO: move it to proper place, it should be registered by datamap implementation
+    // register for lucene indexSchema
+    // TODO: move it to proper place, it should be registered by indexSchema implementation
     sparkSession.udf.register("text_match", new TextMatchUDF)
     sparkSession.udf.register("text_match_with_limit", new TextMatchMaxDocUDF)
     sparkSession.udf.register("in_polygon", new InPolygonUDF)
@@ -168,11 +168,11 @@ object CarbonEnv {
       .addListener(classOf[IndexServerLoadEvent], PrePrimingEventListener)
       .addListener(classOf[LoadTablePreStatusUpdateEvent], new MergeIndexEventListener)
       .addListener(classOf[AlterTableMergeIndexEvent], new MergeIndexEventListener)
-      .addListener(classOf[BuildDataMapPostExecutionEvent], new MergeBloomIndexEventListener)
+      .addListener(classOf[BuildIndexPostExecutionEvent], new MergeBloomIndexEventListener)
       .addListener(classOf[DropTableCacheEvent], DropCacheMVEventListener)
       .addListener(classOf[DropTableCacheEvent], DropCacheBloomEventListener)
       .addListener(classOf[ShowTableCacheEvent], ShowCachePreMVEventListener)
-      .addListener(classOf[ShowTableCacheEvent], ShowCacheDataMapEventListener)
+      .addListener(classOf[ShowTableCacheEvent], ShowCacheIndexEventListener)
       .addListener(classOf[LoadTablePreStatusUpdateEvent], new SILoadEventListener)
       .addListener(classOf[LoadTablePostStatusUpdateEvent],
         new SILoadEventListenerForFailedSegments)

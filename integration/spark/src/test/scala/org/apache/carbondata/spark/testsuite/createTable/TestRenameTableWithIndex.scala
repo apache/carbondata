@@ -24,7 +24,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
- * test functionality for alter table with datamap
+ * test functionality for alter table with indexSchema
  */
 class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
 
@@ -38,7 +38,7 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
   }
 
-  test("Creating a bloomfilter datamap,then table rename") {
+  test("Creating a bloomfilter indexSchema,then table rename") {
     sql(
       s"""
          | CREATE TABLE carbon_table(
@@ -110,8 +110,8 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
   }
 
   /*
-   * mv datamap does not support running here, now must run in mv project.
-  test("Creating a mv datamap,then table rename") {
+   * mv indexSchema does not support running here, now must run in mv project.
+  test("Creating a mv indexSchema,then table rename") {
     sql(
       """
         | CREATE TABLE fact_table2 (empname String, designation String, doj Timestamp,
@@ -123,9 +123,9 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    sql("drop materialized view if exists datamap1")
-    sql("create materialized view datamap1 as select empname, designation from fact_table2")
-    sql(s"refresh materialized view datamap1")
+    sql("drop materialized view if exists mv1")
+    sql("create materialized view mv1 as select empname, designation from fact_table2")
+    sql(s"refresh materialized view mv1")
 
     sql(
       s"""
@@ -139,7 +139,7 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
        """.stripMargin)
     }
     assert(exception_tb_rename.getMessage
-      .contains("alter rename is not supported for mv datamap"))
+      .contains("alter rename is not supported for mv indexSchema"))
   } */
 
   override def afterAll: Unit = {

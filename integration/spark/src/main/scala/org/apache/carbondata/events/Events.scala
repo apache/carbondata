@@ -191,25 +191,25 @@ trait CreateCarbonRelationEventInfo {
 }
 
 /**
- * Event info for create datamap
+ * Event info for create index
  */
-trait CreateDataMapEventsInfo {
+trait MVEventsInfo {
   val sparkSession: SparkSession
   val storePath: String
 }
 
 /**
- * Event info for build datamap
+ * Event info for build index
  */
-trait BuildDataMapEventsInfo {
+trait BuildIndexEventsInfo {
   val sparkSession: SparkSession
   val identifier: AbsoluteTableIdentifier
-  val dataMapNames: scala.collection.mutable.Seq[String]
+  val indexNames: scala.collection.mutable.Seq[String]
 }
 
 /**
  * EventInfo for prepriming on IndexServer. This event is used to
- * fire a call to the index serevr when the load is complete.
+ * fire a call to the index server when the load is complete.
  */
 trait IndexServerEventInfo {
   val carbonTable: CarbonTable

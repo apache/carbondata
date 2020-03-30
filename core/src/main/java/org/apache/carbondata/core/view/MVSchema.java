@@ -72,7 +72,7 @@ public class MVSchema implements Serializable, Writable {
   private Map<String, Set<String>> relatedTableColumnList;
 
   /**
-   * DataMap table column order map as per Select query
+   * MV table column order map as per Select query
    */
   private Map<Integer, String> columnsOrderMap;
 
@@ -120,7 +120,7 @@ public class MVSchema implements Serializable, Writable {
   }
 
   /**
-   * Return true if this datamap is lazy (created with DEFERRED REBUILD syntax)
+   * Return true if this MV is lazy (created with DEFERRED REFRESH syntax)
    */
   public boolean isRefreshOnManual() {
     String refreshTriggerMode = getProperties().get(MVProperty.REFRESH_TRIGGER_MODE);
@@ -130,7 +130,7 @@ public class MVSchema implements Serializable, Writable {
   }
 
   /**
-   * Return true if this DataMap can support incremental build
+   * Return true if this MV can support incremental build
    */
   public boolean isRefreshIncremental() {
     String refreshMode = getProperties().get(MVProperty.REFRESH_MODE);

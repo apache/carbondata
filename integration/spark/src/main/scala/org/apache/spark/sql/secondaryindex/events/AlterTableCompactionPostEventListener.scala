@@ -27,13 +27,14 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.command.IndexModel
 import org.apache.spark.sql.secondaryindex.load.Compactor
-import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.index.Segment
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.events.{AlterTableCompactionPreStatusUpdateEvent, Event, OperationContext, OperationEventListener}
@@ -58,7 +59,7 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
         if (compactionType.toString
           .equalsIgnoreCase(CompactionType.SEGMENT_INDEX.toString)) {
           val carbonMainTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-          val indexTablesList = CarbonInternalScalaUtil.getIndexesMap(carbonMainTable).asScala
+          val indexProviderMap = carbonMainTable.getIndexesMap
           val loadFolderDetailsArray = SegmentStatusManager
             .readLoadMetadata(carbonMainTable.getMetadataPath)
           val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String, String]()
@@ -67,12 +68,16 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
               .put(loadMetadataDetails.getLoadName,
                 String.valueOf(loadMetadataDetails.getLoadStartTime))
           })
-          if (null != indexTablesList && indexTablesList.nonEmpty) {
-            indexTablesList.foreach { indexTableAndColumns =>
+          if (!indexProviderMap.isEmpty &&
+              null != indexProviderMap.get(IndexType.SI.getIndexProviderName)) {
+            val iterator = indexProviderMap.get(IndexType.SI.getIndexProviderName)
+              .entrySet().iterator()
+            while (iterator.hasNext) {
+              val index = iterator.next()
               val secondaryIndex = IndexModel(Some(carbonLoadModel.getDatabaseName),
                 carbonLoadModel.getTableName,
-                indexTableAndColumns._2.asScala.toList,
-                indexTableAndColumns._1)
+                index.getValue.get(CarbonCommonConstants.INDEX_COLUMNS).split(",").toList,
+                index.getKey)
               val metastore = CarbonEnv.getInstance(sQLContext.sparkSession)
                 .carbonMetaStore
               val indexCarbonTable = metastore

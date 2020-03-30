@@ -29,7 +29,7 @@ import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.unsafe.types.UTF8String
 
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty
+import org.apache.carbondata.core.metadata.schema.index.IndexProperty
 import org.apache.carbondata.mv.plans.modular.{GroupBy, Matchable, ModularPlan, Select}
 import org.apache.carbondata.mv.session.MVSession
 import org.apache.carbondata.mv.timeseries.TimeSeriesFunction
@@ -59,9 +59,9 @@ class QueryRewrite private (
     if (rewrittenPlan.find(_.rewritten).isDefined) {
       var updatedMVTablePlan = rewrittenPlan transform {
         case s: Select =>
-          updateDataMap(s, rewrite)
+          updateMV(s, rewrite)
         case g: GroupBy =>
-          updateDataMap(g, rewrite)
+          updateMV(g, rewrite)
       }
       if (rewrittenPlan.isRolledUp) {
         // If the rewritten query is rolled up, then rewrite the query based on the original modular
@@ -71,23 +71,23 @@ class QueryRewrite private (
         // For example:
         // Given User query:
         // SELECT timeseries(col,'day') from maintable group by timeseries(col,'day')
-        // If plan is rewritten as per 'hour' granularity of datamap1,
+        // If plan is rewritten as per 'hour' granularity of mv1,
         // then rewritten query will be like,
-        // SELECT datamap1_table.`UDF:timeseries_projectjoindate_hour` AS `UDF:timeseries
+        // SELECT mv1.`UDF:timeseries_projectjoindate_hour` AS `UDF:timeseries
         // (projectjoindate, hour)`
         // FROM
-        // default.datamap1_table
-        // GROUP BY datamap1_table.`UDF:timeseries_projectjoindate_hour`
+        // default.mv1
+        // GROUP BY mv1.`UDF:timeseries_projectjoindate_hour`
         //
         // Now, rewrite the rewritten plan as per the 'day' granularity
         // SELECT timeseries(gen_subsumer_0.`UDF:timeseries(projectjoindate, hour)`,'day' ) AS
         // `UDF:timeseries(projectjoindate, day)`
         //  FROM
-        //  (SELECT datamap2_table.`UDF:timeseries_projectjoindate_hour` AS `UDF:timeseries
+        //  (SELECT mv2.`UDF:timeseries_projectjoindate_hour` AS `UDF:timeseries
         //  (projectjoindate, hour)`
         //  FROM
-        //    default.datamap2_table
-        //  GROUP BY datamap2_table.`UDF:timeseries_projectjoindate_hour`) gen_subsumer_0
+        //    default.mv2
+        //  GROUP BY mv2.`UDF:timeseries_projectjoindate_hour`) gen_subsumer_0
         // GROUP BY timeseries(gen_subsumer_0.`UDF:timeseries(projectjoindate, hour)`,'day' )
         rewrite.modularPlan match {
           case select: Select =>
@@ -225,12 +225,12 @@ class QueryRewrite private (
   }
 
   /**
-   * Update the modular plan as per the datamap table relation inside it.
+   * Update the modular plan as per the MV table relation inside it.
    *
    * @param subsumer plan to be updated
    * @return Updated modular plan.
    */
-  private def updateDataMap(subsumer: ModularPlan, rewrite: QueryRewrite): ModularPlan = {
+  private def updateMV(subsumer: ModularPlan, rewrite: QueryRewrite): ModularPlan = {
     subsumer match {
       case s: Select if s.modularPlan.isDefined =>
         val relation = s.modularPlan.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
@@ -361,7 +361,7 @@ class QueryRewrite private (
                     other.semanticEquals(c) || other.toAttribute.semanticEquals(c)
                 }
               }
-              val child = updateDataMap(g, rewrite).asInstanceOf[Matchable]
+              val child = updateMV(g, rewrite).asInstanceOf[Matchable]
               // Get the outList from converted child outList using already selected indices
               val outputSel =
                 indices.map(child.outputList(_)).zip(select.outputList).map { case (l, r) =>
@@ -397,7 +397,7 @@ class QueryRewrite private (
 
   private def getAttributeMap(subsumer: Seq[NamedExpression],
       subsume: Seq[NamedExpression]): Map[AttributeKey, NamedExpression] = {
-    // when datamap is created with duplicate columns like select sum(age),sum(age) from table,
+    // when indexSchema is created with duplicate columns like select sum(age),sum(age) from table,
     // the subsumee will have duplicate, so handle that case here
     if (subsumer.length == subsume.groupBy(_.name).size) {
       subsume.zip(subsumer).flatMap { case (left, right) =>
@@ -445,14 +445,14 @@ class QueryRewrite private (
 
   private def updateOutPutList(
       subsumerOutputList: Seq[NamedExpression],
-      dataMapRltn: Select,
+      mvRltn: Select,
       aliasMap: Map[AttributeKey, NamedExpression],
       keepAlias: Boolean): Seq[NamedExpression] = {
-    var outputSel =
+    val outputSel =
       updateSubsumeAttrs(
         subsumerOutputList,
         aliasMap,
-        Some(dataMapRltn.aliasMap.values.head),
+        Some(mvRltn.aliasMap.values.head),
         keepAlias).asInstanceOf[Seq[NamedExpression]]
     outputSel.zip(subsumerOutputList).map{ case (l, r) =>
       l match {
@@ -467,7 +467,7 @@ class QueryRewrite private (
 
   /**
    * Updates the expressions as per the subsumer output expressions. It is needed to update the
-   * expressions as per the datamap table relation
+   * expressions as per the index table relation
    *
    * @param expressions        expressions which are needed to update
    * @param aliasName          table alias name
@@ -542,7 +542,7 @@ class QueryRewrite private (
    * aggregation function or group by functions on the mv table.
    */
   private def isFullRefresh(mvPlanWrapper: MVPlanWrapper): Boolean = {
-    val fullRefresh = mvPlanWrapper.dataMapSchema.getProperties.get(DataMapProperty.FULL_REFRESH)
+    val fullRefresh = mvPlanWrapper.indexSchema.getProperties.get(IndexProperty.FULL_REFRESH)
     if (fullRefresh != null) {
       fullRefresh.toBoolean
     } else {
@@ -551,11 +551,11 @@ class QueryRewrite private (
   }
 
   private def getUpdatedOutputList(outputList: Seq[NamedExpression],
-      dataMapTableRelation: Option[ModularPlan]): Seq[NamedExpression] = {
-    dataMapTableRelation.collect {
+      mvTableRelation: Option[ModularPlan]): Seq[NamedExpression] = {
+    mvTableRelation.collect {
       case mv: MVPlanWrapper =>
-        val dataMapSchema = mv.dataMapSchema
-        val columnsOrderMap = dataMapSchema.getColumnsOrderMap
+        val mvSchema = mv.indexSchema
+        val columnsOrderMap = mvSchema.getColumnsOrderMap
         if (null != columnsOrderMap && !columnsOrderMap.isEmpty) {
           val updatedOutputList = new util.ArrayList[NamedExpression]()
           var i = 0

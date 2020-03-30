@@ -22,7 +22,7 @@ import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.processing.datamap.IndexWriterListener;
+import org.apache.carbondata.processing.index.IndexWriterListener;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
 
@@ -124,7 +124,7 @@ public abstract class AbstractDataLoadProcessorStep {
    * @param bucketId bucketId
    * @return
    */
-  protected IndexWriterListener getDataMapWriterListener(int bucketId) {
+  protected IndexWriterListener getIndexWriterListener(int bucketId) {
     // todo: this method is useless, will remove it later
     return null;
   }

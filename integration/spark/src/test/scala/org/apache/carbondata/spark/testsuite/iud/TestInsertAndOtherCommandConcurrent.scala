@@ -29,15 +29,15 @@ import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainIndex, CoarseGrainIndexFactory}
-import org.apache.carbondata.core.datamap.dev.{IndexBuilder, IndexWriter}
-import org.apache.carbondata.core.datamap.{IndexInputSplit, IndexMeta, Segment}
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
+import org.apache.carbondata.core.index.dev.cgindex.{CoarseGrainIndex, CoarseGrainIndexFactory}
+import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexWriter}
+import org.apache.carbondata.core.index.{IndexInputSplit, IndexMeta, Segment}
 import org.apache.carbondata.core.indexstore.PartitionSpec
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
@@ -136,7 +136,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
       "insert overwrite is in progress for table default.orders, compaction operation is not allowed"))
   }
 
-  // block updating records from table which has index datamap. see PR2483
+  // block updating records from table which has index. see PR2483
   ignore("update should fail if insert overwrite is in progress") {
     val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
@@ -147,7 +147,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
       "loading is in progress for table default.orders, data update operation is not allowed"))
   }
 
-  // block deleting records from table which has index datamap. see PR2483
+  // block deleting records from table which has index. see PR2483
   ignore("delete should fail if insert overwrite is in progress") {
     val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
@@ -239,7 +239,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     sql("drop table t1")
   }
 
-  // block updating records from table which has index datamap. see PR2483
+  // block updating records from table which has index. see PR2483
   ignore("update should fail if insert is in progress") {
     val future = runSqlAsync("insert into table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
@@ -250,7 +250,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
       "loading is in progress for table default.orders, data update operation is not allowed"))
   }
 
-  // block deleting records from table which has index datamap. see PR2483
+  // block deleting records from table which has index. see PR2483
   ignore("delete should fail if insert is in progress") {
     val future = runSqlAsync("insert into table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
@@ -302,7 +302,7 @@ object Global {
 
 class WaitingIndexFactory(
     carbonTable: CarbonTable,
-    dataMapSchema: DataMapSchema) extends CoarseGrainIndexFactory(carbonTable, dataMapSchema) {
+    indexSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, indexSchema) {
 
   override def fireEvent(event: Event): Unit = ???
 
@@ -313,8 +313,8 @@ class WaitingIndexFactory(
   override def getIndexes(segment: Segment): util.List[CoarseGrainIndex] = ???
 
   override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): IndexWriter = {
-    new IndexWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
-      carbonTable.getIndexedColumns(dataMapSchema), segment, shardName) {
+    new IndexWriter(carbonTable.getTablePath, indexSchema.getIndexName,
+      carbonTable.getIndexedColumns(indexSchema.getIndexColumns), segment, shardName) {
       override def onPageAdded(blockletId: Int, pageId: Int, pageSize: Int, pages: Array[ColumnPage]): Unit = { }
 
       override def onBlockletEnd(blockletId: Int): Unit = { }
@@ -337,28 +337,28 @@ class WaitingIndexFactory(
     }
   }
 
-  override def getMeta: IndexMeta = new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema), Seq(ExpressionType.EQUALS).asJava)
+  override def getMeta: IndexMeta = new IndexMeta(carbonTable.getIndexedColumns(indexSchema.getIndexColumns), Seq(ExpressionType.EQUALS).asJava)
 
   override def toDistributable(segmentId: Segment): util.List[IndexInputSplit] = {
     util.Collections.emptyList()
   }
 
   /**
-   * delete datamap of the segment
+   * delete index of the segment
    */
   override def deleteIndexData(segment: Segment): Unit = {
 
   }
 
   /**
-   * delete datamap data if any
+   * delete index data if any
    */
   override def deleteIndexData(): Unit = {
 
   }
 
   /**
-   * defines the features scopes for the datamap
+   * defines the features scopes for the index
    */
   override def willBecomeStale(operation: TableOperation): Boolean = {
     false
@@ -370,7 +370,7 @@ class WaitingIndexFactory(
   }
 
   /**
-   * Get the datamap for segmentId and partitionSpecs
+   * Get the index for segmentId and partitionSpecs
    */
   override def getIndexes(segment: Segment,
       partitions: util.List[PartitionSpec]): util.List[CoarseGrainIndex] = {

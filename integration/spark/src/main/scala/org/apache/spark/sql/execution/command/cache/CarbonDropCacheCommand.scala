@@ -25,7 +25,7 @@ import org.apache.spark.sql.execution.command.MetadataCommand
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, IndexUtil}
+import org.apache.carbondata.core.index.{IndexStoreManager, IndexUtil}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{DropTableCacheEvent, OperationContext, OperationListenerBus}
@@ -58,7 +58,7 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall
     }
     if (cache != null) {
       LOGGER.info("Clearing cache from driver side")
-      DataMapStoreManager.getInstance().clearIndex(carbonTable.getAbsoluteTableIdentifier)
+      IndexStoreManager.getInstance().clearIndex(carbonTable.getAbsoluteTableIdentifier)
     }
     val viewManager = MVManagerInSpark.get(sparkSession)
     val viewsOnTable = viewManager.getSchemasOnTable(carbonTable)

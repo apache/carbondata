@@ -37,7 +37,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 
@@ -372,7 +372,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
     assert(new File(writerPath).exists())
-    clearDataMapCache
+    clearIndexCache
     cleanTestData()
   }
   def buildTestDataMuliBlockLet(recordsInBlocklet1 :Int, recordsInBlocklet2 :Int): Unit ={
@@ -430,12 +430,12 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     }
   }
 
-  private def clearDataMapCache(): Unit = {
+  private def clearIndexCache(): Unit = {
     if (!sqlContext.sparkContext.version.startsWith("2.1")) {
-      val mapSize = DataMapStoreManager.getInstance().getTableIndexForAllTables.size()
-      DataMapStoreManager.getInstance()
+      val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()
+      IndexStoreManager.getInstance()
         .clearIndex(AbsoluteTableIdentifier.from(writerPath))
-      assert(mapSize > DataMapStoreManager.getInstance().getTableIndexForAllTables.size())
+      assert(mapSize > IndexStoreManager.getInstance().getTableIndexForAllTables.size())
     }
   }
 
@@ -496,7 +496,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     checkAnswer(sql("SELECT COUNT(*) FROM (select address,age,note from sdkOutputTableWithoutSchema where length(address)=75000 and length(note)=75000)"),
       Seq(Row(totalRecordsNum)))
     sql("DROP TABLE sdkOutputTableWithoutSchema")
-    clearDataMapCache
+    clearIndexCache
     cleanTestData()
   }
 }

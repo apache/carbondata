@@ -44,9 +44,9 @@ import org.apache.spark.util.TaskCompletionListener
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.{IndexFilter, Segment}
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.{IndexFilter, Segment}
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
@@ -76,7 +76,7 @@ import org.apache.carbondata.spark.util.Util
 class CarbonScanRDD[T: ClassTag](
     @transient private val spark: SparkSession,
     val columnProjection: CarbonProjection,
-    var dataMapFilter: IndexFilter,
+    var indexFilter: IndexFilter,
     identifier: AbsoluteTableIdentifier,
     @transient private val serializedTableInfo: Array[Byte],
     @transient private val tableInfo: TableInfo,
@@ -213,10 +213,10 @@ class CarbonScanRDD[T: ClassTag](
               numBlocks,
               distributeStartTime,
               distributeEndTime,
-              if (dataMapFilter == null) {
+              if (indexFilter == null) {
                 ""
               } else {
-                dataMapFilter.getExpression.getStatement
+                indexFilter.getExpression.getStatement
               },
               if (columnProjection == null) "" else columnProjection.getAllColumns.mkString(",")
             )
@@ -438,7 +438,7 @@ class CarbonScanRDD[T: ClassTag](
     TaskMetricsMap.getInstance().registerThreadCallback()
     inputMetricsStats.initBytesReadCallback(context, inputSplit, inputMetricsInterval)
     val iterator = if (inputSplit.getAllSplits.size() > 0) {
-      val model = format.createQueryModel(inputSplit, attemptContext, dataMapFilter)
+      val model = format.createQueryModel(inputSplit, attemptContext, indexFilter)
       // one query id per table
       model.setQueryId(queryId)
       // get RecordReader by FileFormat
@@ -590,7 +590,7 @@ class CarbonScanRDD[T: ClassTag](
 
   def prepareInputFormatForDriver(conf: Configuration): CarbonTableInputFormat[Object] = {
     CarbonInputFormat.setTableInfo(conf, tableInfo)
-    CarbonInputFormat.setFilterPredicates(conf, dataMapFilter)
+    CarbonInputFormat.setFilterPredicates(conf, indexFilter)
     CarbonInputFormat.setDatabaseName(conf, tableInfo.getDatabaseName)
     CarbonInputFormat.setTableName(conf, tableInfo.getFactTable.getTableName)
     if (partitionNames != null) {
@@ -615,10 +615,10 @@ class CarbonScanRDD[T: ClassTag](
     CarbonInputFormat.setCarbonReadSupport(conf, readSupportClz)
     val tableInfo1 = getTableInfo
     CarbonInputFormat.setTableInfo(conf, tableInfo1)
-    if (dataMapFilter != null) {
-      dataMapFilter.setTable(CarbonTable.buildFromTableInfo(tableInfo1))
+    if (indexFilter != null) {
+      indexFilter.setTable(CarbonTable.buildFromTableInfo(tableInfo1))
     }
-    CarbonInputFormat.setFilterPredicates(conf, dataMapFilter)
+    CarbonInputFormat.setFilterPredicates(conf, indexFilter)
     CarbonInputFormat.setDatabaseName(conf, tableInfo1.getDatabaseName)
     CarbonInputFormat.setTableName(conf, tableInfo1.getFactTable.getTableName)
     CarbonInputFormat.setDataTypeConverter(conf, dataTypeConverterClz)
@@ -630,9 +630,9 @@ class CarbonScanRDD[T: ClassTag](
     CarbonInputFormat.setTablePath(conf,
       identifier.appendWithLocalPrefix(identifier.getTablePath))
     CarbonInputFormat.setQuerySegment(conf, identifier)
-    CarbonInputFormat.setFilterPredicates(conf, dataMapFilter)
+    CarbonInputFormat.setFilterPredicates(conf, indexFilter)
     CarbonInputFormat.setColumnProjection(conf, columnProjection)
-    CarbonInputFormatUtil.setDataMapJobIfConfigured(conf)
+    CarbonInputFormatUtil.setIndexJobIfConfigured(conf)
 
     // when validate segments is disabled in thread local update it to CarbonTableInputFormat
     val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
@@ -655,7 +655,7 @@ class CarbonScanRDD[T: ClassTag](
       identifier.appendWithLocalPrefix(identifier.getTablePath))
     CarbonInputFormat.setQuerySegment(conf, identifier)
     CarbonInputFormat.setColumnProjection(conf, columnProjection)
-    CarbonInputFormatUtil.setDataMapJobIfConfigured(conf)
+    CarbonInputFormatUtil.setIndexJobIfConfigured(conf)
     // when validate segments is disabled in thread local update it to CarbonTableInputFormat
     if (carbonSessionInfo != null) {
       val tableUniqueKey = identifier.getDatabaseName + "." + identifier.getTableName
@@ -679,13 +679,13 @@ class CarbonScanRDD[T: ClassTag](
    */
   private def checkAndRemoveInExpressinFromFilterExpression(
       identifiedPartitions: mutable.Buffer[Partition]) = {
-    if (null != dataMapFilter) {
+    if (null != indexFilter) {
       if (identifiedPartitions.nonEmpty &&
           !checkForBlockWithoutBlockletInfo(identifiedPartitions)) {
-        FilterUtil.removeInExpressionNodeWithPositionIdColumn(dataMapFilter.getExpression)
+        FilterUtil.removeInExpressionNodeWithPositionIdColumn(indexFilter.getExpression)
       } else if (identifiedPartitions.nonEmpty) {
         // the below piece of code will serialize only the required blocklet ids
-        val filterValues = FilterUtil.getImplicitFilterExpression(dataMapFilter.getExpression)
+        val filterValues = FilterUtil.getImplicitFilterExpression(indexFilter.getExpression)
         if (null != filterValues) {
           val implicitExpression = filterValues.asInstanceOf[ImplicitExpression]
           identifiedPartitions.foreach { partition =>
@@ -708,7 +708,7 @@ class CarbonScanRDD[T: ClassTag](
           }
           // remove the right child of the expression here to prevent serialization of
           // implicit filter values to executor
-          FilterUtil.setTrueExpressionAsRightChild(dataMapFilter.getExpression)
+          FilterUtil.setTrueExpressionAsRightChild(indexFilter.getExpression)
         }
       }
     }
@@ -777,8 +777,8 @@ class CarbonScanRDD[T: ClassTag](
   }
 
   def setFilterExpression(expressionVal: Expression): Unit = {
-    if (null != dataMapFilter) {
-      dataMapFilter.setExpression(new AndExpression(dataMapFilter.getExpression, expressionVal))
+    if (null != indexFilter) {
+      indexFilter.setExpression(new AndExpression(indexFilter.getExpression, expressionVal))
     }
   }
 }

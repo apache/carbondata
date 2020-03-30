@@ -22,8 +22,8 @@ import scala.collection.JavaConverters._
 import org.apache.log4j.Logger
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
-import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
@@ -44,7 +44,7 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
       case cleanFilesPostEvent: CleanFilesPostEvent =>
         LOGGER.info("Clean files post event listener called")
         val carbonTable = cleanFilesPostEvent.carbonTable
-        val indexTables = CarbonInternalScalaUtil
+        val indexTables = CarbonIndexUtil
           .getIndexCarbonTables(carbonTable, cleanFilesPostEvent.sparkSession)
         indexTables.foreach { indexTable =>
           val partitions: Option[Seq[PartitionSpec]] = CarbonFilters.getPartitions(

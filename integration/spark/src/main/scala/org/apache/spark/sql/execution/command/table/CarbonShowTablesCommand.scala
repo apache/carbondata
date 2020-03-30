@@ -42,7 +42,7 @@ private[sql] case class CarbonShowTablesCommand ( databaseName: Option[String],
     val tables =
       tableIdentifierPattern.map(catalog.listTables(db, _)).getOrElse(catalog.listTables(db))
     val externalCatalog = sparkSession.sharedState.externalCatalog
-    // this method checks whether the table is mainTable or datamap based on property "isVisible"
+    // this method checks whether the table is mainTable or MV based on property "isVisible"
     def isMainTable(tableIdent: TableIdentifier) = {
       var isMainTable = true
       try {
@@ -54,7 +54,7 @@ private[sql] case class CarbonShowTablesCommand ( databaseName: Option[String],
       }
       isMainTable
     }
-    // tables will be filtered for all the dataMaps to show only main tables
+    // tables will be filtered for all the MVs to show only main tables
     tables.collect {
       case tableIdent if isMainTable(tableIdent) =>
         val isTemp = catalog.isTemporaryTable(tableIdent)

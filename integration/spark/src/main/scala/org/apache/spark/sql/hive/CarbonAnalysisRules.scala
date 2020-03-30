@@ -34,8 +34,8 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.datamap.status.DataMapStatusManager
+import org.apache.carbondata.core.index.IndexStoreManager
+import org.apache.carbondata.core.index.status.IndexStatusManager
 import org.apache.carbondata.core.view.MVStatus
 import org.apache.carbondata.view.MVManagerInSpark
 
@@ -76,23 +76,6 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
               MVStatus.DISABLED
             )
           }
-        }
-        val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
-        if (carbonTable.hasMVCreated) {
-          val allDataMapSchemas = DataMapStoreManager.getInstance
-            .getDataMapSchemasOfTable(carbonTable).asScala
-            .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                     !dataMapSchema.isIndex).asJava
-          allDataMapSchemas.asScala.foreach { dataMapSchema =>
-            DataMapStatusManager.disableDataMap(dataMapSchema.getDataMapName)
-          }
-        } else if (!indexSchemas.isEmpty) {
-          throw new UnsupportedOperationException(
-            "Update operation is not supported for table which has index datamaps")
-        }
-        if (carbonTable.isMV) {
-          throw new UnsupportedOperationException(
-            "Update operation is not supported for mv datamap table")
         }
       }
       val tableRelation =
@@ -221,7 +204,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
         if (carbonTable != null) {
           if (carbonTable.isMV) {
             throw new UnsupportedOperationException(
-              "Delete operation is not supported for datamap table")
+              "Delete operation is not supported for indexSchema table")
           }
           val viewManager = MVManagerInSpark.get(sparkSession)
           val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
@@ -232,19 +215,6 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
                 MVStatus.DISABLED
               )
             }
-          }
-          val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
-          if (carbonTable.hasMVCreated) {
-            val allDataMapSchemas = DataMapStoreManager.getInstance
-              .getDataMapSchemasOfTable(carbonTable).asScala
-              .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                       !dataMapSchema.isIndex).asJava
-            allDataMapSchemas.asScala.foreach { dataMapSchema =>
-              DataMapStatusManager.disableDataMap(dataMapSchema.getDataMapName)
-            }
-          } else if (!indexSchemas.isEmpty) {
-            throw new UnsupportedOperationException(
-              "Delete operation is not supported for table which has index datamaps")
           }
         }
         // include tuple id in subquery

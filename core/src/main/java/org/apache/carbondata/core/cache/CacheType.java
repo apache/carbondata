@@ -31,7 +31,7 @@ public class CacheType<K, V> {
    * Executor BTree cache which maintains size of BTree metadata
    */
   public static final CacheType<TableSegmentUniqueIdentifier, AbstractIndex>
-      DRIVER_BLOCKLET_DATAMAP = new CacheType("driver_blocklet_datamap");
+      DRIVER_BLOCKLET_INDEX = new CacheType("driver_blocklet_index");
 
   /**
    * cacheName which is unique name for a cache

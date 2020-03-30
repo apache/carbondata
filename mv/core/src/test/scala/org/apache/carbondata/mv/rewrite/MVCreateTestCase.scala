@@ -111,13 +111,13 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table source using parquet as select * from fact_table1")
     sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
     var df = sql("select empname, avg(salary) from source group by empname")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
 
     // load to parquet table and check again
     sql("insert into source select * from fact_table1")
     df = sql("select empname, avg(salary) from source group by empname")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
 
     sql(s"drop materialized view mv1")
@@ -138,14 +138,14 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
     assert(sql(" select empname, deptname, avg(salary) from source group by empname, deptname limit 2").collect().length == 2)
     var df = sql("select empname, avg(salary) from source group by empname")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
 
     // load to parquet table and check again
     sql("insert into source select designation, doj, workgroupcategory, workgroupcategoryname, " +
         "deptno, deptname, salary, empname from fact_table1")
     df = sql("select empname, avg(salary) from source group by empname")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
 
     sql(s"drop materialized view mv1")
@@ -158,13 +158,13 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table source using orc as select * from fact_table1")
     sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
     var df = sql("select empname, avg(salary) from source group by empname")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
 
     // load to orc table and check again
     sql("insert into source select * from fact_table1")
     df = sql("select empname, avg(salary) from source group by empname")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
 
     sql(s"drop materialized view mv1")
@@ -184,14 +184,14 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("select * from source limit 2").show(false)
     sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
     var df = sql("select empname, avg(salary) from source group by empname")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
 
     // load to parquet table and check again
     sql("insert into source select designation, doj, workgroupcategory, workgroupcategoryname, " +
         "deptno, deptname, salary, empname from fact_table1")
     df = sql("select empname, avg(salary) from source group by empname")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
 
     sql(s"drop materialized view mv1")
@@ -204,13 +204,13 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table source stored as parquet as select * from fact_table1")
     sql("create materialized view mv1 as select empname, deptname, avg(salary) from source group by empname, deptname")
     var df = sql("select empname, avg(salary) from source group by empname")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
 
     // load to parquet table and check again
     sql("insert into source select * from fact_table1")
     df = sql("select empname, avg(salary) from source group by empname")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
 
     sql(s"drop materialized view mv1")
@@ -227,7 +227,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("select * from mv2_table").show
     val df = sql("select empname, avg(salary) from source group by empname")
     sql("explain extended select empname, avg(salary) from source group by empname").show(false)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv2"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv2"))
     checkAnswer(df, sql("select empname, avg(salary) from fact_table2 group by empname"))
     sql(s"drop materialized view mv2")
     sql("drop table source")
@@ -237,7 +237,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop materialized view if exists mv1")
     sql("create materialized view mv1 as select empname, designation from fact_table1")
     val df = sql("select empname, designation from fact_table1")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname, designation from fact_table2"))
     sql(s"drop materialized view mv1")
   }
@@ -246,7 +246,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop materialized view if exists mv1")
     sql("create materialized view mv1 as select empname, designation from fact_table1")
     val df = sql("select empname,designation from fact_table1")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
     checkAnswer(df, sql("select empname,designation from fact_table2"))
     sql(s"drop materialized view mv1")
   }
@@ -255,7 +255,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop materialized view if exists mv2")
     sql("create materialized view mv2 as select empname, designation from fact_table1")
     val df = sql("select empname from fact_table1")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv2"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv2"))
     checkAnswer(df, sql("select empname from fact_table2"))
     sql(s"drop materialized view mv2")
   }
@@ -264,7 +264,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop materialized view if exists mv3")
     sql("create materialized view mv3 as select empname, designation from fact_table1")
     val frame = sql("select empname, designation from fact_table1 where empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv3"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv3"))
 
     checkAnswer(frame, sql("select empname, designation from fact_table2 where empname='shivani'"))
     sql(s"drop materialized view mv3")
@@ -273,7 +273,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create materialized view with simple and sub projection with non projection filter") {
     sql("create materialized view mv4 as select empname, designation from fact_table1")
     val frame = sql("select designation from fact_table1 where empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv4"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv4"))
     checkAnswer(frame, sql("select designation from fact_table2 where empname='shivani'"))
     sql(s"drop materialized view mv4")
   }
@@ -281,7 +281,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create materialized view with simple and sub projection with filter") {
     sql("create materialized view mv5 as select empname, designation from fact_table1 where empname='shivani'")
     val frame = sql("select designation from fact_table1 where empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv5"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv5"))
     assert(sql("select designation from fact_table1 where empname='shivani' limit 5").collect().length == 5)
     checkAnswer(frame, sql("select designation from fact_table2 where empname='shivani'"))
     sql(s"drop materialized view mv5")
@@ -290,7 +290,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create materialized view with simple and same projection with filter ") {
     sql("create materialized view mv6 as select empname, designation from fact_table1 where empname='shivani'")
     val frame = sql("select empname,designation from fact_table1 where empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv6"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv6"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where empname='shivani'"))
     sql(s"drop materialized view mv6")
   }
@@ -300,7 +300,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select empname,designation from fact_table1 where empname='shivani' and designation='SA'")
     assert( sql("select empname,designation from fact_table1 where empname='shivani' and designation='SA' limit 1").collect().length == 0)
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv7"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv7"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where empname='shivani' and designation='SA'"))
     sql(s"drop materialized view mv7")
   }
@@ -308,7 +308,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create materialized view with simple and same projection with filter and different column filter") {
     sql("create materialized view mv8 as select empname, designation from fact_table1 where empname='shivani'")
     val frame = sql("select empname,designation from fact_table1 where designation='SA'")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv8"))
+    assert(!TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv8"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where designation='SA'"))
     sql(s"drop materialized view mv8")
   }
@@ -316,7 +316,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create materialized view with simple and same projection with filter on non projection column and extra column filter") {
     sql("create materialized view mv9 as select empname, designation,deptname  from fact_table1 where deptname='cloud'")
     val frame = sql("select empname,designation from fact_table1 where deptname='cloud'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv9"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv9"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where deptname='cloud'"))
     sql(s"drop materialized view mv9")
   }
@@ -324,7 +324,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create materialized view with simple and same projection with filter on non projection column and no column filter") {
     sql("create materialized view mv10 as select empname, designation,deptname from fact_table1 where deptname='cloud'")
     val frame = sql("select empname,designation from fact_table1")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv10"))
+    assert(!TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv10"))
     checkAnswer(frame, sql("select empname,designation from fact_table2"))
     sql(s"drop materialized view mv10")
   }
@@ -332,7 +332,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create materialized view with simple and same projection with filter on non projection column and different column filter") {
     sql("create materialized view mv11 as select empname, designation,deptname from fact_table1 where deptname='cloud'")
     val frame = sql("select empname,designation from fact_table1 where designation='SA'")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv11"))
+    assert(!TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv11"))
     checkAnswer(frame, sql("select empname,designation from fact_table2 where designation='SA'"))
     sql(s"drop materialized view mv11")
   }
@@ -341,7 +341,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop materialized view if exists mv12")
     sql("create materialized view mv12 as select empname, sum(utilization) from fact_table1 group by empname")
     val frame = sql("select empname, sum(utilization) from fact_table1 group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv12"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv12"))
     checkAnswer(frame, sql("select empname, sum(utilization) from fact_table2 group by empname"))
     sql(s"drop materialized view mv12")
   }
@@ -350,7 +350,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop materialized view if exists mv13")
     sql("create materialized view mv13 as select empname, sum(utilization) from fact_table1 group by empname")
     val frame = sql("select sum(utilization) from fact_table1 group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv13"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv13"))
     checkAnswer(frame, sql("select sum(utilization) from fact_table2 group by empname"))
     sql(s"drop materialized view mv13")
   }
@@ -360,7 +360,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view mv14 as select empname, sum(utilization) from fact_table1 group by empname")
     val frame = sql(
       "select empname,sum(utilization) from fact_table1 group by empname having empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv14"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv14"))
     checkAnswer(frame, sql("select empname,sum(utilization) from fact_table2 where empname='shivani' group by empname"))
     sql(s"drop materialized view mv14")
   }
@@ -370,7 +370,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view mv32 as select empname, sum(utilization) from fact_table1 group by empname")
     val frame = sql(
       "select empname, sum(utilization) from fact_table1 group by empname having empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv32"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv32"))
     checkAnswer(frame, sql( "select empname, sum(utilization) from fact_table2 group by empname having empname='shivani'"))
     sql(s"drop materialized view mv32")
   }
@@ -379,7 +379,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view mv15 as select empname, sum(utilization) from fact_table1 where empname='shivani' group by empname")
     val frame = sql(
       "select empname,sum(utilization) from fact_table1 where empname='shivani' group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv15"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv15"))
     checkAnswer(frame, sql("select empname,sum(utilization) from fact_table2 where empname='shivani' group by empname"))
     sql(s"drop materialized view mv15")
   }
@@ -387,7 +387,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   test("test create materialized view with simple and sub group by query with filter on materialized view and no filter on query") {
     sql("create materialized view mv16 as select empname, sum(utilization) from fact_table1 where empname='shivani' group by empname")
     val frame = sql("select empname,sum(utilization) from fact_table1 group by empname")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv16"))
+    assert(!TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv16"))
     checkAnswer(frame, sql("select empname,sum(utilization) from fact_table2 group by empname"))
     sql(s"drop materialized view mv16")
   }
@@ -397,7 +397,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group" +
       " by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv17"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv17"))
     assert(sql("select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname limit 2").collect().length == 2)
     checkAnswer(frame, sql("select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 group" +
                            " by empname"))
@@ -409,7 +409,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view mv18 as select empname, sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
     val frame = sql(
       "select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv18"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv18"))
     checkAnswer(frame, sql("select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 group by empname"))
     sql(s"drop materialized view mv18")
   }
@@ -419,7 +419,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view mv19 as select empname, count(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
     val frame = sql(
       "select count(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv19"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv19"))
     checkAnswer(frame, sql("select count(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 group by empname"))
     sql(s"drop materialized view mv19")
   }
@@ -430,7 +430,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 where " +
       "empname='shivani' group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv20"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv20"))
     checkAnswer(frame, sql("select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table2 where " +
                            "empname='shivani' group by empname"))
     sql(s"drop materialized view mv20")
@@ -441,7 +441,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view mv21 as select t1.empname as c1, t2.designation, t2.empname as c2 from fact_table1 t1 inner join fact_table2 t2  on (t1.empname = t2.empname)")
     val frame = sql(
       "select t1.empname as c1, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = t2.empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv21"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv21"))
     assert(sql("select sum(CASE WHEN utilization=27 THEN deptno ELSE 0 END) from fact_table1 group by empname limit 2").collect().length == 2)
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = t2.empname"))
     sql(s"drop materialized view mv21")
@@ -453,7 +453,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = " +
       "t2.empname and t1.empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv22"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv22"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = " +
                            "t2.empname and t1.empname='shivani'"))
     sql(s"drop materialized view mv22")
@@ -466,7 +466,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = " +
       "t2.empname and t1.empname='shivani'")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv23"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv23"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = " +
                            "t2.empname and t1.empname='shivani'"))
     sql(s"drop materialized view mv23")
@@ -477,7 +477,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view mv24 as select t1.empname, t2.designation, t2.empname from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) where t1.empname='shivani'")
     val frame = sql(
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = t2.empname")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv24"))
+    assert(!TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv24"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = t2.empname"))
     sql(s"drop materialized view mv24")
   }
@@ -487,10 +487,10 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view mv25 as select t1.empname as c1, t2.designation, t2.empname, t3.empname from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) inner join fact_table3 t3  on (t1.empname=t3.empname)")
     val frame = sql(
       "select t1.empname as c1, t2.designation from fact_table1 t1,fact_table2 t2 where t1.empname = t2.empname")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv25"))
+    assert(!TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv25"))
     val frame1 = sql(
       "select t1.empname as c1, t2.designation from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) inner join fact_table3 t3  on (t1.empname=t3.empname)")
-    assert(TestUtil.verifyMVDataMap(frame1.queryExecution.optimizedPlan, "mv25"))
+    assert(TestUtil.verifyMVHit(frame1.queryExecution.optimizedPlan, "mv25"))
     assert(sql("select t1.empname as c1, t2.designation from fact_table1 t1 inner join fact_table2 t2 on (t1.empname = t2.empname) inner join fact_table3 t3  on (t1.empname=t3.empname) limit 2").collect().length == 2)
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2 where t1.empname = t2.empname"))
     sql(s"drop materialized view mv25")
@@ -501,7 +501,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation from fact_table1 t1,fact_table2 t2,fact_table3 " +
       "t3  where t1.empname = t2.empname and t1.empname=t3.empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv26"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv26"))
     checkAnswer(frame, sql("select t1.empname, t2.designation from fact_table4 t1,fact_table5 t2,fact_table6 " +
                            "t3  where t1.empname = t2.empname and t1.empname=t3.empname"))
     sql(s"drop materialized view mv26")
@@ -512,7 +512,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname group by t1.empname, t2.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv27"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv27"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  " +
                            "where t1.empname = t2.empname group by t1.empname, t2.designation"))
     assert(sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  where t1.empname = t2.empname group by t1.empname, t2.designation limit 2").collect().length == 2)
@@ -525,7 +525,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  where " +
       "t1.empname = t2.empname group by t2.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv28"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv28"))
     checkAnswer(frame, sql("select t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  where " +
                            "t1.empname = t2.empname group by t2.designation"))
     sql(s"drop materialized view mv28")
@@ -537,7 +537,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  where " +
       "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv29"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv29"))
     checkAnswer(frame, sql("select t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  where " +
                            "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation"))
     sql(s"drop materialized view mv29")
@@ -549,7 +549,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname ,t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  where " +
       "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation,t1.empname ")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv29"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv29"))
     checkAnswer(frame, sql("select t1.empname ,t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  where " +
                            "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation,t1.empname "))
     sql(s"drop materialized view mv29")
@@ -561,7 +561,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname ,t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  where " +
       "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation,t1.empname ")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv29"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv29"))
     checkAnswer(frame, sql("select t1.empname ,t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  where " +
                            "t1.empname = t2.empname and t1.empname='shivani' group by t2.designation,t1.empname "))
     sql(s"drop materialized view mv29")
@@ -573,7 +573,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname and t2.designation='SA' group by t1.empname, t2.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv30"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv30"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1,fact_table5 t2  " +
                            "where t1.empname = t2.empname and t2.designation='SA' group by t1.empname, t2.designation"))
     sql(s"drop materialized view mv30")
@@ -584,7 +584,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view mv31 as select empname, designation, utilization, projectcode from fact_table1 ")
     val frame = sql(
       "select empname, designation, utilization+projectcode from fact_table1")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv31"))
+    assert(!TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv31"))
     checkAnswer(frame, sql("select empname, designation, utilization+projectcode from fact_table2"))
     sql(s"drop materialized view mv31")
   }
@@ -593,7 +593,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists mv32")
     sql("create materialized view mv32 as select empname, count(utilization) from fact_table1 group by empname")
     val frame = sql("select empname,count(utilization) from fact_table1 where empname='shivani' group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv32"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv32"))
     checkAnswer(frame, sql("select empname,count(utilization) from fact_table2 where empname='shivani' group by empname"))
     sql(s"drop materialized view mv32")
   }
@@ -602,7 +602,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists mv33")
     sql("create materialized view mv33 as select empname, avg(utilization) from fact_table1 group by empname")
     val frame = sql("select empname,avg(utilization) from fact_table1 where empname='shivani' group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv33"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv33"))
     checkAnswer(frame, sql("select empname,avg(utilization) from fact_table2 where empname='shivani' group by empname"))
     sql(s"drop materialized view mv33")
   }
@@ -613,7 +613,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname group by t1.empname, t2.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv34"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv34"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname group by t1.empname, t2.designation"))
     sql(s"drop materialized view mv34")
@@ -623,7 +623,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view mv35 as select designation, sum(utilization) from fact_table1 where empname='shivani' group by designation")
     val frame = sql(
       "select designation, sum(utilization) from fact_table1 where empname='shivani' group by designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv35"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv35"))
     checkAnswer(frame, sql("select designation, sum(utilization) from fact_table2 where empname='shivani' group by designation"))
     sql(s"drop materialized view mv35")
   }
@@ -632,7 +632,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view mv36 as select designation, sum(utilization) from fact_table1 where empname='shivani' group by designation")
     val frame = sql(
       "select sum(utilization) from fact_table1 where empname='shivani' group by designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv36"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv36"))
     checkAnswer(frame, sql("select sum(utilization) from fact_table2 where empname='shivani' group by designation"))
     sql(s"drop materialized view mv36")
   }
@@ -643,7 +643,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname group by t1.empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv37"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv37"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname group by t1.empname, t1.designation"))
     sql(s"drop materialized view mv37")
@@ -655,7 +655,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t1.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname group by t1.empname,t1.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv38"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv38"))
     checkAnswer(frame, sql("select t1.empname,t1.designation, sum(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname group by t1.empname, t1.designation"))
     sql(s"drop materialized view mv38")
@@ -667,7 +667,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t1.designation, sum(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname,t1.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv39"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv39"))
     checkAnswer(frame, sql("select t1.empname,t1.designation, sum(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname, t1.designation"))
     sql(s"drop materialized view mv39")
@@ -679,7 +679,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t1.designation, sum(t1.utilization),count(t1.utilization) from fact_table1 t1,fact_table2 t2  " +
       "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname,t1.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv40"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv40"))
     checkAnswer(frame, sql("select t1.empname, t1.designation, sum(t1.utilization),count(t1.utilization) from fact_table3 t1,fact_table4 t2  " +
                            "where t1.empname = t2.empname and t1.empname='shivani' group by t1.empname,t1.designation"))
     sql(s"drop materialized view mv40")
@@ -691,7 +691,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname, t2.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv41"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv41"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname, t2.designation"))
     sql(s"drop materialized view mv41")
@@ -703,7 +703,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname group by t1.empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv42"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv42"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname group by t1.empname"))
     sql(s"drop materialized view mv42")
@@ -715,7 +715,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv43"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv43"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname"))
     sql(s"drop materialized view mv43")
@@ -727,7 +727,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv44"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv44"))
     checkAnswer(frame, sql("select t1.empname, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t1.empname='shivani' group by t1.empname"))
     sql(s"drop materialized view mv44")
@@ -741,7 +741,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql(
       "select t1.empname, t2.designation, sum(t1.utilization) from fact_table1 t1 left join fact_table2 t2  " +
       "on t1.empname = t2.empname where t2.designation='SA' group by t1.empname, t2.designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv45"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv45"))
     checkAnswer(frame, sql("select t1.empname, t2.designation, sum(t1.utilization) from fact_table4 t1 left join fact_table5 t2  " +
                            "on t1.empname = t2.empname where t2.designation='SA' group by t1.empname, t2.designation"))
     sql(s"drop materialized view mv45")
@@ -757,7 +757,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view mv13 as select name,sum(salary) from test4 group by name")
     val frame = sql(
       "select name,sum(salary) from test4 group by name")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv13"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv13"))
   }
 
   test("jira carbondata-2528-1") {
@@ -766,7 +766,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view MV_order as select empname,sum(salary) as total from fact_table1 group by empname")
     val frame = sql(
       "select empname,sum(salary) as total from fact_table1 group by empname order by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_order"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "MV_order"))
     assert(sql("select empname,sum(salary) as total from fact_table1 group by empname order by empname limit 2").collect().length == 2)
   }
 
@@ -776,7 +776,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view MV_order as select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname")
     val frame = sql(
       "select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_order"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "MV_order"))
   }
 
   test("jira carbondata-2528-3") {
@@ -785,7 +785,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view MV_order as select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname DESC")
     val frame = sql(
       "select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname DESC")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_order"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "MV_order"))
     sql("drop materialized view if exists MV_order")
   }
 
@@ -795,7 +795,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view MV_order as select empname,sum(salary)+sum(utilization) as total from fact_table1 group by empname order by empname DESC")
     val frame = sql(
       "select empname,sum(salary)+sum(utilization) as total from fact_table1 where empname = 'ravi' group by empname order by empname DESC")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_order"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "MV_order"))
     sql("drop materialized view if exists MV_order")
   }
 
@@ -807,10 +807,10 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into test1 select 'name1','USA',12,23")
     sql("create materialized view datamv2 as select country,sum(salary) from test1 group by country")
     val frame = sql("select country,sum(salary) from test1 where country='USA' group by country")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "datamv2"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "datamv2"))
     sql("insert into test1 select 'name1','USA',12,23")
     val frame1 = sql("select country,sum(salary) from test1 where country='USA' group by country")
-    assert(TestUtil.verifyMVDataMap(frame1.queryExecution.optimizedPlan, "datamv2"))
+    assert(TestUtil.verifyMVHit(frame1.queryExecution.optimizedPlan, "datamv2"))
     sql("drop materialized view if exists datamv2")
     sql("drop table if exists test1")
   }
@@ -821,7 +821,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view MV_exp as select sum(salary),substring(empname,2,5),designation from fact_table1 group by substring(empname,2,5),designation")
     val frame = sql(
       "select sum(salary),substring(empname,2,5),designation from fact_table1 group by substring(empname,2,5),designation")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_exp"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "MV_exp"))
     sql("drop materialized view if exists MV_exp")
   }
 
@@ -840,7 +840,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view MV_exp as select doj,sum(salary) from xy.fact_tablexy group by doj")
     val frame = sql(
       "select doj,sum(salary) from xy.fact_tablexy group by doj")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_exp"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "MV_exp"))
     sql("drop materialized view if exists MV_exp")
     sql("""drop database if exists xy cascade""")
   }
@@ -856,7 +856,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(" insert into mvtable1 select 'n4',12,12")
     sql("create materialized view map1 as select name,sum(salary) from mvtable1 group by name")
     val frame = sql("select name,sum(salary) from mvtable1 group by name limit 1")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "map1"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "map1"))
     sql("drop materialized view if exists map1")
     sql("drop table if exists mvtable1")
   }
@@ -867,7 +867,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view comp_maxsumminavg as select empname,max(projectenddate),sum(salary),min(projectjoindate),avg(attendance) from fact_table1 group by empname")
     val frame = sql(
       "select empname,max(projectenddate),sum(salary),min(projectjoindate),avg(attendance) from fact_table1 group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "comp_maxsumminavg"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "comp_maxsumminavg"))
     sql("drop materialized view if exists comp_maxsumminavg")
   }
 
@@ -890,7 +890,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
       val frame = sql(
         "select sum(case when deptno=11 and (utilization=92) then salary else 0 end) as t from fact_table1 group by empname")
-      assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV_exp"))
+      assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "MV_exp"))
     }
     sql("drop materialized view if exists MV_exp")
   }
@@ -918,7 +918,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view mv46 as select deptname, sum(salary) from fact_table1 group by deptname")
     val frame = sql(
       "select deptname as babu, sum(salary) from fact_table1 as tt group by deptname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "mv46"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "mv46"))
     sql("drop materialized view if exists mv46")
   }
 
@@ -928,7 +928,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view subqry as select empname, min(salary) from fact_table1 group by empname")
     val frame = sql(
       "SELECT max(utilization) FROM fact_table1 WHERE salary IN (select min(salary) from fact_table1 group by empname ) group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "subqry"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "subqry"))
     sql("drop materialized view if exists subqry")
   }
 
@@ -939,7 +939,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view subqry as select min(salary) from fact_table1")
     val frame = sql(
       "SELECT max(utilization) FROM fact_table1 WHERE salary IN (select min(salary) from fact_table1) group by empname")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "subqry"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "subqry"))
     sql("drop materialized view if exists subqry")
   }
 
@@ -1051,7 +1051,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view all_table_mv as " + querySQL)
 
     val frame = sql(querySQL)
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "all_table_mv"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "all_table_mv"))
     assert(1 == frame.collect().size)
 
     sql("drop table if exists all_table")
@@ -1066,7 +1066,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     try {
       val df = sql("select distinct(empname) from limit_fail limit 10")
       sql("select * from limit_fail limit 10").show()
-      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "limit_fail_dm1"))
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "limit_fail_dm1"))
     } catch {
       case ex: Exception =>
         assert(false)
@@ -1094,7 +1094,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("refresh materialized view all_table_mv")
 
     var frame = sql(querySQL)
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "all_table_mv"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "all_table_mv"))
     assert(2 == frame.collect().size)
     frame.collect().foreach { each =>
       if (1 == each.get(0)) {
@@ -1109,7 +1109,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     }
 
     frame = sql(querySQL2)
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "all_table_mv"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "all_table_mv"))
     assert(1 == frame.collect().size)
     frame.collect().foreach { each =>
       if (2 == each.get(0)) {
@@ -1134,10 +1134,10 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into mv_like select 'chandler', 32, 'newYork', 'US', 5")
     val df1 = sql(
       "select name,address from mv_like where Country NOT LIKE 'US' group by name,address")
-    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "mvlikedm1"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "mvlikedm1"))
     val df2 = sql(
       "select name,address,Country from mv_like where Country = 'US' or Country = 'China' group by name,address,Country")
-    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "mvlikedm2"))
+    assert(TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "mvlikedm2"))
   }
 
   test("test distinct, count, sum on MV with single projection column") {
@@ -1152,9 +1152,9 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(df1, Seq(Row(31), Row(32)))
     checkAnswer(df2, Seq(Row(63)))
     checkAnswer(df3, Seq(Row(2)))
-    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "single_mv"))
-    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "single_mv"))
-    assert(TestUtil.verifyMVDataMap(df3.queryExecution.optimizedPlan, "single_mv"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "single_mv"))
+    assert(TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "single_mv"))
+    assert(TestUtil.verifyMVHit(df3.queryExecution.optimizedPlan, "single_mv"))
   }
 
   test("count test case") {
@@ -1165,7 +1165,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into mvtable1 select 'n1',12,12")
     sql("refresh materialized view MV11")
     val frame = sql("select count(*) from mvtable1")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "MV11"))
+    assert(!TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "MV11"))
     checkAnswer(frame,Seq(Row(1)))
     sql("drop table if exists mvtable1")
     sql(s"drop materialized view MV11")
@@ -1192,12 +1192,12 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val df4 = sql("select sum(1) ex1 from maintable group by name")
     val df5 = sql("select age,age,add from maintable")
     val df6 = sql("select age,add from maintable")
-    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "dupli_mv"))
-    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "dupli_mv"))
-    assert(TestUtil.verifyMVDataMap(df3.queryExecution.optimizedPlan, "constant_mv"))
-    assert(TestUtil.verifyMVDataMap(df4.queryExecution.optimizedPlan, "constant_mv"))
-    assert(TestUtil.verifyMVDataMap(df5.queryExecution.optimizedPlan, "dupli_projection"))
-    assert(TestUtil.verifyMVDataMap(df6.queryExecution.optimizedPlan, "dupli_projection"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "dupli_mv"))
+    assert(TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "dupli_mv"))
+    assert(TestUtil.verifyMVHit(df3.queryExecution.optimizedPlan, "constant_mv"))
+    assert(TestUtil.verifyMVHit(df4.queryExecution.optimizedPlan, "constant_mv"))
+    assert(TestUtil.verifyMVHit(df5.queryExecution.optimizedPlan, "dupli_projection"))
+    assert(TestUtil.verifyMVHit(df6.queryExecution.optimizedPlan, "dupli_projection"))
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false")
   }
 
@@ -1208,7 +1208,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create table quality(product string,quality string) STORED AS carbondata")
     sql("create materialized view same_mv as select price.product,price.price,quality.product,quality.quality from price,quality where price.product = quality.product")
     val df1 = sql("select price.product from price,quality where price.product = quality.product")
-    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "same_mv"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "same_mv"))
     sql("drop materialized view if exists same_mv")
   }
 
@@ -1224,7 +1224,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val df = sql("select u_unit, y_year, m_month, c_country, b_country, sum(case when i_id=1 and (y_year=2000 and m_month=10) then d_dollar_value else 0 end), " +
                  "sum(case when i_id=1 and (y_year=2000 and m_month=10) then q_quantity else 0 end) ex, sum(case when i_id=1 and (y_year=2011 and (m_month>=7 and m_month " +
                  "<=12)) then q_quantity else 0 end) from maintable group by u_unit,y_year, m_month, c_country, b_country")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "da_agg"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "da_agg"))
     sql("drop materialized view if exists da_agg")
     sql("drop table IF EXISTS maintable")
   }
@@ -1241,8 +1241,8 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT) as a ,c_code as abc  from maintable")
     val df2 = sql(
       " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT),c_code as abc  from maintable")
-    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
-    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "da_cast"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "da_cast"))
+    assert(TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "da_cast"))
   }
 
   test("test cast of expression with mv") {
@@ -1257,7 +1257,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT) as a ,c_code as abc  from maintable")
     val df2 = sql(
       " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT),c_code as abc  from maintable")
-    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "da_cast"))
     sql("drop materialized view if exists da_cast")
   }
 
@@ -1271,14 +1271,14 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "create materialized view da_cast as select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable")
     checkAnswer(sql("select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable"), Seq(Row(1010, "xxx")))
     var df1 = sql("select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable")
-    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "da_cast"))
     df1 = sql("select cast(m_month + 1000 AS INT), c_code from maintable")
-    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "da_cast"))
     sql("drop materialized view if exists da_cast")
     sql(
       "create materialized view da_cast as select cast(m_month + 1000 AS INT), c_code from maintable")
     df1 = sql("select cast(m_month + 1000 AS INT), c_code from maintable")
-    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "da_cast"))
     checkAnswer(sql("select cast(m_month + 1000 AS INT), c_code from maintable"), Seq(Row(1010, "xxx")))
     sql("drop materialized view if exists da_cast")
   }
@@ -1293,13 +1293,13 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "create materialized view da_floor as select floor(m_month) as a, c_code as abc from maintable")
     checkAnswer(sql("select floor(m_month) as a, c_code as abc from maintable"), Seq(Row(10, "xxx")))
     val df1 = sql("select floor(m_month) as a, c_code as abc from maintable")
-    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_floor"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "da_floor"))
     sql("drop materialized view if exists da_ceil")
     sql(
       "create materialized view da_ceil as select ceil(m_month) as a, c_code as abc from maintable")
     checkAnswer(sql("select ceil(m_month) as a, c_code as abc from maintable"), Seq(Row(10, "xxx")))
     val df2 = sql("select ceil(m_month) as a, c_code as abc from maintable")
-    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "da_ceil"))
+    assert(TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "da_ceil"))
     sql("drop materialized view if exists da_ceil")
     sql("drop materialized view if exists da_floor")
   }
@@ -1345,7 +1345,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop materialized view if exists addseg")
     sql("create materialized view addseg as select empname, designation from fact_table_addseg")
     val df = sql("select empname,designation from fact_table_addseg")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "addseg"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "addseg"))
     assert(df.collect().length == 90)
     val table = CarbonEnv.getCarbonTable(None, "fact_table_addseg1") (sqlContext.sparkSession)
     val path = CarbonTablePath.getSegmentPath(table.getTablePath, "0")
@@ -1355,7 +1355,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"alter table fact_table_addseg add segment options('path'='$newPath', 'format'='carbon')").show()
     sql("select empname,designation from fact_table_addseg").show()
     val df1 = sql("select empname,designation from fact_table_addseg")
-    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "addseg"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "addseg"))
     assert(df1.collect().length == 180)
     sql(s"drop materialized view addseg")
     FileFactory.deleteAllFilesOfDir(new File(newPath))
@@ -1390,7 +1390,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view addseg with deferred refresh as select empname, designation from fact_table_addseg")
     sql("refresh materialized view addseg")
     val df = sql("select empname,designation from fact_table_addseg")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "addseg"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "addseg"))
     assert(df.collect().length == 90)
     val table = CarbonEnv.getCarbonTable(None, "fact_table_addseg1") (sqlContext.sparkSession)
     val path = CarbonTablePath.getSegmentPath(table.getTablePath, "0")
@@ -1399,13 +1399,13 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql(s"alter table fact_table_addseg add segment options('path'='$newPath', 'format'='carbon')").show()
     val df1 = sql("select empname,designation from fact_table_addseg")
-    assert(!TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "addseg"))
+    assert(!TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "addseg"))
     assert(df1.collect().length == 180)
 
     sql("refresh materialized view addseg")
 
     val df2 = sql("select empname,designation from fact_table_addseg")
-    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "addseg"))
+    assert(TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "addseg"))
     assert(df2.collect().length == 180)
 
     sql("drop materialized view addseg")
@@ -1425,7 +1425,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val result  = sql("select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
     sql("create materialized view mv1 as select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
     val df = sql("select avg(t1.score),t2.age,t2.sex from t1 join t2 on t1.userId=t2.userId group by t2.age,t2.sex")
-    TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1")
+    TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1")
     checkAnswer(df, result)
     intercept[ProcessMetaDataException] {
       sql("alter table t1 drop columns(userId)")

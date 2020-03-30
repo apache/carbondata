@@ -17,14 +17,14 @@
 
 package org.apache.carbondata.core.indexstore.blockletindex;
 
-import org.apache.carbondata.core.datamap.IndexInputSplit;
+import org.apache.carbondata.core.index.IndexInputSplit;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 
 /**
- * This class contains required information to make the Blocklet datamap distributable.
- * Each distributable object can represents one datamap.
+ * This class contains required information to make the Blocklet index distributable.
+ * Each distributable object can represents one index.
  * Using this object job like spark/MR can be launched and execute each distributable object as
- * one datamap task.
+ * one index task.
  */
 public class BlockletIndexInputSplit extends IndexInputSplit {
 

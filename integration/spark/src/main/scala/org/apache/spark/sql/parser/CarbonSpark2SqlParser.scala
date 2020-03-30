@@ -35,7 +35,7 @@ import org.apache.spark.sql.execution.command.schema.CarbonAlterTableDropColumnC
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.execution.command.view.{CarbonCreateMVCommand, CarbonDropMVCommand, CarbonRefreshMVCommand, CarbonShowMVCommand}
-import org.apache.spark.sql.secondaryindex.command.{CreateIndexTableCommand, _}
+import org.apache.spark.sql.secondaryindex.command.{CarbonCreateSecondaryIndexCommand, _}
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
@@ -198,7 +198,11 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
             table.database, indexName.toLowerCase, tableColumns, properties)
           validateColumnCompressorProperty(
             properties.getOrElse(CarbonCommonConstants.COMPRESSOR, null))
-          CreateIndexTableCommand(indexModel, properties, ifNotExists.isDefined, deferred.isDefined)
+          CarbonCreateSecondaryIndexCommand(
+            indexModel,
+            properties,
+            ifNotExists.isDefined,
+            deferred.isDefined)
         } else {
           CarbonCreateIndexCommand(indexModel, indexProvider,
             properties.toMap, ifNotExists.isDefined, deferred.isDefined)
@@ -697,7 +701,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     (WHERE ~> (SEGMENT ~ "." ~ ID) ~> IN ~> "(" ~> repsep(segmentId, ",") <~ ")").? <~
     opt(";") ^^ {
       case indexName ~ parentTableIdent ~ segments =>
-        CarbonRefreshIndexCommand(indexName, parentTableIdent, segments)
+        CarbonRefreshIndexCommand(indexName.toLowerCase(), parentTableIdent, segments)
     }
 
   def getFields(schema: Seq[StructField], isExternal: Boolean = false): Seq[Field] = {

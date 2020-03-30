@@ -42,12 +42,12 @@ public class BlockletIndexDetailsWithSchema implements Serializable {
   public BlockletIndexDetailsWithSchema(
       BlockletIndexWrapper blockletIndexWrapper, boolean isSchemaModified) {
     this.blockletIndexWrapper = blockletIndexWrapper;
-    List<BlockIndex> dataMaps = blockletIndexWrapper.getDataMaps();
-    if (!dataMaps.isEmpty()) {
+    List<BlockIndex> indexes = blockletIndexWrapper.getIndexes();
+    if (!indexes.isEmpty()) {
       // In one task all dataMaps will have the same cardinality and schema therefore
       // segmentPropertyIndex can be fetched from one dataMap
       SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper
-          segmentPropertiesWrapper = dataMaps.get(0).getSegmentPropertiesWrapper();
+          segmentPropertiesWrapper = indexes.get(0).getSegmentPropertiesWrapper();
       // flag to check whether carbon table schema is modified. ColumnSchemaList will be
       // serialized from executor to driver only if schema is modified
       if (isSchemaModified) {

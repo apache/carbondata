@@ -29,7 +29,7 @@ import org.apache.log4j.Logger;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.DataMapStoreManager;
+import org.apache.carbondata.core.index.IndexStoreManager;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -67,7 +67,7 @@ public class CarbonReaderTest extends TestCase {
   public void testWriteAndReadFiles() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
@@ -164,7 +164,7 @@ public class CarbonReaderTest extends TestCase {
   @Test public void testReadWithZeroBatchSize() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance().clearIndexCache(AbsoluteTableIdentifier.from(path), false);
+    IndexStoreManager.getInstance().clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -189,7 +189,7 @@ public class CarbonReaderTest extends TestCase {
   public void testReadBatchWithZeroBatchSize() throws Exception {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance().clearIndexCache(AbsoluteTableIdentifier.from(path), false);
+    IndexStoreManager.getInstance().clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -212,7 +212,7 @@ public class CarbonReaderTest extends TestCase {
   public void testReadWithFilterOfNonTransactionalSimple() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     String path1 = path + "/0testdir";
     String path2 = path + "/testdir";
@@ -259,7 +259,7 @@ public class CarbonReaderTest extends TestCase {
   public void testReadWithFilterOfNonTransactional2() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
@@ -296,7 +296,7 @@ public class CarbonReaderTest extends TestCase {
   public void testReadWithFilterOfNonTransactionalAnd() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[3];
     fields[0] = new Field("name", DataTypes.STRING);
@@ -339,7 +339,7 @@ public class CarbonReaderTest extends TestCase {
   public void testReadWithFilterOfNonTransactionalOr() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[3];
     fields[0] = new Field("name", DataTypes.STRING);
@@ -382,7 +382,7 @@ public class CarbonReaderTest extends TestCase {
   public void testReadWithFilterOfNonTransactionalGreaterThan() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[3];
     fields[0] = new Field("name", DataTypes.STRING);
@@ -425,7 +425,7 @@ public class CarbonReaderTest extends TestCase {
   public void testReadWithFilterOfNonTransactionalLessThan() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[3];
     fields[0] = new Field("name", DataTypes.STRING);
@@ -468,7 +468,7 @@ public class CarbonReaderTest extends TestCase {
   public void testReadWithFilterOfNonTransactionalNotEqual() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[3];
     fields[0] = new Field("name", DataTypes.STRING);
@@ -518,7 +518,7 @@ public class CarbonReaderTest extends TestCase {
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
 
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
     LessThanExpression lessThanExpression = new LessThanExpression(columnExpression,
@@ -554,7 +554,7 @@ public class CarbonReaderTest extends TestCase {
   public void testReadWithFilterOfNonTransactionalNotIn() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[3];
     fields[0] = new Field("name", DataTypes.STRING);
@@ -599,9 +599,9 @@ public class CarbonReaderTest extends TestCase {
     String path2 = "./testWriteFiles2";
     FileUtils.deleteDirectory(new File(path1));
     FileUtils.deleteDirectory(new File(path2));
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path1), false);
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path2), false);
     Field[] fields = new Field[] { new Field("c1", "string"),
          new Field("c2", "int") };
@@ -663,7 +663,7 @@ public class CarbonReaderTest extends TestCase {
   public void testReadColumnTwice() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
@@ -700,7 +700,7 @@ public class CarbonReaderTest extends TestCase {
   public void readFilesParallel() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
@@ -736,7 +736,7 @@ public class CarbonReaderTest extends TestCase {
   public void testReadAfterClose() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
@@ -777,7 +777,7 @@ public class CarbonReaderTest extends TestCase {
   public void testWriteAndReadFilesWithoutTableName() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
@@ -807,7 +807,7 @@ public class CarbonReaderTest extends TestCase {
   public void testWriteAndReadFilesWithoutTableName2() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance()
+    IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);

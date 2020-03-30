@@ -182,7 +182,7 @@ case class AlterTableCompactionPreStatusUpdateEvent(sparkSession: SparkSession,
 
 /**
  * Compaction Event for handling post update status file operations, like committing child
- * datamaps in one transaction
+ * indexes in one transaction
  */
 case class AlterTableCompactionPostStatusUpdateEvent(sparkSession: SparkSession,
     carbonTable: CarbonTable,

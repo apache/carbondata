@@ -96,37 +96,36 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
        """.stripMargin)
   }
 
-  test("create bloomfilter datamap on all datatypes") {
+  test("create bloomfilter index on all datatypes") {
     val tableName = "all_data_types"
-    val dataMapName = "dm_with_all_data_types"
+    val indexName = "dm_with_all_data_types"
     createAllDataTypeTable(tableName)
     loadAllDataTypeTable(tableName)
-    // create datamap on all supported datatype
+    // create index on all supported datatype
     sql(
       s"""
-         | CREATE DATAMAP $dataMapName ON TABLE $tableName
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='booleanField, shortField, intField, bigintField, doubleField, stringField, timestampField, decimalField, dateField, charField, floatField, stringDictField, stringSortField, stringLocalDictField, longStringField',
+         | CREATE INDEX $indexName ON TABLE $tableName (booleanField, shortField, intField, bigintField, doubleField, stringField, timestampField, decimalField, dateField, charField, floatField, stringDictField, stringSortField, stringLocalDictField, longStringField)
+         | AS 'bloomfilter'
+         | PROPERTIES(
          | 'BLOOM_SIZE'='6400',
          | 'BLOOM_FPP'='0.001',
          | 'BLOOM_COMPRESS'='TRUE')
        """.stripMargin)
     loadAllDataTypeTable(tableName)
-    checkExistence(sql(s"SHOW INDEXES ON TABLE $tableName"), true, "bloomfilter", dataMapName)
+    checkExistence(sql(s"SHOW INDEXES ON TABLE $tableName"), true, "bloomfilter", indexName)
     checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName"), Seq(Row(16)))
     checkExistence(
       sql(s"EXPLAIN SELECT * FROM $tableName WHERE booleanField=false AND shortField=2 AND intField=12 AND bigintField=102 AND doubleField=42.4 AND stringField='string2' AND timestampField='2015-05-23 12:01:03' AND decimalField=23.45 AND dateField='2015-05-23' AND charField='bbb' AND floatField=2.5 AND stringDictField='dict2' AND stringSortField='sort2' AND stringLocalDictField= 'local_dict2' AND longStringField='longstring2'"),
-      true, "bloomfilter", dataMapName)
+      true, "bloomfilter", indexName)
     checkAnswer(
       sql(s"SELECT COUNT(*) FROM (SELECT * FROM $tableName WHERE booleanField=false AND shortField=2 AND intField=12 AND bigintField=102 AND stringField='string2' AND timestampField='2015-05-23 12:01:03' AND decimalField=23.45 AND dateField='2015-05-23' AND charField='bbb' AND floatField=2.5 AND stringDictField='dict2' AND stringSortField='sort2' AND stringLocalDictField= 'local_dict2' AND longStringField='longstring2') b"),
       Seq(Row(4)))
     sql(s"DROP TABLE IF EXISTS $tableName")
   }
 
-  test("create bloomfilter datamap on all datatypes with sort columns") {
+  test("create bloomfilter index on all datatypes with sort columns") {
     val tableName = "all_data_types_with_sort_column"
-    val dataMapName = "dm_with_all_data_types_with_sort_column"
+    val indexName = "dm_with_all_data_types_with_sort_column"
     sql(s"DROP TABLE IF EXISTS $tableName")
     // double/float/decimal/longstring cannot be sort_columns so we ignore them in SORT_COLUMNS
     sql(
@@ -157,33 +156,32 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
          |  'SORT_COLUMNS'='booleanField, shortField, intField, bigintField, stringField, timestampField, dateField, charField, stringDictField, stringSortField, stringLocalDictField')
        """.stripMargin)
     loadAllDataTypeTable(tableName)
-    // create datamap on all supported datatype
+    // create index on all supported datatype
     sql(
       s"""
-         | CREATE DATAMAP $dataMapName ON TABLE $tableName
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='booleanField, shortField, intField, bigintField, doubleField, stringField, timestampField, decimalField, dateField, charField, floatField, stringDictField, stringSortField, stringLocalDictField, longStringField',
+         | CREATE INDEX $indexName ON TABLE $tableName (booleanField, shortField, intField, bigintField, doubleField, stringField, timestampField, decimalField, dateField, charField, floatField, stringDictField, stringSortField, stringLocalDictField, longStringField)
+         | AS 'bloomfilter'
+         | PROPERTIES(
          | 'BLOOM_SIZE'='6400',
          | 'BLOOM_FPP'='0.001',
          | 'BLOOM_COMPRESS'='TRUE')
        """.stripMargin)
     loadAllDataTypeTable(tableName)
-    checkExistence(sql(s"SHOW INDEXES ON TABLE $tableName"), true, "bloomfilter", dataMapName)
+    checkExistence(sql(s"SHOW INDEXES ON TABLE $tableName"), true, "bloomfilter", indexName)
     checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName"), Seq(Row(16)))
     checkExistence(
       sql(s"EXPLAIN SELECT * FROM $tableName WHERE booleanField=false AND shortField=2 AND intField=12 AND bigintField=102 AND doubleField=42.4 AND stringField='string2' AND timestampField='2015-05-23 12:01:03' AND decimalField=23.45 AND dateField='2015-05-23' AND charField='bbb' AND floatField=2.5 AND stringDictField='dict2' AND stringSortField='sort2' AND stringLocalDictField= 'local_dict2' AND longStringField='longstring2'"),
-      true, "bloomfilter", dataMapName)
+      true, "bloomfilter", indexName)
     checkAnswer(
       sql(s"SELECT COUNT(*) FROM (SELECT * FROM $tableName WHERE booleanField=false AND shortField=2 AND intField=12 AND bigintField=102 AND stringField='string2' AND timestampField='2015-05-23 12:01:03' AND decimalField=23.45 AND dateField='2015-05-23' AND charField='bbb' AND floatField=2.5 AND stringDictField='dict2' AND stringSortField='sort2' AND stringLocalDictField= 'local_dict2' AND longStringField='longstring2') b"),
       Seq(Row(4)))
     sql(s"DROP TABLE IF EXISTS $tableName")
   }
 
-  test("test bloom datamap with empty values on index column") {
+  test("test bloom index with empty values on index column") {
     val normalTable = "normal_table"
     val bloomDMSampleTable = "bloom_table"
-    val dataMapName = "bloom_datamap"
+    val indexName = "bloom_index"
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
     sql(s"CREATE TABLE $normalTable(c1 string, c2 int, c3 string) STORED AS carbondata")
@@ -196,9 +194,8 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
 
     sql(
       s"""
-         | CREATE DATAMAP $dataMapName on table $bloomDMSampleTable
-         | using 'bloomfilter'
-         | DMPROPERTIES('index_columns'='c1, c2')
+         | CREATE INDEX $indexName on table $bloomDMSampleTable (c1, c2)
+         | AS 'bloomfilter'
        """.stripMargin)
 
     // load data with empty value
@@ -222,146 +219,101 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
 
-  test("create multiple datamaps vs create on datamap on multiple columns") {
+  test("create multiple indexes vs create on index on multiple columns") {
     val tableName1 = "all_data_types10"
     val tableName2 = "all_data_types20"
-    val dataMapName1 = "dm_with_all_data_types10"
-    val dataMapName2Prefix = "dm_with_all_data_types2"
+    val indexName1 = "dm_with_all_data_types10"
+    val indexName2Prefix = "dm_with_all_data_types2"
     sql(s"DROP TABLE IF EXISTS $tableName1")
     sql(s"DROP TABLE IF EXISTS $tableName2")
     createAllDataTypeTable(tableName1)
     createAllDataTypeTable(tableName2)
     loadAllDataTypeTable(tableName1)
     loadAllDataTypeTable(tableName2)
-    // create one datamap on multiple index columns
+    // create one index on multiple index columns
     sql(
       s"""
-         | CREATE DATAMAP $dataMapName1 ON TABLE $tableName1
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='booleanField, shortField, intField, bigintField, doubleField, stringField, timestampField, decimalField, dateField, charField, floatField, stringDictField, stringSortField, stringLocalDictField, longStringField'
-         | )
+         | CREATE INDEX $indexName1 ON TABLE $tableName1 (booleanField, shortField, intField, bigintField, doubleField, stringField, timestampField, decimalField, dateField, charField, floatField, stringDictField, stringSortField, stringLocalDictField, longStringField)
+         | AS 'bloomfilter'
        """.stripMargin)
-    // create multiple datamaps each on one index column
+    // create multiple indexes each on one index column
     sql(
       s"""
-         | CREATE DATAMAP ${dataMapName2Prefix}0 ON TABLE $tableName2
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='booleanField'
-         | )
+         | CREATE INDEX ${indexName2Prefix}0 ON TABLE $tableName2 (booleanField)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ${dataMapName2Prefix}1 ON TABLE $tableName2
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='shortField'
-         | )
+         | CREATE INDEX ${indexName2Prefix}1 ON TABLE $tableName2 (shortField)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ${dataMapName2Prefix}2 ON TABLE $tableName2
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='intField'
-         | )
+         | CREATE INDEX ${indexName2Prefix}2 ON TABLE $tableName2 (intField)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ${dataMapName2Prefix}3 ON TABLE $tableName2
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='bigintField'
-         | )
+         | CREATE INDEX ${indexName2Prefix}3 ON TABLE $tableName2 (bigintField)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ${dataMapName2Prefix}4 ON TABLE $tableName2
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='doubleField'
-         | )
+         | CREATE INDEX ${indexName2Prefix}4 ON TABLE $tableName2 (doubleField)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ${dataMapName2Prefix}5 ON TABLE $tableName2
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='stringField'
-         | )
+         | CREATE INDEX ${indexName2Prefix}5 ON TABLE $tableName2 (stringField)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ${dataMapName2Prefix}6 ON TABLE $tableName2
-         | USING 'bloomfilter'
+         | CREATE INDEX ${indexName2Prefix}6 ON TABLE $tableName2 (timestampField)
+         | AS 'bloomfilter'
          | DMPROPERTIES(
          | 'INDEX_COLUMNS'='timestampField'
          | )
        """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ${dataMapName2Prefix}7 ON TABLE $tableName2
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='decimalField'
-         | )
+         | CREATE INDEX ${indexName2Prefix}7 ON TABLE $tableName2 (decimalField)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ${dataMapName2Prefix}8 ON TABLE $tableName2
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='dateField'
-         | )
+         | CREATE INDEX ${indexName2Prefix}8 ON TABLE $tableName2 (dateField)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ${dataMapName2Prefix}9 ON TABLE $tableName2
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='charField'
-         | )
+         | CREATE INDEX ${indexName2Prefix}9 ON TABLE $tableName2 (charField)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ${dataMapName2Prefix}10 ON TABLE $tableName2
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='floatField'
-         | )
+         | CREATE INDEX ${indexName2Prefix}10 ON TABLE $tableName2 (floatField)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ${dataMapName2Prefix}11 ON TABLE $tableName2
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='stringDictField'
-         | )
+         | CREATE INDEX ${indexName2Prefix}11 ON TABLE $tableName2 (stringDictField)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ${dataMapName2Prefix}12 ON TABLE $tableName2
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='stringSortField'
-         | )
+         | CREATE INDEX ${indexName2Prefix}12 ON TABLE $tableName2 (stringSortField)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ${dataMapName2Prefix}13 ON TABLE $tableName2
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='stringLocalDictField'
-         | )
+         | CREATE INDEX ${indexName2Prefix}13 ON TABLE $tableName2 (stringLocalDictField)
+         | AS 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP ${dataMapName2Prefix}14 ON TABLE $tableName2
-         | USING 'bloomfilter'
-         | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='longStringField'
-         | )
+         | CREATE INDEX ${indexName2Prefix}14 ON TABLE $tableName2 (longStringField)
+         | AS 'bloomfilter'
        """.stripMargin)
 
     loadAllDataTypeTable(tableName1)
@@ -371,9 +323,9 @@ class BloomFilterIndexTestCase extends QueryTest with BeforeAndAfterEach with Be
     checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName1"), sql(s"SELECT COUNT(*) FROM $tableName2"))
     checkExistence(
       sql(s"EXPLAIN SELECT * FROM $tableName1 WHERE booleanField=false AND shortField=2 AND intField=12 AND bigintField=102 AND doubleField=42.4 AND stringField='string2' AND timestampField='2015-05-23 12:01:03' AND decimalField=23.45 AND dateField='2015-05-23' AND charField='bbb' AND floatField=2.5 AND stringDictField='dict2' AND stringSortField='sort2' AND stringLocalDictField= 'local_dict2' AND longStringField='longstring2'"),
-      true, "bloomfilter", dataMapName1)
-    val allDataMapsOnTable2 = (0 to 14).map(p => s"$dataMapName2Prefix$p")
-    val existedString = (allDataMapsOnTable2 :+ "bloomfilter").toArray
+      true, "bloomfilter", indexName1)
+    val allIndexesOnTable2 = (0 to 14).map(p => s"$indexName2Prefix$p")
+    val existedString = (allIndexesOnTable2 :+ "bloomfilter").toArray
     checkExistence(
       sql(s"EXPLAIN SELECT * FROM $tableName2 WHERE booleanField=false AND shortField=2 AND intField=12 AND bigintField=102 AND doubleField=42.4 AND stringField='string2' AND timestampField='2015-05-23 12:01:03' AND decimalField=23.45 AND dateField='2015-05-23' AND charField='bbb' AND floatField=2.5 AND stringDictField='dict2' AND stringSortField='sort2' AND stringLocalDictField= 'local_dict2' AND longStringField='longstring2'"),
       true, existedString: _*)

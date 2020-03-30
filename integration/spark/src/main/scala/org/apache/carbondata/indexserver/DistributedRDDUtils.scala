@@ -28,8 +28,8 @@ import org.apache.spark.Partition
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, IndexInputSplit, Segment}
-import org.apache.carbondata.core.datamap.dev.expr.IndexInputSplitWrapper
+import org.apache.carbondata.core.index.{IndexInputSplit, IndexStoreManager, Segment}
+import org.apache.carbondata.core.index.dev.expr.IndexInputSplitWrapper
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.readcommitter.{LatestFilesReadCommittedScope, TableStatusReadCommittedScope}
@@ -380,7 +380,7 @@ object DistributedRDDUtils {
           new SegmentUpdateStatusManager(carbonTable, readCommittedScope.getSegmentList)
         // Adding valid segments to segments to be refreshed, so that the select query
         // goes in the same executor.
-        DataMapStoreManager.getInstance
+        IndexStoreManager.getInstance
           .getSegmentsToBeRefreshed(carbonTable, validSegments.toList.asJava)
         val indexServerLoadEvent: IndexServerLoadEvent =
           IndexServerLoadEvent(

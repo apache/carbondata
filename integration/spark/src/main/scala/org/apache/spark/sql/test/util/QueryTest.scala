@@ -42,9 +42,6 @@ class QueryTest extends PlanTest {
   // Add Locale setting
   Locale.setDefault(Locale.US)
 
-  CarbonProperties.getInstance()
-    .addProperty(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP, "true")
-
   /**
    * Runs the plan and makes sure the answer contains all of the keywords, or the
    * none of keywords are listed in the answer
@@ -105,9 +102,9 @@ class QueryTest extends PlanTest {
     sql(s"DROP TABLE IF EXISTS $tableName")
   }
 
-  protected def dropDataMaps(tableName: String, dataMapNames: String*): Unit = {
-    for (dataMapName <- dataMapNames) {
-      sql(s"DROP DATAMAP IF EXISTS $dataMapName ON TABLE $tableName")
+  protected def dropIndexes(tableName: String, indexNames: String*): Unit = {
+    for (indexName <- indexNames) {
+      sql(s"DROP INDEX IF EXISTS $indexName ON TABLE $tableName")
     }
   }
 

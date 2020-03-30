@@ -361,7 +361,7 @@ class TestAdaptiveEncodingForPrimitiveTypes extends QueryTest with BeforeAndAfte
     sql("drop table if exists complexTable")
   }
 
-  test("test bloom datamap on the adaptive encoded column") {
+  test("test bloom indexSchema on the adaptive encoded column") {
     sql("drop table if exists negativeTable")
     sql("create table negativeTable (intColumn int,stringColumn string,shortColumn short) STORED AS carbondata TBLPROPERTIES('SORT_COLUMNS'='intColumn,shortColumn')")
     sql(s"load data inpath '${resourcesPath + "/dataWithNegativeValues.csv"}' into table negativeTable options('FILEHEADER'='intColumn,stringColumn,shortColumn')")

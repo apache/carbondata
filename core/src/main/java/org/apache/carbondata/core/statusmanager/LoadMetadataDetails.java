@@ -119,7 +119,7 @@ public class LoadMetadataDetails implements Serializable {
   private String segmentFile;
 
   /**
-   * extraInfo will contain segment mapping Information for datamap table
+   * extraInfo will contain segment mapping Information for index table
    */
   private String extraInfo;
 

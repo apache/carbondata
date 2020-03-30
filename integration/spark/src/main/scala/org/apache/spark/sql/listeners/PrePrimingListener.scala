@@ -20,7 +20,7 @@ package org.apache.spark.sql.listeners
 import scala.collection.JavaConverters._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.IndexInputFormat
+import org.apache.carbondata.core.index.IndexInputFormat
 import org.apache.carbondata.events.{Event, IndexServerLoadEvent, OperationContext, OperationEventListener}
 import org.apache.carbondata.indexserver.IndexServer
 
@@ -33,7 +33,7 @@ object PrePrimingEventListener extends OperationEventListener {
       operationContext: OperationContext): Unit = {
     val prePrimingEvent = event.asInstanceOf[IndexServerLoadEvent]
     val carbonTable = prePrimingEvent.carbonTable
-    val dataMapFormat = new IndexInputFormat(carbonTable,
+    val indexInputFormat = new IndexInputFormat(carbonTable,
       null,
       prePrimingEvent.segment.asJava,
       prePrimingEvent.invalidsegment.asJava,
@@ -44,7 +44,7 @@ object PrePrimingEventListener extends OperationEventListener {
       true)
     if (prePrimingEvent.segment.length != 0) {
       try {
-        IndexServer.getClient.getCount(dataMapFormat)
+        IndexServer.getClient.getCount(indexInputFormat)
       }
       catch {
         // Consider a scenario where prepriming is in progress and the index server crashes, in

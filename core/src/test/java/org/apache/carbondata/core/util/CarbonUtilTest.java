@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;

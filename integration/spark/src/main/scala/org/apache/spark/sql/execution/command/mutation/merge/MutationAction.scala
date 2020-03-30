@@ -25,7 +25,7 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.sql.execution.command.mutation.DeleteExecution
 
-import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, SegmentUpdateDetails}
 import org.apache.carbondata.processing.loading.FailureCauses

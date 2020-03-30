@@ -113,7 +113,7 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     checkAnswer(sql("select * from p1"), Seq(Row("v",2014,2014,1,1)))
     checkAnswer(sql("select empname, sum(year) from partitionone group by empname, year, month,day"), Seq(Row("v", 2014)))
     val df1 = sql(s"select empname, sum(year) from partitionone group by empname, year, month,day")
-    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "p1"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "p1"))
     assert(CarbonEnv.getCarbonTable(Some("partition_mv"), "p1")(sqlContext.sparkSession).isHivePartitionTable)
   }
 
@@ -131,7 +131,7 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("insert overwrite table partitionone values('v',2,2015,1,1)")
     checkAnswer(sql("select * from partitionone"), Seq(Row("k",2,2014,1,1), Row("v",2,2015,1,1)))
     val df1 = sql(s"select empname, sum(year) from partitionone group by empname, year, month,day")
-    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "p1"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "p1"))
     checkAnswer(sql("select * from p1"), Seq(Row("k",2014,2014,1,1), Row("v",2015,2015,1,1)))
   }
 
@@ -254,16 +254,16 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("alter table droppartition drop partition(year=2015,month=2,day=3)")
     sql("clean files for table droppartition")
     val table = CarbonEnv.getCarbonTable(Option("partition_mv"), "droppartition")(sqlContext.sparkSession)
-    val dataMapTable = CarbonEnv.getCarbonTable(Option("partition_mv"), "droppartition")(sqlContext.sparkSession)
-    val dataMaptablePath = dataMapTable.getTablePath
+    val mvTable = CarbonEnv.getCarbonTable(Option("partition_mv"), "droppartition")(sqlContext.sparkSession)
+    val mvtablePath = mvTable.getTablePath
     val tablePath = table.getTablePath
     val carbonFiles = FileFactory.getCarbonFile(tablePath).listFiles().filter{
       file => file.getName.equalsIgnoreCase("year=2015")
     }
-    val dataMapCarbonFiles = FileFactory.getCarbonFile(dataMaptablePath).listFiles().filter{
+    val mvCarbonFiles = FileFactory.getCarbonFile(mvtablePath).listFiles().filter{
       file => file.getName.equalsIgnoreCase("year=2015")
     }
-    assert(dataMapCarbonFiles.length == 0)
+    assert(mvCarbonFiles.length == 0)
     assert(carbonFiles.length == 0)
   }
 
@@ -658,7 +658,7 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("alter table updatetime_8 compact 'minor'")
     sql("alter table updatetime_8 compact 'minor'")
     val df = sql("select sum(hs_len) from updatetime_8 group by imex")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "ag"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "ag"))
     checkAnswer(sql("select sum(hs_len) from updatetime_8 group by imex"),Seq(Row(40),Row(42),Row(83)))
     sql("drop table updatetime_8").show(200, false)
   }

@@ -23,7 +23,7 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ReturnAnswer}
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.index.{CarbonDropIndexCommand, DropIndexCommand, ShowIndexesCommand}
+import org.apache.spark.sql.execution.command.index.{DropIndexCommand, ShowIndexesCommand}
 import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand}
 import org.apache.spark.sql.execution.command.mutation.CarbonTruncateCommand
 import org.apache.spark.sql.execution.command.schema._
@@ -31,7 +31,7 @@ import org.apache.spark.sql.execution.command.table.{CarbonCreateTableLikeComman
 import org.apache.spark.sql.execution.datasources.{InsertIntoHadoopFsRelationCommand, RefreshResource, RefreshTable}
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand, MatchResetCommand}
-import org.apache.spark.sql.secondaryindex.command.CreateIndexTableCommand
+import org.apache.spark.sql.secondaryindex.command.CarbonCreateSecondaryIndexCommand
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -211,13 +211,13 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         DDLHelper.explain(explain, sparkSession)
       case showTables: ShowTablesCommand =>
         DDLHelper.showTables(showTables, sparkSession)
-      case CreateIndexTableCommand(
+      case CarbonCreateSecondaryIndexCommand(
       indexModel, tableProperties, ifNotExists, isDeferredRefresh, isCreateSIndex) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
           .tableExists(TableIdentifier(indexModel.tableName, indexModel.dbName))(
             sparkSession)
         if (isCarbonTable) {
-          ExecutedCommandExec(CreateIndexTableCommand(
+          ExecutedCommandExec(CarbonCreateSecondaryIndexCommand(
             indexModel, tableProperties, ifNotExists, isDeferredRefresh, isCreateSIndex)) :: Nil
         } else {
           sys.error("Operation not allowed on non-carbon table")

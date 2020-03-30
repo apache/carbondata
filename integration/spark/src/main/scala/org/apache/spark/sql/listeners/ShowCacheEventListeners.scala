@@ -20,9 +20,9 @@ package org.apache.spark.sql.listeners
 import scala.collection.JavaConverters._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
+import org.apache.carbondata.core.index.IndexStoreManager
+import org.apache.carbondata.core.metadata.schema.index.IndexClassProvider
+import org.apache.carbondata.core.metadata.schema.table.IndexSchema
 import org.apache.carbondata.events._
 
 object ShowCachePreMVEventListener extends OperationEventListener {
@@ -48,7 +48,7 @@ object ShowCachePreMVEventListener extends OperationEventListener {
 }
 
 
-object ShowCacheDataMapEventListener extends OperationEventListener {
+object ShowCacheIndexEventListener extends OperationEventListener {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -65,31 +65,29 @@ object ShowCacheDataMapEventListener extends OperationEventListener {
         val childTables = operationContext.getProperty(carbonTable.getTableUniqueName)
           .asInstanceOf[List[(String, String)]]
 
-        // Extract all datamaps for the table
-        val datamaps = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+        // Extract all indexes for the table
+        val indexes = IndexStoreManager.getInstance().getIndexSchemasOfTable(carbonTable)
           .asScala.toList
 
-        val bloomDataMaps = filterDataMaps(datamaps, DataMapClassProvider.BLOOMFILTER.getShortName)
-
-        val mvDataMaps = filterDataMaps(datamaps, DataMapClassProvider.MV.getShortName)
+        val mv = filterMV(indexes, IndexClassProvider.MV.getShortName)
         operationContext
-          .setProperty(carbonTable.getTableUniqueName, childTables ++ bloomDataMaps ++ mvDataMaps)
+          .setProperty(carbonTable.getTableUniqueName, childTables ++ mv)
     }
   }
 
-  private def filterDataMaps(dataMaps: List[DataMapSchema],
-      filter: String): List[(String, String, String)] = {
-    dataMaps.collect {
-      case dataMap if dataMap.getProviderName
+  private def filterMV(indexes: List[IndexSchema],
+                       filter: String): List[(String, String, String)] = {
+    indexes.collect {
+      case index if index.getProviderName
         .equalsIgnoreCase(filter) =>
-        if (filter.equalsIgnoreCase(DataMapClassProvider.BLOOMFILTER.getShortName)) {
-          (s"${ dataMap.getRelationIdentifier.getDatabaseName }-${
-            dataMap.getDataMapName}", dataMap.getProviderName,
-            dataMap.getRelationIdentifier.getTableId)
+        if (filter.equalsIgnoreCase(IndexClassProvider.BLOOMFILTER.getShortName)) {
+          (s"${ index.getRelationIdentifier.getDatabaseName }-${
+            index.getIndexName}", index.getProviderName,
+            index.getRelationIdentifier.getTableId)
         } else {
-          (s"${ dataMap.getRelationIdentifier.getDatabaseName }-${
-            dataMap.getRelationIdentifier.getTableName}", dataMap.getProviderName,
-            dataMap.getRelationIdentifier.getTableId)
+          (s"${ index.getRelationIdentifier.getDatabaseName }-${
+            index.getRelationIdentifier.getTableName}", index.getProviderName,
+            index.getRelationIdentifier.getTableId)
         }
     }
   }

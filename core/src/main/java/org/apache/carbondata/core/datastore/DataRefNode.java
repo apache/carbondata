@@ -115,7 +115,7 @@ public interface DataRefNode {
   MeasureRawColumnChunk readMeasureChunk(FileReader fileReader, int columnIndex) throws IOException;
 
   /**
-   * Return the indexed data if it has any from disk which was stored by FG datamap.
+   * Return the indexed data if it has any from disk which was stored by FG index.
    * @return
    */
   BitSetGroup getIndexedData();

@@ -28,13 +28,15 @@ import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.execution.command.Auditable
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.command.IndexModel
-import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
@@ -61,7 +63,7 @@ class AlterTableMergeIndexSIEventListener
         if (lock.lockWithRetries()) {
           LOGGER.info("Acquired the compaction lock for table" +
                       s" ${carbonMainTable.getDatabaseName}.${carbonMainTable.getTableName}")
-          val indexTablesList = CarbonInternalScalaUtil.getIndexesMap(carbonMainTable).asScala
+          val indexProviderMap = carbonMainTable.getIndexesMap
           val loadFolderDetailsArray = SegmentStatusManager
             .readLoadMetadata(carbonMainTable.getMetadataPath)
           val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String, String]()
@@ -70,34 +72,41 @@ class AlterTableMergeIndexSIEventListener
               .put(loadMetadataDetails.getLoadName,
                 String.valueOf(loadMetadataDetails.getLoadStartTime))
           })
-          if (null != indexTablesList && indexTablesList.nonEmpty) {
-            indexTablesList.foreach { indexTableAndColumns =>
-              val secondaryIndex = IndexModel(Some(carbonMainTable.getDatabaseName),
-                carbonMainTable.getTableName,
-                indexTableAndColumns._2.asScala.toList,
-                indexTableAndColumns._1)
-              val metastore = CarbonEnv.getInstance(sparkSession)
-                .carbonMetaStore
-              val indexCarbonTable = metastore
-                .lookupRelation(Some(carbonMainTable.getDatabaseName),
-                  secondaryIndex.indexName)(sparkSession).asInstanceOf[CarbonRelation]
-                .carbonTable
-              setAuditTable(indexCarbonTable)
-              setAuditInfo(Map("compactionType" -> compactionType))
-              val validSegments: mutable.Buffer[Segment] = CarbonDataMergerUtil.getValidSegmentList(
-                carbonMainTable).asScala
-              val validSegmentIds: mutable.Buffer[String] = mutable.Buffer[String]()
-              validSegments.foreach { segment =>
-                validSegmentIds += segment.getSegmentNo
+          if (!indexProviderMap.isEmpty) {
+            if (null != indexProviderMap.get(IndexType.SI.getIndexProviderName)) {
+              val secondaryIndexIterator = indexProviderMap
+                .get(IndexType.SI.getIndexProviderName).entrySet().iterator()
+              while (secondaryIndexIterator.hasNext) {
+                val index = secondaryIndexIterator.next()
+                val secondaryIndex = IndexModel(Some(carbonMainTable.getDatabaseName),
+                  carbonMainTable.getTableName,
+                  index.getValue.get(CarbonCommonConstants.INDEX_COLUMNS).split(",").toList,
+                  index.getKey)
+                val metastore = CarbonEnv.getInstance(sparkSession)
+                  .carbonMetaStore
+                val indexCarbonTable = metastore
+                  .lookupRelation(Some(carbonMainTable.getDatabaseName),
+                    secondaryIndex.indexName)(sparkSession).asInstanceOf[CarbonRelation]
+                  .carbonTable
+                setAuditTable(indexCarbonTable)
+                setAuditInfo(Map("compactionType" -> compactionType))
+                val validSegments: mutable.Buffer[Segment] = CarbonDataMergerUtil
+                  .getValidSegmentList(
+                    carbonMainTable)
+                  .asScala
+                val validSegmentIds: mutable.Buffer[String] = mutable.Buffer[String]()
+                validSegments.foreach { segment =>
+                  validSegmentIds += segment.getSegmentNo
+                }
+                // Just launch job to merge index for all index tables
+                CarbonMergeFilesRDD.mergeIndexFiles(
+                  sparkSession,
+                  validSegmentIds,
+                  segmentFileNameMap,
+                  indexCarbonTable.getTablePath,
+                  indexCarbonTable,
+                  mergeIndexProperty = true)
               }
-              // Just launch job to merge index for all index tables
-              CarbonMergeFilesRDD.mergeIndexFiles(
-                sparkSession,
-                validSegmentIds,
-                segmentFileNameMap,
-                indexCarbonTable.getTablePath,
-                indexCarbonTable,
-                mergeIndexProperty = true)
             }
           }
           LOGGER.info(s"Compaction request completed for table " +

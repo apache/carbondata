@@ -36,7 +36,7 @@ import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.IndexInputFormat
+import org.apache.carbondata.core.index.IndexInputFormat
 import org.apache.carbondata.core.indexstore.{ExtendedBlockletWrapperContainer, SegmentWrapperContainer}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
@@ -48,7 +48,7 @@ import org.apache.carbondata.events.{IndexServerEvent, OperationContext, Operati
   clientPrincipal = "spark.carbon.indexserver.principal")
 trait ServerInterface {
   /**
-   * Used to prune and cache the datamaps for the table.
+   * Used to prune and cache the index for the table.
    */
   def getSplits(request: IndexInputFormat): ExtendedBlockletWrapperContainer
 
@@ -71,10 +71,10 @@ trait ServerInterface {
 
 /**
  * An instance of a distributed Index Server which will be used for:
- * 1. Pruning the datamaps in a distributed way by using the executors.
- * 2. Caching the pruned datamaps in executor size to be reused in the next query.
- * 3. Getting the size of the datamaps cached in the executors.
- * 4. Clearing the datamaps for a table or for the specified invalid segments.
+ * 1. Pruning the indexes in a distributed way by using the executors.
+ * 2. Caching the pruned indexes in executor size to be reused in the next query.
+ * 3. Getting the size of the indexes cached in the executors.
+ * 4. Clearing the indexes for a table or for the specified invalid segments.
  *
  * Start using ./bin/start-indexserver.sh
  * Stop using ./bin/stop-indexserver.sh
@@ -179,7 +179,7 @@ object IndexServer extends ServerInterface {
       if (!request.isFallbackJob) {
         DistributedRDDUtils.updateExecutorCacheSize(splits.map(_._1).toSet)
       }
-      if (request.isJobToClearDataMaps) {
+      if (request.isJobToClearIndexes) {
         DistributedRDDUtils.invalidateTableMapping(request.getCarbonTable.getTableUniqueName)
       }
       new ExtendedBlockletWrapperContainer(splits.map(_._2), request.isFallbackJob)

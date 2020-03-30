@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexRowIndexes;
 import org.apache.carbondata.core.indexstore.row.IndexRow;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -37,7 +37,7 @@ import org.apache.carbondata.hadoop.CarbonInputSplit;
  */
 public class ExtendedBlocklet extends Blocklet {
 
-  private String dataMapUniqueId;
+  private String indexUniqueId;
 
   private CarbonInputSplit inputSplit;
 
@@ -63,7 +63,7 @@ public class ExtendedBlocklet extends Blocklet {
     return this.inputSplit.getDetailInfo();
   }
 
-  public void setDataMapRow(IndexRow indexRow) {
+  public void setIndexRow(IndexRow indexRow) {
     this.inputSplit.setIndexRow(indexRow);
   }
 
@@ -106,16 +106,16 @@ public class ExtendedBlocklet extends Blocklet {
     }
   }
 
-  public void setDataMapWriterPath(String dataMapWriterPath) {
-    this.inputSplit.setDataMapWritePath(dataMapWriterPath);
+  public void setIndexWriterPath(String indexWriterPath) {
+    this.inputSplit.setIndexWritePath(indexWriterPath);
   }
 
-  public String getDataMapUniqueId() {
-    return dataMapUniqueId;
+  public String getIndexUniqueId() {
+    return indexUniqueId;
   }
 
-  public void setDataMapUniqueId(String dataMapUniqueId) {
-    this.dataMapUniqueId = dataMapUniqueId;
+  public void setIndexUniqueId(String indexUniqueId) {
+    this.indexUniqueId = indexUniqueId;
   }
 
   @Override
@@ -175,11 +175,11 @@ public class ExtendedBlocklet extends Blocklet {
       out.writeLong(inputSplit.getIndexRow().getInt(BlockletIndexRowIndexes.ROW_COUNT_INDEX));
       out.writeUTF(inputSplit.getSegmentId());
     } else {
-      if (dataMapUniqueId == null) {
+      if (indexUniqueId == null) {
         out.writeBoolean(false);
       } else {
         out.writeBoolean(true);
-        out.writeUTF(dataMapUniqueId);
+        out.writeUTF(indexUniqueId);
       }
       out.writeBoolean(inputSplit != null);
       if (inputSplit != null) {
@@ -217,7 +217,7 @@ public class ExtendedBlocklet extends Blocklet {
       return;
     }
     if (in.readBoolean()) {
-      dataMapUniqueId = in.readUTF();
+      indexUniqueId = in.readUTF();
     }
     setFilePath(tablePath + getPath());
     boolean isSplitPresent = in.readBoolean();

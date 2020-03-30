@@ -32,9 +32,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexRowIndexes;
 import org.apache.carbondata.core.indexstore.row.IndexRow;
@@ -86,7 +86,7 @@ public class CarbonInputSplit extends FileSplit
 
   private FileFormat fileFormat = FileFormat.COLUMNAR_V3;
 
-  private String dataMapWritePath;
+  private String indexWritePath;
   /**
    * validBlockletIds will contain the valid blocklted ids for a given block that contains the data
    * after pruning from driver. These will be used in executor for further pruning of blocklets
@@ -216,7 +216,7 @@ public class CarbonInputSplit extends FileSplit
 
   private CarbonInputSplit(String segmentId, String blockletId, String filePath, long start,
       long length, ColumnarFormatVersion version, String[] deleteDeltaFiles,
-      String dataMapWritePath) {
+      String indexWritePath) {
     this.filePath = filePath;
     this.start = start;
     this.length = length;
@@ -232,7 +232,7 @@ public class CarbonInputSplit extends FileSplit
     this.blockletId = blockletId;
     this.version = version;
     this.deleteDeltaFiles = deleteDeltaFiles;
-    this.dataMapWritePath = dataMapWritePath;
+    this.indexWritePath = indexWritePath;
   }
 
   public CarbonInputSplit(String segmentId, String blockletId, String filePath, long start,
@@ -286,9 +286,9 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public static CarbonInputSplit from(String segmentId, String blockletId, String path, long start,
-      long length, ColumnarFormatVersion version, String dataMapWritePath) {
+      long length, ColumnarFormatVersion version, String indexWritePath) {
     return new CarbonInputSplit(segmentId, blockletId, path, start, length, version, null,
-        dataMapWritePath);
+        indexWritePath);
   }
 
   public static List<TableBlockInfo> createBlocks(List<CarbonInputSplit> splitList) {
@@ -300,7 +300,7 @@ public class CarbonInputSplit extends FileSplit
                 split.getSegment().toString(), split.getLocations(), split.getLength(),
                 split.getVersion(), split.getDeleteDeltaFiles());
         blockInfo.setDetailInfo(split.getDetailInfo());
-        blockInfo.setDataMapWriterPath(split.dataMapWritePath);
+        blockInfo.setIndexWriterPath(split.indexWritePath);
         if (split.getDetailInfo() != null) {
           blockInfo.setBlockOffset(split.getDetailInfo().getBlockFooterOffset());
         }
@@ -370,9 +370,9 @@ public class CarbonInputSplit extends FileSplit
       detailInfo = new BlockletDetailInfo();
       detailInfo.readFields(in);
     }
-    boolean dataMapWriterPathExists = in.readBoolean();
-    if (dataMapWriterPathExists) {
-      dataMapWritePath = in.readUTF();
+    boolean indexWriterPathExists = in.readBoolean();
+    if (indexWriterPathExists) {
+      indexWritePath = in.readUTF();
     }
     int validBlockletIdCount = in.readShort();
     validBlockletIds = new HashSet<>(validBlockletIdCount);
@@ -425,9 +425,9 @@ public class CarbonInputSplit extends FileSplit
     } else if (writeDetailInfo && indexRow != null) {
       writeBlockletDetailsInfo(out);
     }
-    out.writeBoolean(dataMapWritePath != null);
-    if (dataMapWritePath != null) {
-      out.writeUTF(dataMapWritePath);
+    out.writeBoolean(indexWritePath != null);
+    if (indexWritePath != null) {
+      out.writeUTF(indexWritePath);
     }
     out.writeShort(getValidBlockletIds().size());
     for (Integer blockletId : getValidBlockletIds()) {
@@ -611,16 +611,16 @@ public class CarbonInputSplit extends FileSplit
     this.validBlockletIds = validBlockletIds;
   }
 
-  public void setDataMapWritePath(String dataMapWritePath) {
-    this.dataMapWritePath = dataMapWritePath;
+  public void setIndexWritePath(String indexWritePath) {
+    this.indexWritePath = indexWritePath;
   }
 
   public void setSegment(Segment segment) {
     this.segment = segment;
   }
 
-  public String getDataMapWritePath() {
-    return dataMapWritePath;
+  public String getIndexWritePath() {
+    return indexWritePath;
   }
 
   public void setIndexRow(IndexRow indexRow) {

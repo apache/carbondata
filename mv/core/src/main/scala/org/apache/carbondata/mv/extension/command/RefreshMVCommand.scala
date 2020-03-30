@@ -22,11 +22,11 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.DataCommand
 
 import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
-import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.datamap.status.DataMapStatusManager
+import org.apache.carbondata.core.index.IndexStoreManager
+import org.apache.carbondata.core.index.status.IndexStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.datamap.DataMapManager
-import org.apache.carbondata.events.{UpdateDataMapPostExecutionEvent, _}
+import org.apache.carbondata.events.{UpdateMVPostExecutionEvent, _}
+import org.apache.carbondata.index.IndexManager
 
 /**
  * Refresh Materialized View Command implementation
@@ -38,8 +38,8 @@ case class RefreshMVCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     import scala.collection.JavaConverters._
-    val schemas = DataMapStoreManager.getInstance().getAllDataMapSchemas
-    val schemaOption = schemas.asScala.find(p => p.getDataMapName.equalsIgnoreCase(mvName))
+    val schemas = IndexStoreManager.getInstance().getAllIndexSchemas
+    val schemaOption = schemas.asScala.find(p => p.getIndexName.equalsIgnoreCase(mvName))
     if (schemaOption.isEmpty) {
         throw new MalformedMVCommandException(
           s"Materialized view $mvName does not exist")
@@ -52,17 +52,17 @@ case class RefreshMVCommand(
 
     setAuditTable(mvTable)
 
-    val provider = DataMapManager.get().getDataMapProvider(mvTable, mvSchema, sparkSession)
+    val provider = IndexManager.get().getIndexProvider(mvTable, mvSchema, sparkSession)
     provider.rebuild()
 
     // After rebuild successfully enable the MV table.
     val operationContext = new OperationContext()
     val storeLocation = CarbonProperties.getInstance().getSystemFolderLocation
-    val preExecEvent = UpdateDataMapPreExecutionEvent(sparkSession, storeLocation,
+    val preExecEvent = UpdateMVPreExecutionEvent(sparkSession, storeLocation,
       new TableIdentifier(mvTable.getTableName, Some(mvTable.getDatabaseName)))
     OperationListenerBus.getInstance().fireEvent(preExecEvent, operationContext)
-    DataMapStatusManager.enableDataMap(mvName)
-    val postExecEvent = UpdateDataMapPostExecutionEvent(sparkSession, storeLocation,
+    IndexStatusManager.enableIndex(mvName)
+    val postExecEvent = UpdateMVPostExecutionEvent(sparkSession, storeLocation,
       new TableIdentifier(mvTable.getTableName, Some(mvTable.getDatabaseName)))
     OperationListenerBus.getInstance().fireEvent(postExecEvent, operationContext)
     Seq.empty

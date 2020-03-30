@@ -20,7 +20,7 @@ package org.apache.carbondata.core.indexstore;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.index.Segment;
 
 /**
  * Fetches the detailed blocklet which has more information to execute the query
@@ -58,7 +58,7 @@ public interface BlockletDetailsFetcher {
       throws IOException;
 
   /**
-   * clears the datamap from cache and segmentMap from executor
+   * clears the index from cache and segmentMap from executor
    */
   void clear();
 }

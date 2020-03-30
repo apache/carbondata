@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.IndexFilter;
+import org.apache.carbondata.core.index.IndexFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -146,7 +146,7 @@ public class CarbonTableInputFormatTest {
       Assert.assertTrue("failed", false);
       throw e;
     } finally {
-      creator.clearDataMaps();
+      creator.clearIndexes();
       FileFactory.deleteAllFilesOfDir(new File(outPath));
     }
   }
@@ -166,7 +166,7 @@ public class CarbonTableInputFormatTest {
       e.printStackTrace();
       Assert.assertTrue("failed", false);
     } finally {
-      creator.clearDataMaps();
+      creator.clearIndexes();
     }
   }
 
@@ -186,7 +186,7 @@ public class CarbonTableInputFormatTest {
     } catch (Exception e) {
       Assert.assertTrue("failed", false);
     } finally {
-      creator.clearDataMaps();
+      creator.clearIndexes();
     }
   }
 

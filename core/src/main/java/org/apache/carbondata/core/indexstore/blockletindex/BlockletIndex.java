@@ -26,9 +26,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.dev.IndexModel;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.index.dev.IndexModel;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.row.IndexRow;
@@ -44,12 +44,12 @@ import org.apache.carbondata.core.util.BlockletIndexUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
- * Datamap implementation for blocklet.
+ * Index implementation for blocklet.
  */
 public class BlockletIndex extends BlockIndex implements Serializable {
 
   private static final long serialVersionUID = -2170289352240810993L;
-  // total block number in this datamap
+  // total block number in this index
   private int blockNum = 0;
 
   @Override
@@ -60,14 +60,14 @@ public class BlockletIndex extends BlockIndex implements Serializable {
   /**
    * Method to check the cache level and load metadata based on that information
    *
-   * @param blockletDataMapInfo
+   * @param blockletIndexModel
    * @param indexInfo
    */
   @Override
   protected IndexRowImpl loadMetadata(CarbonRowSchema[] taskSummarySchema,
-      SegmentProperties segmentProperties, BlockletIndexModel blockletDataMapInfo,
+      SegmentProperties segmentProperties, BlockletIndexModel blockletIndexModel,
       List<DataFileFooter> indexInfo) {
-    return loadBlockletMetaInfo(taskSummarySchema, segmentProperties, blockletDataMapInfo,
+    return loadBlockletMetaInfo(taskSummarySchema, segmentProperties, blockletIndexModel,
         indexInfo);
   }
 
@@ -84,11 +84,11 @@ public class BlockletIndex extends BlockIndex implements Serializable {
   /**
    * Method to load blocklet metadata information
    *
-   * @param blockletDataMapInfo
+   * @param blockletIndexModel
    * @param indexInfo
    */
   private IndexRowImpl loadBlockletMetaInfo(CarbonRowSchema[] taskSummarySchema,
-      SegmentProperties segmentProperties, BlockletIndexModel blockletDataMapInfo,
+      SegmentProperties segmentProperties, BlockletIndexModel blockletIndexModel,
       List<DataFileFooter> indexInfo) {
     String tempFilePath = null;
     IndexRowImpl summaryRow = null;
@@ -102,7 +102,7 @@ public class BlockletIndex extends BlockIndex implements Serializable {
       updateMinMaxFlag(fileFooter, summaryRowMinMaxFlag);
       TableBlockInfo blockInfo = fileFooter.getBlockInfo();
       BlockMetaInfo blockMetaInfo =
-          blockletDataMapInfo.getBlockMetaInfoMap().get(blockInfo.getFilePath());
+          blockletIndexModel.getBlockMetaInfoMap().get(blockInfo.getFilePath());
       // Here it loads info about all blocklets of index
       // Only add if the file exists physically. There are scenarios which index file exists inside
       // merge index but related carbondata files are deleted. In that case we first check whether
@@ -207,7 +207,7 @@ public class BlockletIndex extends BlockIndex implements Serializable {
   @Override
   public ExtendedBlocklet getDetailedBlocklet(String blockletId) {
     int absoluteBlockletId = Integer.parseInt(blockletId);
-    IndexRow row = memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), absoluteBlockletId);
+    IndexRow row = memoryDMStore.getIndexRow(getFileFooterEntrySchema(), absoluteBlockletId);
     short relativeBlockletId = row.getShort(BLOCKLET_ID_INDEX);
     String filePath = getFilePath();
     return createBlocklet(row, getFileNameWithFilePath(row, filePath), relativeBlockletId,
@@ -233,13 +233,13 @@ public class BlockletIndex extends BlockIndex implements Serializable {
     blocklet.setColumnSchema(getColumnSchema());
     blocklet.setUseMinMaxForPruning(useMinMaxForPruning);
     blocklet.setIsBlockCache(false);
-    blocklet.setDataMapRow(row);
+    blocklet.setIndexRow(row);
     return blocklet;
   }
 
   @Override
   protected short getBlockletNumOfEntry(int index) {
-    //in blocklet datamap, each entry contains info of one blocklet
+    //in blocklet index, each entry contains info of one blocklet
     return 1;
   }
 

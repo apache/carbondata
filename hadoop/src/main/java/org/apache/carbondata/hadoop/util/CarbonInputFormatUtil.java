@@ -22,7 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datamap.IndexUtil;
+import org.apache.carbondata.core.index.IndexUtil;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
@@ -54,7 +54,7 @@ public class CarbonInputFormatUtil {
     CarbonTableInputFormat
         .setTableName(job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
-    setDataMapJobIfConfigured(job.getConfiguration());
+    setIndexJobIfConfigured(job.getConfiguration());
     return carbonInputFormat;
   }
 
@@ -67,7 +67,7 @@ public class CarbonInputFormatUtil {
     CarbonTableInputFormat.setTableName(
         job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
-    setDataMapJobIfConfigured(job.getConfiguration());
+    setIndexJobIfConfigured(job.getConfiguration());
     return carbonInputFormat;
   }
 
@@ -77,9 +77,9 @@ public class CarbonInputFormatUtil {
    * @param conf
    * @throws IOException
    */
-  public static void setDataMapJobIfConfigured(Configuration conf) throws IOException {
+  public static void setIndexJobIfConfigured(Configuration conf) throws IOException {
     String className = "org.apache.carbondata.indexserver.EmbeddedIndexJob";
-    IndexUtil.setDataMapJob(conf, IndexUtil.createDataMapJob(className));
+    IndexUtil.setIndexJob(conf, IndexUtil.createIndexJob(className));
   }
 
   public static String createJobTrackerID(java.util.Date date) {

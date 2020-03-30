@@ -38,7 +38,7 @@ class MVInvalidTestCase  extends QueryTest with BeforeAndAfterAll {
     sql("create materialized view main_table_mv as select age,name,height from main_table where name = 'tom'")
     sql("refresh materialized view main_table_mv")
 
-    assert(!TestUtil.verifyMVDataMap(sql(querySQL).queryExecution.optimizedPlan, "main_table_mv"))
+    assert(!TestUtil.verifyMVHit(sql(querySQL).queryExecution.optimizedPlan, "main_table_mv"))
   }
 
   override def afterAll(): Unit = {

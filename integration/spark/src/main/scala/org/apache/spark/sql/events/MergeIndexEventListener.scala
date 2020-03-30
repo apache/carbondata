@@ -29,7 +29,7 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.MergeIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{ObjectSerializationUtil, OutputFilesInfoHolder}
@@ -92,7 +92,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
             LOGGER.info("Total time taken for merge index " +
                         (System.currentTimeMillis() - startTime))
             // clear Block dataMap Cache
-            MergeIndexUtil.clearBlockDataMapCache(carbonTable, Seq(loadModel.getSegmentId))
+            MergeIndexUtil.clearBlockIndexCache(carbonTable, Seq(loadModel.getSegmentId))
           }
         }
       case alterTableMergeIndexEvent: AlterTableMergeIndexEvent =>
@@ -150,7 +150,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
               LOGGER.info("Total time taken for merge index "
                           + (System.currentTimeMillis() - startTime) + "ms")
               // clear Block dataMap Cache
-              MergeIndexUtil.clearBlockDataMapCache(carbonMainTable, segmentsToMerge)
+              MergeIndexUtil.clearBlockIndexCache(carbonMainTable, segmentsToMerge)
               val requestMessage = "Compaction request completed for table " +
                 s"${ carbonMainTable.getDatabaseName }.${ carbonMainTable.getTableName }"
               LOGGER.info(requestMessage)

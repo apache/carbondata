@@ -57,8 +57,8 @@ object TimeSeriesUtil {
   /**
    * validate TimeSeries Granularity
    *
-   * @param dmProperties datamap properties
-   * @param dmClassName  datamap class name
+   * @param dmProperties index properties
+   * @param dmClassName  index class name
    * @return whether find  only one granularity
    */
   def validateTimeSeriesGranularity(
@@ -86,8 +86,8 @@ object TimeSeriesUtil {
    *
    * TODO:we will support value not only equal to 1 in the future
    *
-   * @param dmProperties datamap properties
-   * @param dmClassName  datamap class name
+   * @param dmProperties index properties
+   * @param dmClassName  index class name
    * @return key and value tuple
    */
   def getTimeSeriesGranularityDetails(

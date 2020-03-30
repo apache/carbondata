@@ -26,12 +26,13 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
-import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events.{DropTablePreEvent, Event, OperationContext, OperationEventListener}
 
@@ -61,7 +62,7 @@ class SIDropEventListener extends OperationEventListener with Logging {
           val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
           var isValidDeletion = false
 
-          CarbonInternalScalaUtil.getIndexesTables(parentCarbonTable).asScala
+          CarbonIndexUtil.getSecondaryIndexes(parentCarbonTable).asScala
             .foreach { tableName => {
 
               val carbonTable = metastore
@@ -69,8 +70,8 @@ class SIDropEventListener extends OperationEventListener with Logging {
                   tableName)(sparkSession)
                 .asInstanceOf[CarbonRelation].carbonTable
               val ifExistsSet = dropTablePreEvent.ifExistsSet
-              val indexesMap = CarbonInternalScalaUtil.getIndexesMap(carbonTable)
-              if (null != indexesMap) {
+              val indexList = CarbonIndexUtil.getSecondaryIndexes(parentCarbonTable)
+              if (!indexList.isEmpty) {
                 try {
                   val indexTableIdentifier = TableIdentifier(tableName,
                     Some(parentCarbonTable.getDatabaseName))

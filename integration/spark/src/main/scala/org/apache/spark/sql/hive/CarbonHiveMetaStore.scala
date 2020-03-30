@@ -21,8 +21,8 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 
-import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema
@@ -72,11 +72,11 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     (sparkSession: SparkSession): Unit = {
     val dbName = absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName
     val tableName = absoluteTableIdentifier.getCarbonTableIdentifier.getTableName
-    CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
+    CarbonHiveIndexMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
     // discard cached table info in cachedDataSourceTables
     val tableIdentifier = TableIdentifier(tableName, Option(dbName))
     sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
-    DataMapStoreManager.getInstance().clearIndex(absoluteTableIdentifier)
+    IndexStoreManager.getInstance().clearIndex(absoluteTableIdentifier)
     SegmentPropertiesAndSchemaHolder.getInstance().invalidate(absoluteTableIdentifier)
     removeTableFromMetadata(dbName, tableName)
   }

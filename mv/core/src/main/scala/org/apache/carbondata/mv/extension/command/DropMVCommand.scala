@@ -21,16 +21,16 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
-import org.apache.carbondata.core.datamap.status.DataMapStatusManager
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.index.{CarbonIndexProvider, IndexStoreManager}
+import org.apache.carbondata.core.index.status.IndexStatusManager
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.datamap.DataMapManager
 import org.apache.carbondata.events._
+import org.apache.carbondata.index.IndexManager
 
 /**
  * Drop Materialized View Command implementation
- * It will drop the MV table, and unregister the schema in [[DataMapStoreManager]]
+ * It will drop the MV table, and unregister the schema in [[IndexStoreManager]]
  */
 case class DropMVCommand(
     mvName: String,
@@ -39,9 +39,9 @@ case class DropMVCommand(
   extends AtomicRunnableCommand {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-  private var provider: DataMapProvider = _
+  private var provider: CarbonIndexProvider = _
   var mainTable: CarbonTable = _
-  var mvSchema: DataMapSchema = _
+  var mvSchema: IndexSchema = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     setAuditInfo(Map("mvName" -> mvName))
@@ -60,19 +60,19 @@ case class DropMVCommand(
   private def dropSchema(sparkSession: SparkSession): Unit = {
     LOGGER.info("Trying to drop materialized view schema")
     try {
-      mvSchema = DataMapStoreManager.getInstance().getDataMapSchema(mvName)
+      mvSchema = IndexStoreManager.getInstance().getIndexSchema(mvName)
       if (mvSchema != null) {
         val operationContext = new OperationContext()
         val storeLocation = CarbonProperties.getInstance().getSystemFolderLocation
-        val preExecEvent = UpdateDataMapPreExecutionEvent(sparkSession, storeLocation, null)
+        val preExecEvent = UpdateMVPreExecutionEvent(sparkSession, storeLocation, null)
         OperationListenerBus.getInstance().fireEvent(preExecEvent, operationContext)
 
-        DataMapStatusManager.dropDataMap(mvName)
+        IndexStatusManager.dropIndex(mvName)
 
-        val postExecEvent = UpdateDataMapPostExecutionEvent(sparkSession, storeLocation, null)
+        val postExecEvent = UpdateMVPostExecutionEvent(sparkSession, storeLocation, null)
         OperationListenerBus.getInstance().fireEvent(postExecEvent, operationContext)
 
-        provider = DataMapManager.get.getDataMapProvider(null, mvSchema, sparkSession)
+        provider = IndexManager.get.getIndexProvider(null, mvSchema, sparkSession)
         provider.cleanMeta()
       }
     } catch {

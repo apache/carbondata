@@ -24,8 +24,9 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
@@ -299,7 +300,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  test("block deleting records from table which has index datamap") {
+  test("block deleting records from table which has index") {
     sql("drop table if exists test_dm_index")
 
     sql("create table test_dm_index (a string, b string, c string) STORED AS carbondata")
@@ -313,9 +314,9 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
          | Properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    assert(intercept[UnsupportedOperationException] {
+    assert(intercept[MalformedCarbonCommandException] {
       sql("delete from test_dm_index where a = 'ccc'")
-    }.getMessage.contains("Delete operation is not supported for table which has index datamaps"))
+    }.getMessage.contains("delete operation is not supported for index"))
 
     sql("drop table if exists test_dm_index")
   }
