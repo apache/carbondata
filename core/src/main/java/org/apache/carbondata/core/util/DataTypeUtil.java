@@ -476,6 +476,15 @@ public final class DataTypeUtil {
       return ByteUtil.toXorBytes((Integer) dimensionValue);
     } else if (actualDataType == DataTypes.LONG) {
       return ByteUtil.toXorBytes((Long) dimensionValue);
+    } else if (actualDataType == DataTypes.DOUBLE) {
+      return ByteUtil.toXorBytes((double) dimensionValue);
+    } else if (actualDataType == DataTypes.FLOAT) {
+      return ByteUtil.toXorBytes((float) dimensionValue);
+    } else if (DataTypes.isDecimal(actualDataType)) {
+      // Need to make BigDecimal object, else ByteUtil.toBytes will have precision loss
+      return bigDecimalToByte(new BigDecimal(dimensionValue.toString()));
+    } else if (actualDataType == DataTypes.BYTE) {
+      return ByteUtil.toXorBytes((byte) dimensionValue);
     } else if (actualDataType == DataTypes.TIMESTAMP) {
       return ByteUtil.toXorBytes((Long) dimensionValue);
     } else if (actualDataType == DataTypes.BINARY) {

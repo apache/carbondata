@@ -932,7 +932,8 @@ object CommonUtil {
             dataFieldsWithComplexDataType(fields(i).name).asInstanceOf[ArrayDataType]
               .writeByteArray(result.asInstanceOf[ArrayObject],
                 dataOutputStream,
-                badRecordLogHolder)
+                badRecordLogHolder,
+                true)
             dataOutputStream.close()
             data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
           case structType : StructType =>
@@ -943,7 +944,8 @@ object CommonUtil {
             dataFieldsWithComplexDataType(fields(i).name).asInstanceOf[StructDataType]
               .writeByteArray(result.asInstanceOf[StructObject],
                 dataOutputStream,
-                badRecordLogHolder)
+                badRecordLogHolder,
+                true)
             dataOutputStream.close()
             data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
           case mapType : MapType =>
@@ -954,7 +956,8 @@ object CommonUtil {
             dataFieldsWithComplexDataType(fields(i).name).asInstanceOf[ArrayDataType]
               .writeByteArray(result.asInstanceOf[ArrayObject],
                 dataOutputStream,
-                badRecordLogHolder)
+                badRecordLogHolder,
+                true)
             dataOutputStream.close()
             data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
           case other =>
