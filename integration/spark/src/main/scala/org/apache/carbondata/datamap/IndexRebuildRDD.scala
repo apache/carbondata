@@ -33,13 +33,15 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.Decimal
 
+import org.apache.carbondata.common.exceptions.MetadataProcessException
+import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
-import org.apache.carbondata.core.datamap.dev.IndexBuilder
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, IndexRegistry, Segment}
+import org.apache.carbondata.core.datamap.dev.{Index, IndexBuilder, IndexFactory}
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher
+import org.apache.carbondata.core.indexstore.{Blocklet, SegmentPropertiesFetcher}
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableInfo}
@@ -50,7 +52,7 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{ByteUtil, DataTypeUtil, TaskMetricsMap}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.datamap.bloom.DataConvertUtil
-import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{BuildIndexPostExecutionEvent, BuildIndexPreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection, CarbonRecordReader}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
@@ -77,9 +79,9 @@ object IndexRebuildRDD {
     val validAndInvalidSegments = segmentStatusManager
       .getValidAndInvalidSegments(carbonTable.isMV)
     val validSegments = validAndInvalidSegments.getValidSegments
-    val indexedCarbonColumns = carbonTable.getIndexedColumns(schema)
+    val indexedCarbonColumns = carbonTable.getIndexedColumns(schema.getIndexColumns)
     val operationContext = new OperationContext()
-    val buildDataMapPreExecutionEvent = new BuildDataMapPreExecutionEvent(sparkSession,
+    val buildDataMapPreExecutionEvent = new BuildIndexPreExecutionEvent(sparkSession,
       tableIdentifier,
       mutable.Seq[String](schema.getDataMapName))
     OperationListenerBus.getInstance().fireEvent(buildDataMapPreExecutionEvent, operationContext)
@@ -101,9 +103,11 @@ object IndexRebuildRDD {
       sparkSession,
       new RefreshResultImpl(),
       carbonTable.getTableInfo,
+      schema,
       schema.getDataMapName,
       indexedCarbonColumns.asScala.toArray,
-      segments2DmStorePath.keySet
+      segments2DmStorePath.keySet,
+      schema.getProviderName
     ).collect
 
     // for failed segments, clean the result
@@ -128,7 +132,7 @@ object IndexRebuildRDD {
       throw new Exception(s"Failed to refresh datamap ${ schema.getDataMapName }")
     }
 
-    val buildDataMapPostExecutionEvent = new BuildDataMapPostExecutionEvent(sparkSession,
+    val buildDataMapPostExecutionEvent = BuildIndexPostExecutionEvent(sparkSession,
       tableIdentifier, schema.getDataMapName, validSegments.asScala.map(_.getSegmentNo), true)
     OperationListenerBus.getInstance().fireEvent(buildDataMapPostExecutionEvent, operationContext)
   }
@@ -258,12 +262,13 @@ class IndexRebuildRDD[K, V](
     @transient private val session: SparkSession,
     result: RefreshResult[K, V],
     @transient private val tableInfo: TableInfo,
+    dataMapSchema: DataMapSchema,
     dataMapName: String,
     indexColumns: Array[CarbonColumn],
-    segments: Set[Segment])
+    segments: Set[Segment],
+    provider: String)
   extends CarbonRDDWithTableInfo[(K, V)](session, Nil, tableInfo.serialize()) {
 
-  private val dataMapSchema = DataMapStoreManager.getInstance().getDataMapSchema(dataMapName)
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")

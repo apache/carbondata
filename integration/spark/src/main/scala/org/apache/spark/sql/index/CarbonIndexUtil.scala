@@ -15,18 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.secondaryindex.util
+package org.apache.spark.sql.index
 
 import java.util
 
-import scala.collection.mutable
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalogUtil}
+import org.apache.spark.sql.hive.CarbonSessionCatalogUtil
 import org.apache.spark.sql.secondaryindex.command.{IndexModel, SecondaryIndexModel}
 import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
 import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
@@ -38,27 +37,31 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
+import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
 import org.apache.carbondata.core.metadata.schema.indextable.{IndexMetadata, IndexTableInfo}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
-import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
+import org.apache.carbondata.format.TableInfo
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
 /**
- *
+ * Carbon Index util
  */
-object CarbonInternalScalaUtil {
+object CarbonIndexUtil {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  def addIndexTableInfo(carbonTable: CarbonTable,
+  def addIndexTableInfo(
+      indexProvider: String,
+      carbonTable: CarbonTable,
       tableName: String,
-      columns: java.util.List[String]): Unit = {
+      indexProperties: java.util.Map[String, String]): Unit = {
     val indexMeta = carbonTable.getTableInfo.getFactTable.getTableProperties
       .get(carbonTable.getCarbonTableIdentifier.getTableId)
     if (null != indexMeta) {
-      IndexMetadata.deserialize(indexMeta).addIndexTableInfo(tableName, columns)
+      IndexMetadata.deserialize(indexMeta)
+        .addIndexTableInfo(indexProvider, tableName, indexProperties)
     }
   }
 
@@ -81,13 +84,19 @@ object CarbonInternalScalaUtil {
       .get("indextableexists")
   }
 
-  def getIndexesMap(carbonTable: CarbonTable): java.util.Map[String, java.util.List[String]] = {
+  def isIndexExists(carbonTable: CarbonTable): String = {
+    carbonTable.getTableInfo.getFactTable.getTableProperties
+      .get("indexexists")
+  }
+
+  def getIndexesMap(carbonTable: CarbonTable): java.util.Map[String, util.Map[String, util
+  .Map[String, String]]] = {
     val indexMeta = carbonTable.getTableInfo.getFactTable.getTableProperties
       .get(carbonTable.getCarbonTableIdentifier.getTableId)
     val indexesMap = if (null != indexMeta) {
       IndexMetadata.deserialize(indexMeta).getIndexesMap
     } else {
-      new util.HashMap[String, util.List[String]]()
+      new util.HashMap[String, util.Map[String, util.Map[String, String]]]()
     }
     indexesMap
   }
@@ -118,7 +127,7 @@ object CarbonInternalScalaUtil {
     Array[String]] = {
     val indexes = scala.collection.mutable.Map[String, Array[String]]()
     val carbonTable = relation.carbonRelation.carbonTable
-    val indexInfo = carbonTable.getIndexInfo
+    val indexInfo = carbonTable.getIndexInfo(CarbonIndexProvider.SI.getIndexProviderName)
     if (null != indexInfo) {
       IndexTableInfo.fromGson(indexInfo).foreach { indexTableInfo =>
         indexes.put(indexTableInfo.getTableName, indexTableInfo.getIndexCols.asScala.toArray)
@@ -230,9 +239,15 @@ object CarbonInternalScalaUtil {
 
   def getIndexCarbonTables(carbonTable: CarbonTable,
       sparkSession: SparkSession): Seq[CarbonTable] = {
-    carbonTable.getIndexTableNames.asScala.map {
-      indexTable =>
-        CarbonEnv.getCarbonTable(Some(carbonTable.getDatabaseName), indexTable)(sparkSession);
+    val siIndexesMap = CarbonIndexUtil.getIndexesMap(carbonTable)
+      .get(CarbonIndexProvider.SI.getIndexProviderName)
+    if (null != siIndexesMap) {
+      siIndexesMap.keySet().asScala.map {
+        indexTable =>
+          CarbonEnv.getCarbonTable(Some(carbonTable.getDatabaseName), indexTable)(sparkSession);
+      }.toSeq
+    } else {
+      Seq.empty
     }
   }
 

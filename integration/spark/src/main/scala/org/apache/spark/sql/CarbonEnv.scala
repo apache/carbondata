@@ -168,7 +168,7 @@ object CarbonEnv {
       .addListener(classOf[IndexServerLoadEvent], PrePrimingEventListener)
       .addListener(classOf[LoadTablePreStatusUpdateEvent], new MergeIndexEventListener)
       .addListener(classOf[AlterTableMergeIndexEvent], new MergeIndexEventListener)
-      .addListener(classOf[BuildDataMapPostExecutionEvent], new MergeBloomIndexEventListener)
+      .addListener(classOf[BuildIndexPostExecutionEvent], new MergeBloomIndexEventListener)
       .addListener(classOf[DropTableCacheEvent], DropCacheMVEventListener)
       .addListener(classOf[DropTableCacheEvent], DropCacheBloomEventListener)
       .addListener(classOf[ShowTableCacheEvent], ShowCachePreMVEventListener)

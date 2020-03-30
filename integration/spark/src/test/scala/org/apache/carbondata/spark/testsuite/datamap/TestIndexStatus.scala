@@ -22,14 +22,14 @@ import java.util
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainIndex, CoarseGrainIndexFactory}
 import org.apache.carbondata.core.datamap.dev.{IndexBuilder, IndexWriter}
-import org.apache.carbondata.core.datamap.status.{DataMapStatus, DataMapStatusManager}
+import org.apache.carbondata.core.datamap.status.IndexStatus
 import org.apache.carbondata.core.datamap.{IndexInputSplit, IndexMeta, Segment}
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
@@ -60,12 +60,7 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
       s"""create index statusdatamap on table datamapstatustest (name)
          |as '${classOf[TestIndexFactory].getName}'
          | """.stripMargin)
-
-    val details = DataMapStatusManager.readDataMapStatusDetails()
-
-    assert(details.length == 1)
-
-    assert(details.exists(p => p.getDataMapName.equals("statusdatamap") && p.getStatus == DataMapStatus.ENABLED))
+    checkIndexStatus("datamapstatustest", "statusdatamap", IndexStatus.ENABLED.name())
     sql("DROP TABLE IF EXISTS datamapstatustest")
   }
 
@@ -82,12 +77,7 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
          |as '${classOf[TestIndexFactory].getName}'
          |with deferred refresh
          | """.stripMargin)
-
-    val details = DataMapStatusManager.readDataMapStatusDetails()
-
-    assert(details.length == 1)
-
-    assert(details.exists(p => p.getDataMapName.equals("statusdatamap") && p.getStatus == DataMapStatus.DISABLED))
+    checkIndexStatus("datamapstatustest", "statusdatamap", IndexStatus.DISABLED.name())
     sql("DROP TABLE IF EXISTS datamapstatustest")
   }
 
@@ -105,16 +95,10 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
          |with deferred refresh
          | """.stripMargin)
 
-    var details = DataMapStatusManager.readDataMapStatusDetails()
-
-    assert(details.length == 1)
-
-    assert(details.exists(p => p.getDataMapName.equals("statusdatamap1") && p.getStatus == DataMapStatus.DISABLED))
+    checkIndexStatus("datamapstatustest1", "statusdatamap1",IndexStatus.DISABLED.name())
 
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table datamapstatustest1")
-    details = DataMapStatusManager.readDataMapStatusDetails()
-    assert(details.length == 1)
-    assert(details.exists(p => p.getDataMapName.equals("statusdatamap1") && p.getStatus == DataMapStatus.DISABLED))
+    checkIndexStatus("datamapstatustest1", "statusdatamap1",IndexStatus.DISABLED.name())
     sql("DROP TABLE IF EXISTS datamapstatustest1")
   }
 
@@ -132,58 +116,23 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
          |with deferred refresh
          | """.stripMargin)
 
-    var details = DataMapStatusManager.readDataMapStatusDetails()
-
-    assert(details.length == 1)
-
-    assert(details.exists(p => p.getDataMapName.equals("statusdatamap2") && p.getStatus == DataMapStatus.DISABLED))
+    checkIndexStatus("datamapstatustest2", "statusdatamap2", IndexStatus.DISABLED.name())
 
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table datamapstatustest2")
-    details = DataMapStatusManager.readDataMapStatusDetails()
-    assert(details.length == 1)
-    assert(details.exists(p => p.getDataMapName.equals("statusdatamap2") && p.getStatus == DataMapStatus.DISABLED))
+    checkIndexStatus("datamapstatustest2", "statusdatamap2",  IndexStatus.DISABLED.name())
 
     sql(s"REFRESH INDEX statusdatamap2 on table datamapstatustest2")
-
-    details = DataMapStatusManager.readDataMapStatusDetails()
-    assert(details.length == 1)
-    assert(details.exists(p => p.getDataMapName.equals("statusdatamap2") && p.getStatus == DataMapStatus.ENABLED))
-
+    checkIndexStatus("datamapstatustest2", "statusdatamap2", IndexStatus.ENABLED.name())
     sql("DROP TABLE IF EXISTS datamapstatustest2")
   }
 
-  test("REFRESH INDEX status") {
-    sql("DROP TABLE IF EXISTS datamapstatustest3")
-    sql(
-      """
-        | CREATE TABLE datamapstatustest3(id int, name string, city string, age int)
-        | STORED AS carbondata TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
-      """.stripMargin)
-    sql(
-      s"""create index statusdatamap3
-         |on table datamapstatustest3 (name)
-         |as '${classOf[TestIndexFactory].getName}'
-         |with deferred refresh
-         | """.stripMargin)
-
-    var details = DataMapStatusManager.readDataMapStatusDetails()
-
-    assert(details.length == 1)
-
-    assert(details.exists(p => p.getDataMapName.equals("statusdatamap3") && p.getStatus == DataMapStatus.DISABLED))
-
-    sql(s"LOAD DATA LOCAL INPATH '$testData' into table datamapstatustest3")
-    details = DataMapStatusManager.readDataMapStatusDetails()
-    assert(details.length == 1)
-    assert(details.exists(p => p.getDataMapName.equals("statusdatamap3") && p.getStatus == DataMapStatus.DISABLED))
-
-    sql(s"REFRESH INDEX statusdatamap3 ON datamapstatustest3")
-
-    details = DataMapStatusManager.readDataMapStatusDetails()
-    assert(details.length == 1)
-    assert(details.exists(p => p.getDataMapName.equals("statusdatamap3") && p.getStatus == DataMapStatus.ENABLED))
-
-    sql("DROP TABLE IF EXISTS datamapstatustest3")
+  private def checkIndexStatus(tableName: String, indexName: String, indexStatus: String): Unit = {
+    val carbonTable = CarbonEnv.getCarbonTable(Some(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      tableName)(sqlContext.sparkSession)
+    val indexes = carbonTable.getIndexMetadata.getIndexesMap.get({ classOf[TestIndexFactory].getName })
+      .asScala.filter(p => p._2.get(CarbonCommonConstants.INDEX_STATUS).equalsIgnoreCase(indexStatus))
+    assert(indexes.keySet.size == 1)
+    assert(indexes.exists(p => p._1.equals(indexName) && p._2.get(CarbonCommonConstants.INDEX_STATUS) == indexStatus))
   }
 
   override def afterAll {
@@ -217,7 +166,7 @@ class TestIndexFactory(
   }
 
   override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): IndexWriter = {
-    new IndexWriter(carbonTable.getTablePath, "testdm", carbonTable.getIndexedColumns(dataMapSchema),
+    new IndexWriter(carbonTable.getTablePath, "testdm", carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns),
       segment, shardName) {
       override def onPageAdded(blockletId: Int, pageId: Int, pageSize: Int, pages: Array[ColumnPage]): Unit = { }
 
@@ -237,8 +186,10 @@ class TestIndexFactory(
     }
   }
 
-  override def getMeta: IndexMeta = new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema),
-    Seq(ExpressionType.EQUALS).asJava)
+  override def getMeta: IndexMeta = {
+    new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns),
+      Seq(ExpressionType.EQUALS).asJava)
+  }
 
   override def toDistributable(segmentId: Segment): util.List[IndexInputSplit] = {
     util.Collections.emptyList()

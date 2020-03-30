@@ -60,8 +60,10 @@ import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonSessionInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
@@ -985,9 +987,8 @@ public class CarbonTable implements Serializable, Writable {
   /**
    * Get all index columns specified by dataMapSchema
    */
-  public List<CarbonColumn> getIndexedColumns(DataMapSchema dataMapSchema)
+  public List<CarbonColumn> getIndexedColumns(String[] columns)
       throws MalformedIndexCommandException {
-    String[] columns = dataMapSchema.getIndexColumns();
     List<CarbonColumn> indexColumn = new ArrayList<>(columns.length);
     for (String column : columns) {
       CarbonColumn carbonColumn = getColumnByName(column.trim().toLowerCase());
@@ -1003,17 +1004,6 @@ public class CarbonTable implements Serializable, Writable {
       indexColumn.add(carbonColumn);
     }
     return indexColumn;
-  }
-
-  /**
-   * is index exist
-   * @return true if exist, else return false
-   */
-  public boolean isIndexExist(String indexName) throws IOException {
-    List<DataMapSchema> schemas = DataMapStoreManager.getInstance().getAllDataMapSchemas();
-    return schemas.stream().anyMatch(schema ->
-        schema.getDataMapName().equalsIgnoreCase(indexName) &&
-            schema.getRelationIdentifier().getTableId().equals(getTableId()));
   }
 
   /**
@@ -1202,21 +1192,64 @@ public class CarbonTable implements Serializable, Writable {
     }
   }
 
-  public String getIndexInfo() throws IOException {
+  public List<String> getIndexTableNames(String indexProvider) throws IOException {
     deserializeIndexMetadata();
     if (null != indexMetadata) {
-      IndexTableInfo[] indexTableInfos =
-          new IndexTableInfo[indexMetadata.getIndexesMap().entrySet().size()];
-      int index = 0;
-      if (!isIndexTable()) {
-        for (Map.Entry<String, List<String>> entry : indexMetadata.getIndexesMap().entrySet()) {
-          indexTableInfos[index] =
-              new IndexTableInfo(getDatabaseName(), entry.getKey(), entry.getValue());
-          index++;
+      return indexMetadata.getIndexTables(indexProvider);
+    } else {
+      return new ArrayList<>();
+    }
+  }
+
+  public String getIndexInfo() throws IOException {
+    return getIndexInfo(null);
+  }
+
+  public IndexMetadata getIndexMetadata() throws IOException {
+    deserializeIndexMetadata();
+    return indexMetadata;
+  }
+
+  public String getIndexInfo(String indexProvider) throws IOException {
+    deserializeIndexMetadata();
+    if (null != indexMetadata) {
+      if (null != indexProvider) {
+        if (null != indexMetadata.getIndexesMap().get(indexProvider)) {
+          IndexTableInfo[] indexTableInfos =
+              new IndexTableInfo[indexMetadata.getIndexesMap().get(indexProvider).entrySet()
+                  .size()];
+          int index = 0;
+          if (!isIndexTable()) {
+            for (Map.Entry<String, Map<String, String>> entry : indexMetadata.getIndexesMap()
+                .get(indexProvider).entrySet()) {
+              indexTableInfos[index] =
+                  new IndexTableInfo(getDatabaseName(), entry.getKey(), entry.getValue());
+              index++;
+            }
+            return IndexTableInfo.toGson(indexTableInfos);
+          } else {
+            return IndexTableInfo.toGson(new IndexTableInfo[] {});
+          }
+        } else {
+          return IndexTableInfo.toGson(new IndexTableInfo[] {});
         }
-        return IndexTableInfo.toGson(indexTableInfos);
       } else {
-        return IndexTableInfo.toGson(new IndexTableInfo[] {});
+        IndexTableInfo[] indexTableInfos =
+            new IndexTableInfo[indexMetadata.getIndexTables().size()];
+        int index = 0;
+        if (!isIndexTable()) {
+          for (Map.Entry<String, Map<String, Map<String, String>>> entry : indexMetadata
+              .getIndexesMap().entrySet()) {
+            for (Map.Entry<String, Map<String, String>> indexEntry : entry.getValue().entrySet()) {
+              indexTableInfos[index] =
+                  new IndexTableInfo(getDatabaseName(), indexEntry.getKey(), indexEntry.getValue());
+              index++;
+            }
+          }
+          return IndexTableInfo.toGson(indexTableInfos);
+        } else {
+          return IndexTableInfo.toGson(new IndexTableInfo[] {});
+        }
       }
     } else {
       return null;
@@ -1230,10 +1263,40 @@ public class CarbonTable implements Serializable, Writable {
     } catch (IOException e) {
       LOGGER.error("Error deserializing index metadata");
     }
-    if (null != indexMetadata) {
+    if (null != indexMetadata && null != indexMetadata.getParentTableName()) {
       parentTableName = indexMetadata.getParentTableName();
     }
     return parentTableName;
+  }
+
+  /**
+   * It only gives the visible datamaps
+   */
+  public List<TableIndex> getAllVisibleIndexes() throws IOException {
+    CarbonSessionInfo sessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo();
+    List<TableIndex> allIndexes = DataMapStoreManager.getInstance().getAllIndexes(this);
+    Iterator<TableIndex> indexIterator = allIndexes.iterator();
+    while (indexIterator.hasNext()) {
+      TableIndex dataMap = indexIterator.next();
+      String dbName = this.getDatabaseName();
+      String tableName = this.getTableName();
+      String indexName = dataMap.getDataMapSchema().getDataMapName();
+      // TODO: need support get the visible status of datamap without sessionInfo in the future
+      if (sessionInfo != null) {
+        boolean isIndexVisible = sessionInfo.getSessionParams().getProperty(
+            String.format("%s%s.%s.%s", CarbonCommonConstants.CARBON_DATAMAP_VISIBLE,
+                dbName, tableName, indexName), "true").trim().equalsIgnoreCase("true");
+        if (!isIndexVisible) {
+          LOGGER.warn(String.format("Ignore invisible index %s on table %s.%s",
+              indexName, dbName, tableName));
+          indexIterator.remove();
+        }
+      } else {
+        String message = "Carbon session info is null";
+        LOGGER.info(message);
+      }
+    }
+    return allIndexes;
   }
 
 }

@@ -30,10 +30,10 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.execution.command.DataCommand
-import org.apache.spark.sql.hive.{CarbonHiveMetadataUtil, CarbonRelation}
+import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonRelation}
+import org.apache.spark.sql.index.{CarbonIndexUtil, IndexTableUtil}
 import org.apache.spark.sql.secondaryindex.exception.IndexTableExistException
 import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
-import org.apache.spark.sql.secondaryindex.util.{CarbonInternalScalaUtil, IndexTableUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -43,16 +43,15 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICar
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry,
-  SchemaReader}
+import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry, SchemaReader}
 import org.apache.carbondata.core.metadata.schema.indextable.{IndexMetadata, IndexTableInfo}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.events.{CreateTablePostExecutionEvent, CreateTablePreExecutionEvent,
-  OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{CreateTablePostExecutionEvent, CreateTablePreExecutionEvent, OperationContext, OperationListenerBus}
 
 class ErrorMessage(message: String) extends Exception(message) {
 }
@@ -67,7 +66,7 @@ class ErrorMessage(message: String) extends Exception(message) {
  * @param isCreateSIndex    if false then will not create index table schema in the carbonstore
  *                          and will avoid dataload for SI creation.
  */
-private[sql] case class CreateIndexTableCommand(
+private[sql] case class CarbonCreateSecondaryIndexCommand(
     indexModel: IndexModel,
     tableProperties: mutable.Map[String, String],
     ifNotExists: Boolean,
@@ -159,7 +158,7 @@ private[sql] case class CreateIndexTableCommand(
       // Case2: table exists in carbon but deleted in hive
       // Case3: table neither exists in hive nor in carbon but stale folders are present for the
       // index table being created
-      val indexTables = CarbonInternalScalaUtil.getIndexesTables(carbonTable)
+      val indexTables = CarbonIndexUtil.getIndexesTables(carbonTable)
       val indexTableExistsInCarbon = indexTables.asScala.contains(indexTableName)
       val indexTableExistsInHive = sparkSession.sessionState.catalog
         .tableExists(TableIdentifier(indexTableName, indexModel.dbName))
@@ -258,12 +257,17 @@ private[sql] case class CreateIndexTableCommand(
       if (null == oldIndexInfo) {
         oldIndexInfo = ""
       }
+      val indexProperties = new util.HashMap[String, String]
       val indexTableCols = indexModel.columnNames.asJava
+      indexProperties.put(CarbonCommonConstants.INDEX_COLUMNS, indexTableCols.asScala.mkString(","))
+      indexProperties.put(CarbonCommonConstants.INDEX_PROVIDER,
+        CarbonIndexProvider.SI.getIndexProviderName)
       val indexInfo = IndexTableUtil.checkAndAddIndexTable(
         oldIndexInfo,
         new IndexTableInfo(
           databaseName, indexTableName,
-          indexTableCols))
+          indexProperties),
+        true)
       val absoluteTableIdentifier = AbsoluteTableIdentifier.
         from(tablePath, databaseName, indexTableName)
       var tableInfo: TableInfo = null
@@ -303,7 +307,9 @@ private[sql] case class CreateIndexTableCommand(
       } else {
         new IndexMetadata(false)
       }
-      parentIndexMetadata.addIndexTableInfo(indexTableName, indexTableCols)
+      parentIndexMetadata.addIndexTableInfo(CarbonIndexProvider.SI.getIndexProviderName,
+        indexTableName,
+        indexProperties)
       carbonTable.getTableInfo.getFactTable.getTableProperties
         .put(carbonTable.getCarbonTableIdentifier.getTableId, parentIndexMetadata.serialize)
 
@@ -348,9 +354,12 @@ private[sql] case class CreateIndexTableCommand(
           .collect()
       }
 
-      CarbonInternalScalaUtil.addIndexTableInfo(carbonTable, indexTableName, indexTableCols)
+      CarbonIndexUtil.addIndexTableInfo(CarbonIndexProvider.SI.getIndexProviderName,
+        carbonTable,
+        indexTableName,
+        indexProperties)
 
-      CarbonHiveMetadataUtil.refreshTable(databaseName, indexTableName, sparkSession)
+      CarbonHiveIndexMetadataUtil.refreshTable(databaseName, indexTableName, sparkSession)
 
       sparkSession.sql(
         s"""ALTER TABLE $databaseName.$tableName SET SERDEPROPERTIES ('indexInfo' =
@@ -359,12 +368,12 @@ private[sql] case class CreateIndexTableCommand(
       val tableIdent = TableIdentifier(tableName, Some(databaseName))
 
       // modify the tableProperties of mainTable by adding "indexTableExists" property
-      CarbonInternalScalaUtil
+      CarbonIndexUtil
         .addOrModifyTableProperty(
           carbonTable,
           Map("indexTableExists" -> "true"), needLock = false)(sparkSession)
 
-      CarbonHiveMetadataUtil.refreshTable(databaseName, tableName, sparkSession)
+      CarbonHiveIndexMetadataUtil.refreshTable(databaseName, tableName, sparkSession)
 
       // refersh the parent table relation
       sparkSession.sessionState.catalog.refreshTable(identifier)

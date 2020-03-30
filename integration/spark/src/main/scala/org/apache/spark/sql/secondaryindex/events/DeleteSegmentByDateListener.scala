@@ -23,7 +23,7 @@ import org.apache.log4j.Logger
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
+import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -45,7 +45,7 @@ class DeleteSegmentByDateListener extends OperationEventListener with Logging {
         val carbonTable = deleteSegmentPostEvent.carbonTable
         val loadDates = deleteSegmentPostEvent.loadDates
         val sparkSession = deleteSegmentPostEvent.sparkSession
-        CarbonInternalScalaUtil.getIndexesTables(carbonTable).asScala.foreach { tableName =>
+        CarbonIndexUtil.getIndexesTables(carbonTable).asScala.foreach { tableName =>
           val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
           val table = metastore
             .lookupRelation(Some(carbonTable.getDatabaseName), tableName)(sparkSession)

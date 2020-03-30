@@ -28,7 +28,8 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedIndexCommandException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.status.DataMapStatusManager
+import org.apache.carbondata.core.datamap.status.{DataMapStatusManager, IndexStatus}
+import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
 import org.apache.carbondata.core.util.CarbonProperties
 
 class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
@@ -154,8 +155,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    var map = DataMapStatusManager.readDataMapStatusMap()
-    assert(map.get(indexName).isEnabled)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
 
     // load two segments
     (1 to 2).foreach { i =>
@@ -171,8 +171,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          """.stripMargin)
     }
 
-    map = DataMapStatusManager.readDataMapStatusMap()
-    assert(map.get(indexName).isEnabled)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
 
     sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
@@ -292,8 +291,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    var map = DataMapStatusManager.readDataMapStatusMap()
-    assert(!map.get(indexName).isEnabled)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
 
     sql(
       s"""
@@ -306,13 +304,11 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | OPTIONS('header'='false')
          """.stripMargin)
 
-    map = DataMapStatusManager.readDataMapStatusMap()
-    assert(!map.get(indexName).isEnabled)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
 
     // once we rebuild, it should be enabled
     sql(s"REFRESH INDEX $indexName ON $bloomSampleTable")
-    map = DataMapStatusManager.readDataMapStatusMap()
-    assert(map.get(indexName).isEnabled)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
 
     sql(s"SHOW INDEXES ON $bloomSampleTable").show(false)
     checkExistence(sql(s"SHOW INDEXES ON $bloomSampleTable"), true, indexName)
@@ -329,8 +325,8 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | LOAD DATA LOCAL INPATH '$smallFile' INTO TABLE $bloomSampleTable
          | OPTIONS('header'='false')
          """.stripMargin)
-    map = DataMapStatusManager.readDataMapStatusMap()
-    assert(!map.get(indexName).isEnabled)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
+
     checkQuery(indexName, shouldHit = false)
 
     sql(s"DROP TABLE IF EXISTS $normalTable")

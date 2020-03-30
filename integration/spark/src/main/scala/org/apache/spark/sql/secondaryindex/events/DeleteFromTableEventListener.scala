@@ -23,8 +23,9 @@ import org.apache.log4j.Logger
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
-import org.apache.spark.sql.secondaryindex.util.{CarbonInternalScalaUtil, SecondaryIndexUtil}
+import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.events.{DeleteFromTablePostEvent, DeleteFromTablePreEvent, Event, OperationContext, OperationEventListener}
@@ -62,7 +63,7 @@ class DeleteFromTableEventListener extends OperationEventListener with Logging {
             parentCarbonTable.getTableName,
             parentCarbonTable)(
             sparkSession)
-        val indexTableList = CarbonInternalScalaUtil.getIndexesTables(parentCarbonTable)
+        val indexTableList = CarbonIndexUtil.getIndexesTables(parentCarbonTable)
         if (!indexTableList.isEmpty) {
           val indexCarbonTableList = indexTableList.asScala.map { indexTableName =>
             CarbonEnv.getInstance(sparkSession).carbonMetaStore

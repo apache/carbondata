@@ -2,7 +2,7 @@ package org.apache.carbondata.spark.testsuite.cloud
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.hive.CarbonHiveMetadataUtil
+import org.apache.spark.sql.hive.CarbonHiveIndexMetadataUtil
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -22,7 +22,7 @@ class CacheRefreshTestCase extends QueryTest with BeforeAndAfterAll {
   test("test cache refresh") {
     sql("create table tbl_cache1(col1 string, col2 int, col3 int) using carbondata")
     sql("insert into tbl_cache1 select 'a', 123, 345")
-    CarbonHiveMetadataUtil.invalidateAndDropTable(
+    CarbonHiveIndexMetadataUtil.invalidateAndDropTable(
       "cachedb", "tbl_cache1", sqlContext.sparkSession)
     // discard cached table info in cachedDataSourceTables
     val tableIdentifier = TableIdentifier("tbl_cache1", Option("cachedb"))

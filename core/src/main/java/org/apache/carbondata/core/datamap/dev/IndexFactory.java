@@ -187,7 +187,8 @@ public abstract class IndexFactory<T extends Index> {
    * 4. INDEX_COLUMNS should be exists in table columns
    */
   public void validate() throws MalformedIndexCommandException {
-    List<CarbonColumn> indexColumns = carbonTable.getIndexedColumns(dataMapSchema);
+    List<CarbonColumn> indexColumns =
+        carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns());
     Set<String> unique = new HashSet<>();
     for (CarbonColumn indexColumn : indexColumns) {
       unique.add(indexColumn.getColName());

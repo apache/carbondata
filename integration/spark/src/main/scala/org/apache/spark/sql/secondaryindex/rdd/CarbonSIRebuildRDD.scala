@@ -30,7 +30,8 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.execution.command.CarbonMergerMapping
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.secondaryindex.util.{CarbonInternalScalaUtil, SecondaryIndexUtil}
+import org.apache.spark.sql.index.CarbonIndexUtil
+import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -152,7 +153,7 @@ class CarbonSIRebuildRDD[K, V](
         .carbonMetaStore
       val mainTable = metaStore
         .lookupRelation(Some(indexTable.getDatabaseName),
-          CarbonInternalScalaUtil.getParentTableName(indexTable))(sparkSession)
+          CarbonIndexUtil.getParentTableName(indexTable))(sparkSession)
         .asInstanceOf[CarbonRelation]
         .carbonTable
       tableProperties = mainTable.getTableInfo.getFactTable.getTableProperties

@@ -24,13 +24,12 @@ import org.apache.spark.sql.{CarbonEnv, EnvHelper, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
-import org.apache.spark.sql.execution.command.index.CarbonDropIndexCommand
+import org.apache.spark.sql.execution.command.index.DropIndexCommand
 import org.apache.spark.sql.execution.command.view.CarbonDropMVCommand
 import org.apache.spark.sql.hive.CarbonFileMetastore
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
@@ -50,7 +49,7 @@ case class CarbonDropTableCommand(
 
   var carbonTable: CarbonTable = _
   var viewDropCommands : Seq[CarbonDropMVCommand] = Seq.empty
-  var childDropDataMapCommands : Seq[CarbonDropIndexCommand] = Seq.empty
+  var childDropDataMapCommands : Seq[DropIndexCommand] = Seq.empty
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -100,22 +99,6 @@ case class CarbonDropTableCommand(
       OperationListenerBus.getInstance.fireEvent(dropTablePreEvent, operationContext)
 
       CarbonEnv.getInstance(sparkSession).carbonMetaStore.dropTable(identifier)(sparkSession)
-
-      val dataMapSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
-      LOGGER.info(s"Dropping DataMaps in table $tableName, size: ${dataMapSchemas.size()}")
-      if (!dataMapSchemas.isEmpty) {
-        childDropDataMapCommands = dataMapSchemas.asScala.map { schema =>
-          val command = CarbonDropIndexCommand(
-            schema.getDataMapName,
-            ifExistsSet,
-            TableIdentifier(tableName, Some(dbName)),
-            forceDrop = true)
-          command.dataMapSchema = schema
-          command.mainTable = carbonTable
-          command
-        }
-        childDropDataMapCommands.foreach(_.processMetadata(sparkSession))
-      }
 
       val viewManager = MVManagerInSpark.get(sparkSession)
       val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
@@ -198,7 +181,6 @@ case class CarbonDropTableCommand(
         val file = FileFactory.getCarbonFile(tableLockPath)
         CarbonUtil.deleteFoldersAndFilesSilent(file)
       }
-      childDropDataMapCommands.foreach(_.processData(sparkSession))
       viewDropCommands.foreach(_.processData(sparkSession))
     }
     Seq.empty

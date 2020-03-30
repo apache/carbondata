@@ -100,7 +100,7 @@ object CacheUtil {
     }
 
     // get index columns
-    val indexColumns = carbonTable.getIndexedColumns(datamap).asScala.map {
+    val indexColumns = carbonTable.getIndexedColumns(datamap.getIndexColumns).asScala.map {
       entry =>
         entry.getColName
     }

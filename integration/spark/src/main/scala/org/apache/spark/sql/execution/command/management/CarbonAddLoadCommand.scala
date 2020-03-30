@@ -46,7 +46,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.view.{MVSchema, MVStatus}
-import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{BuildIndexPostExecutionEvent, BuildIndexPreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
@@ -241,8 +241,8 @@ case class CarbonAddLoadCommand(
     if (tableDataMaps.size() > 0) {
       val dataMapNames: mutable.Buffer[String] =
         tableDataMaps.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
-      val buildDataMapPreExecutionEvent: BuildDataMapPreExecutionEvent =
-        BuildDataMapPreExecutionEvent(
+      val buildDataMapPreExecutionEvent: BuildIndexPreExecutionEvent =
+        BuildIndexPreExecutionEvent(
           sparkSession, carbonTable.getAbsoluteTableIdentifier, dataMapNames)
       OperationListenerBus.getInstance().fireEvent(buildDataMapPreExecutionEvent,
         dataMapOperationContext)
@@ -352,7 +352,7 @@ case class CarbonAddLoadCommand(
         model)
     OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
     if (tableDataMaps.size() > 0) {
-      val buildDataMapPostExecutionEvent = BuildDataMapPostExecutionEvent(sparkSession,
+      val buildDataMapPostExecutionEvent = BuildIndexPostExecutionEvent(sparkSession,
         carbonTable.getAbsoluteTableIdentifier, null, Seq(model.getSegmentId), false)
       OperationListenerBus.getInstance()
         .fireEvent(buildDataMapPostExecutionEvent, dataMapOperationContext)

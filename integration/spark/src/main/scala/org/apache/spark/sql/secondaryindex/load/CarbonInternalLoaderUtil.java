@@ -39,7 +39,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 
 import org.apache.log4j.Logger;
-import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil;
+import org.apache.spark.sql.index.CarbonIndexUtil;
 
 public class CarbonInternalLoaderUtil {
 
@@ -124,7 +124,7 @@ public class CarbonInternalLoaderUtil {
           updatedLoadMetadataDetails.addAll(newLoadMetadataDetails);
         }
 
-        List<String> indexTables = CarbonInternalScalaUtil.getIndexesTables(carbonTable);
+        List<String> indexTables = CarbonIndexUtil.getIndexesTables(carbonTable);
         if (!indexTables.isEmpty()) {
           List<LoadMetadataDetails> newSegmentDetailsListForIndexTable =
               new ArrayList<>(validSegments.size());
@@ -134,7 +134,7 @@ public class CarbonInternalLoaderUtil {
             newSegmentDetailsListForIndexTable.add(newSegmentDetailsObject);
           }
           for (CarbonTable indexTable : indexCarbonTables) {
-            List<LoadMetadataDetails> indexTableDetailsList = CarbonInternalScalaUtil
+            List<LoadMetadataDetails> indexTableDetailsList = CarbonIndexUtil
                 .getTableStatusDetailsForIndexTable(updatedLoadMetadataDetails, indexTable,
                     newSegmentDetailsListForIndexTable);
 

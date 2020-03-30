@@ -54,6 +54,8 @@ case class CarbonCreateTableLikeCommand(
 
     // copy schema of source table and update fields to target table
     val dstTableSchema = srcTable.getTableInfo.getFactTable.clone().asInstanceOf[TableSchema]
+    // remove index information in source table tblProperties
+    dstTableSchema.getTableProperties.remove(srcTable.getTableId)
     dstTableSchema.setTableName(targetTable.table)
     dstTableSchema.setTableId(UUID.randomUUID().toString)
 

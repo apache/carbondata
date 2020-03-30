@@ -25,9 +25,10 @@ import scala.collection.mutable
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.events.{LoadTableSIPostExecutionEvent, LoadTableSIPreExecutionEvent}
 import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
-import org.apache.spark.sql.secondaryindex.util.{CarbonInternalScalaUtil, SecondaryIndexUtil}
+import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -129,7 +130,7 @@ case class SIRebuildSegmentRunner(
             indexTable,
             loadMetadataDetails.toList.asJava,
             System.currentTimeMillis(),
-            CarbonInternalScalaUtil.getCompressorForIndexTable(indexTable, parentTable))
+            CarbonIndexUtil.getCompressorForIndexTable(indexTable, parentTable))
 
         SecondaryIndexUtil.mergeDataFilesSISegments(segmentIdToLoadStartTimeMapping, indexTable,
           loadMetadataDetails.toList.asJava, carbonLoadModelForMergeDataFiles,

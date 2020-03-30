@@ -35,7 +35,7 @@ class MergeBloomIndexEventListener extends OperationEventListener with Logging {
 
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     event match {
-      case datamapPostEvent: BuildDataMapPostExecutionEvent =>
+      case datamapPostEvent: BuildIndexPostExecutionEvent =>
         LOGGER.info("Load post status event-listener called for merge bloom index")
         val carbonTableIdentifier = datamapPostEvent.identifier
         val carbonTable = DataMapStoreManager.getInstance().getCarbonTable(carbonTableIdentifier)

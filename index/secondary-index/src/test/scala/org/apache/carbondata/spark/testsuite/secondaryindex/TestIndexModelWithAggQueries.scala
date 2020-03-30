@@ -124,7 +124,7 @@ class TestIndexModelWithAggQueries extends QueryTest with BeforeAndAfterAll {
         "ON TABLE si_test_si_1 (address)" +
         "AS 'bloomfilter' PROPERTIES('BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')")
     }.getMessage
-    assert(exceptionMessage.contains("Cannot create index on Secondary Index table"))
+    assert(exceptionMessage.contains("Cannot create index on child table `dm_on_si`"))
   }
 
   test("test CTAS when use cast in select with SI table present on main table") {

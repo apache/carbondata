@@ -69,11 +69,9 @@ object ShowCacheDataMapEventListener extends OperationEventListener {
         val datamaps = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
           .asScala.toList
 
-        val bloomDataMaps = filterDataMaps(datamaps, DataMapClassProvider.BLOOMFILTER.getShortName)
-
         val mvDataMaps = filterDataMaps(datamaps, DataMapClassProvider.MV.getShortName)
         operationContext
-          .setProperty(carbonTable.getTableUniqueName, childTables ++ bloomDataMaps ++ mvDataMaps)
+          .setProperty(carbonTable.getTableUniqueName, childTables ++ mvDataMaps)
     }
   }
 

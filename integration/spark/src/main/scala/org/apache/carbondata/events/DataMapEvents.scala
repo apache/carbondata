@@ -51,7 +51,7 @@ case class UpdateDataMapPostExecutionEvent(sparkSession: SparkSession,
  * For handling operation's before start of index build over table with index datamap
  * example: bloom datamap, Lucene datamap
  */
-case class BuildDataMapPreExecutionEvent(sparkSession: SparkSession,
+case class BuildIndexPreExecutionEvent(sparkSession: SparkSession,
     identifier: AbsoluteTableIdentifier, dataMapNames: scala.collection.mutable.Seq[String])
   extends Event with BuildDataMapEventsInfo
 
@@ -66,7 +66,7 @@ case class BuildDataMapPreExecutionEvent(sparkSession: SparkSession,
  * @param segmentIdList
  * @param isFromRebuild set to false in loading process for skipping lazy datamap
  */
-case class BuildDataMapPostExecutionEvent(sparkSession: SparkSession,
+case class BuildIndexPostExecutionEvent(sparkSession: SparkSession,
     identifier: AbsoluteTableIdentifier, dmName: String,
     segmentIdList: Seq[String], isFromRebuild: Boolean)
   extends Event with TableEventInfo

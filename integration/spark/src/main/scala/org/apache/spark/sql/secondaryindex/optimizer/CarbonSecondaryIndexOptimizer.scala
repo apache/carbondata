@@ -29,10 +29,10 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.execution.datasources.{FindDataSourceTable, LogicalRelation}
-import org.apache.spark.sql.hive.{CarbonHiveMetadataUtil, CarbonRelation}
+import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonRelation}
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.optimizer
 import org.apache.spark.sql.secondaryindex.optimizer.NodeType.NodeType
-import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -101,7 +101,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
 
     matchingIndexTables = CarbonCostBasedOptimizer.identifyRequiredTables(
       filterAttributes.asJava,
-      CarbonInternalScalaUtil.getIndexes(indexableRelation).mapValues(_.toList.asJava).asJava)
+      CarbonIndexUtil.getIndexes(indexableRelation).mapValues(_.toList.asJava).asJava)
       .asScala
 
     // filter out all the index tables which are disabled
@@ -162,7 +162,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       val indexTableAttributeMap: mutable.Map[String, Map[String, AttributeReference]] =
         new mutable.HashMap[String, Map[String, AttributeReference]]()
       // mapping of all the index tables and its columns created on the main table
-      val allIndexTableToColumnMapping = CarbonInternalScalaUtil.getIndexes(indexableRelation)
+      val allIndexTableToColumnMapping = CarbonIndexUtil.getIndexes(indexableRelation)
 
       enabledMatchingIndexTables.foreach { matchedTable =>
         // create index table to index column mapping
@@ -398,7 +398,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case IsNotNull(child: AttributeReference) => Literal(true)
       // Like is possible only if user provides _ in between the string
       // _ in like means any single character wild card check.
-      case plan if (CarbonHiveMetadataUtil.checkNIUDF(plan)) => Literal(true)
+      case plan if (CarbonHiveIndexMetadataUtil.checkNIUDF(plan)) => Literal(true)
       case Like(left: AttributeReference, right: Literal) if (!isPartialStringEnabled) => Literal(
         true)
       case EndsWith(left: AttributeReference,
@@ -465,7 +465,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case Like(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
       case EndsWith(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
       case Contains(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
-      case plan if (CarbonHiveMetadataUtil.checkNIUDF(plan)) => true
+      case plan if (CarbonHiveIndexMetadataUtil.checkNIUDF(plan)) => true
       case _ => false
     }
     if (!doNotPushToSI) {
@@ -695,7 +695,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
         (sort, true)
       case filter@Filter(condition, logicalRelation@MatchIndexableRelation(indexableRelation))
         if !condition.isInstanceOf[IsNotNull] &&
-           CarbonInternalScalaUtil.getIndexes(indexableRelation).nonEmpty =>
+           CarbonIndexUtil.getIndexes(indexableRelation).nonEmpty =>
         val reWrittenPlan = rewritePlanForSecondaryIndex(filter, indexableRelation,
           filter.child.asInstanceOf[LogicalRelation].relation
             .asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.databaseName)
@@ -711,7 +711,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case projection@Project(cols, filter@Filter(condition,
       logicalRelation@MatchIndexableRelation(indexableRelation)))
         if !condition.isInstanceOf[IsNotNull] &&
-           CarbonInternalScalaUtil.getIndexes(indexableRelation).nonEmpty =>
+           CarbonIndexUtil.getIndexes(indexableRelation).nonEmpty =>
         val reWrittenPlan = rewritePlanForSecondaryIndex(filter, indexableRelation,
           filter.child.asInstanceOf[LogicalRelation].relation
             .asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.databaseName, cols)
@@ -734,7 +734,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case limit@Limit(literal: Literal,
       filter@Filter(condition, logicalRelation@MatchIndexableRelation(indexableRelation)))
         if !condition.isInstanceOf[IsNotNull] &&
-           CarbonInternalScalaUtil.getIndexes(indexableRelation).nonEmpty =>
+           CarbonIndexUtil.getIndexes(indexableRelation).nonEmpty =>
         val carbonRelation = filter.child.asInstanceOf[LogicalRelation].relation
           .asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation
         val uniqueTableName = s"${ carbonRelation.databaseName }.${ carbonRelation.tableName }"
@@ -761,7 +761,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case limit@Limit(literal: Literal, projection@Project(cols, filter@Filter(condition,
       logicalRelation@MatchIndexableRelation(indexableRelation))))
         if !condition.isInstanceOf[IsNotNull] &&
-           CarbonInternalScalaUtil.getIndexes(indexableRelation).nonEmpty =>
+           CarbonIndexUtil.getIndexes(indexableRelation).nonEmpty =>
         val carbonRelation = filter.child.asInstanceOf[LogicalRelation].relation
           .asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation
         val uniqueTableName = s"${ carbonRelation.databaseName }.${ carbonRelation.tableName }"
@@ -788,7 +788,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
     })
     val transformedPlanWithoutNIUdf = transformedPlan.transform {
       case filter: Filter =>
-        Filter(CarbonHiveMetadataUtil.transformToRemoveNI(filter.condition), filter.child)
+        Filter(CarbonHiveIndexMetadataUtil.transformToRemoveNI(filter.condition), filter.child)
     }
     transformedPlanWithoutNIUdf
   }

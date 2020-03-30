@@ -125,7 +125,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
     this.dataMapName = dataMapSchema.getDataMapName();
 
     // validate DataMapSchema and get index columns
-    indexedCarbonColumns =  carbonTable.getIndexedColumns(dataMapSchema);
+    indexedCarbonColumns =  carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns());
     flushCacheSize = validateAndGetWriteCacheSize(dataMapSchema);
     storeBlockletWise = validateAndGetStoreBlockletWise(dataMapSchema);
 
@@ -335,7 +335,8 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
   @Override
   public void validate() throws MalformedIndexCommandException {
     super.validate();
-    List<CarbonColumn> indexColumns = getCarbonTable().getIndexedColumns(getDataMapSchema());
+    List<CarbonColumn> indexColumns =
+        getCarbonTable().getIndexedColumns(getDataMapSchema().getIndexColumns());
 
     for (CarbonColumn column : indexColumns) {
       if (column.getDataType() != DataTypes.STRING) {

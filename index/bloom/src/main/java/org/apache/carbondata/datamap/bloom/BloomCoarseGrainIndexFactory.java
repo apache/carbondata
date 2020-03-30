@@ -110,7 +110,8 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
 
     this.dataMapName = dataMapSchema.getDataMapName();
 
-    List<CarbonColumn> indexedColumns = carbonTable.getIndexedColumns(dataMapSchema);
+    List<CarbonColumn> indexedColumns =
+        carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns());
     this.bloomFilterSize = validateAndGetBloomFilterSize(dataMapSchema);
     this.bloomFilterFpp = validateAndGetBloomFilterFpp(dataMapSchema);
     this.bloomCompress = validateAndGetBloomCompress(dataMapSchema);

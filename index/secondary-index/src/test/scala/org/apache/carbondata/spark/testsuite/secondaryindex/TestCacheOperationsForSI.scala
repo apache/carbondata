@@ -23,7 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.core.cache.CacheProvider
@@ -67,7 +67,7 @@ class TestCacheOperationsForSI extends QueryTest with BeforeAndAfterAll {
 
     val tableIdentifier = new TableIdentifier(tableName, Some(dbName))
     val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sqlContext.sparkSession)
-    val allIndexTables = CarbonInternalScalaUtil.getIndexesTables(carbonTable).asScala
+    val allIndexTables = CarbonIndexUtil.getIndexesTables(carbonTable).asScala
     val indexTablePaths = allIndexTables.map {
       tableName =>
         CarbonEnv.getCarbonTable(Some(dbName), tableName)(sqlContext.sparkSession).getTablePath

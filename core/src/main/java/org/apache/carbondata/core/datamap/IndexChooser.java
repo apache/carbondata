@@ -22,16 +22,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.expr.AndIndexExprWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.IndexExprWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.IndexExprWrapperImpl;
 import org.apache.carbondata.core.datamap.dev.expr.OrIndexExprWrapper;
-import org.apache.carbondata.core.datamap.status.DataMapStatusDetail;
-import org.apache.carbondata.core.datamap.status.DataMapStatusManager;
+import org.apache.carbondata.core.datamap.status.IndexStatus;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -68,14 +67,13 @@ public class IndexChooser {
   public IndexChooser(CarbonTable carbonTable) throws IOException {
     this.carbonTable = carbonTable;
     // read all indexes for this table and populate CG and FG index list
-    List<TableIndex> visibleIndexes =
-        DataMapStoreManager.getInstance().getAllVisibleIndexes(carbonTable);
-    Map<String, DataMapStatusDetail> map = DataMapStatusManager.readDataMapStatusMap();
+    List<TableIndex> visibleIndexes = carbonTable.getAllVisibleIndexes();
     cgIndexes = new ArrayList<>(visibleIndexes.size());
     fgIndexes = new ArrayList<>(visibleIndexes.size());
     for (TableIndex visibleIndex : visibleIndexes) {
-      DataMapStatusDetail status = map.get(visibleIndex.getDataMapSchema().getDataMapName());
-      if (status != null && status.isEnabled()) {
+      if (visibleIndex.getDataMapSchema().getProperties().get(CarbonCommonConstants.INDEX_STATUS)
+          != null && visibleIndex.getDataMapSchema().getProperties()
+          .get(CarbonCommonConstants.INDEX_STATUS).equalsIgnoreCase(IndexStatus.ENABLED.name())) {
         IndexLevel level = visibleIndex.getIndexFactory().getDataMapLevel();
         if (level == IndexLevel.CG) {
           cgIndexes.add(visibleIndex);

@@ -26,9 +26,10 @@ import scala.collection.mutable.ListBuffer
 import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.{CarbonEnv, SQLContext}
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.command.SecondaryIndexModel
 import org.apache.spark.sql.secondaryindex.events.{LoadTableSIPostExecutionEvent, LoadTableSIPreExecutionEvent}
-import org.apache.spark.sql.secondaryindex.util.{CarbonInternalScalaUtil, FileInternalUtil, SecondaryIndexCreationResultImpl, SecondaryIndexUtil}
+import org.apache.spark.sql.secondaryindex.util.{FileInternalUtil, SecondaryIndexCreationResultImpl, SecondaryIndexUtil}
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -240,7 +241,7 @@ object SecondaryIndexCreator {
           .getCarbonLoadModel(indexCarbonTable,
             loadMetadataDetails.toList.asJava,
             System.currentTimeMillis(),
-            CarbonInternalScalaUtil
+            CarbonIndexUtil
               .getCompressorForIndexTable(indexCarbonTable, secondaryIndexModel.carbonTable))
 
         // merge the data files of the loaded segments and take care of
@@ -357,7 +358,7 @@ object SecondaryIndexCreator {
       secondaryIndexModel.secondaryIndex.indexName)(secondaryIndexModel.sqlContext.sparkSession)
 
     copyObj.setColumnCompressor(
-      CarbonInternalScalaUtil.getCompressorForIndexTable(
+      CarbonIndexUtil.getCompressorForIndexTable(
         indexTable, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable))
     copyObj.setFactTimeStamp(carbonLoadModel.getFactTimeStamp)
     copyObj

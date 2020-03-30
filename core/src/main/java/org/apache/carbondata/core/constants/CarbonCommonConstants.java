@@ -2444,6 +2444,17 @@ public final class CarbonCommonConstants {
   public static final String CARBON_LOAD_ALL_SEGMENT_INDEXES_TO_CACHE_DEFAULT = "true";
 
   /**
+   * Index properties
+   * Index_Provider is the name of CG or FG Index provider
+   */
+  public static final String INDEX_PROVIDER = "index_provider";
+
+  /**
+   * INDEX_STATUS defines the status of index. (Enabled / Disabled)
+   */
+  public static final String INDEX_STATUS = "index_status";
+
+  /**
    * Materialized view thread context properties
    */
   @CarbonProperty

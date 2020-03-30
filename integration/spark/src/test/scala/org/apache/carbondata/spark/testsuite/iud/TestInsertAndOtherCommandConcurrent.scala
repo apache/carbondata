@@ -314,7 +314,7 @@ class WaitingIndexFactory(
 
   override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): IndexWriter = {
     new IndexWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
-      carbonTable.getIndexedColumns(dataMapSchema), segment, shardName) {
+      carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns), segment, shardName) {
       override def onPageAdded(blockletId: Int, pageId: Int, pageSize: Int, pages: Array[ColumnPage]): Unit = { }
 
       override def onBlockletEnd(blockletId: Int): Unit = { }
@@ -337,7 +337,7 @@ class WaitingIndexFactory(
     }
   }
 
-  override def getMeta: IndexMeta = new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema), Seq(ExpressionType.EQUALS).asJava)
+  override def getMeta: IndexMeta = new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns), Seq(ExpressionType.EQUALS).asJava)
 
   override def toDistributable(segmentId: Segment): util.List[IndexInputSplit] = {
     util.Collections.emptyList()

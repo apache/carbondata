@@ -462,7 +462,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val tableName = absoluteTableIdentifier.getCarbonTableIdentifier.getTableName
     // Clear both driver and executor cache.
     DataMapStoreManager.getInstance().clearIndex(absoluteTableIdentifier)
-    CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
+    CarbonHiveIndexMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
     // discard cached table info in cachedDataSourceTables
     val tableIdentifier = TableIdentifier(tableName, Option(dbName))
     sparkSession.sessionState.catalog.refreshTable(tableIdentifier)

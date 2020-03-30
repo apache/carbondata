@@ -74,6 +74,10 @@ import org.apache.log4j.Logger;
 @InterfaceAudience.Internal
 public abstract class DataMapProvider {
 
+  public void setMainTable(CarbonTable mainTable) {
+    this.mainTable = mainTable;
+  }
+
   private CarbonTable mainTable;
   private DataMapSchema dataMapSchema;
 

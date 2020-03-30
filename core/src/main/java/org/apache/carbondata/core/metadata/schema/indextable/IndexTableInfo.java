@@ -19,7 +19,12 @@ package org.apache.carbondata.core.metadata.schema.indextable;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.status.IndexStatus;
 
 import com.google.gson.Gson;
 
@@ -30,11 +35,15 @@ public class IndexTableInfo implements Serializable {
   private String databaseName;
   private String tableName;
   private List<String> indexCols;
+  private Map<String, String> indexProperties;
 
-  public IndexTableInfo(String databaseName, String tableName, List<String> indexCols) {
+  public IndexTableInfo(String databaseName, String tableName,
+      Map<String, String> indexProperties) {
     this.databaseName = databaseName;
     this.tableName = tableName;
-    this.indexCols = indexCols;
+    this.indexProperties = indexProperties;
+    this.indexCols =
+        Arrays.asList(indexProperties.get(CarbonCommonConstants.INDEX_COLUMNS).split(","));
   }
 
   /**
@@ -141,7 +150,33 @@ public class IndexTableInfo implements Serializable {
         }
       }
       indexTableInfos[i].setIndexCols(newColumnList);
+      Map<String, String> indexProperties = indexTableInfos[i].getIndexProperties();
+      indexProperties
+          .put(CarbonCommonConstants.INDEX_COLUMNS, String.join(",", newColumnList));
+      indexTableInfos[i].setIndexProperties(indexProperties);
     }
     return toGson(indexTableInfos);
   }
+
+  public static String enableIndex(String oldIndexIno, String indexName) {
+    IndexTableInfo[] indexTableInfos = fromGson(oldIndexIno);
+    for (IndexTableInfo indexTableInfo : indexTableInfos) {
+      if (indexTableInfo.tableName.equalsIgnoreCase(indexName)) {
+        Map<String, String> oldindexProperties = indexTableInfo.indexProperties;
+        oldindexProperties.put(CarbonCommonConstants.INDEX_STATUS, IndexStatus.ENABLED.name());
+        indexTableInfo.setIndexProperties(oldindexProperties);
+      }
+    }
+    return toGson(indexTableInfos);
+  }
+
+  public Map<String, String> getIndexProperties() {
+    return indexProperties;
+  }
+
+  public void setIndexProperties(Map<String, String> indexProperties) {
+    this.indexProperties = indexProperties;
+  }
+
+
 }

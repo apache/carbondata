@@ -20,17 +20,19 @@ package org.apache.carbondata.datamap.lucene
 import java.io.{File, PrintWriter}
 
 import scala.util.Random
+import scala.collection.JavaConverters._
 
 import org.apache.spark.SparkException
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedIndexCommandException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.datamap.status.DataMapStatusManager
+import org.apache.carbondata.core.datamap.status.{DataMapStatusManager, IndexStatus}
+import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.datamap.bloom.IndexStatusUtil
 
 class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
@@ -188,14 +190,14 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(sql("SELECT * FROM datamap_test1 WHERE TEXT_MATCH('name:n10')"), sql(s"select * from datamap_test1 where name='n10'"))
 
-    intercept[Exception] {
-      sql("drop index dm12")
-    }
-    val schema = DataMapStoreManager.getInstance().getDataMapSchema("dm12")
+    var carbonTable = CarbonEnv.getCarbonTable(Some("lucene"), "datamap_test1")(sqlContext.sparkSession)
+    var indexes = carbonTable.getIndexMetadata.getIndexesMap.get(CarbonIndexProvider.LUCENE.getIndexProviderName)
+      .asScala.filter(p => p._2.get(CarbonCommonConstants.INDEX_STATUS).equalsIgnoreCase(IndexStatus.ENABLED.name()))
+    assert(indexes.exists(p => p._1.equals("dm12") && p._2.get(CarbonCommonConstants.INDEX_STATUS) == IndexStatus.ENABLED.name()))
+
     sql("drop index dm12 on table datamap_test1")
-    intercept[Exception] {
-      val schema = DataMapStoreManager.getInstance().getDataMapSchema("dm12")
-    }
+    carbonTable = CarbonEnv.getCarbonTable(Some("lucene"), "datamap_test1")(sqlContext.sparkSession)
+    assert(null == carbonTable.getIndexMetadata)
     sql("DROP TABLE IF EXISTS datamap_test1")
   }
 
@@ -612,15 +614,15 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     assert(ex4.getMessage.contains("alter table drop column is not supported"))
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test7 OPTIONS('header'='false')")
-    val ex5 = intercept[UnsupportedOperationException] {
+    val ex5 = intercept[MalformedCarbonCommandException] {
       sql("UPDATE datamap_test7 d set(d.city)=('luc') where d.name='n10'").show()
     }
-    assert(ex5.getMessage.contains("Update operation is not supported"))
+    assert(ex5.getMessage.contains("update operation is not supported for index datamap"))
 
-    val ex6 = intercept[UnsupportedOperationException] {
+    val ex6 = intercept[MalformedCarbonCommandException] {
       sql("delete from datamap_test7 where name = 'n10'").show()
     }
-    assert(ex6.getMessage.contains("Delete operation is not supported"))
+    assert(ex6.getMessage.contains("delete operation is not supported for index datamap"))
 
     val ex7 = intercept[MalformedCarbonCommandException] {
       sql("alter table datamap_test7 change id test int")

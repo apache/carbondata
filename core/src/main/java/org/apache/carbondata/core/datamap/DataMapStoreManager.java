@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -40,6 +39,8 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.index.CarbonIndexProvider;
+import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaFactory;
@@ -50,8 +51,6 @@ import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.CarbonSessionInfo;
-import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
@@ -103,49 +102,29 @@ public final class DataMapStoreManager {
   }
 
   /**
-   * It only gives the visible datamaps
-   */
-  List<TableIndex> getAllVisibleIndexes(CarbonTable carbonTable) throws IOException {
-    CarbonSessionInfo sessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo();
-    List<TableIndex> allDataMaps = getAllIndexes(carbonTable);
-    Iterator<TableIndex> dataMapIterator = allDataMaps.iterator();
-    while (dataMapIterator.hasNext()) {
-      TableIndex dataMap = dataMapIterator.next();
-      String dbName = carbonTable.getDatabaseName();
-      String tableName = carbonTable.getTableName();
-      String dmName = dataMap.getDataMapSchema().getDataMapName();
-      // TODO: need support get the visible status of datamap without sessionInfo in the future
-      if (sessionInfo != null) {
-        boolean isDmVisible = sessionInfo.getSessionParams().getProperty(
-            String.format("%s%s.%s.%s", CarbonCommonConstants.CARBON_DATAMAP_VISIBLE,
-                dbName, tableName, dmName), "true").trim().equalsIgnoreCase("true");
-        if (!isDmVisible) {
-          LOGGER.warn(String.format("Ignore invisible datamap %s on table %s.%s",
-              dmName, dbName, tableName));
-          dataMapIterator.remove();
-        }
-      } else {
-        String message = "Carbon session info is null";
-        LOGGER.info(message);
-      }
-    }
-    return allDataMaps;
-  }
-
-  /**
-   * It gives all indexes except the default index.
+   * It gives all indexes except the default index and secondary index.
+   * Collect's Coarse grain and Fine grain indexes on a table
    *
    * @return
    */
   public List<TableIndex> getAllIndexes(CarbonTable carbonTable) throws IOException {
-    List<DataMapSchema> dataMapSchemas = getDataMapSchemasOfTable(carbonTable);
+    String indexMeta = carbonTable.getTableInfo().getFactTable().getTableProperties()
+        .get(carbonTable.getCarbonTableIdentifier().getTableId());
+    IndexMetadata indexMetadata = IndexMetadata.deserialize(indexMeta);
     List<TableIndex> indexes = new ArrayList<>();
-    if (dataMapSchemas != null) {
-      for (DataMapSchema dataMapSchema : dataMapSchemas) {
-        RelationIdentifier identifier = dataMapSchema.getParentTables().get(0);
-        if (dataMapSchema.isIndex() && identifier.getTableId()
-            .equals(carbonTable.getTableId())) {
-          indexes.add(getIndex(carbonTable, dataMapSchema));
+    if (null != indexMetadata) {
+      // get bloom indexes and lucene indexes
+      for (Map.Entry<String, Map<String, Map<String, String>>> providerEntry : indexMetadata
+          .getIndexesMap().entrySet()) {
+        for (Map.Entry<String, Map<String, String>> indexEntry : providerEntry.getValue()
+            .entrySet()) {
+          if (!indexEntry.getValue().get(CarbonCommonConstants.INDEX_PROVIDER)
+              .equalsIgnoreCase(CarbonIndexProvider.SI.getIndexProviderName())) {
+            DataMapSchema indexSchema = new DataMapSchema(indexEntry.getKey(),
+                indexEntry.getValue().get(CarbonCommonConstants.INDEX_PROVIDER));
+            indexSchema.setProperties(indexEntry.getValue());
+            indexes.add(getIndex(carbonTable, indexSchema));
+          }
         }
       }
     }
@@ -165,17 +144,6 @@ public final class DataMapStoreManager {
    */
   public List<DataMapSchema> getAllDataMapSchemas() throws IOException {
     return provider.retrieveAllSchemas();
-  }
-
-  /**
-   * Return first match of the specified index name in table
-   *
-   */
-  public Optional<DataMapSchema> getIndexInTable(CarbonTable carbonTable, String indexName)
-      throws IOException {
-    return provider.retrieveSchemas(carbonTable).stream()
-        .filter(schema -> schema.getDataMapName().equalsIgnoreCase(indexName))
-        .findFirst();
   }
 
   public DataMapSchema getDataMapSchema(String dataMapName)
@@ -845,7 +813,10 @@ public final class DataMapStoreManager {
   }
 
   private boolean hasCGIndex(CarbonTable carbonTable) throws IOException {
-    for (TableIndex tableIndex : getAllVisibleIndexes(carbonTable)) {
+    if (null == carbonTable) {
+      return false;
+    }
+    for (TableIndex tableIndex : carbonTable.getAllVisibleIndexes()) {
       if (tableIndex.getIndexFactory().getDataMapLevel().equals(IndexLevel.CG)) {
         return true;
       }

@@ -72,7 +72,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     (sparkSession: SparkSession): Unit = {
     val dbName = absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName
     val tableName = absoluteTableIdentifier.getCarbonTableIdentifier.getTableName
-    CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
+    CarbonHiveIndexMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
     // discard cached table info in cachedDataSourceTables
     val tableIdentifier = TableIdentifier(tableName, Option(dbName))
     sparkSession.sessionState.catalog.refreshTable(tableIdentifier)

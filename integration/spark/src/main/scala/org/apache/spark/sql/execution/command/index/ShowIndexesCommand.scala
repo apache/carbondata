@@ -17,18 +17,26 @@
 
 package org.apache.spark.sql.execution.command.index
 
+import java.util
+
 import scala.collection.JavaConverters._
+import scala.collection.immutable.ListMap
+import scala.collection.mutable
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.DataCommand
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
-import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
 import org.apache.spark.sql.types.StringType
 
+import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 /**
@@ -54,69 +62,87 @@ case class ShowIndexesCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val carbonTable = CarbonEnv.getCarbonTable(dbNameOp, tableName)(sparkSession)
     setAuditTable(carbonTable)
-    getFileIndexInfo(carbonTable) ++ getSIInfo(sparkSession, carbonTable)
+    getIndexInfo(sparkSession, carbonTable)
   }
 
-  // get info for 'index datamap'
-  private def getFileIndexInfo(carbonTable: CarbonTable): Seq[Row] = {
-    val indexes = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable).asScala
-    if (indexes != null && indexes.nonEmpty) {
-      indexes.map { index =>
-        Row(
-          index.getDataMapName,
-          index.getProviderName,
-          index.getIndexColumns.mkString(","),
-          index.getPropertiesAsString,
-          index.getStatus.name(),
-          index.getSyncStatus
-        )
-      }
-    } else {
-      Seq.empty
-    }
-  }
-
-  // get info for SI
-  private def getSIInfo(sparkSession: SparkSession, carbonTable: CarbonTable): Seq[Row] = {
+  private def getIndexInfo(sparkSession: SparkSession, carbonTable: CarbonTable): Seq[Row] = {
     CarbonInternalMetastore.refreshIndexInfo(
       carbonTable.getDatabaseName, tableName, carbonTable)(sparkSession)
-    val indexesMap = CarbonInternalScalaUtil.getIndexesMap(carbonTable)
-    if (null == indexesMap) {
-      throw new Exception("Secondary index information is not loaded in main table")
-    }
-    val indexTableMap = indexesMap.asScala
-    if (indexTableMap.nonEmpty) {
-      val indexList = indexTableMap.map { indexInfo =>
-        try {
-          val isSITableEnabled = sparkSession.sessionState.catalog
-            .getTableMetadata(TableIdentifier(indexInfo._1, dbNameOp)).storage.properties
-            .getOrElse("isSITableEnabled", "true").equalsIgnoreCase("true")
-          if (isSITableEnabled) {
-            (indexInfo._1, indexInfo._2.asScala.mkString(","), "enabled")
-          } else {
-            (indexInfo._1, indexInfo._2.asScala.mkString(","), "disabled")
+    val indexesMap = CarbonIndexUtil.getIndexesMap(carbonTable)
+    if (null != indexesMap) {
+      val indexTableMap = indexesMap.asScala
+      if (indexTableMap.nonEmpty) {
+        val secondaryIndex = indexTableMap.get(CarbonIndexProvider.SI.getIndexProviderName)
+        var finalIndexList: Seq[(String, String, String, String, String, String)] = Seq.empty
+
+        if (secondaryIndex.isDefined && null != secondaryIndex.get) {
+          val siIterator = secondaryIndex.get.entrySet().iterator()
+          while (siIterator.hasNext) {
+            val indexInfo = siIterator.next()
+            try {
+              val isSITableEnabled = sparkSession.sessionState.catalog
+                .getTableMetadata(TableIdentifier(indexInfo.getKey, dbNameOp)).storage.properties
+                .getOrElse("isSITableEnabled", "true").equalsIgnoreCase("true")
+              if (isSITableEnabled) {
+                finalIndexList = finalIndexList :+
+                                 (indexInfo.getKey, "carbondata", indexInfo.getValue
+                                   .get(CarbonCommonConstants.INDEX_COLUMNS), "NA", "enabled", "NA")
+              } else {
+                finalIndexList = finalIndexList :+
+                                 (indexInfo.getKey, "carbondata", indexInfo.getValue
+                                   .get(CarbonCommonConstants
+                                     .INDEX_COLUMNS), "NA", "disabled", "NA")
+              }
+            } catch {
+              case ex: Exception =>
+                LOGGER.error(s"Access storage properties from hive failed for index table: ${
+                  indexInfo.getKey
+                }")
+                finalIndexList = finalIndexList :+
+                                 (indexInfo.getKey, "carbondata", indexInfo.getValue
+                                   .get(CarbonCommonConstants.INDEX_COLUMNS), "NA", "UNKNOWN", "NA")
+            }
           }
-        } catch {
-          case ex: Exception =>
-            LOGGER.error(s"Access storage properties from hive failed for index table: ${
-              indexInfo._1
-            }")
-            (indexInfo._1, indexInfo._2.asScala.mkString(","), "UNKNOWN")
         }
+
+        indexesMap.asScala
+          .filter(map => !map._1.equalsIgnoreCase(CarbonIndexProvider.SI.getIndexProviderName))
+          .values.foreach { index =>
+          val indexIterator = index.entrySet().iterator()
+          while (indexIterator.hasNext) {
+            val indexInfo = indexIterator.next()
+            val indexProperties = indexInfo.getValue
+            val indexStatus =
+              if (null != indexProperties.get(CarbonCommonConstants.INDEX_STATUS)) {
+                indexProperties.get(CarbonCommonConstants.INDEX_STATUS)
+              } else {
+                "DISABLED"
+              }
+            val provider = indexProperties.get(CarbonCommonConstants.INDEX_PROVIDER)
+            val indexColumns = indexProperties.get(CarbonCommonConstants.INDEX_COLUMNS)
+            // ignore internal used property
+            val properties = ListMap(indexProperties.asScala.filter(f =>
+              !f._1.equalsIgnoreCase(DataMapProperty.DEFERRED_REBUILD) &&
+              !f._1.equalsIgnoreCase(CarbonCommonConstants.INDEX_PROVIDER) &&
+              !f._1.equalsIgnoreCase(CarbonCommonConstants.INDEX_STATUS)).toSeq.sortBy(_._1): _*)
+              .map { p => "'" + p._1 + "'='" + p._2 + "'" }
+              .toArray
+            finalIndexList = finalIndexList :+
+                             ((indexInfo.getKey, provider, indexColumns, Strings
+                               .mkString(properties, ","), indexStatus, "NA"))
+          }
+        }
+
+        finalIndexList.map { case (col1, col2, col3, col4, col5, col6) =>
+          Row(col1, col2, col3, col4, col5, col6)
+        }
+      } else {
+        Seq.empty
       }
-      indexList.map { case (indexTableName, columnNames, isSITableEnabled) =>
-        Row(
-          indexTableName,
-          "carbondata",
-          columnNames,
-          "NA",
-          isSITableEnabled,
-          "NA"
-        )
-      }.toSeq
     } else {
       Seq.empty
     }
+
   }
 
   override protected def opName: String = "SHOW INDEXES"

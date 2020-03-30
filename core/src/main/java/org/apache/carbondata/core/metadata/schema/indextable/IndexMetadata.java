@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.index.CarbonIndexProvider;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 
 /**
@@ -33,9 +35,9 @@ public class IndexMetadata implements Serializable {
 
   private static final long serialVersionUID = -8076464279248926823L;
   /**
-   * index table name and its corresponding cols
+   * index provider and map of index table name and its index properties
    */
-  private Map<String, List<String>> indexTableMap;
+  private Map<String, Map<String, Map<String, String>>> indexTableMap;
   /**
    * parent table name of this index table
    */
@@ -63,38 +65,77 @@ public class IndexMetadata implements Serializable {
     this.parentTablePath = parentTablePath;
   }
 
-  public IndexMetadata(Map<String, List<String>> indexTableMap, String parentTableName,
-      boolean isIndexTable, String parentTablePath, String parentTableId) {
+  public IndexMetadata(Map<String, Map<String, Map<String, String>>> indexTableMap,
+      String parentTableName, boolean isIndexTable, String parentTablePath, String parentTableId) {
     this(parentTableName, isIndexTable, parentTablePath);
     this.indexTableMap = indexTableMap;
     this.parentTableId = parentTableId;
   }
 
-  public void addIndexTableInfo(String tableName, List<String> indexCols) {
+  public void addIndexTableInfo(String providerName, String tableName,
+      Map<String, String> indexProperties) {
     if (null == indexTableMap) {
-      indexTableMap = new ConcurrentHashMap<String, List<String>>();
+      indexTableMap = new ConcurrentHashMap<>();
     }
-    indexTableMap.put(tableName, indexCols);
+    if (null == indexTableMap.get(providerName) || indexTableMap.isEmpty()) {
+      Map<String, Map<String, String>> indexMap = new ConcurrentHashMap<>();
+      indexMap.put(tableName, indexProperties);
+      indexTableMap.put(providerName, indexMap);
+    } else {
+      indexTableMap.get(providerName).put(tableName, indexProperties);
+    }
   }
 
   public void removeIndexTableInfo(String tableName) {
     if (null != indexTableMap) {
-      indexTableMap.remove(tableName);
+      if (null != indexTableMap.get(CarbonIndexProvider.SI.getIndexProviderName())
+          && null != indexTableMap.get(CarbonIndexProvider.SI.getIndexProviderName())
+          .get(tableName)) {
+        indexTableMap.get(CarbonIndexProvider.SI.getIndexProviderName()).remove(tableName);
+      } else if (null != indexTableMap.get(CarbonIndexProvider.BLOOMFILTER.getIndexProviderName())
+          && null != indexTableMap.get(CarbonIndexProvider.BLOOMFILTER.getIndexProviderName())
+          .get(tableName)) {
+        indexTableMap.get(CarbonIndexProvider.BLOOMFILTER.getIndexProviderName()).remove(tableName);
+      } else if (null != indexTableMap.get(CarbonIndexProvider.LUCENE.getIndexProviderName())
+          && null != indexTableMap.get(CarbonIndexProvider.LUCENE.getIndexProviderName())
+          .get(tableName)) {
+        indexTableMap.get(CarbonIndexProvider.LUCENE.getIndexProviderName()).remove(tableName);
+      }
+    }
+  }
+
+  public void updateIndexStatus(String indexProvider, String indexName, String indexStatus) {
+    if (null != indexTableMap) {
+      indexTableMap.get(indexProvider).get(indexName)
+          .put(CarbonCommonConstants.INDEX_STATUS, indexStatus);
     }
   }
 
   public List<String> getIndexTables() {
     if (null != indexTableMap) {
-      return new ArrayList<String>(indexTableMap.keySet());
+      List<String> indexTables = new ArrayList<>();
+      for (Map.Entry<String, Map<String, Map<String, String>>> mapEntry : indexTableMap
+          .entrySet()) {
+        indexTables.addAll(mapEntry.getValue().keySet());
+      }
+      return indexTables;
     } else {
       return new ArrayList<String>();
+    }
+  }
+
+  public List<String> getIndexTables(String indexProvider) {
+    if (null != indexTableMap && null != indexTableMap.get(indexProvider)) {
+      return new ArrayList<>(indexTableMap.get(indexProvider).keySet());
+    } else {
+      return new ArrayList<>();
     }
   }
 
   /**
    * indexTableMap will be null if index table info is not loaded.
    */
-  public Map<String, List<String>> getIndexesMap() {
+  public Map<String, Map<String, Map<String, String>>> getIndexesMap() {
     return indexTableMap;
   }
 

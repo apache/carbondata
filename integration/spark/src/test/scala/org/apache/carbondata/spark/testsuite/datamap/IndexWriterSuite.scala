@@ -58,7 +58,7 @@ class C2IndexFactory(
     IndexWriterSuite.dataMapWriterC2Mock(identifier, "testdm", segment, shardName)
 
   override def getMeta: IndexMeta =
-    new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema), List(ExpressionType.EQUALS).asJava)
+    new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns), List(ExpressionType.EQUALS).asJava)
 
   /**
    * Get all distributable objects of a segmentId

@@ -16,14 +16,12 @@
  */
 package org.apache.spark.sql.hive
 
-import java.util
-import java.util.{ArrayList, Arrays, List}
-
 import org.apache.hadoop.hive.ql.exec.UDF
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Expression, ScalaUDF}
-import org.apache.spark.sql.secondaryindex.util.{CarbonInternalScalaUtil, FileInternalUtil, IndexTableUtil}
+import org.apache.spark.sql.index.CarbonIndexUtil
+import org.apache.spark.sql.secondaryindex.util.FileInternalUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -34,10 +32,10 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 /**
  * This class contains all carbon hive metadata related utilities
  */
-object CarbonHiveMetadataUtil {
+object CarbonHiveIndexMetadataUtil {
 
   @transient
-  val LOGGER = LogServiceFactory.getLogService(CarbonHiveMetadataUtil.getClass.getName)
+  val LOGGER = LogServiceFactory.getLogService(CarbonHiveIndexMetadataUtil.getClass.getName)
 
 
   /**
@@ -104,7 +102,7 @@ object CarbonHiveMetadataUtil {
       tableName: String)(sparkSession: SparkSession): Unit = {
     val parentTableName = parentCarbonTable.getTableName
     val newIndexInfo = removeIndexTable(indexInfo, dbName, tableName)
-    CarbonInternalScalaUtil.removeIndexTableInfo(parentCarbonTable, tableName)
+    CarbonIndexUtil.removeIndexTableInfo(parentCarbonTable, tableName)
     sparkSession.sql(
       s"""ALTER TABLE $dbName.$parentTableName SET SERDEPROPERTIES ('indexInfo'='$newIndexInfo')
         """.stripMargin).collect()

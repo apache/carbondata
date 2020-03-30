@@ -84,6 +84,8 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
     val info_src = CarbonEnv.getCarbonTable(src)(sqlContext.sparkSession).getTableInfo
     val info_dst = CarbonEnv.getCarbonTable(dst)(sqlContext.sparkSession).getTableInfo
 
+    info_src.getFactTable.getTableProperties.remove(info_src.getFactTable.getTableId)
+
     val fact_src = info_src.getFactTable
     val fact_dst = info_dst.getFactTable
 
@@ -140,7 +142,7 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
     checkTableProperties(TableIdentifier("sourceTable"), TableIdentifier("targetTable"))
   }
 
-  test("table with datamap") {
+  test("table with index") {
     // datamap relation does not store in parent table
     sql(
       s"""

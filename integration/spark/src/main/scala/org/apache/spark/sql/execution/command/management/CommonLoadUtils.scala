@@ -60,7 +60,7 @@ import org.apache.carbondata.core.segmentmeta.{SegmentMetaDataInfo, SegmentMetaD
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util._
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{BuildIndexPostExecutionEvent, BuildIndexPreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.indexserver.DistributedRDDUtils
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
@@ -300,8 +300,8 @@ object CommonLoadUtils {
     if (tableDataMaps.size() > 0) {
       val dataMapNames: mutable.Buffer[String] =
         tableDataMaps.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
-      val buildDataMapPreExecutionEvent: BuildDataMapPreExecutionEvent =
-        BuildDataMapPreExecutionEvent(sparkSession,
+      val buildDataMapPreExecutionEvent: BuildIndexPreExecutionEvent =
+        BuildIndexPreExecutionEvent(sparkSession,
           table.getAbsoluteTableIdentifier, dataMapNames)
       OperationListenerBus.getInstance().fireEvent(buildDataMapPreExecutionEvent,
         dataMapOperationContext)
@@ -321,7 +321,7 @@ object CommonLoadUtils {
         carbonLoadModel)
     OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
     if (tableDataMaps.size() > 0) {
-      val buildDataMapPostExecutionEvent = BuildDataMapPostExecutionEvent(sparkSession,
+      val buildDataMapPostExecutionEvent = BuildIndexPostExecutionEvent(sparkSession,
         table.getAbsoluteTableIdentifier, null, Seq(carbonLoadModel.getSegmentId), false)
       OperationListenerBus.getInstance()
         .fireEvent(buildDataMapPostExecutionEvent, dataMapOperationContext)

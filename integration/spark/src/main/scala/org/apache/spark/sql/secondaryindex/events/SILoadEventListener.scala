@@ -23,10 +23,12 @@ import org.apache.log4j.Logger
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.command.IndexModel
-import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
 import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.events.LoadEvents.LoadTablePreStatusUpdateEvent
@@ -59,15 +61,21 @@ class SILoadEventListener extends OperationEventListener with Logging {
         val indexMetadata = IndexMetadata
           .deserialize(carbonTable.getTableInfo.getFactTable.getTableProperties
             .get(carbonTable.getCarbonTableIdentifier.getTableId))
-        if (null != indexMetadata) {
-          val indexTables = indexMetadata.getIndexTables.asScala
+        if (null != indexMetadata && null != indexMetadata.getIndexesMap && null != indexMetadata
+          .getIndexesMap.get(CarbonIndexProvider.SI.getIndexProviderName)) {
+          val indexTables = indexMetadata.getIndexesMap
+            .get(CarbonIndexProvider.SI.getIndexProviderName).keySet().asScala
           // if there are no index tables for a given fact table do not perform any action
           if (indexTables.nonEmpty) {
             indexTables.foreach {
               indexTableName =>
                 val secondaryIndex = IndexModel(Some(carbonTable.getDatabaseName),
                   indexMetadata.getParentTableName,
-                  indexMetadata.getIndexesMap.get(indexTableName).asScala.toList,
+                  indexMetadata.getIndexesMap.get(CarbonIndexProvider.SI.getIndexProviderName)
+                    .get(indexTableName)
+                    .get(CarbonCommonConstants.INDEX_COLUMNS)
+                    .split(",")
+                    .toList,
                   indexTableName)
 
                 val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
@@ -75,7 +83,7 @@ class SILoadEventListener extends OperationEventListener with Logging {
                   .lookupRelation(Some(carbonLoadModel.getDatabaseName),
                     indexTableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
 
-                CarbonInternalScalaUtil
+                CarbonIndexUtil
                   .LoadToSITable(sparkSession,
                     carbonLoadModel,
                     indexTableName,

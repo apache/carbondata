@@ -122,7 +122,7 @@ class FGIndexFactory(carbonTable: CarbonTable,
    * Return metadata of this datamap
    */
   override def getMeta: IndexMeta = {
-    new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema),
+    new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns),
       List(ExpressionType.EQUALS, ExpressionType.IN).asJava)
   }
 
@@ -287,7 +287,7 @@ class FGIndex extends FineGrainIndex {
 class FGIndexWriter(carbonTable: CarbonTable,
     segment: Segment, shardName: String, dataMapSchema: DataMapSchema)
   extends IndexWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
-    carbonTable.getIndexedColumns(dataMapSchema), segment, shardName) {
+    carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns), segment, shardName) {
 
   var taskName: String = _
   val fgwritepath = dataMapPath

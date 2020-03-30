@@ -27,6 +27,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -784,9 +785,9 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
          | Properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    assert(intercept[UnsupportedOperationException] {
+    assert(intercept[MalformedCarbonCommandException] {
       sql("update test_dm_index set(a) = ('aaa') where a = 'ccc'")
-    }.getMessage.contains("Update operation is not supported for table which has index datamaps"))
+    }.getMessage.contains("update operation is not supported for index datamap"))
 
     sql("drop table if exists test_dm_index")
   }

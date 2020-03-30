@@ -101,12 +101,6 @@ private[sql] case class CarbonAlterTableRenameCommand(
       if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
         throw new ConcurrentOperationException(carbonTable, "loading", "alter table rename")
       }
-      // get the old table all data map schema
-      val dataMapSchemaList: util.List[DataMapSchema] = new util.ArrayList[DataMapSchema]()
-      val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
-      if (!indexSchemas.isEmpty) {
-        dataMapSchemaList.addAll(indexSchemas)
-      }
       // invalid data map for the old table, see CARBON-1690
       val oldAbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       DataMapStoreManager.getInstance().clearIndex(oldAbsoluteTableIdentifier)
@@ -149,11 +143,6 @@ private[sql] case class CarbonAlterTableRenameCommand(
         schemaEvolutionEntry,
         carbonTable.getTablePath)(sparkSession)
 
-      // Update the storage location with datamap schema
-      if (!dataMapSchemaList.isEmpty) {
-        DataMapStoreManager.getInstance().
-          updateDataMapSchema(dataMapSchemaList, newTableName)
-      }
       val alterTableRenamePostEvent: AlterTableRenamePostEvent = AlterTableRenamePostEvent(
         carbonTable,
         alterTableRenameModel,

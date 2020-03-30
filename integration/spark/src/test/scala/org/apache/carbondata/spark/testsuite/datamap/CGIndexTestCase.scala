@@ -127,7 +127,7 @@ class CGIndexFactory(
    * Return metadata of this datamap
    */
   override def getMeta: IndexMeta = {
-    new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema),
+    new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns),
       List(ExpressionType.EQUALS, ExpressionType.IN).asJava)
   }
 
@@ -265,7 +265,7 @@ class CGIndexWriter(
     shardName: String,
     dataMapSchema: DataMapSchema)
   extends IndexWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
-    carbonTable.getIndexedColumns(dataMapSchema), segment, shardName) {
+    carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns), segment, shardName) {
 
   val blockletList = new ArrayBuffer[Array[Byte]]()
   val maxMin = new ArrayBuffer[(Int, (Array[Byte], Array[Byte]))]()
@@ -477,82 +477,6 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
       assert(df3(0).getString(0).contains(dataMapName2))
     }
     assert(e41.getMessage.contains("did not contain \"" + dataMapName2))
-  }
-
-  test("test index storage in system folder") {
-    sql("DROP TABLE IF EXISTS datamap_store_test")
-    sql(
-      """
-        | CREATE TABLE datamap_store_test(id INT, name STRING, city STRING, age INT)
-        | STORED AS carbondata
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
-      """.stripMargin)
-
-    val dataMapProvider = classOf[CGIndexFactory].getName
-    sql(
-      s"""
-         |create index test_cg_datamap
-         |on table datamap_store_test (name)
-         |as '$dataMapProvider'
-       """.stripMargin)
-
-    val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap")
-
-    assert(FileFactory.isFileExist(loc))
-  }
-
-  test("test index storage and drop in system folder") {
-    sql("DROP TABLE IF EXISTS datamap_store_test1")
-    sql(
-      """
-        | CREATE TABLE datamap_store_test1(id INT, name STRING, city STRING, age INT)
-        | STORED AS carbondata
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
-      """.stripMargin)
-
-    val dataMapProvider = classOf[CGIndexFactory].getName
-    sql(
-      s"""
-         |create index test_cg_datamap1
-         |on table datamap_store_test1 (name)
-         |as '$dataMapProvider'
-       """.stripMargin)
-
-    val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation, "test_cg_datamap1")
-
-    assert(FileFactory.isFileExist(loc))
-
-    sql(s"drop index test_cg_datamap1 on table datamap_store_test1")
-
-    assert(!FileFactory.isFileExist(loc))
-  }
-
-  test("test show index storage") {
-    sql("DROP TABLE IF EXISTS datamap_store_test2")
-    sql(
-      """
-        | CREATE TABLE datamap_store_test2(id INT, name STRING, city STRING, age INT)
-        | STORED AS carbondata
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
-      """.stripMargin)
-
-    val dataMapProvider = classOf[CGIndexFactory].getName
-    sql(
-      s"""
-         |create index test_cg_datamap2
-         |on table datamap_store_test2 (name)
-         |as '$dataMapProvider'
-       """.stripMargin)
-
-    val loc = DiskBasedDMSchemaStorageProvider.getSchemaPath(systemFolderStoreLocation,"test_cg_datamap2")
-
-    assert(FileFactory.isFileExist(loc))
-
-    checkExistence(sql("show indexes on datamap_store_test2"), true, "test_cg_datamap2")
-
-    sql(s"drop index test_cg_datamap2 on table datamap_store_test2")
-
-    assert(!FileFactory.isFileExist(loc))
   }
 
   override protected def afterAll(): Unit = {

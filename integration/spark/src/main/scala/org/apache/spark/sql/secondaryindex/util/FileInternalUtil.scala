@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -101,7 +102,7 @@ object FileInternalUtil {
       CarbonLoaderUtil.addDataIndexSizeIntoMetaEntry(loadMetadataDetail, segmentId, carbonTable)
       loadMetadataDetailsList +:= loadMetadataDetail
     }
-    val indexTables = CarbonInternalScalaUtil
+    val indexTables = CarbonIndexUtil
       .getIndexCarbonTables(carbonTable, sparkSession)
     val status = CarbonInternalLoaderUtil.recordLoadMetadata(
       loadMetadataDetailsList.toList.asJava,

@@ -18,7 +18,6 @@
 package org.apache.carbondata.datamap;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -26,13 +25,11 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.core.datamap.DataMapProvider;
-import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.IndexRegistry;
 import org.apache.carbondata.core.datamap.dev.Index;
 import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
-import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 
 import org.apache.spark.sql.SparkSession;
@@ -53,7 +50,11 @@ public class IndexProvider extends DataMapProvider {
     this.sparkSession = sparkSession;
     this.indexFactory = createDataMapFactory();
     indexFactory.validate();
-    this.indexedColumns = table.getIndexedColumns(schema);
+    this.indexedColumns = table.getIndexedColumns(schema.getIndexColumns());
+  }
+
+  public void setMainTable(CarbonTable carbonTable) {
+    super.setMainTable(carbonTable);
   }
 
   public List<CarbonColumn> getIndexedColumns() {
@@ -63,39 +64,14 @@ public class IndexProvider extends DataMapProvider {
   @Override
   public void initMeta(String ctasSqlStatement)
       throws MalformedIndexCommandException, IOException {
-    CarbonTable mainTable = getMainTable();
-    DataMapSchema dataMapSchema = getDataMapSchema();
-    if (mainTable == null) {
-      throw new MalformedIndexCommandException(
-          "Parent table is required to create index datamap");
-    }
-    ArrayList<RelationIdentifier> relationIdentifiers = new ArrayList<>();
-    RelationIdentifier relationIdentifier =
-        new RelationIdentifier(mainTable.getDatabaseName(), mainTable.getTableName(),
-            mainTable.getTableInfo().getFactTable().getTableId());
-    relationIdentifiers.add(relationIdentifier);
-    dataMapSchema.setRelationIdentifier(relationIdentifier);
-    dataMapSchema.setParentTables(relationIdentifiers);
-    DataMapStoreManager.getInstance().registerIndex(mainTable, dataMapSchema, indexFactory);
-    DataMapStoreManager.getInstance().saveDataMapSchema(dataMapSchema);
   }
 
   @Override
   public void cleanMeta() throws IOException {
-    if (getMainTable() == null) {
-      throw new UnsupportedOperationException("Table need to be specified in index datamaps");
-    }
-    DataMapStoreManager.getInstance().dropDataMapSchema(getDataMapSchema().getDataMapName());
   }
 
   @Override
   public void cleanData() {
-    CarbonTable mainTable = getMainTable();
-    if (mainTable == null) {
-      throw new UnsupportedOperationException("Table need to be specified in index datamaps");
-    }
-    DataMapStoreManager.getInstance().deleteIndex(
-        mainTable, getDataMapSchema().getDataMapName());
   }
 
   @Override

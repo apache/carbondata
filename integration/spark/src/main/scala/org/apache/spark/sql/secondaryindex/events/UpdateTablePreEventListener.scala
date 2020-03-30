@@ -18,7 +18,7 @@ package org.apache.spark.sql.secondaryindex.events
 
 import org.apache.log4j.Logger
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.secondaryindex.util.CarbonInternalScalaUtil
+import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.events.{Event, OperationContext, OperationEventListener, UpdateTablePreEvent}
@@ -43,7 +43,7 @@ class UpdateTablePreEventListener extends OperationEventListener with Logging {
               carbonTable
                 .getDatabaseName
             }.${ carbonTable.getTableName }]")
-        } else if (!CarbonInternalScalaUtil.getIndexesMap(carbonTable).isEmpty) {
+        } else if (!CarbonIndexUtil.getIndexesMap(carbonTable).isEmpty) {
           sys
             .error(s"Update is not permitted on table that contains secondary index [${
               carbonTable

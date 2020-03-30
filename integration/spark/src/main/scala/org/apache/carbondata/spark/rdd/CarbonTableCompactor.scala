@@ -191,8 +191,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     if (null != tableDataMaps) {
       val dataMapNames: mutable.Buffer[String] =
         tableDataMaps.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
-      val dataMapPreExecutionEvent: BuildDataMapPreExecutionEvent =
-        new BuildDataMapPreExecutionEvent(sqlContext.sparkSession,
+      val dataMapPreExecutionEvent: BuildIndexPreExecutionEvent =
+        new BuildIndexPreExecutionEvent(sqlContext.sparkSession,
         carbonTable.getAbsoluteTableIdentifier, dataMapNames)
       OperationListenerBus.getInstance().fireEvent(dataMapPreExecutionEvent,
         dataMapOperationContext)
@@ -328,7 +328,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       OperationListenerBus.getInstance()
         .fireEvent(compactionLoadStatusPostEvent, operationContext)
       if (null != tableDataMaps) {
-        val buildDataMapPostExecutionEvent = new BuildDataMapPostExecutionEvent(
+        val buildDataMapPostExecutionEvent = new BuildIndexPostExecutionEvent(
           sqlContext.sparkSession, carbonTable.getAbsoluteTableIdentifier,
           null, Seq(mergedLoadNumber), true)
         OperationListenerBus.getInstance()
