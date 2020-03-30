@@ -53,7 +53,7 @@ public class ComplexFieldConverterImpl implements FieldConverter {
     ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
     DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
     try {
-      genericDataType.writeByteArray(value, dataOutputStream, logHolder);
+      genericDataType.writeByteArray(value, dataOutputStream, logHolder, false);
       dataOutputStream.close();
       return byteArray.toByteArray();
     } catch (Exception e) {

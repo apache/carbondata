@@ -172,15 +172,15 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
 
   @Override
   public void writeByteArray(ArrayObject input, DataOutputStream dataOutputStream,
-      BadRecordLogHolder logHolder) throws IOException {
+      BadRecordLogHolder logHolder, Boolean isWithoutConverter) throws IOException {
     if (input == null) {
       dataOutputStream.writeInt(1);
-      children.writeByteArray(null, dataOutputStream, logHolder);
+      children.writeByteArray(null, dataOutputStream, logHolder, isWithoutConverter);
     } else {
       Object[] data = input.getData();
       dataOutputStream.writeInt(data.length);
       for (Object eachInput : data) {
-        children.writeByteArray(eachInput, dataOutputStream, logHolder);
+        children.writeByteArray(eachInput, dataOutputStream, logHolder, isWithoutConverter);
       }
     }
   }

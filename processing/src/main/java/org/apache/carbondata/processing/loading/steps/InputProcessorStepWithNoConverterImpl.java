@@ -383,7 +383,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
           if (dataTypes[i].isComplexType() && isHivePartitionTable) {
             newData[i] = data[orderOfData[i]];
           } else if (dataTypes[i].isComplexType()) {
-            getComplexTypeByteArray(newData, i, data, dataFields[i], orderOfData[i]);
+            getComplexTypeByteArray(newData, i, data, dataFields[i], orderOfData[i], false);
           } else {
             DataType dataType = dataFields[i].getColumn().getDataType();
             if (dataType == DataTypes.DATE && data[orderOfData[i]] instanceof Long) {
@@ -419,7 +419,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
           // keep the no dictionary measure column as original data
           newData[i] = data[i];
         } else if (dataTypes[i].isComplexType()) {
-          getComplexTypeByteArray(newData, i, data, dataFields[i], i);
+          getComplexTypeByteArray(newData, i, data, dataFields[i], i, true);
         } else if (dataTypes[i] == DataTypes.DATE && data[i] instanceof Long) {
           if (dateDictionaryGenerator == null) {
             dateDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
@@ -435,13 +435,14 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     }
 
     private void getComplexTypeByteArray(Object[] newData, int index, Object[] data,
-        DataField dataField, int orderedIndex) {
+        DataField dataField, int orderedIndex, boolean isWithoutConverter) {
       ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
       DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
       try {
         GenericDataType complextType =
             dataFieldsWithComplexDataType.get(dataField.getColumn().getOrdinal());
-        complextType.writeByteArray(data[orderedIndex], dataOutputStream, logHolder);
+        complextType
+            .writeByteArray(data[orderedIndex], dataOutputStream, logHolder, isWithoutConverter);
         dataOutputStream.close();
         newData[index] = byteArray.toByteArray();
       } catch (BadRecordFoundException e) {

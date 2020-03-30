@@ -174,21 +174,21 @@ public class StructDataType implements GenericDataType<StructObject> {
 
   @Override
   public void writeByteArray(StructObject input, DataOutputStream dataOutputStream,
-      BadRecordLogHolder logHolder) throws IOException {
+      BadRecordLogHolder logHolder, Boolean isWithoutConverter) throws IOException {
     dataOutputStream.writeShort(children.size());
     if (input == null) {
       for (int i = 0; i < children.size(); i++) {
-        children.get(i).writeByteArray(null, dataOutputStream, logHolder);
+        children.get(i).writeByteArray(null, dataOutputStream, logHolder, isWithoutConverter);
       }
     } else {
       Object[] data = input.getData();
       for (int i = 0; i < data.length && i < children.size(); i++) {
-        children.get(i).writeByteArray(data[i], dataOutputStream, logHolder);
+        children.get(i).writeByteArray(data[i], dataOutputStream, logHolder, isWithoutConverter);
       }
 
       // For other children elements which don't have data, write empty
       for (int i = data.length; i < children.size(); i++) {
-        children.get(i).writeByteArray(null, dataOutputStream, logHolder);
+        children.get(i).writeByteArray(null, dataOutputStream, logHolder, isWithoutConverter);
       }
     }
   }
