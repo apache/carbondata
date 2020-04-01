@@ -23,6 +23,7 @@ import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
@@ -1175,8 +1176,14 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
     sql("drop table if exists maintable")
     sql("create table maintable(name string, age int, add string) STORED AS carbondata")
-    sql("create materialized view dupli_mv as select name, sum(age),sum(age) from maintable group by name")
-    sql("create materialized view dupli_projection as select age, age,add from maintable")
+    intercept[MalformedMVCommandException] {
+      sql("create materialized view dupli_mv as select name, sum(age),sum(age) from maintable group by name")
+    }.getMessage.contains("Cannot create mv with duplicate column: sum(maintable.age)")
+    sql("create materialized view dupli_mv as select name, sum(age) from maintable group by name")
+    intercept[MalformedMVCommandException] {
+      sql("create materialized view dupli_projection as select age, age,add from maintable")
+    }.getMessage.contains("Cannot create mv with duplicate column: maintable.age")
+    sql("create materialized view dupli_projection as select age,add from maintable")
     sql("create materialized view constant_mv as select name, sum(1) ex1 from maintable group by name")
     sql("insert into maintable select 'pheobe',31,'NY'")
     val df1 = sql("select sum(age),name from maintable group by name")
