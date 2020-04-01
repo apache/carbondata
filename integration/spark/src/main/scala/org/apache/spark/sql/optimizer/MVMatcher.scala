@@ -1258,11 +1258,12 @@ private object SelectSelectGroupbyChildDelta
         Some(gb_2c@modular.GroupBy(
         _, _, _, _, sel_2c@modular.Select(_, _, _, _, _, _, _, _, _, _), _, _, _))
         ) =>
+        val distinctGrpByOList = getDistinctOutputList(gb_2q.outputList)
         if (sel_3q.predicateList.contains(exprE)) {
           val expr1E = exprE.transform {
             case attr: Attribute =>
               gb_2c.outputList.lift(
-                gb_2q.outputList.indexWhere {
+                distinctGrpByOList.indexWhere {
                   case alias: Alias if alias.toAttribute.semanticEquals(attr) => true;
                   case _ => false
                 }).getOrElse { attr }
@@ -1277,14 +1278,14 @@ private object SelectSelectGroupbyChildDelta
           exprE match {
             case attr: Attribute => // this subexpression must in subsumee select output list
               gb_2c.outputList.lift(
-                gb_2q.outputList.indexWhere {
+                distinctGrpByOList.indexWhere {
                   case a if a.toAttribute.semanticEquals(attr) => true;
                   case _ => false
                 })
 
             case alias: Alias =>
               gb_2c.outputList.lift(
-                gb_2q.outputList.indexWhere {
+                distinctGrpByOList.indexWhere {
                   case a if a.toAttribute.semanticEquals(alias.toAttribute) => true;
                   case _ => false
                 })
@@ -1342,6 +1343,40 @@ private object SelectSelectGroupbyChildDelta
     }
   }
 
+  /**
+   * Removes duplicate projection in the output list for query matching
+   */
+  def getDistinctOutputList(outputList: Seq[NamedExpression]): Seq[NamedExpression] = {
+    var distinctOList: Seq[NamedExpression] = Seq.empty
+    outputList.foreach { output =>
+      if (distinctOList.isEmpty) {
+        distinctOList = distinctOList :+ output
+      } else {
+        // get output name
+        var outputName = output.name
+        if (output.isInstanceOf[Alias]) {
+          // In case of queries with join on more than one table and projection list having
+          // aggregation of same column name on join tables like sum(t1.column), sum(t2.column),
+          // in that case, compare alias name with column id, as alias name will be same for
+          // both output(sum(t1))
+          val projectName = output.simpleString
+          outputName = projectName.substring(0, projectName.indexOf(" AS"))
+        }
+        if (!distinctOList.exists(distinctOutput =>
+          if (distinctOutput.isInstanceOf[Alias]) {
+            val projectName = distinctOutput.simpleString
+            val aliasName = projectName.substring(0, projectName.indexOf(" AS"))
+            aliasName.equalsIgnoreCase(outputName)
+          } else {
+            distinctOutput.qualifiedName.equalsIgnoreCase(output.qualifiedName)
+          })) {
+          distinctOList = distinctOList :+ output
+        }
+      }
+    }
+    distinctOList
+  }
+
   def apply(
       subsumer: ModularPlan,
       subsumee: ModularPlan,
@@ -1352,14 +1387,16 @@ private object SelectSelectGroupbyChildDelta
         sel_3a@modular.Select(
         _, _, Nil, _, _,
         Seq(_@modular.GroupBy(_, _, _, _, _, _, _, _)), _, _, _, _),
-        sel_3q@modular.Select(
+        sel_3q_dup@modular.Select(
         _, _, _, _, _,
         Seq(_@modular.GroupBy(_, _, _, _, _, _, _, _)), _, _, _, _),
         Some(gb_2c@modular.GroupBy(_, _, _, _, _, _, _, _)),
         _ :: Nil,
         _ :: Nil) =>
         val tbls_sel_3a = sel_3a.collect { case tbl: modular.LeafNode => tbl }
-        val tbls_sel_3q = sel_3q.collect { case tbl: modular.LeafNode => tbl }
+        val tbls_sel_3q = sel_3q_dup.collect { case tbl: modular.LeafNode => tbl }
+        val distinctSelOList = getDistinctOutputList(sel_3q_dup.outputList)
+        val sel_3q = sel_3q_dup.copy(outputList = distinctSelOList)
 
         val extrajoin = tbls_sel_3a.filterNot(tbls_sel_3q.contains)
         val rejoin = tbls_sel_3q.filterNot(tbls_sel_3a.contains)
@@ -1423,7 +1460,7 @@ private object SelectSelectGroupbyChildDelta
               val aliasMap_exp = AttributeMap(
                 gb_2c.outputList.collect {
                   case a: Alias => (a.toAttribute, AliasWrapper(a)) })
-              val sel_3q_exp = sel_3q.transformExpressions({
+              val sel_3q_exp = sel_3q_dup.transformExpressions({
                 case attr: Attribute if aliasMap_exp.contains(attr) => aliasMap_exp(attr)
               }).transformExpressions {
                 case AliasWrapper(alias: Alias) => alias

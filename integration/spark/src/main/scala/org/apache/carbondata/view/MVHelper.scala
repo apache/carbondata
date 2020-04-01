@@ -17,8 +17,10 @@
 
 package org.apache.carbondata.view
 
+import java.util
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -31,6 +33,7 @@ import org.apache.spark.sql.execution.command.Field
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.DataType
 
+import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, ModularRelation, Select}
 import org.apache.carbondata.spark.util.CommonUtil
@@ -175,8 +178,13 @@ object MVHelper {
       projectList: Seq[NamedExpression],
       fieldCounter: AtomicInteger): mutable.LinkedHashMap[Field, MVField] = {
     val fieldsMap = scala.collection.mutable.LinkedHashMap.empty[Field, MVField]
+    // map of qualified name with list of column names
+    val fieldColumnsMap = new util.HashMap[String, java.util.ArrayList[String]]()
     projectList.map {
       case reference: AttributeReference =>
+        val columns = new util.ArrayList[String]()
+        columns.add(reference.qualifiedName)
+        findDuplicateColumns(fieldColumnsMap, reference.sql, columns, false)
         val relation = getRelation(relationList, reference)
         if (null != relation) {
           val relatedFields: ArrayBuffer[RelatedFieldWrapper] =
@@ -205,7 +213,10 @@ object MVHelper {
           )
         }
 
-      case Alias(reference: AttributeReference, name) =>
+      case a@Alias(reference: AttributeReference, name) =>
+        val columns = new util.ArrayList[String]()
+        columns.add(reference.qualifiedName)
+        findDuplicateColumns(fieldColumnsMap, a.sql, columns, true)
         val relation = getRelation(relationList, reference)
         if (null != relation) {
           val relatedFields: ArrayBuffer[RelatedFieldWrapper] =
@@ -236,8 +247,10 @@ object MVHelper {
         }
         val relatedFields: ArrayBuffer[RelatedFieldWrapper] =
           new ArrayBuffer[RelatedFieldWrapper]()
+        val columns = new util.ArrayList[String]()
         alias.collect {
           case reference: AttributeReference =>
+            columns.add(reference.qualifiedName)
             val relation = getRelation(relationList, reference)
             if (null != relation) {
               relatedFields += RelatedFieldWrapper(
@@ -246,6 +259,7 @@ object MVHelper {
                 reference.name)
             }
         }
+       findDuplicateColumns(fieldColumnsMap, alias.sql, columns, true)
         fieldsMap.put(
           newField(
             "",
@@ -267,8 +281,10 @@ object MVHelper {
         }
         val relatedFields: ArrayBuffer[RelatedFieldWrapper] =
           new ArrayBuffer[RelatedFieldWrapper]()
+        val columns = new util.ArrayList[String]()
         alias.collect {
           case reference: AttributeReference =>
+            columns.add(reference.qualifiedName)
             val relation = getRelation(relationList, reference)
             if (null != relation) {
               relatedFields += RelatedFieldWrapper(
@@ -277,6 +293,7 @@ object MVHelper {
                 relation.identifier.table)
             }
         }
+        findDuplicateColumns(fieldColumnsMap, alias.sql, columns, true)
         fieldsMap.put(
           newField(
             "",
@@ -289,6 +306,32 @@ object MVHelper {
         )
     }
     fieldsMap
+  }
+
+  private def findDuplicateColumns(
+      fieldColumnsMap: util.HashMap[String, util.ArrayList[String]],
+      columnName: String,
+      columns: util.ArrayList[String],
+      isAlias: Boolean): Unit = {
+    // get qualified name without alias name
+    val qualifiedName = if (isAlias) {
+      columnName.substring(0, columnName.indexOf(" AS"))
+    } else {
+      columnName
+    }
+    if (null == fieldColumnsMap.get(qualifiedName)) {
+      // case to check create mv with same column and different alias names
+      if (fieldColumnsMap.containsKey(qualifiedName)) {
+        throw new MalformedMVCommandException(
+          "Cannot create mv having duplicate column with different alias name: " + columnName)
+      }
+      fieldColumnsMap.put(qualifiedName, columns)
+    } else {
+      if (fieldColumnsMap.get(qualifiedName).containsAll(columns)) {
+        throw new MalformedMVCommandException(
+          "Cannot create mv with duplicate column: " + columnName)
+      }
+    }
   }
 
   /**

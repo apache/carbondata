@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterEach
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedMVCommandException}
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -624,6 +624,49 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     df = sql("select name,c_code from maintable")
     TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1")
     checkAnswer(df, Seq(Row("aaa",21), Row("mmm",24)))
+    sql("drop table IF EXISTS maintable")
+  }
+
+  test("test duplicate column name in mv") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
+    sql("insert into table maintable values('abc',21,2000),('mno',24,3000)")
+    sql("drop materialized view if exists mv1")
+    val res1 = sql("select name,sum(c_code) from maintable group by name")
+    val res2 = sql("select name, name,sum(c_code),sum(c_code) from maintable  group by name")
+    val res3 = sql("select c_code,price from maintable")
+    sql("create materialized view mv1 as select name,sum(c_code) from maintable group by name")
+    val df1 = sql("select name,sum(c_code) from maintable group by name")
+    TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "mv1")
+    checkAnswer(res1, df1)
+    val df2 = sql("select name, name,sum(c_code),sum(c_code) from maintable  group by name")
+    TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "mv1")
+    checkAnswer(df2, res2)
+    sql("drop materialized view if exists mv2")
+    sql("create materialized view mv2 as select c_code,price from maintable")
+    val df3 = sql("select c_code,price from maintable")
+    TestUtil.verifyMVDataMap(df3.queryExecution.optimizedPlan, "mv2")
+    checkAnswer(res3, df3)
+    val df4 = sql("select c_code,price,price,c_code from maintable")
+    TestUtil.verifyMVDataMap(df4.queryExecution.optimizedPlan, "mv2")
+    checkAnswer(df4, Seq(Row(21,2000,2000,21), Row(24,3000,3000,24)))
+    sql("drop table IF EXISTS maintable")
+  }
+
+  test("test duplicate column with different alias name") {
+    sql("drop table IF EXISTS maintable")
+    sql("create table maintable(name string, c_code int, price int) STORED AS carbondata")
+    sql("insert into table maintable values('abc',21,2000),('mno',24,3000)")
+    sql("drop materialized view if exists mv1")
+    intercept[MalformedMVCommandException] {
+      sql("create materialized view mv1 as select name,sum(c_code),sum(c_code) as a from maintable group by name")
+    }.getMessage.contains("Cannot create mv having duplicate column with different alias name: sum(CAST(maintable.`c_code` AS BIGINT)) AS `a`")
+    intercept[MalformedMVCommandException] {
+      sql("create materialized view mv1 as select name,name as a from maintable")
+    }.getMessage.contains("Cannot create mv having duplicate column with different alias name: maintable.`name` AS `a`")
+    intercept[MalformedMVCommandException] {
+      sql("create materialized view mv1 as select name as a,name as b from maintable")
+    }.getMessage.contains("Cannot create mv having duplicate column with different alias name: maintable.`name` AS `b`")
     sql("drop table IF EXISTS maintable")
   }
 

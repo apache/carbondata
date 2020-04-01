@@ -21,6 +21,7 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.mv.rewrite.TestUtil
@@ -290,9 +291,14 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
     dropDataMap("datamap1")
+    intercept[MalformedMVCommandException] {
+      sql(
+        "create materialized view datamap1 as " +
+        "select timeseries(projectjoindate,'month') ,sum(projectcode),sum(projectcode)  from maintable group by timeseries(projectjoindate,'month')")
+    }
     sql(
       "create materialized view datamap1 as " +
-      "select timeseries(projectjoindate,'month') ,sum(projectcode),sum(projectcode)  from maintable group by timeseries(projectjoindate,'month')")
+      "select timeseries(projectjoindate,'month') ,sum(projectcode)  from maintable group by timeseries(projectjoindate,'month')")
     loadData("maintable")
     val df1 = sql("select timeseries(projectjoindate,'month') ,sum(projectcode)  from maintable group by timeseries(projectjoindate,'month')")
     checkPlan("datamap1", df1)

@@ -154,8 +154,6 @@ case class CarbonCreateMVCommand(
     val logicalPlan = MVHelper.dropDummyFunction(
       MVQueryParser.getQueryPlan(queryString, session))
     val modularPlan = checkQuery(session, logicalPlan)
-    // the ctas query can have duplicate columns, so we should take distinct and create fields,
-    // so that it won't fail during create mv table
     val viewSchema = getOutputSchema(logicalPlan)
     val relatedTables = getRelatedTables(logicalPlan)
     val relatedTableList = toCarbonTables(session, relatedTables)
