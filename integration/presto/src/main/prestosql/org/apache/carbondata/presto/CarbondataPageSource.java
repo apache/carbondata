@@ -356,7 +356,6 @@ class CarbondataPageSource implements ConnectorPageSource {
     QueryModel queryModel = createQueryModel(carbonSplit, tableHandle, columns, conf);
     if (isDirectVectorFill) {
       queryModel.setDirectVectorFill(true);
-      queryModel.setPreFetchData(false);
     }
     QueryExecutor queryExecutor =
         QueryExecutorFactory.getQueryExecutor(queryModel, new Configuration());
