@@ -37,7 +37,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events.{DeleteFromTablePostEvent, DeleteFromTablePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.FailureCauses
-import org.apache.carbondata.view.MaterializedViewManagerInSpark
+import org.apache.carbondata.view.MVManagerInSpark
 
 /**
  * IUD update delete and compaction framework.
@@ -143,7 +143,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
       }
 
       // Truncate materialized views on the current table.
-      val viewManager = MaterializedViewManagerInSpark.get(sparkSession)
+      val viewManager = MVManagerInSpark.get(sparkSession)
       val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
       if (!viewSchemas.isEmpty) {
         viewManager.onTruncate(viewSchemas)

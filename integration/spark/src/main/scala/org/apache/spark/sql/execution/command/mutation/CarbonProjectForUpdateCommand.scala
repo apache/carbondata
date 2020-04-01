@@ -43,7 +43,7 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, UpdateTablePostEvent, UpdateTablePreEvent}
 import org.apache.carbondata.processing.loading.FailureCauses
-import org.apache.carbondata.view.MaterializedViewManagerInSpark
+import org.apache.carbondata.view.MVManagerInSpark
 
 private[sql] case class CarbonProjectForUpdateCommand(
     plan: LogicalPlan,
@@ -210,7 +210,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
       }
 
       // Truncate materialized views on the current table.
-      val viewManager = MaterializedViewManagerInSpark.get(sparkSession)
+      val viewManager = MVManagerInSpark.get(sparkSession)
       val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
       if (!viewSchemas.isEmpty) {
         viewManager.onTruncate(viewSchemas)

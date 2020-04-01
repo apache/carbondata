@@ -40,7 +40,7 @@ object ShowCachePreMVEventListener extends OperationEventListener {
       case showTableCacheEvent: ShowTableCacheEvent =>
         val carbonTable = showTableCacheEvent.carbonTable
         val internalCall = showTableCacheEvent.internalCall
-        if (carbonTable.isMaterializedView && !internalCall) {
+        if (carbonTable.isMV && !internalCall) {
           throw new UnsupportedOperationException("Operation not allowed on child table.")
         }
     }

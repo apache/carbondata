@@ -170,7 +170,7 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       tableIdent =>
         try {
           val carbonTable = CarbonEnv.getCarbonTable(tableIdent)(sparkSession)
-          if (!carbonTable.isMaterializedView) {
+          if (!carbonTable.isMV) {
             carbonTables += carbonTable
           }
         } catch {

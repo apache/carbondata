@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.mv.rewrite
 
-import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedMaterializedViewCommandException}
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedMVCommandException}
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -35,7 +35,7 @@ class MVExceptionTestCase  extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test mv reduplicate mv table") {
-    val ex = intercept[MalformedMaterializedViewCommandException] {
+    val ex = intercept[MalformedMVCommandException] {
       sql("create materialized view main_table_mv1 as select sum(age),name from main_table group by name")
       sql("create materialized view main_table_mv1 as select sum(age),name from main_table group by name")
     }

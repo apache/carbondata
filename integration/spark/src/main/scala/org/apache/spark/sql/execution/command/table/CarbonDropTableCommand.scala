@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.index.CarbonDropIndexCommand
-import org.apache.spark.sql.execution.command.view.CarbonDropMaterializedViewCommand
+import org.apache.spark.sql.execution.command.view.CarbonDropMVCommand
 import org.apache.spark.sql.hive.CarbonFileMetastore
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -38,7 +38,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.events._
-import org.apache.carbondata.view.MaterializedViewManagerInSpark
+import org.apache.carbondata.view.MVManagerInSpark
 
 case class CarbonDropTableCommand(
     ifExistsSet: Boolean,
@@ -49,7 +49,7 @@ case class CarbonDropTableCommand(
   extends AtomicRunnableCommand {
 
   var carbonTable: CarbonTable = _
-  var viewDropCommands : Seq[CarbonDropMaterializedViewCommand] = Seq.empty
+  var viewDropCommands : Seq[CarbonDropMVCommand] = Seq.empty
   var childDropDataMapCommands : Seq[CarbonDropIndexCommand] = Seq.empty
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
@@ -71,14 +71,14 @@ case class CarbonDropTableCommand(
                 CarbonLockUtil.getLockObject(identifier, lock)
       }
       // check for directly drop datamap table
-      if (carbonTable.isMaterializedView && !dropChildTable) {
+      if (carbonTable.isMV && !dropChildTable) {
         if (!ifExistsSet) {
           throwMetadataException(dbName, tableName,
-            "Carbon table which is associated with mv cannot be dropped, " +
+            "Carbon table which is related with mv cannot be dropped, " +
             "use DROP MATERIALIZED VIEW command to drop")
         } else {
           LOGGER.info("Skipping Drop table " + tableName +
-                      " because Child table which is associated with datamap cannot be dropped")
+                      " because Child table which is related with mv cannot be dropped")
           return Seq.empty
         }
       }
@@ -117,12 +117,12 @@ case class CarbonDropTableCommand(
         childDropDataMapCommands.foreach(_.processMetadata(sparkSession))
       }
 
-      val viewManager = MaterializedViewManagerInSpark.get(sparkSession)
+      val viewManager = MVManagerInSpark.get(sparkSession)
       val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
       if (!viewSchemas.isEmpty) {
         viewDropCommands = viewSchemas.asScala.map {
           schema =>
-            CarbonDropMaterializedViewCommand(
+            CarbonDropMVCommand(
               Option(schema.getIdentifier.getDatabaseName),
               schema.getIdentifier.getTableName,
               ifExistsSet = true,
@@ -180,7 +180,7 @@ case class CarbonDropTableCommand(
     // clear driver side index and dictionary cache
     if (!EnvHelper.isLegacy(sparkSession)
         && carbonTable != null
-        && !(carbonTable.isMaterializedView && !dropChildTable)) {
+        && !(carbonTable.isMV && !dropChildTable)) {
       // delete the table folder
       val tablePath = carbonTable.getTablePath
       // delete table data only if it is not external table

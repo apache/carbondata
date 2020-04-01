@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException;
-import org.apache.carbondata.common.exceptions.sql.NoSuchMaterializedViewException;
+import org.apache.carbondata.common.exceptions.sql.NoSuchMVException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
@@ -56,8 +56,8 @@ import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.core.view.MaterializedViewManager;
-import org.apache.carbondata.core.view.MaterializedViewSchema;
+import org.apache.carbondata.core.view.MVManager;
+import org.apache.carbondata.core.view.MVSchema;
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
@@ -301,8 +301,8 @@ public final class CarbonDataMergerUtil {
    */
   public static boolean updateLoadMetadataWithMergeStatus(List<LoadMetadataDetails> loadsToMerge,
       String metaDataFilepath, String mergedLoadNumber, CarbonLoadModel carbonLoadModel,
-      CompactionType compactionType, String segmentFile, MaterializedViewManager viewManager)
-      throws IOException, NoSuchMaterializedViewException {
+      CompactionType compactionType, String segmentFile, MVManager viewManager)
+      throws IOException, NoSuchMVException {
     boolean tableStatusUpdationStatus = false;
     AbsoluteTableIdentifier identifier =
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
@@ -352,18 +352,18 @@ public final class CarbonDataMergerUtil {
           loadMetadataDetails.setMajorCompacted("true");
         }
 
-        if (carbonTable.isMaterializedView()) {
+        if (carbonTable.isMV()) {
           // If table is mv table, then get segment mapping and set to extraInfo
-          MaterializedViewSchema viewSchema = viewManager.getSchema(
+          MVSchema viewSchema = viewManager.getSchema(
                 carbonTable.getDatabaseName(),
                 carbonTable.getTableName()
             );
           if (null != viewSchema) {
-            String segmentMap = MaterializedViewManager
+            String segmentMap = MVManager
                 .getUpdatedSegmentMap(mergedLoadNumber, viewSchema, loadDetails);
             loadMetadataDetails.setExtraInfo(segmentMap);
           } else {
-            throw new NoSuchMaterializedViewException(
+            throw new NoSuchMVException(
                 carbonTable.getDatabaseName(), carbonTable.getTableName());
           }
         }
@@ -951,7 +951,7 @@ public final class CarbonDataMergerUtil {
     SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegments = null;
     try {
       validAndInvalidSegments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
-          .getValidAndInvalidSegments(carbonTable.isMaterializedView());
+          .getValidAndInvalidSegments(carbonTable.isMV());
     } catch (IOException e) {
       LOGGER.error("Error while getting valid segment list for a table identifier");
       throw new IOException();

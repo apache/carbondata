@@ -45,7 +45,7 @@ object DropCacheMVEventListener extends OperationEventListener {
         val carbonTable = dropCacheEvent.carbonTable
         val sparkSession = dropCacheEvent.sparkSession
         val internalCall = dropCacheEvent.internalCall
-        if (carbonTable.isMaterializedView && !internalCall) {
+        if (carbonTable.isMV && !internalCall) {
           throw new UnsupportedOperationException("Operation not allowed on child table.")
         }
 

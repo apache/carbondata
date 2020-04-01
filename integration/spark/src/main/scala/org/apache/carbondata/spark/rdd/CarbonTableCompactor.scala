@@ -52,7 +52,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
 import org.apache.carbondata.spark.MergeResultImpl
-import org.apache.carbondata.view.MaterializedViewManagerInSpark
+import org.apache.carbondata.view.MVManagerInSpark
 
 /**
  * This class is used to perform compaction on carbon table.
@@ -313,7 +313,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           carbonLoadModel,
           compactionType,
           segmentFileName,
-          MaterializedViewManagerInSpark.get(sc.sparkSession))
+          MVManagerInSpark.get(sc.sparkSession))
 
       if (compactionType != CompactionType.IUD_DELETE_DELTA &&
           compactionType != CompactionType.IUD_UPDDEL_DELTA) {

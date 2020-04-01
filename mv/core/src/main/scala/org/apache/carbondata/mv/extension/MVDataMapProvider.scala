@@ -25,7 +25,7 @@ import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
-import org.apache.carbondata.common.exceptions.sql.MalformedMaterializedViewCommandException
+import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager, MVCatalog}
@@ -47,11 +47,11 @@ class MVDataMapProvider(
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  @throws[MalformedMaterializedViewCommandException]
+  @throws[MalformedMVCommandException]
   @throws[IOException]
   override def initMeta(ctasSqlStatement: String): Unit = {
     if (ctasSqlStatement == null) {
-      throw new MalformedMaterializedViewCommandException(
+      throw new MalformedMVCommandException(
         "select statement is mandatory")
     }
     MVHelper.createMVDataMap(

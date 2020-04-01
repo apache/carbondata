@@ -2266,9 +2266,9 @@ public final class CarbonCommonConstants {
   public static final String PARENT_TABLES = "parent_tables";
 
   /**
-   * This property will be used to store table name's associated with mv
+   * This property will be used to store table name's related with mv
    */
-  public static final String ASSOCIATED_TABLES = "associated_tables";
+  public static final String MV_RELATED_TABLES = "mv_related_tables";
 
   public static final String LOAD_SYNC_TIME = "load_sync_time";
 

@@ -61,7 +61,7 @@ import org.apache.carbondata.core.segmentmeta.{SegmentMetaDataInfo, SegmentMetaD
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.core.view.{MaterializedViewSchema, MaterializedViewStatus}
+import org.apache.carbondata.core.view.{MVSchema, MVStatus}
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.indexserver.{DistributedRDDUtils, IndexServer}
 import org.apache.carbondata.processing.loading.FailureCauses
@@ -74,7 +74,7 @@ import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoa
 import org.apache.carbondata.spark.{DataLoadResultImpl, _}
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
-import org.apache.carbondata.view.MaterializedViewManagerInSpark
+import org.apache.carbondata.view.MVManagerInSpark
 
 /**
  * This is the factory class which can create different RDD depends on user needs.
@@ -573,7 +573,7 @@ object CarbonDataRDDFactory {
       // as no record loaded in new segment, new segment should be deleted
       val newEntryLoadStatus =
         if (carbonLoadModel.isCarbonTransactionalTable &&
-            !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isMaterializedView &&
+            !carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isMV &&
             !CarbonLoaderUtil.isValidSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)) {
           LOGGER.warn("Cannot write load metadata file as there is no data to load")
           SegmentStatus.MARKED_FOR_DELETE
@@ -1015,14 +1015,14 @@ object CarbonDataRDDFactory {
       throw new Exception(errorMessage)
     } else {
       DataMapStatusManager.disableAllLazyDataMaps(carbonTable)
-      val viewManager = MaterializedViewManagerInSpark.get(session)
-      val viewSchemas = new util.ArrayList[MaterializedViewSchema]()
+      val viewManager = MVManagerInSpark.get(session)
+      val viewSchemas = new util.ArrayList[MVSchema]()
       for (viewSchema <- viewManager.getSchemasOnTable(carbonTable).asScala) {
         if (viewSchema.isRefreshOnManual) {
           viewSchemas.add(viewSchema)
         }
       }
-      viewManager.setStatus(viewSchemas, MaterializedViewStatus.DISABLED)
+      viewManager.setStatus(viewSchemas, MVStatus.DISABLED)
       if (overwriteTable) {
         val allDataMapSchemas = DataMapStoreManager.getInstance
           .getDataMapSchemasOfTable(carbonTable).asScala

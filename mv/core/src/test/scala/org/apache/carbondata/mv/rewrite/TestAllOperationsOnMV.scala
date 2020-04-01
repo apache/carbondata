@@ -260,13 +260,13 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
     assert(result.get(0).get(3).toString.equalsIgnoreCase("incremental"))
     assert(result.get(0).get(4).toString.equalsIgnoreCase("on_manual"))
-    assert(result.get(0).get(5).toString.contains("'associated_tables'='maintable'"))
+    assert(result.get(0).get(5).toString.contains("'mv_related_tables'='maintable'"))
     sql("insert into table maintable select 'abc',21,2000")
     checkExistence(sql("show materialized views on table maintable"), true, "DISABLED")
     sql("refresh materialized view dm1")
     result = sql("show materialized views on table maintable").collectAsList()
     assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
-    assert(result.get(0).get(5).toString.contains("'associated_tables'='maintable'"))
+    assert(result.get(0).get(5).toString.contains("'mv_related_tables'='maintable'"))
     sql("drop materialized view if exists dm1 ")
     sql("drop table IF EXISTS maintable")
   }
@@ -290,17 +290,17 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
     assert(result.get(0).get(3).toString.equalsIgnoreCase("full"))
     assert(result.get(0).get(4).toString.equalsIgnoreCase("on_manual"))
-    assert(result.get(0).get(5).toString.contains("'associated_tables'='products,sales'"))
+    assert(result.get(0).get(5).toString.contains("'mv_related_tables'='products,sales'"))
     result = sql("show materialized views on table sales").collectAsList()
     assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
-    assert(result.get(0).get(5).toString.contains("'associated_tables'='products,sales'"))
+    assert(result.get(0).get(5).toString.contains("'mv_related_tables'='products,sales'"))
     sql(s"load data INPATH '$resourcesPath/sales_data.csv' into table sales")
     checkExistence(sql("show materialized views on table products"), true, "DISABLED")
     checkExistence(sql("show materialized views on table sales"), true, "DISABLED")
     sql("refresh materialized view innerjoin")
     result = sql("show materialized views on table sales").collectAsList()
     assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
-    assert(result.get(0).get(5).toString.contains("'associated_tables'='products,sales'"))
+    assert(result.get(0).get(5).toString.contains("'mv_related_tables'='products,sales'"))
     sql("drop materialized view if exists innerjoin ")
     sql(
       "Create materialized view innerjoin as Select p.product, p.amount, " +
@@ -327,7 +327,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("create materialized view dm1 with deferred refresh as select price from maintable")
     intercept[ProcessMetaDataException] {
       sql("drop table dm1")
-    }.getMessage.contains("Child table which is associated with materialized view cannot be dropped, use DROP materialized view command to drop")
+    }.getMessage.contains("Child table which is related with materialized view cannot be dropped, use DROP materialized view command to drop")
     sql("drop table IF EXISTS maintable")
   }
 

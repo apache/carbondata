@@ -35,7 +35,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events._
 import org.apache.carbondata.spark.util.CommonUtil
-import org.apache.carbondata.view.MaterializedViewManagerInSpark
+import org.apache.carbondata.view.MVManagerInSpark
 
 /**
  * Clean data in table
@@ -77,7 +77,7 @@ case class CarbonCleanFilesCommand(
       cleanFileCommands.foreach(_.processMetadata(sparkSession))
     }
     val viewSchemas =
-      MaterializedViewManagerInSpark.get(sparkSession).getSchemasOnTable(carbonTable)
+      MVManagerInSpark.get(sparkSession).getSchemasOnTable(carbonTable)
     if (!viewSchemas.isEmpty) {
       val commands = viewSchemas.asScala.map {
         schema =>

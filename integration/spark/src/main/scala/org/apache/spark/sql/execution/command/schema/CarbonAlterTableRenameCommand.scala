@@ -36,7 +36,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSch
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events.{AlterTableRenamePostEvent, AlterTableRenamePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.SchemaEvolutionEntry
-import org.apache.carbondata.view.MaterializedViewManagerInSpark
+import org.apache.carbondata.view.MVManagerInSpark
 
 private[sql] case class CarbonAlterTableRenameCommand(
     alterTableRenameModel: AlterTableRenameModel)
@@ -82,8 +82,8 @@ private[sql] case class CarbonAlterTableRenameCommand(
       throw new MalformedCarbonCommandException("alter rename is not supported for index datamap")
     }
     // if table have created MV, not support table rename
-    if (MaterializedViewManagerInSpark.get(sparkSession).hasSchemaOnTable(oldCarbonTable) ||
-        oldCarbonTable.hasMVCreated || oldCarbonTable.isMaterializedView) {
+    if (MVManagerInSpark.get(sparkSession).hasSchemaOnTable(oldCarbonTable) ||
+        oldCarbonTable.hasMVCreated || oldCarbonTable.isMV) {
       throw new MalformedCarbonCommandException(
         "alter rename is not supported for datamap table or for tables which have child datamap")
     }

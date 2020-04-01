@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.execution.command.Field
 import org.apache.spark.sql.types.DataType
 
-import org.apache.carbondata.common.exceptions.sql.MalformedMaterializedViewCommandException
+import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, ModularRelation, Select}
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -267,7 +267,7 @@ class MVUtil {
     val unsupportedProps = tableProperty
       .filter(f => tableProperties.exists(prop => prop.equalsIgnoreCase(f._1)))
     if (unsupportedProps.nonEmpty) {
-      throw new MalformedMaterializedViewCommandException(
+      throw new MalformedMVCommandException(
         "DMProperties " + unsupportedProps.keySet.mkString(",") +
         " are not allowed for this datamap")
     }

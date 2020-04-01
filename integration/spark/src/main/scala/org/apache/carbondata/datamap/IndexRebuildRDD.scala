@@ -75,7 +75,7 @@ object IndexRebuildRDD {
     val tableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val segmentStatusManager = new SegmentStatusManager(tableIdentifier)
     val validAndInvalidSegments = segmentStatusManager
-      .getValidAndInvalidSegments(carbonTable.isMaterializedView)
+      .getValidAndInvalidSegments(carbonTable.isMV)
     val validSegments = validAndInvalidSegments.getValidSegments
     val indexedCarbonColumns = carbonTable.getIndexedColumns(schema)
     val operationContext = new OperationContext()

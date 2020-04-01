@@ -316,7 +316,7 @@ public class IndexUtil {
       CarbonTable carbonTable, Configuration configuration) throws IOException {
     SegmentStatusManager ssm =
         new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(), configuration);
-    return ssm.getValidAndInvalidSegments(carbonTable.isMaterializedView());
+    return ssm.getValidAndInvalidSegments(carbonTable.isMV());
   }
 
   /**

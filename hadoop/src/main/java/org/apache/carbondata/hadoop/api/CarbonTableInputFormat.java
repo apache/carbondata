@@ -150,7 +150,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(),
             readCommittedScope.getConfiguration());
     SegmentStatusManager.ValidAndInvalidSegmentsInfo segments = segmentStatusManager
-        .getValidAndInvalidSegments(carbonTable.isMaterializedView(), loadMetadataDetails,
+        .getValidAndInvalidSegments(carbonTable.isMV(), loadMetadataDetails,
             this.readCommittedScope);
 
     if (getValidateSegmentsToAccess(job.getConfiguration())) {
@@ -438,7 +438,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         table, loadMetadataDetails);
     SegmentStatusManager.ValidAndInvalidSegmentsInfo allSegments =
         new SegmentStatusManager(identifier, readCommittedScope.getConfiguration())
-            .getValidAndInvalidSegments(table.isMaterializedView(), loadMetadataDetails,
+            .getValidAndInvalidSegments(table.isMV(), loadMetadataDetails,
                 readCommittedScope);
     Map<String, Long> blockRowCountMapping = new HashMap<>();
     Map<String, Long> segmentAndBlockCountMapping = new HashMap<>();

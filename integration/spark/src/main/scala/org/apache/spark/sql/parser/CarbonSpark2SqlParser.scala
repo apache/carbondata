@@ -34,7 +34,7 @@ import org.apache.spark.sql.execution.command.management._
 import org.apache.spark.sql.execution.command.schema.CarbonAlterTableDropColumnCommand
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
-import org.apache.spark.sql.execution.command.view.{CarbonCreateMaterializedViewCommand, CarbonDropMaterializedViewCommand, CarbonRefreshMaterializedViewCommand, CarbonShowMaterializedViewCommand}
+import org.apache.spark.sql.execution.command.view.{CarbonCreateMVCommand, CarbonDropMVCommand, CarbonRefreshMVCommand, CarbonShowMVCommand}
 import org.apache.spark.sql.secondaryindex.command.{CreateIndexTableCommand, _}
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.util.CarbonException
@@ -78,12 +78,12 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
 
   protected lazy val start: Parser[LogicalPlan] =
-    startCommand | extendedSparkSyntax | materializedViewCommands
+    startCommand | extendedSparkSyntax
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
     alterTableFinishStreaming | stream | cli |
-    cacheManagement | insertStageData | indexCommands
+    cacheManagement | insertStageData | indexCommands | mvCommands
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | deleteStage | cleanFiles | addLoad
@@ -100,8 +100,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     loadDataNew | explainPlan | alterTableColumnRenameAndModifyDataType |
     alterTableAddColumns
 
-  protected lazy val materializedViewCommands: Parser[LogicalPlan] =
-    createMaterializedView | dropMaterializedView | showMaterializedView | refreshMaterializedView
+  protected lazy val mvCommands: Parser[LogicalPlan] =
+    createMV | dropMV | showMV | refreshMV
 
   protected lazy val indexCommands: Parser[LogicalPlan] =
     createIndex | dropIndex | showIndexes | registerIndexes | refreshIndex
@@ -766,13 +766,13 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
    * [PROPERTIES('KEY'='VALUE')]
    * AS mv_query_statement
    */
-  private lazy val createMaterializedView: Parser[LogicalPlan] =
+  private lazy val createMV: Parser[LogicalPlan] =
     CREATE ~> MATERIALIZED ~> VIEW ~> opt(IF ~> NOT ~> EXISTS) ~ (ident <~ ".").? ~ ident ~
     opt(WITH ~> DEFERRED ~> REFRESH) ~
     (PROPERTIES ~> "(" ~> repsep(options, ",") <~ ")").? ~
     AS ~ query <~ opt(";") ^^ {
       case ifNotExists ~ databaseName ~ name ~ deferredRefresh ~ properties ~ _ ~ query =>
-        CarbonCreateMaterializedViewCommand(
+        CarbonCreateMVCommand(
           databaseName,
           name,
           properties.getOrElse(List[(String, String)]()).toMap[String, String],
@@ -784,28 +784,28 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   /**
    * DROP MATERIALIZED VIEW [IF EXISTS] mv_name
    */
-  private lazy val dropMaterializedView: Parser[LogicalPlan] =
+  private lazy val dropMV: Parser[LogicalPlan] =
     DROP ~> MATERIALIZED ~> VIEW ~> opt(IF ~> EXISTS) ~ (ident <~ ".").? ~ ident <~ opt(";") ^^ {
       case ifExits ~ databaseName ~ name =>
-        CarbonDropMaterializedViewCommand(databaseName, name, ifExits.isDefined)
+        CarbonDropMVCommand(databaseName, name, ifExits.isDefined)
     }
 
   /**
    * SHOW MATERIALIZED VIEWS [ON TABLE table_name]
    */
-  private lazy val showMaterializedView: Parser[LogicalPlan] =
+  private lazy val showMV: Parser[LogicalPlan] =
     SHOW ~> MATERIALIZED ~> VIEWS ~> opt(ontable) <~ opt(";") ^^ {
       case table =>
-        CarbonShowMaterializedViewCommand(None, table)
+        CarbonShowMVCommand(None, table)
     }
 
   /**
    * REFRESH MATERIALIZED VIEW mv_name
    */
-  private lazy val refreshMaterializedView: Parser[LogicalPlan] =
+  private lazy val refreshMV: Parser[LogicalPlan] =
     REFRESH ~> MATERIALIZED ~> VIEW ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
       case databaseName ~ name =>
-        CarbonRefreshMaterializedViewCommand(databaseName, name)
+        CarbonRefreshMVCommand(databaseName, name)
     }
 
   // Returns the rest of the input string that are not parsed yet

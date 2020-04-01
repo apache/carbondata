@@ -29,7 +29,7 @@ import org.apache.spark.sql.hive.CarbonMVRules
 import org.apache.spark.sql.util.{CarbonException, SparkSQLUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.mv.extension.command.{CreateMaterializedViewCommand, DropMaterializedViewCommand, RefreshMaterializedViewCommand, ShowMaterializedViewCommand}
+import org.apache.carbondata.mv.extension.command.{CreateMVCommand, DropMVCommand, RefreshMVCommand, ShowMVCommand}
 import org.apache.carbondata.mv.rewrite.MVUdf
 
 class MVParser extends StandardTokenParsers with PackratParsers {
@@ -116,7 +116,7 @@ class MVParser extends StandardTokenParsers with PackratParsers {
     (AS ~> restInput).? <~ opt(";") ^^ {
       case ifNotExists ~ mvName ~ deferredRebuild ~ properties ~ query =>
         val map = properties.getOrElse(List[(String, String)]()).toMap[String, String]
-        CreateMaterializedViewCommand(mvName, map, query,
+        CreateMVCommand(mvName, map, query,
           ifNotExists.isDefined, deferredRebuild.isDefined)
     }
 
@@ -126,7 +126,7 @@ class MVParser extends StandardTokenParsers with PackratParsers {
   private lazy val dropMV: Parser[LogicalPlan] =
     DROP ~> MATERIALIZED ~> VIEW ~> opt(IF ~> EXISTS) ~ ident <~ opt(";") ^^ {
       case ifExits ~ mvName =>
-        DropMaterializedViewCommand(mvName, ifExits.isDefined)
+        DropMVCommand(mvName, ifExits.isDefined)
     }
 
   /**
@@ -135,7 +135,7 @@ class MVParser extends StandardTokenParsers with PackratParsers {
   private lazy val showMV: Parser[LogicalPlan] =
     SHOW ~> MATERIALIZED ~> VIEWS ~> opt(onTable) <~ opt(";") ^^ {
       case tableIdent =>
-        ShowMaterializedViewCommand(tableIdent)
+        ShowMVCommand(tableIdent)
     }
 
   /**
@@ -144,7 +144,7 @@ class MVParser extends StandardTokenParsers with PackratParsers {
   private lazy val refreshMV: Parser[LogicalPlan] =
     REFRESH ~> MATERIALIZED ~> VIEW ~> ident <~ opt(";") ^^ {
       case mvName =>
-        RefreshMaterializedViewCommand(mvName)
+        RefreshMVCommand(mvName)
     }
 
   // Returns the rest of the input string that are not parsed yet

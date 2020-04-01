@@ -161,7 +161,7 @@ case class CarbonAlterTableDropHivePartitionCommand(
       // If normal table then set uuid to ""
       val uuid = "";
       val segments = new SegmentStatusManager(table.getAbsoluteTableIdentifier)
-        .getValidAndInvalidSegments(table.isMaterializedView).getValidSegments
+        .getValidAndInvalidSegments(table.isMV).getValidSegments
       // First drop the partitions from partition mapper files of each segment
       val tuples = new CarbonDropPartitionRDD(sparkSession,
         table.getTablePath,

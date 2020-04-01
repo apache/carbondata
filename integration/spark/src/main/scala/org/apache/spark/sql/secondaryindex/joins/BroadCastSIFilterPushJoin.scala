@@ -289,7 +289,7 @@ object BroadCastSIFilterPushJoin {
     // get all valid segments and set them into the configuration
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
     val segments: SegmentStatusManager.ValidAndInvalidSegmentsInfo = segmentStatusManager
-      .getValidAndInvalidSegments(carbonTable.isMaterializedView)
+      .getValidAndInvalidSegments(carbonTable.isMV)
     val validSegments: util.List[Segment] = segments.getValidSegments
     // if no segments in table
     val validSegmentsToAccess: util.List[Segment] = new util.ArrayList[Segment]

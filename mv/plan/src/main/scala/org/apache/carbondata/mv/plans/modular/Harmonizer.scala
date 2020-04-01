@@ -69,7 +69,7 @@ object HarmonizeDimensionTable extends Rule[ModularPlan] with PredicateHelper {
       case s@Select(_, _, _, _, jedges, fact :: dims, _, _, _, _) if
       jedges.forall(e => e.joinType == LeftOuter || e.joinType == Inner) &&
       fact.isInstanceOf[ModularRelation] &&
-      !dims.forall(_.isInstanceOf[modular.LeafNode]) &&
+      dims.exists(!_.isInstanceOf[modular.LeafNode]) &&
       dims.forall(d => d.isInstanceOf[ModularRelation] || HarmonizedRelation.canHarmonize(d)) =>
         var tPullUpPredicates = Seq.empty[Expression]
         val tChildren = fact :: dims.map {

@@ -897,11 +897,11 @@ public class CarbonTable implements Serializable, Writable {
   /**
    * Return true if this table is a MV table (child table of other table)
    */
-  public boolean isMaterializedView() {
+  public boolean isMV() {
     return tableInfo.getFactTable().getTableProperties()
-        .get(CarbonCommonConstants.ASSOCIATED_TABLES) != null &&
+        .get(CarbonCommonConstants.MV_RELATED_TABLES) != null &&
         !tableInfo.getFactTable().getTableProperties()
-        .get(CarbonCommonConstants.ASSOCIATED_TABLES).isEmpty();
+        .get(CarbonCommonConstants.MV_RELATED_TABLES).isEmpty();
   }
 
   /**

@@ -36,8 +36,8 @@ import org.apache.spark.util.CarbonReflectionUtils
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
-import org.apache.carbondata.core.view.MaterializedViewStatus
-import org.apache.carbondata.view.MaterializedViewManagerInSpark
+import org.apache.carbondata.core.view.MVStatus
+import org.apache.carbondata.view.MVManagerInSpark
 
 case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
@@ -67,13 +67,13 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
       val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
       val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
       if (carbonTable != null) {
-        val viewManager = MaterializedViewManagerInSpark.get(sparkSession)
+        val viewManager = MVManagerInSpark.get(sparkSession)
         val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
         if (!viewSchemas.isEmpty) {
           viewSchemas.asScala.foreach { schema =>
             viewManager.setStatus(
               schema.getIdentifier,
-              MaterializedViewStatus.DISABLED
+              MVStatus.DISABLED
             )
           }
         }
@@ -90,7 +90,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
           throw new UnsupportedOperationException(
             "Update operation is not supported for table which has index datamaps")
         }
-        if (carbonTable.isMaterializedView) {
+        if (carbonTable.isMV) {
           throw new UnsupportedOperationException(
             "Update operation is not supported for mv datamap table")
         }
@@ -219,17 +219,17 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
         val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
         val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
         if (carbonTable != null) {
-          if (carbonTable.isMaterializedView) {
+          if (carbonTable.isMV) {
             throw new UnsupportedOperationException(
               "Delete operation is not supported for datamap table")
           }
-          val viewManager = MaterializedViewManagerInSpark.get(sparkSession)
+          val viewManager = MVManagerInSpark.get(sparkSession)
           val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
           if (!viewSchemas.isEmpty) {
             viewSchemas.asScala.foreach { schema =>
               viewManager.setStatus(
                 schema.getIdentifier,
-                MaterializedViewStatus.DISABLED
+                MVStatus.DISABLED
               )
             }
           }

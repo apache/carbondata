@@ -579,7 +579,7 @@ class MVIncrementalLoadingTestcase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select empname, designation from test_table"),
       sql("select empname, designation from test_table1"))
     val result = sql("show materialized views on table test_table").collectAsList()
-    assert(result.get(0).get(5).toString.contains("'associated_tables'='test_table'"))
+    assert(result.get(0).get(5).toString.contains("'mv_related_tables'='test_table'"))
     val df = sql(s""" select empname, designation from test_table""".stripMargin)
     assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
   }

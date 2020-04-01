@@ -485,7 +485,7 @@ object CommonLoadUtils {
     }
     // Rearrange the partition column at the end of output list
     if (catalogTable.partitionColumnNames.nonEmpty &&
-        (loadModel.getCarbonDataLoadSchema.getCarbonTable.isMaterializedView) && output.nonEmpty) {
+        (loadModel.getCarbonDataLoadSchema.getCarbonTable.isMV) && output.nonEmpty) {
       val partitionOutPut =
         catalogTable.partitionColumnNames.map(col => output.find(_.name.equalsIgnoreCase(col)).get)
       output = output.filterNot(partitionOutPut.contains(_)) ++ partitionOutPut

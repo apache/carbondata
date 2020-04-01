@@ -46,14 +46,14 @@ import org.apache.carbondata.core.statusmanager.{SegmentStatusManager, SegmentUp
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.core.view.{MaterializedViewSchema, MaterializedViewStatus}
+import org.apache.carbondata.core.view.{MVSchema, MVStatus}
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, StreamHandoffRDD}
 import org.apache.carbondata.streaming.segment.StreamSegment
-import org.apache.carbondata.view.MaterializedViewManagerInSpark
+import org.apache.carbondata.view.MVManagerInSpark
 
 /**
  * Command for the compaction in alter table command
@@ -362,14 +362,14 @@ case class CarbonAlterTableCompactionCommand(
           updateLock.unlock()
         }
         DataMapStatusManager.disableAllLazyDataMaps(carbonTable)
-        val viewManager = MaterializedViewManagerInSpark.get(sqlContext.sparkSession)
-        val viewSchemas = new util.ArrayList[MaterializedViewSchema]()
+        val viewManager = MVManagerInSpark.get(sqlContext.sparkSession)
+        val viewSchemas = new util.ArrayList[MVSchema]()
         for (viewSchema <- viewManager.getSchemasOnTable(carbonTable).asScala) {
           if (viewSchema.isRefreshOnManual) {
             viewSchemas.add(viewSchema)
           }
         }
-        viewManager.setStatus(viewSchemas, MaterializedViewStatus.DISABLED)
+        viewManager.setStatus(viewSchemas, MVStatus.DISABLED)
       }
     }
   }

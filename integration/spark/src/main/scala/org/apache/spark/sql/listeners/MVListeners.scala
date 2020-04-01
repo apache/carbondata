@@ -27,101 +27,92 @@ import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompact
 import org.apache.spark.sql.execution.command.partition.CarbonAlterTableDropHivePartitionCommand
 
 import org.apache.carbondata.common.exceptions.MetadataProcessException
-import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.datamap.status.DataMapStatusManager
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
-import org.apache.carbondata.datamap.DataMapManager
-import org.apache.carbondata.events._
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.view.{MVSchema, MVStatus}
+import org.apache.carbondata.events.{AlterTableDropColumnPreEvent, _}
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
 import org.apache.carbondata.processing.merger.CompactionType
+import org.apache.carbondata.view.{MVManagerInSpark, MVRefresher}
 
-object DataMapListeners {
-  def getDataMapTableColumns(dataMapSchema: DataMapSchema,
-      carbonTable: CarbonTable): mutable.Buffer[String] = {
-    val listOfColumns: mutable.Buffer[String] = new mutable.ArrayBuffer[String]()
-    listOfColumns.asJava
-      .addAll(dataMapSchema.getMainTableColumnList.get(carbonTable.getTableName))
-    listOfColumns
+object MVListeners {
+  def getRelatedColumns(mvSchema: MVSchema,
+                        table: CarbonTable): mutable.Buffer[String] = {
+    val columnList: mutable.Buffer[String] = new mutable.ArrayBuffer[String]()
+    columnList.asJava.addAll(mvSchema.getRelatedTableColumns.get(table.getTableName))
+    columnList
   }
 }
 
 /**
- * Listener to trigger compaction on mv datamap after main table compaction
+ * Listener to trigger compaction on mv after related table compaction
  */
-object AlterDataMaptableCompactionPostListener extends OperationEventListener {
+object MVCompactionPostEventListener extends OperationEventListener {
   /**
-   * Called on a specified event occurrence
-   *
-   * @param event
-   * @param operationContext
+   * Called on AlterTableCompactionPreStatusUpdateEvent occurrence
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     val compactionEvent = event.asInstanceOf[AlterTableCompactionPreStatusUpdateEvent]
-    val carbonTable = compactionEvent.carbonTable
     val compactionType = compactionEvent.carbonMergerMapping.campactionType
     if (compactionType == CompactionType.CUSTOM) {
       return
     }
-    val carbonLoadModel = compactionEvent.carbonLoadModel
-    val sparkSession = compactionEvent.sparkSession
-    val allDataMapSchemas = DataMapStoreManager.getInstance
-      .getDataMapSchemasOfTable(carbonTable).asScala
-      .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                               !dataMapSchema.isIndex)
-    if (!allDataMapSchemas.asJava.isEmpty) {
-      allDataMapSchemas.foreach { dataMapSchema =>
-        val childRelationIdentifier = dataMapSchema.getRelationIdentifier
-        val alterTableModel = AlterTableModel(Some(childRelationIdentifier.getDatabaseName),
-          childRelationIdentifier.getTableName,
-          None,
-          compactionType.toString,
-          Some(System.currentTimeMillis()),
-          "")
-        operationContext.setProperty(
-          dataMapSchema.getRelationIdentifier.getDatabaseName + "_" +
-          dataMapSchema.getRelationIdentifier.getTableName + "_Segment",
-          carbonLoadModel.getSegmentId)
-        CarbonAlterTableCompactionCommand(alterTableModel, operationContext = operationContext)
-          .run(sparkSession)
-      }
+    val table = compactionEvent.carbonTable
+    val viewSchemas =
+      MVManagerInSpark.get(compactionEvent.sparkSession).getSchemasOnTable(table)
+    if (viewSchemas.isEmpty) {
+      return
+    }
+    viewSchemas.asScala.foreach {
+      viewSchema =>
+        if (viewSchema.isRefreshIncremental) {
+          val viewIdentifier = viewSchema.getIdentifier
+          val alterTableModel = AlterTableModel(
+            Some(viewIdentifier.getDatabaseName),
+            viewIdentifier.getTableName,
+            None,
+            compactionType.toString,
+            Some(System.currentTimeMillis()),
+            "")
+          operationContext.setProperty(
+            viewIdentifier.getDatabaseName + "_" +
+            viewIdentifier.getTableName + "_Segment",
+            compactionEvent.carbonLoadModel.getSegmentId)
+          val session = compactionEvent.sparkSession
+          CarbonAlterTableCompactionCommand(alterTableModel, None, operationContext).run(session)
+        }
     }
   }
 }
 
-object LoadMVTablePreListener extends OperationEventListener {
+object MVLoadPreEventListener extends OperationEventListener {
   /**
-   * Called on LoadTablePreExecutionEvent event occurrence
+   * Called on LoadTablePreExecutionEvent occurrence
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     val loadEvent = event.asInstanceOf[LoadTablePreExecutionEvent]
-    val carbonLoadModel = loadEvent.getCarbonLoadModel
-    val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    val isInternalLoadCall = carbonLoadModel.isAggLoadRequest
-    if (table.isMaterializedView && !isInternalLoadCall) {
-      throw new UnsupportedOperationException("Cannot insert data directly into MV table")
+    val loadModel = loadEvent.getCarbonLoadModel
+    val table = loadModel.getCarbonDataLoadSchema.getCarbonTable
+    val isInternalCall = loadModel.isAggLoadRequest
+    if (table.isMV && !isInternalCall) {
+      throw new UnsupportedOperationException("Cannot insert data directly into mv.")
     }
   }
 }
 
 /**
- * Listener to trigger data load on mv datamap after main table data load
+ * Listener to trigger data load on mv after related table data load
  */
-object LoadPostDataMapListener extends OperationEventListener {
+object MVLoadPostEventListener extends OperationEventListener {
   /**
-   * Called on a specified event occurrence
-   *
-   * @param event
-   * @param operationContext
+   * Called on LoadTablePostExecutionEvent/UpdateTablePostEvent/DeleteFromTablePostEvent  occurrence
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
-    val sparkSession = SparkSession.getActiveSession.get
-    val carbonTable: CarbonTable =
+    val table: CarbonTable =
       event match {
         case event: LoadTablePostExecutionEvent =>
-          val carbonLoadModelOption = Some(event.getCarbonLoadModel)
-          if (carbonLoadModelOption.isDefined) {
-            val carbonLoadModel = carbonLoadModelOption.get
-            carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+          val loadModel = Some(event.getCarbonLoadModel)
+          if (loadModel.isDefined) {
+            loadModel.get.getCarbonDataLoadSchema.getCarbonTable
           } else {
             null
           }
@@ -141,258 +132,265 @@ object LoadPostDataMapListener extends OperationEventListener {
           }
         case _ => null
       }
-    if (null != carbonTable) {
-      val allDataMapSchemas = DataMapStoreManager.getInstance
-        .getDataMapSchemasOfTable(carbonTable).asScala
-        .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                 !dataMapSchema.isIndex)
-      if (!allDataMapSchemas.asJava.isEmpty) {
-        allDataMapSchemas.foreach { dataMapSchema =>
-          if (!dataMapSchema.isLazy) {
-            val provider = DataMapManager.get()
-              .getDataMapProvider(carbonTable, dataMapSchema, sparkSession)
-            try {
-              provider.rebuild()
-              DataMapStatusManager.enableDataMap(dataMapSchema.getDataMapName)
-            } catch {
-              case ex: Exception =>
-                DataMapStatusManager.disableDataMap(dataMapSchema.getDataMapName)
-            }
-          }
-        }
+    val session: SparkSession =
+      event match {
+        case _: LoadTablePostExecutionEvent =>
+          SparkSession.getActiveSession.get // TODO
+        case event: UpdateTablePostEvent =>
+          event.sparkSession
+        case event: DeleteFromTablePostEvent =>
+          event.sparkSession
+        case _ => null
       }
+    if (table == null) {
+      return
+    }
+    val viewManager = MVManagerInSpark.get(session)
+    val viewSchemas = viewManager.getSchemasOnTable(table)
+    if (viewSchemas.isEmpty) {
+      return
+    }
+    viewSchemas.asScala.foreach {
+      viewSchema =>
+        val viewIdentifier = viewSchema.getIdentifier
+        if (!viewSchema.isRefreshOnManual) {
+          try {
+            MVRefresher.refresh(viewSchema, SparkSession.getActiveSession.get)
+            viewManager.setStatus(viewIdentifier, MVStatus.ENABLED)
+          } catch {
+            case _: Exception =>
+              viewManager.setStatus(viewIdentifier, MVStatus.DISABLED)
+          }
+        } else {
+          viewManager.setStatus(viewIdentifier, MVStatus.DISABLED)
+        }
     }
   }
 }
 
 /**
  * Listeners to block operations like delete segment on id or by date on tables
- * having an mv datamap or on mv datamap tables
+ * having an mv or on mv tables
  */
-object MVDeleteSegmentPreListener extends OperationEventListener {
+object MVDeleteSegmentPreEventListener extends OperationEventListener {
   /**
-   * Called on a specified event occurrence
-   *
-   * @param event
-   * @param operationContext
+   * Called on DeleteSegmentByIdPreEvent/DeleteSegmentByDatePreEvent occurrence
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
-    val carbonTable = event match {
-      case e: DeleteSegmentByIdPreEvent =>
-        e.asInstanceOf[DeleteSegmentByIdPreEvent].carbonTable
-      case e: DeleteSegmentByDatePreEvent =>
-        e.asInstanceOf[DeleteSegmentByDatePreEvent].carbonTable
+    val table = event match {
+      case event: DeleteSegmentByIdPreEvent =>
+        event.asInstanceOf[DeleteSegmentByIdPreEvent].carbonTable
+      case event: DeleteSegmentByDatePreEvent =>
+        event.asInstanceOf[DeleteSegmentByDatePreEvent].carbonTable
     }
-    if (null != carbonTable) {
-      if (carbonTable.hasMVCreated) {
+    val session = event match {
+      case event: DeleteSegmentByIdPreEvent =>
+        event.asInstanceOf[DeleteSegmentByIdPreEvent].sparkSession
+      case event: DeleteSegmentByDatePreEvent =>
+        event.asInstanceOf[DeleteSegmentByDatePreEvent].sparkSession
+    }
+    if (table != null) {
+      if (table.isMV) {
         throw new UnsupportedOperationException(
-          "Delete segment operation is not supported on tables having child datamap")
+          "Delete segment operation is not supported on mv")
       }
-      if (carbonTable.isMaterializedView) {
+      val viewSchemas = MVManagerInSpark.get(session).getSchemasOnTable(table)
+      if (!viewSchemas.isEmpty) {
         throw new UnsupportedOperationException(
-          "Delete segment operation is not supported on datamap table")
+          "Delete segment operation is not supported on table related by mv " +
+            viewSchemas.asScala.map(_.getIdentifier).mkString(", "))
       }
     }
   }
 }
 
-object MVAddColumnsPreListener extends OperationEventListener {
+object MVAddColumnsPreEventListener extends OperationEventListener {
   /**
-   * Called on a specified event occurrence
-   *
-   * @param event
-   * @param operationContext
+   * Called on AlterTableAddColumnPreEvent occurrence
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
-    val dataTypeChangePreListener = event.asInstanceOf[AlterTableAddColumnPreEvent]
-    val carbonTable = dataTypeChangePreListener.carbonTable
-    if (carbonTable.isMaterializedView) {
+    val table = event.asInstanceOf[AlterTableAddColumnPreEvent].carbonTable
+    if (table.isMV) {
       throw new UnsupportedOperationException(
-        s"Cannot add columns in a Index table " +
-        s"${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
+        s"Cannot add columns in a mv ${table.getDatabaseName}.${table.getTableName}")
     }
   }
 }
 
-
-object MVDropColumnPreListener extends OperationEventListener {
+object MVDropColumnPreEventListener extends OperationEventListener {
   /**
-   * Called on a specified event occurrence
-   *
-   * @param event
-   * @param operationContext
+   * Called on AlterTableDropColumnPreEvent occurrence
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
-    val dropColumnChangePreListener = event.asInstanceOf[AlterTableDropColumnPreEvent]
-    val carbonTable = dropColumnChangePreListener.carbonTable
-    val alterTableDropColumnModel = dropColumnChangePreListener.alterTableDropColumnModel
-    val columnsToBeDropped = alterTableDropColumnModel.columns
-    if (carbonTable.hasMVCreated) {
-      val dataMapSchemaList = DataMapStoreManager.getInstance
-        .getDataMapSchemasOfTable(carbonTable).asScala
-      for (dataMapSchema <- dataMapSchemaList) {
-        if (null != dataMapSchema && !dataMapSchema.isIndex) {
-          val listOfColumns = DataMapListeners.getDataMapTableColumns(dataMapSchema, carbonTable)
-          val columnExistsInChild = listOfColumns.collectFirst {
-            case parentColumnName if columnsToBeDropped.contains(parentColumnName.toLowerCase) =>
-              parentColumnName
-          }
-          if (columnExistsInChild.isDefined) {
-            throw new UnsupportedOperationException(
-              s"Column ${ columnExistsInChild.head } cannot be dropped because it exists " +
-              s"in " + dataMapSchema.getProviderName + " datamap:" +
-              s"${ dataMapSchema.getDataMapName }")
-          }
+    val dropColumnEvent = event.asInstanceOf[AlterTableDropColumnPreEvent]
+    val dropColumnModel = dropColumnEvent.alterTableDropColumnModel
+    val table = dropColumnEvent.carbonTable
+    if (table.isMV) {
+      throw new UnsupportedOperationException(
+        s"Cannot drop columns in a mv ${table.getDatabaseName}.${table.getTableName}")
+    }
+    val viewSchemas =
+      MVManagerInSpark.get(dropColumnEvent.sparkSession).getSchemasOnTable(table)
+    if (viewSchemas.isEmpty) {
+      return
+    }
+    viewSchemas.asScala.foreach {
+      mvSchema =>
+        val relatedColumns = MVListeners.getRelatedColumns(mvSchema, table)
+        val relatedColumnsInDropModel = relatedColumns.collectFirst {
+          case columnName if dropColumnModel.columns.contains(columnName.toLowerCase) => columnName
         }
-      }
-    }
-    if (carbonTable.isMaterializedView) {
-      throw new UnsupportedOperationException(
-        s"Cannot drop columns present in a datamap table ${ carbonTable.getDatabaseName }." +
-        s"${ carbonTable.getTableName }")
+        if (relatedColumnsInDropModel.isDefined) {
+          val mvIdentifier = mvSchema.getIdentifier
+          throw new UnsupportedOperationException(
+            s"Column ${relatedColumnsInDropModel.head} cannot be dropped because it exists " +
+            s"in mv ${mvIdentifier.getDatabaseName}.${mvIdentifier.getTableName}")
+        }
     }
   }
 }
 
-object MVChangeDataTypeorRenameColumnPreListener
-  extends OperationEventListener {
+object MVAlterColumnPreEventListener extends OperationEventListener {
   /**
-   * Called on a specified event occurrence
-   *
-   * @param event
-   * @param operationContext
+   * Called on AlterTableColRenameAndDataTypeChangePreEvent occurrence
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
-    val colRenameDataTypeChangePreListener = event
-      .asInstanceOf[AlterTableColRenameAndDataTypeChangePreEvent]
-    val carbonTable = colRenameDataTypeChangePreListener.carbonTable
-    val alterTableDataTypeChangeModel = colRenameDataTypeChangePreListener
-      .alterTableDataTypeChangeModel
-    val columnToBeAltered: String = alterTableDataTypeChangeModel.columnName
-    if (carbonTable.hasMVCreated) {
-      val dataMapSchemaList = DataMapStoreManager.getInstance
-        .getDataMapSchemasOfTable(carbonTable).asScala
-      for (dataMapSchema <- dataMapSchemaList) {
-        if (null != dataMapSchema && !dataMapSchema.isIndex) {
-          val listOfColumns = DataMapListeners.getDataMapTableColumns(dataMapSchema, carbonTable)
-          if (listOfColumns.contains(columnToBeAltered.toLowerCase)) {
-            throw new UnsupportedOperationException(
-              s"Column $columnToBeAltered exists in a " + dataMapSchema.getProviderName +
-              " datamap. Drop " + dataMapSchema.getProviderName + "  datamap to continue")
-          }
-        }
-      }
-    }
-    if (carbonTable.isMaterializedView) {
+    val alterColumnEvent = event.asInstanceOf[AlterTableColRenameAndDataTypeChangePreEvent]
+    val alterTableModel = alterColumnEvent.alterTableDataTypeChangeModel
+    val table = alterColumnEvent.carbonTable
+    if (table.isMV) {
       throw new UnsupportedOperationException(
-        s"Cannot change data type or rename column for columns present in mv datamap table " +
-        s"${ carbonTable.getDatabaseName }.${ carbonTable.getTableName }")
+        s"Cannot change data type or rename column for columns in mv " +
+        s"${table.getDatabaseName}.${table.getTableName}")
+    }
+    val viewSchemas =
+      MVManagerInSpark.get(alterColumnEvent.sparkSession).getSchemasOnTable(table)
+    if (viewSchemas.isEmpty) {
+      return
+    }
+    viewSchemas.asScala.foreach {
+      viewSchema =>
+        val relatedColumns = MVListeners.getRelatedColumns(viewSchema, table)
+        if (relatedColumns.contains(alterTableModel.columnName.toLowerCase)) {
+          val viewIdentifier = viewSchema.getIdentifier
+          throw new UnsupportedOperationException(
+            s"Column ${alterTableModel.columnName} exists " +
+            s"in mv ${viewIdentifier.getDatabaseName}.${viewIdentifier.getTableName}.")
+        }
     }
   }
 }
 
-object MVAlterTableDropPartitionMetaListener extends OperationEventListener {
+object MVDropPartitionMetaEventListener extends OperationEventListener {
   /**
-   * Called on a specified event occurrence
-   *
-   * @param event
-   * @param operationContext
+   * Called on AlterTableDropPartitionMetaEvent occurrence
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     val dropPartitionEvent = event.asInstanceOf[AlterTableDropPartitionMetaEvent]
-    val parentCarbonTable = dropPartitionEvent.parentCarbonTable
-    val partitionsToBeDropped = dropPartitionEvent.specs.flatMap(_.keys)
-    if (parentCarbonTable.hasMVCreated) {
-      // used as a flag to block direct drop partition on datamap tables fired by the user
-      operationContext.setProperty("isInternalDropCall", "true")
-      // Filter out all the tables which don't have the partition being dropped.
-      val dataMapSchemaList = DataMapStoreManager.getInstance
-        .getDataMapSchemasOfTable(parentCarbonTable).asScala
-      val childTablesWithoutPartitionColumns =
-        dataMapSchemaList.filter { dataMapSchema =>
-          val childColumns = dataMapSchema.getMainTableColumnList
-            .get(parentCarbonTable.getTableName).asScala
-          val partitionColExists =
-            partitionsToBeDropped.forall {
-              partition =>
-                childColumns.exists { childColumn =>
-                  childColumn.equalsIgnoreCase(partition)
-                }
-            }
-          !partitionColExists
-        }
-      if (childTablesWithoutPartitionColumns.nonEmpty) {
-        throw new MetadataProcessException(s"Cannot drop partition as one of the partition is not" +
-                                           s" participating in the following datamaps ${
-                                             childTablesWithoutPartitionColumns.toList
-                                               .map(_.getRelationIdentifier.getTableName)
-                                           }. Please drop the specified child tables to " +
-                                           s"continue")
-      } else {
-        // blocked drop partition for child tables having more than one parent table
-        val nonPartitionChildTables = dataMapSchemaList.filter(_.getParentTables.size() >= 2)
-        if (nonPartitionChildTables.nonEmpty) {
-          throw new MetadataProcessException(
-            s"Cannot drop partition if child Table is mapped to more than one parent table. Drop " +
-            s"datamaps ${ nonPartitionChildTables.toList.map(_.getDataMapName) }  to continue")
-        }
-        val childDropPartitionCommands =
-          dataMapSchemaList.map { dataMapSchema =>
-            val tableIdentifier = TableIdentifier(dataMapSchema.getRelationIdentifier.getTableName,
-              Some(dataMapSchema.getRelationIdentifier.getDatabaseName))
-            if (!CarbonEnv.getCarbonTable(tableIdentifier)(SparkSession.getActiveSession.get)
-              .isHivePartitionTable) {
-              throw new MetadataProcessException(
-                "Cannot drop partition as one of the partition is not participating in the " +
-                "following datamap " + dataMapSchema.getDataMapName +
-                ". Please drop the specified datamap to continue")
-            }
-            // as the datamap table columns start with parent table name therefore the
-            // partition column also has to be updated with parent table name to generate
-            // partitionSpecs for the child table.
-            val childSpecs = dropPartitionEvent.specs.map {
-              spec =>
-                spec.map {
-                  case (key, value) => (s"${ parentCarbonTable.getTableName }_$key", value)
-                }
-            }
-            CarbonAlterTableDropHivePartitionCommand(
-              tableIdentifier,
-              childSpecs,
-              dropPartitionEvent.ifExists,
-              dropPartitionEvent.purge,
-              dropPartitionEvent.retainData,
-              operationContext)
+    val session = dropPartitionEvent.sparkSession
+    val table = dropPartitionEvent.parentCarbonTable
+    if (table.isMV) {
+      if (operationContext.getProperty("isInternalCall") == null) {
+        throw new UnsupportedOperationException("Cannot drop partition directly on mv")
+      }
+      return
+    }
+    val viewSchemas = MVManagerInSpark.get(session).getSchemasOnTable(table)
+    if (viewSchemas.isEmpty) {
+      return
+    }
+    // Filter out all the tables which don't have the partition being dropped.
+    val viewSchemasWithoutPartitionColumns = viewSchemas.asScala.filter {
+      viewSchema =>
+        val relatedColumns = viewSchema.getRelatedTableColumns.get(table.getTableName).asScala
+        val relatedColumnInDropPartitions = dropPartitionEvent.specs.flatMap(_.keys).forall {
+            partitionColumn =>
+              relatedColumns.exists {
+                relatedColumn => relatedColumn.equalsIgnoreCase(partitionColumn)
+              }
           }
-        operationContext.setProperty("dropPartitionCommands", childDropPartitionCommands)
-        childDropPartitionCommands.foreach(_.processMetadata(SparkSession.getActiveSession.get))
+        !relatedColumnInDropPartitions
       }
-    } else if (parentCarbonTable.isMaterializedView) {
-      if (operationContext.getProperty("isInternalDropCall") == null) {
-        throw new UnsupportedOperationException("Cannot drop partition directly on child table")
+    if (viewSchemasWithoutPartitionColumns.nonEmpty) {
+      val viewIdentifiers = viewSchemasWithoutPartitionColumns.toList.map{
+        viewSchema =>
+          viewSchema.getIdentifier.getDatabaseName + viewSchema.getIdentifier.getTableName
       }
+      throw new MetadataProcessException(
+        s"Cannot drop partition as one of the partition is not participating " +
+        s"in the following mvs ${viewIdentifiers.mkString(",")}. " +
+        s"Please drop the specified mvs to continue")
     }
+    // blocked drop partition for child tables having more than one parent table
+    val viewSchemasWithoutPartition = viewSchemas.asScala.filter(_.getRelatedTables.size() >= 2)
+    if (viewSchemasWithoutPartition.nonEmpty) {
+      val viewIdentifiers = viewSchemasWithoutPartition.toList.map{
+        viewSchema =>
+          viewSchema.getIdentifier.getDatabaseName + viewSchema.getIdentifier.getTableName
+      }
+      throw new MetadataProcessException(
+        s"Cannot drop partition if mv associate more than one table. " +
+        s"Please drop the specified mvs $viewIdentifiers to continue")
+    }
+    val dropPartitionCommands =
+      viewSchemas.asScala.map {
+        viewSchema =>
+        val viewIdentifier = TableIdentifier(viewSchema.getIdentifier.getTableName,
+          Some(viewSchema.getIdentifier.getDatabaseName))
+        if (!CarbonEnv.getCarbonTable(viewIdentifier)(session).isHivePartitionTable) {
+          throw new MetadataProcessException(
+            s"Cannot drop partition as one of the partition is not participating " +
+            s"in the following mvs ${viewIdentifier.database}.${viewIdentifier.table}. " +
+            s"Please drop the specified mv to continue")
+        }
+        // as the mv columns start with parent table name therefore the
+        // partition column also has to be updated with parent table name to generate
+        // partitionSpecs for the child table.
+        CarbonAlterTableDropHivePartitionCommand(
+          viewIdentifier,
+          dropPartitionEvent.specs.map {
+            spec =>
+              spec.map {
+                case (key, value) => (s"${table.getTableName}_$key", value)
+              }
+          },
+          dropPartitionEvent.ifExists,
+          dropPartitionEvent.purge,
+          dropPartitionEvent.retainData,
+          operationContext)
+      }
+    // used as a flag to block direct drop partition on mvs fired by the user
+    operationContext.setProperty("isInternalCall", "true")
+    operationContext.setProperty("dropPartitionCommands", dropPartitionCommands)
+    dropPartitionCommands.foreach(_.processMetadata(session))
   }
 }
 
-object MVAlterTableDropPartitionPreStatusListener extends OperationEventListener {
+object MVDropPartitionPreEventListener extends OperationEventListener {
   /**
-   * Called on a specified event occurrence
-   *
-   * @param event
-   * @param operationContext
+   * Called on AlterTableDropPartitionPreStatusEvent occurrence
    */
-  override protected def onEvent(event: Event,
-      operationContext: OperationContext) = {
-    val preStatusListener = event.asInstanceOf[AlterTableDropPartitionPreStatusEvent]
-    val carbonTable = preStatusListener.carbonTable
-    val childDropPartitionCommands = operationContext.getProperty("dropPartitionCommands")
-    if (childDropPartitionCommands != null &&
-        carbonTable.hasMVCreated) {
-      val childCommands =
-        childDropPartitionCommands.asInstanceOf[Seq[CarbonAlterTableDropHivePartitionCommand]]
-      childCommands.foreach(_.processData(SparkSession.getActiveSession.get))
+  override protected def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val dropPartitionEvent = event.asInstanceOf[AlterTableDropPartitionPreStatusEvent]
+    val dropPartitionCommands = operationContext.getProperty("dropPartitionCommands")
+    val table = dropPartitionEvent.carbonTable
+    if (dropPartitionCommands != null &&
+      MVManagerInSpark.get(dropPartitionEvent.sparkSession).hasSchemaOnTable(table)) {
+      dropPartitionCommands.asInstanceOf[Seq[CarbonAlterTableDropHivePartitionCommand]]
+        .foreach(_.processData(SparkSession.getActiveSession.get))
     }
   }
 }
 
+object MVDropTablePreEventListener extends OperationEventListener {
+  /**
+   * Called on DropTablePreEvent occurrence
+   */
+  override protected def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val dropTableEvent = event.asInstanceOf[DropTablePreEvent]
+    val table = dropTableEvent.carbonTable
+    if (table.isMV && !dropTableEvent.isInternalCall) {
+      throw new UnsupportedOperationException("Cannot drop mv with drop table command")
+    }
+  }
+}

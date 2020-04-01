@@ -192,7 +192,7 @@ case class CarbonRelation(
         carbonTable.getAbsoluteTableIdentifier)
       if (tableStatusLastUpdateTime != tableStatusNewLastUpdatedTime) {
         val allSegments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
-          .getValidAndInvalidSegments(carbonTable.isMaterializedView)
+          .getValidAndInvalidSegments(carbonTable.isMV)
         if (allSegments.getValidSegments.isEmpty) {
           sizeInBytesLocalValue = 0L
         } else {

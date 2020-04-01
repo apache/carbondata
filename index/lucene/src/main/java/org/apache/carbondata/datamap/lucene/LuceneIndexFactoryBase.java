@@ -180,7 +180,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
     SegmentStatusManager ssm = new SegmentStatusManager(tableIdentifier);
     try {
       List<Segment> validSegments =
-          ssm.getValidAndInvalidSegments(getCarbonTable().isMaterializedView()).getValidSegments();
+          ssm.getValidAndInvalidSegments(getCarbonTable().isMV()).getValidSegments();
       for (Segment segment : validSegments) {
         deleteIndexData(segment);
       }

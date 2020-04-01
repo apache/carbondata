@@ -45,14 +45,14 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.core.view.{MaterializedViewSchema, MaterializedViewStatus}
+import org.apache.carbondata.core.view.{MVSchema, MVStatus}
 import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.sdk.file.Schema
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory.clearDataMapFiles
-import org.apache.carbondata.view.MaterializedViewManagerInSpark
+import org.apache.carbondata.view.MVManagerInSpark
 
 
 /**
@@ -82,7 +82,7 @@ case class CarbonAddLoadCommand(
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
-    if (carbonTable.isMaterializedView) {
+    if (carbonTable.isMV) {
       throw new MalformedCarbonCommandException("Unsupported operation on MV table")
     }
     // if insert overwrite in progress, do not allow add segment
@@ -334,14 +334,14 @@ case class CarbonAddLoadCommand(
       throw new Exception("Data load failed due to failure in table status updation.")
     }
     DataMapStatusManager.disableAllLazyDataMaps(carbonTable)
-    val viewManager = MaterializedViewManagerInSpark.get(sparkSession)
-    val viewSchemas = new util.ArrayList[MaterializedViewSchema]()
+    val viewManager = MVManagerInSpark.get(sparkSession)
+    val viewSchemas = new util.ArrayList[MVSchema]()
     for (viewSchema <- viewManager.getSchemasOnTable(carbonTable).asScala) {
       if (viewSchema.isRefreshOnManual) {
         viewSchemas.add(viewSchema)
       }
     }
-    viewManager.setStatus(viewSchemas, MaterializedViewStatus.DISABLED)
+    viewManager.setStatus(viewSchemas, MVStatus.DISABLED)
     val loadTablePostExecutionEvent: LoadTablePostExecutionEvent =
       new LoadTablePostExecutionEvent(
         carbonTable.getCarbonTableIdentifier,

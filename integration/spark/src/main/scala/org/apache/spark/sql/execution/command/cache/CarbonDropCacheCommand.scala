@@ -29,7 +29,7 @@ import org.apache.carbondata.core.datamap.{DataMapStoreManager, IndexUtil}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{DropTableCacheEvent, OperationContext, OperationListenerBus}
-import org.apache.carbondata.view.MaterializedViewManagerInSpark
+import org.apache.carbondata.view.MVManagerInSpark
 
 case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall: Boolean = false)
   extends MetadataCommand {
@@ -60,7 +60,7 @@ case class CarbonDropCacheCommand(tableIdentifier: TableIdentifier, internalCall
       LOGGER.info("Clearing cache from driver side")
       DataMapStoreManager.getInstance().clearIndex(carbonTable.getAbsoluteTableIdentifier)
     }
-    val viewManager = MaterializedViewManagerInSpark.get(sparkSession)
+    val viewManager = MVManagerInSpark.get(sparkSession)
     val viewsOnTable = viewManager.getSchemasOnTable(carbonTable)
     if (!viewsOnTable.isEmpty) {
       viewsOnTable.asScala.foreach {

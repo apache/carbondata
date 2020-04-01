@@ -41,7 +41,7 @@ import org.apache.carbondata.geo.InPolygonUDF
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
-import org.apache.carbondata.view.MaterializedViewManagerInSpark
+import org.apache.carbondata.view.{MVFunctions, TimeSeriesFunction}
 
 /**
  * Carbon Environment for unified context
@@ -81,6 +81,11 @@ class CarbonEnv {
     sparkSession.udf.register("text_match", new TextMatchUDF)
     sparkSession.udf.register("text_match_with_limit", new TextMatchMaxDocUDF)
     sparkSession.udf.register("in_polygon", new InPolygonUDF)
+
+    // register udf for materialized view
+    sparkSession.udf.register(MVFunctions.DUMMY_FUNCTION, () => "")
+    // added for handling timeseries function like hour, minute, day, month, year
+    sparkSession.udf.register(MVFunctions.TIME_SERIES_FUNCTION, new TimeSeriesFunction)
 
     // acquiring global level lock so global configuration will be updated by only one thread
     CarbonEnv.carbonEnvMap.synchronized {
@@ -161,29 +166,13 @@ object CarbonEnv {
   def initListeners(): Unit = {
     OperationListenerBus.getInstance()
       .addListener(classOf[IndexServerLoadEvent], PrePrimingEventListener)
-//      .addListener(classOf[LoadTablePreExecutionEvent], LoadMVTablePreListener)
-//      .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
-//        AlterDataMaptableCompactionPostListener)
       .addListener(classOf[LoadTablePreStatusUpdateEvent], new MergeIndexEventListener)
-//      .addListener(classOf[LoadTablePostExecutionEvent], LoadPostDataMapListener)
-//      .addListener(classOf[UpdateTablePostEvent], LoadPostDataMapListener )
-//      .addListener(classOf[DeleteFromTablePostEvent], LoadPostDataMapListener )
       .addListener(classOf[AlterTableMergeIndexEvent], new MergeIndexEventListener)
       .addListener(classOf[BuildDataMapPostExecutionEvent], new MergeBloomIndexEventListener)
       .addListener(classOf[DropTableCacheEvent], DropCacheMVEventListener)
       .addListener(classOf[DropTableCacheEvent], DropCacheBloomEventListener)
       .addListener(classOf[ShowTableCacheEvent], ShowCachePreMVEventListener)
       .addListener(classOf[ShowTableCacheEvent], ShowCacheDataMapEventListener)
-//      .addListener(classOf[DeleteSegmentByIdPreEvent], MVDeleteSegmentPreListener)
-//      .addListener(classOf[DeleteSegmentByDatePreEvent], MVDeleteSegmentPreListener)
-//      .addListener(classOf[AlterTableDropColumnPreEvent], MVDropColumnPreListener)
-//      .addListener(classOf[AlterTableColRenameAndDataTypeChangePreEvent],
-//        MVChangeDataTypeorRenameColumnPreListener)
-//      .addListener(classOf[AlterTableAddColumnPreEvent], MVAddColumnsPreListener)
-//      .addListener(classOf[AlterTableDropPartitionMetaEvent],
-//        MVAlterTableDropPartitionMetaListener)
-//      .addListener(classOf[AlterTableDropPartitionPreStatusEvent],
-//        MVAlterTableDropPartitionPreStatusListener)
       .addListener(classOf[LoadTablePreStatusUpdateEvent], new SILoadEventListener)
       .addListener(classOf[LoadTablePostStatusUpdateEvent],
         new SILoadEventListenerForFailedSegments)
