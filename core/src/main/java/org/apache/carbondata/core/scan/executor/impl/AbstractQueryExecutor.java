@@ -382,16 +382,16 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
               dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath(),
               dataRefNode.getBlockInfos().get(0).getSegment());
       if (null == dimensionReusableDataBuffers || null == measureReusableDataBuffers) {
-        dimensionReusableDataBuffers = blockExecutionInfoForBlock.getDimensionResusableDataBuffer();
-        measureReusableDataBuffers = blockExecutionInfoForBlock.getMeasureResusableDataBuffer();
+        dimensionReusableDataBuffers = blockExecutionInfoForBlock.getDimensionReusableDataBuffer();
+        measureReusableDataBuffers = blockExecutionInfoForBlock.getMeasureReusableDataBuffer();
       } else {
         if (dimensionReusableDataBuffers.length == blockExecutionInfoForBlock
-            .getDimensionResusableDataBuffer().length) {
-          blockExecutionInfoForBlock.setDimensionResusableDataBuffer(dimensionReusableDataBuffers);
+            .getDimensionReusableDataBuffer().length) {
+          blockExecutionInfoForBlock.setDimensionReusableDataBuffer(dimensionReusableDataBuffers);
         }
         if (measureReusableDataBuffers.length == blockExecutionInfoForBlock
-            .getMeasureResusableDataBuffer().length) {
-          blockExecutionInfoForBlock.setMeasureResusableDataBuffer(measureReusableDataBuffers);
+            .getMeasureReusableDataBuffer().length) {
+          blockExecutionInfoForBlock.setMeasureReusableDataBuffer(measureReusableDataBuffers);
         }
       }
       blockExecutionInfoList.add(blockExecutionInfoForBlock);
@@ -510,13 +510,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     int[] dimensionChunkIndexes = QueryUtil.getDimensionChunkIndexes(projectDimensions,
         segmentProperties.getDimensionOrdinalToChunkMapping(),
         currentBlockFilterDimensions, allProjectionListDimensionIdexes);
-    int reusableBufferSize = Math.max(segmentProperties.getDimensionOrdinalToChunkMapping().size(),
-        projectDimensions.size());
-    ReusableDataBuffer[] dimensionBuffer = new ReusableDataBuffer[reusableBufferSize];
+    ReusableDataBuffer[] dimensionBuffer = new ReusableDataBuffer[projectDimensions.size()];
     for (int i = 0; i < dimensionBuffer.length; i++) {
       dimensionBuffer[i] = new ReusableDataBuffer();
     }
-    blockExecutionInfo.setDimensionResusableDataBuffer(dimensionBuffer);
+    blockExecutionInfo.setDimensionReusableDataBuffer(dimensionBuffer);
     int numberOfColumnToBeReadInOneIO = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
             CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE));
@@ -541,13 +539,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         projectionMeasures, expressionMeasures,
         segmentProperties.getMeasuresOrdinalToChunkMapping(), filterMeasures,
         allProjectionListMeasureIndexes);
-    reusableBufferSize = Math.max(segmentProperties.getMeasuresOrdinalToChunkMapping().size(),
-        allProjectionListMeasureIndexes.size());
-    ReusableDataBuffer[] measureBuffer = new ReusableDataBuffer[reusableBufferSize];
+    ReusableDataBuffer[] measureBuffer =
+        new ReusableDataBuffer[allProjectionListMeasureIndexes.size()];
     for (int i = 0; i < measureBuffer.length; i++) {
       measureBuffer[i] = new ReusableDataBuffer();
     }
-    blockExecutionInfo.setMeasureResusableDataBuffer(measureBuffer);
+    blockExecutionInfo.setMeasureReusableDataBuffer(measureBuffer);
     if (measureChunkIndexes.length > 0) {
 
       numberOfElementToConsider = measureChunkIndexes[measureChunkIndexes.length - 1]
