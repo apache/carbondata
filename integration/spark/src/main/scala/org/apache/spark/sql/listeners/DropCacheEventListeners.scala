@@ -27,10 +27,11 @@ import org.apache.spark.sql.execution.command.cache.{CacheUtil, CarbonDropCacheC
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
-import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema
+import org.apache.carbondata.core.view.MVSchema
 import org.apache.carbondata.events.{DropTableCacheEvent, Event, OperationContext, OperationEventListener}
+import org.apache.carbondata.view.MVManagerInSpark
 
 object DropCacheMVEventListener extends OperationEventListener {
 
@@ -49,23 +50,20 @@ object DropCacheMVEventListener extends OperationEventListener {
           throw new UnsupportedOperationException("Operation not allowed on child table.")
         }
 
-        if (carbonTable.hasMVCreated) {
-          val childrenSchemas = IndexStoreManager.getInstance
-            .getIndexSchemasOfTable(carbonTable).asScala
-            .filter(indexSchema => null != indexSchema.getRelationIdentifier &&
-                                   !indexSchema.isIndex)
-          dropCacheForChildTables(sparkSession, childrenSchemas)
+        val mvSchemas = MVManagerInSpark.get(sparkSession).getSchemasOnTable(carbonTable)
+        if (!mvSchemas.isEmpty) {
+          dropCacheForChildTables(sparkSession, mvSchemas.asScala)
         }
     }
   }
 
   private def dropCacheForChildTables(sparkSession: SparkSession,
-      childrenSchemas: mutable.Buffer[IndexSchema]): Unit = {
-    for (childSchema <- childrenSchemas) {
+        mvSchemas: mutable.Buffer[MVSchema]): Unit = {
+    for (mvSchema <- mvSchemas) {
       val childTable =
         CarbonEnv.getCarbonTable(
-          TableIdentifier(childSchema.getRelationIdentifier.getTableName,
-            Some(childSchema.getRelationIdentifier.getDatabaseName)))(sparkSession)
+          TableIdentifier(mvSchema.getIdentifier.getTableName,
+            Some(mvSchema.getIdentifier.getDatabaseName)))(sparkSession)
       try {
         val dropCacheCommandForChildTable =
           CarbonDropCacheCommand(

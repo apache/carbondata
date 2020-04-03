@@ -17,14 +17,11 @@
 
 package org.apache.carbondata.index;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
-import org.apache.carbondata.core.index.CarbonIndexProvider;
 import org.apache.carbondata.core.index.IndexRegistry;
 import org.apache.carbondata.core.index.dev.Index;
 import org.apache.carbondata.core.index.dev.IndexFactory;
@@ -38,7 +35,10 @@ import org.apache.spark.sql.SparkSession;
  * Interface to manipulate the index, All index should implement this interface.
  */
 @InterfaceAudience.Internal
-public class IndexProvider extends CarbonIndexProvider {
+public class IndexProvider {
+
+  private CarbonTable mainTable;
+  private IndexSchema indexSchema;
 
   private SparkSession sparkSession;
   private IndexFactory<? extends Index> indexFactory;
@@ -46,34 +46,29 @@ public class IndexProvider extends CarbonIndexProvider {
 
   public IndexProvider(CarbonTable table, IndexSchema schema, SparkSession sparkSession)
       throws MalformedIndexCommandException {
-    super(table, schema);
+    this.mainTable = table;
+    this.indexSchema = schema;
     this.sparkSession = sparkSession;
     this.indexFactory = createIndexFactory();
     this.indexedColumns = table.getIndexedColumns(schema.getIndexColumns());
   }
 
+  protected final CarbonTable getMainTable() {
+    return mainTable;
+  }
+
+  public final IndexSchema getIndexSchema() {
+    return indexSchema;
+  }
+
   public void setMainTable(CarbonTable carbonTable) {
-    super.setMainTable(carbonTable);
+    this.mainTable = carbonTable;
   }
 
   public List<CarbonColumn> getIndexedColumns() {
     return indexedColumns;
   }
 
-  @Override
-  public void initMeta(String ctasSqlStatement)
-      throws MalformedIndexCommandException, IOException {
-  }
-
-  @Override
-  public void cleanMeta() throws IOException {
-  }
-
-  @Override
-  public void cleanData() {
-  }
-
-  @Override
   public boolean rebuild() {
     IndexRebuildRDD.rebuildIndex(sparkSession, getMainTable(), getIndexSchema());
     return true;
@@ -100,19 +95,12 @@ public class IndexProvider extends CarbonIndexProvider {
     return indexFactory;
   }
 
-  @Override
   public IndexFactory getIndexFactory() {
     return indexFactory;
   }
 
-  @Override
   public boolean supportRebuild() {
     return indexFactory.supportRebuild();
   }
 
-  @Override
-  public boolean rebuildInternal(String newLoadName, Map<String, List<String>> segmentMap,
-      CarbonTable carbonTable) {
-    return false;
-  }
 }

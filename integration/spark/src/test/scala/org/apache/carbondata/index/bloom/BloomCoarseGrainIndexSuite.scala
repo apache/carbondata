@@ -28,7 +28,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedIndexCommandException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.status.{IndexStatus, IndexStatusManager}
+import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.util.CarbonProperties
 

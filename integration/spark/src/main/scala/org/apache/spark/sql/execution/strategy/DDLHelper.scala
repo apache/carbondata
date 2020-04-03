@@ -388,10 +388,6 @@ object DDLHelper {
           throw new MalformedCarbonCommandException(
             "The table which has materialized view does not support set streaming property")
         }
-        if (carbonTable.hasMVCreated) {
-          throw new MalformedCarbonCommandException(
-            "The table which has materialized view does not support set streaming property")
-        }
       }
     }
     CarbonAlterTableSetCommand(tableName, properties, setProperties.isView)

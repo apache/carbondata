@@ -30,9 +30,8 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedIndexCommandException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.index.status.{IndexStatus, IndexStatusManager}
+import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.metadata.index.IndexType
-import org.apache.carbondata.index.bloom.IndexStatusUtil
 
 class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
@@ -679,8 +678,6 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
          | WITH DEFERRED REFRESH
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test5 OPTIONS('header'='false')")
-    val map = IndexStatusManager.readIndexStatusMap()
-    assert(!map.get("dm").isEnabled)
     sql("REFRESH INDEX dm ON TABLE index_test5")
     checkAnswer(sql("SELECT * FROM index_test5 WHERE TEXT_MATCH('city:c020')"),
       sql(s"SELECT * FROM index_test5 WHERE city='c020'"))

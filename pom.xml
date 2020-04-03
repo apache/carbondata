@@ -100,7 +100,6 @@
     <module>processing</module>
     <module>hadoop</module>
     <module>mv/plan</module>
-    <module>mv/core</module>
     <module>index/secondary-index</module>
     <module>index/bloom</module>
     <module>index/lucene</module>
