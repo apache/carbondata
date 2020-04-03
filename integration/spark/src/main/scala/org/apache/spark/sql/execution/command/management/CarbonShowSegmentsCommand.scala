@@ -22,7 +22,7 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.StringType
 
-import org.apache.carbondata.api.CarbonStore.{getDataAndIndexSize, getLoadStartTime, getPartitions, getTotalTimeSpentForTheLoad, readSegments}
+import org.apache.carbondata.api.CarbonStore.{getDataAndIndexSize, getLoadStartTime, getLoadTimeTaken, getPartitions, readSegments}
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
@@ -74,7 +74,7 @@ case class CarbonShowSegmentsCommand(
     segments
       .map { segment =>
         val startTime = getLoadStartTime(segment)
-        val spentTime = getTotalTimeSpentForTheLoad(segment)
+        val timeTaken = getLoadTimeTaken(segment)
         val (dataSize, indexSize) = getDataAndIndexSize(tablePath, segment)
         val partitions = getPartitions(tablePath, segment)
         val partitionString = if (partitions.size == 1) {
@@ -88,7 +88,7 @@ case class CarbonShowSegmentsCommand(
           segment.getLoadName,
           segment.getSegmentStatus.getMessage,
           startTime,
-          spentTime,
+          timeTaken,
           partitionString,
           Strings.formatSize(dataSize.toFloat),
           Strings.formatSize(indexSize.toFloat))

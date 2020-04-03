@@ -30,7 +30,7 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager
  */
 class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
 
-  test("verify success case") {
+  test("test show segment by query, success case") {
     sql("drop table if exists source")
     sql(
       """
@@ -53,7 +53,7 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     assert(header(0).name.equalsIgnoreCase("ID"))
     assert(header(1).name.equalsIgnoreCase("Status"))
     assert(header(2).name.equalsIgnoreCase("Load Start Time"))
-    assert(header(3).name.equalsIgnoreCase("Spent"))
+    assert(header(3).name.equalsIgnoreCase("Load Time Taken"))
     assert(header(4).name.equalsIgnoreCase("Partition"))
     assert(header(5).name.equalsIgnoreCase("Data Size"))
     assert(header(6).name.equalsIgnoreCase("Index Size"))
@@ -63,13 +63,7 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
       .toSeq
     assert(col.equals(Seq(Row("4.1", "Success"), Row("0.2", "Success"))))
 
-    sql(
-      """
-        | show segments on source as
-        | select id, status, datasize from source_segments where status = 'Success' order by dataSize
-        |""".stripMargin).show(false)
-
-    val rows = sql(
+    var rows = sql(
       """
         | show segments on source as
         | select id, status, datasize from source_segments where status = 'Success' order by dataSize
@@ -77,10 +71,8 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
 
     assertResult("4.1")(rows(0).get(0))
     assertResult("Success")(rows(0).get(1))
-    assertResult(1762)(rows(0).get(2))
     assertResult("0.2")(rows(1).get(0))
     assertResult("Success")(rows(1).get(1))
-    assertResult(3524)(rows(1).get(2))
 
     val tables = sql("show tables").collect()
     assert(!tables.toSeq.exists(_.get(1).equals("source_segments")))
@@ -96,7 +88,7 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     assertResult(0)(result.length)
   }
 
-  test("can not show segments on exist table") {
+  test("test show segments on already existing table") {
     sql("drop TABLE if exists source").collect
     sql(
       """
@@ -112,7 +104,7 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists source_segments")
   }
 
-  test("can not show segments by wrong query") {
+  test(" test show segments by wrong query") {
     sql("drop TABLE if exists source").collect
     sql(
       """
@@ -144,12 +136,7 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"create table ${tableName} (name String, age int) STORED AS carbondata "
         + "TBLPROPERTIES('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='2,2')")
     val carbonTable = CarbonEnv.getCarbonTable(Some("default"), tableName)(sqlContext.sparkSession)
-    sql(s"insert into ${tableName} select 'abc1',1")
-    sql(s"insert into ${tableName} select 'abc2',2")
-    sql(s"insert into ${tableName} select 'abc3',3")
-    sql(s"insert into ${tableName} select 'abc4',4")
-    sql(s"insert into ${tableName} select 'abc5',5")
-    sql(s"insert into ${tableName} select 'abc6',6")
+    insertTestDataIntoTable(tableName)
     assert(sql(s"show segments on ${tableName} as select * from ${tableName}_segments").collect().length == 10)
     var detail = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
     var historyDetail = SegmentStatusManager.readLoadHistoryMetadata(carbonTable.getMetadataPath)
@@ -170,12 +157,7 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"create table ${tableName} (name String, age int) STORED AS carbondata "
         + "TBLPROPERTIES('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='2,2')")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", tableName)
-    sql(s"insert into ${tableName} select 'abc1',1")
-    sql(s"insert into ${tableName} select 'abc2',2")
-    sql(s"insert into ${tableName} select 'abc3',3")
-    sql(s"insert into ${tableName} select 'abc4',4")
-    sql(s"insert into ${tableName} select 'abc5',5")
-    sql(s"insert into ${tableName} select 'abc6',6")
+    insertTestDataIntoTable(tableName)
     assert(sql(s"show segments on ${tableName} as select * from ${tableName}_segments").collect().length == 10)
     assert(sql(s"show history segments on ${tableName} as select * from ${tableName}_segments").collect().length == 10)
     sql(s"clean files for table ${tableName}")
@@ -203,5 +185,14 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     assertResult("Compacted")(segmentsHistoryList(9).getString(1))
     assert(sql(s"show history segments on ${tableName} as select * from ${tableName}_segments limit 3").collect().length == 3)
     dropTable(tableName)
+  }
+
+  private def insertTestDataIntoTable(tableName: String) = {
+    sql(s"insert into ${ tableName } select 'abc1',1")
+    sql(s"insert into ${ tableName } select 'abc2',2")
+    sql(s"insert into ${ tableName } select 'abc3',3")
+    sql(s"insert into ${ tableName } select 'abc4',4")
+    sql(s"insert into ${ tableName } select 'abc5',5")
+    sql(s"insert into ${ tableName } select 'abc6',6")
   }
 }

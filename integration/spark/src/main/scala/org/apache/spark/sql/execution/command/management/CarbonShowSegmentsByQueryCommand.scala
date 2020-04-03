@@ -27,7 +27,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 
 case class SegmentRow(
-    id: String, status: String, loadStartTime: String, spentTimeMs: Long, partitions: Seq[String],
+    id: String, status: String, loadStartTime: String, timeTakenMs: Long, partitions: Seq[String],
     dataSize: Long, indexSize: Long, mergedToId: String, format: String, path: String,
     loadEndTime: String, segmentFileName: String)
 
@@ -55,7 +55,8 @@ case class CarbonShowSegmentsByQueryCommand(
     try {
       setAuditTable(carbonTable)
       if (!carbonTable.getTableInfo.isTransactionalTable) {
-        throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
+        throw new MalformedCarbonCommandException(
+          "Unsupported operation on non transactional table")
       }
       df.collect()
     } catch {
@@ -102,14 +103,14 @@ case class CarbonShowSegmentsByQueryCommand(
       val path = CarbonStore.getExternalSegmentPath(segment)
       val startTime = CarbonStore.getLoadStartTime(segment)
       val endTime = CarbonStore.getLoadEndTime(segment)
-      val spentTime = CarbonStore.getTotalTimeSpentForTheLoadAsMillis(segment)
+      val timeTaken = CarbonStore.getLoadTimeTakenAsMillis(segment)
       val (dataSize, indexSize) = CarbonStore.getDataAndIndexSize(tablePath, segment)
       val partitions = CarbonStore.getPartitions(tablePath, segment)
       SegmentRow(
         segment.getLoadName,
         segment.getSegmentStatus.toString,
         startTime,
-        spentTime,
+        timeTaken,
         partitions,
         dataSize,
         indexSize,

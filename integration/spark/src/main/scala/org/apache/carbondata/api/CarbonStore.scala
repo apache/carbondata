@@ -110,7 +110,7 @@ object CarbonStore {
     endTime
   }
 
-  def getTotalTimeSpentForTheLoad(load: LoadMetadataDetails): String = {
+  def getLoadTimeTaken(load: LoadMetadataDetails): String = {
     if (load.getLoadEndTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
       "NA"
     } else {
@@ -121,7 +121,7 @@ object CarbonStore {
     }
   }
 
-  def getTotalTimeSpentForTheLoadAsMillis(load: LoadMetadataDetails): Long = {
+  def getLoadTimeTakenAsMillis(load: LoadMetadataDetails): Long = {
     if (load.getLoadEndTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
       // loading in progress
       -1L
