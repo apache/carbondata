@@ -31,23 +31,23 @@ public class DatabaseDMSchemaStorageProvider implements DataMapSchemaStorageProv
   }
 
   @Override
-  public void saveSchema(DataMapSchema dataMapSchema) {
+  public void saveSchema(IndexSchema indexSchema) {
     throw new UnsupportedOperationException("not support saving Index schema into database");
   }
 
   @Override
-  public DataMapSchema retrieveSchema(String dataMapName)
+  public IndexSchema retrieveSchema(String dataMapName)
       throws NoSuchDataMapException {
     throw new NoSuchDataMapException(dataMapName);
   }
 
   @Override
-  public List<DataMapSchema> retrieveSchemas(CarbonTable carbonTable) {
+  public List<IndexSchema> retrieveSchemas(CarbonTable carbonTable) {
     return new ArrayList<>(0);
   }
 
   @Override
-  public List<DataMapSchema> retrieveAllSchemas() {
+  public List<IndexSchema> retrieveAllSchemas() {
     return new ArrayList<>(0);
   }
 

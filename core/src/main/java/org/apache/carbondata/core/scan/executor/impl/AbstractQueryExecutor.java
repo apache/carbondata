@@ -34,12 +34,12 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
-import org.apache.carbondata.core.datamap.IndexFilter;
-import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.index.IndexFilter;
+import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataRefNode;
 import org.apache.carbondata.core.indexstore.blockletindex.IndexWrapper;
@@ -165,8 +165,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   private List<AbstractIndex> getDataBlocks(QueryModel queryModel) throws IOException {
     Map<String, List<TableBlockInfo>> listMap = new LinkedHashMap<>();
-    // this is introduced to handle the case when CACHE_LEVEL=BLOCK and there are few other dataMaps
-    // like lucene, Bloom created on the table. In that case all the dataMaps will do blocklet
+    // this is introduced to handle the case when CACHE_LEVEL=BLOCK and there are few other indexes
+    // like lucene, Bloom created on the table. In that case all the indexes will do blocklet
     // level pruning and blockInfo entries will be repeated with different blockletIds
     Map<String, DataFileFooter> filePathToFileFooterMapping = new HashMap<>();
     Map<String, SegmentProperties> filePathToSegmentPropertiesMap = new HashMap<>();
@@ -322,7 +322,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
     // cases when blockletID will be -1
     // 1. In case of legacy store
-    // 2. In case CACHE_LEVEL is block and no other dataMap apart from blockletDataMap is
+    // 2. In case CACHE_LEVEL is block and no other index apart from blockletDataMap is
     // created for a table
     // In all above cases entries will be according to the number of blocks and not according to
     // number of blocklets
@@ -465,10 +465,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       LOGGER.info("Query prefetch is: " + queryModel.isPreFetchData());
       blockExecutionInfo.setPrefetchBlocklet(queryModel.isPreFetchData());
     }
-    // In case of fg datamap it should not go to direct fill.
+    // In case of fg index it should not go to direct fill.
     boolean fgDataMapPathPresent = false;
     for (TableBlockInfo blockInfo : queryModel.getTableBlockInfos()) {
-      fgDataMapPathPresent = blockInfo.getDataMapWriterPath() != null;
+      fgDataMapPathPresent = blockInfo.getIndexWriterPath() != null;
       if (fgDataMapPathPresent) {
         queryModel.setDirectVectorFill(false);
         break;

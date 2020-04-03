@@ -106,7 +106,7 @@ class TestIndexModelWithAggQueries extends QueryTest with BeforeAndAfterAll {
       Seq(Row(458.16, 91.12)))
   }
 
-  test("test datamap on SI table") {
+  test("test index on SI table") {
     sql("drop table if exists test_si_1")
     sql(
       "CREATE TABLE test_si_1 (id int,name string,salary float,dob date,address string) STORED AS " +

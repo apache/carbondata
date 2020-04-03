@@ -33,29 +33,27 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.Decimal
 
-import org.apache.carbondata.common.exceptions.MetadataProcessException
-import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, IndexRegistry, Segment}
-import org.apache.carbondata.core.datamap.dev.{Index, IndexBuilder, IndexFactory}
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.indexstore.{Blocklet, SegmentPropertiesFetcher}
+import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
+import org.apache.carbondata.core.index.dev.IndexBuilder
+import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableInfo}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{ByteUtil, DataTypeUtil, TaskMetricsMap}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.datamap.bloom.DataConvertUtil
 import org.apache.carbondata.events.{BuildIndexPostExecutionEvent, BuildIndexPreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection, CarbonRecordReader}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
+import org.apache.carbondata.index.bloom.DataConvertUtil
 import org.apache.carbondata.spark.{RefreshResult, RefreshResultImpl}
 import org.apache.carbondata.spark.rdd.{CarbonRDDWithTableInfo, CarbonSparkPartition}
 
@@ -67,12 +65,12 @@ object IndexRebuildRDD {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   /**
-   * Rebuild the datamap for all existing data in the table
+   * Rebuild the indexSchema for all existing data in the table
    */
-  def rebuildDataMap(
+  def rebuildIndex(
       sparkSession: SparkSession,
       carbonTable: CarbonTable,
-      schema: DataMapSchema
+      schema: IndexSchema
   ): Unit = {
     val tableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val segmentStatusManager = new SegmentStatusManager(tableIdentifier)
@@ -81,21 +79,21 @@ object IndexRebuildRDD {
     val validSegments = validAndInvalidSegments.getValidSegments
     val indexedCarbonColumns = carbonTable.getIndexedColumns(schema.getIndexColumns)
     val operationContext = new OperationContext()
-    val buildDataMapPreExecutionEvent = new BuildIndexPreExecutionEvent(sparkSession,
+    val buildIndexPreExecutionEvent = new BuildIndexPreExecutionEvent(sparkSession,
       tableIdentifier,
-      mutable.Seq[String](schema.getDataMapName))
-    OperationListenerBus.getInstance().fireEvent(buildDataMapPreExecutionEvent, operationContext)
+      mutable.Seq[String](schema.getIndexName))
+    OperationListenerBus.getInstance().fireEvent(buildIndexPreExecutionEvent, operationContext)
 
     val segments2DmStorePath = validSegments.asScala.map { segment =>
-      val dataMapStorePath = CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath,
-        segment.getSegmentNo, schema.getDataMapName)
-      segment -> dataMapStorePath
+      val indexStorePath = CarbonTablePath.getIndexesStorePath(carbonTable.getTablePath,
+        segment.getSegmentNo, schema.getIndexName)
+      segment -> indexStorePath
     }.filter(p => !FileFactory.isFileExist(p._2)).toMap
 
     segments2DmStorePath.foreach { case (_, dmPath) =>
       if (!FileFactory.mkdirs(dmPath)) {
         throw new IOException(
-          s"Failed to create directory $dmPath for rebuilding datamap ${ schema.getDataMapName }")
+          s"Failed to create directory $dmPath for rebuilding indexSchema ${ schema.getIndexName }")
       }
     }
 
@@ -104,7 +102,7 @@ object IndexRebuildRDD {
       new RefreshResultImpl(),
       carbonTable.getTableInfo,
       schema,
-      schema.getDataMapName,
+      schema.getIndexName,
       indexedCarbonColumns.asScala.toArray,
       segments2DmStorePath.keySet,
       schema.getProviderName
@@ -121,7 +119,7 @@ object IndexRebuildRDD {
         val cleanResult = dmPath.map(p =>
           FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(p)))
         if (cleanResult.exists(!_)) {
-          LOGGER.error(s"Failed to clean up datamap store for segment_$segmentId")
+          LOGGER.error(s"Failed to clean up indexSchema store for segment_$segmentId")
           false
         } else {
           true
@@ -129,12 +127,12 @@ object IndexRebuildRDD {
       }
 
     if (failedSegments.nonEmpty) {
-      throw new Exception(s"Failed to refresh datamap ${ schema.getDataMapName }")
+      throw new Exception(s"Failed to refresh indexSchema ${ schema.getIndexName }")
     }
 
-    val buildDataMapPostExecutionEvent = BuildIndexPostExecutionEvent(sparkSession,
-      tableIdentifier, schema.getDataMapName, validSegments.asScala.map(_.getSegmentNo), true)
-    OperationListenerBus.getInstance().fireEvent(buildDataMapPostExecutionEvent, operationContext)
+    val buildIndexPostExecutionEvent = BuildIndexPostExecutionEvent(sparkSession,
+      tableIdentifier, schema.getIndexName, validSegments.asScala.map(_.getSegmentNo), true)
+    OperationListenerBus.getInstance().fireEvent(buildIndexPostExecutionEvent, operationContext)
   }
 }
 
@@ -262,8 +260,8 @@ class IndexRebuildRDD[K, V](
     @transient private val session: SparkSession,
     result: RefreshResult[K, V],
     @transient private val tableInfo: TableInfo,
-    dataMapSchema: DataMapSchema,
-    dataMapName: String,
+    indexSchema: IndexSchema,
+    indexName: String,
     indexColumns: Array[CarbonColumn],
     segments: Set[Segment],
     provider: String)
@@ -280,8 +278,7 @@ class IndexRebuildRDD[K, V](
   override def internalCompute(split: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val carbonTable = CarbonTable.buildFromTableInfo(getTableInfo)
-    val dataMapFactory = DataMapManager.get().getDataMapProvider(
-      carbonTable, dataMapSchema, session).getIndexFactory
+    val indexFactory = new IndexProvider(carbonTable, indexSchema, session).getIndexFactory
     var status = false
     val inputMetrics = new CarbonInputMetrics
     TaskMetricsMap.getInstance().registerThreadCallback()
@@ -304,14 +301,14 @@ class IndexRebuildRDD[K, V](
       var reader: CarbonRecordReader[Array[Object]] = null
       var refresher: IndexBuilder = null
       try {
-        val segmentPropertiesFetcher = DataMapStoreManager.getInstance().getIndex(carbonTable,
-          BlockletIndexFactory.DATA_MAP_SCHEMA).getIndexFactory
+        val segmentPropertiesFetcher = IndexStoreManager.getInstance().getIndex(carbonTable,
+          BlockletIndexFactory.INDEX_SCHEMA).getIndexFactory
           .asInstanceOf[SegmentPropertiesFetcher]
         val segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment.get)
 
-        // we use task name as shard name to create the folder for this datamap
+        // we use task name as shard name to create the folder for this indexSchema
         val shardName = CarbonTablePath.getShardName(inputSplit.getAllSplits.get(0).getBlockPath)
-        refresher = dataMapFactory.createBuilder(segment.get, shardName, segmentProperties)
+        refresher = indexFactory.createBuilder(segment.get, shardName, segmentProperties)
         refresher.initialize()
 
         model.setForcedDetailRawQuery(refresher.isIndexForCarbonRawBytes)
@@ -323,10 +320,10 @@ class IndexRebuildRDD[K, V](
         reader = new CarbonRecordReader[Array[Object]](model, readSupport, inputMetrics,
           attemptContext.getConfiguration)
         reader.initialize(inputSplit, attemptContext)
-        // skip clear datamap and we will do this adter rebuild
-        reader.setSkipClearDataMapAtClose(true)
+        // skip clear indexSchema and we will do this adter rebuild
+        reader.setSkipClearIndexAtClose(true)
 
-        // Note that datamap rebuilding is based on query, the blockletId in rowWithPosition
+        // Note that indexSchema rebuilding is based on query, the blockletId in rowWithPosition
         // is set to relative number in carbondata file in query process.
         // In order to get absolute blockletId in shard like the one filled in loading process,
         // here we use another way to generate it.
@@ -412,7 +409,7 @@ class IndexRebuildRDD[K, V](
   }
 
   override protected def internalGetPartitions = {
-    if (!dataMapSchema.isIndex) {
+    if (!indexSchema.isIndex) {
       throw new UnsupportedOperationException
     }
     val conf = FileFactory.getConfiguration

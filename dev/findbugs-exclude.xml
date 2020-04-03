@@ -59,7 +59,7 @@
     <Bug pattern="STCAL_INVOKE_ON_STATIC_DATE_FORMAT_INSTANCE"/>
   </Match>
   <Match>
-    <Class name="org.apache.carbondata.core.datamap.IndexInputFormat"/>
+    <Class name="org.apache.carbondata.core.index.IndexInputFormat"/>
     <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
   </Match>
   <Match>
@@ -111,15 +111,15 @@
     <Bug pattern="JLM_JSR166_UTILCONCURRENT_MONITORENTER"/>
   </Match>
   <Match>
-    <Class name="org.apache.carbondata.core.datamap.Segment"/>
+    <Class name="org.apache.carbondata.core.index.Segment"/>
     <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
   </Match>
   <Match>
-    <Class name="org.apache.carbondata.core.datamap.IndexFilter"/>
+    <Class name="org.apache.carbondata.core.index.IndexFilter"/>
     <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
   </Match>
   <Match>
-    <Class name="org.apache.carbondata.core.datamap.IndexFilter"/>
+    <Class name="org.apache.carbondata.core.index.IndexFilter"/>
     <Bug pattern="SE_BAD_FIELD"/>
   </Match>
   <Match>

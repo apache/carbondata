@@ -34,15 +34,15 @@ public interface DataMapSchemaStorageProvider {
 
   /**
    * Save the schema to storage medium.
-   * @param dataMapSchema
+   * @param indexSchema
    */
-  void saveSchema(DataMapSchema dataMapSchema) throws IOException;
+  void saveSchema(IndexSchema indexSchema) throws IOException;
 
   /**
    * Retrieve the schema by using dataMapName.
    * @param dataMapName
    */
-  DataMapSchema retrieveSchema(String dataMapName) throws IOException, NoSuchDataMapException;
+  IndexSchema retrieveSchema(String dataMapName) throws IOException, NoSuchDataMapException;
 
   /**
    * Retrieve schemas of the given table.
@@ -50,14 +50,14 @@ public interface DataMapSchemaStorageProvider {
    * @return
    * @throws IOException
    */
-  List<DataMapSchema> retrieveSchemas(CarbonTable table) throws IOException;
+  List<IndexSchema> retrieveSchemas(CarbonTable table) throws IOException;
 
   /**
    * Retrieve all datamap schemas from store.
    * @return
    * @throws IOException
    */
-  List<DataMapSchema> retrieveAllSchemas() throws IOException;
+  List<IndexSchema> retrieveAllSchemas() throws IOException;
 
   /**
    * Drop the schema from the storage by using dataMapName.

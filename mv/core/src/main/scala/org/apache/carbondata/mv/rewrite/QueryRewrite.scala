@@ -29,7 +29,7 @@ import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.unsafe.types.UTF8String
 
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty
+import org.apache.carbondata.core.metadata.schema.datamap.IndexProperty
 import org.apache.carbondata.mv.plans.modular.{GroupBy, Matchable, ModularPlan, Select}
 import org.apache.carbondata.mv.session.MVSession
 import org.apache.carbondata.mv.timeseries.TimeSeriesFunction
@@ -397,7 +397,7 @@ class QueryRewrite private (
 
   private def getAttributeMap(subsumer: Seq[NamedExpression],
       subsume: Seq[NamedExpression]): Map[AttributeKey, NamedExpression] = {
-    // when datamap is created with duplicate columns like select sum(age),sum(age) from table,
+    // when indexSchema is created with duplicate columns like select sum(age),sum(age) from table,
     // the subsumee will have duplicate, so handle that case here
     if (subsumer.length == subsume.groupBy(_.name).size) {
       subsume.zip(subsumer).flatMap { case (left, right) =>
@@ -542,7 +542,7 @@ class QueryRewrite private (
    * aggregation function or group by functions on the mv table.
    */
   private def isFullRefresh(mvPlanWrapper: MVPlanWrapper): Boolean = {
-    val fullRefresh = mvPlanWrapper.dataMapSchema.getProperties.get(DataMapProperty.FULL_REFRESH)
+    val fullRefresh = mvPlanWrapper.dataMapSchema.getProperties.get(IndexProperty.FULL_REFRESH)
     if (fullRefresh != null) {
       fullRefresh.toBoolean
     } else {

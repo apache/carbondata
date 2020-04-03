@@ -216,11 +216,11 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     val ex = intercept[ProcessMetaDataException] {
       sql("alter table datamap_test change Name myName string")
     }
-    ex.getMessage.contains("alter table column rename is not supported for index datamap")
+    ex.getMessage.contains("alter table column rename is not supported for index indexSchema")
     sql("DROP TABLE IF EXISTS datamap_test")
   }
 
-  test("test rename column with bloom datamap") {
+  test("test rename column with bloom indexSchema") {
     sql("DROP TABLE IF EXISTS bloomtable")
     sql(
       s"""

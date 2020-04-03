@@ -47,12 +47,11 @@ import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants, SortScopeOptions}
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, TableIndex}
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
+import org.apache.carbondata.core.index.{IndexStoreManager, TableIndex}
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.{DateDirectDictionaryGenerator, TimeStampGranularityTypeValue}
 import org.apache.carbondata.core.metadata.SegmentFileStore
-import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
@@ -294,25 +293,25 @@ object CommonLoadUtils {
         isOverwriteTable)
     operationContext.setProperty("isOverwrite", isOverwriteTable)
     OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
-    // Add pre event listener for index datamap
-    val tableDataMaps = DataMapStoreManager.getInstance().getAllIndexes(table)
-    val dataMapOperationContext = new OperationContext()
-    if (tableDataMaps.size() > 0) {
-      val dataMapNames: mutable.Buffer[String] =
-        tableDataMaps.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
-      val buildDataMapPreExecutionEvent: BuildIndexPreExecutionEvent =
+    // Add pre event listener for index indexSchema
+    val tableIndexes = IndexStoreManager.getInstance().getAllIndexes(table)
+    val indexOperationContext = new OperationContext()
+    if (tableIndexes.size() > 0) {
+      val indexNames: mutable.Buffer[String] =
+        tableIndexes.asScala.map(index => index.getIndexSchema.getIndexName)
+      val buildIndexPreExecutionEvent: BuildIndexPreExecutionEvent =
         BuildIndexPreExecutionEvent(sparkSession,
-          table.getAbsoluteTableIdentifier, dataMapNames)
-      OperationListenerBus.getInstance().fireEvent(buildDataMapPreExecutionEvent,
-        dataMapOperationContext)
+          table.getAbsoluteTableIdentifier, indexNames)
+      OperationListenerBus.getInstance().fireEvent(buildIndexPreExecutionEvent,
+        indexOperationContext)
     }
-    (tableDataMaps, dataMapOperationContext)
+    (tableIndexes, indexOperationContext)
   }
 
   def firePostLoadEvents(sparkSession: SparkSession,
       carbonLoadModel: CarbonLoadModel,
-      tableDataMaps: util.List[TableIndex],
-      dataMapOperationContext: OperationContext,
+      tableIndexes: util.List[TableIndex],
+      indexOperationContext: OperationContext,
       table: CarbonTable,
       operationContext: OperationContext): Unit = {
     val loadTablePostExecutionEvent: LoadTablePostExecutionEvent =
@@ -320,11 +319,11 @@ object CommonLoadUtils {
         table.getCarbonTableIdentifier,
         carbonLoadModel)
     OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
-    if (tableDataMaps.size() > 0) {
-      val buildDataMapPostExecutionEvent = BuildIndexPostExecutionEvent(sparkSession,
+    if (tableIndexes.size() > 0) {
+      val buildIndexPostExecutionEvent = BuildIndexPostExecutionEvent(sparkSession,
         table.getAbsoluteTableIdentifier, null, Seq(carbonLoadModel.getSegmentId), false)
       OperationListenerBus.getInstance()
-        .fireEvent(buildDataMapPostExecutionEvent, dataMapOperationContext)
+        .fireEvent(buildIndexPostExecutionEvent, indexOperationContext)
     }
   }
 
@@ -1051,7 +1050,7 @@ object CommonLoadUtils {
     } finally {
       CarbonUtils.threadUnset("partition.operationcontext")
       if (loadParams.isOverwriteTable) {
-        DataMapStoreManager.getInstance().clearIndex(table.getAbsoluteTableIdentifier)
+        IndexStoreManager.getInstance().clearIndex(table.getAbsoluteTableIdentifier)
         // Clean the overwriting segments if any.
         SegmentFileStore.cleanSegments(
           table,
@@ -1156,26 +1155,26 @@ object CommonLoadUtils {
               .entrySet()
               .iterator()
             while (iterator.hasNext) {
-              val currentSegmentColumnMetaDataMap = iterator.next()
+              val currentSegmentColumnMetaIndex = iterator.next()
               if (segmentMetaDataInfo.getSegmentColumnMetaDataInfoMap
-                .containsKey(currentSegmentColumnMetaDataMap.getKey)) {
+                .containsKey(currentSegmentColumnMetaIndex.getKey)) {
                 val currentMax = SegmentMetaDataInfoStats.getInstance()
                   .compareAndUpdateMinMax(segmentMetaDataInfo
                     .getSegmentColumnMetaDataInfoMap
-                    .get(currentSegmentColumnMetaDataMap.getKey)
+                    .get(currentSegmentColumnMetaIndex.getKey)
                     .getColumnMaxValue,
-                    currentSegmentColumnMetaDataMap.getValue.getColumnMaxValue,
+                    currentSegmentColumnMetaIndex.getValue.getColumnMaxValue,
                     false)
                 val currentMin = SegmentMetaDataInfoStats.getInstance()
                   .compareAndUpdateMinMax(segmentMetaDataInfo.getSegmentColumnMetaDataInfoMap
-                    .get(currentSegmentColumnMetaDataMap.getKey).getColumnMinValue,
-                    currentSegmentColumnMetaDataMap.getValue.getColumnMinValue,
+                    .get(currentSegmentColumnMetaIndex.getKey).getColumnMinValue,
+                    currentSegmentColumnMetaIndex.getValue.getColumnMinValue,
                     true)
                 segmentMetaDataInfo.getSegmentColumnMetaDataInfoMap
-                  .get(currentSegmentColumnMetaDataMap.getKey)
+                  .get(currentSegmentColumnMetaIndex.getKey)
                   .setColumnMaxValue(currentMax)
                 segmentMetaDataInfo.getSegmentColumnMetaDataInfoMap
-                  .get(currentSegmentColumnMetaDataMap.getKey)
+                  .get(currentSegmentColumnMetaIndex.getKey)
                   .setColumnMinValue(currentMin)
               }
             }

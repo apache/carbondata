@@ -28,19 +28,19 @@ import org.apache.spark.sql.secondaryindex.command.IndexModel
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedIndexCommandException}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.status.IndexStatus
+import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty
+import org.apache.carbondata.core.metadata.schema.datamap.IndexProperty
 import org.apache.carbondata.core.metadata.schema.indextable.{IndexMetadata, IndexTableInfo}
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.datamap.IndexProvider
 
 /**
- * Below command class will be used to create index on table
+ * Below command class will be used to create fg or cg index on table
  * and updating the parent table about the index information
  */
 case class CarbonCreateIndexCommand(
@@ -54,7 +54,7 @@ case class CarbonCreateIndexCommand(
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
   private var provider: IndexProvider = _
   private var parentTable: CarbonTable = _
-  private var indexSchema: DataMapSchema = _
+  private var indexSchema: IndexSchema = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val indexName = indexModel.indexName
@@ -67,11 +67,11 @@ case class CarbonCreateIndexCommand(
       throw new MalformedIndexCommandException(errMsg)
     }
     val dbName = parentTable.getDatabaseName
-    indexSchema = new DataMapSchema(indexName, indexProviderName)
+    indexSchema = new IndexSchema(indexName, indexProviderName)
 
     val property = properties.map(x => (x._1.trim, x._2.trim)).asJava
     val indexProperties = new java.util.LinkedHashMap[String, String](property)
-    indexProperties.put(DataMapProperty.DEFERRED_REBUILD, deferredRebuild.toString)
+    indexProperties.put(IndexProperty.DEFERRED_REBUILD, deferredRebuild.toString)
     indexProperties.put(CarbonCommonConstants.INDEX_COLUMNS, indexModel.columnNames.mkString(","))
     indexProperties.put(CarbonCommonConstants.INDEX_PROVIDER, indexProviderName)
 

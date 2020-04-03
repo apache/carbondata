@@ -128,7 +128,7 @@ public abstract class DecimalColumnPage extends UnsafeVarLengthColumnPageBase {
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
-  // used for building datamap in loading process
+  // used for building index in loading process
   private BigDecimal getDecimalFromRawData(int rowId) {
     long value;
     switch (decimalConverter.getDecimalConverterType()) {

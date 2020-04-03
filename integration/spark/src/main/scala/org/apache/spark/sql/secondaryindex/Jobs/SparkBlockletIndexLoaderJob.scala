@@ -33,9 +33,9 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{AbstractIndexJob, DataMapStoreManager, IndexInputFormat}
-import org.apache.carbondata.core.datamap.dev.CacheableIndex
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
+import org.apache.carbondata.core.index.{AbstractIndexJob, IndexInputFormat, IndexStoreManager}
+import org.apache.carbondata.core.index.dev.CacheableIndex
 import org.apache.carbondata.core.indexstore.{BlockletIndexWrapper, TableBlockIndexUniqueIdentifier, TableBlockIndexUniqueIdentifierWrapper}
 import org.apache.carbondata.core.indexstore.blockletindex.BlockIndex
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -50,14 +50,14 @@ class SparkBlockletIndexLoaderJob extends AbstractIndexJob {
     val loader: BlockletIndexInputFormat = dataMapFormat
       .asInstanceOf[BlockletIndexInputFormat]
     val dataMapIndexWrappers = new IndexLoaderRDD(SparkSQLUtil.getSparkSession, loader).collect()
-    val cacheableDataMap = DataMapStoreManager.getInstance.getDefaultIndex(carbonTable)
+    val cacheableDataMap = IndexStoreManager.getInstance.getDefaultIndex(carbonTable)
       .getIndexFactory.asInstanceOf[CacheableIndex]
     val tableBlockIndexUniqueIdentifiers = dataMapIndexWrappers.map {
       case (tableBlockIndexUniqueIdentifier, _) => tableBlockIndexUniqueIdentifier
     }
     val groupBySegment = tableBlockIndexUniqueIdentifiers.toSet.groupBy[String](x => x.getSegmentId)
       .map(a => (a._1, a._2.asJava)).asJava
-    cacheableDataMap.updateSegmentDataMap(groupBySegment)
+    cacheableDataMap.updateSegmentIndex(groupBySegment)
     // add segmentProperties in single thread if carbon table schema is not modified
     if (!carbonTable.getTableInfo.isSchemaModified) {
       addSegmentProperties(carbonTable, dataMapIndexWrappers)

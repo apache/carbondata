@@ -377,32 +377,32 @@ public class CarbonTablePath {
   }
 
   /**
-   * Return store path for datamap based on the taskNo,if three tasks get launched during loading,
+   * Return store path for index based on the taskNo,if three tasks get launched during loading,
    * then three folders will be created based on the shard name and lucene index file will be
    * written into those folders
    *
    * @return store path based on index shard name
    */
-  public static String getDataMapStorePathOnShardName(String tablePath, String segmentId,
-      String dataMapName, String shardName) {
+  public static String getIndexStorePathOnShardName(String tablePath, String segmentId,
+      String indexName, String shardName) {
     return new StringBuilder()
-        .append(getDataMapStorePath(tablePath, segmentId, dataMapName))
+        .append(getIndexesStorePath(tablePath, segmentId, indexName))
         .append(CarbonCommonConstants.FILE_SEPARATOR)
         .append(shardName)
         .toString();
   }
 
   /**
-   * Return store path for datamap based on the dataMapName,
+   * Return store path for index based on the indexName,
    *
-   * @return store path based on datamapname
+   * @return store path based on indexname
    */
-  public static String getDataMapStorePath(String tablePath, String segmentId,
-      String dataMapName) {
+  public static String getIndexesStorePath(String tablePath, String segmentId,
+      String indexName) {
     return new StringBuilder()
         .append(tablePath)
         .append(CarbonCommonConstants.FILE_SEPARATOR)
-        .append(dataMapName)
+        .append(indexName)
         .append(CarbonCommonConstants.FILE_SEPARATOR)
         .append(segmentId)
         .toString();

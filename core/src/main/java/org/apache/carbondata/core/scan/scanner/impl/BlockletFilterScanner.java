@@ -172,7 +172,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
   private BlockletScannedResult executeFilter(RawBlockletColumnChunks rawBlockletColumnChunks)
       throws FilterUnsupportedException, IOException {
     long startTime = System.currentTimeMillis();
-    // set the indexed data if it has any during fgdatamap pruning.
+    // set the indexed data if it has any during fgindex pruning.
     BitSetGroup fgBitSetGroup = rawBlockletColumnChunks.getDataBlock().getIndexedData();
     rawBlockletColumnChunks.setBitSetGroup(fgBitSetGroup);
     // apply filter on actual data, for each page

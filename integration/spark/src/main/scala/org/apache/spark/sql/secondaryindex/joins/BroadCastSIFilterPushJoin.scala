@@ -45,7 +45,7 @@ import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, IndexChooser, IndexFilter, IndexInputFormat, IndexUtil, Segment}
+import org.apache.carbondata.core.index.{IndexChooser, IndexFilter, IndexInputFormat, IndexStoreManager, IndexUtil, Segment}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope
@@ -336,7 +336,7 @@ object BroadCastSIFilterPushJoin {
       val setSegID: util.List[Segment] = new util.ArrayList[Segment]
       if (CarbonProperties.getInstance
         .isDistributedPruningEnabled(carbonTable.getDatabaseName, carbonTable.getTableName)) {
-        val segmentsToBeRefreshed: util.List[String] = DataMapStoreManager.getInstance
+        val segmentsToBeRefreshed: util.List[String] = IndexStoreManager.getInstance
           .getSegmentsToBeRefreshed(carbonTable, validSegmentsToAccess)
         try {
           val dataMapFormat: IndexInputFormat =
@@ -376,7 +376,7 @@ object BroadCastSIFilterPushJoin {
             } catch {
               case ex: Exception =>
                 logger.warn("Embedded Segment Pruning failed, initiating driver pruning", ex)
-                DataMapStoreManager.getInstance
+                IndexStoreManager.getInstance
                   .refreshSegmentCacheIfRequired(carbonTable,
                     updateStatusManager,
                     validSegmentsToAccess)
@@ -386,7 +386,7 @@ object BroadCastSIFilterPushJoin {
             }
         }
       } else {
-        DataMapStoreManager.getInstance
+        IndexStoreManager.getInstance
           .refreshSegmentCacheIfRequired(carbonTable, updateStatusManager, validSegmentsToAccess)
         setSegID.addAll(
           isSegmentValidAfterFilter(job.getConfiguration, carbonTable, filter.getResolver,
@@ -407,10 +407,10 @@ object BroadCastSIFilterPushJoin {
       carbonTable: CarbonTable,
       filterResolverIntf: FilterResolverIntf,
       segmentIds: util.List[Segment]): util.List[Segment] = {
-    val blockletMap = DataMapStoreManager.getInstance.getDefaultIndex(carbonTable)
-    val dataMapExprWrapper = IndexChooser.getDefaultDataMap(carbonTable,
+    val blockletMap = IndexStoreManager.getInstance.getDefaultIndex(carbonTable)
+    val dataMapExprWrapper = IndexChooser.getDefaultIndex(carbonTable,
       filterResolverIntf)
-    IndexUtil.loadDataMaps(carbonTable,
+    IndexUtil.loadIndexes(carbonTable,
       dataMapExprWrapper,
       segmentIds,
       CarbonInputFormat.getPartitionsToPrune(configuration))

@@ -33,7 +33,6 @@ import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
@@ -328,33 +327,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       thriftRelationIdentifierList.add(thriftRelationIdentifier);
     }
     return thriftRelationIdentifierList;
-  }
-
-  private List<org.apache.carbondata.format.DataMapSchema> fromWrapperToExternalChildSchemaList(
-      List<DataMapSchema> wrapperChildSchemaList) {
-    List<org.apache.carbondata.format.DataMapSchema> thriftChildSchemas = new ArrayList<>();
-    for (DataMapSchema wrapperChildSchema : wrapperChildSchemaList) {
-      org.apache.carbondata.format.DataMapSchema thriftChildSchema =
-          new org.apache.carbondata.format.DataMapSchema();
-      if (wrapperChildSchema.getRelationIdentifier() != null) {
-        org.apache.carbondata.format.RelationIdentifier relationIdentifier =
-            new org.apache.carbondata.format.RelationIdentifier();
-        relationIdentifier
-            .setDatabaseName(wrapperChildSchema.getRelationIdentifier().getDatabaseName());
-        relationIdentifier.setTableName(wrapperChildSchema.getRelationIdentifier().getTableName());
-        relationIdentifier.setTableId(wrapperChildSchema.getRelationIdentifier().getTableId());
-        thriftChildSchema.setChildTableIdentifier(relationIdentifier);
-      }
-      thriftChildSchema.setProperties(wrapperChildSchema.getProperties());
-      thriftChildSchema.setClassName(wrapperChildSchema.getProviderName());
-      thriftChildSchema.setDataMapName(wrapperChildSchema.getDataMapName());
-      if (wrapperChildSchema.getChildSchema() != null) {
-        thriftChildSchema.setChildTableSchema(
-            fromWrapperToExternalTableSchema(wrapperChildSchema.getChildSchema()));
-      }
-      thriftChildSchemas.add(thriftChildSchema);
-    }
-    return thriftChildSchemas;
   }
 
   private List<org.apache.carbondata.format.ParentColumnTableRelation> wrapperToThriftRelationList(
@@ -652,25 +624,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     return wrapperTableInfo;
   }
 
-  @Override
-  public DataMapSchema fromExternalToWrapperDataMapSchema(
-      org.apache.carbondata.format.DataMapSchema thriftDataMapSchema) {
-    DataMapSchema childSchema = new DataMapSchema(thriftDataMapSchema.getDataMapName(),
-        thriftDataMapSchema.getClassName());
-    childSchema.setProperties(thriftDataMapSchema.getProperties());
-    if (null != thriftDataMapSchema.getChildTableIdentifier()) {
-      RelationIdentifier relationIdentifier =
-          new RelationIdentifier(thriftDataMapSchema.getChildTableIdentifier().getDatabaseName(),
-              thriftDataMapSchema.getChildTableIdentifier().getTableName(),
-              thriftDataMapSchema.getChildTableIdentifier().getTableId());
-      childSchema.setRelationIdentifier(relationIdentifier);
-      childSchema.setChildSchema(
-          fromExternalToWrapperTableSchema(thriftDataMapSchema.getChildTableSchema(),
-              relationIdentifier.getTableName()));
-    }
-    return childSchema;
-  }
-
   private List<ParentColumnTableRelation> fromExternalToWrapperParentTableColumnRelations(
       List<org.apache.carbondata.format.ParentColumnTableRelation> thirftParentColumnRelation) {
     List<ParentColumnTableRelation> parentColumnTableRelationList = new ArrayList<>();
@@ -686,14 +639,5 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       parentColumnTableRelationList.add(parentColumnTableRelation);
     }
     return parentColumnTableRelationList;
-  }
-
-  public List<DataMapSchema> fromExternalToWrapperChildSchemaList(
-      List<org.apache.carbondata.format.DataMapSchema> childSchemaList) {
-    List<DataMapSchema> childSchemas = new ArrayList<>();
-    for (org.apache.carbondata.format.DataMapSchema childSchemaThrift : childSchemaList) {
-      childSchemas.add(fromExternalToWrapperDataMapSchema(childSchemaThrift));
-    }
-    return childSchemas;
   }
 }

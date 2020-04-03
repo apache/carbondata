@@ -76,8 +76,8 @@ class CarbonEnv {
     sparkSession.udf.register("getPositionId", () => "")
     sparkSession.udf.register("NI", (anyRef: AnyRef) => true)
 
-    // register for lucene datamap
-    // TODO: move it to proper place, it should be registered by datamap implementation
+    // register for lucene indexSchema
+    // TODO: move it to proper place, it should be registered by indexSchema implementation
     sparkSession.udf.register("text_match", new TextMatchUDF)
     sparkSession.udf.register("text_match_with_limit", new TextMatchMaxDocUDF)
     sparkSession.udf.register("in_polygon", new InPolygonUDF)

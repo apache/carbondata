@@ -27,15 +27,15 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainIndex, CoarseGrainIndexFactory}
-import org.apache.carbondata.core.datamap.dev.{IndexBuilder, IndexWriter}
-import org.apache.carbondata.core.datamap.status.IndexStatus
-import org.apache.carbondata.core.datamap.{IndexInputSplit, IndexMeta, Segment}
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
+import org.apache.carbondata.core.index.dev.cgindex.{CoarseGrainIndex, CoarseGrainIndexFactory}
+import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexWriter}
+import org.apache.carbondata.core.index.status.IndexStatus
+import org.apache.carbondata.core.index.{IndexInputSplit, IndexMeta, Segment}
 import org.apache.carbondata.core.indexstore.PartitionSpec
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
@@ -49,7 +49,7 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
     drop
   }
 
-  test("datamap status enable for new datamap") {
+  test("indexSchema status enable for new indexSchema") {
     sql("DROP TABLE IF EXISTS datamapstatustest")
     sql(
       """
@@ -64,7 +64,7 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamapstatustest")
   }
 
-  test("datamap status disable for new datamap with deferred rebuild") {
+  test("indexSchema status disable for new indexSchema with deferred rebuild") {
     sql("DROP TABLE IF EXISTS datamapstatustest")
     sql(
       """
@@ -81,7 +81,7 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamapstatustest")
   }
 
-  test("datamap status disable after new load  with deferred rebuild") {
+  test("indexSchema status disable after new load  with deferred rebuild") {
     sql("DROP TABLE IF EXISTS datamapstatustest1")
     sql(
       """
@@ -102,7 +102,7 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamapstatustest1")
   }
 
-  test("datamap status with REFRESH INDEX") {
+  test("indexSchema status with REFRESH INDEX") {
     sql("DROP TABLE IF EXISTS datamapstatustest2")
     sql(
       """
@@ -151,7 +151,7 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
 
 class TestIndexFactory(
     carbonTable: CarbonTable,
-    dataMapSchema: DataMapSchema) extends CoarseGrainIndexFactory(carbonTable, dataMapSchema) {
+    dataMapSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, dataMapSchema) {
 
   override def fireEvent(event: Event): Unit = ???
 
@@ -196,21 +196,21 @@ class TestIndexFactory(
   }
 
   /**
-   * delete datamap of the segment
+   * delete indexSchema of the segment
    */
   override def deleteIndexData(segment: Segment): Unit = {
 
   }
 
   /**
-   * delete datamap data if any
+   * delete indexSchema data if any
    */
   override def deleteIndexData(): Unit = {
 
   }
 
   /**
-   * defines the features scopes for the datamap
+   * defines the features scopes for the indexSchema
    */
   override def willBecomeStale(operation: TableOperation): Boolean = {
     false
@@ -243,7 +243,7 @@ class TestIndexFactory(
   override def supportRebuild(): Boolean = true
 
   /**
-   * Get the datamap for segmentId and partitionSpecs
+   * Get the indexSchema for segmentId and partitionSpecs
    */
   override def getIndexes(segment: Segment,
       partitions: util.List[PartitionSpec]): util.List[CoarseGrainIndex] = {

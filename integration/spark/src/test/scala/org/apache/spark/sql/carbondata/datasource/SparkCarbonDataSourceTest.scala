@@ -36,8 +36,8 @@ import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field, StructField}
 import org.apache.carbondata.core.util.CarbonProperties
@@ -157,10 +157,10 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       sql("select * from testparquet where c1='a1'"))
     if (!sqlContext.sparkContext.version.startsWith("2.1")) {
       LOGGER.error("!!!" + warehouse + "/carbon_table")
-      val mapSize = DataMapStoreManager.getInstance().getTableIndexForAllTables.size()
-      DataMapStoreManager.getInstance()
+      val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()
+      IndexStoreManager.getInstance()
         .clearIndex(AbsoluteTableIdentifier.from(warehouse + "/carbon_table"))
-      assert(mapSize > DataMapStoreManager.getInstance().getTableIndexForAllTables.size())
+      assert(mapSize > IndexStoreManager.getInstance().getTableIndexForAllTables.size())
     }
     sql("drop table if exists testparquet")
     sql("drop table if exists testformat")
@@ -184,10 +184,10 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       checkAnswer(sql("SELECT * FROM carbon_table WHERE c1='a1'"),
         sql("SELECT * FROM test_parquet WHERE c1='a1'"))
       if (!SparkUtil.isSparkVersionEqualTo("2.1")) {
-        val mapSize = DataMapStoreManager.getInstance().getTableIndexForAllTables.size()
-        DataMapStoreManager.getInstance()
+        val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()
+        IndexStoreManager.getInstance()
           .clearIndex(AbsoluteTableIdentifier.from(warehouse + "/carbon_table"))
-        assert(mapSize > DataMapStoreManager.getInstance().getTableIndexForAllTables.size())
+        assert(mapSize > IndexStoreManager.getInstance().getTableIndexForAllTables.size())
       }
       assert(df.schema.map(_.name) === Seq("c1", "c2", "number"))
       sql("ALTER TABLE carbon_table ADD COLUMNS (a1 INT, b1 STRING) ")
@@ -257,10 +257,10 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       checkAnswer(sql("SELECT * FROM carbon_table WHERE c1='a1'"),
         sql("SELECT * FROM test_parquet WHERE c1='a1'"))
       if (!sqlContext.sparkContext.version.startsWith("2.1")) {
-        val mapSize = DataMapStoreManager.getInstance().getTableIndexForAllTables.size()
-        DataMapStoreManager.getInstance()
+        val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()
+        IndexStoreManager.getInstance()
           .clearIndex(AbsoluteTableIdentifier.from(warehouse + "/carbon_table"))
-        assert(mapSize > DataMapStoreManager.getInstance().getTableIndexForAllTables.size())
+        assert(mapSize > IndexStoreManager.getInstance().getTableIndexForAllTables.size())
       }
       assert(df.schema.map(_.name) === Seq("c1", "c2", "number"))
       sql("ALTER TABLE carbon_table drop COLUMNS (a1 INT, b1 STRING) ")
@@ -291,10 +291,10 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       checkAnswer(sql("SELECT * FROM carbon_table WHERE c1='a1'"),
         sql("SELECT * FROM test_parquet WHERE c1='a1'"))
       if (!sqlContext.sparkContext.version.startsWith("2.1")) {
-        val mapSize = DataMapStoreManager.getInstance().getTableIndexForAllTables.size()
-        DataMapStoreManager.getInstance()
+        val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()
+        IndexStoreManager.getInstance()
           .clearIndex(AbsoluteTableIdentifier.from(warehouse + "/carbon_table"))
-        assert(mapSize > DataMapStoreManager.getInstance().getTableIndexForAllTables.size())
+        assert(mapSize > IndexStoreManager.getInstance().getTableIndexForAllTables.size())
       }
       assert(df.schema.map(_.name) === Seq("c1", "c2", "number"))
       sql("ALTER TABLE carbon_table RENAME TO carbon_table2 ")
@@ -327,10 +327,10 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       checkAnswer(sql("SELECT * FROM carbon_table WHERE c1='a1'"),
         sql("SELECT * FROM test_parquet WHERE c1='a1'"))
       if (!SparkUtil.isSparkVersionEqualTo("2.1")) {
-        val mapSize = DataMapStoreManager.getInstance().getTableIndexForAllTables.size()
-        DataMapStoreManager.getInstance()
+        val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()
+        IndexStoreManager.getInstance()
           .clearIndex(AbsoluteTableIdentifier.from(warehouse + "/carbon_table"))
-        assert(mapSize > DataMapStoreManager.getInstance().getTableIndexForAllTables.size())
+        assert(mapSize > IndexStoreManager.getInstance().getTableIndexForAllTables.size())
       }
       assert(df.schema.map(_.name) === Seq("c1", "c2", "number"))
       sql("ALTER TABLE carbon_table change number number decimal(9,4)")
@@ -543,10 +543,10 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       val frame = sqlContext.sparkSession.read.format("carbon").load(warehouse + "/test_folder")
       assert(frame.where("c1='a1'").count() == 3)
 
-      val mapSize = DataMapStoreManager.getInstance().getTableIndexForAllTables.size()
-      DataMapStoreManager.getInstance()
+      val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()
+      IndexStoreManager.getInstance()
         .clearIndex(AbsoluteTableIdentifier.from(warehouse + "/test_folder"))
-      assert(mapSize > DataMapStoreManager.getInstance().getTableIndexForAllTables.size())
+      assert(mapSize > IndexStoreManager.getInstance().getTableIndexForAllTables.size())
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse + "/test_folder"))
     }
   }
@@ -1313,21 +1313,21 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       sql("create table carbon_table1(c1 string, c2 string, number int) using carbon")
       sql("insert into carbon_table select * from testparquet")
       sql("insert into carbon_table1 select * from testparquet")
-      DataMapStoreManager.getInstance().getTableIndexForAllTables.clear()
+      IndexStoreManager.getInstance().getTableIndexForAllTables.clear()
       sql("select * from carbon_table where c1='a1'").collect()
-      assert(DataMapStoreManager.getInstance().getTableIndexForAllTables.size() == 1)
+      assert(IndexStoreManager.getInstance().getTableIndexForAllTables.size() == 1)
       sql("select * from carbon_table where c1='a2'").collect()
-      assert(DataMapStoreManager.getInstance().getTableIndexForAllTables.size() == 1)
+      assert(IndexStoreManager.getInstance().getTableIndexForAllTables.size() == 1)
       sql("select * from carbon_table1 where c1='a1'").collect()
-      assert(DataMapStoreManager.getInstance().getTableIndexForAllTables.size() == 2)
+      assert(IndexStoreManager.getInstance().getTableIndexForAllTables.size() == 2)
       sql("select * from carbon_table1 where c1='a2'").collect()
-      assert(DataMapStoreManager.getInstance().getTableIndexForAllTables.size() == 2)
-      DataMapStoreManager.getInstance()
+      assert(IndexStoreManager.getInstance().getTableIndexForAllTables.size() == 2)
+      IndexStoreManager.getInstance()
         .clearIndex(AbsoluteTableIdentifier.from(warehouse + "/carbon_table"))
-      assert(DataMapStoreManager.getInstance().getTableIndexForAllTables.size() == 1)
-      DataMapStoreManager.getInstance()
+      assert(IndexStoreManager.getInstance().getTableIndexForAllTables.size() == 1)
+      IndexStoreManager.getInstance()
         .clearIndex(AbsoluteTableIdentifier.from(warehouse + "/carbon_table1"))
-      assert(DataMapStoreManager.getInstance().getTableIndexForAllTables.size() == 0)
+      assert(IndexStoreManager.getInstance().getTableIndexForAllTables.size() == 0)
       sql("drop table if exists testparquet")
       sql("drop table if exists carbon_table")
       sql("drop table if exists carbon_table1")
@@ -1350,10 +1350,10 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       val frame = sqlContext.sparkSession.read.format("carbon").load(warehouse + "/test_folder")
       assert(frame.count() == 30)
       assert(frame.where("c1='a1'").count() == 3)
-      val mapSize = DataMapStoreManager.getInstance().getTableIndexForAllTables.size()
-      DataMapStoreManager.getInstance()
+      val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()
+      IndexStoreManager.getInstance()
         .clearIndex(AbsoluteTableIdentifier.from(warehouse + "/test_folder"))
-      assert(mapSize > DataMapStoreManager.getInstance().getTableIndexForAllTables.size())
+      assert(mapSize > IndexStoreManager.getInstance().getTableIndexForAllTables.size())
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse + "/test_folder"))
     }
   }

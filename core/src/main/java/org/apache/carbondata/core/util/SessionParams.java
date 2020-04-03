@@ -224,7 +224,7 @@ public class SessionParams implements Serializable, Cloneable {
           }
         } else if (key.equalsIgnoreCase(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP)) {
           isValid = true;
-        } else if (key.startsWith(CarbonCommonConstants.CARBON_DATAMAP_VISIBLE)) {
+        } else if (key.startsWith(CarbonCommonConstants.CARBON_INDEX_VISIBLE)) {
           isValid = true;
         } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL)) {
           isValid = CarbonUtil.validateBoolean(value);

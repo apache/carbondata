@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.core.indexstore.blockletindex;
 
-import org.apache.carbondata.core.datamap.IndexInputSplit;
+import org.apache.carbondata.core.index.IndexInputSplit;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 
 /**

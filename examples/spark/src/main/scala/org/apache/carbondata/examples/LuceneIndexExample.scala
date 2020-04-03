@@ -53,7 +53,7 @@ object LuceneIndexExample {
       .option("compress", "true")
       .mode(SaveMode.Overwrite).save()
 
-    // create lucene datamap on personTable
+    // create lucene index on personTable
     spark.sql(
       s"""
          | CREATE INDEX IF NOT EXISTS dm ON TABLE personTable (id, name)

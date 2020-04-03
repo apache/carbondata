@@ -29,8 +29,8 @@ public class DataMapSchemaFactory {
    * @param providerName
    * @return data map schema
    */
-  public DataMapSchema getDataMapSchema(String dataMapName, String providerName) {
-    return new DataMapSchema(dataMapName, providerName);
+  public IndexSchema getDataMapSchema(String dataMapName, String providerName) {
+    return new IndexSchema(dataMapName, providerName);
   }
 
   public static DataMapSchemaStorageProvider getDataMapSchemaStorageProvider() {

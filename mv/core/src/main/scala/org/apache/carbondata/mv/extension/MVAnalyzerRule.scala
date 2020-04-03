@@ -28,16 +28,16 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
+import org.apache.carbondata.core.metadata.schema.table.IndexSchema
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.datamap.DataMapManager
 import org.apache.carbondata.mv.plans.modular.{ModularPlan, Select}
 import org.apache.carbondata.mv.rewrite.{MVUdf, SummaryDataset, SummaryDatasetCatalog}
 
 /**
- * Analyzer rule to rewrite the query for MV datamap
+ * Analyzer rule to rewrite the query for MV indexSchema
  *
  * @param sparkSession
  */
@@ -46,7 +46,7 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
   // TODO Find way better way to get the provider.
   private val dataMapProvider =
     DataMapManager.get().getDataMapProvider(null,
-      new DataMapSchema("", DataMapClassProvider.MV.getShortName), sparkSession)
+      new IndexSchema("", DataMapClassProvider.MV.getShortName), sparkSession)
 
   private val LOGGER = LogServiceFactory.getLogService(classOf[MVAnalyzerRule].getName)
 
@@ -84,13 +84,13 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
         Aggregate(grp, aExp, child)
     }
     if (needAnalysis) {
-      var catalog = DataMapStoreManager.getInstance().getMVCatalog(dataMapProvider,
+      var catalog = IndexStoreManager.getInstance().getMVCatalog(dataMapProvider,
         DataMapClassProvider.MV.getShortName, false).asInstanceOf[SummaryDatasetCatalog]
       // when first time DataMapCatalogs are initialized, it stores session info also,
       // but when carbon session is newly created, catalog map will not be cleared,
       // so if session info is different, remove the entry from map.
       if (catalog != null && !catalog.mvSession.sparkSession.equals(sparkSession)) {
-        catalog = DataMapStoreManager.getInstance().getMVCatalog(dataMapProvider,
+        catalog = IndexStoreManager.getInstance().getMVCatalog(dataMapProvider,
           DataMapClassProvider.MV.getShortName, true).asInstanceOf[SummaryDatasetCatalog]
       }
       if (catalog != null && isValidPlan(plan, catalog)) {
@@ -159,7 +159,7 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
   }
 
   /**
-   * Whether the plan is valid for doing modular plan matching and datamap replacing.
+   * Whether the plan is valid for doing modular plan matching and indexSchema replacing.
    */
   def isValidPlan(plan: LogicalPlan, catalog: SummaryDatasetCatalog): Boolean = {
     if (!plan.isInstanceOf[Command]  && !plan.isInstanceOf[DeserializeToObject]) {
@@ -173,10 +173,10 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
   }
   /**
-   * Check whether datamap table already updated in the query.
+   * Check whether indexSchema table already updated in the query.
    *
    * @param mvdataSetArray Array of available mvdataset which include modular plans
-   * @return Boolean whether already datamap replaced in the plan or not
+   * @return Boolean whether already indexSchema replaced in the plan or not
    */
   def isDataMapReplaced(
       mvdataSetArray: Array[SummaryDataset],
@@ -217,7 +217,7 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
   /**
    * Check if any segments are set for main table for Query. If any segments are set, then
-   * skip mv datamap table for query
+   * skip mv indexSchema table for query
    */
   def isSegmentSetForMainTable(catalogs: Seq[Option[CatalogTable]]): Boolean = {
     catalogs.foreach { c =>

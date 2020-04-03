@@ -60,7 +60,7 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
       if (!carbonTable.canAllow(carbonTable, TableOperation.ALTER_DROP,
           alterTableDropColumnModel.columns.asJava)) {
         throw new MalformedCarbonCommandException(
-          "alter table drop column is not supported for index datamap")
+          "alter table drop column is not supported for index indexSchema")
       }
       // Do not allow index handler's source columns to be dropped.
       AlterTableUtil.validateForIndexHandlerSources(carbonTable, alterTableDropColumnModel.columns)

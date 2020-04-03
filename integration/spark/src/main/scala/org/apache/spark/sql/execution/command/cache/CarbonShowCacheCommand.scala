@@ -30,10 +30,10 @@ import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.indexstore.BlockletIndexWrapper
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
+import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, ShowTableCacheEvent}
@@ -254,13 +254,13 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
         .getTableUniqueName, carbonTable.getTableId) match {
         case list =>
           val parentCache = list
-            .filter(_._4.equalsIgnoreCase(BlockletIndexFactory.DATA_MAP_SCHEMA
+            .filter(_._4.equalsIgnoreCase(BlockletIndexFactory.INDEX_SCHEMA
               .getProviderName)) match {
             case Nil => ("", 0, 0L, "")
             case head :: _ => head
           }
           val dataMapList = list
-            .filter(!_._4.equalsIgnoreCase(BlockletIndexFactory.DATA_MAP_SCHEMA
+            .filter(!_._4.equalsIgnoreCase(BlockletIndexFactory.INDEX_SCHEMA
               .getProviderName))
           (parentCache, dataMapList)
         case Nil => (("", 0, 0L, ""), Nil)
@@ -325,7 +325,7 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       childTable =>
         val tableName = childTable._1.replace("-", "_")
         if (childTable._2
-          .equalsIgnoreCase(DataMapClassProvider.BLOOMFILTER.getShortName)) {
+          .equalsIgnoreCase(CarbonIndexProvider.BLOOMFILTER.getIndexProviderName)) {
           val childCache = getTableCache(cache, tableName)._2
           if (childCache != 0) {
             Seq(Row(tableName, 0L, childCache, childTable._2))
@@ -423,21 +423,21 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
 
   private def collectDriverMetaCacheInfo(tableName: String,
       tableId: String): List[(String, Int, Long, String)] = {
-    val dataMaps = DataMapStoreManager.getInstance().getTableIndexForAllTables.asScala
+    val dataMaps = IndexStoreManager.getInstance().getTableIndexForAllTables.asScala
     dataMaps.collect {
       case (table, tableDataMaps) if table.isEmpty ||
                                      (tableId.nonEmpty && tableId.equalsIgnoreCase(table)) =>
         val sizeAndIndexLengths = tableDataMaps.asScala
           .collect { case dataMap if
-          dataMap.getDataMapSchema.getDataMapName.equalsIgnoreCase(tableName) ||
+          dataMap.getIndexSchema.getIndexName.equalsIgnoreCase(tableName) ||
           dataMap.getIndexFactory.getCarbonTable.getTableUniqueName.equalsIgnoreCase(tableName) =>
             if (dataMap.getIndexFactory.isInstanceOf[BlockletIndexFactory]) {
               s"$tableName:${ dataMap.getIndexFactory.getCacheSize }:${
-                dataMap.getDataMapSchema.getProviderName}"
+                dataMap.getIndexSchema.getProviderName}"
             } else {
-              s"${ dataMap.getDataMapSchema.getDataMapName }:${
+              s"${ dataMap.getIndexSchema.getIndexName }:${
                 dataMap.getIndexFactory.getCacheSize
-              }:${ dataMap.getDataMapSchema.getProviderName }"
+              }:${ dataMap.getIndexSchema.getProviderName }"
             }
           }
         sizeAndIndexLengths.map {
@@ -450,7 +450,7 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
 
   private def getIndexServerCacheSizeForCurrentDB: (Long, Long) = {
     var (allIndexSize, allDatamapSize) = (0L, 0L)
-    val bloomFilterIdentifier = DataMapClassProvider.BLOOMFILTER.getShortName
+    val bloomFilterIdentifier = CarbonIndexProvider.BLOOMFILTER.getIndexProviderName
     cacheResult.foreach {
       case (_, _, sum, provider) =>
         provider.toLowerCase match {

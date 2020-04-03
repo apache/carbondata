@@ -57,7 +57,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
 
   private long lastModifiedTime;
 
-  private Set<DataMapSchema> dataMapSchemas = new HashSet<>();
+  private Set<IndexSchema> indexSchemas = new HashSet<>();
 
   public DiskBasedDMSchemaStorageProvider(String storePath) {
     this.storePath = CarbonUtil.checkAndAppendHDFSUrl(storePath);
@@ -65,14 +65,14 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
   }
 
   @Override
-  public void saveSchema(DataMapSchema dataMapSchema) throws IOException {
+  public void saveSchema(IndexSchema indexSchema) throws IOException {
     BufferedWriter brWriter = null;
     DataOutputStream dataOutputStream = null;
     Gson gsonObjectToWrite = new Gson();
-    String schemaPath = getSchemaPath(storePath, dataMapSchema.getDataMapName());
+    String schemaPath = getSchemaPath(storePath, indexSchema.getIndexName());
     if (FileFactory.isFileExist(schemaPath)) {
       throw new IOException(
-              "Index with name " + dataMapSchema.getDataMapName() + " already exists in storage");
+              "Index with name " + indexSchema.getIndexName() + " already exists in storage");
     }
     // write the datamap shema in json format.
     try {
@@ -83,13 +83,13 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
 
-      String metadataInstance = gsonObjectToWrite.toJson(dataMapSchema);
+      String metadataInstance = gsonObjectToWrite.toJson(indexSchema);
       brWriter.write(metadataInstance);
     } finally {
       if (null != brWriter) {
         brWriter.flush();
       }
-      dataMapSchemas.add(dataMapSchema);
+      indexSchemas.add(indexSchema);
       CarbonUtil.closeStreams(dataOutputStream, brWriter);
       checkAndReloadDataMapSchemas(true);
       touchMDTFile();
@@ -97,47 +97,47 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
   }
 
   @Override
-  public DataMapSchema retrieveSchema(String dataMapName)
+  public IndexSchema retrieveSchema(String dataMapName)
       throws IOException, NoSuchDataMapException {
     checkAndReloadDataMapSchemas(true);
-    for (DataMapSchema dataMapSchema : dataMapSchemas) {
-      if (dataMapSchema.getDataMapName().equalsIgnoreCase(dataMapName)) {
-        return dataMapSchema;
+    for (IndexSchema indexSchema : indexSchemas) {
+      if (indexSchema.getIndexName().equalsIgnoreCase(dataMapName)) {
+        return indexSchema;
       }
     }
     throw new NoSuchDataMapException(dataMapName);
   }
 
   @Override
-  public List<DataMapSchema> retrieveSchemas(CarbonTable carbonTable) throws IOException {
+  public List<IndexSchema> retrieveSchemas(CarbonTable carbonTable) throws IOException {
     checkAndReloadDataMapSchemas(false);
-    List<DataMapSchema> dataMapSchemas = new ArrayList<>();
-    for (DataMapSchema dataMapSchema : this.dataMapSchemas) {
-      List<RelationIdentifier> parentTables = dataMapSchema.getParentTables();
+    List<IndexSchema> indexSchemas = new ArrayList<>();
+    for (IndexSchema indexSchema : this.indexSchemas) {
+      List<RelationIdentifier> parentTables = indexSchema.getParentTables();
       for (RelationIdentifier identifier : parentTables) {
         if (StringUtils.isNotEmpty(identifier.getTableId())) {
           if (identifier.getTableId().equalsIgnoreCase(carbonTable.getTableId())) {
-            dataMapSchemas.add(dataMapSchema);
+            indexSchemas.add(indexSchema);
             break;
           }
         } else if (identifier.getTableName().equalsIgnoreCase(carbonTable.getTableName()) &&
             identifier.getDatabaseName().equalsIgnoreCase(carbonTable.getDatabaseName())) {
-          dataMapSchemas.add(dataMapSchema);
+          indexSchemas.add(indexSchema);
           break;
         }
       }
     }
-    return dataMapSchemas;
+    return indexSchemas;
   }
 
   @Override
-  public List<DataMapSchema> retrieveAllSchemas() throws IOException {
+  public List<IndexSchema> retrieveAllSchemas() throws IOException {
     checkAndReloadDataMapSchemas(true);
-    return new ArrayList<>(dataMapSchemas);
+    return new ArrayList<>(indexSchemas);
   }
 
-  private Set<DataMapSchema> retrieveAllSchemasInternal() throws IOException {
-    Set<DataMapSchema> dataMapSchemas = new HashSet<>();
+  private Set<IndexSchema> retrieveAllSchemasInternal() throws IOException {
+    Set<IndexSchema> indexSchemas = new HashSet<>();
     CarbonFile carbonFile = FileFactory.getCarbonFile(storePath);
     CarbonFile[] carbonFiles = carbonFile.listFiles(new CarbonFileFilter() {
       @Override
@@ -159,12 +159,12 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
         inStream = new InputStreamReader(dataInputStream,
             Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         buffReader = new BufferedReader(inStream);
-        dataMapSchemas.add(gsonObjectToRead.fromJson(buffReader, DataMapSchema.class));
+        indexSchemas.add(gsonObjectToRead.fromJson(buffReader, IndexSchema.class));
       } finally {
         CarbonUtil.closeStreams(buffReader, inStream, dataInputStream);
       }
     }
-    return dataMapSchemas;
+    return indexSchemas;
   }
 
   @Override
@@ -177,7 +177,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
 
     LOG.info(String.format("Trying to delete Index %s schema", dataMapName));
 
-    dataMapSchemas.removeIf(schema -> schema.getDataMapName().equalsIgnoreCase(dataMapName));
+    indexSchemas.removeIf(schema -> schema.getIndexName().equalsIgnoreCase(dataMapName));
     touchMDTFile();
     if (!FileFactory.deleteFile(schemaPath)) {
       throw new IOException("Index with name " + dataMapName + " cannot be deleted");
@@ -189,11 +189,11 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     if (FileFactory.isFileExist(mdtFilePath)) {
       long lastModifiedTime = FileFactory.getCarbonFile(mdtFilePath).getLastModifiedTime();
       if (this.lastModifiedTime != lastModifiedTime) {
-        dataMapSchemas = retrieveAllSchemasInternal();
+        indexSchemas = retrieveAllSchemasInternal();
         touchMDTFile();
       }
     } else {
-      dataMapSchemas = retrieveAllSchemasInternal();
+      indexSchemas = retrieveAllSchemasInternal();
       if (touchFile) {
         touchMDTFile();
       }

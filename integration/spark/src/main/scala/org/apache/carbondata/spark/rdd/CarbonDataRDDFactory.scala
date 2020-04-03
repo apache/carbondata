@@ -46,13 +46,13 @@ import org.apache.spark.util.CollectionAccumulator
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, SortScopeOptions}
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
-import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo}
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
+import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
+import org.apache.carbondata.core.index.status.DataMapStatusManager
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarFormatVersion, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -552,7 +552,7 @@ object CarbonDataRDDFactory {
       if (carbonLoadModel.isCarbonTransactionalTable) {
         // delete segment is applicable for transactional table
         CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
-        clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
+        clearIndexFiles(carbonTable, carbonLoadModel.getSegmentId)
       }
       LOGGER.info("********clean up done**********")
       LOGGER.warn("Cannot write load metadata file as data load failed")
@@ -569,7 +569,7 @@ object CarbonDataRDDFactory {
         if (carbonLoadModel.isCarbonTransactionalTable) {
           // delete segment is applicable for transactional table
           CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
-          clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
+          clearIndexFiles(carbonTable, carbonLoadModel.getSegmentId)
         }
         LOGGER.info("********clean up done**********")
         throw new Exception(status(0)._2._2.errorMsg)
@@ -639,7 +639,7 @@ object CarbonDataRDDFactory {
           val segmentFile = CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
                             File.separator + segmentFileName
           FileFactory.deleteFile(segmentFile)
-          clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
+          clearIndexFiles(carbonTable, carbonLoadModel.getSegmentId)
         }
         LOGGER.info("********clean up done**********")
         LOGGER.error("Data load failed due to failure in table status updation.")
@@ -684,17 +684,17 @@ object CarbonDataRDDFactory {
   }
 
   /**
-   * clear datamap files for segment
+   * clear indexSchema files for segment
    */
-  def clearDataMapFiles(carbonTable: CarbonTable, segmentId: String): Unit = {
+  def clearIndexFiles(carbonTable: CarbonTable, segmentId: String): Unit = {
     try {
       val segments = List(new Segment(segmentId)).asJava
-      DataMapStoreManager.getInstance().getAllIndexes(carbonTable).asScala
-        .filter(_.getDataMapSchema.isIndex)
-        .foreach(_.deleteDatamapData(segments))
+      IndexStoreManager.getInstance().getAllIndexes(carbonTable).asScala
+        .filter(_.getIndexSchema.isIndex)
+        .foreach(_.deleteIndexData(segments))
     } catch {
       case ex : Exception =>
-        LOGGER.error(s"Failed to clear datamap files for" +
+        LOGGER.error(s"Failed to clear indexSchema files for" +
                      s" ${carbonTable.getDatabaseName}.${carbonTable.getTableName}")
     }
   }
@@ -1042,7 +1042,7 @@ object CarbonDataRDDFactory {
       }
       viewManager.setStatus(viewSchemas, MVStatus.DISABLED)
       if (overwriteTable) {
-        val allDataMapSchemas = DataMapStoreManager.getInstance
+        val allDataMapSchemas = IndexStoreManager.getInstance
           .getDataMapSchemasOfTable(carbonTable).asScala
           .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
                                    !dataMapSchema.isIndex).asJava

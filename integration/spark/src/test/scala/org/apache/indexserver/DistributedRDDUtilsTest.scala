@@ -6,8 +6,8 @@ import scala.collection.JavaConverters._
 
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
 
-import org.apache.carbondata.core.datamap.Segment
-import org.apache.carbondata.core.datamap.dev.expr.IndexInputSplitWrapper
+import org.apache.carbondata.core.index.Segment
+import org.apache.carbondata.core.index.dev.expr.IndexInputSplitWrapper
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexInputSplit
 import org.apache.carbondata.indexserver.DistributedRDDUtils
 

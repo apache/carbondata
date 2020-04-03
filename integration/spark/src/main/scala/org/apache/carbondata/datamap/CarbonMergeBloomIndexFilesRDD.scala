@@ -26,18 +26,18 @@ import org.apache.spark.TaskContext
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.datamap.bloom.BloomIndexFileStore
+import org.apache.carbondata.index.bloom.BloomIndexFileStore
 import org.apache.carbondata.spark.rdd.CarbonRDD
 
 
 /**
- * RDD to merge all bloomindex files of specified segment for bloom datamap
+ * RDD to merge all bloomindex files of specified segment for bloom index
  */
 class CarbonMergeBloomIndexFilesRDD(
   @transient private val ss: SparkSession,
   carbonTable: CarbonTable,
   segmentIds: Seq[String],
-  bloomDatamapNames: Seq[String],
+  bloomIndexNames: Seq[String],
   bloomIndexColumns: Seq[Seq[String]])
   extends CarbonRDD[String](ss, Nil) {
 
@@ -53,8 +53,8 @@ class CarbonMergeBloomIndexFilesRDD(
     logInfo("Merging bloom index files of " +
       s"segment ${split.segmentId} for ${carbonTable.getTableName}")
 
-    bloomDatamapNames.zipWithIndex.map( dm => {
-      val dmSegmentPath = CarbonTablePath.getDataMapStorePath(
+    bloomIndexNames.zipWithIndex.map( dm => {
+      val dmSegmentPath = CarbonTablePath.getIndexesStorePath(
         tablePath, split.segmentId, dm._1)
       BloomIndexFileStore.mergeBloomIndexFile(dmSegmentPath, bloomIndexColumns(dm._2).asJava)
     })

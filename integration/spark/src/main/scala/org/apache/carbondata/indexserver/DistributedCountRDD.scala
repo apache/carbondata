@@ -30,16 +30,16 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, IndexInputFormat}
-import org.apache.carbondata.core.datamap.dev.expr.IndexInputSplitWrapper
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.{IndexInputFormat, IndexStoreManager}
+import org.apache.carbondata.core.index.dev.expr.IndexInputSplitWrapper
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonThreadFactory}
 import org.apache.carbondata.spark.rdd.CarbonRDD
 
 /**
  * An RDD which will get the count for the table.
  */
-class DistributedCountRDD(@transient ss: SparkSession, dataMapFormat: IndexInputFormat)
+class DistributedCountRDD(@transient ss: SparkSession, indexInputFormat: IndexInputFormat)
   extends CarbonRDD[(String, String)](ss, Nil) {
 
   @transient private val LOGGER = LogServiceFactory.getLogService(classOf[DistributedPruneRDD]
@@ -64,10 +64,10 @@ class DistributedCountRDD(@transient ss: SparkSession, dataMapFormat: IndexInput
       .newFixedThreadPool(numOfThreads, new CarbonThreadFactory("IndexPruningPool", true))
     implicit val ec: ExecutionContextExecutor = ExecutionContext
       .fromExecutor(service)
-    if (dataMapFormat.ifAsyncCall()) {
+    if (indexInputFormat.ifAsyncCall()) {
       // to clear cache of invalid segments during pre-priming in index server
-      DataMapStoreManager.getInstance().clearInvalidSegments(dataMapFormat.getCarbonTable,
-        dataMapFormat.getInvalidSegments)
+      IndexStoreManager.getInstance().clearInvalidSegments(indexInputFormat.getCarbonTable,
+        indexInputFormat.getInvalidSegments)
     }
     val futures = if (inputSplits.length <= numOfThreads) {
       inputSplits.map {
@@ -93,7 +93,7 @@ class DistributedCountRDD(@transient ss: SparkSession, dataMapFormat: IndexInput
   }
 
   override protected def internalGetPartitions: Array[Partition] = {
-    new DistributedPruneRDD(ss, dataMapFormat).partitions
+    new DistributedPruneRDD(ss, indexInputFormat).partitions
   }
 
   private def generateFuture(split: Seq[InputSplit])
@@ -102,14 +102,14 @@ class DistributedCountRDD(@transient ss: SparkSession, dataMapFormat: IndexInput
       val segments = split.map { inputSplit =>
         val distributable = inputSplit.asInstanceOf[IndexInputSplitWrapper]
         distributable.getDistributable.getSegment
-          .setReadCommittedScope(dataMapFormat.getReadCommittedScope)
+          .setReadCommittedScope(indexInputFormat.getReadCommittedScope)
         distributable.getDistributable.getSegment
       }
-      val defaultDataMap = DataMapStoreManager.getInstance
-        .getIndex(dataMapFormat.getCarbonTable, split.head
-          .asInstanceOf[IndexInputSplitWrapper].getDistributable.getDataMapSchema)
-      defaultDataMap.getBlockRowCount(segments.toList.asJava, dataMapFormat
-        .getPartitions, defaultDataMap).asScala
+      val defaultIndex = IndexStoreManager.getInstance
+        .getIndex(indexInputFormat.getCarbonTable, split.head
+          .asInstanceOf[IndexInputSplitWrapper].getDistributable.getIndexSchema)
+      defaultIndex.getBlockRowCount(segments.toList.asJava, indexInputFormat
+        .getPartitions, defaultIndex).asScala
     }
   }
 

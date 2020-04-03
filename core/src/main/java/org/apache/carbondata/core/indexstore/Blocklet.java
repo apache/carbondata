@@ -38,7 +38,7 @@ public class Blocklet implements Writable, Serializable {
   /**
    * flag to specify whether to consider blocklet Id in equals and hashcode comparison. This is
    * because when CACHE_LEVEL='BLOCK' which is default value, the blocklet ID returned by
-   * BlockIndex pruning will always be -1 and other datamaps will give the the correct blocklet
+   * BlockIndex pruning will always be -1 and other indexes will give the the correct blocklet
    * ID. Therefore if we compare -1 with correct blocklet ID the comparison will become wrong and
    * always false will be returned resulting in incorrect result. Default value for flag is true.
    */

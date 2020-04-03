@@ -33,23 +33,23 @@ import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.IndexFilter;
-import org.apache.carbondata.core.datamap.IndexInputSplit;
-import org.apache.carbondata.core.datamap.IndexMeta;
-import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.CacheableIndex;
-import org.apache.carbondata.core.datamap.dev.Index;
-import org.apache.carbondata.core.datamap.dev.IndexBuilder;
-import org.apache.carbondata.core.datamap.dev.IndexWriter;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndex;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndexFactory;
-import org.apache.carbondata.core.datamap.dev.expr.IndexExprWrapper;
-import org.apache.carbondata.core.datamap.dev.expr.IndexInputSplitWrapper;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.features.TableOperation;
+import org.apache.carbondata.core.index.IndexFilter;
+import org.apache.carbondata.core.index.IndexInputSplit;
+import org.apache.carbondata.core.index.IndexMeta;
+import org.apache.carbondata.core.index.Segment;
+import org.apache.carbondata.core.index.dev.CacheableIndex;
+import org.apache.carbondata.core.index.dev.Index;
+import org.apache.carbondata.core.index.dev.IndexBuilder;
+import org.apache.carbondata.core.index.dev.IndexWriter;
+import org.apache.carbondata.core.index.dev.cgindex.CoarseGrainIndex;
+import org.apache.carbondata.core.index.dev.cgindex.CoarseGrainIndexFactory;
+import org.apache.carbondata.core.index.dev.expr.IndexExprWrapper;
+import org.apache.carbondata.core.index.dev.expr.IndexInputSplitWrapper;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.BlockletIndexWrapper;
@@ -61,7 +61,7 @@ import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifierWrapper;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
@@ -85,8 +85,8 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
    */
   public static final String CACHE_LEVEL_BLOCKLET = "BLOCKLET";
 
-  public static final DataMapSchema DATA_MAP_SCHEMA =
-      new DataMapSchema(NAME, BlockletIndexFactory.class.getName());
+  public static final IndexSchema INDEX_SCHEMA =
+      new IndexSchema(NAME, BlockletIndexFactory.class.getName());
 
   private AbsoluteTableIdentifier identifier;
 
@@ -95,11 +95,11 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
 
   private Cache<TableBlockIndexUniqueIdentifierWrapper, BlockletIndexWrapper> cache;
 
-  public BlockletIndexFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
-    super(carbonTable, dataMapSchema);
+  public BlockletIndexFactory(CarbonTable carbonTable, IndexSchema indexSchema) {
+    super(carbonTable, indexSchema);
     this.identifier = carbonTable.getAbsoluteTableIdentifier();
     cache = CacheProvider.getInstance()
-        .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);
+        .createCache(CacheType.DRIVER_BLOCKLET_INDEX);
   }
 
   /**
@@ -447,7 +447,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
     try {
       BlockletIndexInputSplit distributable = new BlockletIndexInputSplit();
       distributable.setSegment(segment);
-      distributable.setDataMapSchema(DATA_MAP_SCHEMA);
+      distributable.setIndexSchema(INDEX_SCHEMA);
       distributable.setSegmentPath(CarbonTablePath.getSegmentPath(identifier.getTablePath(),
           segment.getSegmentNo()));
       distributables.add(new IndexInputSplitWrapper(UUID.randomUUID().toString(),
@@ -642,7 +642,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   }
 
   @Override
-  public SegmentProperties getSegmentPropertiesFromDataMap(Index coarseGrainIndex) {
+  public SegmentProperties getSegmentPropertiesFromIndex(Index coarseGrainIndex) {
     assert (coarseGrainIndex instanceof BlockIndex);
     BlockIndex dataMap = (BlockIndex) coarseGrainIndex;
     return dataMap.getSegmentProperties();
@@ -708,7 +708,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
     return tableBlockIndexUniqueIdentifiers;
   }
 
-  public void updateSegmentDataMap(
+  public void updateSegmentIndex(
       Map<String, Set<TableBlockIndexUniqueIdentifier>> indexUniqueIdentifiers) {
     for (Map.Entry<String, Set<TableBlockIndexUniqueIdentifier>> identifier : indexUniqueIdentifiers
         .entrySet()) {
@@ -740,10 +740,10 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
 
   @Override
   public IndexInputSplitWrapper toDistributableSegment(Segment segment,
-      DataMapSchema schema, AbsoluteTableIdentifier identifier, String uniqueId) {
+      IndexSchema schema, AbsoluteTableIdentifier identifier, String uniqueId) {
     try {
       BlockletIndexInputSplit distributable = new BlockletIndexInputSplit();
-      distributable.setDataMapSchema(schema);
+      distributable.setIndexSchema(schema);
       distributable.setSegment(segment);
       distributable.setSegmentPath(
           CarbonTablePath.getSegmentPath(identifier.getTablePath(), segment.getSegmentNo()));

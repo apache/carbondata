@@ -34,9 +34,9 @@ import org.apache.spark.sql.types.StringType
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty
+import org.apache.carbondata.core.metadata.schema.datamap.IndexProperty
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 /**
@@ -122,7 +122,7 @@ case class ShowIndexesCommand(
             val indexColumns = indexProperties.get(CarbonCommonConstants.INDEX_COLUMNS)
             // ignore internal used property
             val properties = ListMap(indexProperties.asScala.filter(f =>
-              !f._1.equalsIgnoreCase(DataMapProperty.DEFERRED_REBUILD) &&
+              !f._1.equalsIgnoreCase(IndexProperty.DEFERRED_REBUILD) &&
               !f._1.equalsIgnoreCase(CarbonCommonConstants.INDEX_PROVIDER) &&
               !f._1.equalsIgnoreCase(CarbonCommonConstants.INDEX_STATUS)).toSeq.sortBy(_._1): _*)
               .map { p => "'" + p._1 + "'='" + p._2 + "'" }

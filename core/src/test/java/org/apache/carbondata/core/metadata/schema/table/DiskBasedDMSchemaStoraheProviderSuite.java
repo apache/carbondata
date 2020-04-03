@@ -55,17 +55,17 @@ public class DiskBasedDMSchemaStoraheProviderSuite {
       CarbonProperties.getInstance().getSystemFolderLocation());
 
   @Test public void testSaveSchema() throws IOException, NoSuchDataMapException {
-    DataMapSchema dataMapSchema = createDataMapSchema("dm1", "table1");
-    provider.saveSchema(dataMapSchema);
+    IndexSchema indexSchema = createDataMapSchema("dm1", "table1");
+    provider.saveSchema(indexSchema);
     CarbonFile[] schemaFilesFromLocation = getSchemaFilesFromLocation();
-    assert (existsSchema(dataMapSchema, schemaFilesFromLocation));
-    DataMapSchema dataMapSchema1 = provider.retrieveSchema("dm1");
-    assert (dataMapSchema.getDataMapName().equals(dataMapSchema1.getDataMapName()));
+    assert (existsSchema(indexSchema, schemaFilesFromLocation));
+    IndexSchema indexSchema1 = provider.retrieveSchema("dm1");
+    assert (indexSchema.getIndexName().equals(indexSchema1.getIndexName()));
   }
 
   @Test public void testDropSchema() throws IOException {
-    DataMapSchema dataMapSchema = createDataMapSchema("dm2", "table1");
-    provider.saveSchema(dataMapSchema);
+    IndexSchema indexSchema = createDataMapSchema("dm2", "table1");
+    provider.saveSchema(indexSchema);
     provider.dropSchema("dm2");
     CarbonFile[] schemaFilesFromLocation = getSchemaFilesFromLocation();
     for (CarbonFile file : schemaFilesFromLocation) {
@@ -80,90 +80,90 @@ public class DiskBasedDMSchemaStoraheProviderSuite {
   }
 
   @Test public void testRetriveAllSchemas() throws IOException {
-    DataMapSchema dataMapSchema1 = createDataMapSchema("dm3", "table1");
-    DataMapSchema dataMapSchema2 = createDataMapSchema("dm4", "table1");
-    DataMapSchema dataMapSchema3 = createDataMapSchema("dm5", "table1");
-    provider.saveSchema(dataMapSchema1);
-    provider.saveSchema(dataMapSchema2);
-    provider.saveSchema(dataMapSchema3);
+    IndexSchema indexSchema1 = createDataMapSchema("dm3", "table1");
+    IndexSchema indexSchema2 = createDataMapSchema("dm4", "table1");
+    IndexSchema indexSchema3 = createDataMapSchema("dm5", "table1");
+    provider.saveSchema(indexSchema1);
+    provider.saveSchema(indexSchema2);
+    provider.saveSchema(indexSchema3);
 
-    List<DataMapSchema> dataMapSchemas = provider.retrieveAllSchemas();
-    assert (existsSchema(dataMapSchema1, dataMapSchemas));
-    assert (existsSchema(dataMapSchema2, dataMapSchemas));
-    assert (existsSchema(dataMapSchema3, dataMapSchemas));
+    List<IndexSchema> indexSchemas = provider.retrieveAllSchemas();
+    assert (existsSchema(indexSchema1, indexSchemas));
+    assert (existsSchema(indexSchema2, indexSchemas));
+    assert (existsSchema(indexSchema3, indexSchemas));
   }
 
   @Test public void testWithOtherProvider() throws IOException, InterruptedException {
-    DataMapSchema dataMapSchema1 = createDataMapSchema("dm6", "table1");
-    DataMapSchema dataMapSchema2 = createDataMapSchema("dm7", "table1");
-    DataMapSchema dataMapSchema3 = createDataMapSchema("dm8", "table1");
-    provider.saveSchema(dataMapSchema1);
+    IndexSchema indexSchema1 = createDataMapSchema("dm6", "table1");
+    IndexSchema indexSchema2 = createDataMapSchema("dm7", "table1");
+    IndexSchema indexSchema3 = createDataMapSchema("dm8", "table1");
+    provider.saveSchema(indexSchema1);
     Thread.sleep(400);
-    provider.saveSchema(dataMapSchema2);
+    provider.saveSchema(indexSchema2);
     Thread.sleep(400);
     DiskBasedDMSchemaStorageProvider provider1 = new DiskBasedDMSchemaStorageProvider(
         CarbonProperties.getInstance().getSystemFolderLocation());
-    provider1.saveSchema(dataMapSchema3);
+    provider1.saveSchema(indexSchema3);
     Thread.sleep(400);
 
-    List<DataMapSchema> dataMapSchemas = provider1.retrieveAllSchemas();
-    assert (existsSchema(dataMapSchema1, dataMapSchemas));
-    assert (existsSchema(dataMapSchema2, dataMapSchemas));
-    assert (existsSchema(dataMapSchema3, dataMapSchemas));
+    List<IndexSchema> indexSchemas = provider1.retrieveAllSchemas();
+    assert (existsSchema(indexSchema1, indexSchemas));
+    assert (existsSchema(indexSchema2, indexSchemas));
+    assert (existsSchema(indexSchema3, indexSchemas));
 
-    List<DataMapSchema> dataMapSchemas1 = provider.retrieveAllSchemas();
-    assert (existsSchema(dataMapSchema1, dataMapSchemas1));
-    assert (existsSchema(dataMapSchema2, dataMapSchemas1));
-    assert (existsSchema(dataMapSchema3, dataMapSchemas1));
+    List<IndexSchema> indexSchemas1 = provider.retrieveAllSchemas();
+    assert (existsSchema(indexSchema1, indexSchemas1));
+    assert (existsSchema(indexSchema2, indexSchemas1));
+    assert (existsSchema(indexSchema3, indexSchemas1));
   }
 
   @Test public void testDropWithOtherProvider() throws IOException, InterruptedException {
-    DataMapSchema dataMapSchema1 = createDataMapSchema("dm9", "table1");
-    DataMapSchema dataMapSchema2 = createDataMapSchema("dm10", "table1");
-    DataMapSchema dataMapSchema3 = createDataMapSchema("dm11", "table1");
-    provider.saveSchema(dataMapSchema1);
+    IndexSchema indexSchema1 = createDataMapSchema("dm9", "table1");
+    IndexSchema indexSchema2 = createDataMapSchema("dm10", "table1");
+    IndexSchema indexSchema3 = createDataMapSchema("dm11", "table1");
+    provider.saveSchema(indexSchema1);
     Thread.sleep(400);
-    provider.saveSchema(dataMapSchema2);
+    provider.saveSchema(indexSchema2);
     Thread.sleep(400);
-    provider.saveSchema(dataMapSchema3);
+    provider.saveSchema(indexSchema3);
     Thread.sleep(400);
 
     DiskBasedDMSchemaStorageProvider provider1 = new DiskBasedDMSchemaStorageProvider(
         CarbonProperties.getInstance().getSystemFolderLocation());
-    provider1.dropSchema(dataMapSchema3.getDataMapName());
+    provider1.dropSchema(indexSchema3.getIndexName());
     Thread.sleep(400);
 
-    List<DataMapSchema> dataMapSchemas = provider1.retrieveAllSchemas();
-    assert (existsSchema(dataMapSchema1, dataMapSchemas));
-    assert (existsSchema(dataMapSchema2, dataMapSchemas));
-    assert (!existsSchema(dataMapSchema3, dataMapSchemas));
+    List<IndexSchema> indexSchemas = provider1.retrieveAllSchemas();
+    assert (existsSchema(indexSchema1, indexSchemas));
+    assert (existsSchema(indexSchema2, indexSchemas));
+    assert (!existsSchema(indexSchema3, indexSchemas));
 
-    List<DataMapSchema> dataMapSchemas1 = provider.retrieveAllSchemas();
-    assert (existsSchema(dataMapSchema1, dataMapSchemas1));
-    assert (existsSchema(dataMapSchema2, dataMapSchemas1));
-    assert (!existsSchema(dataMapSchema3, dataMapSchemas1));
+    List<IndexSchema> indexSchemas1 = provider.retrieveAllSchemas();
+    assert (existsSchema(indexSchema1, indexSchemas1));
+    assert (existsSchema(indexSchema2, indexSchemas1));
+    assert (!existsSchema(indexSchema3, indexSchemas1));
   }
 
-  private boolean existsSchema(DataMapSchema schema, List<DataMapSchema> dataMapSchemas) {
-    for (DataMapSchema dataMapSchema : dataMapSchemas) {
-      if (dataMapSchema.getDataMapName().equals(schema.getDataMapName())) {
+  private boolean existsSchema(IndexSchema schema, List<IndexSchema> indexSchemas) {
+    for (IndexSchema indexSchema : indexSchemas) {
+      if (indexSchema.getIndexName().equals(schema.getIndexName())) {
         return true;
       }
     }
     return false;
   }
 
-  private boolean existsSchema(DataMapSchema schema, CarbonFile[] carbonFiles) {
+  private boolean existsSchema(IndexSchema schema, CarbonFile[] carbonFiles) {
     for (CarbonFile dataMapSchema : carbonFiles) {
-      if (dataMapSchema.getName().contains(schema.getDataMapName())) {
+      if (dataMapSchema.getName().contains(schema.getIndexName())) {
         return true;
       }
     }
     return false;
   }
 
-  private DataMapSchema createDataMapSchema(String name, String table) {
-    DataMapSchema mapSchema = new DataMapSchema(name, "index");
+  private IndexSchema createDataMapSchema(String name, String table) {
+    IndexSchema mapSchema = new IndexSchema(name, "index");
     RelationIdentifier identifier = new RelationIdentifier("default", table, "");
 
     ArrayList<RelationIdentifier> parentTables = new ArrayList<>();

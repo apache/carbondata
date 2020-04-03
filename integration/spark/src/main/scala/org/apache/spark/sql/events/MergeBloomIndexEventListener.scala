@@ -24,9 +24,8 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.index.IndexStoreManager
+import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
 import org.apache.carbondata.datamap.CarbonMergeBloomIndexFilesRDD
 import org.apache.carbondata.events._
 
@@ -38,35 +37,35 @@ class MergeBloomIndexEventListener extends OperationEventListener with Logging {
       case datamapPostEvent: BuildIndexPostExecutionEvent =>
         LOGGER.info("Load post status event-listener called for merge bloom index")
         val carbonTableIdentifier = datamapPostEvent.identifier
-        val carbonTable = DataMapStoreManager.getInstance().getCarbonTable(carbonTableIdentifier)
-        val tableDataMaps = DataMapStoreManager.getInstance().getAllIndexes(carbonTable)
+        val carbonTable = IndexStoreManager.getInstance().getCarbonTable(carbonTableIdentifier)
+        val tableDataMaps = IndexStoreManager.getInstance().getAllIndexes(carbonTable)
         val sparkSession = SparkSession.getActiveSession.get
 
-        // filter out bloom datamap
+        // filter out bloom indexSchema
         var bloomDatamaps = tableDataMaps.asScala.filter(
-          _.getDataMapSchema.getProviderName.equalsIgnoreCase(
-            DataMapClassProvider.BLOOMFILTER.getShortName))
+          _.getIndexSchema.getProviderName.equalsIgnoreCase(
+            CarbonIndexProvider.BLOOMFILTER.getIndexProviderName))
 
         if (datamapPostEvent.isFromRebuild) {
-          if (null != datamapPostEvent.dmName) {
+          if (null != datamapPostEvent.indexName) {
             // for rebuild process
             bloomDatamaps = bloomDatamaps.filter(
-              _.getDataMapSchema.getDataMapName.equalsIgnoreCase(datamapPostEvent.dmName))
+              _.getIndexSchema.getIndexName.equalsIgnoreCase(datamapPostEvent.indexName))
           }
         } else {
-          // for load process, skip lazy datamap
-          bloomDatamaps = bloomDatamaps.filter(!_.getDataMapSchema.isLazy)
+          // for load process, skip lazy indexSchema
+          bloomDatamaps = bloomDatamaps.filter(!_.getIndexSchema.isLazy)
         }
 
         val segmentIds = datamapPostEvent.segmentIdList
         if (bloomDatamaps.size > 0 && segmentIds.size > 0) {
-          // we extract bloom datamap name and index columns here
+          // we extract bloom indexSchema name and index columns here
           // because TableIndex is not serializable
           val bloomDMnames = ListBuffer.empty[String]
           val bloomIndexColumns = ListBuffer.empty[Seq[String]]
           bloomDatamaps.foreach( dm => {
-            bloomDMnames += dm.getDataMapSchema.getDataMapName
-            bloomIndexColumns += dm.getDataMapSchema.getIndexColumns.map(_.trim.toLowerCase)
+            bloomDMnames += dm.getIndexSchema.getIndexName
+            bloomIndexColumns += dm.getIndexSchema.getIndexColumns.map(_.trim.toLowerCase)
           })
           new CarbonMergeBloomIndexFilesRDD(sparkSession, carbonTable,
             segmentIds, bloomDMnames, bloomIndexColumns).collect()

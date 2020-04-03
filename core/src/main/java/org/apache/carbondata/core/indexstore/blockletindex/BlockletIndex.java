@@ -26,9 +26,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.dev.IndexModel;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.index.dev.IndexModel;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.row.IndexRow;
@@ -207,7 +207,7 @@ public class BlockletIndex extends BlockIndex implements Serializable {
   @Override
   public ExtendedBlocklet getDetailedBlocklet(String blockletId) {
     int absoluteBlockletId = Integer.parseInt(blockletId);
-    IndexRow row = memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), absoluteBlockletId);
+    IndexRow row = memoryDMStore.getIndexRow(getFileFooterEntrySchema(), absoluteBlockletId);
     short relativeBlockletId = row.getShort(BLOCKLET_ID_INDEX);
     String filePath = getFilePath();
     return createBlocklet(row, getFileNameWithFilePath(row, filePath), relativeBlockletId,
@@ -233,7 +233,7 @@ public class BlockletIndex extends BlockIndex implements Serializable {
     blocklet.setColumnSchema(getColumnSchema());
     blocklet.setUseMinMaxForPruning(useMinMaxForPruning);
     blocklet.setIsBlockCache(false);
-    blocklet.setDataMapRow(row);
+    blocklet.setIndexRow(row);
     return blocklet;
   }
 

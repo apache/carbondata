@@ -33,10 +33,10 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
-import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
+import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
+import org.apache.carbondata.core.index.status.DataMapStatusManager
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
@@ -201,7 +201,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
       HorizontalCompaction.tryHorizontalCompaction(
         sparkSession, carbonTable, isUpdateOperation = true)
 
-      val allDataMapSchemas = DataMapStoreManager.getInstance
+      val allDataMapSchemas = IndexStoreManager.getInstance
         .getDataMapSchemasOfTable(carbonTable).asScala
         .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
                                  !dataMapSchema.isIndex).asJava

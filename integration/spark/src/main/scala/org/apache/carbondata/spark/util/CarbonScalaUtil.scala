@@ -44,8 +44,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
-import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
 import org.apache.carbondata.core.util.{ByteUtil, DataTypeUtil}
 import org.apache.carbondata.processing.exception.DataLoadingException
@@ -524,13 +523,13 @@ object CarbonScalaUtil {
   }
 
   /**
-   * Create datamap provider using class name
+   * Create indexSchema provider using class name
    */
   def createDataMapProvider(
       className: String,
       sparkSession: SparkSession,
       table: CarbonTable,
-      schema: DataMapSchema): Object = {
+      schema: IndexSchema): Object = {
     CarbonReflectionUtils.createObject(
       className,
       sparkSession,

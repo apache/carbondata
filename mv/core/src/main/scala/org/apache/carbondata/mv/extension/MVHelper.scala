@@ -35,12 +35,12 @@ import org.apache.spark.sql.types.{ArrayType, DateType, MapType, StructType}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, RelationIdentifier}
+import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, IndexProperty}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema, RelationIdentifier}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.datamap.DataMapManager
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan}
@@ -65,7 +65,7 @@ object MVHelper {
 
   def createMVDataMap(
       sparkSession: SparkSession,
-      dataMapSchema: DataMapSchema,
+      dataMapSchema: IndexSchema,
       queryString: String,
       ifNotExistsSet: Boolean = false): Unit = {
     val properties = dataMapSchema.getProperties.asScala
@@ -176,7 +176,7 @@ object MVHelper {
         }
     }
 
-    tableProperties.put(CarbonCommonConstants.DATAMAP_NAME, dataMapSchema.getDataMapName)
+    tableProperties.put(CarbonCommonConstants.DATAMAP_NAME, dataMapSchema.getIndexName)
     tableProperties.put(CarbonCommonConstants.PARENT_TABLES, parentTables.asScala.mkString(","))
 
     val finalModularPlan = new SQLBuilder(modularPlan).SQLizer.execute(modularPlan)
@@ -240,7 +240,7 @@ object MVHelper {
     }
 
     val viewTableIdentifier = TableIdentifier(
-      dataMapSchema.getDataMapName + "_table", mainTables.head.identifier.database)
+      dataMapSchema.getIndexName + "_table", mainTables.head.identifier.database)
 
     // prepare table model of the collected tokens
     val viewTableModel: TableModel = CarbonParserUtil.prepareTableModel(
@@ -301,9 +301,9 @@ object MVHelper {
     }
     dataMapSchema.getRelationIdentifier.setTablePath(viewTablePath)
     dataMapSchema.setParentTables(new util.ArrayList[RelationIdentifier](parentIdents.asJava))
-    dataMapSchema.getProperties.put(DataMapProperty.FULL_REFRESH, isNeedFullRebuild.toString)
+    dataMapSchema.getProperties.put(IndexProperty.FULL_REFRESH, isNeedFullRebuild.toString)
     try {
-      DataMapStoreManager.getInstance().saveDataMapSchema(dataMapSchema)
+      IndexStoreManager.getInstance().saveDataMapSchema(dataMapSchema)
     } catch {
       case ex: Exception =>
         val dropTableCommand = CarbonDropTableCommand(
@@ -320,8 +320,8 @@ object MVHelper {
       sparkSession: SparkSession,
       logicalPlan: LogicalPlan): ModularPlan = {
     val dataMapProvider = DataMapManager.get().getDataMapProvider(null,
-      new DataMapSchema("", DataMapClassProvider.MV.getShortName), sparkSession)
-    var catalog = DataMapStoreManager.getInstance().getMVCatalog(dataMapProvider,
+      new IndexSchema("", DataMapClassProvider.MV.getShortName), sparkSession)
+    var catalog = IndexStoreManager.getInstance().getMVCatalog(dataMapProvider,
       DataMapClassProvider.MV.getShortName, false).asInstanceOf[SummaryDatasetCatalog]
     if (catalog == null) {
       catalog = new SummaryDatasetCatalog(sparkSession)
@@ -483,7 +483,7 @@ object MVHelper {
    * @return
    */
   private def validateMVTimeSeriesQuery(logicalPlan: LogicalPlan,
-      dataMapSchema: DataMapSchema): (String, String) = {
+      dataMapSchema: IndexSchema): (String, String) = {
     var timeSeriesColumn: String = null
     var granularity: String = null
     logicalPlan.transformExpressions {

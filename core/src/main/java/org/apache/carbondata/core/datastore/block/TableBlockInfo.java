@@ -24,8 +24,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
@@ -83,7 +83,7 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   private BlockletDetailInfo detailInfo;
 
-  private String dataMapWriterPath;
+  private String indexWriterPath;
 
   private transient DataFileFooter dataFileFooter;
 
@@ -131,7 +131,7 @@ public class TableBlockInfo implements Distributable, Serializable {
     info.version = version;
     info.deletedDeltaFilePath = deletedDeltaFilePath;
     info.detailInfo = detailInfo.copy();
-    info.dataMapWriterPath = dataMapWriterPath;
+    info.indexWriterPath = indexWriterPath;
     return info;
   }
 
@@ -326,12 +326,12 @@ public class TableBlockInfo implements Distributable, Serializable {
     this.detailInfo = detailInfo;
   }
 
-  public String getDataMapWriterPath() {
-    return dataMapWriterPath;
+  public String getIndexWriterPath() {
+    return indexWriterPath;
   }
 
-  public void setDataMapWriterPath(String dataMapWriterPath) {
-    this.dataMapWriterPath = dataMapWriterPath;
+  public void setIndexWriterPath(String indexWriterPath) {
+    this.indexWriterPath = indexWriterPath;
   }
 
   public DataFileFooter getDataFileFooter() {

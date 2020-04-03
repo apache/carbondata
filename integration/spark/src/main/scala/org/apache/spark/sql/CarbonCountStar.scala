@@ -105,7 +105,7 @@ case class CarbonCountStar(
     CarbonInputFormat
       .setTransactionalTable(job.getConfiguration,
         carbonTable.getTableInfo.isTransactionalTable)
-    CarbonInputFormatUtil.setDataMapJobIfConfigured(job.getConfiguration)
+    CarbonInputFormatUtil.setIndexJobIfConfigured(job.getConfiguration)
     (job, carbonInputFormat)
   }
 }

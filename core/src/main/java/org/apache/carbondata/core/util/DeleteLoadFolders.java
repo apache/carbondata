@@ -22,12 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datamap.DataMapStoreManager;
-import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.TableIndex;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.index.IndexStoreManager;
+import org.apache.carbondata.core.index.Segment;
+import org.apache.carbondata.core.index.TableIndex;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
@@ -97,16 +97,16 @@ public final class DeleteLoadFolders {
   private static void physicalFactAndMeasureMetadataDeletion(CarbonTable carbonTable,
       LoadMetadataDetails[] loadDetails, boolean isForceDelete, List<PartitionSpec> specs,
       LoadMetadataDetails[] currLoadDetails) {
-    List<TableIndex> indexDataMaps = new ArrayList<>();
+    List<TableIndex> indexes = new ArrayList<>();
     try {
-      for (TableIndex dataMap : DataMapStoreManager.getInstance().getAllIndexes(carbonTable)) {
-        if (dataMap.getDataMapSchema().isIndex()) {
-          indexDataMaps.add(dataMap);
+      for (TableIndex index : IndexStoreManager.getInstance().getAllIndexes(carbonTable)) {
+        if (index.getIndexSchema().isIndex()) {
+          indexes.add(index);
         }
       }
     } catch (IOException e) {
       LOGGER.warn(String.format(
-          "Failed to get datamaps for %s.%s, therefore the datamap files could not be cleaned.",
+          "Failed to get indexes for %s.%s, therefore the index files could not be cleaned.",
           carbonTable.getAbsoluteTableIdentifier().getDatabaseName(),
           carbonTable.getAbsoluteTableIdentifier().getTableName()));
     }
@@ -160,10 +160,10 @@ public final class DeleteLoadFolders {
             }
           }
           List<Segment> segments = new ArrayList<>(1);
-          for (TableIndex dataMap : indexDataMaps) {
+          for (TableIndex index : indexes) {
             segments.clear();
             segments.add(new Segment(oneLoad.getLoadName()));
-            dataMap.deleteDatamapData(segments);
+            index.deleteIndexData(segments);
           }
         } catch (Exception e) {
           LOGGER.warn("Unable to delete the file as per delete command " + oneLoad.getLoadName());

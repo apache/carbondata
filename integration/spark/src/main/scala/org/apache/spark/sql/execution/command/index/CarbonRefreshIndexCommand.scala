@@ -31,12 +31,12 @@ import org.apache.spark.sql.secondaryindex.command.SIRebuildSegmentRunner
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.status.IndexStatus
+import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
 import org.apache.carbondata.core.metadata.schema.indextable.{IndexMetadata, IndexTableInfo}
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
-import org.apache.carbondata.datamap.DataMapManager
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
+import org.apache.carbondata.datamap.IndexProvider
 
 /**
  * Rebuild the index through sync with main table data. After sync with parent table's it enables
@@ -104,14 +104,14 @@ case class CarbonRefreshIndexCommand(
         "on table `" + parentTable.getTableName + "`")
     }
     val indexProviderName = indexInfo.get(CarbonCommonConstants.INDEX_PROVIDER)
-    val schema = new DataMapSchema(indexName, indexProviderName)
+    val schema = new IndexSchema(indexName, indexProviderName)
     schema.setProperties(indexInfo)
     if (!schema.isLazy) {
       throw new MalformedIndexCommandException(
         s"Non-lazy index $indexName does not support manual refresh")
     }
 
-    val provider = DataMapManager.get().getDataMapProvider(parentTable, schema, sparkSession)
+    val provider = new IndexProvider(parentTable, schema, sparkSession)
     provider.rebuild()
     // enable bloom or lucene index
     // get metadata lock to avoid concurrent create index operations

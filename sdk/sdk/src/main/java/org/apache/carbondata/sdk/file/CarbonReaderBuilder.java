@@ -27,9 +27,9 @@ import java.util.UUID;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.DataMapStoreManager;
-import org.apache.carbondata.core.datamap.IndexFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.index.IndexFilter;
+import org.apache.carbondata.core.index.IndexStoreManager;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
@@ -248,7 +248,7 @@ public class CarbonReaderBuilder {
   }
 
   private CarbonFileInputFormat prepareFileInputFormat(Job job, boolean enableBlockletDistribution,
-      boolean disableLoadBlockDataMap) throws IOException {
+      boolean disableLoadBlockIndex) throws IOException {
     if (inputSplit != null && inputSplit instanceof CarbonInputSplit) {
       tablePath =
           ((CarbonInputSplit) inputSplit).getSegment().getReadCommittedScope().getFilePath();
@@ -305,7 +305,7 @@ public class CarbonReaderBuilder {
       }
       format.setColumnProjection(job.getConfiguration(), projectionColumns);
     }
-    if ((disableLoadBlockDataMap) && (filterExpression == null)) {
+    if ((disableLoadBlockIndex) && (filterExpression == null)) {
       job.getConfiguration().set("filter_blocks", "false");
     }
     return format;
@@ -374,7 +374,7 @@ public class CarbonReaderBuilder {
       }
     } catch (Exception ex) {
       // Clear the datamap cache as it can get added in getSplits() method
-      DataMapStoreManager.getInstance().clearIndexCache(
+      IndexStoreManager.getInstance().clearIndexCache(
           format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier(),
           false);
       throw ex;
@@ -433,7 +433,7 @@ public class CarbonReaderBuilder {
     } finally {
       if (format != null) {
         // Clear the datamap cache as it is added in getSplits() method
-        DataMapStoreManager.getInstance().clearIndexCache(
+        IndexStoreManager.getInstance().clearIndexCache(
             format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier(),
             false);
       }

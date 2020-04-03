@@ -36,7 +36,7 @@ public abstract class AbstractMemoryDMStore implements Serializable {
 
   public abstract void addIndexRow(CarbonRowSchema[] schema, IndexRow indexRow);
 
-  public abstract IndexRow getDataMapRow(CarbonRowSchema[] schema, int index);
+  public abstract IndexRow getIndexRow(CarbonRowSchema[] schema, int index);
 
   public abstract void freeMemory();
 

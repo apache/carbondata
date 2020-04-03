@@ -230,7 +230,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     checkPlan("datamap1", df1)
     val df2 = sql("select distinct(timeseries(projectjoindate,'month')) from maintable")
     checkPlan("datamap1", df2)
-    // TODO: cast expression and group by not allowing to create datamap, check later
+    // TODO: cast expression and group by not allowing to create indexSchema, check later
 //    sql(
 //      "create materialized view datamap2 as " +
 //      "select timeseries(projectjoindate,'month'),cast(floor((projectcode + 1000) / 900) * 900 - 2000 AS INT) from maintable group by timeseries(projectjoindate,'month'),projectcode")
@@ -329,7 +329,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test mv timeseries with join scenario") {
-    // this test case datamap table is created with distinct column (2 columns),
+    // this test case indexSchema table is created with distinct column (2 columns),
     // but insert projection has duplicate column(3 columns). Cannot support in new insert into flow
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")

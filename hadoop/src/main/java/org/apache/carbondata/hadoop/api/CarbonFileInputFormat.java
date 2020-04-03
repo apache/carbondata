@@ -27,11 +27,11 @@ import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.core.datamap.IndexFilter;
-import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.index.IndexFilter;
+import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -159,14 +159,14 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       }
     }
     List<InputSplit> splits = new ArrayList<>();
-    boolean useBlockDataMap = job.getConfiguration().getBoolean("filter_blocks", true);
-    // useBlockDataMap would be false in case of SDK when user has not provided any filter, In
-    // this case we don't want to load block/blocklet datamap. It would be true in all other
+    boolean useBlockIndex = job.getConfiguration().getBoolean("filter_blocks", true);
+    // useBlockIndex would be false in case of SDK when user has not provided any filter, In
+    // this case we don't want to load block/blocklet index. It would be true in all other
     // scenarios
     if (filter != null) {
       filter.resolve(false);
     }
-    if (useBlockDataMap) {
+    if (useBlockIndex) {
       // do block filtering and get split
       splits = getSplits(job, filter, externalTableSegments);
     } else {

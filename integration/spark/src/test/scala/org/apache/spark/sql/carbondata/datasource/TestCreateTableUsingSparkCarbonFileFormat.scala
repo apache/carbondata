@@ -37,7 +37,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 
@@ -432,10 +432,10 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
 
   private def clearDataMapCache(): Unit = {
     if (!sqlContext.sparkContext.version.startsWith("2.1")) {
-      val mapSize = DataMapStoreManager.getInstance().getTableIndexForAllTables.size()
-      DataMapStoreManager.getInstance()
+      val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()
+      IndexStoreManager.getInstance()
         .clearIndex(AbsoluteTableIdentifier.from(writerPath))
-      assert(mapSize > DataMapStoreManager.getInstance().getTableIndexForAllTables.size())
+      assert(mapSize > IndexStoreManager.getInstance().getTableIndexForAllTables.size())
     }
   }
 

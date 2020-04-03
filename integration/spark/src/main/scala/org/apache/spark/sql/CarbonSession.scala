@@ -92,7 +92,7 @@ class CarbonSession(@transient val sc: SparkContext,
   }
 
   /**
-   * Return true if the specified sql statement will hit the datamap
+   * Return true if the specified sql statement will hit the indexSchema
    * This API is for test purpose only
    */
   @InterfaceAudience.Developer(Array("Index"))

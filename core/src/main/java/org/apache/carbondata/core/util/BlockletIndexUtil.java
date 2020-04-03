@@ -35,7 +35,6 @@ import java.util.TreeMap;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -43,6 +42,7 @@ import org.apache.carbondata.core.datastore.filesystem.AbstractDFSCarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.S3CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifierWrapper;
@@ -497,7 +497,7 @@ public class BlockletIndexUtil {
    * @param carbonTable
    * @return
    */
-  public static boolean loadDataMapsParallel(CarbonTable carbonTable) {
+  public static boolean loadIndexesParallel(CarbonTable carbonTable) {
     String parentTableName = carbonTable.getParentTableName();
     String tableName;
     String dbName;

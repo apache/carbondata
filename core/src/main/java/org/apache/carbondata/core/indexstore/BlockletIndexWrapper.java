@@ -21,7 +21,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import org.apache.carbondata.core.cache.Cacheable;
-import org.apache.carbondata.core.datamap.dev.Index;
+import org.apache.carbondata.core.index.dev.Index;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockIndex;
 
 /**

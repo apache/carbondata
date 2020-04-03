@@ -35,11 +35,11 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.constants.SortScopeOptions;
-import org.apache.carbondata.core.datamap.DataMapStoreManager;
-import org.apache.carbondata.core.datamap.TableIndex;
-import org.apache.carbondata.core.datamap.dev.IndexFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.features.TableOperation;
+import org.apache.carbondata.core.index.IndexStoreManager;
+import org.apache.carbondata.core.index.TableIndex;
+import org.apache.carbondata.core.index.dev.IndexFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.DatabaseLocationProvider;
@@ -82,7 +82,7 @@ public class CarbonTable implements Serializable, Writable {
   private static final long serialVersionUID = 8696507171227156445L;
 
   // The main object that contains all carbon table information, including
-  // schema, store path, table properties, datamap related info, etc.
+  // schema, store path, table properties, Index related info, etc.
   // All other fields in CarbonTable can be derived from TableInfo.
   private TableInfo tableInfo;
 
@@ -146,7 +146,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * During creation of TableInfo from hivemetastore the DataMapSchemas and the columns
+   * During creation of TableInfo from hivemetastore the IndexSchemas and the columns
    * DataTypes are not converted to the appropriate child classes.
    * This method will cast the same to the appropriate classes
    */
@@ -873,7 +873,7 @@ public class CarbonTable implements Serializable, Writable {
    * Return true if MV created on this table
    */
   public boolean hasMVCreated() throws IOException {
-    List<DataMapSchema> schemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(this);
+    List<IndexSchema> schemas = IndexStoreManager.getInstance().getDataMapSchemasOfTable(this);
     return schemas.stream().anyMatch(schema ->
         schema.getProviderName().equalsIgnoreCase(DataMapClassProvider.MV.toString()));
   }
@@ -951,8 +951,8 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * methods returns true if operation is allowed for the corresponding datamap or not
-   * if this operation makes datamap stale it is not allowed
+   * methods returns true if operation is allowed for the corresponding Index or not
+   * if this operation makes Index stale it is not allowed
    *
    * @param carbonTable carbontable to be operated
    * @param operation   which operation on the table,such as drop column,change datatype.
@@ -961,11 +961,11 @@ public class CarbonTable implements Serializable, Writable {
    */
   public boolean canAllow(CarbonTable carbonTable, TableOperation operation, Object... targets) {
     try {
-      List<TableIndex> indexes = DataMapStoreManager.getInstance().getAllIndexes(carbonTable);
+      List<TableIndex> indexes = IndexStoreManager.getInstance().getAllIndexes(carbonTable);
       if (!indexes.isEmpty()) {
-        for (TableIndex dataMap : indexes) {
-          IndexFactory factoryClass = DataMapStoreManager.getInstance()
-              .getDataMapFactoryClass(carbonTable, dataMap.getDataMapSchema());
+        for (TableIndex index : indexes) {
+          IndexFactory factoryClass = IndexStoreManager.getInstance()
+              .getIndexFactoryClass(carbonTable, index.getIndexSchema());
           if (factoryClass.willBecomeStale(operation)) {
             return false;
           }
@@ -985,7 +985,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * Get all index columns specified by dataMapSchema
+   * Get all index columns specified by IndexSchema
    */
   public List<CarbonColumn> getIndexedColumns(String[] columns)
       throws MalformedIndexCommandException {
@@ -1270,21 +1270,21 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   /**
-   * It only gives the visible datamaps
+   * It only gives the visible Indexes
    */
   public List<TableIndex> getAllVisibleIndexes() throws IOException {
     CarbonSessionInfo sessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo();
-    List<TableIndex> allIndexes = DataMapStoreManager.getInstance().getAllIndexes(this);
+    List<TableIndex> allIndexes = IndexStoreManager.getInstance().getAllIndexes(this);
     Iterator<TableIndex> indexIterator = allIndexes.iterator();
     while (indexIterator.hasNext()) {
-      TableIndex dataMap = indexIterator.next();
+      TableIndex index = indexIterator.next();
       String dbName = this.getDatabaseName();
       String tableName = this.getTableName();
-      String indexName = dataMap.getDataMapSchema().getDataMapName();
-      // TODO: need support get the visible status of datamap without sessionInfo in the future
+      String indexName = index.getIndexSchema().getIndexName();
+      // TODO: need support get the visible status of Index without sessionInfo in the future
       if (sessionInfo != null) {
         boolean isIndexVisible = sessionInfo.getSessionParams().getProperty(
-            String.format("%s%s.%s.%s", CarbonCommonConstants.CARBON_DATAMAP_VISIBLE,
+            String.format("%s%s.%s.%s", CarbonCommonConstants.CARBON_INDEX_VISIBLE,
                 dbName, tableName, indexName), "true").trim().equalsIgnoreCase("true");
         if (!isIndexVisible) {
           LOGGER.warn(String.format("Ignore invisible index %s on table %s.%s",

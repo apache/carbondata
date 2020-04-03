@@ -20,9 +20,9 @@ package org.apache.carbondata.core.indexstore;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.Index;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.index.Segment;
+import org.apache.carbondata.core.index.dev.Index;
 
 /**
  * Fetches the detailed segmentProperties which has more information to execute the query
@@ -41,5 +41,5 @@ public interface SegmentPropertiesFetcher {
   SegmentProperties getSegmentProperties(Segment segment, List<PartitionSpec> partitionSpecs)
       throws IOException;
 
-  SegmentProperties getSegmentPropertiesFromDataMap(Index coarseGrainIndex);
+  SegmentProperties getSegmentPropertiesFromIndex(Index coarseGrainIndex);
 }

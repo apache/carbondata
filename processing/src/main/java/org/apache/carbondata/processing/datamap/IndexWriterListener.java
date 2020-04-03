@@ -25,14 +25,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datamap.DataMapStoreManager;
-import org.apache.carbondata.core.datamap.IndexMeta;
-import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.TableIndex;
-import org.apache.carbondata.core.datamap.dev.IndexFactory;
-import org.apache.carbondata.core.datamap.dev.IndexWriter;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.index.IndexMeta;
+import org.apache.carbondata.core.index.IndexStoreManager;
+import org.apache.carbondata.core.index.Segment;
+import org.apache.carbondata.core.index.TableIndex;
+import org.apache.carbondata.core.index.dev.IndexFactory;
+import org.apache.carbondata.core.index.dev.IndexWriter;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -63,10 +63,10 @@ public class IndexWriterListener {
   public void registerAllWriter(CarbonTable carbonTable, String segmentId,
       String taskNo, SegmentProperties segmentProperties) {
     // clear cache in executor side
-    DataMapStoreManager.getInstance().clearIndex(carbonTable.getTableId());
+    IndexStoreManager.getInstance().clearIndex(carbonTable.getTableId());
     List<TableIndex> tableIndices;
     try {
-      tableIndices = DataMapStoreManager.getInstance().getAllIndexes(carbonTable);
+      tableIndices = IndexStoreManager.getInstance().getAllIndexes(carbonTable);
     } catch (IOException e) {
       LOG.error("Error while retrieving datamaps", e);
       throw new RuntimeException(e);
@@ -75,7 +75,7 @@ public class IndexWriterListener {
     for (TableIndex tableIndex : tableIndices) {
       // register it only if it is not lazy datamap, for lazy datamap, user
       // will rebuild the datamap manually
-      if (!tableIndex.getDataMapSchema().isLazy()) {
+      if (!tableIndex.getIndexSchema().isLazy()) {
         IndexFactory factory = tableIndex.getIndexFactory();
         register(factory, segmentId, taskNo, segmentProperties);
       }

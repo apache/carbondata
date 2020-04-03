@@ -32,9 +32,9 @@ import org.apache.spark.sql.hive.DistributionUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, IndexInputFormat}
-import org.apache.carbondata.core.datamap.dev.expr.IndexInputSplitWrapper
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.{IndexInputFormat, IndexStoreManager}
+import org.apache.carbondata.core.index.dev.expr.IndexInputSplitWrapper
 import org.apache.carbondata.core.indexstore.{ExtendedBlocklet, ExtendedBlockletWrapper}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonThreadFactory}
 import org.apache.carbondata.spark.rdd.CarbonRDD
@@ -56,7 +56,7 @@ class IndexRDDPartition(rddId: Int,
 }
 
 private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkSession,
-    dataMapFormat: IndexInputFormat)
+    indexInputFormat: IndexInputFormat)
   extends CarbonRDD[(String, ExtendedBlockletWrapper)](ss, Nil) {
 
   @transient private val LOGGER = LogServiceFactory.getLogService(classOf[DistributedPruneRDD]
@@ -73,14 +73,14 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
     val executorIP = s"${ SparkEnv.get.blockManager.blockManagerId.host }_${
       SparkEnv.get.blockManager.blockManagerId.executorId
     }"
-    if (dataMapFormat.isJobToClearDataMaps) {
+    if (indexInputFormat.isJobToClearIndexes) {
       // if job is to clear datamaps just clear datamaps from cache and pass empty iterator
-      DataMapStoreManager.getInstance().clearInvalidIndex(dataMapFormat.getCarbonTable,
+      IndexStoreManager.getInstance().clearInvalidIndex(indexInputFormat.getCarbonTable,
         inputSplits.map(_
           .asInstanceOf[IndexInputSplitWrapper].getDistributable.getSegment.getSegmentNo)
           .toList.asJava,
-        dataMapFormat
-          .getDataMapToClear)
+        indexInputFormat
+          .getIndexToClear)
       val cacheSize = if (CacheProvider.getInstance().getCarbonCache != null) {
         CacheProvider.getInstance().getCarbonCache.getCurrentSize
       } else {
@@ -91,14 +91,14 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
       }"
       Iterator((executorIP + "_" + cacheSize, new ExtendedBlockletWrapper()))
     } else {
-      if (dataMapFormat.getInvalidSegments.size > 0) {
+      if (indexInputFormat.getInvalidSegments.size > 0) {
         // clear the segmentMap and from cache in executor when there are invalid segments
-        DataMapStoreManager.getInstance().clearInvalidSegments(dataMapFormat.getCarbonTable,
-          dataMapFormat.getInvalidSegments)
+        IndexStoreManager.getInstance().clearInvalidSegments(indexInputFormat.getCarbonTable,
+          indexInputFormat.getInvalidSegments)
       }
       val startTime = System.currentTimeMillis()
       val numOfThreads = CarbonProperties.getInstance().getNumOfThreadsForExecutorPruning
-      dataMapFormat.createDataMapChooser()
+      indexInputFormat.createIndexChooser()
       val service = Executors
         .newFixedThreadPool(numOfThreads, new CarbonThreadFactory("IndexPruningPool", true))
       implicit val ec: ExecutionContextExecutor = ExecutionContext
@@ -129,8 +129,8 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
         SparkEnv.get.blockManager.blockManagerId.executorId
       }"
       val value = (executorIP + "_" + cacheSize.toString, new ExtendedBlockletWrapper(f.toList
-        .asJava, dataMapFormat.getCarbonTable.getTablePath, dataMapFormat.getQueryId,
-        dataMapFormat.isWriteToFile, dataMapFormat.isCountStarJob))
+        .asJava, indexInputFormat.getCarbonTable.getTablePath, indexInputFormat.getQueryId,
+        indexInputFormat.isWriteToFile, indexInputFormat.isCountStarJob))
       Iterator(value)
     }
   }
@@ -140,7 +140,7 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
     Future {
       split.flatMap { inputSplit =>
         val blocklets = new java.util.ArrayList[ExtendedBlocklet]()
-        val reader = dataMapFormat.createRecordReader(inputSplit, attemptContextImpl)
+        val reader = indexInputFormat.createRecordReader(inputSplit, attemptContextImpl)
         reader.initialize(inputSplit, attemptContextImpl)
         while (reader.nextKeyValue()) {
           blocklets.add(reader.getCurrentValue)
@@ -160,11 +160,11 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
 
   override protected def internalGetPartitions: Array[Partition] = {
     val job = Job.getInstance(FileFactory.getConfiguration)
-    val splits = dataMapFormat.getSplits(job).asScala
+    val splits = indexInputFormat.getSplits(job).asScala
     val isDistributedPruningEnabled = CarbonProperties.getInstance()
-      .isDistributedPruningEnabled(dataMapFormat.getCarbonTable.getDatabaseName,
-        dataMapFormat.getCarbonTable.getTableName)
-    if (!isDistributedPruningEnabled || dataMapFormat.isFallbackJob || splits.isEmpty) {
+      .isDistributedPruningEnabled(indexInputFormat.getCarbonTable.getDatabaseName,
+        indexInputFormat.getCarbonTable.getTableName)
+    if (!isDistributedPruningEnabled || indexInputFormat.isFallbackJob || splits.isEmpty) {
       splits.zipWithIndex.map {
         f => new IndexRDDPartition(id, f._2, List(f._1), f._1.getLocations)
       }.toArray
@@ -172,7 +172,7 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
       val executorsList: Map[String, Seq[String]] = DistributionUtil
         .getExecutors(ss.sparkContext)
       val (response, time) = CarbonScalaUtil.logTime {
-        DistributedRDDUtils.getExecutors(splits.toArray, executorsList, dataMapFormat
+        DistributedRDDUtils.getExecutors(splits.toArray, executorsList, indexInputFormat
           .getCarbonTable.getTableUniqueName, id)
       }
       LOGGER.debug(s"Time taken to assign executors to ${ splits.length } is $time ms")

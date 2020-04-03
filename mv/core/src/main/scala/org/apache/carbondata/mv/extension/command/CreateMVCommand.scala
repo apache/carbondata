@@ -25,10 +25,10 @@ import org.apache.spark.sql.execution.command._
 
 import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
-import org.apache.carbondata.core.datamap.status.DataMapStatusManager
-import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
+import org.apache.carbondata.core.index.{DataMapProvider, IndexStoreManager}
+import org.apache.carbondata.core.index.status.DataMapStatusManager
+import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, IndexProperty}
+import org.apache.carbondata.core.metadata.schema.table.IndexSchema
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.DataMapManager
 import org.apache.carbondata.events._
@@ -36,7 +36,7 @@ import org.apache.carbondata.events._
 /**
  * Create Materialized View Command implementation
  * It will create the MV table, load the MV table (if deferred rebuild is false),
- * and register the MV schema in [[DataMapStoreManager]]
+ * and register the MV schema in [[IndexStoreManager]]
  */
 case class CreateMVCommand(
     mvName: String,
@@ -48,23 +48,23 @@ case class CreateMVCommand(
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
   private var dataMapProvider: DataMapProvider = _
-  private var dataMapSchema: DataMapSchema = _
+  private var dataMapSchema: IndexSchema = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
 
     setAuditInfo(Map("mvName" -> mvName) ++ properties)
 
     val mutableMap = mutable.Map[String, String](properties.toSeq: _*)
-    mutableMap.put(DataMapProperty.DEFERRED_REBUILD, deferredRebuild.toString)
+    mutableMap.put(IndexProperty.DEFERRED_REBUILD, deferredRebuild.toString)
 
-    dataMapSchema = new DataMapSchema(mvName, DataMapClassProvider.MV.name())
+    dataMapSchema = new IndexSchema(mvName, DataMapClassProvider.MV.name())
     dataMapSchema.setProperties(mutableMap.asJava)
     dataMapProvider = DataMapManager.get.getDataMapProvider(null, dataMapSchema, sparkSession)
-    if (DataMapStoreManager.getInstance().getAllDataMapSchemas.asScala
-      .exists(_.getDataMapName.equalsIgnoreCase(dataMapSchema.getDataMapName))) {
+    if (IndexStoreManager.getInstance().getAllDataMapSchemas.asScala
+      .exists(_.getIndexName.equalsIgnoreCase(dataMapSchema.getIndexName))) {
       if (!ifNotExistsSet) {
         throw new MalformedMVCommandException(
-          s"Materialized view with name ${dataMapSchema.getDataMapName} already exists")
+          s"Materialized view with name ${dataMapSchema.getIndexName} already exists")
       } else {
         return Seq.empty
       }

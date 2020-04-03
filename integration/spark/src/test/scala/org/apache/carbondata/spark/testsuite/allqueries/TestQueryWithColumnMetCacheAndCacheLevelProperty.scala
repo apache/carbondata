@@ -26,8 +26,8 @@ import org.apache.spark.sql.{CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.dev.Index
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, IndexChooser, IndexFilter, Segment, TableIndex}
+import org.apache.carbondata.core.index.dev.Index
+import org.apache.carbondata.core.index.{IndexStoreManager, IndexChooser, IndexFilter, Segment, TableIndex}
 import org.apache.carbondata.core.indexstore.Blocklet
 import org.apache.carbondata.core.indexstore.blockletindex.{BlockIndex, BlockletIndexRowIndexes, BlockletIndex}
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema
@@ -77,7 +77,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     val carbonTable = relation.carbonTable
     assert(carbonTable.getTableInfo.isSchemaModified == isSchemaModified)
     val segment: Segment = Segment.getSegment(segmentId, carbonTable.getTablePath)
-    val defaultDataMap: TableIndex = DataMapStoreManager.getInstance()
+    val defaultDataMap: TableIndex = IndexStoreManager.getInstance()
       .getDefaultIndex(carbonTable)
     val dataMaps: List[Index[_ <: Blocklet]] = defaultDataMap.getIndexFactory
       .getIndexes(segment).asScala.toList
@@ -281,7 +281,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     val equalsExpression = new NotEqualsExpression(columnExpression, literalValueExpression)
     val andExpression = new AndExpression(notEqualsExpression, equalsExpression)
     val resolveFilter: FilterResolverIntf = new IndexFilter(carbonTable, andExpression).getResolver()
-    val exprWrapper = IndexChooser.getDefaultDataMap(carbonTable, resolveFilter)
+    val exprWrapper = IndexChooser.getDefaultIndex(carbonTable, resolveFilter)
     val segment = new Segment("0", new TableStatusReadCommittedScope(carbonTable
       .getAbsoluteTableIdentifier, new Configuration(false)))
     // get the pruned blocklets

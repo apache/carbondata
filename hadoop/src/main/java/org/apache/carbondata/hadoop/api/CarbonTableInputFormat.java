@@ -31,14 +31,14 @@ import org.apache.carbondata.common.exceptions.DeprecatedFeatureException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
-import org.apache.carbondata.core.datamap.DataMapStoreManager;
-import org.apache.carbondata.core.datamap.IndexChooser;
-import org.apache.carbondata.core.datamap.IndexFilter;
-import org.apache.carbondata.core.datamap.IndexUtil;
-import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.TableIndex;
-import org.apache.carbondata.core.datamap.dev.expr.IndexExprWrapper;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.index.IndexChooser;
+import org.apache.carbondata.core.index.IndexFilter;
+import org.apache.carbondata.core.index.IndexStoreManager;
+import org.apache.carbondata.core.index.IndexUtil;
+import org.apache.carbondata.core.index.Segment;
+import org.apache.carbondata.core.index.TableIndex;
+import org.apache.carbondata.core.index.dev.expr.IndexExprWrapper;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -176,7 +176,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         invalidSegmentIds.add(segment.getSegmentNo());
       }
       if (invalidSegmentIds.size() > 0) {
-        DataMapStoreManager.getInstance()
+        IndexStoreManager.getInstance()
             .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()),
                 invalidSegmentIds);
       }
@@ -358,11 +358,11 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     if (!CarbonProperties.getInstance()
         .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName())) {
       // Clean the updated segments from memory if the update happens on segments
-      DataMapStoreManager.getInstance().refreshSegmentCacheIfRequired(carbonTable,
+      IndexStoreManager.getInstance().refreshSegmentCacheIfRequired(carbonTable,
           updateStatusManager,
           validSegments);
     } else {
-      segmentsToBeRefreshed = DataMapStoreManager.getInstance()
+      segmentsToBeRefreshed = IndexStoreManager.getInstance()
           .getSegmentsToBeRefreshed(carbonTable, validSegments);
     }
 
@@ -459,7 +459,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     So, latest files content should reflect the new count by refreshing the segment */
     List<String> toBeCleanedSegments = new ArrayList<>();
     for (Segment segment : filteredSegment) {
-      boolean refreshNeeded = DataMapStoreManager.getInstance()
+      boolean refreshNeeded = IndexStoreManager.getInstance()
           .getTableSegmentRefresher(getOrCreateCarbonTable(job.getConfiguration()))
           .isRefreshNeeded(segment, SegmentUpdateStatusManager
               .getInvalidTimestampRange(segment.getLoadMetadataDetails()));
@@ -472,13 +472,13 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       toBeCleanedSegments.add(segment.getSegmentNo());
     }
     if (toBeCleanedSegments.size() > 0) {
-      DataMapStoreManager.getInstance()
+      IndexStoreManager.getInstance()
           .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()),
               toBeCleanedSegments);
     }
     IndexExprWrapper indexExprWrapper =
-        IndexChooser.getDefaultDataMap(getOrCreateCarbonTable(job.getConfiguration()), null);
-    IndexUtil.loadDataMaps(table, indexExprWrapper, filteredSegment, partitions);
+        IndexChooser.getDefaultIndex(getOrCreateCarbonTable(job.getConfiguration()), null);
+    IndexUtil.loadIndexes(table, indexExprWrapper, filteredSegment, partitions);
     if (isIUDTable || isUpdateFlow) {
       Map<String, Long> blockletToRowCountMap = new HashMap<>();
       if (CarbonProperties.getInstance()
@@ -499,12 +499,12 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           if (CarbonProperties.getInstance().isFallBackDisabled()) {
             throw e;
           }
-          TableIndex defaultDataMap = DataMapStoreManager.getInstance().getDefaultIndex(table);
+          TableIndex defaultDataMap = IndexStoreManager.getInstance().getDefaultIndex(table);
           blockletToRowCountMap
               .putAll(defaultDataMap.getBlockRowCount(filteredSegment, partitions, defaultDataMap));
         }
       } else {
-        TableIndex defaultDataMap = DataMapStoreManager.getInstance().getDefaultIndex(table);
+        TableIndex defaultDataMap = IndexStoreManager.getInstance().getDefaultIndex(table);
         blockletToRowCountMap
             .putAll(defaultDataMap.getBlockRowCount(filteredSegment, partitions, defaultDataMap));
       }
@@ -544,7 +544,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         totalRowCount =
             getDistributedCount(table, partitions, filteredSegment);
       } else {
-        TableIndex defaultDataMap = DataMapStoreManager.getInstance().getDefaultIndex(table);
+        TableIndex defaultDataMap = IndexStoreManager.getInstance().getDefaultIndex(table);
         totalRowCount = defaultDataMap.getRowCount(filteredSegment, partitions, defaultDataMap);
       }
       blockRowCountMapping.put(CarbonCommonConstantsInternal.ROW_COUNT, totalRowCount);

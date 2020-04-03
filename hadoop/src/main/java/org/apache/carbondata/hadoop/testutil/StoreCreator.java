@@ -32,12 +32,12 @@ import java.util.UUID;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
+import org.apache.carbondata.core.index.IndexStoreManager;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
@@ -175,7 +175,7 @@ public class StoreCreator {
    * Method to clear the data maps
    */
   public void clearDataMaps() {
-    DataMapStoreManager.getInstance().clearIndex(absoluteTableIdentifier);
+    IndexStoreManager.getInstance().clearIndex(absoluteTableIdentifier);
   }
 
   public CarbonLoadModel createTableAndLoadModel(boolean deleteOldStore) throws Exception {

@@ -97,15 +97,15 @@ object MergeIndexUtil {
         carbonTable.getTablePath,
         carbonTable,
         false)
-      // clear Block dataMap Cache
-      clearBlockDataMapCache(carbonTable, validMergedSegIds)
+      // clear Block index Cache
+      clearBlockIndexCache(carbonTable, validMergedSegIds)
     }
   }
 
-  def clearBlockDataMapCache(carbonTable: CarbonTable, segmentIds: Seq[String]): Unit = {
-    // clear driver Block dataMap cache for each segment
+  def clearBlockIndexCache(carbonTable: CarbonTable, segmentIds: Seq[String]): Unit = {
+    // clear driver Block index cache for each segment
     segmentIds.foreach { segmentId =>
-      SegmentFileStore.clearBlockDataMapCache(carbonTable, segmentId)
+      SegmentFileStore.clearBlockIndexCache(carbonTable, segmentId)
     }
   }
 

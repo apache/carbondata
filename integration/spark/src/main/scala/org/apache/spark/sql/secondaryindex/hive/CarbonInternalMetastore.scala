@@ -30,8 +30,8 @@ import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
 import org.apache.carbondata.core.metadata.schema.indextable.{IndexMetadata, IndexTableInfo}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -78,7 +78,7 @@ object CarbonInternalMetastore {
               sparkSession)
           // clear parent table from meta store cache as it is also required to be
           // refreshed when SI table is dropped
-          DataMapStoreManager.getInstance()
+          IndexStoreManager.getInstance()
             .clearIndex(indexCarbonTable.getAbsoluteTableIdentifier)
           removeTableFromMetadataCache(dbName, indexCarbonTable.getTableName)(sparkSession)
           removeTableFromMetadataCache(dbName, parentTableName)(sparkSession)

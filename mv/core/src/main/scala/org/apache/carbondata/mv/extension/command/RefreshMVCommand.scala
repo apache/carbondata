@@ -22,8 +22,8 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.DataCommand
 
 import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
-import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.datamap.status.DataMapStatusManager
+import org.apache.carbondata.core.index.IndexStoreManager
+import org.apache.carbondata.core.index.status.DataMapStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.DataMapManager
 import org.apache.carbondata.events.{UpdateDataMapPostExecutionEvent, _}
@@ -38,8 +38,8 @@ case class RefreshMVCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     import scala.collection.JavaConverters._
-    val schemas = DataMapStoreManager.getInstance().getAllDataMapSchemas
-    val schemaOption = schemas.asScala.find(p => p.getDataMapName.equalsIgnoreCase(mvName))
+    val schemas = IndexStoreManager.getInstance().getAllDataMapSchemas
+    val schemaOption = schemas.asScala.find(p => p.getIndexName.equalsIgnoreCase(mvName))
     if (schemaOption.isEmpty) {
         throw new MalformedMVCommandException(
           s"Materialized view $mvName does not exist")

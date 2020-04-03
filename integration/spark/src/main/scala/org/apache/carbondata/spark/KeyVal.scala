@@ -140,7 +140,7 @@ class RestructureResultImpl extends RestructureResult[Int, Boolean] {
 
 trait RefreshResult[K, V] extends Serializable {
   /**
-   * Previously index datamap refresh is per segment, for CARBONDATA-2685 it will refresh
+   * Previously index indexSchema refresh is per segment, for CARBONDATA-2685 it will refresh
    * all segments in a batch. The structure is taskNo -> (segmentNo, status)
    */
   def getKey(key: String, value: (String, Boolean)): (K, V)

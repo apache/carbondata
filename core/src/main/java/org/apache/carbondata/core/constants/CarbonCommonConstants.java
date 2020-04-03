@@ -1536,12 +1536,12 @@ public final class CarbonCommonConstants {
   //////////////////////////////////////////////////////////////////////////////////////////
 
   /**
-   * key prefix for set command. 'carbon.datamap.visible.dbName.tableName.dmName = false' means
+   * key prefix for set command. 'carbon.index.visible.dbName.tableName.dmName = false' means
    * that the query on 'dbName.table' will not use the datamap 'dmName'
    */
   @InterfaceStability.Unstable
   @CarbonProperty(dynamicConfigurable = true)
-  public static final String CARBON_DATAMAP_VISIBLE = "carbon.datamap.visible.";
+  public static final String CARBON_INDEX_VISIBLE = "carbon.index.visible.";
 
   /**
    * Whether load/insert command is fired internally or by the user.

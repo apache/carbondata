@@ -20,7 +20,7 @@ package org.apache.spark.sql.listeners
 import scala.collection.JavaConverters._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.IndexInputFormat
+import org.apache.carbondata.core.index.IndexInputFormat
 import org.apache.carbondata.events.{Event, IndexServerLoadEvent, OperationContext, OperationEventListener}
 import org.apache.carbondata.indexserver.IndexServer
 

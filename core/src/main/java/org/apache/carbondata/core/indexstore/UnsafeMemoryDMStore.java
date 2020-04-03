@@ -246,7 +246,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
     }
   }
 
-  public IndexRow getDataMapRow(CarbonRowSchema[] schema, int index) {
+  public IndexRow getIndexRow(CarbonRowSchema[] schema, int index) {
     assert (index < rowCount);
     return new UnsafeIndexRow(schema, memoryBlock, pointers[index]);
   }

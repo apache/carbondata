@@ -22,7 +22,7 @@ import org.apache.spark.{Partition, SparkEnv, TaskContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.hive.DistributionUtil
 
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.spark.rdd.CarbonRDD
@@ -59,7 +59,7 @@ class DistributedShowCacheRDD(@transient private val ss: SparkSession,
   }
 
   override def internalCompute(split: Partition, context: TaskContext): Iterator[String] = {
-    val dataMaps = DataMapStoreManager.getInstance().getTableIndexForAllTables.asScala
+    val dataMaps = IndexStoreManager.getInstance().getTableIndexForAllTables.asScala
     val tableList = tableUniqueId.split(",")
     val iterator = dataMaps.collect {
       case (tableId, tableDataMaps) if tableUniqueId.isEmpty || tableList.contains(tableId) =>
@@ -72,19 +72,19 @@ class DistributedShowCacheRDD(@transient private val ss: SparkSession,
                 .getCarbonTable
                 .getTableUniqueName
             } else {
-              dataMap.getDataMapSchema.getRelationIdentifier.getDatabaseName + "_" + dataMap
-                .getDataMapSchema.getDataMapName
+              dataMap.getIndexSchema.getRelationIdentifier.getDatabaseName + "_" + dataMap
+                .getIndexSchema.getIndexName
             }
             if (executorCache) {
               val executorIP = s"${ SparkEnv.get.blockManager.blockManagerId.host }_${
                 SparkEnv.get.blockManager.blockManagerId.executorId
               }"
               s"${ executorIP }:${ dataMap.getIndexFactory.getCacheSize }:${
-                dataMap.getDataMapSchema.getProviderName
+                dataMap.getIndexSchema.getProviderName
               }"
             } else {
               s"${dataMapName}:${dataMap.getIndexFactory.getCacheSize}:${
-                dataMap.getDataMapSchema.getProviderName
+                dataMap.getIndexSchema.getProviderName
               }"
             }
           }

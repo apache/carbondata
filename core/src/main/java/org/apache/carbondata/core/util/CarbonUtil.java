@@ -47,7 +47,6 @@ import java.util.UUID;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -64,6 +63,7 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
+import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.localdictionary.generator.ColumnLocalDictionaryGenerator;
@@ -2151,7 +2151,7 @@ public final class CarbonUtil {
     org.apache.carbondata.format.TableInfo tableInfo =
         new org.apache.carbondata.format.TableInfo(thriftFactTable,
             new ArrayList<org.apache.carbondata.format.TableSchema>());
-    tableInfo.setDataMapSchemas(null);
+    tableInfo.setIndexSchemas(null);
     return tableInfo;
   }
 
@@ -2176,7 +2176,7 @@ public final class CarbonUtil {
     org.apache.carbondata.format.TableInfo tableInfo =
         new org.apache.carbondata.format.TableInfo(thriftFactTable,
             new ArrayList<org.apache.carbondata.format.TableSchema>());
-    tableInfo.setDataMapSchemas(null);
+    tableInfo.setIndexSchemas(null);
     SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
     TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
         tableInfo, dbName, tableName, carbonDataFilePath);
@@ -2214,7 +2214,7 @@ public final class CarbonUtil {
           new org.apache.carbondata.format.TableInfo(thriftFactTable,
               new ArrayList<org.apache.carbondata.format.TableSchema>());
 
-      tableInfo.setDataMapSchemas(null);
+      tableInfo.setIndexSchemas(null);
       return tableInfo;
     } finally {
       indexFileReader.closeThriftReader();

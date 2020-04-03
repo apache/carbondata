@@ -26,9 +26,9 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.execution.datasources.FindDataSourceTable
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.MVCatalog
-import org.apache.carbondata.core.datamap.status.DataMapStatusManager
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
+import org.apache.carbondata.core.index.MVCatalog
+import org.apache.carbondata.core.index.status.DataMapStatusManager
+import org.apache.carbondata.core.metadata.schema.table.IndexSchema
 import org.apache.carbondata.mv.extension.{MVHelper, MVParser}
 import org.apache.carbondata.mv.plans.modular.{Flags, ModularPlan, ModularRelation, Select}
 import org.apache.carbondata.mv.plans.util.Signature
@@ -39,13 +39,13 @@ import org.apache.carbondata.mv.session.MVSession
 private[mv] case class SummaryDataset(
     signature: Option[Signature],
     plan: LogicalPlan,
-    dataMapSchema: DataMapSchema,
+    dataMapSchema: IndexSchema,
     relation: ModularPlan)
 
 /**
- * It is wrapper on datamap relation along with schema.
+ * It is wrapper on indexSchema relation along with schema.
  */
-case class MVPlanWrapper(plan: ModularPlan, dataMapSchema: DataMapSchema) extends ModularPlan {
+case class MVPlanWrapper(plan: ModularPlan, dataMapSchema: IndexSchema) extends ModularPlan {
   override def output: Seq[Attribute] = plan.output
 
   override def children: Seq[ModularPlan] = plan.children
@@ -102,7 +102,7 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
    * `RDD.cache()`, the default storage level is set to be `MEMORY_AND_DISK` because recomputing
    * the in-memory columnar representation of the underlying table is expensive.
    */
-  private[mv] def registerSchema(dataMapSchema: DataMapSchema): Unit = {
+  private[mv] def registerSchema(dataMapSchema: IndexSchema): Unit = {
     writeLock {
       val currentDatabase = sparkSession.catalog.currentDatabase
 
@@ -170,7 +170,7 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
   private[mv] def unregisterSchema(dataMapName: String): Unit = {
     writeLock {
       val dataIndex = summaryDatasets
-        .indexWhere(sd => sd.dataMapSchema.getDataMapName.equals(dataMapName))
+        .indexWhere(sd => sd.dataMapSchema.getIndexName.equals(dataMapName))
       require(dataIndex >= 0, s"Datamap $dataMapName is not registered.")
       summaryDatasets.remove(dataIndex)
     }
@@ -181,7 +181,7 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
    */
   private[mv] def isMVExists(mvName: String): java.lang.Boolean = {
     val dataIndex = summaryDatasets
-      .indexWhere(sd => sd.dataMapSchema.getDataMapName.equals(mvName))
+      .indexWhere(sd => sd.dataMapSchema.getIndexName.equals(mvName))
     dataIndex > 0
   }
 
@@ -189,7 +189,7 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
     val statusDetails = DataMapStatusManager.getEnabledDataMapStatusDetails
     // Only select the enabled datamaps for the query.
     val enabledDataSets = summaryDatasets.filter { p =>
-      statusDetails.exists(_.getDataMapName.equalsIgnoreCase(p.dataMapSchema.getDataMapName))
+      statusDetails.exists(_.getDataMapName.equalsIgnoreCase(p.dataMapSchema.getIndexName))
     }
     enabledDataSets.toArray
   }
@@ -276,7 +276,7 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
       val statusDetails = DataMapStatusManager.getEnabledDataMapStatusDetails
       // Only select the enabled datamaps for the query.
       val enabledDataSets = summaryDatasets.filter { p =>
-        statusDetails.exists(_.getDataMapName.equalsIgnoreCase(p.dataMapSchema.getDataMapName))
+        statusDetails.exists(_.getDataMapName.equalsIgnoreCase(p.dataMapSchema.getIndexName))
       }
 
       //  ****not sure what enabledDataSets is used for ****

@@ -105,7 +105,7 @@ object CarbonSetCommand {
           "property should be in \" carbon.input.segments.<database_name>" +
           ".<table_name>=<seg_id list> \" format.")
       }
-    } else if (key.startsWith(CarbonCommonConstants.CARBON_DATAMAP_VISIBLE)) {
+    } else if (key.startsWith(CarbonCommonConstants.CARBON_INDEX_VISIBLE)) {
       if (key.split("\\.").length == 6) {
         sessionParams.addProperty(key.toLowerCase, value)
       }

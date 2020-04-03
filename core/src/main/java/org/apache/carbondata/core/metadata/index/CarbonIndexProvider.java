@@ -18,17 +18,47 @@
 package org.apache.carbondata.core.metadata.index;
 
 public enum CarbonIndexProvider {
-  LUCENE("lucene"),
-  BLOOMFILTER("bloomfilter"),
-  SI("si");
+  LUCENE("org.apache.carbondata.index.lucene.LuceneFineGrainIndexFactory", "lucene"),
+  BLOOMFILTER("org.apache.carbondata.index.bloom.BloomCoarseGrainIndexFactory", "bloomfilter"),
+  SI("", "si");
 
-  private String indexProviderName;
 
-  CarbonIndexProvider(String indexProviderName) {
-    this.indexProviderName = indexProviderName;
+  /**
+   * Fully qualified class name of index
+   */
+  private String className;
+
+  /**
+   * Short name representation of index
+   */
+  private String shortName;
+
+  CarbonIndexProvider(String className, String shortName) {
+    this.className = className;
+    this.shortName = shortName;
   }
 
   public String getIndexProviderName() {
-    return indexProviderName;
+    return shortName;
+  }
+
+  public String getClassName() {
+    return className;
+  }
+
+  private boolean isEqual(String indexClass) {
+    return (indexClass != null &&
+        (indexClass.equals(className) ||
+            indexClass.equalsIgnoreCase(shortName)));
+  }
+
+  public static CarbonIndexProvider get(String indexProviderName) {
+    if (LUCENE.isEqual(indexProviderName)) {
+      return LUCENE;
+    } else if (BLOOMFILTER.isEqual(indexProviderName)) {
+      return BLOOMFILTER;
+    } else {
+      throw new UnsupportedOperationException("Unknown index provider" + indexProviderName);
+    }
   }
 }

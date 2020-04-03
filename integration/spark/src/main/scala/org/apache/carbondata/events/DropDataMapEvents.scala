@@ -18,7 +18,7 @@ package org.apache.carbondata.events
 
 import org.apache.spark.sql.SparkSession
 
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.metadata.schema.table.IndexSchema
 
 
 /**
@@ -26,8 +26,8 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSch
  * @param ifExistsSet
  * @param sparkSession
  */
-case class DropDataMapPreEvent(
-    dataMapSchema: Option[DataMapSchema],
+case class DropIndexPreEvent(
+    indexSchema: Option[IndexSchema],
     ifExistsSet: Boolean,
     sparkSession: SparkSession) extends Event
 
@@ -37,8 +37,8 @@ case class DropDataMapPreEvent(
  * @param ifExistsSet
  * @param sparkSession
  */
-case class DropDataMapPostEvent(
-    dataMapSchema: Option[DataMapSchema],
+case class DropIndexPostEvent(
+    indexSchema: Option[IndexSchema],
     ifExistsSet: Boolean,
     sparkSession: SparkSession) extends Event
 
@@ -48,7 +48,7 @@ case class DropDataMapPostEvent(
  * @param ifExistsSet
  * @param sparkSession
  */
-case class DropDataMapAbortEvent(
-    dataMapSchema: Option[DataMapSchema],
+case class DropIndexAbortEvent(
+    indexSchema: Option[IndexSchema],
     ifExistsSet: Boolean,
     sparkSession: SparkSession) extends Event

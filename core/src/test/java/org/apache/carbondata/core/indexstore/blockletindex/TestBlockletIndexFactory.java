@@ -30,15 +30,15 @@ import java.util.UUID;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
-import org.apache.carbondata.core.datamap.IndexInputSplit;
-import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.index.IndexInputSplit;
+import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.BlockletIndexWrapper;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifierWrapper;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
@@ -90,15 +90,15 @@ public class TestBlockletIndexFactory {
         return absoluteTableIdentifier;
       }
     };
-    blockletIndexFactory = new BlockletIndexFactory(carbonTable, new DataMapSchema());
+    blockletIndexFactory = new BlockletIndexFactory(carbonTable, new IndexSchema());
     Deencapsulation.setField(blockletIndexFactory, "cache",
-        CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_DATAMAP));
+        CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_INDEX));
     tableBlockIndexUniqueIdentifier =
         new TableBlockIndexUniqueIdentifier("/opt/store/default/carbon_table/Fact/Part0/Segment_0",
             "0_batchno0-0-1521012756709.carbonindex", null, "0");
     tableBlockIndexUniqueIdentifierWrapper =
         new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier, carbonTable);
-    cache = CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);
+    cache = CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_INDEX);
   }
 
   @Test public void addDataMapToCache()

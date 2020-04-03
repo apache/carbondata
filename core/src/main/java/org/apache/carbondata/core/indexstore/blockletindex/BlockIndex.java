@@ -30,14 +30,14 @@ import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.IndexFilter;
-import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.IndexModel;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.index.IndexFilter;
+import org.apache.carbondata.core.index.Segment;
+import org.apache.carbondata.core.index.dev.IndexModel;
+import org.apache.carbondata.core.index.dev.cgindex.CoarseGrainIndex;
 import org.apache.carbondata.core.indexstore.AbstractMemoryDMStore;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.indexstore.Blocklet;
@@ -562,7 +562,7 @@ public class BlockIndex extends CoarseGrainIndex
     FilterExecuter filterExecuter = FilterUtil.getFilterExecuterTree(
         filterExp, getSegmentProperties(), null, getMinMaxCacheColumns(), false);
     IndexRow unsafeRow = taskSummaryDMStore
-        .getDataMapRow(getTaskSummarySchema(), taskSummaryDMStore.getRowCount() - 1);
+        .getIndexRow(getTaskSummarySchema(), taskSummaryDMStore.getRowCount() - 1);
     boolean isScanRequired = FilterExpressionProcessor
         .isScanRequired(filterExecuter, getMinMaxValue(unsafeRow, TASK_MAX_VALUES_INDEX),
             getMinMaxValue(unsafeRow, TASK_MIN_VALUES_INDEX),
@@ -610,7 +610,7 @@ public class BlockIndex extends CoarseGrainIndex
   @Override
   public long getRowCount(Segment segment, List<PartitionSpec> partitions) {
     long totalRowCount =
-        taskSummaryDMStore.getDataMapRow(getTaskSummarySchema(), 0).getLong(TASK_ROW_COUNT);
+        taskSummaryDMStore.getIndexRow(getTaskSummarySchema(), 0).getLong(TASK_ROW_COUNT);
     if (totalRowCount == 0) {
       Map<String, Long> blockletToRowCountMap = new HashMap<>();
       getRowCountForEachBlock(segment, partitions, blockletToRowCountMap);
@@ -640,7 +640,7 @@ public class BlockIndex extends CoarseGrainIndex
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     int numEntries = memoryDMStore.getRowCount();
     for (int i = 0; i < numEntries; i++) {
-      IndexRow indexRow = memoryDMStore.getDataMapRow(schema, i);
+      IndexRow indexRow = memoryDMStore.getIndexRow(schema, i);
       String fileName = new String(indexRow.getByteArray(FILE_PATH_INDEX),
           CarbonCommonConstants.DEFAULT_CHARSET_CLASS) + CarbonTablePath.getCarbonDataExtension();
       int rowCount = indexRow.getInt(ROW_COUNT_INDEX);
@@ -672,7 +672,7 @@ public class BlockIndex extends CoarseGrainIndex
     int hitBlocklets = 0;
     if (filterExp == null) {
       for (int i = 0; i < numEntries; i++) {
-        IndexRow indexRow = memoryDMStore.getDataMapRow(schema, i);
+        IndexRow indexRow = memoryDMStore.getIndexRow(schema, i);
         blocklets.add(createBlocklet(indexRow, getFileNameWithFilePath(indexRow, filePath),
             getBlockletId(indexRow), false));
       }
@@ -690,7 +690,7 @@ public class BlockIndex extends CoarseGrainIndex
       }
       // min and max for executor pruning
       while (entryIndex < numEntries) {
-        IndexRow row = memoryDMStore.getDataMapRow(schema, entryIndex);
+        IndexRow row = memoryDMStore.getIndexRow(schema, entryIndex);
         boolean[] minMaxFlag = getMinMaxFlag(row, BLOCK_MIN_MAX_FLAG);
         String fileName = getFileNameWithFilePath(row, filePath);
         short blockletId = getBlockletId(row);
@@ -855,7 +855,7 @@ public class BlockIndex extends CoarseGrainIndex
       }
     }
     IndexRow row =
-        memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), rowIndex);
+        memoryDMStore.getIndexRow(getFileFooterEntrySchema(), rowIndex);
     String filePath = getFilePath();
     return createBlocklet(row, getFileNameWithFilePath(row, filePath), relativeBlockletId,
         false);
@@ -865,7 +865,7 @@ public class BlockIndex extends CoarseGrainIndex
     // taskSummary DM store will  have only one row
     CarbonRowSchema[] taskSummarySchema = getTaskSummarySchema();
     return taskSummaryDMStore
-        .getDataMapRow(taskSummarySchema, taskSummaryDMStore.getRowCount() - 1)
+        .getIndexRow(taskSummarySchema, taskSummaryDMStore.getRowCount() - 1)
         .getByteArray(taskSummarySchema.length - 1);
   }
 
@@ -875,7 +875,7 @@ public class BlockIndex extends CoarseGrainIndex
    * @return
    */
   public String getTableTaskInfo(int index) {
-    IndexRow unsafeRow = taskSummaryDMStore.getDataMapRow(getTaskSummarySchema(), 0);
+    IndexRow unsafeRow = taskSummaryDMStore.getIndexRow(getTaskSummarySchema(), 0);
     try {
       return new String(unsafeRow.getByteArray(index), CarbonCommonConstants.DEFAULT_CHARSET);
     } catch (UnsupportedEncodingException e) {
@@ -911,7 +911,7 @@ public class BlockIndex extends CoarseGrainIndex
     short versionNumber = row.getShort(VERSION_INDEX);
     ExtendedBlocklet blocklet = new ExtendedBlocklet(fileName, blockletId + "", false,
         ColumnarFormatVersion.valueOf(versionNumber));
-    blocklet.setDataMapRow(row);
+    blocklet.setIndexRow(row);
     blocklet.setUseMinMaxForPruning(useMinMaxForPruning);
     return blocklet;
   }
@@ -919,7 +919,7 @@ public class BlockIndex extends CoarseGrainIndex
   private String[] getFileDetails() {
     try {
       String[] fileDetails = new String[3];
-      IndexRow unsafeRow = taskSummaryDMStore.getDataMapRow(getTaskSummarySchema(), 0);
+      IndexRow unsafeRow = taskSummaryDMStore.getIndexRow(getTaskSummarySchema(), 0);
       fileDetails[0] = new String(unsafeRow.getByteArray(SUMMARY_INDEX_PATH),
           CarbonCommonConstants.DEFAULT_CHARSET);
       fileDetails[1] = new String(unsafeRow.getByteArray(SUMMARY_INDEX_FILE_NAME),

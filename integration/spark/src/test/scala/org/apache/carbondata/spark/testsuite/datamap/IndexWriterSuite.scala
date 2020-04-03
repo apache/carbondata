@@ -26,23 +26,23 @@ import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainIndex, CoarseGrainIndexFactory}
-import org.apache.carbondata.core.datamap.dev.{IndexBuilder, IndexWriter}
-import org.apache.carbondata.core.datamap.{IndexInputSplit, IndexMeta, Segment}
+import org.apache.carbondata.core.index.dev.cgindex.{CoarseGrainIndex, CoarseGrainIndexFactory}
+import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexWriter}
+import org.apache.carbondata.core.index.{IndexInputSplit, IndexMeta, Segment}
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
 
 class C2IndexFactory(
     carbonTable: CarbonTable,
-    dataMapSchema: DataMapSchema) extends CoarseGrainIndexFactory(carbonTable, dataMapSchema) {
+    dataMapSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, dataMapSchema) {
 
   var identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
@@ -70,20 +70,20 @@ class C2IndexFactory(
   }
 
   /**
-   * delete datamap of the segment
+   * delete indexSchema of the segment
    */
   override def deleteIndexData(segment: Segment): Unit = {
 
   }
 
   /**
-   * delete datamap data if any
+   * delete indexSchema data if any
    */
   override def deleteIndexData(): Unit = {
   }
 
   /**
-   * defines the features scopes for the datamap
+   * defines the features scopes for the indexSchema
    */
   override def willBecomeStale(operation: TableOperation): Boolean = {
     false
@@ -95,7 +95,7 @@ class C2IndexFactory(
   }
 
   /**
-   * Get the datamap for segmentId and partitionSpecs
+   * Get the indexSchema for segmentId and partitionSpecs
    */
   override def getIndexes(segment: Segment,
       partitions: util.List[PartitionSpec]): util.List[CoarseGrainIndex] = {
@@ -120,9 +120,9 @@ class IndexWriterSuite extends QueryTest with BeforeAndAfterAll {
     dropTable()
   }
 
-  test("test write datamap 2 pages") {
+  test("test write indexSchema 2 pages") {
     sql(s"CREATE TABLE carbon1(c1 STRING, c2 STRING, c3 INT) STORED AS carbondata")
-    // register datamap writer
+    // register indexSchema writer
     sql(
       s"""
          | CREATE INDEX test1
@@ -152,7 +152,7 @@ class IndexWriterSuite extends QueryTest with BeforeAndAfterAll {
     IndexWriterSuite.callbackSeq = Seq()
   }
 
-  test("test write datamap 2 blocklet") {
+  test("test write indexSchema 2 blocklet") {
     sql(s"CREATE TABLE carbon2(c1 STRING, c2 STRING, c3 INT) STORED AS carbondata")
     sql(
       s"""

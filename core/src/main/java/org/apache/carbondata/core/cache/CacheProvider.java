@@ -91,7 +91,7 @@ public class CacheProvider {
           if (null == carbonLRUCache) {
             createLRULevelCacheInstance();
           }
-          createBlockletDataMapCache(cacheType);
+          createBlockletIndexCache(cacheType);
         }
       }
     }
@@ -128,9 +128,9 @@ public class CacheProvider {
    *
    * @param cacheType       type of cache
    */
-  private void createBlockletDataMapCache(CacheType cacheType) {
+  private void createBlockletIndexCache(CacheType cacheType) {
     Cache cacheObject = null;
-    if (cacheType.equals(cacheType.DRIVER_BLOCKLET_DATAMAP)) {
+    if (cacheType.equals(cacheType.DRIVER_BLOCKLET_INDEX)) {
       cacheObject = new BlockletIndexStore(carbonLRUCache);
     }
     cacheTypeToCacheMap.put(cacheType, cacheObject);

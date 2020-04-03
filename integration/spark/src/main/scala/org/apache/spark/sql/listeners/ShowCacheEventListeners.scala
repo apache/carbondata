@@ -20,9 +20,9 @@ package org.apache.spark.sql.listeners
 import scala.collection.JavaConverters._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
+import org.apache.carbondata.core.metadata.schema.table.IndexSchema
 import org.apache.carbondata.events._
 
 object ShowCachePreMVEventListener extends OperationEventListener {
@@ -66,7 +66,7 @@ object ShowCacheDataMapEventListener extends OperationEventListener {
           .asInstanceOf[List[(String, String)]]
 
         // Extract all datamaps for the table
-        val datamaps = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+        val datamaps = IndexStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
           .asScala.toList
 
         val mvDataMaps = filterDataMaps(datamaps, DataMapClassProvider.MV.getShortName)
@@ -75,14 +75,14 @@ object ShowCacheDataMapEventListener extends OperationEventListener {
     }
   }
 
-  private def filterDataMaps(dataMaps: List[DataMapSchema],
+  private def filterDataMaps(dataMaps: List[IndexSchema],
       filter: String): List[(String, String, String)] = {
     dataMaps.collect {
       case dataMap if dataMap.getProviderName
         .equalsIgnoreCase(filter) =>
         if (filter.equalsIgnoreCase(DataMapClassProvider.BLOOMFILTER.getShortName)) {
           (s"${ dataMap.getRelationIdentifier.getDatabaseName }-${
-            dataMap.getDataMapName}", dataMap.getProviderName,
+            dataMap.getIndexName}", dataMap.getProviderName,
             dataMap.getRelationIdentifier.getTableId)
         } else {
           (s"${ dataMap.getRelationIdentifier.getDatabaseName }-${

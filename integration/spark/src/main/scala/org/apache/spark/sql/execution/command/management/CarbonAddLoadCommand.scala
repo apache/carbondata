@@ -34,10 +34,10 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
-import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
+import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
+import org.apache.carbondata.core.index.status.DataMapStatusManager
 import org.apache.carbondata.core.indexstore.{PartitionSpec => CarbonPartitionSpec}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.datatype.Field
@@ -51,7 +51,7 @@ import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePost
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.sdk.file.Schema
-import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory.clearDataMapFiles
+import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory.clearIndexFiles
 import org.apache.carbondata.view.MVManagerInSpark
 
 
@@ -235,17 +235,17 @@ case class CarbonAddLoadCommand(
         model)
     operationContext.setProperty("isOverwrite", false)
     OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
-    // Add pre event listener for index datamap
-    val tableDataMaps = DataMapStoreManager.getInstance().getAllIndexes(carbonTable)
-    val dataMapOperationContext = new OperationContext()
-    if (tableDataMaps.size() > 0) {
-      val dataMapNames: mutable.Buffer[String] =
-        tableDataMaps.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
-      val buildDataMapPreExecutionEvent: BuildIndexPreExecutionEvent =
+    // Add pre event listener for index indexSchema
+    val tableIndexes = IndexStoreManager.getInstance().getAllIndexes(carbonTable)
+    val indexOperationContext = new OperationContext()
+    if (tableIndexes.size() > 0) {
+      val indexNames: mutable.Buffer[String] =
+        tableIndexes.asScala.map(index => index.getIndexSchema.getIndexName)
+      val buildIndexPreExecutionEvent: BuildIndexPreExecutionEvent =
         BuildIndexPreExecutionEvent(
-          sparkSession, carbonTable.getAbsoluteTableIdentifier, dataMapNames)
-      OperationListenerBus.getInstance().fireEvent(buildDataMapPreExecutionEvent,
-        dataMapOperationContext)
+          sparkSession, carbonTable.getAbsoluteTableIdentifier, indexNames)
+      OperationListenerBus.getInstance().fireEvent(buildIndexPreExecutionEvent,
+        indexOperationContext)
     }
 
     val newLoadMetaEntry = new LoadMetadataDetails
@@ -332,7 +332,7 @@ case class CarbonAddLoadCommand(
       val segmentFile = CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath) +
                         File.separator + segment.getSegmentFileName
       FileFactory.deleteFile(segmentFile)
-      clearDataMapFiles(carbonTable, model.getSegmentId)
+      clearIndexFiles(carbonTable, model.getSegmentId)
       LOGGER.info("********clean up done**********")
       LOGGER.error("Data load failed due to failure in table status updation.")
       throw new Exception("Data load failed due to failure in table status updation.")
@@ -351,11 +351,11 @@ case class CarbonAddLoadCommand(
         carbonTable.getCarbonTableIdentifier,
         model)
     OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
-    if (tableDataMaps.size() > 0) {
-      val buildDataMapPostExecutionEvent = BuildIndexPostExecutionEvent(sparkSession,
+    if (tableIndexes.size() > 0) {
+      val buildIndexPostExecutionEvent = BuildIndexPostExecutionEvent(sparkSession,
         carbonTable.getAbsoluteTableIdentifier, null, Seq(model.getSegmentId), false)
       OperationListenerBus.getInstance()
-        .fireEvent(buildDataMapPostExecutionEvent, dataMapOperationContext)
+        .fireEvent(buildIndexPostExecutionEvent, indexOperationContext)
     }
   }
 

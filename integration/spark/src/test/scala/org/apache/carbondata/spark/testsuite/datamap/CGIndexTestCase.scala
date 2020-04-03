@@ -29,9 +29,9 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainIndex, CoarseGrainIndexFactory}
-import org.apache.carbondata.core.datamap.dev.{IndexBuilder, IndexModel, IndexWriter}
-import org.apache.carbondata.core.datamap.{IndexInputSplit, IndexMeta, Segment}
+import org.apache.carbondata.core.index.dev.cgindex.{CoarseGrainIndex, CoarseGrainIndexFactory}
+import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexModel, IndexWriter}
+import org.apache.carbondata.core.index.{IndexInputSplit, IndexMeta, Segment}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor
@@ -40,7 +40,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexInputSplit
 import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, DiskBasedDMSchemaStorageProvider}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema, DiskBasedDMSchemaStorageProvider}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression
@@ -53,23 +53,23 @@ import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlo
 
 class CGIndexFactory(
     carbonTable: CarbonTable,
-    dataMapSchema: DataMapSchema) extends CoarseGrainIndexFactory(carbonTable, dataMapSchema) {
+    dataMapSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, dataMapSchema) {
   var identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
   /**
-   * Return a new write for this datamap
+   * Return a new write for this indexSchema
    */
   override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): IndexWriter = {
     new CGIndexWriter(carbonTable, segment, shardName, dataMapSchema)
   }
 
   /**
-   * Get the datamap for segmentId
+   * Get the indexSchema for segmentId
    */
   override def getIndexes(segment: Segment): java.util.List[CoarseGrainIndex] = {
     val path = identifier.getTablePath
     val file = FileFactory.getCarbonFile(
-      path+ "/" +dataMapSchema.getDataMapName + "/" + segment.getSegmentNo)
+      path + "/" + dataMapSchema.getIndexName + "/" + segment.getSegmentNo)
 
     val files = file.listFiles()
     files.map {f =>
@@ -107,7 +107,7 @@ class CGIndexFactory(
   override def toDistributable(segment: Segment): java.util.List[IndexInputSplit] = {
     val path = identifier.getTablePath
     val file = FileFactory.getCarbonFile(
-      path+ "/" +dataMapSchema.getDataMapName + "/" + segment.getSegmentNo)
+      path + "/" + dataMapSchema.getIndexName + "/" + segment.getSegmentNo)
 
     val files = file.listFiles()
     files.map { f =>
@@ -124,7 +124,7 @@ class CGIndexFactory(
   }
 
   /**
-   * Return metadata of this datamap
+   * Return metadata of this indexSchema
    */
   override def getMeta: IndexMeta = {
     new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns),
@@ -132,20 +132,20 @@ class CGIndexFactory(
   }
 
   /**
-   * delete datamap of the segment
+   * delete indexSchema of the segment
    */
   override def deleteIndexData(segment: Segment): Unit = {
 
   }
 
   /**
-   * delete datamap data if any
+   * delete indexSchema data if any
    */
   override def deleteIndexData(): Unit = {
   }
 
   /**
-   * defines the features scopes for the datamap
+   * defines the features scopes for the indexSchema
    */
   override def willBecomeStale(feature: TableOperation): Boolean = {
     false
@@ -157,7 +157,7 @@ class CGIndexFactory(
   }
 
   /**
-   * Get the datamap for segmentId and partitionSpecs
+   * Get the indexSchema for segmentId and partitionSpecs
    */
   override def getIndexes(segment: Segment,
       partitions: java.util.List[PartitionSpec]): java.util.List[CoarseGrainIndex] = {
@@ -180,7 +180,7 @@ class CGIndex extends CoarseGrainIndex {
     val indexPath = FileFactory.getPath(dataMapModel.getFilePath)
     this.shardName = indexPath.getName
 
-    this.filePath = dataMapModel.getFilePath + "/testcg.datamap"
+    this.filePath = dataMapModel.getFilePath + "/testcg.indexSchema"
     val carbonFile = FileFactory.getCarbonFile(filePath)
     val size = carbonFile.getSize
     FileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath))
@@ -192,7 +192,7 @@ class CGIndex extends CoarseGrainIndex {
   }
 
   /**
-   * Prune the datamap with filter expression. It returns the list of
+   * Prune the indexSchema with filter expression. It returns the list of
    * blocklets where these filters can exist.
    *
    * @param filterExp
@@ -263,8 +263,8 @@ class CGIndexWriter(
     carbonTable: CarbonTable,
     segment: Segment,
     shardName: String,
-    dataMapSchema: DataMapSchema)
-  extends IndexWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
+    dataMapSchema: IndexSchema)
+  extends IndexWriter(carbonTable.getTablePath, dataMapSchema.getIndexName,
     carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns), segment, shardName) {
 
   val blockletList = new ArrayBuffer[Array[Byte]]()
@@ -308,7 +308,7 @@ class CGIndexWriter(
   }
 
   /**
-   * Add the column pages row to the datamap, order of pages is same as `index_columns` in
+   * Add the column pages row to the indexSchema, order of pages is same as `index_columns` in
    * IndexMeta returned in IndexFactory.
    *
    * Implementation should copy the content of `pages` as needed, because `pages` memory
@@ -341,8 +341,8 @@ class CGIndexWriter(
    * class.
    */
   override def finish(): Unit = {
-    FileFactory.mkdirs(dataMapPath)
-    val file = dataMapPath + "/testcg.datamap"
+    FileFactory.mkdirs(indexPath)
+    val file = indexPath + "/testcg.indexSchema"
     val stream: DataOutputStream = FileFactory
       .getDataOutputStream(file)
     val out = new ByteOutputStream()
@@ -422,7 +422,7 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
          | STORED AS carbondata
          | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
-    // register datamap writer
+    // register indexSchema writer
     sql(
       s"""
          | CREATE INDEX $dataMapName1
@@ -442,7 +442,7 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     assert(df1(0).getString(0).contains(dataMapName2))
 
     // make datamap1 invisible
-    sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName1 = false")
+    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$dataMapName1 = false")
     val df2 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
     val e = intercept[Exception] {
       assert(df2(0).getString(0).contains(dataMapName1))
@@ -453,7 +453,7 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
 
     // also make datamap2 invisible
-    sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName2 = false")
+    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$dataMapName2 = false")
     checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
     val df3 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
@@ -467,8 +467,8 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     assert(e32.getMessage.contains("did not contain \"" + dataMapName2))
 
     // make datamap1,datamap2 visible
-    sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName1 = true")
-    sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName1 = true")
+    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$dataMapName1 = true")
+    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$dataMapName1 = true")
     checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
     val df4 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()

@@ -35,8 +35,8 @@ import org.apache.spark.util.{CollectionAccumulator, MergeIndexUtil}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.constants.SortScopeOptions.SortScope
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
@@ -185,17 +185,17 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         carbonMergerMapping,
         mergedLoadName)
     OperationListenerBus.getInstance.fireEvent(alterTableCompactionPreEvent, operationContext)
-    // Add pre event listener for index datamap
-    val tableDataMaps = DataMapStoreManager.getInstance().getAllIndexes(carbonTable)
-    val dataMapOperationContext = new OperationContext()
-    if (null != tableDataMaps) {
-      val dataMapNames: mutable.Buffer[String] =
-        tableDataMaps.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
-      val dataMapPreExecutionEvent: BuildIndexPreExecutionEvent =
+    // Add pre event listener for index indexSchema
+    val tableIndexes = IndexStoreManager.getInstance().getAllIndexes(carbonTable)
+    val indexOperationContext = new OperationContext()
+    if (null != tableIndexes) {
+      val indexNames: mutable.Buffer[String] =
+        tableIndexes.asScala.map(index => index.getIndexSchema.getIndexName)
+      val indexPreExecutionEvent: BuildIndexPreExecutionEvent =
         new BuildIndexPreExecutionEvent(sqlContext.sparkSession,
-        carbonTable.getAbsoluteTableIdentifier, dataMapNames)
-      OperationListenerBus.getInstance().fireEvent(dataMapPreExecutionEvent,
-        dataMapOperationContext)
+        carbonTable.getAbsoluteTableIdentifier, indexNames)
+      OperationListenerBus.getInstance().fireEvent(indexPreExecutionEvent,
+        indexOperationContext)
     }
     // accumulator to collect segment metadata
     val segmentMetaDataAccumulator = sqlContext
@@ -327,12 +327,12 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         mergedLoadName)
       OperationListenerBus.getInstance()
         .fireEvent(compactionLoadStatusPostEvent, operationContext)
-      if (null != tableDataMaps) {
-        val buildDataMapPostExecutionEvent = new BuildIndexPostExecutionEvent(
+      if (null != tableIndexes) {
+        val buildIndexPostExecutionEvent = new BuildIndexPostExecutionEvent(
           sqlContext.sparkSession, carbonTable.getAbsoluteTableIdentifier,
           null, Seq(mergedLoadNumber), true)
         OperationListenerBus.getInstance()
-          .fireEvent(buildDataMapPostExecutionEvent, dataMapOperationContext)
+          .fireEvent(buildIndexPostExecutionEvent, indexOperationContext)
       }
       val commitDone = operationContext.getProperty("commitComplete")
       val commitComplete = if (null != commitDone) {
@@ -342,7 +342,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       }
       // here either of the conditions can be true, when delete segment is fired after compaction
       // has started, statusFileUpdation will be false , but at the same time commitComplete can be
-      // true because compaction for all datamaps will be finished at a time to the maximum level
+      // true because compaction for all indexes will be finished at a time to the maximum level
       // possible (level 1, 2 etc). so we need to check for either condition
       if (!statusFileUpdation || !commitComplete) {
         LOGGER.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +

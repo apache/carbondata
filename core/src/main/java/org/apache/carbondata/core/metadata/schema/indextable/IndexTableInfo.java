@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.status.IndexStatus;
+import org.apache.carbondata.core.index.status.IndexStatus;
 
 import com.google.gson.Gson;
 

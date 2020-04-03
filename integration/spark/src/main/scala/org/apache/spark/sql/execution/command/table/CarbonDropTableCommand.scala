@@ -69,7 +69,7 @@ case class CarbonDropTableCommand(
         lock => carbonLocks +=
                 CarbonLockUtil.getLockObject(identifier, lock)
       }
-      // check for directly drop datamap table
+      // check for directly drop indexSchema table
       if (carbonTable.isMV && !dropChildTable) {
         if (!ifExistsSet) {
           throwMetadataException(dbName, tableName,

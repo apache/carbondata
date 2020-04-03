@@ -24,12 +24,12 @@ import java.util.Map;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
-import org.apache.carbondata.core.datamap.DataMapProvider;
-import org.apache.carbondata.core.datamap.IndexRegistry;
-import org.apache.carbondata.core.datamap.dev.Index;
-import org.apache.carbondata.core.datamap.dev.IndexFactory;
+import org.apache.carbondata.core.index.DataMapProvider;
+import org.apache.carbondata.core.index.IndexRegistry;
+import org.apache.carbondata.core.index.dev.Index;
+import org.apache.carbondata.core.index.dev.IndexFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 
 import org.apache.spark.sql.SparkSession;
@@ -44,11 +44,11 @@ public class IndexProvider extends DataMapProvider {
   private IndexFactory<? extends Index> indexFactory;
   private List<CarbonColumn> indexedColumns;
 
-  public IndexProvider(CarbonTable table, DataMapSchema schema, SparkSession sparkSession)
+  public IndexProvider(CarbonTable table, IndexSchema schema, SparkSession sparkSession)
       throws MalformedIndexCommandException {
     super(table, schema);
     this.sparkSession = sparkSession;
-    this.indexFactory = createDataMapFactory();
+    this.indexFactory = createIndexFactory();
     indexFactory.validate();
     this.indexedColumns = table.getIndexedColumns(schema.getIndexColumns());
   }
@@ -76,27 +76,27 @@ public class IndexProvider extends DataMapProvider {
 
   @Override
   public boolean rebuild() {
-    IndexRebuildRDD.rebuildDataMap(sparkSession, getMainTable(), getDataMapSchema());
+    IndexRebuildRDD.rebuildIndex(sparkSession, getMainTable(), getIndexSchema());
     return true;
   }
 
-  private IndexFactory<? extends Index> createDataMapFactory()
+  private IndexFactory<? extends Index> createIndexFactory()
       throws MalformedIndexCommandException {
     CarbonTable mainTable = getMainTable();
-    DataMapSchema dataMapSchema = getDataMapSchema();
+    IndexSchema indexSchema = getIndexSchema();
     IndexFactory<? extends Index> indexFactory;
     try {
       // try to create DataMapClassProvider instance by taking providerName as class name
       indexFactory = (IndexFactory<? extends Index>)
-          Class.forName(dataMapSchema.getProviderName()).getConstructors()[0]
-              .newInstance(mainTable, dataMapSchema);
+          Class.forName(indexSchema.getProviderName()).getConstructors()[0]
+              .newInstance(mainTable, indexSchema);
     } catch (ClassNotFoundException e) {
       // try to create DataMapClassProvider instance by taking providerName as short name
       indexFactory =
-          IndexRegistry.getDataMapFactoryByShortName(mainTable, dataMapSchema);
+          IndexRegistry.getIndexFactoryByShortName(mainTable, indexSchema);
     } catch (Throwable e) {
       throw new MetadataProcessException(
-          "failed to create DataMapClassProvider '" + dataMapSchema.getProviderName() + "'", e);
+          "failed to create DataMapClassProvider '" + indexSchema.getProviderName() + "'", e);
     }
     return indexFactory;
   }

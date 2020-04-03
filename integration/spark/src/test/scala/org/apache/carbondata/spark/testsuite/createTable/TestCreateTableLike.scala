@@ -143,7 +143,7 @@ class TestCreateTableLike extends QueryTest with BeforeAndAfterEach with BeforeA
   }
 
   test("table with index") {
-    // datamap relation does not store in parent table
+    // indexSchema relation does not store in parent table
     sql(
       s"""
          | CREATE INDEX dm1

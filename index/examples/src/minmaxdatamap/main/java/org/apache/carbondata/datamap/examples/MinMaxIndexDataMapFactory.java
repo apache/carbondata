@@ -26,14 +26,14 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datamap.DataMapDistributable;
-import org.apache.carbondata.core.datamap.DataMapMeta;
-import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
-import org.apache.carbondata.core.datamap.dev.DataMapModel;
-import org.apache.carbondata.core.datamap.dev.DataMapWriter;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
-import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMapFactory;
+import org.apache.carbondata.core.index.DataMapDistributable;
+import org.apache.carbondata.core.index.DataMapMeta;
+import org.apache.carbondata.core.index.Segment;
+import org.apache.carbondata.core.index.dev.DataMapBuilder;
+import org.apache.carbondata.core.index.dev.DataMapModel;
+import org.apache.carbondata.core.index.dev.DataMapWriter;
+import org.apache.carbondata.core.index.dev.cgindex.CoarseGrainDataMap;
+import org.apache.carbondata.core.index.dev.cgindex.CoarseGrainDataMapFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -58,8 +58,8 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
   public MinMaxIndexDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
     super(carbonTable, dataMapSchema);
 
-    // this is an example for datamap, we can choose the columns and operations that
-    // will be supported by this datamap. Furthermore, we can add cache-support for this datamap.
+    // this is an example for indexSchema, we can choose the columns and operations that
+    // will be supported by this indexSchema. Furthermore, we can add cache-support for this indexSchema.
 
     // columns that will be indexed
     List<CarbonColumn> allColumns = getCarbonTable().getCreateOrderColumn();

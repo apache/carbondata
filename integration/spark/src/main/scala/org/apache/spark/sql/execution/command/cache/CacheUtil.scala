@@ -24,15 +24,14 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.CacheType
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.index.Segment
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.datamap.bloom.{BloomCacheKeyValue, BloomCoarseGrainIndexFactory}
+import org.apache.carbondata.index.bloom.{BloomCacheKeyValue, BloomCoarseGrainIndexFactory}
 import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 
@@ -89,31 +88,31 @@ object CacheUtil {
     }
   }
 
-  def getBloomCacheKeys(carbonTable: CarbonTable, datamap: DataMapSchema): List[String] = {
+  def getBloomCacheKeys(carbonTable: CarbonTable, indexSchema: IndexSchema): List[String] = {
     val segments = CarbonDataMergerUtil.getValidSegmentList(carbonTable).asScala
 
-    // Generate shard Path for the datamap
+    // Generate shard Path for the indexSchema
     val shardPaths = segments.flatMap {
       segment =>
         BloomCoarseGrainIndexFactory.getAllShardPaths(carbonTable.getTablePath,
-          segment.getSegmentNo, datamap.getDataMapName).asScala
+          segment.getSegmentNo, indexSchema.getIndexName).asScala
     }
 
     // get index columns
-    val indexColumns = carbonTable.getIndexedColumns(datamap.getIndexColumns).asScala.map {
+    val indexColumns = carbonTable.getIndexedColumns(indexSchema.getIndexColumns).asScala.map {
       entry =>
         entry.getColName
     }
 
     // generate cache key using shard path and index columns on which bloom was created.
-    val datamapKeys = shardPaths.flatMap {
+    val indexKeys = shardPaths.flatMap {
       shardPath =>
         indexColumns.map {
           indexCol =>
             new BloomCacheKeyValue.CacheKey(shardPath, indexCol).toString
       }
     }
-    datamapKeys.toList
+    indexKeys.toList
   }
 
 }

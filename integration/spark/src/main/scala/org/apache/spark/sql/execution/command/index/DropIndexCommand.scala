@@ -29,7 +29,7 @@ import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedIndexCommandException, NoSuchIndexException}
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
@@ -60,7 +60,7 @@ private[sql] case class DropIndexCommand(
     }
     if (!parentTable.getIndexTableNames(CarbonIndexProvider.SI.getIndexProviderName)
       .contains(indexName)) {
-      DataMapStoreManager.getInstance().deleteIndex(parentTable, indexName)
+      IndexStoreManager.getInstance().deleteIndex(parentTable, indexName)
       CarbonHiveIndexMetadataUtil.removeIndexInfoFromParentTable(parentTable.getIndexInfo,
         parentTable,
         parentTable.getDatabaseName,
