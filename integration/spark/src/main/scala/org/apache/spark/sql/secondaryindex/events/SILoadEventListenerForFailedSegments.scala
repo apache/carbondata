@@ -67,10 +67,11 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
           .deserialize(carbonTable.getTableInfo.getFactTable.getTableProperties
             .get(carbonTable.getCarbonTableIdentifier.getTableId))
         val mainTableDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+        val providerName = CarbonIndexProvider.SI.getIndexProviderName
         if (null != indexMetadata && null != indexMetadata.getIndexesMap &&
-            null != indexMetadata.getIndexesMap.get(CarbonIndexProvider.SI.getIndexProviderName)) {
+            null != indexMetadata.getIndexesMap.get(providerName)) {
           val indexTables = indexMetadata.getIndexesMap
-            .get(CarbonIndexProvider.SI.getIndexProviderName).keySet().asScala
+            .get(providerName).keySet().asScala
           // if there are no index tables for a given fact table do not perform any action
           if (indexTables.nonEmpty) {
             indexTables.foreach {
@@ -81,15 +82,10 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
                   .getOrElse("isSITableEnabled", "true").toBoolean
 
                 if (!isLoadSIForFailedSegments) {
-                  val indexColumns = indexMetadata.getIndexesMap
-                    .get(CarbonIndexProvider.SI.getIndexProviderName)
-                    .get(indexTableName)
-                    .get(CarbonCommonConstants.INDEX_COLUMNS)
-                    .split(",")
-                    .toList
+                  val indexColumns = indexMetadata.getIndexColumns(providerName, indexTableName)
                   val secondaryIndex = IndexModel(Some(carbonTable.getDatabaseName),
                     indexMetadata.getParentTableName,
-                    indexColumns,
+                    indexColumns.split(",").toList,
                     indexTableName)
 
                   val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore

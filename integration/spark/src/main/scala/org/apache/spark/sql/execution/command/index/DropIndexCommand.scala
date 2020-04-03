@@ -23,7 +23,7 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.RunnableCommand
-import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonRelation}
+import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonMetaStore, CarbonRelation}
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.hive.CarbonInternalMetastore
 
@@ -46,6 +46,7 @@ private[sql] case class DropIndexCommand(
   extends RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
+    var isSecondaryIndex = false
     val parentTable = try {
       CarbonEnv.getCarbonTable(dbNameOp, parentTableName)(sparkSession)
     } catch {
@@ -53,27 +54,24 @@ private[sql] case class DropIndexCommand(
         if (!ifExistsSet) throw e
         else return Seq.empty
     }
-    if (!CarbonIndexUtil.getIndexesTables(parentTable).contains(indexName)) {
+    if (!parentTable.getIndexTableNames().contains(indexName)) {
       if (!ifExistsSet) {
         throw new MalformedIndexCommandException("Index with name " + indexName + " does not exist")
       }
     }
-    if (!parentTable.getIndexTableNames(CarbonIndexProvider.SI.getIndexProviderName)
+    if (parentTable.getIndexTableNames(CarbonIndexProvider.SI.getIndexProviderName)
       .contains(indexName)) {
-      IndexStoreManager.getInstance().deleteIndex(parentTable, indexName)
-      CarbonHiveIndexMetadataUtil.removeIndexInfoFromParentTable(parentTable.getIndexInfo,
-        parentTable,
-        parentTable.getDatabaseName,
-        indexName)(sparkSession)
+      isSecondaryIndex = true
     } else {
-      dropIndexTable(sparkSession)
+      // Clear the index of a table from memory and disk
+      IndexStoreManager.getInstance().deleteIndex(parentTable, indexName)
     }
+    dropIndex(isSecondaryIndex, sparkSession)
     Seq.empty
   }
 
-  def dropIndexTable(sparkSession: SparkSession): Seq[Row] = {
+  def dropIndex(isSecondaryIndex: Boolean, sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    LOGGER.info(s"dropping index table $indexName")
     val dbName = CarbonEnv.getDatabaseName(dbNameOp)(sparkSession)
     var tableIdentifierForAcquiringLock: AbsoluteTableIdentifier = null
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.DROP_TABLE_LOCK)
@@ -83,104 +81,114 @@ private[sql] case class DropIndexCommand(
     val carbonLocks: scala.collection.mutable.ArrayBuffer[ICarbonLock] = ArrayBuffer[ICarbonLock]()
     var carbonTable: Option[CarbonTable] = None
     try {
-      carbonTable =
-        try {
-          Some(CarbonEnv.getCarbonTable(Some(dbName), indexName)(sparkSession))
-        } catch {
-          case ex: NoSuchTableException =>
-            var isIndexTableExists = false
-            // even if the index table does not exists
-            // check if the parent table exists and remove the index table reference
-            // in case if the parent table hold the deleted index table reference
-            try {
-              val parentCarbonTable = Some(catalog
-                .lookupRelation(Some(dbName), parentTableName)(sparkSession)
-                .asInstanceOf[CarbonRelation].carbonTable)
-              val indexTableList = CarbonIndexUtil.getIndexesTables(parentCarbonTable.get)
-              if (!indexTableList.isEmpty) {
-                locksToBeAcquired foreach {
-                  lock => {
-                    carbonLocks += CarbonLockUtil
-                      .getLockObject(parentCarbonTable.get.getAbsoluteTableIdentifier, lock)
+      if (isSecondaryIndex) {
+        LOGGER.info(s"dropping index table $indexName")
+        carbonTable =
+          try {
+            Some(CarbonEnv.getCarbonTable(Some(dbName), indexName)(sparkSession))
+          } catch {
+            case ex: NoSuchTableException =>
+              var isIndexTableExists = false
+              // even if the index table does not exists
+              // check if the parent table exists and remove the index table reference
+              // in case if the parent table hold the deleted index table reference
+              try {
+                val parentCarbonTable = getParentTableFromCatalog(sparkSession, dbName, catalog)
+                val indexTableList = CarbonIndexUtil.getIndexesTables(parentCarbonTable.get)
+                if (!indexTableList.isEmpty) {
+                  removeIndexInfoFromParentTable(sparkSession,
+                    dbName,
+                    locksToBeAcquired,
+                    carbonLocks,
+                    parentCarbonTable.get)
+                  isIndexTableExists = true
+                }
+              } catch {
+                case ex: NoSuchTableException =>
+                  if (!ifExistsSet) {
+                    throw ex
                   }
-                }
-                CarbonHiveIndexMetadataUtil.removeIndexInfoFromParentTable(parentCarbonTable
-                  .get
-                  .getIndexInfo,
-                  parentCarbonTable.get,
-                  dbName,
-                  indexName)(sparkSession)
-                // clear parent table from meta store cache as it is also required to be
-                // refreshed when SI table is dropped
-                CarbonInternalMetastore
-                  .removeTableFromMetadataCache(dbName, parentTableName)(sparkSession)
-                isIndexTableExists = true
+                case e: Exception =>
+                  throw e
               }
-            } catch {
-              case ex: NoSuchTableException =>
-                if (!ifExistsSet) {
-                  throw ex
-                }
-              case e: Exception =>
-                throw e
-            }
-            if (!ifExistsSet && !isIndexTableExists) {
-              throw new NoSuchIndexException(indexName)
-            }
-            None
-        }
+              if (!ifExistsSet && !isIndexTableExists) {
+                throw new NoSuchIndexException(indexName)
+              }
+              None
+          }
 
-      if (carbonTable.isDefined) {
-        CarbonInternalMetastore.refreshIndexInfo(dbName, indexName, carbonTable.get)(sparkSession)
-        val isIndexTableBool = carbonTable.get.isIndexTable
-        val parentTableName = CarbonIndexUtil.getParentTableName(carbonTable.get)
-        var parentTable = CarbonEnv.getCarbonTable(Some(dbName), parentTableName)(sparkSession)
-        if (!isIndexTableBool) {
-          sys.error(s"Drop Index command is not permitted on table [$dbName.$indexName]")
-        } else if (isIndexTableBool &&
-                   !parentTableName.equalsIgnoreCase(parentTableName)) {
-          throw new NoSuchIndexException(indexName)
-        } else {
-          if (isIndexTableBool) {
-            tableIdentifierForAcquiringLock = parentTable.getAbsoluteTableIdentifier
+        if (carbonTable.isDefined) {
+          CarbonInternalMetastore.refreshIndexInfo(dbName, indexName, carbonTable.get)(sparkSession)
+          val isIndexTableBool = carbonTable.get.isIndexTable
+          val parentTableName = CarbonIndexUtil.getParentTableName(carbonTable.get)
+          var parentTable = CarbonEnv.getCarbonTable(Some(dbName), parentTableName)(sparkSession)
+          if (!isIndexTableBool) {
+            sys.error(s"Drop Index command is not permitted on table [$dbName.$indexName]")
+          } else if (isIndexTableBool &&
+                     !parentTableName.equalsIgnoreCase(parentTableName)) {
+            throw new NoSuchIndexException(indexName)
           } else {
-            tableIdentifierForAcquiringLock = AbsoluteTableIdentifier
-              .from(carbonTable.get.getTablePath, dbName.toLowerCase, indexName.toLowerCase)
-          }
-          locksToBeAcquired foreach {
-            lock => {
-              carbonLocks += CarbonLockUtil.getLockObject(tableIdentifierForAcquiringLock, lock)
+            if (isIndexTableBool) {
+              tableIdentifierForAcquiringLock = parentTable.getAbsoluteTableIdentifier
+            } else {
+              tableIdentifierForAcquiringLock = AbsoluteTableIdentifier
+                .from(carbonTable.get.getTablePath, dbName.toLowerCase, indexName.toLowerCase)
             }
+            locksToBeAcquired foreach {
+              lock => {
+                carbonLocks += CarbonLockUtil.getLockObject(tableIdentifierForAcquiringLock, lock)
+              }
+            }
+            isValidDeletion = true
           }
-          isValidDeletion = true
+
+          val tableIdentifier = TableIdentifier(indexName, Some(dbName))
+          // drop carbon table
+          val tablePath = carbonTable.get.getTablePath
+
+          CarbonInternalMetastore.dropIndexTable(tableIdentifier, carbonTable.get,
+            tablePath,
+            parentTable,
+            removeEntryFromParentTable = true)(sparkSession)
+
+          // take the refreshed table object after dropping and updating the index table
+          parentTable = getRefreshedParentTable(sparkSession, dbName)
+
+          val indexTables = CarbonIndexUtil.getIndexesTables(parentTable)
+          // if all the indexes are dropped then the main table holds no index tables,
+          // so change the "indexTableExists" property to false, iff all the indexes are deleted
+          if (null == indexTables || indexTables.isEmpty) {
+            val tableIdentifier = TableIdentifier(parentTable.getTableName,
+              Some(parentTable.getDatabaseName))
+            // modify the tableProperties of mainTable by adding "indexTableExists" property
+            CarbonIndexUtil
+              .addOrModifyTableProperty(parentTable,
+                Map("indexTableExists" -> "false"), needLock = false)(sparkSession)
+
+            CarbonHiveIndexMetadataUtil.refreshTable(dbName, parentTableName, sparkSession)
+          }
         }
+      } else {
+        // remove cg or fg index
+        var parentCarbonTable = getParentTableFromCatalog(sparkSession, dbName, catalog).get
+        removeIndexInfoFromParentTable(sparkSession,
+          dbName,
+          locksToBeAcquired,
+          carbonLocks,
+          parentCarbonTable)
+        parentCarbonTable = getRefreshedParentTable(sparkSession, dbName)
+        val indexMetadata = parentCarbonTable.getIndexMetadata
+        if (null != indexMetadata && null != indexMetadata.getIndexesMap) {
+          val hasCgFgIndexes =
+            !(indexMetadata.getIndexesMap.size() == 1 &&
+              indexMetadata.getIndexesMap.containsKey(CarbonIndexProvider.SI.getIndexProviderName))
+          if (hasCgFgIndexes) {
+            CarbonIndexUtil
+              .addOrModifyTableProperty(parentCarbonTable,
+                Map("indexExists" -> "false"), needLock = false)(sparkSession)
 
-        val tableIdentifier = TableIdentifier(indexName, Some(dbName))
-        // drop carbon table
-        val tablePath = carbonTable.get.getTablePath
-
-        CarbonInternalMetastore.dropIndexTable(tableIdentifier, carbonTable.get,
-          tablePath,
-          parentTable,
-          removeEntryFromParentTable = true)(sparkSession)
-
-        // take the refreshed table object after dropping and updating the index table
-        parentTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .lookupRelation(Some(dbName), parentTableName)(sparkSession).asInstanceOf[CarbonRelation]
-          .carbonTable
-
-        val indexTables = CarbonIndexUtil.getIndexesTables(parentTable)
-        // if all the indexes are dropped then the main table holds no index tables,
-        // so change the "indexTableExists" property to false, iff all the indexes are deleted
-        if (null == indexTables || indexTables.isEmpty) {
-          val tableIdentifier = TableIdentifier(parentTable.getTableName,
-            Some(parentTable.getDatabaseName))
-          // modify the tableProperties of mainTable by adding "indexTableExists" property
-          CarbonIndexUtil
-            .addOrModifyTableProperty(parentTable,
-              Map("indexTableExists" -> "false"), needLock = false)(sparkSession)
-
-          CarbonHiveIndexMetadataUtil.refreshTable(dbName, parentTableName, sparkSession)
+            CarbonHiveIndexMetadataUtil.refreshTable(dbName, parentTableName, sparkSession)
+          }
         }
       }
     } finally {
@@ -207,4 +215,48 @@ private[sql] case class DropIndexCommand(
     Seq.empty
   }
 
+  /**
+   * get the refreshed table object after dropping the index
+   */
+  private def getRefreshedParentTable(sparkSession: SparkSession,
+      dbName: String) = {
+    CarbonEnv
+      .getInstance(sparkSession)
+      .carbonMetaStore
+      .lookupRelation(Some(dbName), parentTableName)(sparkSession)
+      .asInstanceOf[CarbonRelation]
+      .carbonTable
+  }
+
+  private def getParentTableFromCatalog(sparkSession: SparkSession,
+      dbName: String,
+      catalog: CarbonMetaStore): Option[CarbonTable] = {
+    Some(catalog.lookupRelation(Some(dbName), parentTableName)(sparkSession)
+      .asInstanceOf[CarbonRelation].carbonTable)
+  }
+
+  /**
+   * AcquireLock and remove indexInfo from parent tabe
+   */
+  private def removeIndexInfoFromParentTable(sparkSession: SparkSession,
+      dbName: String,
+      locksToBeAcquired: List[String],
+      carbonLocks: ArrayBuffer[ICarbonLock],
+      parentCarbonTable: CarbonTable): Unit = {
+    locksToBeAcquired foreach {
+      lock => {
+        carbonLocks += CarbonLockUtil
+          .getLockObject(parentCarbonTable.getAbsoluteTableIdentifier, lock)
+      }
+    }
+    CarbonHiveIndexMetadataUtil.removeIndexInfoFromParentTable(
+      parentCarbonTable.getIndexInfo,
+      parentCarbonTable,
+      dbName,
+      indexName)(sparkSession)
+    // clear parent table from meta store cache as it is also required to be
+    // refreshed when SI table is dropped
+    CarbonInternalMetastore
+      .removeTableFromMetadataCache(dbName, parentTableName)(sparkSession)
+  }
 }

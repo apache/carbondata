@@ -770,7 +770,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists senten")
   }
 
-  test("block updating table which has index indexSchema") {
+  test("block updating table which has index datamap") {
     sql("use iud")
     sql("drop table if exists test_dm_index")
 
@@ -787,7 +787,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
     assert(intercept[MalformedCarbonCommandException] {
       sql("update test_dm_index set(a) = ('aaa') where a = 'ccc'")
-    }.getMessage.contains("update operation is not supported for index indexSchema"))
+    }.getMessage.contains("update operation is not supported for index datamap"))
 
     sql("drop table if exists test_dm_index")
   }

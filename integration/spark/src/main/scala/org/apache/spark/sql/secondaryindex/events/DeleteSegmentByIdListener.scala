@@ -28,8 +28,8 @@ import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{DeleteSegmentByIdPostEvent, Event, OperationContext, OperationEventListener}
 
 class DeleteSegmentByIdListener extends OperationEventListener with Logging {

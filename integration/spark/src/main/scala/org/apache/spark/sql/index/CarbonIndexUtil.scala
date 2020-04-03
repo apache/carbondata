@@ -105,7 +105,8 @@ object CarbonIndexUtil {
     val indexMeta = carbonTable.getTableInfo.getFactTable.getTableProperties
       .get(carbonTable.getCarbonTableIdentifier.getTableId)
     val indexesTables = if (null != indexMeta) {
-      IndexMetadata.deserialize(indexMeta).getIndexTables
+      IndexMetadata.deserialize(indexMeta)
+        .getIndexTables(CarbonIndexProvider.SI.getIndexProviderName)
     } else {
       new java.util.ArrayList[String]
     }

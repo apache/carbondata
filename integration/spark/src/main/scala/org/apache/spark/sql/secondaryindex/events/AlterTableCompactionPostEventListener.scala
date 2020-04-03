@@ -73,12 +73,11 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
             val iterator = indexTablesList.get(CarbonIndexProvider.SI.getIndexProviderName)
               .entrySet().iterator()
             while (iterator.hasNext) {
-              val indexTableColumns = iterator.next()
+              val index = iterator.next()
               val secondaryIndex = IndexModel(Some(carbonLoadModel.getDatabaseName),
                 carbonLoadModel.getTableName,
-                indexTableColumns.getValue.get(CarbonCommonConstants.INDEX_COLUMNS)
-                  .split(",").toList,
-                indexTableColumns.getKey)
+                index.getValue.get(CarbonCommonConstants.INDEX_COLUMNS).split(",").toList,
+                index.getKey)
               val metastore = CarbonEnv.getInstance(sQLContext.sparkSession)
                 .carbonMetaStore
               val indexCarbonTable = metastore

@@ -58,13 +58,12 @@ object Compactor {
       java.util.Collections.emptyIterator()
     }
     while (iterator.hasNext) {
-      val indexTableAndColumns = iterator.next()
-      val indexColumns = indexTableAndColumns.getValue.get(CarbonCommonConstants.INDEX_COLUMNS)
-        .split(",").toList
+      val index = iterator.next()
+      val indexColumns = index.getValue.get(CarbonCommonConstants.INDEX_COLUMNS).split(",").toList
       val secondaryIndex = IndexModel(Some(carbonLoadModel.getDatabaseName),
         carbonLoadModel.getTableName,
         indexColumns,
-        indexTableAndColumns.getKey)
+        index.getKey)
       val secondaryIndexModel = SecondaryIndexModel(sqlContext,
         carbonLoadModel,
         carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,

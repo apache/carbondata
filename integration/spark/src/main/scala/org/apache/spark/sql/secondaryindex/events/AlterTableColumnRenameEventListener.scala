@@ -86,13 +86,11 @@ class AlterTableColumnRenameEventListener extends OperationEventListener with Lo
             .iterator()
           while (iterator.hasNext) {
             val indexTable = iterator.next()
-            indexTable.getValue
-              .get(CarbonCommonConstants.INDEX_COLUMNS)
-              .split(",")
-              .foreach(column =>
-                if (oldColumnName.equalsIgnoreCase(column)) {
-                  indexTablesToRenameColumn ++= Seq(indexTable.getKey)
-                })
+            val indexCols = indexTable.getValue.get(CarbonCommonConstants.INDEX_COLUMNS).split(",")
+            indexCols.foreach(column =>
+              if (oldColumnName.equalsIgnoreCase(column)) {
+                indexTablesToRenameColumn ++= Seq(indexTable.getKey)
+              })
           }
         }
         val indexTablesRenamedSuccess = indexTablesToRenameColumn

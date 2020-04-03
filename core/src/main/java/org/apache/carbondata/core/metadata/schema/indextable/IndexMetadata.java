@@ -166,4 +166,8 @@ public class IndexMetadata implements Serializable {
     }
     return (IndexMetadata) ObjectSerializationUtil.convertStringToObject(serializedIndexMeta);
   }
+
+  public String getIndexColumns(String provider, String indexName) {
+    return indexTableMap.get(provider).get(indexName).get(CarbonCommonConstants.INDEX_COLUMNS);
+  }
 }

@@ -77,15 +77,11 @@ class AlterTableMergeIndexSIEventListener
               val iterator = indexTablesList(CarbonIndexProvider.SI.getIndexProviderName).entrySet()
                 .iterator()
               while (iterator.hasNext) {
-                val indexTableAndColumns = iterator.next()
+                val index = iterator.next()
                 val secondaryIndex = IndexModel(Some(carbonMainTable.getDatabaseName),
                   carbonMainTable.getTableName,
-                  indexTableAndColumns
-                    .getValue
-                    .get(CarbonCommonConstants.INDEX_COLUMNS)
-                    .split(",")
-                    .toList,
-                  indexTableAndColumns.getKey)
+                  index.getValue.get(CarbonCommonConstants.INDEX_COLUMNS).split(",").toList,
+                  index.getKey)
                 val metastore = CarbonEnv.getInstance(sparkSession)
                   .carbonMetaStore
                 val indexCarbonTable = metastore
