@@ -25,25 +25,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
-import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.index.IndexUtil;
-import org.apache.carbondata.core.index.status.IndexStatus;
-import org.apache.carbondata.core.index.status.IndexStatusDetail;
-import org.apache.carbondata.core.index.status.IndexStatusManager;
-import org.apache.carbondata.core.index.status.MVSegmentStatusUtil;
 import org.apache.carbondata.core.metadata.schema.index.IndexProperty;
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
-import org.apache.carbondata.core.statusmanager.SegmentStatus;
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_COLUMNS;
 
-import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import org.apache.commons.lang.StringUtils;
 
@@ -71,11 +58,6 @@ public class IndexSchema implements Serializable, Writable {
   protected RelationIdentifier relationIdentifier;
 
   /**
-   * SQL query string used to create MV
-   */
-  protected String ctasQuery;
-
-  /**
    * Properties provided by user
    */
   protected Map<String, String> properties;
@@ -89,21 +71,6 @@ public class IndexSchema implements Serializable, Writable {
    * child table schema
    */
   protected TableSchema childSchema;
-
-  /**
-   * main table column list mapped to index table
-   */
-  private Map<String, Set<String>> mainTableColumnList;
-
-  /**
-   * Index table column order map as per Select query
-   */
-  private Map<Integer, String> columnsOrderMap;
-
-  /**
-   * timeseries query
-   */
-  private boolean isTimeSeries;
 
   public IndexSchema(String indexName, String providerName) {
     this.indexName = indexName;
@@ -133,14 +100,6 @@ public class IndexSchema implements Serializable, Writable {
     this.relationIdentifier = relationIdentifier;
   }
 
-  public String getCtasQuery() {
-    return ctasQuery;
-  }
-
-  public void setCtasQuery(String ctasQuery) {
-    this.ctasQuery = ctasQuery;
-  }
-
   public Map<String, String> getProperties() {
     return properties;
   }
@@ -155,14 +114,6 @@ public class IndexSchema implements Serializable, Writable {
 
   public List<RelationIdentifier> getParentTables() {
     return parentTables;
-  }
-
-  public TableSchema getChildSchema() {
-    return childSchema;
-  }
-
-  public void setChildSchema(TableSchema childSchema) {
-    this.childSchema = childSchema;
   }
 
   /**
@@ -261,30 +212,6 @@ public class IndexSchema implements Serializable, Writable {
     return Objects.hash(indexName);
   }
 
-  public Map<String, Set<String>> getMainTableColumnList() {
-    return mainTableColumnList;
-  }
-
-  public void setMainTableColumnList(Map<String, Set<String>> mainTableColumnList) {
-    this.mainTableColumnList = mainTableColumnList;
-  }
-
-  public Map<Integer, String> getColumnsOrderMap() {
-    return columnsOrderMap;
-  }
-
-  public void setColumnsOrderMap(Map<Integer, String> columnsOrderMap) {
-    this.columnsOrderMap = columnsOrderMap;
-  }
-
-  public boolean isTimeSeries() {
-    return isTimeSeries;
-  }
-
-  public void setTimeSeries(boolean timeSeries) {
-    isTimeSeries = timeSeries;
-  }
-
   /**
    * Return true if this Index can support incremental build
    */
@@ -293,64 +220,4 @@ public class IndexSchema implements Serializable, Writable {
     return prop == null || prop.equalsIgnoreCase("false");
   }
 
-  public String getPropertiesAsString() {
-    String[] properties = getProperties().entrySet().stream()
-        // ignore internal used property
-        .filter(p ->
-            !p.getKey().equalsIgnoreCase(IndexProperty.DEFERRED_REBUILD) &&
-            !p.getKey().equalsIgnoreCase(IndexProperty.FULL_REFRESH))
-        .map(p -> "'" + p.getKey() + "'='" + p.getValue() + "'")
-        .sorted()
-        .toArray(String[]::new);
-    return Strings.mkString(properties, ",");
-  }
-
-  public String getUniqueTableName() {
-    return relationIdentifier.getDatabaseName() + CarbonCommonConstants.POINT +
-        relationIdentifier.getTableName();
-  }
-
-  public IndexStatus getStatus() throws IOException {
-    IndexStatusDetail[] details = IndexStatusManager.getEnabledIndexStatusDetails();
-    for (IndexStatusDetail detail : details) {
-      if (detail.getIndexName().equalsIgnoreCase(this.getIndexName())) {
-        return IndexStatus.ENABLED;
-      }
-    }
-    return IndexStatus.DISABLED;
-  }
-
-  public String getSyncStatus() {
-    LoadMetadataDetails[] loads =
-        SegmentStatusManager.readLoadMetadata(
-            CarbonTablePath.getMetadataPath(this.getRelationIdentifier().getTablePath()));
-    if (!isIndex() && loads.length > 0) {
-      for (int i = loads.length - 1; i >= 0; i--) {
-        LoadMetadataDetails load = loads[i];
-        if (load.getSegmentStatus().equals(SegmentStatus.SUCCESS)) {
-          Map<String, List<String>> segmentMaps =
-              MVSegmentStatusUtil.getSegmentMap(load.getExtraInfo());
-          Map<String, String> syncInfoMap = new HashMap<>();
-          for (Map.Entry<String, List<String>> entry : segmentMaps.entrySet()) {
-            // when in join scenario, one table is loaded and one more is not loaded,
-            // then put value as NA
-            if (entry.getValue().isEmpty()) {
-              syncInfoMap.put(entry.getKey(), "NA");
-            } else {
-              syncInfoMap.put(entry.getKey(), IndexUtil.getMaxSegmentID(entry.getValue()));
-            }
-          }
-          String loadEndTime;
-          if (load.getLoadEndTime() == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
-            loadEndTime = "NA";
-          } else {
-            loadEndTime = new java.sql.Timestamp(load.getLoadEndTime()).toString();
-          }
-          syncInfoMap.put(CarbonCommonConstants.LOAD_SYNC_TIME, loadEndTime);
-          return new Gson().toJson(syncInfoMap);
-        }
-      }
-    }
-    return "NA";
-  }
 }

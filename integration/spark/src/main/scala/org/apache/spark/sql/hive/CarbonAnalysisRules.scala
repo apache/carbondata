@@ -34,8 +34,6 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.IndexStoreManager
-import org.apache.carbondata.core.index.status.IndexStatusManager
 import org.apache.carbondata.core.view.MVStatus
 import org.apache.carbondata.view.MVManagerInSpark
 

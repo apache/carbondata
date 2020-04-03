@@ -85,7 +85,7 @@ case class CarbonCreateIndexCommand(
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
-    if (parentTable.isMVTable || parentTable.isIndexTable) {
+    if (parentTable.isIndexTable) {
       throw new MalformedIndexCommandException(
         "Cannot create index on child table `" + indexName + "`")
     }
@@ -212,7 +212,6 @@ case class CarbonCreateIndexCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     if (provider != null) {
       provider.setMainTable(parentTable)
-      provider.initData()
       if (!deferredRebuild) {
         provider.rebuild()
         // enable bloom or lucene index

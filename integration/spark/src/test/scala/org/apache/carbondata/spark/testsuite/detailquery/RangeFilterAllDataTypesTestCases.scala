@@ -182,6 +182,9 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
           TimeStampGranularityConstants.TIME_GRAN_SEC.toString
         )
       CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "true")
+
+      CarbonProperties.getInstance().removeProperty("carbon.timestamp.format")
+
       sql("drop table if exists directDictionaryTable")
       sql("drop table if exists directDictionaryTable_hive")
       sql(

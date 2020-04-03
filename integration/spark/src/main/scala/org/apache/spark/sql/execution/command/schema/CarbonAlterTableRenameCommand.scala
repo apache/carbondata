@@ -81,7 +81,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
     }
     // if table have created MV, not support table rename
     if (MVManagerInSpark.get(sparkSession).hasSchemaOnTable(oldCarbonTable) ||
-        oldCarbonTable.hasMVCreated || oldCarbonTable.isMV) {
+        oldCarbonTable.isMV) {
       throw new MalformedCarbonCommandException(
         "alter rename is not supported for MV table or for tables which have child MV")
     }

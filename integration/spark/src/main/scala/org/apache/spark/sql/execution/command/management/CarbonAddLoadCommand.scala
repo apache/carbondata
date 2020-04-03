@@ -37,7 +37,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
-import org.apache.carbondata.core.index.status.IndexStatusManager
 import org.apache.carbondata.core.indexstore.{PartitionSpec => CarbonPartitionSpec}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.datatype.Field
