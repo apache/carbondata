@@ -203,9 +203,9 @@ public class BlockExecutionInfo {
    */
   private boolean isDirectVectorFill;
 
-  private ReusableDataBuffer[] dimensionResusableDataBuffer;
+  private ReusableDataBuffer[] dimensionReusableDataBuffer;
 
-  private ReusableDataBuffer[] measureResusableDataBuffer;
+  private ReusableDataBuffer[] measureReusableDataBuffer;
 
   /**
    * It is used to read only the deleted data of a particular version. It will be used to get the
@@ -588,20 +588,20 @@ public class BlockExecutionInfo {
     isDirectVectorFill = directVectorFill;
   }
 
-  public ReusableDataBuffer[] getDimensionResusableDataBuffer() {
-    return dimensionResusableDataBuffer;
+  public ReusableDataBuffer[] getDimensionReusableDataBuffer() {
+    return dimensionReusableDataBuffer;
   }
 
-  public void setDimensionResusableDataBuffer(ReusableDataBuffer[] dimensionResusableDataBuffer) {
-    this.dimensionResusableDataBuffer = dimensionResusableDataBuffer;
+  public void setDimensionReusableDataBuffer(ReusableDataBuffer[] dimensionReusableDataBuffer) {
+    this.dimensionReusableDataBuffer = dimensionReusableDataBuffer;
   }
 
-  public ReusableDataBuffer[] getMeasureResusableDataBuffer() {
-    return measureResusableDataBuffer;
+  public ReusableDataBuffer[] getMeasureReusableDataBuffer() {
+    return measureReusableDataBuffer;
   }
 
-  public void setMeasureResusableDataBuffer(ReusableDataBuffer[] measureResusableDataBuffer) {
-    this.measureResusableDataBuffer = measureResusableDataBuffer;
+  public void setMeasureReusableDataBuffer(ReusableDataBuffer[] measureReusableDataBuffer) {
+    this.measureReusableDataBuffer = measureReusableDataBuffer;
   }
 
   public boolean isReadOnlyDelta() {

@@ -157,8 +157,8 @@ public abstract class BlockletScannedResult {
 
   public BlockletScannedResult(BlockExecutionInfo blockExecutionInfo,
       QueryStatisticsModel queryStatisticsModel) {
-    this.dimensionReusableBuffer = blockExecutionInfo.getDimensionResusableDataBuffer();
-    this.measureReusableBuffer = blockExecutionInfo.getMeasureResusableDataBuffer();
+    this.dimensionReusableBuffer = blockExecutionInfo.getDimensionReusableDataBuffer();
+    this.measureReusableBuffer = blockExecutionInfo.getMeasureReusableDataBuffer();
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
     this.noDictionaryColumnChunkIndexes = blockExecutionInfo.getNoDictionaryColumnChunkIndexes();
     this.dictionaryColumnChunkIndexes = blockExecutionInfo.getDictionaryColumnChunkIndex();
