@@ -194,6 +194,9 @@ class TestCarbonPartitionWriter extends QueryTest {
 
       checkAnswer(sql(s"SELECT count(1) FROM $tableName"), Seq(Row(1000)))
 
+      checkAnswer(sql(s"SELECT stringField FROM $tableName order by stringField limit 2"),
+        Seq(Row("test0"), Row("test1")))
+
       val rows = sql(s"SELECT * FROM $tableName limit 1").collect()
       assertResult(1)(rows.length)
       assertResult(Array[Byte](2, 3, 4))(rows(0).get(rows(0).fieldIndex("binaryfield")).asInstanceOf[GenericRowWithSchema](0))
