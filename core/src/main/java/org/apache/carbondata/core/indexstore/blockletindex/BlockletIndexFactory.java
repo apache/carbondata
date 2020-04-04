@@ -653,9 +653,13 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
       throws IOException {
     List<Blocklet> blocklets = new ArrayList<>();
     List<CoarseGrainIndex> dataMaps = getIndexes(segment, partitions);
+    if (dataMaps.size() == 0) {
+      return blocklets;
+    }
+    SegmentProperties segmentProperties = getSegmentPropertiesFromDataMap(dataMaps.get(0));
     for (CoarseGrainIndex dataMap : dataMaps) {
       blocklets.addAll(dataMap
-          .prune((FilterResolverIntf) null, getSegmentProperties(segment, partitions), partitions,
+          .prune((FilterResolverIntf) null, segmentProperties, partitions,
               null, this.getCarbonTable()));
     }
     return blocklets;
