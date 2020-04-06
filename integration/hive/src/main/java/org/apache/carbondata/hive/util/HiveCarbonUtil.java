@@ -61,6 +61,7 @@ import org.apache.hadoop.hive.metastore.HiveMetaHook;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.hive.metastore.api.hive_metastoreConstants;
 import org.apache.log4j.Logger;
 
 public class HiveCarbonUtil {
@@ -73,12 +74,14 @@ public class HiveCarbonUtil {
     String[] tableUniqueName = tableProperties.get("name").split("\\.");
     String databaseName = tableUniqueName[0];
     String tableName = tableUniqueName[1];
-    String tablePath = tableProperties.get("location");
-    String columns = tableProperties.get("columns");
+    String tablePath = tableProperties.get(hive_metastoreConstants.META_TABLE_LOCATION);
+    String columns = tableProperties.get(hive_metastoreConstants.META_TABLE_COLUMNS);
     String sortColumns = tableProperties.get("sort_columns");
-    String columnTypes = tableProperties.get("columns.types");
-    String partitionColumns = tableProperties.get("partition_columns");
-    String partitionColumnTypes = tableProperties.get("partition_columns.types");
+    String columnTypes = tableProperties.get(hive_metastoreConstants.META_TABLE_COLUMN_TYPES);
+    String partitionColumns =
+        tableProperties.get(hive_metastoreConstants.META_TABLE_PARTITION_COLUMNS);
+    String partitionColumnTypes =
+        tableProperties.get(hive_metastoreConstants.META_TABLE_PARTITION_COLUMN_TYPES);
     if (partitionColumns != null) {
       columns = columns + "," + partitionColumns;
       columnTypes = columnTypes + ":" + partitionColumnTypes;
@@ -101,8 +104,8 @@ public class HiveCarbonUtil {
     String[] tableUniqueName = tableProperties.getProperty("name").split("\\.");
     String databaseName = tableUniqueName[0];
     String tableName = tableUniqueName[1];
-    String tablePath = tableProperties.getProperty("location");
-    String columns = tableProperties.getProperty("columns");
+    String tablePath = tableProperties.getProperty(hive_metastoreConstants.META_TABLE_LOCATION);
+    String columns = tableProperties.getProperty(hive_metastoreConstants.META_TABLE_COLUMNS);
     String sortColumns = tableProperties.getProperty("sort_columns");
     String[] columnTypes = splitSchemaStringToArray(tableProperties.getProperty("columns.types"));
     String complexDelim = tableProperties.getProperty("complex_delimiter", "");

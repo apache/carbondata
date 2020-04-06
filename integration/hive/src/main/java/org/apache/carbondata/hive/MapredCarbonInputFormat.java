@@ -46,6 +46,7 @@ import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.InvalidPathException;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.metastore.api.hive_metastoreConstants;
 import org.apache.hadoop.hive.ql.exec.SerializationUtilities;
 import org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;
 import org.apache.hadoop.hive.ql.plan.ExprNodeGenericFuncDesc;
@@ -58,7 +59,6 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Logger;
 
 public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritable>
@@ -73,29 +73,15 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
    */
   private static void populateCarbonTable(Configuration configuration, String paths)
       throws IOException, InvalidConfigurationException {
-    String dirs = configuration.get(INPUT_DIR, "");
-    String[] inputPaths = StringUtils.split(dirs);
-    String validInputPath = null;
-    if (inputPaths.length == 0) {
-      throw new InvalidPathException("No input paths specified in job");
-    } else {
-      if (paths != null) {
-        for (String inputPath : inputPaths) {
-          inputPath = inputPath.replace("file:", "");
-          if (FileFactory.isFileExist(inputPath)) {
-            validInputPath = inputPath;
-            break;
-          }
-        }
-      }
-    }
     if (null != paths) {
       // read the schema file to get the absoluteTableIdentifier having the correct table id
       // persisted in the schema
       CarbonTable carbonTable;
       AbsoluteTableIdentifier absoluteTableIdentifier = AbsoluteTableIdentifier
-          .from(validInputPath, getDatabaseName(configuration), getTableName(configuration));
-      String schemaPath = CarbonTablePath.getSchemaFilePath(validInputPath);
+          .from(configuration.get(hive_metastoreConstants.META_TABLE_LOCATION),
+              getDatabaseName(configuration), getTableName(configuration));
+      String schemaPath =
+          CarbonTablePath.getSchemaFilePath(absoluteTableIdentifier.getTablePath(), configuration);
       if (FileFactory.getCarbonFile(schemaPath).exists()) {
         // read the schema file to get the absoluteTableIdentifier having the correct table id
         // persisted in the schema
@@ -129,7 +115,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     CarbonTable carbonTable;
     try {
       carbonTable = getCarbonTable(jobContext.getConfiguration(),
-          jobContext.getConfiguration().get("location"));
+          jobContext.getConfiguration().get(hive_metastoreConstants.META_TABLE_LOCATION));
     } catch (Exception e) {
       throw new IOException("Unable read Carbon Schema: ", e);
     }
@@ -151,7 +137,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     CarbonInputFormat<Void> carbonInputFormat;
     if (carbonTable.isTransactionalTable()) {
       carbonInputFormat = new CarbonTableInputFormat<>();
-      jobContext.getConfiguration().set(CarbonTableInputFormat.CARBON_TRANSACTIONAL_TABLE, "true");
+      jobContext.getConfiguration().set(CARBON_TRANSACTIONAL_TABLE, "true");
     } else {
       carbonInputFormat = new CarbonFileInputFormat<>();
     }
