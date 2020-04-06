@@ -137,7 +137,7 @@ public class CarbondataModule extends HiveModule {
         .as(generatedNameOf(HiveSplitManager.class, connectorId));
     binder.bind(ConnectorPageSourceProvider.class).to(CarbondataPageSourceProvider.class)
         .in(Scopes.SINGLETON);
-    binder.bind(ConnectorPageSinkProvider.class).to(HivePageSinkProvider.class)
+    binder.bind(ConnectorPageSinkProvider.class).to(CarbonDataPageSinkProvider.class)
         .in(Scopes.SINGLETON);
     binder.bind(ConnectorNodePartitioningProvider.class).to(HiveNodePartitioningProvider.class)
         .in(Scopes.SINGLETON);

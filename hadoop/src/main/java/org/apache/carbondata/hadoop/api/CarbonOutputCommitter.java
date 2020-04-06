@@ -161,7 +161,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
         carbonTable.getCarbonTableIdentifier().getTableId(),
         new SegmentFileStore(carbonTable.getTablePath(),
             segmentFileName + CarbonTablePath.SEGMENT_EXT));
-
+    newMetaEntry.setSegmentFile(segmentFileName + CarbonTablePath.SEGMENT_EXT);
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(newMetaEntry, SegmentStatus.SUCCESS, loadModel.getFactTimeStamp(),
             true);

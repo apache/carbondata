@@ -18,19 +18,20 @@
 package org.apache.carbondata.presto;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Optional;
 import java.util.Properties;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
-import org.apache.carbondata.hadoop.api.CarbonOutputCommitter;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
+import org.apache.carbondata.hive.MapredCarbonOutputCommitter;
 import org.apache.carbondata.hive.util.HiveCarbonUtil;
+import org.apache.carbondata.presto.impl.CarbonTableConfig;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
+import com.google.common.collect.ImmutableMap;
 import io.airlift.slice.Slice;
 import io.prestosql.plugin.hive.HdfsEnvironment;
 import io.prestosql.plugin.hive.HiveInsertTableHandle;
@@ -52,14 +53,13 @@ import io.prestosql.spi.connector.ConnectorTableHandle;
 import io.prestosql.spi.connector.SchemaTableName;
 import io.prestosql.spi.statistics.ComputedStatistics;
 import io.prestosql.spi.type.TypeManager;
-import org.apache.hadoop.conf.Configuration;
+
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.JobID;
-import org.apache.hadoop.mapreduce.OutputCommitter;
-import org.apache.hadoop.mapreduce.TaskAttemptID;
-import org.apache.hadoop.mapreduce.TaskType;
-import org.apache.hadoop.mapreduce.task.JobContextImpl;
-import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.JobContextImpl;
+import org.apache.hadoop.mapred.JobID;
+
+import org.apache.hadoop.mapred.TaskAttemptContextImpl;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTimeZone;
 
@@ -70,7 +70,7 @@ public class CarbonDataMetaData extends HiveMetadata {
 
   private HdfsEnvironment hdfsEnvironment;
   private SemiTransactionalHiveMetastore metastore;
-  private OutputCommitter carbonOutputCommitter;
+  private MapredCarbonOutputCommitter carbonOutputCommitter;
   private JobContextImpl jobContext;
 
   public CarbonDataMetaData(SemiTransactionalHiveMetastore metastore,
@@ -82,7 +82,7 @@ public class CarbonDataMetaData extends HiveMetadata {
       TypeTranslator typeTranslator, String prestoVersion,
       HiveStatisticsProvider hiveStatisticsProvider, AccessControlMetadata accessControlMetadata) {
     super(metastore, hdfsEnvironment, partitionManager, timeZone, allowCorruptWritesForTesting,
-        writesToNonManagedTablesEnabled, createsOfNonManagedTablesEnabled, typeManager,
+        true, createsOfNonManagedTablesEnabled, typeManager,
         locationService, partitionUpdateCodec, typeTranslator, prestoVersion,
         hiveStatisticsProvider, accessControlMetadata);
     this.hdfsEnvironment = hdfsEnvironment;
@@ -90,7 +90,7 @@ public class CarbonDataMetaData extends HiveMetadata {
   }
 
   @Override
-  public HiveInsertTableHandle beginInsert(ConnectorSession session,
+  public CarbonDataInsertTableHandle beginInsert(ConnectorSession session,
       ConnectorTableHandle tableHandle) {
     HiveInsertTableHandle hiveInsertTableHandle = super.beginInsert(session, tableHandle);
     SchemaTableName tableName = hiveInsertTableHandle.getSchemaTableName();
@@ -98,38 +98,40 @@ public class CarbonDataMetaData extends HiveMetadata {
         this.metastore.getTable(tableName.getSchemaName(), tableName.getTableName());
     Path outputPath =
         new Path(hiveInsertTableHandle.getLocationHandle().getJsonSerializableTargetPath());
-    Configuration initialConfiguration = ConfigurationUtils.toJobConf(this.hdfsEnvironment
+    JobConf jobConf = ConfigurationUtils.toJobConf(this.hdfsEnvironment
         .getConfiguration(
             new HdfsEnvironment.HdfsContext(session, hiveInsertTableHandle.getSchemaName(),
                 hiveInsertTableHandle.getTableName()),
             new Path(hiveInsertTableHandle.getLocationHandle().getJsonSerializableWritePath())));
-    TaskAttemptID taskAttemptID = TaskAttemptID.forName(initialConfiguration.get("mapred.task.id"));
+    jobConf.set("location", outputPath.toString());
     Properties hiveSchema = MetastoreUtil.getHiveSchema(table.get());
     try {
       CarbonLoadModel carbonLoadModel =
-          HiveCarbonUtil.getCarbonLoadModel(hiveSchema, initialConfiguration);
+          HiveCarbonUtil.getCarbonLoadModel(hiveSchema, jobConf);
 
-      CarbonTableOutputFormat.setLoadModel(initialConfiguration, carbonLoadModel);
+      CarbonTableOutputFormat.setLoadModel(jobConf, carbonLoadModel);
     } catch (IOException ex) {
       LOG.error("Error while creating carbon load model", ex);
       throw new RuntimeException(ex);
     }
-    if (taskAttemptID == null) {
-      SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmm");
-      String jobTrackerId = formatter.format(new Date());
-      taskAttemptID = new TaskAttemptID(jobTrackerId, 0, TaskType.MAP, 0, 0);
-    }
-    TaskAttemptContextImpl context =
-        new TaskAttemptContextImpl(initialConfiguration, taskAttemptID);
     try {
-      carbonOutputCommitter = new CarbonOutputCommitter(outputPath, context);
-      jobContext = new JobContextImpl(initialConfiguration, new JobID());
+      carbonOutputCommitter = new MapredCarbonOutputCommitter();
+      jobContext = new JobContextImpl(jobConf, new JobID());
       carbonOutputCommitter.setupJob(jobContext);
-      ThreadLocalSessionInfo.setConfigurationToCurrentThread(context.getConfiguration());
+      ThreadLocalSessionInfo.setConfigurationToCurrentThread(jobConf);
     } catch (IOException e) {
+      LOG.error("error setting the output committer", e);
       throw new RuntimeException("error setting the output committer");
     }
-    return hiveInsertTableHandle;
+    return new CarbonDataInsertTableHandle(hiveInsertTableHandle.getSchemaTableName().getSchemaName(),
+        hiveInsertTableHandle.getTableName(),
+        hiveInsertTableHandle.getInputColumns(),
+        hiveInsertTableHandle.getPageSinkMetadata(),
+        hiveInsertTableHandle.getLocationHandle(),
+        hiveInsertTableHandle.getBucketProperty(), hiveInsertTableHandle.getTableStorageFormat(),
+        hiveInsertTableHandle.getPartitionStorageFormat(),
+        ImmutableMap.of(CarbonTableConfig.CARBON_PRESTO_LOAD_MODEL,
+            jobContext.getConfiguration().get(CarbonTableOutputFormat.LOAD_MODEL)));
   }
 
   @Override

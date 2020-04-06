@@ -23,6 +23,7 @@ import java.util.UUID;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.api.CarbonOutputCommitter;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
@@ -52,25 +53,30 @@ public class MapredCarbonOutputCommitter extends OutputCommitter {
 
   @Override
   public void setupJob(JobContext jobContext) throws IOException {
-    ThreadLocalSessionInfo.setConfigurationToCurrentThread(jobContext.getConfiguration());
-    String a = jobContext.getJobConf().get(JobConf.MAPRED_MAP_TASK_ENV);
     Random random = new Random();
     JobID jobId = new JobID(UUID.randomUUID().toString(), 0);
     TaskID task = new TaskID(jobId, TaskType.MAP, random.nextInt());
     TaskAttemptID attemptID = new TaskAttemptID(task, random.nextInt());
     org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl context =
         new TaskAttemptContextImpl(jobContext.getJobConf(), attemptID);
-    CarbonLoadModel carbonLoadModel =
-        HiveCarbonUtil.getCarbonLoadModel(jobContext.getConfiguration());
-    CarbonTableOutputFormat.setLoadModel(jobContext.getConfiguration(), carbonLoadModel);
+    CarbonLoadModel carbonLoadModel = null;
+    String encodedString = jobContext.getJobConf().get(CarbonTableOutputFormat.LOAD_MODEL);
+    if (encodedString != null) {
+      carbonLoadModel =
+          (CarbonLoadModel) ObjectSerializationUtil.convertStringToObject(encodedString);
+    }
+    if (null == carbonLoadModel) {
+      ThreadLocalSessionInfo.setConfigurationToCurrentThread(jobContext.getConfiguration());
+      String a = jobContext.getJobConf().get(JobConf.MAPRED_MAP_TASK_ENV);
+      carbonLoadModel = HiveCarbonUtil.getCarbonLoadModel(jobContext.getConfiguration());
+      CarbonTableOutputFormat.setLoadModel(jobContext.getConfiguration(), carbonLoadModel);
+      String loadModelStr = jobContext.getConfiguration().get(CarbonTableOutputFormat.LOAD_MODEL);
+      jobContext.getJobConf().set(JobConf.MAPRED_MAP_TASK_ENV, a + ",carbon=" + loadModelStr);
+      jobContext.getJobConf().set(JobConf.MAPRED_REDUCE_TASK_ENV, a + ",carbon=" + loadModelStr);
+    }
     carbonOutputCommitter =
         new CarbonOutputCommitter(new Path(carbonLoadModel.getTablePath()), context);
     carbonOutputCommitter.setupJob(jobContext);
-    String loadModelStr = jobContext.getConfiguration().get("mapreduce.carbontable.load.model");
-    jobContext.getJobConf().set(JobConf.MAPRED_MAP_TASK_ENV,
-        a + ",carbon=" + loadModelStr);
-    jobContext.getJobConf().set(JobConf.MAPRED_REDUCE_TASK_ENV,
-        a + ",carbon=" + loadModelStr);
   }
 
   @Override

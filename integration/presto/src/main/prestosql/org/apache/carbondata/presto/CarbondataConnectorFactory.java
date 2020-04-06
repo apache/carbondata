@@ -26,6 +26,8 @@ import static java.util.Objects.requireNonNull;
 
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
+import org.apache.carbondata.hive.MapredCarbonInputFormat;
+import org.apache.carbondata.hive.MapredCarbonOutputFormat;
 import org.apache.carbondata.presto.impl.CarbonTableConfig;
 
 import com.google.common.collect.ImmutableSet;
@@ -65,6 +67,7 @@ import io.prestosql.spi.classloader.ThreadContextClassLoader;
 import io.prestosql.spi.connector.Connector;
 import io.prestosql.spi.connector.ConnectorAccessControl;
 import io.prestosql.spi.connector.ConnectorContext;
+import io.prestosql.spi.connector.ConnectorHandleResolver;
 import io.prestosql.spi.connector.ConnectorNodePartitioningProvider;
 import io.prestosql.spi.connector.ConnectorPageSinkProvider;
 import io.prestosql.spi.connector.ConnectorPageSourceProvider;
@@ -198,9 +201,18 @@ public class CarbondataConnectorFactory extends HiveConnectorFactory {
       acquireConstructorAccessorMethod.setAccessible(true);
       ca = (ConstructorAccessor) acquireConstructorAccessorMethod.invoke(declaredConstructors[0]);
     }
-    Object instance = ca.newInstance(new Object[] { "CARBON", HiveStorageFormat.values().length, "",
-        CarbonTableInputFormat.class.getName(), CarbonTableOutputFormat.class.getName(),
-        new DataSize(256.0D, DataSize.Unit.MEGABYTE) });
+    addHiveStorageFormatsForCarbondata(ca, "CARBONDATA");
+    addHiveStorageFormatsForCarbondata(ca, "ORG.APACHE.CARBONDATA.FORMAT");
+    addHiveStorageFormatsForCarbondata(ca, "CARBON");
+    return;
+  }
+
+  private static void addHiveStorageFormatsForCarbondata(ConstructorAccessor ca, String storedAs)
+      throws InstantiationException, InvocationTargetException, NoSuchFieldException,
+      IllegalAccessException {
+    Object instance = ca.newInstance(new Object[] { storedAs, HiveStorageFormat.values().length,
+        "org.apache.hadoop.hive.serde2.LazySimpleSerde", MapredCarbonInputFormat.class.getName(),
+        MapredCarbonOutputFormat.class.getName(), new DataSize(256.0D, DataSize.Unit.MEGABYTE) });
     Field values = HiveStorageFormat.class.getDeclaredField("$VALUES");
     values.setAccessible(true);
     Field modifiersField = Field.class.getDeclaredField("modifiers");
@@ -213,5 +225,9 @@ public class CarbondataConnectorFactory extends HiveConnectorFactory {
     System.arraycopy(src, 0, hiveStorageFormats, 0, src.length);
     hiveStorageFormats[src.length] = (HiveStorageFormat) instance;
     values.set(null, hiveStorageFormats);
+  }
+
+  @Override public ConnectorHandleResolver getHandleResolver() {
+    return new CarbonDataHandleResolver();
   }
 }

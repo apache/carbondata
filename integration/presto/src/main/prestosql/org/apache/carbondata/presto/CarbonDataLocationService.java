@@ -55,8 +55,6 @@ public class CarbonDataLocationService extends HiveLocationService {
       ConnectorSession session, Table table) {
     // TODO: check and make it compatible for cloud scenario
     super.forExistingTable(metastore, session, table);
-    HdfsEnvironment.HdfsContext context =
-        new HdfsEnvironment.HdfsContext(session, table.getDatabaseName(), table.getTableName());
     Path targetPath = new Path(table.getStorage().getLocation());
     return new LocationHandle(targetPath, targetPath, true,
         LocationHandle.WriteMode.DIRECT_TO_TARGET_EXISTING_DIRECTORY);

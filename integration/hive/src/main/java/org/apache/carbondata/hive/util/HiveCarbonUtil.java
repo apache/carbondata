@@ -137,7 +137,7 @@ public class HiveCarbonUtil {
           carbonTable = CarbonTable.buildFromTableInfo(
               SchemaReader.inferSchema(absoluteTableIdentifier, false, configuration));
         }
-        carbonTable.setTransactionalTable(false);
+        carbonTable.setTransactionalTable(true);
       }
     } catch (SQLException | IOException e) {
       throw new RuntimeException("Unable to fetch schema for the table: " + tableName, e);

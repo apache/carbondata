@@ -25,8 +25,10 @@ import java.util.Properties;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
 import org.apache.carbondata.hive.CarbonHiveSerDe;
 import org.apache.carbondata.hive.MapredCarbonOutputFormat;
+import org.apache.carbondata.presto.impl.CarbonTableConfig;
 
 import com.google.common.collect.ImmutableList;
 import io.prestosql.plugin.hive.HiveFileWriter;
@@ -37,6 +39,7 @@ import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.block.Block;
 import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.TypeManager;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.ql.exec.FileSinkOperator;
@@ -104,6 +107,10 @@ public class CarbonDataFileWriter implements HiveFileWriter {
     for (int i = 0; i < setters.length; i++) {
       setters[i] = HiveWriteUtils.createFieldSetter(tableInspector, row, structFields.get(i),
           fileColumnTypes.get(structFields.get(i).getFieldID()));
+    }
+    String encodedLoadModel = configuration.get(CarbonTableConfig.CARBON_PRESTO_LOAD_MODEL);
+    if (StringUtils.isNotEmpty(encodedLoadModel)) {
+      configuration.set(CarbonTableOutputFormat.LOAD_MODEL, encodedLoadModel);
     }
     try {
       boolean compress = HiveConf.getBoolVar(configuration, COMPRESSRESULT);

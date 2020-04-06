@@ -69,89 +69,89 @@ object CarbonDataStoreCreator {
     try {
       logger.info("Creating The Carbon Store")
       val dbName: String = "testdb"
-      val tableName: String = "test"
+      val tableName: String = "testtable"
       val absoluteTableIdentifier = AbsoluteTableIdentifier.from(
         storePath + "/" + dbName + "/" + tableName,
         new CarbonTableIdentifier(dbName,
           tableName,
           UUID.randomUUID().toString))
       val table: CarbonTable = createTable(absoluteTableIdentifier, useLocalDict)
-//      val schema: CarbonDataLoadSchema = new CarbonDataLoadSchema(table)
-//      val loadModel: CarbonLoadModel = new CarbonLoadModel()
-//      import scala.collection.JavaConverters._
-//      val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
-//        .getOrElse(CarbonCommonConstants.COMPRESSOR,
-//          CompressorFactory.getInstance().getCompressor().getName())
-//      loadModel.setColumnCompressor(columnCompressor)
-//      loadModel.setCarbonDataLoadSchema(schema)
-//      loadModel.setDatabaseName(
-//        absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName)
-//      loadModel.setTableName(
-//        absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
-//      loadModel.setTableName(
-//        absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
-//      loadModel.setFactFilePath(dataFilePath)
-//      loadModel.setCarbonTransactionalTable(table.isTransactionalTable)
-//      loadModel.setLoadMetadataDetails(new ArrayList[LoadMetadataDetails]())
-//      loadModel.setTablePath(absoluteTableIdentifier.getTablePath)
-//      CarbonProperties.getInstance
-//        .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
-//
-//      loadModel.setDefaultTimestampFormat(
-//        CarbonProperties.getInstance.getProperty(
-//          CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-//          CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS))
-//      loadModel.setDefaultDateFormat(
-//        CarbonProperties.getInstance.getProperty(
-//          CarbonCommonConstants.CARBON_DATE_FORMAT,
-//          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
-//      loadModel.setSerializationNullFormat(
-//        TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName +
-//        "," +
-//        "\\N")
-//      loadModel.setBadRecordsLoggerEnable(
-//        TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName +
-//        "," +
-//        "false")
-//      loadModel.setBadRecordsAction(
-//        TableOptionConstant.BAD_RECORDS_ACTION.getName + "," +
-//        "force")
-//      loadModel.setIsEmptyDataBadRecord(
-//        DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD +
-//        "," +
-//        "true")
-//      loadModel.setMaxColumns("15")
-//      loadModel.setCsvHeader(
-//        "ID,date,country,name,phonetype,serialname,salary,bonus,monthlyBonus,dob,shortField,isCurrentEmployee")
-//      loadModel.setCsvHeaderColumns(loadModel.getCsvHeader.split(","))
-//      loadModel.setTaskNo("0")
-//      loadModel.setSegmentId("0")
-//      loadModel.setFactTimeStamp(System.currentTimeMillis())
-//      loadModel.setMaxColumns("15")
-//      executeGraph(loadModel, storePath)
+      val schema: CarbonDataLoadSchema = new CarbonDataLoadSchema(table)
+      val loadModel: CarbonLoadModel = new CarbonLoadModel()
+      import scala.collection.JavaConverters._
+      val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
+        .getOrElse(CarbonCommonConstants.COMPRESSOR,
+          CompressorFactory.getInstance().getCompressor().getName())
+      loadModel.setColumnCompressor(columnCompressor)
+      loadModel.setCarbonDataLoadSchema(schema)
+      loadModel.setDatabaseName(
+        absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName)
+      loadModel.setTableName(
+        absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
+      loadModel.setTableName(
+        absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
+      loadModel.setFactFilePath(dataFilePath)
+      loadModel.setCarbonTransactionalTable(table.isTransactionalTable)
+      loadModel.setLoadMetadataDetails(new ArrayList[LoadMetadataDetails]())
+      loadModel.setTablePath(absoluteTableIdentifier.getTablePath)
+      CarbonProperties.getInstance
+        .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
+
+      loadModel.setDefaultTimestampFormat(
+        CarbonProperties.getInstance.getProperty(
+          CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS))
+      loadModel.setDefaultDateFormat(
+        CarbonProperties.getInstance.getProperty(
+          CarbonCommonConstants.CARBON_DATE_FORMAT,
+          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+      loadModel.setSerializationNullFormat(
+        TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName +
+        "," +
+        "\\N")
+      loadModel.setBadRecordsLoggerEnable(
+        TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName +
+        "," +
+        "false")
+      loadModel.setBadRecordsAction(
+        TableOptionConstant.BAD_RECORDS_ACTION.getName + "," +
+        "force")
+      loadModel.setIsEmptyDataBadRecord(
+        DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD +
+        "," +
+        "true")
+      loadModel.setMaxColumns("15")
+      loadModel.setCsvHeader(
+        "ID,date,country,name,phonetype,serialname,salary,bonus,monthlyBonus,dob,shortField,isCurrentEmployee")
+      loadModel.setCsvHeaderColumns(loadModel.getCsvHeader.split(","))
+      loadModel.setTaskNo("0")
+      loadModel.setSegmentId("0")
+      loadModel.setFactTimeStamp(System.currentTimeMillis())
+      loadModel.setMaxColumns("15")
+      executeGraph(loadModel, storePath)
     } catch {
       case e: Exception =>
         throw e
     }
   }
 
-  private def createTable(absoluteTableIdentifier: AbsoluteTableIdentifier,
+  def createTable(absoluteTableIdentifier: AbsoluteTableIdentifier,
       useLocalDict: Boolean): CarbonTable = {
 
     val integer = new AtomicInteger(0)
     val schemaBuilder = new TableSchemaBuilder
     schemaBuilder.addColumn(new StructField("ID", DataTypes.INT), integer, false, false)
-//    schemaBuilder.addColumn(new StructField("date", DataTypes.DATE), integer, false, false)
-//    schemaBuilder.addColumn(new StructField("country", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("date", DataTypes.DATE), integer, false, false)
+    schemaBuilder.addColumn(new StructField("country", DataTypes.STRING), integer, false, false)
     schemaBuilder.addColumn(new StructField("name", DataTypes.STRING), integer, false, false)
-//    schemaBuilder.addColumn(new StructField("phonetype", DataTypes.STRING), integer, false, false)
-//    schemaBuilder.addColumn(new StructField("serialname", DataTypes.STRING), integer, false, false)
-//    schemaBuilder.addColumn(new StructField("salary", DataTypes.DOUBLE), integer, false, false)
-//    schemaBuilder.addColumn(new StructField("bonus", DataTypes.createDecimalType(10, 4)), integer, false, true)
-//    schemaBuilder.addColumn(new StructField("monthlyBonus", DataTypes.createDecimalType(18, 4)), integer, false, true)
-//    schemaBuilder.addColumn(new StructField("dob", DataTypes.TIMESTAMP), integer, false, true)
-//    schemaBuilder.addColumn(new StructField("shortField", DataTypes.SHORT), integer, false, false)
-//    schemaBuilder.addColumn(new StructField("isCurrentEmployee", DataTypes.BOOLEAN), integer, false, true)
+    schemaBuilder.addColumn(new StructField("phonetype", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("serialname", DataTypes.STRING), integer, false, false)
+    schemaBuilder.addColumn(new StructField("salary", DataTypes.DOUBLE), integer, false, false)
+    schemaBuilder.addColumn(new StructField("bonus", DataTypes.createDecimalType(10, 4)), integer, false, true)
+    schemaBuilder.addColumn(new StructField("monthlyBonus", DataTypes.createDecimalType(18, 4)), integer, false, true)
+    schemaBuilder.addColumn(new StructField("dob", DataTypes.TIMESTAMP), integer, false, true)
+    schemaBuilder.addColumn(new StructField("shortField", DataTypes.SHORT), integer, false, false)
+    schemaBuilder.addColumn(new StructField("isCurrentEmployee", DataTypes.BOOLEAN), integer, false, true)
     schemaBuilder.tableName(absoluteTableIdentifier.getTableName)
     val schema = schemaBuilder.build()
 
@@ -189,32 +189,6 @@ object CarbonDataStoreCreator {
     thriftWriter.write(thriftTableInfo)
     thriftWriter.close()
     CarbonMetadata.getInstance.getCarbonTable(tableInfo.getTableUniqueName)
-  }
-
-  private def addDictionaryValuesToDimensionSet(dims: util.List[CarbonDimension],
-      dimensionIndex: mutable.Buffer[Int],
-      dimensionSet: Array[util.List[String]],
-      data: Array[String],
-      index: Int) = {
-    if (isDictionaryDefaultMember(dims, dimensionSet, index)) {
-      dimensionSet(index).add(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
-      dimensionSet(index).add(data(dimensionIndex(index)))
-    }
-    else {
-      if (data.length == 1) {
-        dimensionSet(index).add("""\N""")
-      } else {
-        dimensionSet(index).add(data(dimensionIndex(index)))
-      }
-    }
-  }
-
-  private def isDictionaryDefaultMember(dims: util.List[CarbonDimension],
-      dimensionSet: Array[util.List[String]],
-      index: Int) = {
-    val dimensions = dims.asScala
-    dimensionSet(index).isEmpty && dimensions(index).hasEncoding(Encoding.DICTIONARY) &&
-    !dimensions(index).hasEncoding(Encoding.DIRECT_DICTIONARY)
   }
 
   /**
@@ -294,15 +268,11 @@ object CarbonDataStoreCreator {
     new DataLoadExecutor()
       .execute(loadModel, Array(storeLocation), Array(readerIterator))
     writeLoadMetadata(loadModel.getCarbonDataLoadSchema,
-      loadModel.getTableName,
-      loadModel.getTableName,
       new ArrayList[LoadMetadataDetails]())
   }
 
   private def writeLoadMetadata(
       schema: CarbonDataLoadSchema,
-      databaseName: String,
-      tableName: String,
       listOfLoadFolderDetails: util.List[LoadMetadataDetails]): Unit = {
     try {
       val loadMetadataDetails: LoadMetadataDetails = new LoadMetadataDetails()

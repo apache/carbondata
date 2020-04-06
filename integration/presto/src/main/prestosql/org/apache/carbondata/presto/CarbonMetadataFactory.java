@@ -48,7 +48,7 @@ public class CarbonMetadataFactory extends HiveMetadataFactory {
   private final boolean allowCorruptWritesForTesting;
   private final boolean skipDeletionForAlter;
   private final boolean skipTargetCleanupOnRollback;
-  private final boolean writesToNonManagedTablesEnabled;
+  private final boolean writesToNonManagedTablesEnabled = true;
   private final boolean createsOfNonManagedTablesEnabled;
   private final long perTransactionCacheMaximumSize;
   private final HiveMetastore metastore;
@@ -90,13 +90,12 @@ public class CarbonMetadataFactory extends HiveMetadataFactory {
       AccessControlMetadataFactory accessControlMetadataFactory) {
     super(metastore, hdfsEnvironment, partitionManager, timeZone, maxConcurrentFileRenames,
         allowCorruptWritesForTesting, skipDeletionForAlter, skipTargetCleanupOnRollback,
-        writesToNonManagedTablesEnabled, createsOfNonManagedTablesEnabled,
+        true, createsOfNonManagedTablesEnabled,
         perTransactionCacheMaximumSize, typeManager, locationService, partitionUpdateCodec,
         executorService, typeTranslator, prestoVersion, accessControlMetadataFactory);
     this.allowCorruptWritesForTesting = allowCorruptWritesForTesting;
     this.skipDeletionForAlter = skipDeletionForAlter;
     this.skipTargetCleanupOnRollback = skipTargetCleanupOnRollback;
-    this.writesToNonManagedTablesEnabled = writesToNonManagedTablesEnabled;
     this.createsOfNonManagedTablesEnabled = createsOfNonManagedTablesEnabled;
     this.perTransactionCacheMaximumSize = perTransactionCacheMaximumSize;
     this.metastore = Objects.requireNonNull(metastore, "metastore is null");
