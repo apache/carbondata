@@ -240,11 +240,13 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   public void writeByteArray(Object input, DataOutputStream dataOutputStream,
       BadRecordLogHolder logHolder, Boolean isWithoutConverter) throws IOException {
     String parsedValue = null;
+    // write null value
     if (null == input ||
         (this.carbonDimension.getDataType() == DataTypes.STRING && input.equals(nullFormat))) {
       updateNullValue(dataOutputStream, logHolder);
       return;
     }
+    // write null value after converter
     if (!isWithoutConverter) {
       parsedValue = DataTypeUtil.parseValue(input.toString(), carbonDimension);
       if (null == parsedValue || (this.carbonDimension.getDataType() == DataTypes.STRING
@@ -254,39 +256,11 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       }
     }
     // Transform into ByteArray for No Dictionary.
-    String dateFormat = null;
-    if (this.carbonDimension.getDataType() == DataTypes.DATE) {
-      dateFormat = carbonDimension.getDateFormat();
-    } else if (this.carbonDimension.getDataType() == DataTypes.TIMESTAMP) {
-      dateFormat = carbonDimension.getTimestampFormat();
-    }
     try {
       if (!this.carbonDimension.getUseActualData()) {
         byte[] value;
         if (isDirectDictionary) {
-          int surrogateKey;
-          // If the input is a long value then this means that logical type was provided by
-          // the user using AvroCarbonWriter. In this case directly generate surrogate key
-          // using dictionaryGenerator.
-          if (dictionaryGenerator instanceof DirectDictionary && input instanceof Long) {
-            surrogateKey = ((DirectDictionary) dictionaryGenerator).generateKey((long) input);
-          } else if (dictionaryGenerator instanceof DirectDictionary
-              && input instanceof Integer) {
-            // In case of file format, for complex type date or time type, input data comes as a
-            // Integer object, so just assign the surrogate key with the input object value
-            surrogateKey = (int) input;
-          } else {
-            if (isWithoutConverter) {
-              surrogateKey = dictionaryGenerator.getOrGenerateKey(input.toString());
-            } else {
-              surrogateKey = dictionaryGenerator.getOrGenerateKey(parsedValue);
-            }
-          }
-          if (surrogateKey == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
-            value = new byte[0];
-          } else {
-            value = ByteUtil.toXorBytes(surrogateKey);
-          }
+          value = writeDirectDictionary(input, parsedValue, isWithoutConverter);
         } else {
           // If the input is a long value then this means that logical type was provided by
           // the user using AvroCarbonWriter. In this case directly generate Bytes from value.
@@ -304,6 +278,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
               }
             }
           } else if (this.carbonDimension.getDataType().equals(DataTypes.BINARY)) {
+            // write binary data type
             if (binaryDecoder == null) {
               value = DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(input,
                   this.carbonDimension.getDataType());
@@ -315,12 +290,13 @@ public class PrimitiveDataType implements GenericDataType<Object> {
               }
             }
           } else {
+            // write other data types
             if (isWithoutConverter) {
               value = DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(input,
                   this.carbonDimension.getDataType());
             } else {
               value = DataTypeUtil.getBytesBasedOnDataTypeForNoDictionaryColumn(parsedValue,
-                  this.carbonDimension.getDataType(), dateFormat);
+                  this.carbonDimension.getDataType(), getDateOrTimeFormat());
             }
           }
           if (this.carbonDimension.getDataType() == DataTypes.STRING
@@ -342,34 +318,82 @@ public class PrimitiveDataType implements GenericDataType<Object> {
                 this.carbonDimension.getDataType());
           } else {
             value = DataTypeUtil.getBytesBasedOnDataTypeForNoDictionaryColumn(parsedValue,
-                this.carbonDimension.getDataType(), dateFormat);
+                this.carbonDimension.getDataType(), getDateOrTimeFormat());
           }
         }
-        if (isWithoutConverter) {
-          if (this.carbonDimension.getDataType() == DataTypes.STRING && input instanceof String
-              && ((String)input).length() > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
-            throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
-                + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
-          }
-          updateValueToByteStream(dataOutputStream, value);
-        } else {
-          if (this.carbonDimension.getDataType() == DataTypes.STRING
-              && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
-            throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
-                + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
-          }
-          if (parsedValue.length() > 0) {
-            updateValueToByteStream(dataOutputStream,
-                parsedValue.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
-          } else {
-            updateNullValue(dataOutputStream, logHolder);
-          }
-        }
+        checkAndWriteByteArray(input, dataOutputStream, logHolder, isWithoutConverter, parsedValue,
+            value);
       }
     } catch (NumberFormatException e) {
       // Update logHolder for bad record and put null in dataOutputStream.
       updateNullValue(dataOutputStream, logHolder);
     }
+  }
+
+  private void checkAndWriteByteArray(Object input, DataOutputStream dataOutputStream,
+      BadRecordLogHolder logHolder, Boolean isWithoutConverter, String parsedValue, byte[] value)
+      throws IOException {
+    if (isWithoutConverter) {
+      if (this.carbonDimension.getDataType() == DataTypes.STRING && input instanceof String
+          && ((String)input).length() > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+        throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
+            + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+      }
+      updateValueToByteStream(dataOutputStream, value);
+    } else {
+      if (this.carbonDimension.getDataType() == DataTypes.STRING
+          && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+        throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
+            + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+      }
+      if (parsedValue.length() > 0) {
+        updateValueToByteStream(dataOutputStream,
+            parsedValue.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+      } else {
+        updateNullValue(dataOutputStream, logHolder);
+      }
+    }
+  }
+
+  private String getDateOrTimeFormat() {
+    if (this.carbonDimension.getDataType() == DataTypes.DATE) {
+      return carbonDimension.getDateFormat();
+    } else if (this.carbonDimension.getDataType() == DataTypes.TIMESTAMP) {
+      return carbonDimension.getTimestampFormat();
+    } else {
+      return null;
+    }
+  }
+
+  private byte[] writeDirectDictionary(
+      Object input,
+      String parsedValue,
+      Boolean isWithoutConverter) {
+    byte[] value;
+    int surrogateKey;
+    // If the input is a long value then this means that logical type was provided by
+    // the user using AvroCarbonWriter. In this case directly generate surrogate key
+    // using dictionaryGenerator.
+    if (input instanceof Long) {
+      surrogateKey = ((DirectDictionary) dictionaryGenerator).generateKey((long) input);
+    } else if (input instanceof Integer) {
+      // In case of file format, for complex type date or time type, input data comes as a
+      // Integer object, so just assign the surrogate key with the input object value
+      surrogateKey = (int) input;
+    } else {
+      // in case of data frame insert, date can come as string value
+      if (isWithoutConverter) {
+        surrogateKey = dictionaryGenerator.getOrGenerateKey(input.toString());
+      } else {
+        surrogateKey = dictionaryGenerator.getOrGenerateKey(parsedValue);
+      }
+    }
+    if (surrogateKey == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
+      value = new byte[0];
+    } else {
+      value = ByteUtil.toXorBytes(surrogateKey);
+    }
+    return value;
   }
 
   private void updateValueToByteStream(DataOutputStream dataOutputStream, byte[] value)
