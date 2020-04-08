@@ -59,7 +59,7 @@ case class CarbonCountStar(
 
     val partitions = CarbonFilters.getPartitions(Seq.empty, sparkSession, TableIdentifier(
         carbonTable.getTableName, Some(carbonTable.getDatabaseName))).map(_.asJava).orNull
-    var partitionPath: String = ""
+    val partitionPaths = new java.util.ArrayList[String]()
     var rowCount: Long = 0
 
     if (predicates.nonEmpty && !partitions.isEmpty) {
@@ -68,19 +68,23 @@ case class CarbonCountStar(
         predicates(1).asInstanceOf[EqualTo].left.asInstanceOf[AttributeReference].name + "=" +
           predicates(1).asInstanceOf[EqualTo].right.asInstanceOf[Literal].value.toString
       partitions.asScala.foreach(partition =>
-        if (partition.getPartitions.get(0).equalsIgnoreCase(filterStr)) {
-          partitionPath = partition.getLocation.toString
+        for (par <- partition.getPartitions.asScala) {
+          if (par.equalsIgnoreCase(filterStr)) {
+            partitionPaths.add(partition.getLocation.toString)
+          }
         }
       )
-      if (!partitionPath.isEmpty) {
-        val indexFiles = SegmentFileStore.getListOfCarbonIndexFiles(partitionPath)
-        indexFiles.foreach(indexFile =>
-          if (indexFile.getPath.endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
-            rowCount += CarbonUtil.getRowCountFromIndexFile(indexFile.getPath)
-          } else if (indexFile.getPath.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-            rowCount += CarbonUtil.getRowCountFromMergeIndexFile(indexFile.getPath)
-          }
-        )
+      if (partitionPaths.size() > 0) {
+        for (partitionPath <- partitionPaths.asScala) {
+          val indexFiles = SegmentFileStore.getListOfCarbonIndexFiles(partitionPath)
+          indexFiles.foreach(indexFile =>
+            if (indexFile.getPath.endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+              rowCount += CarbonUtil.getRowCountFromIndexFile(indexFile.getPath)
+            } else if (indexFile.getPath.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+              rowCount += CarbonUtil.getRowCountFromMergeIndexFile(indexFile.getPath)
+            }
+          )
+        }
       }
     } else {
       // get row count by filter apply
