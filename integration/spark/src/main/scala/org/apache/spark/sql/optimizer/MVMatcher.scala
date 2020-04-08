@@ -863,11 +863,15 @@ private object GroupbyGroupbyNoChildDelta extends MVMatchPattern {
           isExpressionMatches(expr, gb_2q.predicateList))
         val isOutputEmR = gb_2q.outputList.forall {
           case a @ Alias(_, _) =>
-            gb_2a.outputList.exists{
-              case a1: Alias => a1.child.semanticEquals(a.child)
+            gb_2a.outputList.exists {
+              case alias: Alias => alias.child.semanticEquals(a.child)
               case exp => exp.semanticEquals(a.child)
             }
-          case exp => gb_2a.outputList.exists(_.semanticEquals(exp))
+          case exp =>
+            gb_2a.outputList.exists {
+              case alias: Alias => alias.child.semanticEquals(exp)
+              case expr => expr.semanticEquals(exp)
+            }
         }
         if (isGroupingEmR && isGroupingRmE) {
           if (isOutputEmR) {
@@ -878,7 +882,12 @@ private object GroupbyGroupbyNoChildDelta extends MVMatchPattern {
                   a.child.semanticEquals(exp.children.head) ||
                     isExpressionMatches(a.child, exp.children.head)
                 case a: Alias => a.child.semanticEquals(exp)
-                case other => other.semanticEquals(exp)
+                case other => exp match {
+                  case alias: Alias =>
+                    other.semanticEquals(alias.child)
+                  case _ =>
+                    other.semanticEquals(exp)
+                }
               }.getOrElse(gb_2a.outputList(index)))
             }
 
