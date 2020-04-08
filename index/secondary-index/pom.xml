@@ -37,7 +37,7 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark</artifactId>
+      <artifactId>carbondata-spark_${spark.binary.version}</artifactId>
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
@@ -203,6 +203,21 @@
       <id>sdvtest</id>
       <properties>
         <maven.test.skip>true</maven.test.skip>
+      </properties>
+    </profile>
+    <profile>
+      <id>spark-2.3</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <spark.binary.version>2.3</spark.binary.version>
+      </properties>
+    </profile>
+    <profile>
+      <id>spark-2.4</id>
+      <properties>
+        <spark.binary.version>2.4</spark.binary.version>
       </properties>
     </profile>
   </profiles>

@@ -24,4 +24,5 @@ python/.idea/
 */*/.cache-tests
 */*/*/.cache-main
 */*/*/.cache-tests
+*.flattened-pom.xml
 python/pycarbon/.pylintrc

@@ -538,12 +538,38 @@
         <activeByDefault>true</activeByDefault>
       </activation>
       <properties>
+        <spark.binary.version>2.3</spark.binary.version>
         <spark.version>2.3.4</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.8</scala.version>
       </properties>
       <build>
         <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>flatten-maven-plugin</artifactId>
+            <!--<version>1.2.2</version>-->
+            <configuration>
+            </configuration>
+            <executions>
+              <!-- enable flattening -->
+              <execution>
+                <id>flatten</id>
+                <phase>process-resources</phase>
+                <goals>
+                  <goal>flatten</goal>
+                </goals>
+              </execution>
+              <!-- ensure proper cleanup -->
+              <execution>
+                <id>flatten.clean</id>
+                <phase>clean</phase>
+                <goals>
+                  <goal>clean</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <groupId>org.eluder.coveralls</groupId>
             <artifactId>coveralls-maven-plugin</artifactId>
@@ -583,12 +609,38 @@
     <profile>
       <id>spark-2.4</id>
       <properties>
+        <spark.binary.version>2.4</spark.binary.version>
         <spark.version>2.4.5</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.12</scala.version>
       </properties>
       <build>
         <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>flatten-maven-plugin</artifactId>
+            <!--<version>1.2.2</version>-->
+            <configuration>
+            </configuration>
+            <executions>
+              <!-- enable flattening -->
+              <execution>
+                <id>flatten</id>
+                <phase>process-resources</phase>
+                <goals>
+                  <goal>flatten</goal>
+                </goals>
+              </execution>
+              <!-- ensure proper cleanup -->
+              <execution>
+                <id>flatten.clean</id>
+                <phase>clean</phase>
+                <goals>
+                  <goal>clean</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <groupId>org.eluder.coveralls</groupId>
             <artifactId>coveralls-maven-plugin</artifactId>

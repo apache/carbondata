@@ -26,7 +26,7 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>carbondata-spark</artifactId>
+  <artifactId>carbondata-spark_${spark.binary.version}</artifactId>
   <name>Apache CarbonData :: Spark</name>
 
   <properties>
@@ -39,8 +39,6 @@
     <build.directory.projectHadoop>../../hadoop/target</build.directory.projectHadoop>
     <build.directory.projectFormat>../../format/target</build.directory.projectFormat>
     <build.directory.projectSpark>../../integration/spark/target</build.directory.projectSpark>
-    <!--<build.directory.projectHive>../../integration/hive/target</build.directory.projectHive>-->
-    <!--<build.directory.projectPresto>../../integration/presto/target</build.directory.projectPresto>-->
     <build.directory.projectStoreSdk>../../sdk/sdk/target</build.directory.projectStoreSdk>
     <build.directory.projectStreaming>../../streaming/target</build.directory.projectStreaming>
     <build.directory.projectBloom>../../index/bloom/target</build.directory.projectBloom>
@@ -52,8 +50,6 @@
     <classes.directory.projectHadoop>../../hadoop/target/classes</classes.directory.projectHadoop>
     <classes.directory.projectFormat>../../format/target/classes</classes.directory.projectFormat>
     <classes.directory.projectSpark>../../integration/spark/target/classes</classes.directory.projectSpark>
-    <!--<classes.directory.projectHive>../../integration/hive/target/classes</classes.directory.projectHive>-->
-    <!--<classes.directory.projectPresto>../../integration/presto/target/classes</classes.directory.projectPresto>-->
     <classes.directory.projectStoreSdk>../../sdk/sdk/target/classes</classes.directory.projectStoreSdk>
     <classes.directory.projectStreaming>../../streaming/target/classes</classes.directory.projectStreaming>
     <classes.directory.projectBloom>../../index/bloom/target/classes</classes.directory.projectBloom>
@@ -66,10 +62,6 @@
     <sources.directory.projectFormat>../../format/src/main/thrift</sources.directory.projectFormat>
     <sources.directory.projectSpark>../../integration/spark/src/main/scala</sources.directory.projectSpark>
     <sources.directory.projectSpark>../../integration/spark/src/main/java</sources.directory.projectSpark>
-    <!--<sources.directory.projectHive>../../integration/hive/src/main/java</sources.directory.projectHive>-->
-    <!--<sources.directory.projectHive>../../integration/hive/src/main/scala</sources.directory.projectHive>-->
-    <!--<sources.directory.projectPresto>../../integration/presto/src/main/java</sources.directory.projectPresto>-->
-    <!--<sources.directory.projectPresto>../../integration/presto/src/main/scala</sources.directory.projectPresto>-->
     <sources.directory.projectStoreSdk>../../sdk/sdk/src/main/java</sources.directory.projectStoreSdk>
     <sources.directory.projectStreaming>../../streaming/src/main/java</sources.directory.projectStreaming>
     <sources.directory.projectStreaming>../../streaming/src/main/scala</sources.directory.projectStreaming>
@@ -82,8 +74,6 @@
     <generated-sources.directory.projectHadoop>../../hadoop/target/generated-sources/annotations</generated-sources.directory.projectHadoop>
     <generated-sources.directory.projectFormat>../../format/target/generated-sources/annotations</generated-sources.directory.projectFormat>
     <generated-sources.directory.projectSpark>../../integration/spark/target/generated-sources/annotations</generated-sources.directory.projectSpark>
-    <!--<generated-sources.directory.projectHive>../../integration/hive/target/generated-sources/annotations</generated-sources.directory.projectHive>-->
-    <!--<generated-sources.directory.projectPresto>../../integration/presto/target/generated-sources/annotations</generated-sources.directory.projectPresto>-->
     <generated-sources.directory.projectStoreSdk>../../sdk/sdk/target/generated-sources/annotations</generated-sources.directory.projectStoreSdk>
     <generated-sources.directory.projectStreaming>../../streaming/target/generated-sources/annotations</generated-sources.directory.projectStreaming>
     <generated-sources.directory.projectBloom>../../index/bloom/target/generated-sources/annotations</generated-sources.directory.projectBloom>
@@ -139,7 +129,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-mv-plan</artifactId>
+      <artifactId>carbondata-mv-plan_${spark.binary.version}</artifactId>
       <version>${project.version}</version>
     </dependency>
     <!-- spark -->
@@ -495,6 +485,9 @@
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
+      <properties>
+        <spark.binary.version>2.3</spark.binary.version>
+      </properties>
       <build>
         <plugins>
           <plugin>
@@ -530,6 +523,9 @@
     </profile>
     <profile>
       <id>spark-2.4</id>
+      <properties>
+        <spark.binary.version>2.4</spark.binary.version>
+      </properties>
       <build>
         <plugins>
           <plugin>
