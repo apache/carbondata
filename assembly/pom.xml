@@ -58,12 +58,12 @@
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark</artifactId>
+      <artifactId>carbondata-spark_${spark.binary.version}</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-mv-plan</artifactId>
+      <artifactId>carbondata-mv-plan_${spark.binary.version}</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
