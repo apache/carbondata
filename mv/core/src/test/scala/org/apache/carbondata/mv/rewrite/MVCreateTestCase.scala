@@ -1242,6 +1242,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val df2 = sql(
       " select cast(floor((m_month +1000) / 900) * 900 - 2000 AS INT),c_code as abc  from maintable")
     assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
+    assert(TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "da_cast"))
   }
 
   test("test cast of expression with mv") {
@@ -1270,6 +1271,8 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
       "create materialized view da_cast as select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable")
     checkAnswer(sql("select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable"), Seq(Row(1010, "xxx")))
     var df1 = sql("select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable")
+    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
+    df1 = sql("select cast(m_month + 1000 AS INT), c_code from maintable")
     assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "da_cast"))
     sql("drop materialized view if exists da_cast")
     sql(

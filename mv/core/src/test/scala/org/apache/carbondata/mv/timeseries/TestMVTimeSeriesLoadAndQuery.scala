@@ -240,6 +240,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test mvtimeseries with alias") {
+    val result = sql("select timeseries(projectjoindate,'month'),projectcode from maintable group by timeseries(projectjoindate,'month'),projectcode")
     dropDataMap("datamap1")
     sql(
       "create materialized view datamap1 as " +
@@ -247,9 +248,11 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     loadData("maintable")
     val df1 = sql("select timeseries(projectjoindate,'month') as t,projectcode as y from maintable group by timeseries(projectjoindate,'month'),projectcode")
     checkPlan("datamap1", df1)
-    // TODO: fix the base issue of alias with group by
-    //   val df2 = sql("select timeseries(projectjoindate,'month'),projectcode from maintable group by timeseries(projectjoindate,'month'),projectcode")
-    //   checkPlan("datamap1", df2)
+    val df2 = sql("select timeseries(projectjoindate,'month'),projectcode from maintable group by timeseries(projectjoindate,'month'),projectcode")
+    checkPlan("datamap1", df2)
+    checkAnswer(result, df2)
+    val df4 = sql("select timeseries(projectjoindate,'month'),projectcode as y from maintable group by timeseries(projectjoindate,'month'),projectcode")
+    checkPlan("datamap1", df4)
     dropDataMap("datamap1")
     sql(
       "create materialized view datamap1 as " +
