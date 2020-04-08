@@ -33,9 +33,9 @@ import org.scalatest.{BeforeAndAfterAll,FunSuite}
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field, StructField}
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
 import org.apache.carbondata.hadoop.testutil.StoreCreator
-import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
+import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 
 class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
   import spark._
@@ -72,8 +72,10 @@ class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
     checkAnswer(sql("select * from carbon_table where c1='a1'"),
       sql("select * from testparquet where c1='a1'"))
     if (!sqlContext.sparkContext.version.startsWith("2.1")) {
+      val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
       DataMapStoreManager.getInstance()
-        .clearIndex(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
+        .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
+      assert(mapSize >= DataMapStoreManager.getInstance().getAllDataMaps.size())
     }
     sql("drop table if exists testparquet")
     sql("drop table if exists testformat")
@@ -110,8 +112,10 @@ class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
       val frame = sqlContext.read.format("carbon").load(warehouse1 + "/test_folder")
       assert(frame.where("c1='a1'").count() == 3)
 
+      val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
       DataMapStoreManager.getInstance()
-        .clearIndex(AbsoluteTableIdentifier.from(warehouse1 + "/test_folder"))
+        .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/test_folder"))
+      assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
     }
   }
@@ -731,8 +735,10 @@ class SparkCarbonDataSourceTestCase extends FunSuite with BeforeAndAfterAll {
       val frame = sqlContext.read.format("carbon").load(warehouse1 + "/test_folder")
       assert(frame.count() == 30)
       assert(frame.where("c1='a1'").count() == 3)
+      val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
       DataMapStoreManager.getInstance()
-        .clearIndex(AbsoluteTableIdentifier.from(warehouse1 + "/test_folder"))
+        .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/test_folder"))
+      assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
     }
   }
