@@ -35,15 +35,18 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
+import org.apache.carbondata.core.util.AbstractDataFileFooterConverter;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
+import org.apache.carbondata.core.util.DataFileFooterConverterFactory;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.IndexHeader;
@@ -105,9 +108,9 @@ public class SegmentIndexFileStore {
     CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentPath, configuration);
     for (CarbonFile carbonIndexFile : carbonIndexFiles) {
       if (carbonIndexFile.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-        readMergeFile(carbonIndexFile.getCanonicalPath());
+        readMergeFile(carbonIndexFile.getCanonicalPath(), false);
       } else if (carbonIndexFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
-        readIndexFile(carbonIndexFile);
+        readIndexFile(carbonIndexFile, false);
       }
     }
   }
@@ -154,9 +157,9 @@ public class SegmentIndexFileStore {
     }
     for (CarbonFile carbonIndexFile : carbonIndexFiles) {
       if (carbonIndexFile.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-        readMergeFile(carbonIndexFile.getCanonicalPath());
+        readMergeFile(carbonIndexFile.getCanonicalPath(), false);
       } else if (carbonIndexFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
-        readIndexFile(carbonIndexFile);
+        readIndexFile(carbonIndexFile, false);
       }
     }
   }
@@ -172,7 +175,7 @@ public class SegmentIndexFileStore {
         getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
     for (CarbonFile carbonIndexFile : carbonIndexFiles) {
       if (carbonIndexFile.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-        readMergeFile(carbonIndexFile.getCanonicalPath());
+        readMergeFile(carbonIndexFile.getCanonicalPath(), false);
       } else if (carbonIndexFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
         readIndexAndFillBlockletInfo(carbonIndexFile);
       }
@@ -189,9 +192,9 @@ public class SegmentIndexFileStore {
     CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(carbonFiles);
     for (CarbonFile carbonIndexFile : carbonIndexFiles) {
       if (carbonIndexFile.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-        readMergeFile(carbonIndexFile.getCanonicalPath());
+        readMergeFile(carbonIndexFile.getCanonicalPath(), false);
       } else if (carbonIndexFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
-        readIndexFile(carbonIndexFile);
+        readIndexFile(carbonIndexFile, false);
       }
     }
   }
@@ -258,50 +261,79 @@ public class SegmentIndexFileStore {
   }
 
   /**
-   * Read carbonindexmerge file and update the map
+   * Read carbonindexmerge file and update the map or get row count from file
    *
-   * @param mergeFilePath
    * @throws IOException
    */
-  public void readMergeFile(String mergeFilePath) throws IOException {
+  public long readMergeFile(String mergeFilePath, boolean getRowCount) throws IOException {
     ThriftReader thriftReader = new ThriftReader(mergeFilePath, configuration);
+    long rowCount = 0;
     try {
       thriftReader.open();
       MergedBlockIndexHeader indexHeader = readMergeBlockIndexHeader(thriftReader);
       MergedBlockIndex mergedBlockIndex = readMergeBlockIndex(thriftReader);
       List<String> file_names = indexHeader.getFile_names();
-      carbonMergeFileToIndexFilesMap.put(mergeFilePath, file_names);
       List<ByteBuffer> fileData = mergedBlockIndex.getFileData();
-      CarbonFile mergeFile = FileFactory.getCarbonFile(mergeFilePath, configuration);
-      String mergeFileAbsolutePath = mergeFile.getParentFile().getAbsolutePath();
       assert (file_names.size() == fileData.size());
-      for (int i = 0; i < file_names.size(); i++) {
-        byte[] data = fileData.get(i).array();
-        carbonIndexMap.put(file_names.get(i), data);
-        carbonIndexMapWithFullPath
-            .put(mergeFileAbsolutePath + CarbonCommonConstants.FILE_SEPARATOR + file_names.get(i),
-                data);
+      if (!getRowCount) {
+        carbonMergeFileToIndexFilesMap.put(mergeFilePath, file_names);
+        CarbonFile mergeFile = FileFactory.getCarbonFile(mergeFilePath, configuration);
+        String mergeFileAbsolutePath = mergeFile.getParentFile().getAbsolutePath();
+        assert (file_names.size() == fileData.size());
+        for (int i = 0; i < file_names.size(); i++) {
+          byte[] data = fileData.get(i).array();
+          carbonIndexMap.put(file_names.get(i), data);
+          carbonIndexMapWithFullPath.put(
+                  mergeFileAbsolutePath + CarbonCommonConstants.FILE_SEPARATOR + file_names.get(i),
+                          data);
+        }
+      } else {
+        for (int i = 0; i < file_names.size(); i++) {
+          byte[] data = fileData.get(i).array();
+          DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter(configuration);
+          List<DataFileFooter> fileFooters =
+                  fileFooterConverter.getIndexInfo(file_names.get(i), data);
+          for (DataFileFooter footer : fileFooters) {
+            rowCount += footer.getNumberOfRows();
+          }
+        }
       }
+      // if no need to get rowCount, just return default value 0
+      return rowCount;
     } finally {
       thriftReader.close();
     }
   }
 
   /**
-   * Read carbon index file and convert to stream and add to map
+   * Read carbonindex file and convert to stream and add to map or get rowCount
    *
    * @param indexFile
    * @throws IOException
    */
-  public void readIndexFile(CarbonFile indexFile) throws IOException {
+  public long readIndexFile(CarbonFile indexFile, boolean getRowCount) throws IOException {
+    long rowCount = 0;
     String indexFilePath = indexFile.getCanonicalPath();
-    try (DataInputStream dataInputStream =
-        FileFactory.getDataInputStream(indexFilePath, configuration)) {
-      byte[] bytes = new byte[(int) indexFile.getSize()];
-      dataInputStream.readFully(bytes);
-      carbonIndexMap.put(indexFile.getName(), bytes);
-      carbonIndexMapWithFullPath.put(indexFile.getAbsolutePath(), bytes);
+    if (!getRowCount) {
+      try (DataInputStream dataInputStream = FileFactory
+              .getDataInputStream(indexFilePath, configuration)) {
+        byte[] bytes = new byte[(int) indexFile.getSize()];
+
+        dataInputStream.readFully(bytes);
+        carbonIndexMap.put(indexFile.getName(), bytes);
+        carbonIndexMapWithFullPath.put(indexFile.getAbsolutePath(), bytes);
+      }
+    } else {
+      ColumnarFormatVersion version = ColumnarFormatVersion.valueOf((short)3);
+      AbstractDataFileFooterConverter footerConverter =
+              DataFileFooterConverterFactory.getInstance().getDataFileFooterConverter(version);
+      List<DataFileFooter> footers = footerConverter.getIndexInfo(indexFilePath, null, true);
+      // find the footer of the input data file (tableBlockInfo)
+      for (DataFileFooter footer : footers) {
+        rowCount += footer.getNumberOfRows();
+      }
     }
+    return rowCount;
   }
 
   private MergedBlockIndexHeader readMergeBlockIndexHeader(ThriftReader thriftReader)
@@ -458,7 +490,7 @@ public class SegmentIndexFileStore {
       }
       // read complete file at once
       if (!isCarbonDataFileFooterReadRequired) {
-        readIndexFile(indexFile);
+        readIndexFile(indexFile, false);
       } else {
         int totalSize = 0;
         List<byte[]> blockIndexByteArrayList =
@@ -508,7 +540,7 @@ public class SegmentIndexFileStore {
     if (indexFilePath.toLowerCase().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
       SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore(configuration);
       try {
-        indexFileStore.readMergeFile(indexFilePath);
+        indexFileStore.readMergeFile(indexFilePath, false);
       } catch (IOException ex) {
         LOGGER.error(ex);
       }

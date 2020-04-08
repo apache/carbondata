@@ -247,7 +247,7 @@ public class BlockletIndexUtil {
     String mergeFilePath =
         identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
             .getIndexFileName();
-    segmentIndexFileStore.readMergeFile(mergeFilePath);
+    segmentIndexFileStore.readMergeFile(mergeFilePath, false);
     List<String> indexFiles =
         segmentIndexFileStore.getCarbonMergeFileToIndexFilesMap().get(mergeFilePath);
     for (String indexFile : indexFiles) {

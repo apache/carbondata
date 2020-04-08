@@ -16,10 +16,9 @@
  */
 package org.apache.carbondata.spark.testsuite.standardpartition
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonCountStar, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -204,7 +203,20 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE insertstaticpartitiondynamic PARTITION(empno1='1', empname, doj) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     checkAnswer(sql(s"select count(*) from insertstaticpartitiondynamic where empno1=1"), Seq(Row(10)))
+    // double check using cache
+    checkAnswer(sql(s"select count(*) from insertstaticpartitiondynamic where empno1=1"), Seq(Row(10)))
     checkAnswer(sql(s"select count(*) from insertstaticpartitiondynamic"), Seq(Row(10)))
+    val plan = sql(
+      """
+        select count(*) from insertstaticpartitiondynamic where empno1=1
+      """.stripMargin).queryExecution.executedPlan
+    var useCountStarPlan = false
+    plan.collect {
+      case s: CarbonCountStar if (s.getClass.getName.equals
+      ("org.apache.spark.sql.CarbonCountStar"))
+      => useCountStarPlan = true
+    }
+    assert(useCountStarPlan, "pure partition prune should use count start plan!")
 
     intercept[Exception] {
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE insertstaticpartitiondynamic PARTITION(empno1, empname, doj) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")

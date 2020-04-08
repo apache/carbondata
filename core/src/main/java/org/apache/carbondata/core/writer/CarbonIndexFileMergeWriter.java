@@ -210,7 +210,7 @@ public class CarbonIndexFileMergeWriter {
     // in case of partition table, merge index file to be created for each partition
     if (null != partitionPath) {
       for (CarbonFile indexFile : indexFiles) {
-        fileStore.readIndexFile(indexFile);
+        fileStore.readIndexFile(indexFile, false);
       }
     } else {
       fileStore.readAllIIndexOfSegment(segmentFileStore.getSegmentFile(),
