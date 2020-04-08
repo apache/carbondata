@@ -33,11 +33,12 @@ import org.apache.spark.sql.types.StringType
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.StageInputCollector
-import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
@@ -46,6 +47,7 @@ case class CarbonCountStar(
     attributesRaw: Seq[Attribute],
     carbonTable: CarbonTable,
     sparkSession: SparkSession,
+    predicates: Seq[Expression],
     outUnsafeRows: Boolean = true) extends LeafExecNode {
 
   override def doExecute(): RDD[InternalRow] = {
@@ -55,18 +57,40 @@ case class CarbonCountStar(
     val (job, tableInputFormat) = createCarbonInputFormat(absoluteTableIdentifier)
     CarbonInputFormat.setQuerySegment(job.getConfiguration, carbonTable)
 
-    // get row count
-    var rowCount = CarbonUpdateUtil.getRowCount(
-      tableInputFormat.getBlockRowCount(
-        job,
-        carbonTable,
-        CarbonFilters.getPartitions(
-          Seq.empty,
-          sparkSession,
-          TableIdentifier(
-            carbonTable.getTableName,
-            Some(carbonTable.getDatabaseName))).map(_.asJava).orNull, false),
-      carbonTable)
+    val partitions = CarbonFilters.getPartitions(Seq.empty, sparkSession, TableIdentifier(
+        carbonTable.getTableName, Some(carbonTable.getDatabaseName))).map(_.asJava).orNull
+    var partitionPath: String = ""
+    var rowCount: Long = 0
+
+    if (predicates.nonEmpty && !partitions.isEmpty) {
+      // when it is partition point query filter, the count star comes here
+      val filterStr =
+        predicates(1).asInstanceOf[EqualTo].left.asInstanceOf[AttributeReference].name + "=" +
+          predicates(1).asInstanceOf[EqualTo].right.asInstanceOf[Literal].value.toString
+      partitions.asScala.foreach(partition =>
+        if (partition.getPartitions.get(0).equalsIgnoreCase(filterStr)) {
+          partitionPath = partition.getLocation.toString
+        }
+      )
+      if (!partitionPath.isEmpty) {
+        val indexFiles = SegmentFileStore.getListOfCarbonIndexFiles(partitionPath)
+        indexFiles.foreach(indexFile =>
+          if (indexFile.getPath.endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+            rowCount += CarbonUtil.getRowCountFromIndexFile(indexFile.getPath)
+          } else if (indexFile.getPath.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+            rowCount += CarbonUtil.getRowCountFromMergeIndexFile(indexFile.getPath)
+          }
+        )
+      }
+    } else {
+      // get row count by filter apply
+      rowCount = CarbonUpdateUtil.getRowCount(
+        tableInputFormat.getBlockRowCount(
+          job,
+          carbonTable,
+          partitions, false),
+        carbonTable)
+    }
 
     if (CarbonProperties.isQueryStageInputEnabled) {
       // check for number of row for stage input

@@ -35,15 +35,18 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
+import org.apache.carbondata.core.util.AbstractDataFileFooterConverter;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
+import org.apache.carbondata.core.util.DataFileFooterConverterFactory;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.IndexHeader;
@@ -287,6 +290,50 @@ public class SegmentIndexFileStore {
     } finally {
       thriftReader.close();
     }
+  }
+
+  /**
+   * Read carbonindexmerge file and get data count
+   *
+   * @param mergeFilePath
+   * @throws IOException
+   */
+  public int readMergeIdxFileGetRowCount(String mergeFilePath) throws IOException {
+    ThriftReader thriftReader = new ThriftReader(mergeFilePath, configuration);
+    int rowCount = 0;
+    try {
+      thriftReader.open();
+      MergedBlockIndexHeader indexHeader = readMergeBlockIndexHeader(thriftReader);
+      MergedBlockIndex mergedBlockIndex = readMergeBlockIndex(thriftReader);
+      List<String> file_names = indexHeader.getFile_names();
+      List<ByteBuffer> fileData = mergedBlockIndex.getFileData();
+      assert (file_names.size() == fileData.size());
+      for (int i = 0; i < file_names.size(); i++) {
+        byte[] data = fileData.get(i).array();
+        DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter(configuration);
+        List<DataFileFooter> fileFooters =
+                fileFooterConverter.getIndexInfo(file_names.get(i), data);
+        for (DataFileFooter footer : fileFooters) {
+          rowCount += footer.getNumberOfRows();
+        }
+      }
+      return rowCount;
+    } finally {
+      thriftReader.close();
+    }
+  }
+
+  public int readIdxFileGetRowCount(String indexFilePath) throws IOException {
+    ColumnarFormatVersion version = ColumnarFormatVersion.valueOf((short)3);
+    AbstractDataFileFooterConverter footerConverter =
+            DataFileFooterConverterFactory.getInstance().getDataFileFooterConverter(version);
+    List<DataFileFooter> footers = footerConverter.getIndexInfo(indexFilePath, null, true);
+    int rowCount = 0;
+    // find the footer of the input data file (tableBlockInfo)
+    for (DataFileFooter footer : footers) {
+      rowCount += footer.getNumberOfRows();
+    }
+    return rowCount;
   }
 
   /**

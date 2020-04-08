@@ -138,7 +138,8 @@ public abstract class AbstractDataFileFooterConverter {
     CarbonIndexFileReader indexReader = new CarbonIndexFileReader(configuration);
     List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
     String formattedPath = filePath.replace("\\", "/");
-    String parentPath = formattedPath.substring(0, formattedPath.lastIndexOf("/"));
+    int index = formattedPath.lastIndexOf("/");
+    String parentPath = index > 0 ? formattedPath.substring(0, index) : formattedPath;
     try {
       // open the reader
       if (fileData != null) {

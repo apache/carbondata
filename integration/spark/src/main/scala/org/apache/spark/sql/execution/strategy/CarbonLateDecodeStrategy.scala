@@ -103,7 +103,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       case CountStarPlan(colAttr, PhysicalOperation(projectList, predicates, l: LogicalRelation))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] && driverSideCountStar(l) =>
         val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-        CarbonCountStar(colAttr, relation.carbonTable, SparkSession.getActiveSession.get) :: Nil
+        CarbonCountStar(colAttr, relation.carbonTable,
+          SparkSession.getActiveSession.get, predicates) :: Nil
       case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition,
       left, right)
         if isCarbonPlan(left) && CarbonInternalScalaUtil.checkIsIndexTable(right) =>

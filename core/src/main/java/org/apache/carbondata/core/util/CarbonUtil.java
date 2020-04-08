@@ -946,6 +946,18 @@ public final class CarbonUtil {
   }
 
   /**
+   * Read index file and get row count.
+   */
+  public static int getRowCountFromIndexFile(String indexFilePath)
+          throws IOException {
+    return new SegmentIndexFileStore().readIdxFileGetRowCount(indexFilePath);
+  }
+
+  public static int getRowCountFromMergeIndexFile(String mergeIndexFilePath) throws IOException {
+    return new SegmentIndexFileStore().readMergeIdxFileGetRowCount(mergeIndexFilePath);
+  }
+
+  /**
    * Below method will be used to get the number of dimension column
    * in carbon column schema
    *

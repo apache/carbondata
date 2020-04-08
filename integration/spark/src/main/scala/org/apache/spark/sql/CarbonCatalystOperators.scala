@@ -17,13 +17,14 @@
 
 package org.apache.spark.sql
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Count}
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.types.StringType
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 abstract class CarbonProfile(attributes: Seq[Attribute]) extends Serializable {
   def isEmpty: Boolean = attributes.isEmpty
@@ -139,7 +140,7 @@ object CountStarPlan {
   }
 
   /**
-   * check if child
+   * check if child has no filter or just has 1 partition equal to filter
    */
   def strictCountStar(groupingExpressions: Seq[Expression],
       partialComputation: Seq[NamedExpression],
@@ -154,8 +155,46 @@ object CountStarPlan {
       return false
     }
     child collect {
-      case cd: Filter => return false
+      case filter: Filter => if (isPartitonPointQuery(filter)) return true else return false
     }
     true
+  }
+
+  def isPartitonPointQuery(filter: Filter): Boolean = {
+    if (!filter.condition.isInstanceOf[And]) {
+      false
+    } else {
+      val and = filter.condition.asInstanceOf[And]
+      if (and.left.isInstanceOf[IsNotNull] && and.right.isInstanceOf[EqualTo] &&
+        and.right.asInstanceOf[EqualTo].left.isInstanceOf[AttributeReference]) {
+        return isPartitionCol(filter,
+          and.right.asInstanceOf[EqualTo].left.asInstanceOf[AttributeReference].name)
+      } else {
+        return false
+      }
+      true
+    }
+  }
+
+  def isPartitionCol(filter: Filter, columnName: String): Boolean = {
+    filter.child match {
+      case relation: LogicalRelation if relation
+        .relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
+        val partitionInfo = relation.relation
+          .asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.carbonTable
+          .getPartitionInfo
+        if (partitionInfo == null) {
+          return false
+        }
+        val columns = partitionInfo.getColumnSchemaList.asScala
+        for (column <- columns) {
+          if (column.getColumnName.equalsIgnoreCase(columnName)) {
+            return true
+          }
+        }
+        false
+      case _ =>
+        false
+    }
   }
 }
