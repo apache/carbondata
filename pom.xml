@@ -124,7 +124,7 @@
     <!--    default properties-->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <snappy.version>1.1.2.6</snappy.version>
-    <hadoop.version>3.1.1</hadoop.version>
+    <hadoop.version>3.1.0</hadoop.version>
     <httpclient.version>4.3.4</httpclient.version>
     <httpcore.version>4.3-alpha1</httpcore.version>
     <scala.binary.version>2.11</scala.binary.version>
@@ -542,7 +542,7 @@
     <profile>
       <id>hadoop-3.1</id>
       <properties>
-        <hadoop.version>3.1.1</hadoop.version>
+        <hadoop.version>3.1.0</hadoop.version>
       </properties>
       <activation>
         <activeByDefault>true</activeByDefault>
