@@ -94,7 +94,7 @@ private[sql] case class DropIndexCommand(
               // in case if the parent table hold the deleted index table reference
               try {
                 val parentCarbonTable = getParentTableFromCatalog(sparkSession, dbName, catalog)
-                val indexTableList = CarbonIndexUtil.getIndexesTables(parentCarbonTable.get)
+                val indexTableList = CarbonIndexUtil.getSecondaryIndexes(parentCarbonTable.get)
                 if (!indexTableList.isEmpty) {
                   removeIndexInfoFromParentTable(sparkSession,
                     dbName,
@@ -154,7 +154,7 @@ private[sql] case class DropIndexCommand(
           // take the refreshed table object after dropping and updating the index table
           parentTable = getRefreshedParentTable(sparkSession, dbName)
 
-          val indexTables = CarbonIndexUtil.getIndexesTables(parentTable)
+          val indexTables = CarbonIndexUtil.getSecondaryIndexes(parentTable)
           // if all the indexes are dropped then the main table holds no index tables,
           // so change the "indexTableExists" property to false, iff all the indexes are deleted
           if (null == indexTables || indexTables.isEmpty) {

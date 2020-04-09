@@ -102,10 +102,8 @@ object IndexRebuildRDD {
       new RefreshResultImpl(),
       carbonTable.getTableInfo,
       schema,
-      schema.getIndexName,
       indexedCarbonColumns.asScala.toArray,
-      segments2DmStorePath.keySet,
-      schema.getProviderName
+      segments2DmStorePath.keySet
     ).collect
 
     // for failed segments, clean the result
@@ -261,10 +259,8 @@ class IndexRebuildRDD[K, V](
     result: RefreshResult[K, V],
     @transient private val tableInfo: TableInfo,
     indexSchema: IndexSchema,
-    indexName: String,
     indexColumns: Array[CarbonColumn],
-    segments: Set[Segment],
-    provider: String)
+    segments: Set[Segment])
   extends CarbonRDDWithTableInfo[(K, V)](session, Nil, tableInfo.serialize()) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")

@@ -45,7 +45,7 @@ class DeleteSegmentByDateListener extends OperationEventListener with Logging {
         val carbonTable = deleteSegmentPostEvent.carbonTable
         val loadDates = deleteSegmentPostEvent.loadDates
         val sparkSession = deleteSegmentPostEvent.sparkSession
-        CarbonIndexUtil.getIndexesTables(carbonTable).asScala.foreach { tableName =>
+        CarbonIndexUtil.getSecondaryIndexes(carbonTable).asScala.foreach { tableName =>
           val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
           val table = metastore
             .lookupRelation(Some(carbonTable.getDatabaseName), tableName)(sparkSession)

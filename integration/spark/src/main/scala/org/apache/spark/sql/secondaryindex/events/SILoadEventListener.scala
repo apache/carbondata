@@ -58,21 +58,20 @@ class SILoadEventListener extends OperationEventListener with Logging {
         val carbonTable = metaStore
           .lookupRelation(Some(carbonLoadModel.getDatabaseName),
             carbonLoadModel.getTableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
-        val indexMetadata = IndexMetadata
-          .deserialize(carbonTable.getTableInfo.getFactTable.getTableProperties
-            .get(carbonTable.getCarbonTableIdentifier.getTableId))
-        val provider = CarbonIndexProvider.SI.getIndexProviderName
+        val indexMetadata = carbonTable.getIndexMetadata
+        val secondaryIndexProvider = CarbonIndexProvider.SI.getIndexProviderName
         if (null != indexMetadata && null != indexMetadata.getIndexesMap &&
-            null != indexMetadata.getIndexesMap.get(provider)) {
+            null != indexMetadata.getIndexesMap.get(secondaryIndexProvider)) {
           val indexTables = indexMetadata.getIndexesMap
-            .get(provider).keySet().asScala
+            .get(secondaryIndexProvider).keySet().asScala
           // if there are no index tables for a given fact table do not perform any action
           if (indexTables.nonEmpty) {
             indexTables.foreach {
               indexTableName =>
                 val secondaryIndex = IndexModel(Some(carbonTable.getDatabaseName),
                   indexMetadata.getParentTableName,
-                  indexMetadata.getIndexColumns(provider, indexTableName).split(",").toList,
+                  indexMetadata
+                    .getIndexColumns(secondaryIndexProvider, indexTableName).split(",").toList,
                   indexTableName)
 
                 val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore

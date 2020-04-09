@@ -25,11 +25,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 
 /**
- * Secondary Index properties holder
+ * Carbon Index properties holder
  */
 public class IndexMetadata implements Serializable {
 
@@ -37,7 +36,7 @@ public class IndexMetadata implements Serializable {
   /**
    * index provider and map of index table name and its index properties
    */
-  private Map<String, Map<String, Map<String, String>>> indexTableMap;
+  private Map<String, Map<String, Map<String, String>>> indexProviderMap;
   /**
    * parent table name of this index table
    */
@@ -65,56 +64,50 @@ public class IndexMetadata implements Serializable {
     this.parentTablePath = parentTablePath;
   }
 
-  public IndexMetadata(Map<String, Map<String, Map<String, String>>> indexTableMap,
+  public IndexMetadata(Map<String, Map<String, Map<String, String>>> indexProviderMap,
       String parentTableName, boolean isIndexTable, String parentTablePath, String parentTableId) {
     this(parentTableName, isIndexTable, parentTablePath);
-    this.indexTableMap = indexTableMap;
+    this.indexProviderMap = indexProviderMap;
     this.parentTableId = parentTableId;
   }
 
   public void addIndexTableInfo(String providerName, String tableName,
       Map<String, String> indexProperties) {
-    if (null == indexTableMap) {
-      indexTableMap = new ConcurrentHashMap<>();
+    if (null == indexProviderMap) {
+      indexProviderMap = new ConcurrentHashMap<>();
     }
-    if (null == indexTableMap.get(providerName) || indexTableMap.isEmpty()) {
+    if (null == indexProviderMap.get(providerName) || indexProviderMap.isEmpty()) {
       Map<String, Map<String, String>> indexMap = new ConcurrentHashMap<>();
       indexMap.put(tableName, indexProperties);
-      indexTableMap.put(providerName, indexMap);
+      indexProviderMap.put(providerName, indexMap);
     } else {
-      indexTableMap.get(providerName).put(tableName, indexProperties);
+      indexProviderMap.get(providerName).put(tableName, indexProperties);
     }
   }
 
-  public void removeIndexTableInfo(String tableName) {
-    if (null != indexTableMap) {
-      if (null != indexTableMap.get(CarbonIndexProvider.SI.getIndexProviderName())
-          && null != indexTableMap.get(CarbonIndexProvider.SI.getIndexProviderName())
-          .get(tableName)) {
-        indexTableMap.get(CarbonIndexProvider.SI.getIndexProviderName()).remove(tableName);
-      } else if (null != indexTableMap.get(CarbonIndexProvider.BLOOMFILTER.getIndexProviderName())
-          && null != indexTableMap.get(CarbonIndexProvider.BLOOMFILTER.getIndexProviderName())
-          .get(tableName)) {
-        indexTableMap.get(CarbonIndexProvider.BLOOMFILTER.getIndexProviderName()).remove(tableName);
-      } else if (null != indexTableMap.get(CarbonIndexProvider.LUCENE.getIndexProviderName())
-          && null != indexTableMap.get(CarbonIndexProvider.LUCENE.getIndexProviderName())
-          .get(tableName)) {
-        indexTableMap.get(CarbonIndexProvider.LUCENE.getIndexProviderName()).remove(tableName);
+  public void removeIndexTableInfo(String indexName) {
+    if (null != indexProviderMap) {
+      for (Map.Entry<String, Map<String, Map<String, String>>> indexProviderEntry : indexProviderMap
+          .entrySet()) {
+        Map<String, Map<String, String>> indexMap = indexProviderEntry.getValue();
+        if (indexMap.containsKey(indexName)) {
+          indexProviderMap.get(indexProviderEntry.getKey()).remove(indexName);
+        }
       }
     }
   }
 
   public void updateIndexStatus(String indexProvider, String indexName, String indexStatus) {
-    if (null != indexTableMap) {
-      indexTableMap.get(indexProvider).get(indexName)
+    if (null != indexProviderMap) {
+      indexProviderMap.get(indexProvider).get(indexName)
           .put(CarbonCommonConstants.INDEX_STATUS, indexStatus);
     }
   }
 
   public List<String> getIndexTables() {
-    if (null != indexTableMap) {
+    if (null != indexProviderMap) {
       List<String> indexTables = new ArrayList<>();
-      for (Map.Entry<String, Map<String, Map<String, String>>> mapEntry : indexTableMap
+      for (Map.Entry<String, Map<String, Map<String, String>>> mapEntry : indexProviderMap
           .entrySet()) {
         indexTables.addAll(mapEntry.getValue().keySet());
       }
@@ -125,8 +118,8 @@ public class IndexMetadata implements Serializable {
   }
 
   public List<String> getIndexTables(String indexProvider) {
-    if (null != indexTableMap && null != indexTableMap.get(indexProvider)) {
-      return new ArrayList<>(indexTableMap.get(indexProvider).keySet());
+    if (null != indexProviderMap && null != indexProviderMap.get(indexProvider)) {
+      return new ArrayList<>(indexProviderMap.get(indexProvider).keySet());
     } else {
       return new ArrayList<>();
     }
@@ -136,7 +129,7 @@ public class IndexMetadata implements Serializable {
    * indexTableMap will be null if index table info is not loaded.
    */
   public Map<String, Map<String, Map<String, String>>> getIndexesMap() {
-    return indexTableMap;
+    return indexProviderMap;
   }
 
   public String getParentTableName() {
@@ -168,6 +161,6 @@ public class IndexMetadata implements Serializable {
   }
 
   public String getIndexColumns(String provider, String indexName) {
-    return indexTableMap.get(provider).get(indexName).get(CarbonCommonConstants.INDEX_COLUMNS);
+    return indexProviderMap.get(provider).get(indexName).get(CarbonCommonConstants.INDEX_COLUMNS);
   }
 }

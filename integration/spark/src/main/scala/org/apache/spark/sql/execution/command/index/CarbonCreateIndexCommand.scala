@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.execution.command.index
 
+import java.util
+
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql._
@@ -36,6 +38,7 @@ import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
 import org.apache.carbondata.core.metadata.schema.datamap.IndexProperty
 import org.apache.carbondata.core.metadata.schema.indextable.{IndexMetadata, IndexTableInfo}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.datamap.IndexProvider
 
@@ -118,22 +121,8 @@ case class CarbonCreateIndexCommand(
               "`")
           }
         }
-        // set properties
-        indexSchema.setProperties(indexProperties)
-        provider = new IndexProvider(parentTable, indexSchema, sparkSession)
 
-        if (deferredRebuild && !provider.supportRebuild()) {
-          throw new MalformedIndexCommandException(
-          "DEFERRED REFRESH is not supported on this index " + indexModel.indexName +
-          " with provider " + indexProviderName)
-        } else if (deferredRebuild && provider.supportRebuild()) {
-          indexProperties.put(CarbonCommonConstants.INDEX_STATUS, IndexStatus.DISABLED.name())
-        }
-
-        val isBloomFilter = CarbonIndexProvider.BLOOMFILTER.getIndexProviderName
-          .equalsIgnoreCase(indexProviderName)
-
-        val existingIndexColumn4ThisProvider =
+        val existingIndexColumnsForThisProvider =
           if (null != oldIndexMetaData &&
               null != oldIndexMetaData.getIndexesMap.get(indexProviderName)) {
             oldIndexMetaData.getIndexesMap.get(indexProviderName).values().asScala.flatMap {
@@ -142,13 +131,17 @@ case class CarbonCreateIndexCommand(
           } else {
             Seq.empty
           }
-
-        parentTable.getIndexedColumns(indexModel.columnNames.toArray).asScala.foreach { column =>
-          if (existingIndexColumn4ThisProvider.contains(column.getColName)) {
+        val indexColumns = validateAndGetIndexColumns(parentTable,
+          indexModel.columnNames.toArray,
+          indexProviderName)
+        indexColumns.asScala.foreach { column =>
+          if (existingIndexColumnsForThisProvider.contains(column.getColName)) {
             throw new MalformedIndexCommandException(String.format(
               "column '%s' already has %s index created",
               column.getColName, indexProviderName))
           }
+          val isBloomFilter = CarbonIndexProvider.BLOOMFILTER.getIndexProviderName
+            .equalsIgnoreCase(indexProviderName)
           if (isBloomFilter) {
             if (column.getDataType == DataTypes.BINARY) {
               throw new MalformedIndexCommandException(
@@ -165,6 +158,17 @@ case class CarbonCreateIndexCommand(
             }
           }
         }
+        // set properties
+        indexSchema.setProperties(indexProperties)
+        provider = new IndexProvider(parentTable, indexSchema, sparkSession)
+
+        if (deferredRebuild && !provider.supportRebuild()) {
+          throw new MalformedIndexCommandException(
+            "DEFERRED REFRESH is not supported on this index " + indexModel.indexName +
+            " with provider " + indexProviderName)
+        } else if (deferredRebuild && provider.supportRebuild()) {
+          indexProperties.put(CarbonCommonConstants.INDEX_STATUS, IndexStatus.DISABLED.name())
+        }
 
         var oldIndexInfo = parentTable.getIndexInfo
         if (null == oldIndexInfo) {
@@ -180,8 +184,7 @@ case class CarbonCreateIndexCommand(
         val parentIndexMetadata = if (
           parentTable.getTableInfo.getFactTable.getTableProperties
             .get(parentTable.getCarbonTableIdentifier.getTableId) != null) {
-          IndexMetadata.deserialize(parentTable.getTableInfo.getFactTable.getTableProperties
-            .get(parentTable.getCarbonTableIdentifier.getTableId))
+          parentTable.getIndexMetadata
         } else {
           new IndexMetadata(false)
         }
@@ -237,9 +240,7 @@ case class CarbonCreateIndexCommand(
             val enabledIndexInfo = IndexTableInfo.enableIndex(indexInfo, indexModel.indexName)
 
             // set index information in parent table
-            val parentIndexMetadata =
-              IndexMetadata.deserialize(parentTable.getTableInfo.getFactTable.getTableProperties
-                .get(parentTable.getCarbonTableIdentifier.getTableId))
+            val parentIndexMetadata = parentTable.getIndexMetadata
             parentIndexMetadata.updateIndexStatus(indexProviderName,
               indexModel.indexName,
               IndexStatus.ENABLED.name())
@@ -264,6 +265,48 @@ case class CarbonCreateIndexCommand(
         sparkSession)
     }
     Seq.empty
+  }
+
+  /**
+   * Validate's index columns for the corresponding indexProvider
+   * Following will be validated
+   *  1. require INDEX_COLUMNS property
+   *  2. INDEX_COLUMNS can't contains illegal argument(empty, blank)
+   *  3. INDEX_COLUMNS can't contains duplicate same columns
+   *  4. INDEX_COLUMNS should be exists in table columns
+   *
+   * @param parentTable to which carbon columns to be derived
+   * @param indexColumns to be validated
+   * @param indexProvider name
+   * @return validated list of CarbonColumns
+   */
+  def validateAndGetIndexColumns(
+      parentTable: CarbonTable,
+      indexColumns: Array[String],
+      indexProvider: String): java.util.List[CarbonColumn] = {
+    val indexCarbonColumns = parentTable.getIndexedColumns(indexColumns)
+    val unique: util.Set[String] = new util.HashSet[String]
+    for (indexColumn <- indexCarbonColumns.asScala) {
+      if (indexProvider.equalsIgnoreCase(CarbonIndexProvider.LUCENE.getIndexProviderName)) {
+        // validate whether it is string column.
+        if (indexColumn.getDataType != DataTypes.STRING) {
+          throw new MalformedIndexCommandException(String.format(
+            "Only String column is supported, column '%s' is %s type. ",
+            indexColumn.getColName,
+            indexColumn.getDataType))
+        }
+        else if (indexColumn.getDataType == DataTypes.DATE) {
+          throw new MalformedIndexCommandException(String.format(
+            "Dictionary column is not supported, column '%s' is dictionary column",
+            indexColumn.getColName))
+        }
+      }
+      unique.add(indexColumn.getColName)
+    }
+    if (unique.size != indexColumns.size) {
+      throw new MalformedIndexCommandException("index column list has duplicate column")
+    }
+    indexCarbonColumns
   }
 
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {

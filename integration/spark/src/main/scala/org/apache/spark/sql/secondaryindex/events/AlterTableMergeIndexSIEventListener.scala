@@ -63,7 +63,7 @@ class AlterTableMergeIndexSIEventListener
         if (lock.lockWithRetries()) {
           LOGGER.info("Acquired the compaction lock for table" +
                       s" ${carbonMainTable.getDatabaseName}.${carbonMainTable.getTableName}")
-          val indexTablesList = CarbonIndexUtil.getIndexesMap(carbonMainTable).asScala
+          val indexProviderMap = carbonMainTable.getIndexesMap
           val loadFolderDetailsArray = SegmentStatusManager
             .readLoadMetadata(carbonMainTable.getMetadataPath)
           val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String, String]()
@@ -72,12 +72,12 @@ class AlterTableMergeIndexSIEventListener
               .put(loadMetadataDetails.getLoadName,
                 String.valueOf(loadMetadataDetails.getLoadStartTime))
           })
-          if (null != indexTablesList && indexTablesList.nonEmpty) {
-            if (indexTablesList.get(CarbonIndexProvider.SI.getIndexProviderName).isDefined) {
-              val iterator = indexTablesList(CarbonIndexProvider.SI.getIndexProviderName).entrySet()
-                .iterator()
-              while (iterator.hasNext) {
-                val index = iterator.next()
+          if (!indexProviderMap.isEmpty) {
+            if (null != indexProviderMap.get(CarbonIndexProvider.SI.getIndexProviderName)) {
+              val secondaryIndexIterator = indexProviderMap
+                .get(CarbonIndexProvider.SI.getIndexProviderName).entrySet().iterator()
+              while (secondaryIndexIterator.hasNext) {
+                val index = secondaryIndexIterator.next()
                 val secondaryIndex = IndexModel(Some(carbonMainTable.getDatabaseName),
                   carbonMainTable.getTableName,
                   index.getValue.get(CarbonCommonConstants.INDEX_COLUMNS).split(",").toList,

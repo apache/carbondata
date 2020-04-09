@@ -158,7 +158,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       // Case2: table exists in carbon but deleted in hive
       // Case3: table neither exists in hive nor in carbon but stale folders are present for the
       // index table being created
-      val indexTables = CarbonIndexUtil.getIndexesTables(carbonTable)
+      val indexTables = CarbonIndexUtil.getSecondaryIndexes(carbonTable)
       val indexTableExistsInCarbon = indexTables.asScala.contains(indexTableName)
       val indexTableExistsInHive = sparkSession.sessionState.catalog
         .tableExists(TableIdentifier(indexTableName, indexModel.dbName))
@@ -302,8 +302,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       val parentIndexMetadata = if (
         carbonTable.getTableInfo.getFactTable.getTableProperties
           .get(carbonTable.getCarbonTableIdentifier.getTableId) != null) {
-        IndexMetadata.deserialize(carbonTable.getTableInfo.getFactTable.getTableProperties
-          .get(carbonTable.getCarbonTableIdentifier.getTableId))
+        carbonTable.getIndexMetadata
       } else {
         new IndexMetadata(false)
       }

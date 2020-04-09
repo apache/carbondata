@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -961,7 +962,7 @@ public class CarbonTable implements Serializable, Writable {
    */
   public boolean canAllow(CarbonTable carbonTable, TableOperation operation, Object... targets) {
     try {
-      List<TableIndex> indexes = IndexStoreManager.getInstance().getAllIndexes(carbonTable);
+      List<TableIndex> indexes = IndexStoreManager.getInstance().getAllCGAndFGIndexes(carbonTable);
       if (!indexes.isEmpty()) {
         for (TableIndex index : indexes) {
           IndexFactory factoryClass = IndexStoreManager.getInstance()
@@ -1210,6 +1211,14 @@ public class CarbonTable implements Serializable, Writable {
     return indexMetadata;
   }
 
+  public Map<String, Map<String, Map<String, String>>> getIndexesMap() throws IOException {
+    deserializeIndexMetadata();
+    if (null == indexMetadata) {
+      return new HashMap<>();
+    }
+    return indexMetadata.getIndexesMap();
+  }
+
   public String getIndexInfo(String indexProvider) throws IOException {
     deserializeIndexMetadata();
     if (null != indexMetadata) {
@@ -1219,6 +1228,7 @@ public class CarbonTable implements Serializable, Writable {
               new IndexTableInfo[indexMetadata.getIndexesMap().get(indexProvider).entrySet()
                   .size()];
           int index = 0;
+          // In case of secondary index child table, return empty list of IndexTableInfo
           if (!isIndexTable()) {
             for (Map.Entry<String, Map<String, String>> entry : indexMetadata.getIndexesMap()
                 .get(indexProvider).entrySet()) {
@@ -1274,7 +1284,7 @@ public class CarbonTable implements Serializable, Writable {
    */
   public List<TableIndex> getAllVisibleIndexes() throws IOException {
     CarbonSessionInfo sessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo();
-    List<TableIndex> allIndexes = IndexStoreManager.getInstance().getAllIndexes(this);
+    List<TableIndex> allIndexes = IndexStoreManager.getInstance().getAllCGAndFGIndexes(this);
     Iterator<TableIndex> indexIterator = allIndexes.iterator();
     while (indexIterator.hasNext()) {
       TableIndex index = indexIterator.next();

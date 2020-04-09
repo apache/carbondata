@@ -43,7 +43,7 @@ class UpdateTablePreEventListener extends OperationEventListener with Logging {
               carbonTable
                 .getDatabaseName
             }.${ carbonTable.getTableName }]")
-        } else if (!CarbonIndexUtil.getIndexesMap(carbonTable).isEmpty) {
+        } else if (!carbonTable.getIndexesMap.isEmpty) {
           sys
             .error(s"Update is not permitted on table that contains secondary index [${
               carbonTable

@@ -99,15 +99,12 @@ public final class IndexStoreManager {
   }
 
   /**
-   * It gives all indexes except the default index and secondary index.
    * Collect's Coarse grain and Fine grain indexes on a table
    *
    * @return
    */
-  public List<TableIndex> getAllIndexes(CarbonTable carbonTable) throws IOException {
-    String indexMeta = carbonTable.getTableInfo().getFactTable().getTableProperties()
-        .get(carbonTable.getCarbonTableIdentifier().getTableId());
-    IndexMetadata indexMetadata = IndexMetadata.deserialize(indexMeta);
+  public List<TableIndex> getAllCGAndFGIndexes(CarbonTable carbonTable) throws IOException {
+    IndexMetadata indexMetadata = carbonTable.getIndexMetadata();
     List<TableIndex> indexes = new ArrayList<>();
     if (null != indexMetadata) {
       // get bloom indexes and lucene indexes
@@ -422,7 +419,7 @@ public final class IndexStoreManager {
   public void clearInvalidSegments(CarbonTable carbonTable, List<String> segments)
       throws IOException {
     getDefaultIndex(carbonTable).clear(segments);
-    List<TableIndex> indexes = getAllIndexes(carbonTable);
+    List<TableIndex> indexes = getAllCGAndFGIndexes(carbonTable);
     for (TableIndex index: indexes) {
       index.clear(segments);
     }
@@ -715,7 +712,7 @@ public final class IndexStoreManager {
 
   public synchronized void clearInvalidIndex(CarbonTable carbonTable, List<String> segmentNos,
       String indexToClear) throws IOException {
-    List<TableIndex> indexes = getAllIndexes(carbonTable);
+    List<TableIndex> indexes = getAllCGAndFGIndexes(carbonTable);
     List<TableIndex> remainingIndexes = new ArrayList<>();
     if (StringUtils.isNotEmpty(indexToClear)) {
       Iterator<TableIndex> indexIterator = indexes.iterator();
@@ -740,6 +737,7 @@ public final class IndexStoreManager {
   }
 
   private boolean hasCGIndex(CarbonTable carbonTable) throws IOException {
+    // In case of spark file format flow, carbontable will be null
     if (null == carbonTable) {
       return false;
     }

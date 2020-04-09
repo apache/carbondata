@@ -124,7 +124,7 @@ public class CarbonInternalLoaderUtil {
           updatedLoadMetadataDetails.addAll(newLoadMetadataDetails);
         }
 
-        List<String> indexTables = CarbonIndexUtil.getIndexesTables(carbonTable);
+        List<String> indexTables = CarbonIndexUtil.getSecondaryIndexes(carbonTable);
         if (!indexTables.isEmpty()) {
           List<LoadMetadataDetails> newSegmentDetailsListForIndexTable =
               new ArrayList<>(validSegments.size());

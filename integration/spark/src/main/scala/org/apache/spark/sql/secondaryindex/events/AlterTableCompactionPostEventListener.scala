@@ -59,7 +59,7 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
         if (compactionType.toString
           .equalsIgnoreCase(CompactionType.SEGMENT_INDEX.toString)) {
           val carbonMainTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-          val indexTablesList = CarbonIndexUtil.getIndexesMap(carbonMainTable)
+          val indexProviderMap = carbonMainTable.getIndexesMap
           val loadFolderDetailsArray = SegmentStatusManager
             .readLoadMetadata(carbonMainTable.getMetadataPath)
           val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String, String]()
@@ -68,9 +68,9 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
               .put(loadMetadataDetails.getLoadName,
                 String.valueOf(loadMetadataDetails.getLoadStartTime))
           })
-          if (null != indexTablesList &&
-              null != indexTablesList.get(CarbonIndexProvider.SI.getIndexProviderName)) {
-            val iterator = indexTablesList.get(CarbonIndexProvider.SI.getIndexProviderName)
+          if (!indexProviderMap.isEmpty &&
+              null != indexProviderMap.get(CarbonIndexProvider.SI.getIndexProviderName)) {
+            val iterator = indexProviderMap.get(CarbonIndexProvider.SI.getIndexProviderName)
               .entrySet().iterator()
             while (iterator.hasNext) {
               val index = iterator.next()

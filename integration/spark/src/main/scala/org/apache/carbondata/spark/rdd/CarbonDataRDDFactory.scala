@@ -689,7 +689,7 @@ object CarbonDataRDDFactory {
   def clearIndexFiles(carbonTable: CarbonTable, segmentId: String): Unit = {
     try {
       val segments = List(new Segment(segmentId)).asJava
-      IndexStoreManager.getInstance().getAllIndexes(carbonTable).asScala
+      IndexStoreManager.getInstance().getAllCGAndFGIndexes(carbonTable).asScala
         .filter(_.getIndexSchema.isIndex)
         .foreach(_.deleteIndexData(segments))
     } catch {

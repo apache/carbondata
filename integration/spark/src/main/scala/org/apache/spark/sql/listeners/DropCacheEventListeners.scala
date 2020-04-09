@@ -95,11 +95,10 @@ object DropCacheBloomEventListener extends OperationEventListener {
       case dropCacheEvent: DropTableCacheEvent =>
         val carbonTable = dropCacheEvent.carbonTable
         val cache = CacheProvider.getInstance().getCarbonCache
-        val indexMetadata = carbonTable.getIndexMetadata
+        val indexProviderMap = carbonTable.getIndexesMap
         val bloomIndexProvider = CarbonIndexProvider.BLOOMFILTER.getIndexProviderName
-        if (null != indexMetadata && null != indexMetadata.getIndexesMap &&
-            null != indexMetadata.getIndexesMap.get(bloomIndexProvider)) {
-          val bloomIndexes = indexMetadata.getIndexesMap.get(bloomIndexProvider)
+        if (!indexProviderMap.isEmpty && null != indexProviderMap.get(bloomIndexProvider)) {
+          val bloomIndexes = indexProviderMap.get(bloomIndexProvider)
           val bloomIndexIterator = bloomIndexes.entrySet().iterator()
           while (bloomIndexIterator.hasNext) {
             val bloomIndexEntry = bloomIndexIterator.next()

@@ -41,7 +41,6 @@ import org.apache.carbondata.core.index.dev.IndexBuilder;
 import org.apache.carbondata.core.index.dev.IndexFactory;
 import org.apache.carbondata.core.index.dev.IndexWriter;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -304,7 +303,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
     try {
       // there can be multiple lucene datamaps present on a table, so get all datamaps and form
       // the path till the index file directories in all datamaps folders present in each segment
-      dataMaps = IndexStoreManager.getInstance().getAllIndexes(getCarbonTable());
+      dataMaps = IndexStoreManager.getInstance().getAllCGAndFGIndexes(getCarbonTable());
     } catch (IOException ex) {
       LOGGER.error("failed to get datamaps");
     }
@@ -326,28 +325,5 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
       }
     }
     return indexDirs.toArray(new CarbonFile[0]);
-  }
-
-  /**
-   * Further validate whether it is string column and dictionary column.
-   * Currently only string and non-dictionary column is supported for Lucene Index
-   */
-  @Override
-  public void validate() throws MalformedIndexCommandException {
-    super.validate();
-    List<CarbonColumn> indexColumns =
-        getCarbonTable().getIndexedColumns(getIndexSchema().getIndexColumns());
-
-    for (CarbonColumn column : indexColumns) {
-      if (column.getDataType() != DataTypes.STRING) {
-        throw new MalformedIndexCommandException(String.format(
-            "Only String column is supported, column '%s' is %s type. ",
-            column.getColName(), column.getDataType()));
-      } else if (column.getDataType() == DataTypes.DATE) {
-        throw new MalformedIndexCommandException(String.format(
-            "Dictionary column is not supported, column '%s' is dictionary column",
-            column.getColName()));
-      }
-    }
   }
 }

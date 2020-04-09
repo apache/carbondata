@@ -294,7 +294,7 @@ object CommonLoadUtils {
     operationContext.setProperty("isOverwrite", isOverwriteTable)
     OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
     // Add pre event listener for index indexSchema
-    val tableIndexes = IndexStoreManager.getInstance().getAllIndexes(table)
+    val tableIndexes = IndexStoreManager.getInstance().getAllCGAndFGIndexes(table)
     val indexOperationContext = new OperationContext()
     if (tableIndexes.size() > 0) {
       val indexNames: mutable.Buffer[String] =

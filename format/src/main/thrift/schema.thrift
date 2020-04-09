@@ -203,25 +203,7 @@ struct ParentColumnTableRelation {
    3: required string columnName
 }
 
-struct IndexSchema  {
-    // DataMap name
-    1: required string indexName;
-    // class name
-    2: required string className;
-    // to maintain properties which are mentioned in DMPROPERTIES of DDL and also it
-    // stores properties of select query, query type like groupby, join in
-    // case of preaggregate/timeseries
-    3: optional map<string, string> properties;
-    // relation identifier of a table which stores data of Materialize View.
-    4: optional RelationIdentifier childTableIdentifier;
-    // in case of preaggregate/timeseries datamap it will be used to maintain the child schema
-    // which will be usefull in case of query and data load
-    // Deprecated
-    5: optional TableSchema childTableSchema;
-}
-
 struct TableInfo{
 	1: required TableSchema fact_table;
 	2: required list<TableSchema> aggregate_table_list;
-	3: optional list<IndexSchema> indexSchemas; // childSchema information
 }

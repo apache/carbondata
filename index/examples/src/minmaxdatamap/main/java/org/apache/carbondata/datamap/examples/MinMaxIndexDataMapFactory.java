@@ -97,7 +97,7 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
   }
 
   /**
-   * getIndexes Factory method Initializes the Min Max Data Map and returns.
+   * getSecondaryIndexes Factory method Initializes the Min Max Data Map and returns.
    *
    * @param segment
    * @return

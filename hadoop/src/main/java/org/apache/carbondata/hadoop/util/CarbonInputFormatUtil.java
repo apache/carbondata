@@ -54,7 +54,7 @@ public class CarbonInputFormatUtil {
     CarbonTableInputFormat
         .setTableName(job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
-    setDataMapJobIfConfigured(job.getConfiguration());
+    setIndexJobIfConfigured(job.getConfiguration());
     return carbonInputFormat;
   }
 

@@ -67,7 +67,7 @@ class TestCacheOperationsForSI extends QueryTest with BeforeAndAfterAll {
 
     val tableIdentifier = new TableIdentifier(tableName, Some(dbName))
     val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sqlContext.sparkSession)
-    val allIndexTables = CarbonIndexUtil.getIndexesTables(carbonTable).asScala
+    val allIndexTables = CarbonIndexUtil.getSecondaryIndexes(carbonTable).asScala
     val indexTablePaths = allIndexTables.map {
       tableName =>
         CarbonEnv.getCarbonTable(Some(dbName), tableName)(sqlContext.sparkSession).getTablePath

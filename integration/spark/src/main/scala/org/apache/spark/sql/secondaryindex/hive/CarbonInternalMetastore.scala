@@ -137,7 +137,9 @@ object CarbonInternalMetastore {
 
   def refreshIndexInfo(dbName: String, tableName: String,
       carbonTable: CarbonTable, needLock: Boolean = true)(sparkSession: SparkSession): Unit = {
+    // check if secondary index table exists
     val indexTableExists = CarbonIndexUtil.isIndexTableExists(carbonTable)
+    // check if cg and fg index exists
     val indexExists = CarbonIndexUtil.isIndexExists(carbonTable)
     // tables created without property "indexTableExists", will return null, for those tables enter
     // into below block, gather the actual data from hive and then set this property to true/false
@@ -187,7 +189,7 @@ object CarbonInternalMetastore {
             .put(carbonTable.getCarbonTableIdentifier.getTableId, indexMetadata.serialize)
         }
         if (null == indexTableExists && !isIndexTable.equals("true")) {
-          val indexTables = CarbonIndexUtil.getIndexesTables(carbonTable)
+          val indexTables = CarbonIndexUtil.getSecondaryIndexes(carbonTable)
           val tableIdentifier = new TableIdentifier(carbonTable.getTableName,
             Some(carbonTable.getDatabaseName))
           if (indexTables.isEmpty) {
@@ -226,8 +228,9 @@ object CarbonInternalMetastore {
           LOGGER.error(e.getMessage)
       }
     }
+    // add cg and fg index info to table properties
     if (null != indexExists) {
-      if (null != carbonTable && (null == indexExists || indexExists.toBoolean)) {
+      if (null != carbonTable && indexExists.toBoolean) {
         val indexTableMap = new ConcurrentHashMap[String, java.util.Map[String, java.util
         .Map[String, String]]]
         val (isIndexTable, parentTableName, indexInfo, parentTablePath, parentTableId, schema) =

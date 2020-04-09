@@ -68,9 +68,9 @@ case class ShowIndexesCommand(
   private def getIndexInfo(sparkSession: SparkSession, carbonTable: CarbonTable): Seq[Row] = {
     CarbonInternalMetastore.refreshIndexInfo(
       carbonTable.getDatabaseName, tableName, carbonTable)(sparkSession)
-    val indexesMap = CarbonIndexUtil.getIndexesMap(carbonTable)
-    if (null != indexesMap) {
-      val indexTableMap = indexesMap.asScala
+    val indexesProviderMap = carbonTable.getIndexesMap
+    if (!indexesProviderMap.isEmpty) {
+      val indexTableMap = indexesProviderMap.asScala
       if (indexTableMap.nonEmpty) {
         val secondaryIndex = indexTableMap.get(CarbonIndexProvider.SI.getIndexProviderName)
         var finalIndexList: Seq[(String, String, String, String, String, String)] = Seq.empty
@@ -105,7 +105,7 @@ case class ShowIndexesCommand(
           }
         }
 
-        indexesMap.asScala
+        indexesProviderMap.asScala
           .filter(map => !map._1.equalsIgnoreCase(CarbonIndexProvider.SI.getIndexProviderName))
           .values.foreach { index =>
           val indexIterator = index.entrySet().iterator()

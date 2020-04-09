@@ -48,12 +48,12 @@ object Compactor {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val carbonMainTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     // get list from carbonTable.getIndexes method
-    if (null == CarbonIndexUtil.getIndexesMap(carbonMainTable)) {
+    val indexProviderMap = carbonMainTable.getIndexesMap
+    if (null == indexProviderMap) {
       throw new Exception("Secondary index load failed")
     }
-    val indexTablesList = CarbonIndexUtil.getIndexesMap(carbonMainTable)
-    val iterator = if (null != indexTablesList.get(CarbonIndexProvider.SI.getIndexProviderName)) {
-      indexTablesList.get(CarbonIndexProvider.SI.getIndexProviderName).entrySet().iterator()
+    val iterator = if (null != indexProviderMap.get(CarbonIndexProvider.SI.getIndexProviderName)) {
+      indexProviderMap.get(CarbonIndexProvider.SI.getIndexProviderName).entrySet().iterator()
     } else {
       java.util.Collections.emptyIterator()
     }

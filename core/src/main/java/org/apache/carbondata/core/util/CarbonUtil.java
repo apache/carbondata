@@ -2151,7 +2151,6 @@ public final class CarbonUtil {
     org.apache.carbondata.format.TableInfo tableInfo =
         new org.apache.carbondata.format.TableInfo(thriftFactTable,
             new ArrayList<org.apache.carbondata.format.TableSchema>());
-    tableInfo.setIndexSchemas(null);
     return tableInfo;
   }
 
@@ -2176,7 +2175,6 @@ public final class CarbonUtil {
     org.apache.carbondata.format.TableInfo tableInfo =
         new org.apache.carbondata.format.TableInfo(thriftFactTable,
             new ArrayList<org.apache.carbondata.format.TableSchema>());
-    tableInfo.setIndexSchemas(null);
     SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
     TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
         tableInfo, dbName, tableName, carbonDataFilePath);
@@ -2214,7 +2212,6 @@ public final class CarbonUtil {
           new org.apache.carbondata.format.TableInfo(thriftFactTable,
               new ArrayList<org.apache.carbondata.format.TableSchema>());
 
-      tableInfo.setIndexSchemas(null);
       return tableInfo;
     } finally {
       indexFileReader.closeThriftReader();

@@ -236,7 +236,7 @@ case class CarbonAddLoadCommand(
     operationContext.setProperty("isOverwrite", false)
     OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
     // Add pre event listener for index indexSchema
-    val tableIndexes = IndexStoreManager.getInstance().getAllIndexes(carbonTable)
+    val tableIndexes = IndexStoreManager.getInstance().getAllCGAndFGIndexes(carbonTable)
     val indexOperationContext = new OperationContext()
     if (tableIndexes.size() > 0) {
       val indexNames: mutable.Buffer[String] =

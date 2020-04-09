@@ -62,7 +62,7 @@ class SIDropEventListener extends OperationEventListener with Logging {
           val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
           var isValidDeletion = false
 
-          CarbonIndexUtil.getIndexesTables(parentCarbonTable).asScala
+          CarbonIndexUtil.getSecondaryIndexes(parentCarbonTable).asScala
             .foreach { tableName => {
 
               val carbonTable = metastore
@@ -70,7 +70,7 @@ class SIDropEventListener extends OperationEventListener with Logging {
                   tableName)(sparkSession)
                 .asInstanceOf[CarbonRelation].carbonTable
               val ifExistsSet = dropTablePreEvent.ifExistsSet
-              val indexList = CarbonIndexUtil.getIndexesTables(parentCarbonTable)
+              val indexList = CarbonIndexUtil.getSecondaryIndexes(parentCarbonTable)
               if (!indexList.isEmpty) {
                 try {
                   val indexTableIdentifier = TableIdentifier(tableName,

@@ -38,7 +38,7 @@ class MergeBloomIndexEventListener extends OperationEventListener with Logging {
         LOGGER.info("Load post status event-listener called for merge bloom index")
         val carbonTableIdentifier = datamapPostEvent.identifier
         val carbonTable = IndexStoreManager.getInstance().getCarbonTable(carbonTableIdentifier)
-        val tableDataMaps = IndexStoreManager.getInstance().getAllIndexes(carbonTable)
+        val tableDataMaps = IndexStoreManager.getInstance().getAllCGAndFGIndexes(carbonTable)
         val sparkSession = SparkSession.getActiveSession.get
 
         // filter out bloom indexSchema

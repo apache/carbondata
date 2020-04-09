@@ -99,10 +99,10 @@ object CarbonHiveIndexMetadataUtil {
   def removeIndexInfoFromParentTable(indexInfo: String,
       parentCarbonTable: CarbonTable,
       dbName: String,
-      tableName: String)(sparkSession: SparkSession): Unit = {
+      indexName: String)(sparkSession: SparkSession): Unit = {
     val parentTableName = parentCarbonTable.getTableName
-    val newIndexInfo = removeIndexTable(indexInfo, dbName, tableName)
-    CarbonIndexUtil.removeIndexTableInfo(parentCarbonTable, tableName)
+    val newIndexInfo = removeIndexTable(indexInfo, dbName, indexName)
+    CarbonIndexUtil.removeIndexTableInfo(parentCarbonTable, indexName)
     sparkSession.sql(
       s"""ALTER TABLE $dbName.$parentTableName SET SERDEPROPERTIES ('indexInfo'='$newIndexInfo')
         """.stripMargin).collect()

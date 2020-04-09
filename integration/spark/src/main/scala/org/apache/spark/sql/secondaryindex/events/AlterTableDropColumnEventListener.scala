@@ -27,6 +27,7 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
 import org.apache.carbondata.events.{AlterTableDropColumnPreEvent, Event, OperationContext, OperationEventListener}
 
 class AlterTableDropColumnEventListener extends OperationEventListener {
@@ -63,8 +64,13 @@ class AlterTableDropColumnEventListener extends OperationEventListener {
     val catalog = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val parentCarbonTable = catalog.lookupRelation(Some(dbName), tableName)(sparkSession)
       .asInstanceOf[CarbonRelation].carbonTable
-    CarbonIndexUtil.getIndexesMap(parentCarbonTable).asScala
-      .foreach(indexTable => {
+    val secondaryIndexMap =
+      parentCarbonTable.getIndexesMap.get(CarbonIndexProvider.SI.getIndexProviderName)
+    if (null == secondaryIndexMap) {
+      // if secondary index map is empty, return
+      return
+    }
+    secondaryIndexMap.asScala.foreach(indexTable => {
         var colSize = 0
         indexTable._2.asScala.foreach(column =>
           if (alterTableDropColumnModel.columns.contains(column)) {

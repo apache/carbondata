@@ -49,7 +49,6 @@ public class IndexProvider extends DataMapProvider {
     super(table, schema);
     this.sparkSession = sparkSession;
     this.indexFactory = createIndexFactory();
-    indexFactory.validate();
     this.indexedColumns = table.getIndexedColumns(schema.getIndexColumns());
   }
 

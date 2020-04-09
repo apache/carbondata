@@ -99,7 +99,7 @@ public final class DeleteLoadFolders {
       LoadMetadataDetails[] currLoadDetails) {
     List<TableIndex> indexes = new ArrayList<>();
     try {
-      for (TableIndex index : IndexStoreManager.getInstance().getAllIndexes(carbonTable)) {
+      for (TableIndex index : IndexStoreManager.getInstance().getAllCGAndFGIndexes(carbonTable)) {
         if (index.getIndexSchema().isIndex()) {
           indexes.add(index);
         }

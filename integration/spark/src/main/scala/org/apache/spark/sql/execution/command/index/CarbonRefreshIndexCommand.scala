@@ -31,6 +31,7 @@ import org.apache.spark.sql.secondaryindex.command.SIRebuildSegmentRunner
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
@@ -52,9 +53,8 @@ case class CarbonRefreshIndexCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val parentTable = CarbonEnv.getCarbonTable(parentTableIdent)(sparkSession)
     setAuditTable(parentTable)
-    val indexMetaData = parentTable.getIndexMetadata
-    val secondaryIndexes = indexMetaData.getIndexesMap
-      .get(CarbonIndexProvider.SI.getIndexProviderName)
+    val indexProviderMap = parentTable.getIndexesMap
+    val secondaryIndexes = indexProviderMap.get(CarbonIndexProvider.SI.getIndexProviderName)
     if (null != secondaryIndexes && secondaryIndexes.containsKey(indexName)) {
       val indexTable = try {
         CarbonEnv.getCarbonTable(parentTableIdent.database, indexName)(sparkSession)
@@ -65,7 +65,7 @@ case class CarbonRefreshIndexCommand(
       }
       refreshIndexTable(parentTable, indexTable, sparkSession)
     } else {
-      refreshIndex(sparkSession, parentTable, indexMetaData)
+      refreshIndex(sparkSession, parentTable)
     }
     Seq.empty
   }
@@ -79,22 +79,15 @@ case class CarbonRefreshIndexCommand(
 
   private def refreshIndex(
       sparkSession: SparkSession,
-      parentTable: CarbonTable,
-      indexMetaData: IndexMetadata): Unit = {
+      parentTable: CarbonTable): Unit = {
     var indexInfo: util.Map[String, String] = new util.HashMap[String, String]()
-    val allIndexesIterator = indexMetaData.getIndexesMap.entrySet().iterator()
+    val cgAndFgIndexIterator = CarbonIndexUtil.getCGAndFGIndexes(parentTable).entrySet().iterator()
     breakable {
-      while (allIndexesIterator.hasNext) {
-        val currentIndex = allIndexesIterator.next()
-        if (!currentIndex.getKey.equalsIgnoreCase(CarbonIndexProvider.SI.getIndexProviderName)) {
-          val indexIterator = currentIndex.getValue.entrySet().iterator()
-          while (indexIterator.hasNext) {
-            val indexEntry = indexIterator.next()
-            if (indexEntry.getKey.equalsIgnoreCase(indexName)) {
-              indexInfo = indexEntry.getValue
-              break()
-            }
-          }
+      while (cgAndFgIndexIterator.hasNext) {
+        val indexMap = cgAndFgIndexIterator.next().getValue
+        if (indexMap.containsKey(indexName)) {
+          indexInfo = indexMap.get(indexName)
+          break()
         }
       }
     }
@@ -126,9 +119,7 @@ case class CarbonRefreshIndexCommand(
         val updatedIndexInfo = IndexTableInfo.enableIndex(oldIndexInfo, indexName)
 
         // set index information in parent table
-        val parentIndexMetadata =
-          IndexMetadata.deserialize(parentTable.getTableInfo.getFactTable.getTableProperties
-            .get(parentTable.getCarbonTableIdentifier.getTableId))
+        val parentIndexMetadata = parentTable.getIndexMetadata
         parentIndexMetadata.updateIndexStatus(indexProviderName,
           indexName,
           IndexStatus.ENABLED.name())

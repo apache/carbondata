@@ -186,7 +186,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         mergedLoadName)
     OperationListenerBus.getInstance.fireEvent(alterTableCompactionPreEvent, operationContext)
     // Add pre event listener for index indexSchema
-    val tableIndexes = IndexStoreManager.getInstance().getAllIndexes(carbonTable)
+    val tableIndexes = IndexStoreManager.getInstance().getAllCGAndFGIndexes(carbonTable)
     val indexOperationContext = new OperationContext()
     if (null != tableIndexes) {
       val indexNames: mutable.Buffer[String] =

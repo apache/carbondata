@@ -19,12 +19,9 @@ package org.apache.carbondata.core.index.dev;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.index.IndexFilter;
@@ -38,14 +35,12 @@ import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.events.Event;
 
 /**
  * Factory class for creating the index.
  */
 public abstract class IndexFactory<T extends Index> {
-
   private CarbonTable carbonTable;
   private IndexSchema indexSchema;
 
@@ -181,26 +176,6 @@ public abstract class IndexFactory<T extends Index> {
    * This function should return true is the input operation enum will make the index become stale
    */
   public abstract boolean willBecomeStale(TableOperation operation);
-
-  /**
-   * Validate INDEX_COLUMNS property and return a array containing index column name
-   * Following will be validated
-   * 1. require INDEX_COLUMNS property
-   * 2. INDEX_COLUMNS can't contains illegal argument(empty, blank)
-   * 3. INDEX_COLUMNS can't contains duplicate same columns
-   * 4. INDEX_COLUMNS should be exists in table columns
-   */
-  public void validate() throws MalformedIndexCommandException {
-    List<CarbonColumn> indexColumns =
-        carbonTable.getIndexedColumns(indexSchema.getIndexColumns());
-    Set<String> unique = new HashSet<>();
-    for (CarbonColumn indexColumn : indexColumns) {
-      unique.add(indexColumn.getColName());
-    }
-    if (unique.size() != indexColumns.size()) {
-      throw new MalformedIndexCommandException("index column list has duplicate column");
-    }
-  }
 
   /**
    * whether to block operation on corresponding table or column.

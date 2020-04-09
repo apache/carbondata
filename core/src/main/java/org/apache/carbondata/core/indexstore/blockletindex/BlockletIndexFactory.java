@@ -656,7 +656,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
     if (dataMaps.size() == 0) {
       return blocklets;
     }
-    SegmentProperties segmentProperties = getSegmentPropertiesFromDataMap(dataMaps.get(0));
+    SegmentProperties segmentProperties = getSegmentPropertiesFromIndex(dataMaps.get(0));
     for (CoarseGrainIndex dataMap : dataMaps) {
       blocklets.addAll(dataMap
           .prune((FilterResolverIntf) null, segmentProperties, partitions,

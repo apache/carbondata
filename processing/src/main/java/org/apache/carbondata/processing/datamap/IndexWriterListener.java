@@ -66,7 +66,7 @@ public class IndexWriterListener {
     IndexStoreManager.getInstance().clearIndex(carbonTable.getTableId());
     List<TableIndex> tableIndices;
     try {
-      tableIndices = IndexStoreManager.getInstance().getAllIndexes(carbonTable);
+      tableIndices = IndexStoreManager.getInstance().getAllCGAndFGIndexes(carbonTable);
     } catch (IOException e) {
       LOG.error("Error while retrieving datamaps", e);
       throw new RuntimeException(e);

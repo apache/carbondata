@@ -80,10 +80,10 @@ class AlterTableColumnRenameEventListener extends OperationEventListener with Lo
           .filter(!_.isInvisible)
         val carbonColumn = carbonColumns.filter(_.getColName.equalsIgnoreCase(oldColumnName))
         var indexTablesToRenameColumn: Seq[String] = Seq.empty
-        val indexTablesList = CarbonIndexUtil.getIndexesMap(carbonTable)
-        if (null != indexTablesList.get(CarbonIndexProvider.SI.getIndexProviderName)) {
-          val iterator = indexTablesList.get(CarbonIndexProvider.SI.getIndexProviderName).entrySet()
-            .iterator()
+        val secondaryIndexMap =
+          carbonTable.getIndexesMap.get(CarbonIndexProvider.SI.getIndexProviderName)
+        if (null != secondaryIndexMap) {
+          val iterator = secondaryIndexMap.entrySet().iterator()
           while (iterator.hasNext) {
             val indexTable = iterator.next()
             val indexCols = indexTable.getValue.get(CarbonCommonConstants.INDEX_COLUMNS).split(",")

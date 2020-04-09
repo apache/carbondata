@@ -63,7 +63,7 @@ class DeleteFromTableEventListener extends OperationEventListener with Logging {
             parentCarbonTable.getTableName,
             parentCarbonTable)(
             sparkSession)
-        val indexTableList = CarbonIndexUtil.getIndexesTables(parentCarbonTable)
+        val indexTableList = CarbonIndexUtil.getSecondaryIndexes(parentCarbonTable)
         if (!indexTableList.isEmpty) {
           val indexCarbonTableList = indexTableList.asScala.map { indexTableName =>
             CarbonEnv.getInstance(sparkSession).carbonMetaStore

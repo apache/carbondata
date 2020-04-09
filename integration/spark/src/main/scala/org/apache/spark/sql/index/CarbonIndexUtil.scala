@@ -57,19 +57,16 @@ object CarbonIndexUtil {
       carbonTable: CarbonTable,
       tableName: String,
       indexProperties: java.util.Map[String, String]): Unit = {
-    val indexMeta = carbonTable.getTableInfo.getFactTable.getTableProperties
-      .get(carbonTable.getCarbonTableIdentifier.getTableId)
-    if (null != indexMeta) {
-      IndexMetadata.deserialize(indexMeta)
-        .addIndexTableInfo(indexProvider, tableName, indexProperties)
+    val indexMetadata = carbonTable.getIndexMetadata
+    if (null != indexMetadata) {
+        indexMetadata.addIndexTableInfo(indexProvider, tableName, indexProperties)
     }
   }
 
   def removeIndexTableInfo(carbonTable: CarbonTable, tableName: String): Unit = {
-    val indexMeta = carbonTable.getTableInfo.getFactTable.getTableProperties
-      .get(carbonTable.getCarbonTableIdentifier.getTableId)
-    if (null != indexMeta) {
-      IndexMetadata.deserialize(indexMeta).removeIndexTableInfo(tableName)
+    val indexMetadata = carbonTable.getIndexMetadata
+    if (null != indexMetadata) {
+      indexMetadata.removeIndexTableInfo(tableName)
     }
   }
 
@@ -89,43 +86,41 @@ object CarbonIndexUtil {
       .get("indexexists")
   }
 
-  def getIndexesMap(carbonTable: CarbonTable): java.util.Map[String, util.Map[String, util
-  .Map[String, String]]] = {
-    val indexMeta = carbonTable.getTableInfo.getFactTable.getTableProperties
-      .get(carbonTable.getCarbonTableIdentifier.getTableId)
-    val indexesMap = if (null != indexMeta) {
-      IndexMetadata.deserialize(indexMeta).getIndexesMap
-    } else {
-      new util.HashMap[String, util.Map[String, util.Map[String, String]]]()
-    }
-    indexesMap
-  }
-
-  def getIndexesTables(carbonTable: CarbonTable): java.util.List[String] = {
-    val indexMeta = carbonTable.getTableInfo.getFactTable.getTableProperties
-      .get(carbonTable.getCarbonTableIdentifier.getTableId)
-    val indexesTables = if (null != indexMeta) {
-      IndexMetadata.deserialize(indexMeta)
-        .getIndexTables(CarbonIndexProvider.SI.getIndexProviderName)
+  def getSecondaryIndexes(carbonTable: CarbonTable): java.util.List[String] = {
+    val indexMetadata = carbonTable.getIndexMetadata
+    val secondaryIndexesTables = if (null != indexMetadata) {
+     indexMetadata.getIndexTables(CarbonIndexProvider.SI.getIndexProviderName)
     } else {
       new java.util.ArrayList[String]
     }
-    indexesTables
+    secondaryIndexesTables
+  }
+
+  def getCGAndFGIndexes(carbonTable: CarbonTable): java.util.Map[String,
+    util.Map[String, util.Map[String, String]]] = {
+    val indexMetadata = carbonTable.getIndexMetadata
+    val cgAndFgIndexes = if (null != indexMetadata) {
+      val indexesMap = indexMetadata.getIndexesMap
+      indexesMap.asScala.filter(provider =>
+        !provider._1.equalsIgnoreCase(CarbonIndexProvider.SI.getIndexProviderName)).asJava
+    } else {
+      new util.HashMap[String, util.Map[String, util.Map[String, String]]]()
+    }
+    cgAndFgIndexes
   }
 
   def getParentTableName(carbonTable: CarbonTable): String = {
-    val indexMeta = carbonTable.getTableInfo.getFactTable.getTableProperties
-      .get(carbonTable.getCarbonTableIdentifier.getTableId)
-    val indexesTables = if (null != indexMeta) {
-      IndexMetadata.deserialize(indexMeta).getParentTableName
+    val indexMetadata = carbonTable.getIndexMetadata
+    val indexesTables = if (null != indexMetadata) {
+      indexMetadata.getParentTableName
     } else {
       null
     }
     indexesTables
   }
 
-  def getIndexes(relation: CarbonDatasourceHadoopRelation): scala.collection.mutable.Map[String,
-    Array[String]] = {
+  def getSecondaryIndexes(relation: CarbonDatasourceHadoopRelation): scala.collection.mutable
+  .Map[String, Array[String]] = {
     val indexes = scala.collection.mutable.Map[String, Array[String]]()
     val carbonTable = relation.carbonRelation.carbonTable
     val indexInfo = carbonTable.getIndexInfo(CarbonIndexProvider.SI.getIndexProviderName)
@@ -240,8 +235,12 @@ object CarbonIndexUtil {
 
   def getIndexCarbonTables(carbonTable: CarbonTable,
       sparkSession: SparkSession): Seq[CarbonTable] = {
-    val siIndexesMap = CarbonIndexUtil.getIndexesMap(carbonTable)
-      .get(CarbonIndexProvider.SI.getIndexProviderName)
+    val indexMetadata = carbonTable.getIndexMetadata
+    val siIndexesMap = if (null != indexMetadata) {
+      indexMetadata.getIndexesMap.get(CarbonIndexProvider.SI.getIndexProviderName)
+    } else {
+      new util.HashMap[String, util.Map[String, util.Map[String, String]]]()
+    }
     if (null != siIndexesMap) {
       siIndexesMap.keySet().asScala.map {
         indexTable =>

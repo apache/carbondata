@@ -879,8 +879,10 @@ object IndexStatusUtil {
       indexProvider: CarbonIndexProvider): Unit = {
     val carbonTable = CarbonEnv.getCarbonTable(Some(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
       tableName)(sparkSession)
-    val indexes = carbonTable.getIndexMetadata.getIndexesMap.get(indexProvider.getIndexProviderName)
-      .asScala.filter(p => p._2.get(CarbonCommonConstants.INDEX_STATUS).equalsIgnoreCase(indexStatus))
-    assert(indexes.exists(p => p._1.equals(indexName) && p._2.get(CarbonCommonConstants.INDEX_STATUS) == indexStatus))
+    val secondaryIndexMap = carbonTable.getIndexesMap.get(indexProvider.getIndexProviderName)
+    if (null != secondaryIndexMap) {
+      val indexes = secondaryIndexMap.asScala.filter(p => p._2.get(CarbonCommonConstants.INDEX_STATUS).equalsIgnoreCase(indexStatus))
+      assert(indexes.exists(p => p._1.equals(indexName) && p._2.get(CarbonCommonConstants.INDEX_STATUS) == indexStatus))
+    }
   }
 }
