@@ -18,7 +18,6 @@
 
     <properties>
         <dev.path>${basedir}/../../dev</dev.path>
-        <hadoop.version>2.7.5</hadoop.version>
     </properties>
 
     <dependencies>

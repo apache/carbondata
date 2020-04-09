@@ -119,6 +119,10 @@
     <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
   </Match>
   <Match>
+    <Class name="org.apache.carbondata.core.indexstore.PartitionSpec"/>
+    <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
+  </Match>
+  <Match>
     <Class name="org.apache.carbondata.core.datamap.IndexFilter"/>
     <Bug pattern="SE_BAD_FIELD"/>
   </Match>

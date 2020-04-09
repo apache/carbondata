@@ -76,7 +76,6 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
     <testSourceDirectory>src/test/java</testSourceDirectory>
@@ -116,6 +115,23 @@
         <maven.test.skip>true</maven.test.skip>
       </properties>
     </profile>
+    <profile>
+      <id>hadoop-3.1</id>
+      <properties>
+        <hadoop.version>3.1.1</hadoop.version>
+      </properties>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.htrace</groupId>
+          <artifactId>htrace-core</artifactId>
+          <version>3.1.0-incubating</version>
+        </dependency>
+      </dependencies>
+    </profile>
+
   </profiles>
 
 </project>

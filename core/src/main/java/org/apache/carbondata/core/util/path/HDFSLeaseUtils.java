@@ -29,7 +29,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.viewfs.ViewFileSystem;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
-import org.apache.hadoop.hdfs.server.namenode.LeaseExpiredException;
 import org.apache.log4j.Logger;
 
 /**
@@ -126,10 +125,7 @@ public class HDFSLeaseUtils {
           }
         }
       } catch (IOException e) {
-        if (e instanceof LeaseExpiredException && e.getMessage().contains("File does not exist")) {
-          LOGGER.error("The given file does not exist at path " + filePath);
-          throw e;
-        } else if (e instanceof FileNotFoundException) {
+        if (e instanceof FileNotFoundException) {
           LOGGER.error("The given file does not exist at path " + filePath);
           throw e;
         } else {
