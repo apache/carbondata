@@ -65,7 +65,11 @@ public class HiveCarbonTest extends HiveTestUtils {
   public void verifyDataAfterLoad() throws Exception {
     statement.execute("drop table if exists hive_carbon_table4");
     statement.execute("CREATE TABLE hive_carbon_table4(shortField SMALLINT , intField INT, bigintField BIGINT , doubleField DOUBLE, stringField STRING, timestampField TIMESTAMP, decimalField DECIMAL(18,2), dateField DATE, charField CHAR(5), floatField FLOAT) stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
-    statement.execute("insert into hive_carbon_table4 select * from hive_table");
+    try {
+      statement.execute("insert into hive_carbon_table4 select * from hive_table");
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
     checkAnswer(statement.executeQuery("select * from hive_carbon_table4"),
             connection.createStatement().executeQuery("select * from hive_table"));
   }
