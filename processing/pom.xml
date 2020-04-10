@@ -118,7 +118,7 @@
     <profile>
       <id>hadoop-3.1</id>
       <properties>
-        <hadoop.version>3.1.0</hadoop.version>
+        <hadoop.version>3.1.1</hadoop.version>
       </properties>
       <activation>
         <activeByDefault>true</activeByDefault>
