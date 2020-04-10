@@ -327,7 +327,7 @@ TBLPROPERTIES ( 'LOCAL_DICTIONARY_ENABLE'='false', 'table_blocksize'='256')
 ```sql
 create table if not exists test.detail_global_sort
 ('id', BIGINT, 'imsi' STRING,'msisdn' STRING, `imei` STRING, ...) 
- TBLPROPERTIES ( 'LOCAL_DICTIONARY_ENABLE'='false',  TBLPROPERTIES ( 'LOCAL_DICTIONARY_ENABLE'='false', 'table_blocksize'='256', 'SORT_COLUMNS'='msisdn,req_time_sec,req_succed_flag', 'SORT_SCOPE'='GLOBAL_SORT')
+TBLPROPERTIES ( 'LOCAL_DICTIONARY_ENABLE'='false', 'table_blocksize'='256', 'SORT_COLUMNS'='msisdn,req_time_sec,req_succed_flag', 'SORT_SCOPE'='GLOBAL_SORT')
 ```
 
 ```本地排序```
@@ -335,7 +335,7 @@ create table if not exists test.detail_global_sort
 ```sql
 create table if not exists test.detail_local_sort
 ('id', BIGINT, 'imsi' STRING,'msisdn' STRING, `imei` STRING, ...) 
- TBLPROPERTIES ( 'LOCAL_DICTIONARY_ENABLE'='false',  TBLPROPERTIES ( 'LOCAL_DICTIONARY_ENABLE'='false', 'table_blocksize'='256', 'SORT_COLUMNS'='msisdn,req_time_sec,req_succed_flag', 'SORT_SCOPE'='LOCAL_SORT')
+TBLPROPERTIES ( 'LOCAL_DICTIONARY_ENABLE'='false', 'table_blocksize'='256', 'SORT_COLUMNS'='msisdn,req_time_sec,req_succed_flag', 'SORT_SCOPE'='LOCAL_SORT')
 ```
 
 ```不排序```
@@ -343,7 +343,7 @@ create table if not exists test.detail_local_sort
 ```sql
 create table if not exists test.detail_no_sort
 ('id', BIGINT, 'imsi' STRING,'msisdn' STRING, `imei` STRING, ...) 
- TBLPROPERTIES ( 'LOCAL_DICTIONARY_ENABLE'='false',  TBLPROPERTIES ( 'LOCAL_DICTIONARY_ENABLE'='false', 'table_blocksize'='256', 'SORT_COLUMNS'='msisdn,req_time_sec,req_succed_flag', 'SORT_SCOPE'='NO_SORT')
+TBLPROPERTIES ( 'LOCAL_DICTIONARY_ENABLE'='false', 'table_blocksize'='256', 'SORT_COLUMNS'='msisdn,req_time_sec,req_succed_flag', 'SORT_SCOPE'='NO_SORT')
 ```
 
 验证其加载性能如下：
