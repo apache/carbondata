@@ -533,7 +533,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   /**
    * SHOW [HISTORY] SEGMENTS
    * [FOR TABLE | ON] [db_name.]table_name
-   * [BY (select query)]
+   * [AS (select query)]
    */
   protected lazy val showSegments: Parser[LogicalPlan] =
     (SHOW ~> opt(HISTORY) <~ SEGMENTS <~ ((FOR <~ TABLE) | ON)) ~ (ident <~ ".").? ~ ident ~
@@ -545,7 +545,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
             tableName.toLowerCase(),
             showHistory.isDefined)
         } else {
-          CarbonShowSegmentsByQueryCommand(
+          CarbonShowSegmentsAsSelectCommand(
             CarbonParserUtil.convertDbNameToLowerCase(databaseName),
             tableName.toLowerCase(),
             queryOp.get,

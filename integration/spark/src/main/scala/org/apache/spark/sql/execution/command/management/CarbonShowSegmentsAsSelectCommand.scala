@@ -31,7 +31,7 @@ case class SegmentRow(
     dataSize: Long, indexSize: Long, mergedToId: String, format: String, path: String,
     loadEndTime: String, segmentFileName: String)
 
-case class CarbonShowSegmentsByQueryCommand(
+case class CarbonShowSegmentsAsSelectCommand(
     databaseNameOp: Option[String],
     tableName: String,
     query: String,
