@@ -96,10 +96,10 @@ class CarbonSession(@transient val sc: SparkContext,
    * This API is for test purpose only
    */
   @InterfaceAudience.Developer(Array("Index"))
-  def isDataMapHit(sqlStatement: String, dataMapName: String): Boolean = {
+  def isIndexHit(sqlStatement: String, indexName: String): Boolean = {
     // explain command will output the dataMap information only if enable.query.statistics = true
     val message = sql(s"EXPLAIN $sqlStatement").collect()
-    message(0).getString(0).contains(dataMapName)
+    message(0).getString(0).contains(indexName)
   }
 
   /**

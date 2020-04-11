@@ -21,16 +21,16 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
+import org.apache.carbondata.common.exceptions.sql.NoSuchIndexException;
 
 /**
- *It is used to save/retreive/drop datamap schema from storage medium like disk or DB.
- * Here dataMapName must be unique across whole store.
+ *It is used to save/retreive/drop index schema from storage medium like disk or DB.
+ * Here index name must be unique across whole store.
  *
  * @since 1.4.0
  */
 @InterfaceAudience.Internal
-public interface DataMapSchemaStorageProvider {
+public interface IndexSchemaStorageProvider {
 
   /**
    * Save the schema to storage medium.
@@ -39,10 +39,10 @@ public interface DataMapSchemaStorageProvider {
   void saveSchema(IndexSchema indexSchema) throws IOException;
 
   /**
-   * Retrieve the schema by using dataMapName.
-   * @param dataMapName
+   * Retrieve the schema by using index name.
+   * @param indexName
    */
-  IndexSchema retrieveSchema(String dataMapName) throws IOException, NoSuchDataMapException;
+  IndexSchema retrieveSchema(String indexName) throws IOException, NoSuchIndexException;
 
   /**
    * Retrieve schemas of the given table.
@@ -53,16 +53,16 @@ public interface DataMapSchemaStorageProvider {
   List<IndexSchema> retrieveSchemas(CarbonTable table) throws IOException;
 
   /**
-   * Retrieve all datamap schemas from store.
+   * Retrieve all index schemas from store.
    * @return
    * @throws IOException
    */
   List<IndexSchema> retrieveAllSchemas() throws IOException;
 
   /**
-   * Drop the schema from the storage by using dataMapName.
-   * @param dataMapName
+   * Drop the schema from the storage by using index name.
+   * @param indexName
    */
-  void dropSchema(String dataMapName) throws IOException;
+  void dropSchema(String indexName) throws IOException;
 
 }

@@ -101,32 +101,31 @@ public class TestBlockletIndexFactory {
     cache = CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_INDEX);
   }
 
-  @Test public void addDataMapToCache()
-      throws IOException, MemoryException, NoSuchMethodException, InvocationTargetException,
+  @Test public void addIndexToCache() throws NoSuchMethodException, InvocationTargetException,
       IllegalAccessException {
-    List<BlockIndex> dataMaps = new ArrayList<>();
+    List<BlockIndex> indexes = new ArrayList<>();
     Method method = BlockletIndexFactory.class
         .getDeclaredMethod("cache", TableBlockIndexUniqueIdentifierWrapper.class,
             BlockletIndexWrapper.class);
     method.setAccessible(true);
     method.invoke(blockletIndexFactory, tableBlockIndexUniqueIdentifierWrapper,
-        new BlockletIndexWrapper(tableBlockIndexUniqueIdentifier.getSegmentId(), dataMaps));
+        new BlockletIndexWrapper(tableBlockIndexUniqueIdentifier.getSegmentId(), indexes));
     BlockletIndexWrapper result = cache.getIfPresent(tableBlockIndexUniqueIdentifierWrapper);
     assert null != result;
   }
 
   @Test public void getValidDistributables() throws IOException {
-    BlockletIndexInputSplit blockletDataMapDistributable = new BlockletIndexInputSplit(
+    BlockletIndexInputSplit blockletIndexInputSplit = new BlockletIndexInputSplit(
         "/opt/store/default/carbon_table/Fact/Part0/Segment_0/0_batchno0-0-1521012756709.carbonindex");
     Segment segment = new Segment("0", null, new TableStatusReadCommittedScope(carbonTable
         .getAbsoluteTableIdentifier(), new Configuration(false)));
-    blockletDataMapDistributable.setSegment(segment);
-    BlockletIndexInputSplit blockletDataMapDistributable1 = new BlockletIndexInputSplit(
+    blockletIndexInputSplit.setSegment(segment);
+    BlockletIndexInputSplit indexInputSplit = new BlockletIndexInputSplit(
         "/opt/store/default/carbon_table/Fact/Part0/Segment_0/0_batchno0-0-1521012756701.carbonindex");
-    blockletDataMapDistributable1.setSegment(segment);
+    indexInputSplit.setSegment(segment);
     List<IndexInputSplit> indexInputSplits = new ArrayList<>(2);
-    indexInputSplits.add(blockletDataMapDistributable);
-    indexInputSplits.add(blockletDataMapDistributable1);
+    indexInputSplits.add(blockletIndexInputSplit);
+    indexInputSplits.add(indexInputSplit);
     new MockUp<BlockletIndexFactory>() {
       @Mock Set<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers(
           Segment segment) {

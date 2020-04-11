@@ -63,9 +63,9 @@ import org.apache.hadoop.util.bloom.Key;
 import org.apache.log4j.Logger;
 
 /**
- * BloomDataCoarseGrainMap is constructed in blocklet level. For each indexed column,
+ * BloomDataCoarseGrainIndex is constructed in blocklet level. For each indexed column,
  * a bloom filter is constructed to indicate whether a value belongs to this blocklet.
- * More information of the index file can be found in the corresponding datamap writer.
+ * More information of the index file can be found in the corresponding index writer.
  */
 @InterfaceAudience.Internal
 public class BloomCoarseGrainIndex extends CoarseGrainIndex {
@@ -159,7 +159,7 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
       List<CarbonBloomFilter> bloomIndexList = cacheValue.getBloomFilters();
       for (CarbonBloomFilter bloomFilter : bloomIndexList) {
         if (needShardPrune && !filteredShard.contains(bloomFilter.getShardName())) {
-          // skip shard which has been pruned in Main datamap
+          // skip shard which has been pruned in Main index
           continue;
         }
         boolean scanRequired = false;
@@ -184,7 +184,7 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
               String.valueOf(bloomFilter.getBlockletNo())));
         }
         // get intersect result between query models
-        // pre-condition: only And/In/EqualTo expression exists in single bloom datamap
+        // pre-condition: only And/In/EqualTo expression exists in single bloom index
         if (null == hitBlocklets) {
           hitBlocklets = tempHitBlockletsResult;
         } else {
@@ -203,7 +203,7 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
 
   private List<BloomQueryModel> createQueryModel(Expression expression) {
     List<BloomQueryModel> queryModels = new ArrayList<BloomQueryModel>();
-    // bloomdatamap only support equalTo and In operators now
+    // bloom index only support equalTo and In operators now
     if (expression instanceof EqualToExpression) {
       Expression left = ((EqualToExpression) expression).getLeft();
       Expression right = ((EqualToExpression) expression).getRight();

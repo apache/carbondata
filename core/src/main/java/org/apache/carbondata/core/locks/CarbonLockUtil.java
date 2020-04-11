@@ -66,7 +66,7 @@ public class CarbonLockUtil {
       } else if (locktype.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
         LOGGER.info("Not able to release the delete segments lock");
       } else if (locktype.equals(LockUsage.DATAMAP_STATUS_LOCK)) {
-        LOGGER.info("Not able to release the datamap status lock");
+        LOGGER.info("Not able to release the index status lock");
       }
     }
   }

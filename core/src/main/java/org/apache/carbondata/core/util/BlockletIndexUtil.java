@@ -510,6 +510,6 @@ public class BlockletIndexUtil {
       tableName = carbonTable.getTableName();
     }
     dbName = carbonTable.getDatabaseName();
-    return CarbonProperties.getInstance().isDataMapParallelLoadingEnabled(dbName, tableName);
+    return CarbonProperties.getInstance().isIndexParallelLoadingEnabled(dbName, tableName);
   }
 }

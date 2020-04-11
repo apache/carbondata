@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.datamap;
+package org.apache.carbondata.processing.index;
 
 import java.io.IOException;
 import java.util.ArrayList;

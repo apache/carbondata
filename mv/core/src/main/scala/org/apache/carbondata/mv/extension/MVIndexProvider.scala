@@ -28,20 +28,20 @@ import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.{DataMapProvider, IndexStoreManager, MVCatalog}
+import org.apache.carbondata.core.index.{CarbonIndexProvider, IndexStoreManager, MVCatalog}
 import org.apache.carbondata.core.index.dev.{Index, IndexFactory}
-import org.apache.carbondata.core.index.status.DataMapStatusManager
+import org.apache.carbondata.core.index.status.IndexStatusManager
 import org.apache.carbondata.core.indexstore.Blocklet
-import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, IndexProperty}
+import org.apache.carbondata.core.metadata.schema.index.{IndexClassProvider, IndexProperty}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.mv.rewrite.{SummaryDataset, SummaryDatasetCatalog}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 
 @InterfaceAudience.Internal
-class MVDataMapProvider(
+class MVIndexProvider(
     sparkSession: SparkSession,
-    dataMapSchema: IndexSchema)
-  extends DataMapProvider(null, dataMapSchema) {
+    indexSchema: IndexSchema)
+  extends CarbonIndexProvider(null, indexSchema) {
 
   protected var dropTableCommand: CarbonDropTableCommand = null
 
@@ -56,36 +56,36 @@ class MVDataMapProvider(
     }
     MVHelper.createMVDataMap(
       sparkSession,
-      dataMapSchema,
+      indexSchema,
       ctasSqlStatement,
       true)
     try {
       val catalog = IndexStoreManager.getInstance().getMVCatalog(this,
-        DataMapClassProvider.MV.getShortName, false).asInstanceOf[SummaryDatasetCatalog]
+        IndexClassProvider.MV.getShortName, false).asInstanceOf[SummaryDatasetCatalog]
       if (catalog != null && !catalog.mvSession.sparkSession.equals(sparkSession)) {
-        IndexStoreManager.getInstance.registerMVCatalog(this, dataMapSchema, true)
+        IndexStoreManager.getInstance.registerMVCatalog(this, indexSchema, true)
       } else {
-        IndexStoreManager.getInstance.registerMVCatalog(this, dataMapSchema, false)
+        IndexStoreManager.getInstance.registerMVCatalog(this, indexSchema, false)
       }
-      if (dataMapSchema.isLazy) {
-        DataMapStatusManager.disableDataMap(dataMapSchema.getIndexName)
+      if (indexSchema.isLazy) {
+        IndexStatusManager.disableIndex(indexSchema.getIndexName)
       }
     } catch {
       case exception: Exception =>
         dropTableCommand = new CarbonDropTableCommand(true,
-          new Some[String](dataMapSchema.getRelationIdentifier.getDatabaseName),
-          dataMapSchema.getRelationIdentifier.getTableName,
+          new Some[String](indexSchema.getRelationIdentifier.getDatabaseName),
+          indexSchema.getRelationIdentifier.getTableName,
           true)
         dropTableCommand.run(sparkSession)
-        IndexStoreManager.getInstance().dropDataMapSchema(dataMapSchema.getIndexName)
+        IndexStoreManager.getInstance().dropIndexSchema(indexSchema.getIndexName)
         throw exception
     }
   }
 
   override def initData(): Unit = {
-    if (!dataMapSchema.isLazy) {
+    if (!indexSchema.isLazy) {
       if (rebuild()) {
-        DataMapStatusManager.enableDataMap(dataMapSchema.getIndexName)
+        IndexStatusManager.enableIndex(indexSchema.getIndexName)
       }
     }
   }
@@ -93,20 +93,20 @@ class MVDataMapProvider(
   @throws[IOException]
   override def cleanMeta(): Unit = {
     dropTableCommand = new CarbonDropTableCommand(true,
-      new Some[String](dataMapSchema.getRelationIdentifier.getDatabaseName),
-      dataMapSchema.getRelationIdentifier.getTableName,
+      new Some[String](indexSchema.getRelationIdentifier.getDatabaseName),
+      indexSchema.getRelationIdentifier.getTableName,
       true)
     dropTableCommand.processMetadata(sparkSession)
-    // First, drop datamapschema and unregister datamap from catalog, because if in
-    // case, unregister fails, datamapschema will not be deleted from system and cannot
-    // create datamap also again
+    // First, drop schema and unregister MV from catalog, because if in
+    // case, unregister fails, schema will not be deleted from system and cannot
+    // create MV also again
     try {
-      IndexStoreManager.getInstance().dropDataMapSchema(dataMapSchema.getIndexName)
+      IndexStoreManager.getInstance().dropIndexSchema(indexSchema.getIndexName)
     } catch {
       case e: IOException =>
         throw e
     } finally {
-      IndexStoreManager.getInstance.unRegisterDataMapCatalog(dataMapSchema)
+      IndexStoreManager.getInstance.unRegisterIndex(indexSchema)
     }
   }
 
@@ -120,14 +120,14 @@ class MVDataMapProvider(
   override def rebuildInternal(newLoadName: String,
       segmentMap: java.util.Map[String, java.util.List[String]],
       dataMapTable: CarbonTable): Boolean = {
-    val ctasQuery = dataMapSchema.getCtasQuery
+    val ctasQuery = indexSchema.getCtasQuery
     if (ctasQuery != null) {
-      val identifier = dataMapSchema.getRelationIdentifier
+      val identifier = indexSchema.getRelationIdentifier
       val updatedQuery = MVParser.getMVQuery(ctasQuery, sparkSession)
       var isOverwriteTable = false
       val isFullRefresh =
-        if (null != dataMapSchema.getProperties.get(IndexProperty.FULL_REFRESH)) {
-          dataMapSchema.getProperties.get(IndexProperty.FULL_REFRESH).toBoolean
+        if (null != indexSchema.getProperties.get(IndexProperty.FULL_REFRESH)) {
+          indexSchema.getProperties.get(IndexProperty.FULL_REFRESH).toBoolean
         } else {
           false
         }
@@ -158,9 +158,9 @@ class MVDataMapProvider(
         insertIntoCommand.run(sparkSession)
       } catch {
         case ex: Exception =>
-          // If load to dataMap table fails, disable the dataMap and if newLoad is still
+          // If load to MV table fails, disable the MV and if newLoad is still
           // in INSERT_IN_PROGRESS state, mark for delete the newLoad and update table status file
-          DataMapStatusManager.disableDataMap(dataMapSchema.getIndexName)
+          IndexStatusManager.disableIndex(indexSchema.getIndexName)
           LOGGER.error("Data Load failed for Index: ", ex)
           CarbonLoaderUtil.updateTableStatusInCaseOfFailure(
             newLoadName,
@@ -178,7 +178,7 @@ class MVDataMapProvider(
   }
 
   /**
-   * This method will set main table segments which needs to be loaded to mv dataMap
+   * This method will set main table segments which needs to be loaded to the MV
    */
   private def setSegmentsToLoadDataMap(tableUniqueName: String,
       mainTableSegmentList: java.util.List[String]): Unit = {
@@ -188,7 +188,7 @@ class MVDataMapProvider(
   }
 
   private def unsetMainTableSegments(): Unit = {
-    val relationIdentifiers = dataMapSchema.getParentTables.asScala
+    val relationIdentifiers = indexSchema.getParentTables.asScala
     for (relationIdentifier <- relationIdentifiers) {
       CarbonUtils
         .threadUnset(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
@@ -197,7 +197,7 @@ class MVDataMapProvider(
     }
   }
 
-  override def createDataMapCatalog : MVCatalog[SummaryDataset] =
+  override def createMVCatalog : MVCatalog[SummaryDataset] =
     new SummaryDatasetCatalog(sparkSession)
 
   override def getIndexFactory: IndexFactory[_ <: Index[_ <: Blocklet]] = {

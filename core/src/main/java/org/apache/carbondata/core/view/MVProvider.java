@@ -201,7 +201,7 @@ public class MVProvider {
       statusDetails = gsonObjectToRead.fromJson(buffReader,
           MVStatusDetail[].class);
     } catch (IOException e) {
-      LOG.error("Failed to read datamap status", e);
+      LOG.error("Failed to read MV status", e);
       throw e;
     } finally {
       CarbonUtil.closeStreams(buffReader, inStream, dataInputStream);
@@ -282,12 +282,12 @@ public class MVProvider {
                     status));
           }
         }
-        // Add the newly added datamaps to the list.
+        // Add the newly added MV to the list.
         if (newStatusDetails.size() > 0 &&
             status != MVStatus.DROPPED) {
           statusDetailList.addAll(newStatusDetails);
         }
-        // In case of dropped datamap, just remove from the list.
+        // In case of dropped MV, just remove from the list.
         if (status == MVStatus.DROPPED) {
           statusDetailList.removeAll(changedStatusDetails);
         }
@@ -296,7 +296,7 @@ public class MVProvider {
             statusDetailList.toArray(
                 new MVStatusDetail[statusDetailList.size()]));
       } else {
-        String errorMsg = "Upadating datamapstatus is failed due to another process taken the lock"
+        String errorMsg = "Updating MV status is failed due to another process taken the lock"
             + " for updating it";
         LOG.error(errorMsg);
         throw new IOException(errorMsg + " Please try after some time.");

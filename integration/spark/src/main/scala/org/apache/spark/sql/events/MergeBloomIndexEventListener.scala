@@ -26,8 +26,8 @@ import org.apache.spark.sql.SparkSession
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
-import org.apache.carbondata.datamap.CarbonMergeBloomIndexFilesRDD
 import org.apache.carbondata.events._
+import org.apache.carbondata.index.CarbonMergeBloomIndexFilesRDD
 
 class MergeBloomIndexEventListener extends OperationEventListener with Logging {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -42,28 +42,28 @@ class MergeBloomIndexEventListener extends OperationEventListener with Logging {
         val sparkSession = SparkSession.getActiveSession.get
 
         // filter out bloom indexSchema
-        var bloomDatamaps = tableDataMaps.asScala.filter(
+        var index = tableDataMaps.asScala.filter(
           _.getIndexSchema.getProviderName.equalsIgnoreCase(
             CarbonIndexProvider.BLOOMFILTER.getIndexProviderName))
 
         if (datamapPostEvent.isFromRebuild) {
           if (null != datamapPostEvent.indexName) {
             // for rebuild process
-            bloomDatamaps = bloomDatamaps.filter(
+            index = index.filter(
               _.getIndexSchema.getIndexName.equalsIgnoreCase(datamapPostEvent.indexName))
           }
         } else {
           // for load process, skip lazy indexSchema
-          bloomDatamaps = bloomDatamaps.filter(!_.getIndexSchema.isLazy)
+          index = index.filter(!_.getIndexSchema.isLazy)
         }
 
         val segmentIds = datamapPostEvent.segmentIdList
-        if (bloomDatamaps.size > 0 && segmentIds.size > 0) {
+        if (index.size > 0 && segmentIds.size > 0) {
           // we extract bloom indexSchema name and index columns here
           // because TableIndex is not serializable
           val bloomDMnames = ListBuffer.empty[String]
           val bloomIndexColumns = ListBuffer.empty[Seq[String]]
-          bloomDatamaps.foreach( dm => {
+          index.foreach( dm => {
             bloomDMnames += dm.getIndexSchema.getIndexName
             bloomIndexColumns += dm.getIndexSchema.getIndexColumns.map(_.trim.toLowerCase)
           })

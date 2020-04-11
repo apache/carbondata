@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
+import org.apache.carbondata.common.exceptions.sql.NoSuchIndexException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
@@ -51,11 +51,11 @@ public class DiskBasedDMSchemaStoraheProviderSuite {
         FileFactory.getCarbonFile(CarbonProperties.getInstance().getSystemFolderLocation()));
   }
 
-  private DiskBasedDMSchemaStorageProvider provider = new DiskBasedDMSchemaStorageProvider(
+  private DiskBasedIndexSchemaStorageProvider provider = new DiskBasedIndexSchemaStorageProvider(
       CarbonProperties.getInstance().getSystemFolderLocation());
 
-  @Test public void testSaveSchema() throws IOException, NoSuchDataMapException {
-    IndexSchema indexSchema = createDataMapSchema("dm1", "table1");
+  @Test public void testSaveSchema() throws IOException, NoSuchIndexException {
+    IndexSchema indexSchema = createIndexSchema("dm1", "table1");
     provider.saveSchema(indexSchema);
     CarbonFile[] schemaFilesFromLocation = getSchemaFilesFromLocation();
     assert (existsSchema(indexSchema, schemaFilesFromLocation));
@@ -64,7 +64,7 @@ public class DiskBasedDMSchemaStoraheProviderSuite {
   }
 
   @Test public void testDropSchema() throws IOException {
-    IndexSchema indexSchema = createDataMapSchema("dm2", "table1");
+    IndexSchema indexSchema = createIndexSchema("dm2", "table1");
     provider.saveSchema(indexSchema);
     provider.dropSchema("dm2");
     CarbonFile[] schemaFilesFromLocation = getSchemaFilesFromLocation();
@@ -74,15 +74,15 @@ public class DiskBasedDMSchemaStoraheProviderSuite {
     try {
       provider.retrieveSchema("dm2");
       assert (false);
-    } catch (NoSuchDataMapException e) {
+    } catch (NoSuchIndexException e) {
       // Ignore
     }
   }
 
   @Test public void testRetriveAllSchemas() throws IOException {
-    IndexSchema indexSchema1 = createDataMapSchema("dm3", "table1");
-    IndexSchema indexSchema2 = createDataMapSchema("dm4", "table1");
-    IndexSchema indexSchema3 = createDataMapSchema("dm5", "table1");
+    IndexSchema indexSchema1 = createIndexSchema("dm3", "table1");
+    IndexSchema indexSchema2 = createIndexSchema("dm4", "table1");
+    IndexSchema indexSchema3 = createIndexSchema("dm5", "table1");
     provider.saveSchema(indexSchema1);
     provider.saveSchema(indexSchema2);
     provider.saveSchema(indexSchema3);
@@ -94,14 +94,14 @@ public class DiskBasedDMSchemaStoraheProviderSuite {
   }
 
   @Test public void testWithOtherProvider() throws IOException, InterruptedException {
-    IndexSchema indexSchema1 = createDataMapSchema("dm6", "table1");
-    IndexSchema indexSchema2 = createDataMapSchema("dm7", "table1");
-    IndexSchema indexSchema3 = createDataMapSchema("dm8", "table1");
+    IndexSchema indexSchema1 = createIndexSchema("dm6", "table1");
+    IndexSchema indexSchema2 = createIndexSchema("dm7", "table1");
+    IndexSchema indexSchema3 = createIndexSchema("dm8", "table1");
     provider.saveSchema(indexSchema1);
     Thread.sleep(400);
     provider.saveSchema(indexSchema2);
     Thread.sleep(400);
-    DiskBasedDMSchemaStorageProvider provider1 = new DiskBasedDMSchemaStorageProvider(
+    DiskBasedIndexSchemaStorageProvider provider1 = new DiskBasedIndexSchemaStorageProvider(
         CarbonProperties.getInstance().getSystemFolderLocation());
     provider1.saveSchema(indexSchema3);
     Thread.sleep(400);
@@ -118,9 +118,9 @@ public class DiskBasedDMSchemaStoraheProviderSuite {
   }
 
   @Test public void testDropWithOtherProvider() throws IOException, InterruptedException {
-    IndexSchema indexSchema1 = createDataMapSchema("dm9", "table1");
-    IndexSchema indexSchema2 = createDataMapSchema("dm10", "table1");
-    IndexSchema indexSchema3 = createDataMapSchema("dm11", "table1");
+    IndexSchema indexSchema1 = createIndexSchema("dm9", "table1");
+    IndexSchema indexSchema2 = createIndexSchema("dm10", "table1");
+    IndexSchema indexSchema3 = createIndexSchema("dm11", "table1");
     provider.saveSchema(indexSchema1);
     Thread.sleep(400);
     provider.saveSchema(indexSchema2);
@@ -128,7 +128,7 @@ public class DiskBasedDMSchemaStoraheProviderSuite {
     provider.saveSchema(indexSchema3);
     Thread.sleep(400);
 
-    DiskBasedDMSchemaStorageProvider provider1 = new DiskBasedDMSchemaStorageProvider(
+    DiskBasedIndexSchemaStorageProvider provider1 = new DiskBasedIndexSchemaStorageProvider(
         CarbonProperties.getInstance().getSystemFolderLocation());
     provider1.dropSchema(indexSchema3.getIndexName());
     Thread.sleep(400);
@@ -162,7 +162,7 @@ public class DiskBasedDMSchemaStoraheProviderSuite {
     return false;
   }
 
-  private IndexSchema createDataMapSchema(String name, String table) {
+  private IndexSchema createIndexSchema(String name, String table) {
     IndexSchema mapSchema = new IndexSchema(name, "index");
     RelationIdentifier identifier = new RelationIdentifier("default", table, "");
 

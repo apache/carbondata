@@ -63,13 +63,13 @@ case class CarbonCleanFilesCommand(
       "force" -> forceTableClean.toString,
       "internal" -> isInternalCleanCall.toString))
     if (carbonTable.hasMVCreated) {
-      val allDataMapSchemas = IndexStoreManager.getInstance
-        .getDataMapSchemasOfTable(carbonTable).asScala
-        .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                 !dataMapSchema.isIndex)
-      cleanFileCommands = allDataMapSchemas.map {
-        dataMapSchema =>
-          val relationIdentifier = dataMapSchema.getRelationIdentifier
+      val allIndexSchemas = IndexStoreManager.getInstance
+        .getIndexSchemasOfTable(carbonTable).asScala
+        .filter(indexSchema => null != indexSchema.getRelationIdentifier &&
+                               !indexSchema.isIndex)
+      cleanFileCommands = allIndexSchemas.map {
+        indexSchema =>
+          val relationIdentifier = indexSchema.getRelationIdentifier
           CarbonCleanFilesCommand(
             Some(relationIdentifier.getDatabaseName), Some(relationIdentifier.getTableName),
             isInternalCleanCall = true)

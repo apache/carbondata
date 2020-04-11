@@ -31,7 +31,7 @@ import org.apache.carbondata.mv.plans.modular.Flags._
 import org.apache.carbondata.mv.plans.util.SQLBuilder
 import org.apache.carbondata.view.TimeSeriesFunction
 
-private abstract class MVMatchMaker$ {
+private abstract class MVMatchMaker {
 
   /** Define a sequence of rules, to be overridden by the implementation. */
   protected val patterns: Seq[MVMatchPattern]
@@ -48,7 +48,7 @@ private abstract class MVMatchMaker$ {
 
 }
 
-private object MVMatchMaker$ extends MVMatchMaker$ {
+private object MVMatchMaker extends MVMatchMaker {
   lazy val patterns: List[MVMatchPattern] =
     SelectSelectNoChildDelta ::
     GroupbyGroupbyNoChildDelta ::

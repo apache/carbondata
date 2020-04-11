@@ -44,12 +44,12 @@ import org.apache.carbondata.core.util.BlockletIndexUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
- * Datamap implementation for blocklet.
+ * Index implementation for blocklet.
  */
 public class BlockletIndex extends BlockIndex implements Serializable {
 
   private static final long serialVersionUID = -2170289352240810993L;
-  // total block number in this datamap
+  // total block number in this index
   private int blockNum = 0;
 
   @Override
@@ -60,14 +60,14 @@ public class BlockletIndex extends BlockIndex implements Serializable {
   /**
    * Method to check the cache level and load metadata based on that information
    *
-   * @param blockletDataMapInfo
+   * @param blockletIndexModel
    * @param indexInfo
    */
   @Override
   protected IndexRowImpl loadMetadata(CarbonRowSchema[] taskSummarySchema,
-      SegmentProperties segmentProperties, BlockletIndexModel blockletDataMapInfo,
+      SegmentProperties segmentProperties, BlockletIndexModel blockletIndexModel,
       List<DataFileFooter> indexInfo) {
-    return loadBlockletMetaInfo(taskSummarySchema, segmentProperties, blockletDataMapInfo,
+    return loadBlockletMetaInfo(taskSummarySchema, segmentProperties, blockletIndexModel,
         indexInfo);
   }
 
@@ -84,11 +84,11 @@ public class BlockletIndex extends BlockIndex implements Serializable {
   /**
    * Method to load blocklet metadata information
    *
-   * @param blockletDataMapInfo
+   * @param blockletIndexModel
    * @param indexInfo
    */
   private IndexRowImpl loadBlockletMetaInfo(CarbonRowSchema[] taskSummarySchema,
-      SegmentProperties segmentProperties, BlockletIndexModel blockletDataMapInfo,
+      SegmentProperties segmentProperties, BlockletIndexModel blockletIndexModel,
       List<DataFileFooter> indexInfo) {
     String tempFilePath = null;
     IndexRowImpl summaryRow = null;
@@ -102,7 +102,7 @@ public class BlockletIndex extends BlockIndex implements Serializable {
       updateMinMaxFlag(fileFooter, summaryRowMinMaxFlag);
       TableBlockInfo blockInfo = fileFooter.getBlockInfo();
       BlockMetaInfo blockMetaInfo =
-          blockletDataMapInfo.getBlockMetaInfoMap().get(blockInfo.getFilePath());
+          blockletIndexModel.getBlockMetaInfoMap().get(blockInfo.getFilePath());
       // Here it loads info about all blocklets of index
       // Only add if the file exists physically. There are scenarios which index file exists inside
       // merge index but related carbondata files are deleted. In that case we first check whether
@@ -239,7 +239,7 @@ public class BlockletIndex extends BlockIndex implements Serializable {
 
   @Override
   protected short getBlockletNumOfEntry(int index) {
-    //in blocklet datamap, each entry contains info of one blocklet
+    //in blocklet index, each entry contains info of one blocklet
     return 1;
   }
 

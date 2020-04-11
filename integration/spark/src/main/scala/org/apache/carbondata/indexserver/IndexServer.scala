@@ -48,7 +48,7 @@ import org.apache.carbondata.events.{IndexServerEvent, OperationContext, Operati
   clientPrincipal = "spark.carbon.indexserver.principal")
 trait ServerInterface {
   /**
-   * Used to prune and cache the datamaps for the table.
+   * Used to prune and cache the index for the table.
    */
   def getSplits(request: IndexInputFormat): ExtendedBlockletWrapperContainer
 
@@ -71,10 +71,10 @@ trait ServerInterface {
 
 /**
  * An instance of a distributed Index Server which will be used for:
- * 1. Pruning the datamaps in a distributed way by using the executors.
- * 2. Caching the pruned datamaps in executor size to be reused in the next query.
- * 3. Getting the size of the datamaps cached in the executors.
- * 4. Clearing the datamaps for a table or for the specified invalid segments.
+ * 1. Pruning the indexes in a distributed way by using the executors.
+ * 2. Caching the pruned indexes in executor size to be reused in the next query.
+ * 3. Getting the size of the indexes cached in the executors.
+ * 4. Clearing the indexes for a table or for the specified invalid segments.
  *
  * Start using ./bin/start-indexserver.sh
  * Stop using ./bin/stop-indexserver.sh

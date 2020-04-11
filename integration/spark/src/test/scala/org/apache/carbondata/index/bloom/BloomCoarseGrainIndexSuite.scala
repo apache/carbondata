@@ -28,7 +28,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedIndexCommandException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.status.{DataMapStatusManager, IndexStatus}
+import org.apache.carbondata.core.index.status.{IndexStatusManager, IndexStatus}
 import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -55,7 +55,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     sql(s"DROP TABLE IF EXISTS $bloomSampleTable")
   }
 
-  private def checkSqlHitDataMap(sqlText: String, dataMapName: String, shouldHit: Boolean): DataFrame = {
+  private def sql(sqlText: String, dataMapName: String, shouldHit: Boolean): DataFrame = {
     // ignore checking index hit, because bloom bloom index may be skipped if
     // default blocklet index pruned all the blocklets.
     // We cannot tell whether the index will be hit from the query.
@@ -67,64 +67,64 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
      * queries that use equal operator
      */
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where id = 1", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id = 1", dataMapName, shouldHit),
       sql(s"select * from $normalTable where id = 1"))
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where id = 999", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id = 999", dataMapName, shouldHit),
       sql(s"select * from $normalTable where id = 999"))
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where city = 'city_1'", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city = 'city_1'", dataMapName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_1'"))
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where city = 'city_999'", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city = 'city_999'", dataMapName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_999'"))
     // query with two index_columns
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where id = 1 and city='city_1'", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id = 1 and city='city_1'", dataMapName, shouldHit),
       sql(s"select * from $normalTable where id = 1 and city='city_1'"))
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where id = 999 and city='city_999'", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id = 999 and city='city_999'", dataMapName, shouldHit),
       sql(s"select * from $normalTable where id = 999 and city='city_999'"))
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where city = 'city_1' and id = 0", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city = 'city_1' and id = 0", dataMapName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_1' and id = 0"))
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where city = 'city_999' and name='n999'", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city = 'city_999' and name='n999'", dataMapName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_999' and name='n999'"))
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where city = 'city_999' and name='n1'", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city = 'city_999' and name='n1'", dataMapName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_999' and name='n1'"))
 
     /**
      * queries that use in operator
      */
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where id in (1)", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id in (1)", dataMapName, shouldHit),
       sql(s"select * from $normalTable where id in (1)"))
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where id in (999)", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id in (999)", dataMapName, shouldHit),
       sql(s"select * from $normalTable where id in (999)"))
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where city in( 'city_1')", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city in( 'city_1')", dataMapName, shouldHit),
       sql(s"select * from $normalTable where city in( 'city_1')"))
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where city in ('city_999')", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city in ('city_999')", dataMapName, shouldHit),
       sql(s"select * from $normalTable where city in ('city_999')"))
     // query with two index_columns
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where id in (1) and city in ('city_1')", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id in (1) and city in ('city_1')", dataMapName, shouldHit),
       sql(s"select * from $normalTable where id in (1) and city in ('city_1')"))
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where id in (999) and city in ('city_999')", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id in (999) and city in ('city_999')", dataMapName, shouldHit),
       sql(s"select * from $normalTable where id in (999) and city in ('city_999')"))
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where city in ('city_1') and id in (0)", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city in ('city_1') and id in (0)", dataMapName, shouldHit),
       sql(s"select * from $normalTable where city in ('city_1') and id in (0)"))
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where city in ('city_999') and name in ('n999')", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city in ('city_999') and name in ('n999')", dataMapName, shouldHit),
       sql(s"select * from $normalTable where city in ('city_999') and name in ('n999')"))
     checkAnswer(
-      checkSqlHitDataMap(s"select * from $bloomSampleTable where city in ('city_999') and name in ('n1')", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city in ('city_999') and name in ('n1')", dataMapName, shouldHit),
       sql(s"select * from $normalTable where city in ('city_999') and name in ('n1')"))
 
     checkAnswer(
@@ -378,10 +378,10 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
   test("test bloom index: multiple indexes with each on one column vs one index on multiple columns") {
     val iterations = 1
     // 500000 lines will result to 3 blocklets and bloomfilter index will prune 2 blocklets.
-    val datamap11 = "datamap11"
-    val datamap12 = "datamap12"
-    val datamap13 = "datamap13"
-    val datamap2 = "datamap2"
+    val index11 = "index11"
+    val index12 = "index12"
+    val index13 = "index13"
+    val index2 = "index2"
 
     sql(s"DROP TABLE IF EXISTS $bloomSampleTable")
     // create a table and 3 bloom indexes on it, each index contains one index column
@@ -393,21 +393,21 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          |  """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $datamap11
+         | CREATE INDEX $index11
          | ON $bloomSampleTable (id)
          | AS 'bloomfilter'
          | properties('BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
       """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $datamap12
+         | CREATE INDEX $index12
          | ON $bloomSampleTable (name)
          | AS 'bloomfilter'
          | properties('BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
       """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $datamap13
+         | CREATE INDEX $index13
          | ON $bloomSampleTable (city)
          | AS 'bloomfilter'
          | properties('BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
@@ -422,7 +422,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          |  """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $datamap2
+         | CREATE INDEX $index2
          | ON $normalTable (id, name, city)
          | AS 'bloomfilter'
          | properties('BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
@@ -442,30 +442,30 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     }
 
     var res = sql(s"explain select * from $bloomSampleTable where id = 1 and city = 'city_1' and name='n1'")
-    checkExistence(res, true, datamap11, datamap12, datamap13)
+    checkExistence(res, true, index11, index12, index13)
     res = sql(s"explain select * from $normalTable where id = 1 and city = 'city_1' and name='n1'")
-    checkExistence(res, true, datamap2)
+    checkExistence(res, true, index2)
     // in the following cases, default blocklet index will prune all the blocklets
     // and bloomfilter index will not take effects
     res = sql(s"explain select * from $bloomSampleTable where id < 0")
-    checkExistence(res, false, datamap11, datamap12, datamap13)
+    checkExistence(res, false, index11, index12, index13)
     res = sql(s"explain select * from $normalTable where id < 0")
-    checkExistence(res, false, datamap2)
+    checkExistence(res, false, index2)
 
     // we do not care about the index name here, only to validate the query results are them same
     checkQuery("fakeDm", shouldHit = false)
   }
 
-  test("test create indexs on different column but hit only one") {
-    val originDistributedDatamapStatus = CarbonProperties.getInstance().getProperty(
+  test("test create indexes on different column but hit only one") {
+    val originDistributedIndexStatus = CarbonProperties.getInstance().getProperty(
       CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
       CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT
     )
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP, "true")
-    val datamap1 = "datamap1"
-    val datamap2 = "datamap2"
+    val index1 = "index1"
+    val index2 = "index2"
     sql(
       s"""
          | CREATE TABLE $bloomSampleTable(id INT, name STRING, city STRING, age INT)
@@ -473,14 +473,14 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          |  """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $datamap1
+         | CREATE INDEX $index1
          | ON $bloomSampleTable (name)
          | AS 'bloomfilter'
          | properties('BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
       """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $datamap2
+         | CREATE INDEX $index2
          | ON $bloomSampleTable (city)
          | AS 'bloomfilter'
          | properties('BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
@@ -495,7 +495,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
 
     // recover original setting
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
-      originDistributedDatamapStatus)
+      originDistributedIndexStatus)
   }
 
   test("test block change datatype for bloomfilter index") {
@@ -625,9 +625,8 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     // Fix the loading cores to ensure number of buckets.
     CarbonProperties.getInstance().addProperty("carbon.number.of.cores.while.loading","1")
 
-    val datamap1 = "datamap1"
-    val datamap2 = "datamap2"
-    val datamap3 = "datamap3"
+    val index1 = "index1"
+    val index2 = "index2"
 
     // create a table with dict/noDict/measure column
     sql(
@@ -647,7 +646,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     // create simple index on segment0
     sql(
       s"""
-         | CREATE INDEX $datamap1
+         | CREATE INDEX $index1
          | ON $bloomSampleTable (id)
          | AS 'bloomfilter'
          | properties('BLOOM_SIZE'='640000')
@@ -682,7 +681,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     // create index on newly added column
     sql(
       s"""
-         | CREATE INDEX $datamap2
+         | CREATE INDEX $index2
          | ON $bloomSampleTable (s1,dictString,s8,noDictString,age,num1)
          | AS 'bloomfilter'
          | properties('BLOOM_SIZE'='640000')
@@ -712,7 +711,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
         | - pruned by Main Index
         |    - skipped: 1 blocks, 1 blocklets
         | - pruned by CG Index
-        |    - name: datamap2
+        |    - name: index2
         |    - provider: bloomfilter
         |    - skipped: 1 blocks, 1 blocklets""".stripMargin))
 
@@ -731,7 +730,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
         | - pruned by Main Index
         |    - skipped: 1 blocks, 1 blocklets
         | - pruned by CG Index
-        |    - name: datamap2
+        |    - name: index2
         |    - provider: bloomfilter
         |    - skipped: 0 blocks, 0 blocklets""".stripMargin))
 

@@ -22,20 +22,20 @@ import java.io.Serializable;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 
 /**
- * Status of each datamap
+ * Status of each index
  */
 @InterfaceAudience.Internal
-public class DataMapStatusDetail implements Serializable {
+public class IndexStatusDetail implements Serializable {
 
   private static final long serialVersionUID = 1570997199499681821L;
   private String dataMapName;
 
-  private DataMapStatus status;
+  private IndexStatus status;
 
-  public DataMapStatusDetail() {
+  public IndexStatusDetail() {
   }
 
-  public DataMapStatusDetail(String dataMapName, DataMapStatus status) {
+  public IndexStatusDetail(String dataMapName, IndexStatus status) {
     this.dataMapName = dataMapName;
     this.status = status;
   }
@@ -48,15 +48,15 @@ public class DataMapStatusDetail implements Serializable {
     this.dataMapName = dataMapName;
   }
 
-  public DataMapStatus getStatus() {
+  public IndexStatus getStatus() {
     return status;
   }
 
   public boolean isEnabled() {
-    return status == DataMapStatus.ENABLED;
+    return status == IndexStatus.ENABLED;
   }
 
-  public void setStatus(DataMapStatus status) {
+  public void setStatus(IndexStatus status) {
     this.status = status;
   }
 }

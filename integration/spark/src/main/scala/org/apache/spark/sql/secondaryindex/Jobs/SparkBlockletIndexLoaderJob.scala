@@ -46,29 +46,27 @@ class SparkBlockletIndexLoaderJob extends AbstractIndexJob {
   private val LOGGER = LogServiceFactory
     .getLogService(classOf[SparkBlockletIndexLoaderJob].getName)
   override def execute(carbonTable: CarbonTable,
-      dataMapFormat: FileInputFormat[Void, BlockletIndexWrapper]): Unit = {
-    val loader: BlockletIndexInputFormat = dataMapFormat
+      indexFormat: FileInputFormat[Void, BlockletIndexWrapper]): Unit = {
+    val loader: BlockletIndexInputFormat = indexFormat
       .asInstanceOf[BlockletIndexInputFormat]
-    val dataMapIndexWrappers = new IndexLoaderRDD(SparkSQLUtil.getSparkSession, loader).collect()
-    val cacheableDataMap = IndexStoreManager.getInstance.getDefaultIndex(carbonTable)
+    val indexWrappers = new IndexLoaderRDD(SparkSQLUtil.getSparkSession, loader).collect()
+    val cacheableIndex = IndexStoreManager.getInstance.getDefaultIndex(carbonTable)
       .getIndexFactory.asInstanceOf[CacheableIndex]
-    val tableBlockIndexUniqueIdentifiers = dataMapIndexWrappers.map {
+    val tableBlockIndexUniqueIdentifiers = indexWrappers.map {
       case (tableBlockIndexUniqueIdentifier, _) => tableBlockIndexUniqueIdentifier
     }
     val groupBySegment = tableBlockIndexUniqueIdentifiers.toSet.groupBy[String](x => x.getSegmentId)
       .map(a => (a._1, a._2.asJava)).asJava
-    cacheableDataMap.updateSegmentIndex(groupBySegment)
+    cacheableIndex.updateSegmentIndex(groupBySegment)
     // add segmentProperties in single thread if carbon table schema is not modified
     if (!carbonTable.getTableInfo.isSchemaModified) {
-      addSegmentProperties(carbonTable, dataMapIndexWrappers)
+      addSegmentProperties(carbonTable, indexWrappers)
     }
     val executorService: ExecutorService = Executors.newFixedThreadPool(3)
     try {
-      dataMapIndexWrappers.toList.foreach { dataMapIndexWrapper =>
-        executorService
-          .submit(new IndexCacher(cacheableDataMap,
-            dataMapIndexWrapper,
-            carbonTable))
+      indexWrappers.toList.foreach { indexWrapper =>
+        executorService.submit(
+          new IndexCacher(cacheableIndex, indexWrapper, carbonTable))
       }
     } finally {
       loader.invalidate()
@@ -77,39 +75,40 @@ class SparkBlockletIndexLoaderJob extends AbstractIndexJob {
     }
   }
 
-  private def addSegmentProperties(carbonTable: CarbonTable,
-      dataMapIndexWrappers: Array[(TableBlockIndexUniqueIdentifier,
-        BlockletIndexDetailsWithSchema)]): Unit = {
+  private def addSegmentProperties(
+      carbonTable: CarbonTable,
+      indexWrappers: Array[(TableBlockIndexUniqueIdentifier, BlockletIndexDetailsWithSchema)]
+  ): Unit = {
     // use the carbon table schema only as this flow is called when schema is not modified
     val tableColumnSchema = CarbonUtil
       .getColumnSchemaList(carbonTable.getVisibleDimensions,
         carbonTable.getVisibleMeasures)
     // add segmentProperties in the segmentPropertyCache
-    dataMapIndexWrappers.foreach { entry =>
+    indexWrappers.foreach { entry =>
       val segmentId = entry._1.getSegmentId
       val wrapper = SegmentPropertiesAndSchemaHolder.getInstance()
         .addSegmentProperties(carbonTable, tableColumnSchema, segmentId)
-      entry._2.getBlockletIndexWrapper.getDataMaps.asScala
+      entry._2.getBlockletIndexWrapper.getIndexes.asScala
         .foreach(_.setSegmentPropertiesWrapper(wrapper))
     }
   }
 
-  override def executeCountJob(dataMapFormat: IndexInputFormat): lang.Long = 0L
+  override def executeCountJob(indexFormat: IndexInputFormat): lang.Long = 0L
 }
 
 class IndexCacher(
     cacheableIndex: CacheableIndex,
-    dataMapIndexWrapper: (TableBlockIndexUniqueIdentifier, BlockletIndexDetailsWithSchema),
+    indexWrapper: (TableBlockIndexUniqueIdentifier, BlockletIndexDetailsWithSchema),
     carbonTable: CarbonTable) extends Callable[Unit] {
   override def call(): Unit = {
     // if schema is modified then populate the segmentProperties cache
     if (carbonTable.getTableInfo.isSchemaModified) {
-      val dataMaps: util.List[BlockIndex] = dataMapIndexWrapper._2.getBlockletIndexWrapper
-        .getDataMaps
+      val dataMaps: util.List[BlockIndex] = indexWrapper._2.getBlockletIndexWrapper
+        .getIndexes
       val wrapper = SegmentPropertiesAndSchemaHolder.getInstance()
         .addSegmentProperties(carbonTable,
-          dataMapIndexWrapper._2.getColumnSchemaList,
-          dataMapIndexWrapper._1.getSegmentId)
+          indexWrapper._2.getColumnSchemaList,
+          indexWrapper._1.getSegmentId)
       // update all dataMaps with new segmentPropertyIndex
       dataMaps.asScala.foreach { dataMap =>
         dataMap.setSegmentPropertiesWrapper(wrapper)
@@ -118,12 +117,12 @@ class IndexCacher(
     // create identifier wrapper object
     val tableBlockIndexUniqueIdentifierWrapper: TableBlockIndexUniqueIdentifierWrapper = new
         TableBlockIndexUniqueIdentifierWrapper(
-          dataMapIndexWrapper._1,
+          indexWrapper._1,
           carbonTable)
     // add dataMap to cache
     cacheableIndex
       .cache(tableBlockIndexUniqueIdentifierWrapper,
-        dataMapIndexWrapper._2.getBlockletIndexWrapper)
+        indexWrapper._2.getBlockletIndexWrapper)
   }
 }
 
@@ -138,11 +137,11 @@ class IndexLoaderPartition(rddId: Int, idx: Int, val inputSplit: InputSplit)
  * This RDD is used to load the dataMaps of a segment
  *
  * @param ss
- * @param dataMapFormat
+ * @param indexFormat
  */
 class IndexLoaderRDD(
     @transient ss: SparkSession,
-    dataMapFormat: BlockletIndexInputFormat)
+    indexFormat: BlockletIndexInputFormat)
   extends CarbonRDD[(TableBlockIndexUniqueIdentifier, BlockletIndexDetailsWithSchema)](ss, Nil) {
 
   private val jobTrackerId: String = {
@@ -152,7 +151,7 @@ class IndexLoaderRDD(
 
   override def internalGetPartitions: Array[Partition] = {
     val job = Job.getInstance(new Configuration())
-    val splits = dataMapFormat.getSplits(job)
+    val splits = indexFormat.getSplits(job)
     splits.asScala.zipWithIndex.map(f => new IndexLoaderPartition(id, f._2, f._1)).toArray
   }
 
@@ -161,7 +160,7 @@ class IndexLoaderRDD(
     val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
     val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
     val inputSplit = split.asInstanceOf[IndexLoaderPartition].inputSplit
-    val reader = dataMapFormat.createRecordReader(inputSplit, attemptContext)
+    val reader = indexFormat.createRecordReader(inputSplit, attemptContext)
     val iter = new Iterator[(TableBlockIndexUniqueIdentifier, BlockletIndexDetailsWithSchema)] {
       // in case of success, failure or cancelation clear memory and stop execution
       context.addTaskCompletionListener { _ =>

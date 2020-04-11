@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.metadata.schema.datamap;
+package org.apache.carbondata.core.metadata.schema.index;
 
 /**
  * Please refer {{org.apache.spark.sql.parser.CarbonSpark2SqlParser}}
  */
-public enum DataMapClassProvider {
+public enum IndexClassProvider {
   LUCENE("org.apache.carbondata.datamap.lucene.LuceneFineGrainIndexFactory", "lucene"),
   BLOOMFILTER("org.apache.carbondata.datamap.bloom.BloomCoarseGrainIndexFactory", "bloomfilter"),
   MV("org.apache.carbondata.core.datamap.MVDataMap", "mv");
@@ -35,7 +35,7 @@ public enum DataMapClassProvider {
    */
   private String shortName;
 
-  DataMapClassProvider(String className, String shortName) {
+  IndexClassProvider(String className, String shortName) {
     this.className = className;
     this.shortName = shortName;
   }
@@ -54,7 +54,7 @@ public enum DataMapClassProvider {
             dataMapClass.equalsIgnoreCase(shortName)));
   }
 
-  public static DataMapClassProvider get(String indexProviderName) {
+  public static IndexClassProvider get(String indexProviderName) {
     if (LUCENE.isEqual(indexProviderName)) {
       return LUCENE;
     } else if (BLOOMFILTER.isEqual(indexProviderName)) {

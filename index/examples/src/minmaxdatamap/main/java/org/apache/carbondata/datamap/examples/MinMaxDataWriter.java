@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.datamap.examples;
+package org.apache.carbondata.index.examples;
 
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
@@ -271,16 +271,16 @@ public class MinMaxDataWriter extends DataMapWriter {
   }
 
   /**
-   * create and return path that will store the datamap
+   * create and return path that will store the index
    *
    * @param dataPath patch to store the carbondata factdata
-   * @param dataMapName datamap name
-   * @return path to store the datamap
+   * @param indexName index name
+   * @return path to store the index
    * @throws IOException
    */
-  public static String genDataMapStorePath(String dataPath, String dataMapName)
+  public static String genIndexStorePath(String dataPath, String indexName)
       throws IOException {
-    String dmDir = dataPath + File.separator + dataMapName;
+    String dmDir = dataPath + File.separator + indexName;
     Path dmPath = FileFactory.getPath(dmDir);
     FileSystem fs = FileFactory.getFileSystem(dmPath);
     if (!fs.exists(dmPath)) {

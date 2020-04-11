@@ -48,7 +48,6 @@ public class InterfaceAudience {
 
   /**
    * Intended for developers to develop extension for Apache CarbonData project
-   * For example, "Index DataMap" to add a new index implementation, etc
    */
   @Documented
   @Retention(RetentionPolicy.RUNTIME)

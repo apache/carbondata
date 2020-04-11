@@ -49,24 +49,24 @@ object BloomCoarseGrainIndexTestUtil extends QueryTest {
     }
   }
 
-  private def checkSqlHitIndex(sqlText: String, dataMapName: String, shouldHit: Boolean): DataFrame = {
+  private def checkSqlHitIndex(sqlText: String, indexName: String, shouldHit: Boolean): DataFrame = {
     // we will not check whether the query will hit the index because index may be skipped
     // if the former index pruned all the blocklets
     sql(sqlText)
   }
 
-  def checkBasicQuery(dataMapName: String, bloomDMSampleTable: String, normalTable: String, shouldHit: Boolean = true): Unit = {
+  def checkBasicQuery(indexName: String, bloomDMSampleTable: String, normalTable: String, shouldHit: Boolean = true): Unit = {
     checkAnswer(
-      checkSqlHitIndex(s"select * from $bloomDMSampleTable where id = 1", dataMapName, shouldHit),
+      checkSqlHitIndex(s"select * from $bloomDMSampleTable where id = 1", indexName, shouldHit),
       sql(s"select * from $normalTable where id = 1"))
     checkAnswer(
-      checkSqlHitIndex(s"select * from $bloomDMSampleTable where id = 999", dataMapName, shouldHit),
+      checkSqlHitIndex(s"select * from $bloomDMSampleTable where id = 999", indexName, shouldHit),
       sql(s"select * from $normalTable where id = 999"))
     checkAnswer(
-      checkSqlHitIndex(s"select * from $bloomDMSampleTable where city = 'city_1'", dataMapName, shouldHit),
+      checkSqlHitIndex(s"select * from $bloomDMSampleTable where city = 'city_1'", indexName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_1'"))
     checkAnswer(
-      checkSqlHitIndex(s"select * from $bloomDMSampleTable where city = 'city_999'", dataMapName, shouldHit),
+      checkSqlHitIndex(s"select * from $bloomDMSampleTable where city = 'city_999'", indexName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_999'"))
     checkAnswer(
       sql(s"select min(id), max(id), min(name), max(name), min(city), max(city)" +

@@ -200,24 +200,24 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test rename column with lucene") {
-    sql("DROP TABLE IF EXISTS datamap_test")
+    sql("DROP TABLE IF EXISTS index_test")
     sql(
       """
-        | CREATE TABLE datamap_test(id INT, name STRING, city STRING, age INT)
+        | CREATE TABLE index_test(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
     sql(
       s"""
          | CREATE INDEX dm
-         | ON TABLE datamap_test (name, city)
+         | ON TABLE index_test (name, city)
          | AS 'lucene'
       """.stripMargin)
     val ex = intercept[ProcessMetaDataException] {
-      sql("alter table datamap_test change Name myName string")
+      sql("alter table index_test change Name myName string")
     }
     ex.getMessage.contains("alter table column rename is not supported for index indexSchema")
-    sql("DROP TABLE IF EXISTS datamap_test")
+    sql("DROP TABLE IF EXISTS index_test")
   }
 
   test("test rename column with bloom indexSchema") {
@@ -238,7 +238,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     val ex = intercept[ProcessMetaDataException] {
       sql("alter table bloomtable change city nation string")
     }
-    ex.getMessage.contains("alter table column rename is not supported for index datamap")
+    ex.getMessage.contains("alter table column rename is not supported for index")
     sql("drop table if exists bloomtable")
   }
 

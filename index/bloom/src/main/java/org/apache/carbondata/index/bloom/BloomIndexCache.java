@@ -27,7 +27,7 @@ import org.apache.carbondata.core.cache.CarbonLRUCache;
 import org.apache.hadoop.util.bloom.CarbonBloomFilter;
 
 /**
- * This class is used to add cache for bloomfilter datamap to accelerate query through it.
+ * This class is used to add cache for bloomfilter index to accelerate query through it.
  * The cache is implemented using carbon lru cache.
  * As for the cache, the key is a bloomindex file for a shard and the value is the bloomfilters
  * for the blocklets in this shard.

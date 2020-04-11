@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
+import org.apache.carbondata.common.exceptions.sql.NoSuchIndexException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.index.IndexStoreManager;
@@ -41,23 +41,23 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.log4j.Logger;
 
 /**
- * Maintains the status of each datamap. As per the status query will decide whether to hit datamap
+ * Maintains the status of each index. As per the status query will decide whether to hit index
  * or not.
  */
-public class DataMapStatusManager {
+public class IndexStatusManager {
 
   // Create private constructor to not allow create instance of it
-  private DataMapStatusManager() {
+  private IndexStatusManager() {
 
   }
 
   private static final Logger LOGGER =
-      LogServiceFactory.getLogService(DataMapStatusManager.class.getName());
+      LogServiceFactory.getLogService(IndexStatusManager.class.getName());
 
   /**
    * TODO Use factory when we have more storage providers
    */
-  private static DataMapStatusStorageProvider storageProvider =
+  private static IndexStatusStorageProvider storageProvider =
       getDataMapStatusStorageProvider();
 
   /**
@@ -65,8 +65,8 @@ public class DataMapStatusManager {
    * @return
    * @throws IOException
    */
-  public static DataMapStatusDetail[] readDataMapStatusDetails() throws IOException {
-    return storageProvider.getDataMapStatusDetails();
+  public static IndexStatusDetail[] readDataMapStatusDetails() throws IOException {
+    return storageProvider.getIndexStatusDetails();
   }
 
   /**
@@ -74,71 +74,71 @@ public class DataMapStatusManager {
    * @return
    * @throws IOException
    */
-  public static DataMapStatusDetail[] getEnabledDataMapStatusDetails() throws IOException {
-    DataMapStatusDetail[] dataMapStatusDetails = storageProvider.getDataMapStatusDetails();
-    List<DataMapStatusDetail> statusDetailList = new ArrayList<>();
-    for (DataMapStatusDetail statusDetail : dataMapStatusDetails) {
-      if (statusDetail.getStatus() == DataMapStatus.ENABLED) {
+  public static IndexStatusDetail[] getEnabledDataMapStatusDetails() throws IOException {
+    IndexStatusDetail[] indexStatusDetails = storageProvider.getIndexStatusDetails();
+    List<IndexStatusDetail> statusDetailList = new ArrayList<>();
+    for (IndexStatusDetail statusDetail : indexStatusDetails) {
+      if (statusDetail.getStatus() == IndexStatus.ENABLED) {
         statusDetailList.add(statusDetail);
       }
     }
-    return statusDetailList.toArray(new DataMapStatusDetail[statusDetailList.size()]);
+    return statusDetailList.toArray(new IndexStatusDetail[statusDetailList.size()]);
   }
 
-  public static Map<String, DataMapStatusDetail> readDataMapStatusMap() throws IOException {
-    DataMapStatusDetail[] details = storageProvider.getDataMapStatusDetails();
-    Map<String, DataMapStatusDetail> map = new HashMap<>(details.length);
-    for (DataMapStatusDetail detail : details) {
+  public static Map<String, IndexStatusDetail> readDataMapStatusMap() throws IOException {
+    IndexStatusDetail[] details = storageProvider.getIndexStatusDetails();
+    Map<String, IndexStatusDetail> map = new HashMap<>(details.length);
+    for (IndexStatusDetail detail : details) {
       map.put(detail.getDataMapName(), detail);
     }
     return map;
   }
 
-  public static void disableDataMap(String dataMapName) throws IOException, NoSuchDataMapException {
-    IndexSchema indexSchema = getDataMapSchema(dataMapName);
+  public static void disableIndex(String indexName) throws IOException, NoSuchIndexException {
+    IndexSchema indexSchema = getIndexSchema(indexName);
     if (indexSchema != null) {
       List<IndexSchema> list = new ArrayList<>();
       list.add(indexSchema);
-      storageProvider.updateDataMapStatus(list, DataMapStatus.DISABLED);
+      storageProvider.updateIndexStatus(list, IndexStatus.DISABLED);
     }
   }
 
   /**
-   * This method will disable all lazy (DEFERRED REBUILD) datamap in the given table
+   * This method will disable all lazy (DEFERRED REFRESH) index in the given table
    */
-  public static void disableAllLazyDataMaps(CarbonTable table) throws IOException {
+  public static void disableAllLazyIndexes(CarbonTable table) throws IOException {
     List<IndexSchema> allIndexSchemas =
-        IndexStoreManager.getInstance().getDataMapSchemasOfTable(table);
+        IndexStoreManager.getInstance().getIndexSchemasOfTable(table);
     List<IndexSchema> dataMapToBeDisabled = new ArrayList<>(allIndexSchemas.size());
-    for (IndexSchema dataMap : allIndexSchemas) {
-      if (dataMap.isLazy()) {
-        dataMapToBeDisabled.add(dataMap);
+    for (IndexSchema indexSchema : allIndexSchemas) {
+      if (indexSchema.isLazy()) {
+        dataMapToBeDisabled.add(indexSchema);
       }
     }
-    storageProvider.updateDataMapStatus(dataMapToBeDisabled, DataMapStatus.DISABLED);
+    storageProvider.updateIndexStatus(dataMapToBeDisabled, IndexStatus.DISABLED);
   }
 
-  public static void enableDataMap(String dataMapName) throws IOException, NoSuchDataMapException {
-    IndexSchema indexSchema = getDataMapSchema(dataMapName);
+  public static void enableIndex(String indexName) throws IOException, NoSuchIndexException {
+    IndexSchema indexSchema = getIndexSchema(indexName);
     if (indexSchema != null) {
       List<IndexSchema> list = new ArrayList<>();
       list.add(indexSchema);
-      storageProvider.updateDataMapStatus(list, DataMapStatus.ENABLED);
+      storageProvider.updateIndexStatus(list, IndexStatus.ENABLED);
     }
   }
 
-  public static void dropDataMap(String dataMapName) throws IOException, NoSuchDataMapException {
-    IndexSchema indexSchema = getDataMapSchema(dataMapName);
+  public static void dropIndex(String indexName) throws IOException, NoSuchIndexException {
+    IndexSchema indexSchema = getIndexSchema(indexName);
     if (indexSchema != null) {
       List<IndexSchema> list = new ArrayList<>();
       list.add(indexSchema);
-      storageProvider.updateDataMapStatus(list, DataMapStatus.DROPPED);
+      storageProvider.updateIndexStatus(list, IndexStatus.DROPPED);
     }
   }
 
-  public static IndexSchema getDataMapSchema(String dataMapName)
-      throws IOException, NoSuchDataMapException {
-    return IndexStoreManager.getInstance().getDataMapSchema(dataMapName);
+  public static IndexSchema getIndexSchema(String indexName)
+      throws IOException, NoSuchIndexException {
+    return IndexStoreManager.getInstance().getIndexSchema(indexName);
   }
 
   /**
@@ -148,13 +148,13 @@ public class DataMapStatusManager {
    * @param allIndexSchemas of main carbon table
    * @throws IOException
    */
-  public static void truncateDataMap(List<IndexSchema> allIndexSchemas)
-      throws IOException, NoSuchDataMapException {
-    for (IndexSchema datamapschema : allIndexSchemas) {
-      if (!datamapschema.isLazy()) {
-        disableDataMap(datamapschema.getIndexName());
+  public static void truncateIndex(List<IndexSchema> allIndexSchemas)
+      throws IOException, NoSuchIndexException {
+    for (IndexSchema indexSchema : allIndexSchemas) {
+      if (!indexSchema.isLazy()) {
+        disableIndex(indexSchema.getIndexName());
       }
-      RelationIdentifier dataMapRelationIdentifier = datamapschema.getRelationIdentifier();
+      RelationIdentifier dataMapRelationIdentifier = indexSchema.getRelationIdentifier();
       SegmentStatusManager segmentStatusManager = new SegmentStatusManager(AbsoluteTableIdentifier
           .from(dataMapRelationIdentifier.getTablePath(),
               dataMapRelationIdentifier.getDatabaseName(),
@@ -194,14 +194,14 @@ public class DataMapStatusManager {
     }
   }
 
-  public static DataMapStatusStorageProvider getDataMapStatusStorageProvider() {
+  public static IndexStatusStorageProvider getDataMapStatusStorageProvider() {
     String providerProperties = CarbonProperties.getDataMapStorageProvider();
     switch (providerProperties) {
       case CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DATABASE:
-        return new DatabaseDataMapStatusProvider();
+        return new DatabaseIndexStatusProvider();
       case CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DISK:
       default:
-        return new DiskBasedDataMapStatusProvider();
+        return new DiskBasedIndexStatusProvider();
     }
   }
 }

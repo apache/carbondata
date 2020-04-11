@@ -43,7 +43,7 @@ class MVCoalesceTestCase  extends QueryTest with BeforeAndAfterAll  {
     sql("refresh materialized view coalesce_test_main_mv")
 
     val frame = sql("select coalesce(sum(id),0) as sumid,name from coalesce_test_main group by name")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "coalesce_test_main_mv"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "coalesce_test_main_mv"))
     checkAnswer(frame, Seq(Row(3, "tom"), Row(3, "lily")))
 
     sql("drop materialized view if exists coalesce_test_main_mv")
@@ -59,7 +59,7 @@ class MVCoalesceTestCase  extends QueryTest with BeforeAndAfterAll  {
     assert("MV doesn't support Coalesce".equals(exception.getMessage))
 
     val frame = sql("select coalesce(sum(id),0) as sumid,name from coalesce_test_main group by name")
-    assert(!TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "coalesce_test_main_mv"))
+    assert(!TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "coalesce_test_main_mv"))
     checkAnswer(frame, Seq(Row(3, "tom"), Row(3, "lily")))
 
     sql("drop materialized view if exists coalesce_test_main_mv")
@@ -72,7 +72,7 @@ class MVCoalesceTestCase  extends QueryTest with BeforeAndAfterAll  {
     sql("refresh materialized view coalesce_test_main_mv")
 
     val frame = sql("select sum(coalesce(id,0)) as sumid,name from coalesce_test_main group by name")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "coalesce_test_main_mv"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "coalesce_test_main_mv"))
     checkAnswer(frame, Seq(Row(3, "tom"), Row(3, "lily")))
 
     sql("drop materialized view if exists coalesce_test_main_mv")
@@ -84,7 +84,7 @@ class MVCoalesceTestCase  extends QueryTest with BeforeAndAfterAll  {
 }
 
 object TestUtil {
-  def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
+  def verifyMVHit(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get
     }

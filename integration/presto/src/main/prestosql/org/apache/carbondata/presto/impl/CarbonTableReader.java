@@ -339,12 +339,12 @@ public class CarbonTableReader {
   }
 
   private CarbonTableInputFormat<Object> createInputFormat(Configuration conf,
-      AbsoluteTableIdentifier identifier, IndexFilter dataMapFilter,
+      AbsoluteTableIdentifier identifier, IndexFilter indexFilter,
       List<PartitionSpec> filteredPartitions) {
     CarbonTableInputFormat<Object> format = new CarbonTableInputFormat<>();
     CarbonTableInputFormat
         .setTablePath(conf, identifier.appendWithLocalPrefix(identifier.getTablePath()));
-    CarbonTableInputFormat.setFilterPredicates(conf, dataMapFilter);
+    CarbonTableInputFormat.setFilterPredicates(conf, indexFilter);
     if (filteredPartitions.size() != 0) {
       CarbonTableInputFormat.setPartitionsToPrune(conf, filteredPartitions);
     }

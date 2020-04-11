@@ -69,9 +69,9 @@ class FGIndexFactory(carbonTable: CarbonTable,
 
     val files = file.listFiles()
     files.map { f =>
-      val dataMap: FineGrainIndex = new FGIndex()
-      dataMap.init(new IndexModel(f.getCanonicalPath, new Configuration(false)))
-      dataMap
+      val index: FineGrainIndex = new FGIndex()
+      index.init(new IndexModel(f.getCanonicalPath, new Configuration(false)))
+      index
     }.toList.asJava
   }
 
@@ -80,9 +80,9 @@ class FGIndexFactory(carbonTable: CarbonTable,
    */
   override def getIndexes(distributable: IndexInputSplit): java.util.List[FineGrainIndex]= {
     val mapDistributable = distributable.asInstanceOf[BlockletIndexInputSplit]
-    val dataMap: FineGrainIndex = new FGIndex()
-    dataMap.init(new IndexModel(mapDistributable.getFilePath, new Configuration(false)))
-    Seq(dataMap).asJava
+    val index: FineGrainIndex = new FGIndex()
+    index.init(new IndexModel(mapDistributable.getFilePath, new Configuration(false)))
+    Seq(index).asJava
   }
 
   /**

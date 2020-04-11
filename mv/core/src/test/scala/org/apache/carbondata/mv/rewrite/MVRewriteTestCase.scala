@@ -78,7 +78,7 @@ class MVRewriteTestCase extends QueryTest with BeforeAndAfterAll {
           | GROUP BY MT.`3600`, MT.`2250410101`
           | ORDER BY `3600` ASC LIMIT 5000""".stripMargin)
 
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "data_table_mv"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "data_table_mv"))
   }
 
   override def afterAll(): Unit = {

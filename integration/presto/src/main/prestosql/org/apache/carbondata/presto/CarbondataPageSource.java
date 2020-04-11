@@ -421,12 +421,12 @@ class CarbondataPageSource implements ConnectorPageSource {
   /**
    * @param conf
    * @param carbonTable
-   * @param dataMapFilter
+   * @param indexFilter
    * @param projection
    * @return
    */
   private CarbonTableInputFormat<Object> createInputFormat(Configuration conf,
-      CarbonTable carbonTable, IndexFilter dataMapFilter, CarbonProjection projection) {
+      CarbonTable carbonTable, IndexFilter indexFilter, CarbonProjection projection) {
 
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     CarbonTableInputFormat format = new CarbonTableInputFormat<Object>();
@@ -440,7 +440,7 @@ class CarbondataPageSource implements ConnectorPageSource {
     } catch (Exception e) {
       throw new RuntimeException("Unable to create the CarbonTableInputFormat", e);
     }
-    CarbonTableInputFormat.setFilterPredicates(conf, dataMapFilter);
+    CarbonTableInputFormat.setFilterPredicates(conf, indexFilter);
     CarbonTableInputFormat.setColumnProjection(conf, projection);
 
     return format;

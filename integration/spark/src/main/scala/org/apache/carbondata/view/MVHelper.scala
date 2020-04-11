@@ -131,7 +131,7 @@ object MVHelper {
   }
 
   /**
-   * Create's main table to datamap table field relation map by using modular plan generated from
+   * Create's main table to MV table field relation map by using modular plan generated from
    * user query
    * @param outputList of the modular plan
    * @param predicateList of the modular plan

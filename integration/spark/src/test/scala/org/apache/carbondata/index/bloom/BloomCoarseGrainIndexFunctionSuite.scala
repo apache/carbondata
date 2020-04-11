@@ -808,16 +808,16 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
     val carbonTable = CarbonEnv.getCarbonTable(Option("default"), bloomSampleTable)(SparkTestQueryExecutor.spark)
     import scala.collection.JavaConverters._
     (0 to 1).foreach { segId =>
-      val datamapPath = CarbonTablePath.getIndexesStorePath(carbonTable.getTablePath, segId.toString, indexName)
-      assert(FileUtils.listFiles(FileUtils.getFile(datamapPath), Array("bloomindexmerge"), true).asScala.nonEmpty)
+      val indexPath = CarbonTablePath.getIndexesStorePath(carbonTable.getTablePath, segId.toString, indexName)
+      assert(FileUtils.listFiles(FileUtils.getFile(indexPath), Array("bloomindexmerge"), true).asScala.nonEmpty)
     }
     // delete and clean the first segment, the corresponding index files should be cleaned too
     sql(s"DELETE FROM TABLE $bloomSampleTable WHERE SEGMENT.ID IN (0)")
     sql(s"CLEAN FILES FOR TABLE $bloomSampleTable")
-    var datamapPath = CarbonTablePath.getIndexesStorePath(carbonTable.getTablePath, "0", indexName)
-    assert(!FileUtils.getFile(datamapPath).exists(), "index file of this segment has been deleted, should not exist")
-    datamapPath = CarbonTablePath.getIndexesStorePath(carbonTable.getTablePath, "1", indexName)
-    assert(FileUtils.listFiles(FileUtils.getFile(datamapPath), Array("bloomindexmerge"), true).asScala.nonEmpty)
+    var indexPath = CarbonTablePath.getIndexesStorePath(carbonTable.getTablePath, "0", indexName)
+    assert(!FileUtils.getFile(indexPath).exists(), "index file of this segment has been deleted, should not exist")
+    indexPath = CarbonTablePath.getIndexesStorePath(carbonTable.getTablePath, "1", indexName)
+    assert(FileUtils.listFiles(FileUtils.getFile(indexPath), Array("bloomindexmerge"), true).asScala.nonEmpty)
   }
 
   // two blocklets in one block are hit by bloom index while block cache level hit this block

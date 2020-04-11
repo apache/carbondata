@@ -15,43 +15,43 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.datamap;
+package org.apache.carbondata.index;
 
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
-import org.apache.carbondata.core.index.DataMapProvider;
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
+import org.apache.carbondata.core.index.CarbonIndexProvider;
+import org.apache.carbondata.core.metadata.schema.index.IndexClassProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.spark.util.CarbonScalaUtil;
 
 import org.apache.spark.sql.SparkSession;
 
-public class DataMapManager {
+public class IndexManager {
 
-  private static DataMapManager INSTANCE;
+  private static IndexManager INSTANCE;
 
-  private DataMapManager() { }
+  private IndexManager() { }
 
-  public static synchronized DataMapManager get() {
+  public static synchronized IndexManager get() {
     if (INSTANCE == null) {
-      INSTANCE = new DataMapManager();
+      INSTANCE = new IndexManager();
     }
     return INSTANCE;
   }
 
   /**
-   * Return a DataMapClassProvider instance for specified indexSchema.
+   * Return a IndexClassProvider instance for specified indexSchema.
    */
-  public DataMapProvider getDataMapProvider(CarbonTable mainTable, IndexSchema indexSchema,
+  public CarbonIndexProvider getIndexProvider(CarbonTable mainTable, IndexSchema indexSchema,
       SparkSession sparkSession) throws MalformedIndexCommandException {
-    DataMapProvider provider;
-    if (indexSchema.getProviderName().equalsIgnoreCase(DataMapClassProvider.MV.toString())) {
-      provider = (DataMapProvider) CarbonScalaUtil.createDataMapProvider(
-          "org.apache.carbondata.mv.extension.MVDataMapProvider",
-              sparkSession,
-              mainTable, indexSchema);
+    org.apache.carbondata.core.index.CarbonIndexProvider provider;
+    if (indexSchema.getProviderName().equalsIgnoreCase(IndexClassProvider.MV.toString())) {
+      provider = (org.apache.carbondata.core.index.CarbonIndexProvider) CarbonScalaUtil
+          .createDataMapProvider("org.apache.carbondata.mv.extension.MVDataMapProvider",
+              sparkSession, mainTable, indexSchema);
     } else {
-      provider = new IndexProvider(mainTable, indexSchema, sparkSession);
+      provider =
+          new org.apache.carbondata.index.IndexProvider(mainTable, indexSchema, sparkSession);
     }
     return provider;
   }

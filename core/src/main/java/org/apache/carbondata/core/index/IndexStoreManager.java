@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
-import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
+import org.apache.carbondata.common.exceptions.sql.NoSuchIndexException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
@@ -42,9 +42,9 @@ import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.index.CarbonIndexProvider;
 import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaFactory;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaStorageProvider;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
+import org.apache.carbondata.core.metadata.schema.table.IndexSchemaFactory;
+import org.apache.carbondata.core.metadata.schema.table.IndexSchemaStorageProvider;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
@@ -86,8 +86,8 @@ public final class IndexStoreManager {
 
   private Map<String, TableSegmentRefresher> segmentRefreshMap = new ConcurrentHashMap<>();
 
-  private DataMapSchemaStorageProvider provider =
-      DataMapSchemaFactory.getDataMapSchemaStorageProvider();
+  private IndexSchemaStorageProvider provider =
+      IndexSchemaFactory.getIndexSchemaStorageProvider();
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(IndexStoreManager.class.getName());
@@ -126,47 +126,47 @@ public final class IndexStoreManager {
   }
 
   /**
-   * It gives all datamap schemas of a given table.
+   * It gives all index schemas of a given table.
    *
    */
-  public List<IndexSchema> getDataMapSchemasOfTable(CarbonTable carbonTable) throws IOException {
+  public List<IndexSchema> getIndexSchemasOfTable(CarbonTable carbonTable) throws IOException {
     return provider.retrieveSchemas(carbonTable);
   }
 
   /**
-   * It gives all datamap schemas from store.
+   * It gives all index schemas from store.
    */
-  public List<IndexSchema> getAllDataMapSchemas() throws IOException {
+  public List<IndexSchema> getAllIndexSchemas() throws IOException {
     return provider.retrieveAllSchemas();
   }
 
-  public IndexSchema getDataMapSchema(String dataMapName)
-      throws NoSuchDataMapException, IOException {
-    return provider.retrieveSchema(dataMapName);
+  public IndexSchema getIndexSchema(String indexName) throws IOException, NoSuchIndexException {
+    return provider.retrieveSchema(indexName);
   }
 
   /**
-   * Saves the datamap schema to storage
+   * Saves the index schema to storage
    * @param indexSchema
    */
-  public void saveDataMapSchema(IndexSchema indexSchema) throws IOException {
+  public void saveIndexSchema(IndexSchema indexSchema) throws IOException {
     provider.saveSchema(indexSchema);
   }
 
   /**
-   * Drops the datamap schema from storage
-   * @param dataMapName
+   * Drops the index schema from storage
+   * @param indexName
    */
-  public void dropDataMapSchema(String dataMapName) throws IOException {
-    provider.dropSchema(dataMapName);
+  public void dropIndexSchema(String indexName) throws IOException {
+    provider.dropSchema(indexName);
   }
 
   /**
-   * Register datamap catalog for the datamap provider
-   * @param dataMapProvider
+   * Register MV catalog for the MV provider
+   * @param indexProvider
    * @param indexSchema
    */
-  public synchronized void registerMVCatalog(DataMapProvider dataMapProvider,
+  public synchronized void registerMVCatalog(
+      org.apache.carbondata.core.index.CarbonIndexProvider indexProvider,
       IndexSchema indexSchema, boolean clearCatalogs) throws IOException {
     // this check is added to check if when registering the datamapCatalog, if the catalog map has
     // datasets with old session, then need to clear and reload the map, else error can be thrown
@@ -174,14 +174,14 @@ public final class IndexStoreManager {
     if (clearCatalogs) {
       mvCatalogMap = null;
     }
-    initializeMVCatalogs(dataMapProvider);
+    initializeMVCatalogs(indexProvider);
     String name = indexSchema.getProviderName().toLowerCase();
     MVCatalog mvCatalog = mvCatalogMap.get(name);
     if (mvCatalog == null) {
-      mvCatalog = dataMapProvider.createDataMapCatalog();
-      // If MVDataMapProvider, then createDataMapCatalog will return summaryDatasetCatalog
+      mvCatalog = indexProvider.createMVCatalog();
+      // If MVDataMapProvider, then createMVCatalog will return summaryDatasetCatalog
       // instance, which needs to be added to dataMapCatalogs.
-      // For other datamaps, createDataMapCatalog will return null, so no need to register
+      // For other datamaps, createMVCatalog will return null, so no need to register
       if (mvCatalog != null) {
         mvCatalogMap.put(name, mvCatalog);
         mvCatalog.registerSchema(indexSchema);
@@ -194,10 +194,10 @@ public final class IndexStoreManager {
   }
 
   /**
-   * Unregister datamap catalog.
+   * Unregister index.
    * @param indexSchema
    */
-  public synchronized void unRegisterDataMapCatalog(IndexSchema indexSchema) {
+  public synchronized void unRegisterIndex(IndexSchema indexSchema) {
     if (mvCatalogMap == null) {
       return;
     }
@@ -209,12 +209,12 @@ public final class IndexStoreManager {
   }
 
   /**
-   * Get the datamap catalog for provider.
+   * Get the MV catalog for provider.
    * @param providerName
    * @return
    */
   public synchronized MVCatalog getMVCatalog(
-      DataMapProvider dataMapProvider,
+      org.apache.carbondata.core.index.CarbonIndexProvider indexProvider,
       String providerName,
       boolean clearCatalogs) throws IOException {
     // This method removes the datamapCatalog for the corresponding provider if the session gets
@@ -222,26 +222,27 @@ public final class IndexStoreManager {
     if (clearCatalogs) {
       mvCatalogMap = null;
     }
-    initializeMVCatalogs(dataMapProvider);
+    initializeMVCatalogs(indexProvider);
     return mvCatalogMap.get(providerName.toLowerCase());
   }
 
   /**
    * Initialize by reading all datamaps from store and re register it
-   * @param dataMapProvider
+   * @param indexProvider
    */
-  private synchronized void initializeMVCatalogs(DataMapProvider dataMapProvider)
+  private synchronized void initializeMVCatalogs(
+      org.apache.carbondata.core.index.CarbonIndexProvider indexProvider)
       throws IOException {
     if (mvCatalogMap == null) {
       mvCatalogMap = new ConcurrentHashMap<>();
-      List<IndexSchema> indexSchemas = getAllDataMapSchemas();
+      List<IndexSchema> indexSchemas = getAllIndexSchemas();
       for (IndexSchema schema : indexSchemas) {
         if (schema.getProviderName()
-            .equalsIgnoreCase(dataMapProvider.getIndexSchema().getProviderName())) {
+            .equalsIgnoreCase(indexProvider.getIndexSchema().getProviderName())) {
           MVCatalog MVCatalog =
               mvCatalogMap.get(schema.getProviderName().toLowerCase());
           if (MVCatalog == null) {
-            MVCatalog = dataMapProvider.createDataMapCatalog();
+            MVCatalog = indexProvider.createMVCatalog();
             if (null == MVCatalog) {
               throw new RuntimeException("Internal Error.");
             }

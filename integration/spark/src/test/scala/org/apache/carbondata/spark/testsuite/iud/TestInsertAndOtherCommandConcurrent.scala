@@ -136,7 +136,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
       "insert overwrite is in progress for table default.orders, compaction operation is not allowed"))
   }
 
-  // block updating records from table which has index datamap. see PR2483
+  // block updating records from table which has index. see PR2483
   ignore("update should fail if insert overwrite is in progress") {
     val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
@@ -147,7 +147,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
       "loading is in progress for table default.orders, data update operation is not allowed"))
   }
 
-  // block deleting records from table which has index datamap. see PR2483
+  // block deleting records from table which has index. see PR2483
   ignore("delete should fail if insert overwrite is in progress") {
     val future = runSqlAsync("insert overwrite table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
@@ -239,7 +239,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     sql("drop table t1")
   }
 
-  // block updating records from table which has index datamap. see PR2483
+  // block updating records from table which has index. see PR2483
   ignore("update should fail if insert is in progress") {
     val future = runSqlAsync("insert into table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
@@ -250,7 +250,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
       "loading is in progress for table default.orders, data update operation is not allowed"))
   }
 
-  // block deleting records from table which has index datamap. see PR2483
+  // block deleting records from table which has index. see PR2483
   ignore("delete should fail if insert is in progress") {
     val future = runSqlAsync("insert into table orders select * from orders_overwrite")
     val ex = intercept[ConcurrentOperationException] {
@@ -344,21 +344,21 @@ class WaitingIndexFactory(
   }
 
   /**
-   * delete datamap of the segment
+   * delete index of the segment
    */
   override def deleteIndexData(segment: Segment): Unit = {
 
   }
 
   /**
-   * delete datamap data if any
+   * delete index data if any
    */
   override def deleteIndexData(): Unit = {
 
   }
 
   /**
-   * defines the features scopes for the datamap
+   * defines the features scopes for the index
    */
   override def willBecomeStale(operation: TableOperation): Boolean = {
     false
@@ -370,7 +370,7 @@ class WaitingIndexFactory(
   }
 
   /**
-   * Get the datamap for segmentId and partitionSpecs
+   * Get the index for segmentId and partitionSpecs
    */
   override def getIndexes(segment: Segment,
       partitions: util.List[PartitionSpec]): util.List[CoarseGrainIndex] = {

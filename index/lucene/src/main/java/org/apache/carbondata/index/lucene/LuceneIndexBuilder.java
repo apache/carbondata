@@ -55,7 +55,7 @@ public class LuceneIndexBuilder implements IndexBuilder {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(LuceneIndexWriter.class.getName());
 
-  private String dataMapPath;
+  private String indexPath;
 
   private List<CarbonColumn> indexColumns;
 
@@ -76,10 +76,10 @@ public class LuceneIndexBuilder implements IndexBuilder {
 
   private int currentBlockletId = -1;
 
-  LuceneIndexBuilder(String tablePath, String dataMapName, Segment segment, String shardName,
+  LuceneIndexBuilder(String tablePath, String indexName, Segment segment, String shardName,
       List<CarbonColumn> indexColumns, int writeCacheSize, boolean storeBlockletWise) {
-    this.dataMapPath = CarbonTablePath
-        .getIndexStorePathOnShardName(tablePath, segment.getSegmentNo(), dataMapName, shardName);
+    this.indexPath = CarbonTablePath
+        .getIndexStorePathOnShardName(tablePath, segment.getSegmentNo(), indexName, shardName);
     this.indexColumns = indexColumns;
     this.columnsCount = indexColumns.size();
     this.writeCacheSize = writeCacheSize;
@@ -90,16 +90,16 @@ public class LuceneIndexBuilder implements IndexBuilder {
   public void initialize() throws IOException {
     if (!storeBlockletWise) {
       // get index path, put index data into segment's path
-      indexWriter = createIndexWriter(dataMapPath);
+      indexWriter = createIndexWriter(indexPath);
     }
   }
 
-  private IndexWriter createIndexWriter(String dataMapPath) throws IOException {
-    Path indexPath = FileFactory.getPath(dataMapPath);
+  private IndexWriter createIndexWriter(String path) throws IOException {
+    Path indexPath = FileFactory.getPath(path);
     FileSystem fs = FileFactory.getFileSystem(indexPath);
 
     // if index path exists, should delete it because we are
-    // rebuilding the whole datamap for all segments
+    // rebuilding the whole index for all segments
     if (fs.exists(indexPath)) {
       fs.delete(indexPath, true);
     }
@@ -134,7 +134,7 @@ public class LuceneIndexBuilder implements IndexBuilder {
     if (storeBlockletWise) {
       if (currentBlockletId != blockletId) {
         close();
-        indexWriter = createIndexWriter(dataMapPath + File.separator + blockletId);
+        indexWriter = createIndexWriter(indexPath + File.separator + blockletId);
         currentBlockletId = blockletId;
       }
     }

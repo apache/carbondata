@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.datamap.examples;
+package org.apache.carbondata.index.examples;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -49,9 +49,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 
 /**
- * Datamap implementation for min max blocklet.
+ * Index implementation for min max blocklet.
  */
-public class MinMaxIndexDataMap extends CoarseGrainDataMap {
+public class MinMaxIndex extends CoarseGrainIndex {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(MinMaxIndexDataMap.class.getName());
@@ -67,11 +67,11 @@ public class MinMaxIndexDataMap extends CoarseGrainDataMap {
     FileSystem fs = FileFactory.getFileSystem(indexPath);
     if (!fs.exists(indexPath)) {
       throw new IOException(
-          String.format("Path %s for MinMax index dataMap does not exist", indexPath));
+          String.format("Path %s for MinMax index does not exist", indexPath));
     }
     if (!fs.isDirectory(indexPath)) {
       throw new IOException(
-          String.format("Path %s for MinMax index dataMap must be a directory", indexPath));
+          String.format("Path %s for MinMax index must be a directory", indexPath));
     }
 
     FileStatus[] indexFileStatus = fs.listStatus(indexPath, new PathFilter() {
@@ -148,11 +148,11 @@ public class MinMaxIndexDataMap extends CoarseGrainDataMap {
                 indexFilePath[blkIdx].indexOf(".minmaxindex"));
             Blocklet blocklet = new Blocklet(blockFileName,
                 String.valueOf(readMinMaxDataMap[blkIdx][blkltIdx].getBlockletId()));
-            LOGGER.info(String.format("MinMaxDataMap: Need to scan block#%s -> blocklet#%s, %s",
+            LOGGER.info(String.format("Need to scan block#%s -> blocklet#%s, %s",
                 blkIdx, blkltIdx, blocklet));
             blocklets.add(blocklet);
           } else {
-            LOGGER.info(String.format("MinMaxDataMap: Skip scan block#%s -> blocklet#%s",
+            LOGGER.info(String.format("Skip scan block#%s -> blocklet#%s",
                 blkIdx, blkltIdx));
           }
         }

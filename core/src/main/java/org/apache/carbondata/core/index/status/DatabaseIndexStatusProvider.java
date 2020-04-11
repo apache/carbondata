@@ -22,16 +22,16 @@ import java.util.List;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 
 /**
- * It saves/serializes the array of {{@link DataMapStatusDetail}} to database folder.
+ * It saves/serializes the array of {{@link IndexStatusDetail}} to database folder.
  * It ensures the data consistance while concurrent write through write lock. It saves the status
  * to the datamapstatus under the database folder.
  * Now the implement not finished, it used to disable Index in multi-tenant scenario.
  */
-public class DatabaseDataMapStatusProvider implements DataMapStatusStorageProvider {
+public class DatabaseIndexStatusProvider implements IndexStatusStorageProvider {
 
   @Override
-  public DataMapStatusDetail[] getDataMapStatusDetails() {
-    return new DataMapStatusDetail[0];
+  public IndexStatusDetail[] getIndexStatusDetails() {
+    return new IndexStatusDetail[0];
   }
 
   /**
@@ -43,7 +43,7 @@ public class DatabaseDataMapStatusProvider implements DataMapStatusStorageProvid
    * @param dataMapStatus  status to be updated for the datamap schemas
    */
   @Override
-  public void updateDataMapStatus(
-      List<IndexSchema> indexSchemas, DataMapStatus dataMapStatus) {
+  public void updateIndexStatus(
+      List<IndexSchema> indexSchemas, IndexStatus indexStatus) {
   }
 }

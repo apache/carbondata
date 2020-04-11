@@ -94,7 +94,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
   private static final boolean DEFAULT_BLOOM_COMPRESS = true;
 
   private IndexMeta indexMeta;
-  private String dataMapName;
+  private String indexName;
   private int bloomFilterSize;
   private double bloomFilterFpp;
   private boolean bloomCompress;
@@ -108,7 +108,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     Objects.requireNonNull(carbonTable);
     Objects.requireNonNull(indexSchema);
 
-    this.dataMapName = indexSchema.getIndexName();
+    this.indexName = indexSchema.getIndexName();
 
     List<CarbonColumn> indexedColumns =
         carbonTable.getIndexedColumns(indexSchema.getIndexColumns());
@@ -119,9 +119,9 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     // todo: support more optimize operations
     optimizedOperations.add(ExpressionType.EQUALS);
     optimizedOperations.add(ExpressionType.IN);
-    this.indexMeta = new IndexMeta(this.dataMapName, indexedColumns, optimizedOperations);
+    this.indexMeta = new IndexMeta(this.indexName, indexedColumns, optimizedOperations);
     LOGGER.info(String.format("Index %s works for %s with bloom size %d",
-        this.dataMapName, this.indexMeta, this.bloomFilterSize));
+        this.indexName, this.indexMeta, this.bloomFilterSize));
     try {
       this.cache = CacheProvider.getInstance()
           .createCache(new CacheType("bloom_cache"), BloomIndexCache.class.getName());
@@ -141,8 +141,8 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     String bloomFilterSizeStr = dmSchema.getProperties().get(BLOOM_SIZE);
     if (StringUtils.isBlank(bloomFilterSizeStr)) {
       LOGGER.warn(
-          String.format("Bloom filter size is not configured for datamap %s, use default value %d",
-              dataMapName, DEFAULT_BLOOM_FILTER_SIZE));
+          String.format("Bloom filter size is not configured for index %s, use default value %d",
+              indexName, DEFAULT_BLOOM_FILTER_SIZE));
       return DEFAULT_BLOOM_FILTER_SIZE;
     }
     int bloomFilterSize;
@@ -172,8 +172,8 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     String bloomFilterFppStr = dmSchema.getProperties().get(BLOOM_FPP);
     if (StringUtils.isBlank(bloomFilterFppStr)) {
       LOGGER.warn(
-          String.format("Bloom filter FPP is not configured for datamap %s, use default value %f",
-              dataMapName, DEFAULT_BLOOM_FILTER_FPP));
+          String.format("Bloom filter FPP is not configured for index %s, use default value %f",
+              indexName, DEFAULT_BLOOM_FILTER_FPP));
       return DEFAULT_BLOOM_FILTER_FPP;
     }
     double bloomFilterFpp;
@@ -200,8 +200,8 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     String bloomCompress = dmSchema.getProperties().get(COMPRESS_BLOOM);
     if (StringUtils.isBlank(bloomCompress)) {
       LOGGER.warn(
-          String.format("Bloom compress is not configured for datamap %s, use default value %b",
-              dataMapName, DEFAULT_BLOOM_COMPRESS));
+          String.format("Bloom compress is not configured for index %s, use default value %b",
+              indexName, DEFAULT_BLOOM_COMPRESS));
       return DEFAULT_BLOOM_COMPRESS;
     }
     return Boolean.parseBoolean(bloomCompress);
@@ -211,43 +211,42 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
   public IndexWriter createWriter(Segment segment, String shardName,
       SegmentProperties segmentProperties) throws IOException {
     LOGGER.info(
-        String.format("Data of BloomCoarseGranDataMap %s for table %s will be written to %s",
-            this.dataMapName, getCarbonTable().getTableName() , shardName));
-    return new BloomIndexWriter(getCarbonTable().getTablePath(), this.dataMapName,
-        this.indexMeta.getIndexedColumns(), segment, shardName, segmentProperties,
-        this.bloomFilterSize, this.bloomFilterFpp, bloomCompress);
+        String.format("Data of BloomCoarseGrainIndex %s for table %s will be written to %s",
+            this.indexName, getCarbonTable().getTableName() , shardName));
+    return new BloomIndexWriter(getCarbonTable().getTablePath(), this.indexName,
+        this.indexMeta.getIndexedColumns(), segment, shardName, this.bloomFilterSize,
+        this.bloomFilterFpp, bloomCompress);
   }
 
   @Override
   public IndexBuilder createBuilder(Segment segment, String shardName,
       SegmentProperties segmentProperties) throws IOException {
-    return new BloomIndexBuilder(getCarbonTable().getTablePath(), this.dataMapName,
-        this.indexMeta.getIndexedColumns(), segment, shardName, segmentProperties,
-        this.bloomFilterSize, this.bloomFilterFpp, bloomCompress);
+    return new BloomIndexBuilder(getCarbonTable().getTablePath(), this.indexName,
+        this.indexMeta.getIndexedColumns(), segment, shardName, this.bloomFilterSize,
+        this.bloomFilterFpp, bloomCompress);
   }
 
   /**
    * returns all shard directories of bloom index files for query
    * if bloom index files are merged we should get only one shard path
    */
-  public static Set<String> getAllShardPaths(String tablePath, String segmentId,
-      String dataMapName) {
-    String dataMapStorePath = CarbonTablePath.getIndexesStorePath(
-        tablePath, segmentId, dataMapName);
-    CarbonFile[] carbonFiles = FileFactory.getCarbonFile(dataMapStorePath).listFiles();
+  public static Set<String> getAllShardPaths(String tablePath, String segmentId, String indexName) {
+    String indexStorePath = CarbonTablePath.getIndexesStorePath(
+        tablePath, segmentId, indexName);
+    CarbonFile[] carbonFiles = FileFactory.getCarbonFile(indexStorePath).listFiles();
     Set<String> shardPaths = new HashSet<>();
-    boolean mergeShardInprogress = false;
+    boolean mergeShardInProgress = false;
     CarbonFile mergeShardFile = null;
     for (CarbonFile carbonFile : carbonFiles) {
       if (carbonFile.getName().equals(BloomIndexFileStore.MERGE_BLOOM_INDEX_SHARD_NAME)) {
         mergeShardFile = carbonFile;
       } else if (carbonFile.getName().equals(BloomIndexFileStore.MERGE_INPROGRESS_FILE)) {
-        mergeShardInprogress = true;
+        mergeShardInProgress = true;
       } else if (carbonFile.isDirectory()) {
         shardPaths.add(FileFactory.getPath(carbonFile.getAbsolutePath()).toString());
       }
     }
-    if (mergeShardFile != null && !mergeShardInprogress) {
+    if (mergeShardFile != null && !mergeShardInProgress) {
       // should only get one shard path if mergeShard is generated successfully
       shardPaths.clear();
       shardPaths.add(FileFactory.getPath(mergeShardFile.getAbsolutePath()).toString());
@@ -257,31 +256,31 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
 
   @Override
   public List<CoarseGrainIndex> getIndexes(Segment segment) throws IOException {
-    List<CoarseGrainIndex> dataMaps = new ArrayList<>();
+    List<CoarseGrainIndex> indexes = new ArrayList<>();
     try {
       Set<String> shardPaths = segmentMap.get(segment.getSegmentNo());
       if (shardPaths == null) {
         shardPaths =
-            getAllShardPaths(getCarbonTable().getTablePath(), segment.getSegmentNo(), dataMapName);
+            getAllShardPaths(getCarbonTable().getTablePath(), segment.getSegmentNo(), indexName);
         segmentMap.put(segment.getSegmentNo(), shardPaths);
       }
       Set<String> filteredShards = segment.getFilteredIndexShardNames();
       for (String shard : shardPaths) {
         if (shard.endsWith(BloomIndexFileStore.MERGE_BLOOM_INDEX_SHARD_NAME) ||
             filteredShards.contains(new File(shard).getName())) {
-          // Filter out the tasks which are filtered through Main datamap.
+          // Filter out the tasks which are filtered through Main index.
           // for merge shard, shard pruning delay to be done before pruning blocklet
           BloomCoarseGrainIndex bloomDM = new BloomCoarseGrainIndex();
           bloomDM.init(new BloomIndexModel(shard, cache, segment.getConfiguration()));
           bloomDM.initIndexColumnConverters(getCarbonTable(), indexMeta.getIndexedColumns());
           bloomDM.setFilteredShard(filteredShards);
-          dataMaps.add(bloomDM);
+          indexes.add(bloomDM);
         }
       }
     } catch (Exception e) {
       throw new IOException("Error occurs while init Bloom Index", e);
     }
-    return dataMaps;
+    return indexes;
   }
 
   @Override
@@ -292,15 +291,15 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
 
   @Override
   public List<CoarseGrainIndex> getIndexes(IndexInputSplit distributable) {
-    List<CoarseGrainIndex> dataMaps = new ArrayList<>();
+    List<CoarseGrainIndex> indexes = new ArrayList<>();
     String indexPath = ((BloomIndexInputSplit) distributable).getIndexPath();
     Set<String> filteredShards = ((BloomIndexInputSplit) distributable).getFilteredShards();
     BloomCoarseGrainIndex bloomDM = new BloomCoarseGrainIndex();
     bloomDM.init(new BloomIndexModel(indexPath, cache, FileFactory.getConfiguration()));
     bloomDM.initIndexColumnConverters(getCarbonTable(), indexMeta.getIndexedColumns());
     bloomDM.setFilteredShard(filteredShards);
-    dataMaps.add(bloomDM);
-    return dataMaps;
+    indexes.add(bloomDM);
+    return indexes;
   }
 
   @Override
@@ -309,12 +308,12 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     Set<String> shardPaths = segmentMap.get(segment.getSegmentNo());
     if (shardPaths == null) {
       shardPaths =
-          getAllShardPaths(getCarbonTable().getTablePath(), segment.getSegmentNo(), dataMapName);
+          getAllShardPaths(getCarbonTable().getTablePath(), segment.getSegmentNo(), indexName);
       segmentMap.put(segment.getSegmentNo(), shardPaths);
     }
     Set<String> filteredShards = segment.getFilteredIndexShardNames();
     for (String shardPath : shardPaths) {
-      // Filter out the tasks which are filtered through Main datamap.
+      // Filter out the tasks which are filtered through Main index.
       // for merge shard, shard pruning delay to be done before pruning blocklet
       if (shardPath.endsWith(BloomIndexFileStore.MERGE_BLOOM_INDEX_SHARD_NAME) ||
           filteredShards.contains(new File(shardPath).getName())) {
@@ -363,15 +362,15 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
   @Override
   public void deleteSegmentIndexData(String segmentId) throws IOException {
     try {
-      String datamapPath = CarbonTablePath
-          .getIndexesStorePath(getCarbonTable().getTablePath(), segmentId, dataMapName);
-      if (FileFactory.isFileExist(datamapPath)) {
-        CarbonFile file = FileFactory.getCarbonFile(datamapPath);
+      String indexPath = CarbonTablePath
+          .getIndexesStorePath(getCarbonTable().getTablePath(), segmentId, indexName);
+      if (FileFactory.isFileExist(indexPath)) {
+        CarbonFile file = FileFactory.getCarbonFile(indexPath);
         CarbonUtil.deleteFoldersAndFilesSilent(file);
       }
       clear(segmentId);
     } catch (InterruptedException ex) {
-      throw new IOException("Failed to delete datamap for segment_" + segmentId);
+      throw new IOException("Failed to delete index for segment_" + segmentId);
     }
   }
 
@@ -386,7 +385,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
         deleteIndexData(segment);
       }
     } catch (IOException e) {
-      LOGGER.error("drop datamap failed, failed to delete datamap directory");
+      LOGGER.error("drop index failed, failed to delete index directory");
     }
   }
 
@@ -421,7 +420,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     switch (operation) {
       case ALTER_DROP: {
         // alter table drop columns
-        // will be blocked if the columns in bloomfilter datamap
+        // will be blocked if the columns in bloomfilter index
         List<String> columnsToDrop = (List<String>) targets[0];
         List<String> indexedColumnNames = indexMeta.getIndexedColumnNames();
         for (String indexedcolumn : indexedColumnNames) {
@@ -436,7 +435,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
       case ALTER_CHANGE_DATATYPE:
       case ALTER_COLUMN_RENAME: {
         // alter table change one column datatype, or rename
-        // will be blocked if the column in bloomfilter datamap
+        // will be blocked if the column in bloomfilter index
         String columnToChangeDatatype = (String) targets[0];
         List<String> indexedColumnNames = indexMeta.getIndexedColumnNames();
         for (String indexedcolumn : indexedColumnNames) {

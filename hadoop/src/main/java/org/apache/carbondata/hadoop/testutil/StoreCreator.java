@@ -172,9 +172,9 @@ public class StoreCreator {
   }
 
   /**
-   * Method to clear the data maps
+   * Method to clear the index
    */
-  public void clearDataMaps() {
+  public void clearIndexes() {
     IndexStoreManager.getInstance().clearIndex(absoluteTableIdentifier);
   }
 

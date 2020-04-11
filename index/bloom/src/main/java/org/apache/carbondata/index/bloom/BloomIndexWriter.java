@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -30,7 +29,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
- * BloomDataMap is constructed in CG level (blocklet level).
+ * Bloom index is constructed in CG level (blocklet level).
  * For each indexed column, a bloom filter is constructed to indicate whether a value
  * belongs to this blocklet. Bloom filter of blocklet that belongs to same block will
  * be written to one index file suffixed with .bloomindex. So the number
@@ -39,12 +38,12 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 @InterfaceAudience.Internal
 public class BloomIndexWriter extends AbstractBloomIndexWriter {
 
-  BloomIndexWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
-      Segment segment, String shardName, SegmentProperties segmentProperties,
-      int bloomFilterSize, double bloomFilterFpp, boolean compressBloom)
+  BloomIndexWriter(String tablePath, String indexName, List<CarbonColumn> indexColumns,
+      Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp,
+      boolean compressBloom)
       throws IOException {
-    super(tablePath, dataMapName, indexColumns, segment, shardName, segmentProperties,
-        bloomFilterSize, bloomFilterFpp, compressBloom);
+    super(tablePath, indexName, indexColumns, segment, shardName, bloomFilterSize,
+        bloomFilterFpp, compressBloom);
   }
 
   protected byte[] convertNonDictionaryValue(int indexColIdx, Object value) {

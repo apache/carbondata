@@ -22,7 +22,7 @@ import org.apache.carbondata.core.metadata.schema.table.IndexSchema
 
 
 /**
- * This event is fired before creating datamap
+ * This event is fired before creating index
  * @param ifExistsSet
  * @param sparkSession
  */
@@ -33,7 +33,7 @@ case class DropIndexPreEvent(
 
 
 /**
- * This event is fired after creating datamap.
+ * This event is fired after creating index.
  * @param ifExistsSet
  * @param sparkSession
  */
@@ -44,7 +44,7 @@ case class DropIndexPostEvent(
 
 
 /**
- * This event is fired when any abort operation during datamap creation.
+ * This event is fired when any abort operation during index creation.
  * @param ifExistsSet
  * @param sparkSession
  */

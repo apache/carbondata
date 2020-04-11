@@ -48,7 +48,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
+import org.apache.carbondata.core.metadata.schema.index.IndexClassProvider;
 import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata;
 import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo;
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
@@ -874,9 +874,9 @@ public class CarbonTable implements Serializable, Writable {
    * Return true if MV created on this table
    */
   public boolean hasMVCreated() throws IOException {
-    List<IndexSchema> schemas = IndexStoreManager.getInstance().getDataMapSchemasOfTable(this);
+    List<IndexSchema> schemas = IndexStoreManager.getInstance().getIndexSchemasOfTable(this);
     return schemas.stream().anyMatch(schema ->
-        schema.getProviderName().equalsIgnoreCase(DataMapClassProvider.MV.toString()));
+        schema.getProviderName().equalsIgnoreCase(IndexClassProvider.MV.toString()));
   }
 
   /**

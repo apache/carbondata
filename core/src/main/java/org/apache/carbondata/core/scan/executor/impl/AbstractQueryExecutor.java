@@ -322,7 +322,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
     // cases when blockletID will be -1
     // 1. In case of legacy store
-    // 2. In case CACHE_LEVEL is block and no other index apart from blockletDataMap is
+    // 2. In case CACHE_LEVEL is block and no other index apart from blocklet index is
     // created for a table
     // In all above cases entries will be according to the number of blocks and not according to
     // number of blocklets
@@ -466,20 +466,18 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       blockExecutionInfo.setPrefetchBlocklet(queryModel.isPreFetchData());
     }
     // In case of fg index it should not go to direct fill.
-    boolean fgDataMapPathPresent = false;
+    boolean fgIndexPathPresent = false;
     for (TableBlockInfo blockInfo : queryModel.getTableBlockInfos()) {
-      fgDataMapPathPresent = blockInfo.getIndexWriterPath() != null;
-      if (fgDataMapPathPresent) {
+      fgIndexPathPresent = blockInfo.getIndexWriterPath() != null;
+      if (fgIndexPathPresent) {
         queryModel.setDirectVectorFill(false);
         break;
       }
     }
 
-    blockExecutionInfo
-        .setDirectVectorFill(queryModel.isDirectVectorFill());
-
-    blockExecutionInfo
-        .setTotalNumberOfMeasureToRead(segmentProperties.getMeasuresOrdinalToChunkMapping().size());
+    blockExecutionInfo.setDirectVectorFill(queryModel.isDirectVectorFill());
+    blockExecutionInfo.setTotalNumberOfMeasureToRead(
+        segmentProperties.getMeasuresOrdinalToChunkMapping().size());
     blockExecutionInfo.setComplexDimensionInfoMap(
         QueryUtil.getComplexDimensionsMap(
             projectDimensions,

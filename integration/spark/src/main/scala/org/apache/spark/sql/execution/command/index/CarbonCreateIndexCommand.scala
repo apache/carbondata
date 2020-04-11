@@ -35,12 +35,12 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
-import org.apache.carbondata.core.metadata.schema.datamap.IndexProperty
+import org.apache.carbondata.core.metadata.schema.index.IndexProperty
 import org.apache.carbondata.core.metadata.schema.indextable.{IndexMetadata, IndexTableInfo}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.datamap.IndexProvider
+import org.apache.carbondata.index.IndexProvider
 
 /**
  * Below command class will be used to create fg or cg index on table

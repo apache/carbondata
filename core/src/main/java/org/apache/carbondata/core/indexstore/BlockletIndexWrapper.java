@@ -25,26 +25,26 @@ import org.apache.carbondata.core.index.dev.Index;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockIndex;
 
 /**
- * A cacheable wrapper of datamaps
+ * A cacheable wrapper of index
  */
 public class BlockletIndexWrapper implements Cacheable, Serializable {
 
   private static final long serialVersionUID = -2859075086955465810L;
 
-  private List<BlockIndex> dataMaps;
+  private List<BlockIndex> indexes;
 
   private String segmentId;
 
-  // size of the wrapper. basically the total size of the datamaps this wrapper is holding
+  // size of the wrapper. basically the total size of the index this wrapper is holding
   private long wrapperSize;
 
-  public BlockletIndexWrapper(String segmentId, List<BlockIndex> dataMaps) {
-    this.dataMaps = dataMaps;
+  public BlockletIndexWrapper(String segmentId, List<BlockIndex> indexes) {
+    this.indexes = indexes;
     this.wrapperSize = 0L;
     this.segmentId = segmentId;
-    // add the size of each and every datamap in this wrapper
-    for (BlockIndex dataMap : dataMaps) {
-      this.wrapperSize += dataMap.getMemorySize();
+    // add the size of each and every index in this wrapper
+    for (BlockIndex index : indexes) {
+      this.wrapperSize += index.getMemorySize();
     }
   }
 
@@ -60,13 +60,13 @@ public class BlockletIndexWrapper implements Cacheable, Serializable {
 
   @Override
   public void invalidate() {
-    for (Index index : dataMaps) {
+    for (Index index : indexes) {
       index.clear();
     }
   }
 
-  public List<BlockIndex> getDataMaps() {
-    return dataMaps;
+  public List<BlockIndex> getIndexes() {
+    return indexes;
   }
 
   public String getSegmentId() {

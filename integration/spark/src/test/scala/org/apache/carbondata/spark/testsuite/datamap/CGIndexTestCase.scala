@@ -40,7 +40,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexInputSplit
 import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema, DiskBasedDMSchemaStorageProvider}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema, DiskBasedIndexSchemaStorageProvider}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression
@@ -73,22 +73,22 @@ class CGIndexFactory(
 
     val files = file.listFiles()
     files.map {f =>
-      val dataMap: CoarseGrainIndex = new CGIndex()
-      dataMap.init(new IndexModel(f.getCanonicalPath, new Configuration(false)))
-      dataMap
+      val index: CoarseGrainIndex = new CGIndex()
+      index.init(new IndexModel(f.getCanonicalPath, new Configuration(false)))
+      index
     }.toList.asJava
   }
 
 
   /**
-   * Get datamaps for distributable object.
+   * Get indexes for distributable object.
    */
   override def getIndexes(distributable: IndexInputSplit): java.util.List[CoarseGrainIndex] = {
     val mapDistributable = distributable.asInstanceOf[BlockletIndexInputSplit]
-    val dataMap: CoarseGrainIndex = new CGIndex()
-    dataMap.init(new IndexModel(mapDistributable.getFilePath, new
+    val index: CoarseGrainIndex = new CGIndex()
+    index.init(new IndexModel(mapDistributable.getFilePath, new
         Configuration(false)))
-    Seq(dataMap).asJava
+    Seq(index).asJava
   }
 
   /**

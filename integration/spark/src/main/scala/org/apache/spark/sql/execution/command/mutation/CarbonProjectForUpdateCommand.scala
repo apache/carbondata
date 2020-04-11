@@ -36,7 +36,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
-import org.apache.carbondata.core.index.status.DataMapStatusManager
+import org.apache.carbondata.core.index.status.IndexStatusManager
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
@@ -89,7 +89,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
 
     if (!carbonTable.canAllow(carbonTable, TableOperation.UPDATE)) {
       throw new MalformedCarbonCommandException(
-        "update operation is not supported for index datamap")
+        "update operation is not supported for index")
     }
 
     // Block the update operation for non carbon formats
@@ -201,12 +201,12 @@ private[sql] case class CarbonProjectForUpdateCommand(
       HorizontalCompaction.tryHorizontalCompaction(
         sparkSession, carbonTable, isUpdateOperation = true)
 
-      val allDataMapSchemas = IndexStoreManager.getInstance
-        .getDataMapSchemasOfTable(carbonTable).asScala
-        .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                 !dataMapSchema.isIndex).asJava
-      if (!allDataMapSchemas.isEmpty) {
-        DataMapStatusManager.truncateDataMap(allDataMapSchemas)
+      val allIndexSchemas = IndexStoreManager.getInstance
+        .getIndexSchemasOfTable(carbonTable).asScala
+        .filter(indexSchema => null != indexSchema.getRelationIdentifier &&
+                               !indexSchema.isIndex).asJava
+      if (!allIndexSchemas.isEmpty) {
+        IndexStatusManager.truncateIndex(allIndexSchemas)
       }
 
       // Truncate materialized views on the current table.

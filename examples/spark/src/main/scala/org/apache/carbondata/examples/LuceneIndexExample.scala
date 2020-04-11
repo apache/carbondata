@@ -69,7 +69,7 @@ object LuceneIndexExample {
       (System.currentTimeMillis() - start).toDouble / 1000
     }
 
-    val time_without_lucenedatamap = time {
+    val timeWithoutLuceneIndex = time {
 
       spark.sql(
         s"""
@@ -79,7 +79,7 @@ object LuceneIndexExample {
 
     }
 
-    val time_with_lucenedatamap = time {
+    val timeWithLuceneIndex = time {
 
       spark.sql(
         s"""
@@ -90,8 +90,8 @@ object LuceneIndexExample {
     }
 
     // scalastyle:off
-    println("time for query on table with lucene datamap table:" + time_with_lucenedatamap.toString)
-    println("time for query on table without lucene datamap table:" + time_without_lucenedatamap.toString)
+    println("time for query on table with lucene index table:" + timeWithLuceneIndex.toString)
+    println("time for query on table without lucene index table:" + timeWithoutLuceneIndex.toString)
     // scalastyle:on
 
     // 2. Search for word "test1" and not "good" in the id field

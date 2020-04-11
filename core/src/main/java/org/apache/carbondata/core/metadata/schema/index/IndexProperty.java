@@ -15,29 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.common.exceptions.sql;
+package org.apache.carbondata.core.metadata.schema.index;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.annotations.InterfaceStability;
 
 /**
- * This exception will be thrown if datamap is not found when executing datamap
- * related SQL statement
+ * Property that can be specified when creating Index
  */
-@InterfaceAudience.User
-@InterfaceStability.Stable
-public class NoSuchDataMapException extends MalformedCarbonCommandException {
+@InterfaceAudience.Internal
+public class IndexProperty {
 
   /**
-   * default serial version ID.
+   * For index created with 'WITH DEFERRED REBUILD' syntax, we will add this
+   * property internally
    */
-  private static final long serialVersionUID = 1L;
+  public static final String DEFERRED_REBUILD = "_internal.deferred.rebuild";
 
-  public NoSuchDataMapException(String dataMapName, String tableName) {
-    super("Datamap with name " + dataMapName + " does not exist under table " + tableName);
-  }
-
-  public NoSuchDataMapException(String dataMapName) {
-    super("Datamap with name " + dataMapName + " does not exist");
-  }
+  /**
+   * internal property, true if it needs full refresh, thus it does not support incremental load
+   */
+  public static final String FULL_REFRESH = "full_refresh";
 }

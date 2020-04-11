@@ -28,11 +28,11 @@ import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
-import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
+import org.apache.carbondata.common.exceptions.sql.NoSuchIndexException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.index.dev.IndexFactory;
-import org.apache.carbondata.core.index.status.DataMapStatusManager;
+import org.apache.carbondata.core.index.status.IndexStatusManager;
 import org.apache.carbondata.core.index.status.MVSegmentStatusUtil;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -53,14 +53,14 @@ import org.apache.log4j.Logger;
  *
  * Currently two types of Index are supported
  * <ol>
- *   <li> MVDataMap: materialized view type of Index to accelerate olap style query,
+ *   <li> MV: materialized view type of Index to accelerate olap style query,
  * like SPJG query (select, predicate, join, groupby) </li>
  *   <li> Index: index type of Index to accelerate filter query </li>
  * </ol>
  *
  * <p>
  * In following command <br>
- * {@code CREATE DATAMAP dm ON TABLE main USING 'provider'}, <br>
+ * {@code CREATE INDEX dm ON TABLE main AS 'provider'}, <br>
  * the <b>provider</b> string can be a short name or class name of the Index implementation.
  *
  * <br>Currently CarbonData supports following provider:
@@ -72,7 +72,7 @@ import org.apache.log4j.Logger;
  * @since 1.4.0
  */
 @InterfaceAudience.Internal
-public abstract class DataMapProvider {
+public abstract class CarbonIndexProvider {
 
   public void setMainTable(CarbonTable mainTable) {
     this.mainTable = mainTable;
@@ -83,7 +83,7 @@ public abstract class DataMapProvider {
 
   private Logger LOGGER = LogServiceFactory.getLogService(this.getClass().getCanonicalName());
 
-  public DataMapProvider(CarbonTable mainTable, IndexSchema indexSchema) {
+  public CarbonIndexProvider(CarbonTable mainTable, IndexSchema indexSchema) {
     this.mainTable = mainTable;
     this.indexSchema = indexSchema;
   }
@@ -97,55 +97,55 @@ public abstract class DataMapProvider {
   }
 
   /**
-   * Initialize a datamap's metadata.
-   * This is called when user creates datamap, for example "CREATE DATAMAP dm ON TABLE mainTable"
-   * Implementation should initialize metadata for datamap, like creating table
+   * Initialize a index's metadata.
+   * This is called when user creates index "CREATE INDEX index ON mainTable"
+   * Implementation should initialize metadata for index, like creating table
    */
   public abstract void initMeta(String ctasSqlStatement) throws MalformedIndexCommandException,
       IOException;
 
   /**
-   * Initialize a datamap's data.
-   * This is called when user creates datamap, for example "CREATE DATAMAP dm ON TABLE mainTable"
-   * Implementation should initialize data for datamap, like creating data folders
+   * Initialize a index's data.
+   * This is called when user creates index, for example "CREATE INDEX dm ON TABLE mainTable"
+   * Implementation should initialize data for index, like creating data folders
    */
   public void initData() { }
 
   /**
    * Opposite operation of {@link #initMeta(String)}.
-   * This is called when user drops datamap, for example "DROP DATAMAP dm ON TABLE mainTable"
-   * Implementation should clean all meta for the datamap
+   * This is called when user drops index, for example "DROP INDEX dm ON TABLE mainTable"
+   * Implementation should clean all meta for the index
    */
   public abstract void cleanMeta() throws IOException;
 
   /**
    * Opposite operation of {@link #initData()}.
-   * This is called when user drops datamap, for example "DROP DATAMAP dm ON TABLE mainTable"
-   * Implementation should clean all data for the datamap
+   * This is called when user drops index, for example "DROP INDEX dm ON TABLE mainTable"
+   * Implementation should clean all data for the index
    */
   public abstract void cleanData();
 
   /**
-   * Rebuild the datamap by loading all existing data from mainTable
-   * This is called when refreshing the datamap when
-   * 1. after datamap creation and no "WITH DEFERRED REBUILD" defined
-   * 2. user manually trigger REBUILD DATAMAP command
+   * Rebuild the index by loading all existing data from mainTable
+   * This is called when refreshing the index when
+   * 1. after index creation and no "WITH DEFERRED REFRESH" defined
+   * 2. user manually trigger REFRESH index command
    */
-  public boolean rebuild() throws IOException, NoSuchDataMapException {
+  public boolean rebuild() throws IOException, NoSuchIndexException {
     if (null == indexSchema.getRelationIdentifier()) {
       return false;
     }
     String newLoadName = "";
     String segmentMap = "";
-    CarbonTable dataMapTable = CarbonTable
+    CarbonTable table = CarbonTable
         .buildFromTablePath(indexSchema.getRelationIdentifier().getTableName(),
             indexSchema.getRelationIdentifier().getDatabaseName(),
             indexSchema.getRelationIdentifier().getTablePath(),
             indexSchema.getRelationIdentifier().getTableId());
     AbsoluteTableIdentifier dataMapTableAbsoluteTableIdentifier =
-        dataMapTable.getAbsoluteTableIdentifier();
+        table.getAbsoluteTableIdentifier();
     // Clean up the old invalid segment data before creating a new entry for new load.
-    SegmentStatusManager.deleteLoadsAndUpdateMetadata(dataMapTable, false, null);
+    SegmentStatusManager.deleteLoadsAndUpdateMetadata(table, false, null);
     SegmentStatusManager segmentStatusManager =
         new SegmentStatusManager(dataMapTableAbsoluteTableIdentifier);
     Map<String, List<String>> segmentMapping = new HashMap<>();
@@ -174,7 +174,7 @@ public abstract class DataMapProvider {
             new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         Collections.addAll(listOfLoadFolderDetails, loadMetaDataDetails);
         if (indexSchema.isLazy()) {
-          // check if rebuild to datamap is already in progress and throw exception
+          // check if rebuild to index is already in progress and throw exception
           if (!listOfLoadFolderDetails.isEmpty()) {
             for (LoadMetadataDetails loadMetaDetail : loadMetaDataDetails) {
               if ((loadMetaDetail.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS
@@ -182,7 +182,7 @@ public abstract class DataMapProvider {
                   == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) && SegmentStatusManager
                   .isLoadInProgress(dataMapTableAbsoluteTableIdentifier,
                       loadMetaDetail.getLoadName())) {
-                throw new RuntimeException("Rebuild to datamap " + indexSchema.getIndexName()
+                throw new RuntimeException("Rebuild to index " + indexSchema.getIndexName()
                     + " is already in progress");
               }
             }
@@ -211,7 +211,7 @@ public abstract class DataMapProvider {
         }
         segmentMap = new Gson().toJson(segmentMapping);
 
-        // To handle concurrent dataloading to datamap, create new loadMetaEntry and
+        // To handle concurrent data loading to index, create new loadMetaEntry and
         // set segmentMap to new loadMetaEntry and pass new segmentId with load command
         LoadMetadataDetails loadMetadataDetail = new LoadMetadataDetails();
         String segmentId =
@@ -231,7 +231,7 @@ public abstract class DataMapProvider {
             "Not able to acquire the lock for Table status updation for table " + indexSchema
                 .getRelationIdentifier().getDatabaseName() + "." + indexSchema
                 .getRelationIdentifier().getTableName());
-        DataMapStatusManager.disableDataMap(indexSchema.getIndexName());
+        IndexStatusManager.disableIndex(indexSchema.getIndexName());
         return false;
       }
     } finally {
@@ -245,50 +245,49 @@ public abstract class DataMapProvider {
             + " during table status updation");
       }
     }
-    return rebuildInternal(newLoadName, segmentMapping, dataMapTable);
+    return rebuildInternal(newLoadName, segmentMapping, table);
   }
 
   /**
-   * This method will compare mainTable and dataMapTable segment List and loads only newly added
-   * segment from main table to dataMap table.
-   * In case if mainTable is compacted, then based on dataMap to mainTables segmentMapping, dataMap
+   * This method will compare mainTable and index segment List and loads only newly added
+   * segment from main table to index.
+   * In case if mainTable is compacted, then based on index to mainTables segmentMapping, index
    * will be loaded
    * Eg:
-   * case 1: Consider mainTableSegmentList: {0, 1, 2}, dataMapToMainTable segmentMap:
+   * case 1: Consider mainTableSegmentList: {0, 1, 2}, indexToMainTable segmentMap:
    * { 0 -> 0, 1-> 1,2}. If (1, 2) segments of main table are compacted to 1.1 and new segment (3)
    * is loaded to main table, then mainTableSegmentList will be updated to{0, 1.1, 3}.
-   * In this case, segment (1) of dataMap table will be marked for delete, and new segment
-   * {2 -> 1.1, 3} will be loaded to dataMap table
-   * case 2: Consider mainTableSegmentList: {0, 1, 2, 3}, dataMapToMainTable segmentMap:
+   * In this case, segment (1) of index will be marked for delete, and new segment
+   * {2 -> 1.1, 3} will be loaded to index
+   * case 2: Consider mainTableSegmentList: {0, 1, 2, 3}, indexToMainTable segmentMap:
    * { 0 -> 0,1,2, 1-> 3}. If (1, 2) segments of main table are compacted to 1.1 and new segment
    * (4) is loaded to main table, then mainTableSegmentList will be updated to {0, 1.1, 3, 4}.
-   * In this case, segment (0) of dataMap table will be marked for delete and segment (0) of
-   * main table will be added to validSegmentList which needs to be loaded again. Now, new dataMap
-   * table segment (2) with main table segmentList{2 -> 1.1, 4, 0} will be loaded to dataMap table.
-   * dataMapToMainTable segmentMap will be updated to {1 -> 3, 2 -> 1.1, 4, 0} after rebuild
+   * In this case, segment (0) of index will be marked for delete and segment (0) of
+   * main table will be added to validSegmentList which needs to be loaded again. Now, new index
+   * segment (2) with main table segmentList{2 -> 1.1, 4, 0} will be loaded to index.
+   * indexToMainTable segmentMap will be updated to {1 -> 3, 2 -> 1.1, 4, 0} after rebuild
    */
   private boolean getSpecificSegmentsTobeLoaded(Map<String, List<String>> segmentMapping,
       List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
     List<RelationIdentifier> relationIdentifiers = indexSchema.getParentTables();
-    // invalidDataMapSegmentList holds segment list which needs to be marked for delete
-    HashSet<String> invalidDataMapSegmentList = new HashSet<>();
+    // invalidIndexSegmentList holds segment list which needs to be marked for delete
+    HashSet<String> invalidIndexSegmentList = new HashSet<>();
     if (listOfLoadFolderDetails.isEmpty()) {
-      // If segment Map is empty, load all valid segments from main tables to dataMap
+      // If segment Map is empty, load all valid segments from main tables to index
       for (RelationIdentifier relationIdentifier : relationIdentifiers) {
         List<String> mainTableSegmentList =
             IndexUtil.getMainTableValidSegmentList(relationIdentifier);
         // If mainTableSegmentList is empty, no need to trigger load command
-        // TODO: handle in case of multiple tables load to datamap table
         if (mainTableSegmentList.isEmpty()) {
           return false;
         }
         segmentMapping.put(
-            relationIdentifier.getDatabaseName() + CarbonCommonConstants.POINT + relationIdentifier
-                .getTableName(), mainTableSegmentList);
+            relationIdentifier.getDatabaseName() + CarbonCommonConstants.POINT +
+                relationIdentifier.getTableName(), mainTableSegmentList);
       }
     } else {
       for (RelationIdentifier relationIdentifier : relationIdentifiers) {
-        List<String> dataMapTableSegmentList = new ArrayList<>();
+        List<String> indexSegmentList = new ArrayList<>();
         // Get all segments for parent relationIdentifier
         List<String> mainTableSegmentList =
             IndexUtil.getMainTableValidSegmentList(relationIdentifier);
@@ -305,10 +304,10 @@ public abstract class DataMapProvider {
             String table = relationIdentifier.getDatabaseName() + CarbonCommonConstants.POINT
                 + relationIdentifier.getTableName();
             for (String segmentId : mainTableSegmentList) {
-              // In case if dataMap segment(0) is mapped to mainTable segments{0,1,2} and if
+              // In case if index segment(0) is mapped to mainTable segments{0,1,2} and if
               // {0,1,2} segments of mainTable are compacted to 0.1. Then,
-              // on next rebuild/load to dataMap, no need to load segment(0.1) again. Update the
-              // segmentMapping of dataMap segment from {0,1,2} to {0.1}
+              // on next rebuild/load to index, no need to load segment(0.1) again. Update the
+              // segmentMapping of index segment from {0,1,2} to {0.1}
               if (!checkIfSegmentsToBeReloaded(parentTableLoadMetaDataDetails,
                   segmentMaps.get(table), segmentId)) {
                 ifTableStatusUpdateRequired = true;
@@ -317,35 +316,34 @@ public abstract class DataMapProvider {
                 List<String> segmentList = new ArrayList<>();
                 segmentList.add(segmentId);
                 updatedSegmentMap.put(table, segmentList);
-                dataMapTableSegmentList.add(segmentId);
+                indexSegmentList.add(segmentId);
                 loadMetaDetail.setExtraInfo(new Gson().toJson(updatedSegmentMap));
                 segmentMaps.get(table).clear();
               }
             }
-            dataMapTableSegmentList.addAll(segmentMaps.get(table));
+            indexSegmentList.addAll(segmentMaps.get(table));
           }
         }
-        List<String> dataMapSegmentList = new ArrayList<>(dataMapTableSegmentList);
-        dataMapTableSegmentList.removeAll(mainTableSegmentList);
+        List<String> dataMapSegmentList = new ArrayList<>(indexSegmentList);
+        indexSegmentList.removeAll(mainTableSegmentList);
         mainTableSegmentList.removeAll(dataMapSegmentList);
         if (ifTableStatusUpdateRequired && mainTableSegmentList.isEmpty()) {
           SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath
                   .getTableStatusFilePath(indexSchema.getRelationIdentifier().getTablePath()),
-              listOfLoadFolderDetails
-                  .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
+              listOfLoadFolderDetails.toArray(new LoadMetadataDetails[0]));
           return false;
         } else if (mainTableSegmentList.isEmpty()) {
           return false;
         }
-        if (!dataMapTableSegmentList.isEmpty()) {
+        if (!indexSegmentList.isEmpty()) {
           List<String> invalidMainTableSegmentList = new ArrayList<>();
           // validMainTableSegmentList holds segment list which needs to be loaded again
           HashSet<String> validMainTableSegmentList = new HashSet<>();
 
-          // For dataMap segments which are not in main table segment list(if main table
-          // is compacted), iterate over those segments and get dataMap segments which needs to
+          // For index segments which are not in main table segment list(if main table
+          // is compacted), iterate over those segments and get index segments which needs to
           // be marked for delete and main table segments which needs to be loaded again
-          for (String segmentId : dataMapTableSegmentList) {
+          for (String segmentId : indexSegmentList) {
             for (LoadMetadataDetails loadMetaDetail : listOfLoadFolderDetails) {
               if (loadMetaDetail.getSegmentStatus() == SegmentStatus.SUCCESS
                   || loadMetaDetail.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS) {
@@ -358,7 +356,7 @@ public abstract class DataMapProvider {
                   segmentIds.remove(segmentId);
                   validMainTableSegmentList.addAll(segmentIds);
                   invalidMainTableSegmentList.add(segmentId);
-                  invalidDataMapSegmentList.add(loadMetaDetail.getLoadName());
+                  invalidIndexSegmentList.add(loadMetaDetail.getLoadName());
                 }
               }
             }
@@ -367,18 +365,15 @@ public abstract class DataMapProvider {
           validMainTableSegmentList.removeAll(invalidMainTableSegmentList);
           // Add all valid segments of main table which needs to be loaded again
           mainTableSegmentList.addAll(validMainTableSegmentList);
-          segmentMapping.put(relationIdentifier.getDatabaseName() + CarbonCommonConstants.POINT
-              + relationIdentifier.getTableName(), mainTableSegmentList);
-        } else {
-          segmentMapping.put(relationIdentifier.getDatabaseName() + CarbonCommonConstants.POINT
-              + relationIdentifier.getTableName(), mainTableSegmentList);
         }
+        segmentMapping.put(relationIdentifier.getDatabaseName() + CarbonCommonConstants.POINT
+            + relationIdentifier.getTableName(), mainTableSegmentList);
       }
     }
-    // Remove invalid datamap segments
-    if (!invalidDataMapSegmentList.isEmpty()) {
+    // Remove invalid index segments
+    if (!invalidIndexSegmentList.isEmpty()) {
       for (LoadMetadataDetails loadMetadataDetail : listOfLoadFolderDetails) {
-        if (invalidDataMapSegmentList.contains(loadMetadataDetail.getLoadName())) {
+        if (invalidIndexSegmentList.contains(loadMetadataDetail.getLoadName())) {
           loadMetadataDetail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
         }
       }
@@ -387,7 +382,7 @@ public abstract class DataMapProvider {
   }
 
   /**
-   * This method checks if dataMap table segment has to be reloaded again or not
+   * This method checks if index segment has to be reloaded again or not
    */
   private boolean checkIfSegmentsToBeReloaded(LoadMetadataDetails[] loadMetaDataDetails,
       List<String> segmentIds, String segmentId) {
@@ -406,10 +401,9 @@ public abstract class DataMapProvider {
   }
 
   /**
-   * Provide the datamap catalog instance or null if this datamap not required to rewrite
-   * the query.
+   * Provide the MV catalog instance
    */
-  public MVCatalog createDataMapCatalog() {
+  public MVCatalog createMVCatalog() {
     return null;
   }
 

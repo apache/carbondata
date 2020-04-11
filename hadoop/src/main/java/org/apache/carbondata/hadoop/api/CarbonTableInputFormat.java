@@ -499,14 +499,14 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           if (CarbonProperties.getInstance().isFallBackDisabled()) {
             throw e;
           }
-          TableIndex defaultDataMap = IndexStoreManager.getInstance().getDefaultIndex(table);
+          TableIndex defaultIndex = IndexStoreManager.getInstance().getDefaultIndex(table);
           blockletToRowCountMap
-              .putAll(defaultDataMap.getBlockRowCount(filteredSegment, partitions, defaultDataMap));
+              .putAll(defaultIndex.getBlockRowCount(filteredSegment, partitions, defaultIndex));
         }
       } else {
-        TableIndex defaultDataMap = IndexStoreManager.getInstance().getDefaultIndex(table);
+        TableIndex defaultIndex = IndexStoreManager.getInstance().getDefaultIndex(table);
         blockletToRowCountMap
-            .putAll(defaultDataMap.getBlockRowCount(filteredSegment, partitions, defaultDataMap));
+            .putAll(defaultIndex.getBlockRowCount(filteredSegment, partitions, defaultIndex));
       }
       // key is the (segmentId","+blockletPath) and key is the row count of that blocklet
       for (Map.Entry<String, Long> eachBlocklet : blockletToRowCountMap.entrySet()) {
@@ -544,8 +544,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         totalRowCount =
             getDistributedCount(table, partitions, filteredSegment);
       } else {
-        TableIndex defaultDataMap = IndexStoreManager.getInstance().getDefaultIndex(table);
-        totalRowCount = defaultDataMap.getRowCount(filteredSegment, partitions, defaultDataMap);
+        TableIndex defaultIndex = IndexStoreManager.getInstance().getDefaultIndex(table);
+        totalRowCount = defaultIndex.getRowCount(filteredSegment, partitions, defaultIndex);
       }
       blockRowCountMapping.put(CarbonCommonConstantsInternal.ROW_COUNT, totalRowCount);
     }

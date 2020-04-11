@@ -28,7 +28,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.Segment;
-import org.apache.carbondata.core.index.status.DataMapStatusManager;
+import org.apache.carbondata.core.index.status.IndexStatusManager;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
@@ -218,7 +218,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
   private void commitJobFinal(JobContext context, CarbonLoadModel loadModel,
       OperationContext operationContext, CarbonTable carbonTable, String uniqueId)
       throws IOException {
-    DataMapStatusManager.disableAllLazyDataMaps(carbonTable);
+    IndexStatusManager.disableAllLazyIndexes(carbonTable);
     if (operationContext != null) {
       LoadEvents.LoadTablePostStatusUpdateEvent postStatusUpdateEvent =
           new LoadEvents.LoadTablePostStatusUpdateEvent(loadModel);

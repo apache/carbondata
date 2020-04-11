@@ -373,7 +373,7 @@ public class CarbonReaderBuilder {
         return new CarbonReader<>(readers);
       }
     } catch (Exception ex) {
-      // Clear the datamap cache as it can get added in getSplits() method
+      // Clear the index cache as it can get added in getSplits() method
       IndexStoreManager.getInstance().clearIndexCache(
           format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier(),
           false);
@@ -432,7 +432,7 @@ public class CarbonReaderBuilder {
       }
     } finally {
       if (format != null) {
-        // Clear the datamap cache as it is added in getSplits() method
+        // Clear the index cache as it is added in getSplits() method
         IndexStoreManager.getInstance().clearIndexCache(
             format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier(),
             false);

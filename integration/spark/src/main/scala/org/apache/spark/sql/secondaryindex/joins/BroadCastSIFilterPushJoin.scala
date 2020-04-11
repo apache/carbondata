@@ -339,7 +339,7 @@ object BroadCastSIFilterPushJoin {
         val segmentsToBeRefreshed: util.List[String] = IndexStoreManager.getInstance
           .getSegmentsToBeRefreshed(carbonTable, validSegmentsToAccess)
         try {
-          val dataMapFormat: IndexInputFormat =
+          val indexFormat: IndexInputFormat =
             new IndexInputFormat(carbonTable,
               filter.getResolver,
               validSegmentsToAccess,
@@ -348,15 +348,15 @@ object BroadCastSIFilterPushJoin {
               false,
               null,
               false, false)
-          dataMapFormat.setTaskGroupId(SparkSQLUtil.getTaskGroupId(SparkSQLUtil.getSparkSession))
-          dataMapFormat.setTaskGroupDesc(SparkSQLUtil.getTaskGroupDesc(SparkSQLUtil
+          indexFormat.setTaskGroupId(SparkSQLUtil.getTaskGroupId(SparkSQLUtil.getSparkSession))
+          indexFormat.setTaskGroupDesc(SparkSQLUtil.getTaskGroupDesc(SparkSQLUtil
             .getSparkSession))
-          setSegID.addAll(IndexServer.getClient.getPrunedSegments(dataMapFormat).getSegments)
+          setSegID.addAll(IndexServer.getClient.getPrunedSegments(indexFormat).getSegments)
         } catch {
           case e: Exception =>
             logger.warn("Distributed Segment Pruning failed, initiating embedded pruning", e)
             try {
-              val dataMapFormat: IndexInputFormat = new IndexInputFormat(
+              val indexFormat: IndexInputFormat = new IndexInputFormat(
                 carbonTable,
                 filter.getResolver,
                 validSegmentsToAccess,
@@ -365,7 +365,7 @@ object BroadCastSIFilterPushJoin {
                 false,
                 null,
                 true, false)
-              setSegID.addAll(IndexServer.getPrunedSegments(dataMapFormat).getSegments)
+              setSegID.addAll(IndexServer.getPrunedSegments(indexFormat).getSegments)
               val segmentsToBeCleaned: Array[String] = new Array[String](validSegments.size)
               for (i <- 0 until validSegments.size) {
                 segmentsToBeCleaned(i) = validSegments.get(i).getSegmentNo
@@ -408,10 +408,10 @@ object BroadCastSIFilterPushJoin {
       filterResolverIntf: FilterResolverIntf,
       segmentIds: util.List[Segment]): util.List[Segment] = {
     val blockletMap = IndexStoreManager.getInstance.getDefaultIndex(carbonTable)
-    val dataMapExprWrapper = IndexChooser.getDefaultIndex(carbonTable,
-      filterResolverIntf)
-    IndexUtil.loadIndexes(carbonTable,
-      dataMapExprWrapper,
+    val indexExprWrapper = IndexChooser.getDefaultIndex(carbonTable, filterResolverIntf)
+    IndexUtil.loadIndexes(
+      carbonTable,
+      indexExprWrapper,
       segmentIds,
       CarbonInputFormat.getPartitionsToPrune(configuration))
     blockletMap.pruneSegments(segmentIds, filterResolverIntf)

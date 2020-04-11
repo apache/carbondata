@@ -37,7 +37,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
-import org.apache.carbondata.core.index.status.DataMapStatusManager
+import org.apache.carbondata.core.index.status.IndexStatusManager
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
@@ -361,7 +361,7 @@ case class CarbonAlterTableCompactionCommand(
         if (CompactionType.IUD_UPDDEL_DELTA != compactionType) {
           updateLock.unlock()
         }
-        DataMapStatusManager.disableAllLazyDataMaps(carbonTable)
+        IndexStatusManager.disableAllLazyIndexes(carbonTable)
         val viewManager = MVManagerInSpark.get(sqlContext.sparkSession)
         val viewSchemas = new util.ArrayList[MVSchema]()
         for (viewSchema <- viewManager.getSchemasOnTable(carbonTable).asScala) {

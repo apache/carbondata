@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.datamap.examples;
+package org.apache.carbondata.index.examples;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -72,7 +72,7 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
     optOperations.add(ExpressionType.LESSTHAN);
     optOperations.add(ExpressionType.LESSTHAN_EQUALTO);
     optOperations.add(ExpressionType.NOT_EQUALS);
-    LOGGER.error("MinMaxDataMap support operations: " + StringUtils.join(optOperations, ", "));
+    LOGGER.error("support operations: " + StringUtils.join(optOperations, ", "));
     this.dataMapMeta = new DataMapMeta(allColumns, optOperations);
   }
 
@@ -104,13 +104,13 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
    * @throws IOException
    */
   @Override
-  public List<CoarseGrainDataMap> getDataMaps(Segment segment)
+  public List<MinMaxIndex> getDataMaps(Segment segment)
       throws IOException {
-    List<CoarseGrainDataMap> dataMapList = new ArrayList<>();
-    // Form a dataMap of Type MinMaxIndexDataMap.
-    MinMaxIndexDataMap dataMap = new MinMaxIndexDataMap();
+    List<MinMaxIndex> indexes = new ArrayList<>();
+    // Form a MinMaxIndex.
+    MinMaxIndex index = new MinMaxIndex();
     try {
-      dataMap.init(new DataMapModel(
+      index.init(new DataMapModel(
           MinMaxDataWriter.genDataMapStorePath(
               CarbonTablePath.getSegmentPath(
                   identifier.getTablePath(), segment.getSegmentNo()),
@@ -118,8 +118,8 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
     } catch (MemoryException ex) {
       throw new IOException(ex);
     }
-    dataMapList.add(dataMap);
-    return dataMapList;
+    indexes.add(index);
+    return indexes;
   }
 
   /**

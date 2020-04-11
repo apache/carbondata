@@ -30,7 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
+import org.apache.carbondata.common.exceptions.sql.NoSuchIndexException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -45,9 +45,9 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.log4j.Logger;
 
 /**
- * Stores datamap schema in disk as json format
+ * Stores index schema in disk as json format
  */
-public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStorageProvider {
+public class DiskBasedIndexSchemaStorageProvider implements IndexSchemaStorageProvider {
 
   private Logger LOG = LogServiceFactory.getLogService(this.getClass().getCanonicalName());
 
@@ -59,7 +59,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
 
   private Set<IndexSchema> indexSchemas = new HashSet<>();
 
-  public DiskBasedDMSchemaStorageProvider(String storePath) {
+  public DiskBasedIndexSchemaStorageProvider(String storePath) {
     this.storePath = CarbonUtil.checkAndAppendHDFSUrl(storePath);
     this.mdtFilePath = storePath + CarbonCommonConstants.FILE_SEPARATOR + "datamap.mdtfile";
   }
@@ -74,7 +74,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
       throw new IOException(
               "Index with name " + indexSchema.getIndexName() + " already exists in storage");
     }
-    // write the datamap shema in json format.
+    // write the index schema in json format.
     try {
       FileFactory.mkdirs(storePath);
       FileFactory.createNewFile(schemaPath);
@@ -91,26 +91,25 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
       }
       indexSchemas.add(indexSchema);
       CarbonUtil.closeStreams(dataOutputStream, brWriter);
-      checkAndReloadDataMapSchemas(true);
+      checkAndReloadIndexSchemas(true);
       touchMDTFile();
     }
   }
 
   @Override
-  public IndexSchema retrieveSchema(String dataMapName)
-      throws IOException, NoSuchDataMapException {
-    checkAndReloadDataMapSchemas(true);
+  public IndexSchema retrieveSchema(String indexName) throws IOException, NoSuchIndexException {
+    checkAndReloadIndexSchemas(true);
     for (IndexSchema indexSchema : indexSchemas) {
-      if (indexSchema.getIndexName().equalsIgnoreCase(dataMapName)) {
+      if (indexSchema.getIndexName().equalsIgnoreCase(indexName)) {
         return indexSchema;
       }
     }
-    throw new NoSuchDataMapException(dataMapName);
+    throw new NoSuchIndexException(indexName);
   }
 
   @Override
   public List<IndexSchema> retrieveSchemas(CarbonTable carbonTable) throws IOException {
-    checkAndReloadDataMapSchemas(false);
+    checkAndReloadIndexSchemas(false);
     List<IndexSchema> indexSchemas = new ArrayList<>();
     for (IndexSchema indexSchema : this.indexSchemas) {
       List<RelationIdentifier> parentTables = indexSchema.getParentTables();
@@ -132,7 +131,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
 
   @Override
   public List<IndexSchema> retrieveAllSchemas() throws IOException {
-    checkAndReloadDataMapSchemas(true);
+    checkAndReloadIndexSchemas(true);
     return new ArrayList<>(indexSchemas);
   }
 
@@ -168,24 +167,24 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
   }
 
   @Override
-  public void dropSchema(String dataMapName)
+  public void dropSchema(String indexName)
       throws IOException {
-    String schemaPath = getSchemaPath(storePath, dataMapName);
+    String schemaPath = getSchemaPath(storePath, indexName);
     if (!FileFactory.isFileExist(schemaPath)) {
-      throw new IOException("Index with name " + dataMapName + " does not exists in storage");
+      throw new IOException("Index with name " + indexName + " does not exists in storage");
     }
 
-    LOG.info(String.format("Trying to delete Index %s schema", dataMapName));
+    LOG.info(String.format("Trying to delete Index %s schema", indexName));
 
-    indexSchemas.removeIf(schema -> schema.getIndexName().equalsIgnoreCase(dataMapName));
+    indexSchemas.removeIf(schema -> schema.getIndexName().equalsIgnoreCase(indexName));
     touchMDTFile();
     if (!FileFactory.deleteFile(schemaPath)) {
-      throw new IOException("Index with name " + dataMapName + " cannot be deleted");
+      throw new IOException("Index with name " + indexName + " cannot be deleted");
     }
-    LOG.info(String.format("Index %s schema is deleted", dataMapName));
+    LOG.info(String.format("Index %s schema is deleted", indexName));
   }
 
-  private void checkAndReloadDataMapSchemas(boolean touchFile) throws IOException {
+  private void checkAndReloadIndexSchemas(boolean touchFile) throws IOException {
     if (FileFactory.isFileExist(mdtFilePath)) {
       long lastModifiedTime = FileFactory.getCarbonFile(mdtFilePath).getLastModifiedTime();
       if (this.lastModifiedTime != lastModifiedTime) {
@@ -217,13 +216,13 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
   }
 
   /**
-   * it returns the schema path for the datamap
+   * it returns the schema path for the index
    * @param storePath
-   * @param dataMapName
+   * @param indexName
    * @return
    */
-  public static String getSchemaPath(String storePath, String dataMapName) {
-    String schemaPath =  storePath + CarbonCommonConstants.FILE_SEPARATOR + dataMapName
+  public static String getSchemaPath(String storePath, String indexName) {
+    String schemaPath =  storePath + CarbonCommonConstants.FILE_SEPARATOR + indexName
         + ".dmschema";
     return schemaPath;
   }

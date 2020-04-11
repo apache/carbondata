@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.datamap.examples
+package org.apache.carbondata.index.examples
 
 import java.io.{File, PrintWriter}
 import java.util.UUID
@@ -38,7 +38,7 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(s"DROP TABLE IF EXISTS $minMaxDMSampleTable")
   }
   
-  test("test minmax datamap") {
+  test("test minmax index") {
     sql(
       s"""
          | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
@@ -53,8 +53,8 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
         |  """.stripMargin)
     sql(
       s"""
-        | CREATE DATAMAP $dataMapName ON TABLE $minMaxDMSampleTable
-        | USING '${classOf[MinMaxIndexDataMapFactory].getName}'
+        | CREATE INDEX $dataMapName ON TABLE $minMaxDMSampleTable
+        | AS '${classOf[MinMaxIndexDataMapFactory].getName}'
       """.stripMargin)
 
     sql(

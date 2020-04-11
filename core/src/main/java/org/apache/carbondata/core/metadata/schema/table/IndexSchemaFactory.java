@@ -20,27 +20,17 @@ package org.apache.carbondata.core.metadata.schema.table;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 
-public class DataMapSchemaFactory {
-  public static final DataMapSchemaFactory INSTANCE = new DataMapSchemaFactory();
+public class IndexSchemaFactory {
+  public static final IndexSchemaFactory INSTANCE = new IndexSchemaFactory();
 
-  /**
-   * Below class will be used to get data map schema object
-   * based on class name
-   * @param providerName
-   * @return data map schema
-   */
-  public IndexSchema getDataMapSchema(String dataMapName, String providerName) {
-    return new IndexSchema(dataMapName, providerName);
-  }
-
-  public static DataMapSchemaStorageProvider getDataMapSchemaStorageProvider() {
+  public static IndexSchemaStorageProvider getIndexSchemaStorageProvider() {
     String provider = CarbonProperties.getDataMapStorageProvider();
     switch (provider) {
       case CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DATABASE:
-        return new DatabaseDMSchemaStorageProvider();
+        return new DatabaseIndexSchemaStorageProvider();
       case CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DISK:
       default:
-        return new DiskBasedDMSchemaStorageProvider(
+        return new DiskBasedIndexSchemaStorageProvider(
             CarbonProperties.getInstance().getSystemFolderLocation());
     }
   }

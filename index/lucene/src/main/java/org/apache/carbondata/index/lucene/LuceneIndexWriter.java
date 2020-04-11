@@ -99,10 +99,10 @@ public class LuceneIndexWriter extends IndexWriter {
 
   private boolean storeBlockletWise;
 
-  LuceneIndexWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
+  LuceneIndexWriter(String tablePath, String indexName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName, int flushSize,
       boolean storeBlockletWise) {
-    super(tablePath, dataMapName, indexColumns, segment, shardName);
+    super(tablePath, indexName, indexColumns, segment, shardName);
     this.cacheSize = flushSize;
     this.storeBlockletWise = storeBlockletWise;
   }
@@ -147,19 +147,19 @@ public class LuceneIndexWriter extends IndexWriter {
       return;
     }
     // get index path, put index data into segment's path
-    String dataMapPath;
+    String path;
     if (storeBlockletWise) {
-      dataMapPath = this.indexPath + File.separator + blockletId;
+      path = this.indexPath + File.separator + blockletId;
     } else {
-      dataMapPath = this.indexPath;
+      path = this.indexPath;
     }
-    Path indexPath = FileFactory.getPath(dataMapPath);
+    Path indexPath = FileFactory.getPath(path);
     FileSystem fs = FileFactory.getFileSystem(indexPath);
 
     // if index path not exists, create it
     if (!fs.exists(indexPath)) {
       if (!fs.mkdirs(indexPath)) {
-        throw new IOException("Failed to create directory " + dataMapPath);
+        throw new IOException("Failed to create directory " + path);
       }
     }
 
@@ -206,7 +206,7 @@ public class LuceneIndexWriter extends IndexWriter {
   }
 
   /**
-   * Add the column pages row to the datamap, order of pages is same as `indexColumns` in
+   * Add the column pages row to the index, order of pages is same as `indexColumns` in
    * IndexMeta returned in IndexFactory.
    * Implementation should copy the content of `pages` as needed, because `pages` memory
    * may be freed after this method returns, if using unsafe column page.
@@ -217,7 +217,7 @@ public class LuceneIndexWriter extends IndexWriter {
     int columnsCount = pages.length;
     if (columnsCount <= 0) {
       LOGGER.warn("No data in the page " + pageId + "with blockletid " + blockletId
-          + " to write lucene datamap");
+          + " to write lucene index");
       return;
     }
     for (int rowId = 0; rowId < pageSize; rowId++) {

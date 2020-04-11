@@ -72,7 +72,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 /**
- * Datamap implementation for block.
+ * Index implementation for block.
  */
 public class BlockIndex extends CoarseGrainIndex
     implements BlockletIndexRowIndexes, Serializable {
@@ -112,29 +112,29 @@ public class BlockIndex extends CoarseGrainIndex
   public void init(IndexModel indexModel) throws IOException {
     long startTime = System.currentTimeMillis();
     assert (indexModel instanceof BlockletIndexModel);
-    BlockletIndexModel blockletDataMapInfo = (BlockletIndexModel) indexModel;
+    BlockletIndexModel blockletIndexModel = (BlockletIndexModel) indexModel;
     DataFileFooterConverter fileFooterConverter =
         new DataFileFooterConverter(indexModel.getConfiguration());
     List<DataFileFooter> indexInfo = null;
-    if (blockletDataMapInfo.getIndexInfos() == null || blockletDataMapInfo.getIndexInfos()
+    if (blockletIndexModel.getIndexInfos() == null || blockletIndexModel.getIndexInfos()
         .isEmpty()) {
       indexInfo = fileFooterConverter
-          .getIndexInfo(blockletDataMapInfo.getFilePath(), blockletDataMapInfo.getFileData(),
-              blockletDataMapInfo.getCarbonTable().isTransactionalTable());
+          .getIndexInfo(blockletIndexModel.getFilePath(), blockletIndexModel.getFileData(),
+              blockletIndexModel.getCarbonTable().isTransactionalTable());
     } else {
       // when index info is already read and converted to data file footer object
-      indexInfo = blockletDataMapInfo.getIndexInfos();
+      indexInfo = blockletIndexModel.getIndexInfos();
     }
-    String path = blockletDataMapInfo.getFilePath();
+    String path = blockletIndexModel.getFilePath();
     // store file path only in case of partition table, non transactional table and flat folder
     // structure
     byte[] filePath;
-    this.isPartitionTable = blockletDataMapInfo.getCarbonTable().isHivePartitionTable();
-    if (this.isPartitionTable || !blockletDataMapInfo.getCarbonTable().isTransactionalTable() ||
-        blockletDataMapInfo.getCarbonTable().isSupportFlatFolder() ||
+    this.isPartitionTable = blockletIndexModel.getCarbonTable().isHivePartitionTable();
+    if (this.isPartitionTable || !blockletIndexModel.getCarbonTable().isTransactionalTable() ||
+        blockletIndexModel.getCarbonTable().isSupportFlatFolder() ||
         // if the segment data is written in tablepath then no need to store whole path of file.
-        !blockletDataMapInfo.getFilePath().startsWith(
-            blockletDataMapInfo.getCarbonTable().getTablePath())) {
+        !blockletIndexModel.getFilePath().startsWith(
+            blockletIndexModel.getCarbonTable().getTablePath())) {
       filePath = FilenameUtils.getFullPathNoEndSeparator(path)
               .getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
       isFilePathStored = true;
@@ -144,17 +144,17 @@ public class BlockIndex extends CoarseGrainIndex
     byte[] fileName = path.substring(path.lastIndexOf("/") + 1, path.length())
         .getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
     byte[] segmentId =
-        blockletDataMapInfo.getSegmentId().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
+        blockletIndexModel.getSegmentId().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
     if (!indexInfo.isEmpty()) {
       DataFileFooter fileFooter = indexInfo.get(0);
       // init segment properties and create schema
-      SegmentProperties segmentProperties = initSegmentProperties(blockletDataMapInfo, fileFooter);
-      createMemorySchema(blockletDataMapInfo);
-      createSummaryDMStore(blockletDataMapInfo);
+      SegmentProperties segmentProperties = initSegmentProperties(blockletIndexModel, fileFooter);
+      createMemorySchema(blockletIndexModel);
+      createSummaryDMStore(blockletIndexModel);
       CarbonRowSchema[] taskSummarySchema = getTaskSummarySchema();
       // check for legacy store and load the metadata
       IndexRowImpl summaryRow =
-          loadMetadata(taskSummarySchema, segmentProperties, blockletDataMapInfo, indexInfo);
+          loadMetadata(taskSummarySchema, segmentProperties, blockletIndexModel, indexInfo);
       finishWriting(taskSummarySchema, filePath, fileName, segmentId, summaryRow);
       if (((BlockletIndexModel) indexModel).isSerializeDmStore()) {
         serializeDmStore();
@@ -162,7 +162,7 @@ public class BlockIndex extends CoarseGrainIndex
     }
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug(
-          "Time taken to load blocklet datamap from file : " + indexModel.getFilePath() + " is "
+          "Time taken to load blocklet index from file : " + indexModel.getFilePath() + " is "
               + (System.currentTimeMillis() - startTime));
     }
   }
@@ -192,13 +192,13 @@ public class BlockIndex extends CoarseGrainIndex
    * Method to check the cache level and load metadata based on that information
    *
    * @param segmentProperties
-   * @param blockletDataMapInfo
+   * @param blockletIndexModel
    * @param indexInfo
    */
   protected IndexRowImpl loadMetadata(CarbonRowSchema[] taskSummarySchema,
-      SegmentProperties segmentProperties, BlockletIndexModel blockletDataMapInfo,
+      SegmentProperties segmentProperties, BlockletIndexModel blockletIndexModel,
       List<DataFileFooter> indexInfo) {
-    return loadBlockMetaInfo(taskSummarySchema, segmentProperties, blockletDataMapInfo, indexInfo);
+    return loadBlockMetaInfo(taskSummarySchema, segmentProperties, blockletIndexModel, indexInfo);
   }
 
   /**
@@ -207,12 +207,12 @@ public class BlockIndex extends CoarseGrainIndex
    * @param fileFooter
    * @throws IOException
    */
-  private SegmentProperties initSegmentProperties(BlockletIndexModel blockletDataMapInfo,
+  private SegmentProperties initSegmentProperties(BlockletIndexModel blockletIndexModel,
       DataFileFooter fileFooter) {
     List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
     segmentPropertiesWrapper = SegmentPropertiesAndSchemaHolder.getInstance()
-        .addSegmentProperties(blockletDataMapInfo.getCarbonTable(),
-            columnInTable, blockletDataMapInfo.getSegmentId());
+        .addSegmentProperties(blockletIndexModel.getCarbonTable(),
+            columnInTable, blockletIndexModel.getSegmentId());
     return segmentPropertiesWrapper.getSegmentProperties();
   }
 
@@ -230,11 +230,11 @@ public class BlockIndex extends CoarseGrainIndex
   /**
    * Method to load block metadata information
    *
-   * @param blockletDataMapInfo
+   * @param blockletIndexModel
    * @param indexInfo
    */
   private IndexRowImpl loadBlockMetaInfo(CarbonRowSchema[] taskSummarySchema,
-      SegmentProperties segmentProperties, BlockletIndexModel blockletDataMapInfo,
+      SegmentProperties segmentProperties, BlockletIndexModel blockletIndexModel,
       List<DataFileFooter> indexInfo) {
     String tempFilePath = null;
     DataFileFooter previousDataFileFooter = null;
@@ -256,7 +256,7 @@ public class BlockIndex extends CoarseGrainIndex
     for (DataFileFooter fileFooter : indexInfo) {
       TableBlockInfo blockInfo = fileFooter.getBlockInfo();
       BlockMetaInfo blockMetaInfo =
-          blockletDataMapInfo.getBlockMetaInfoMap().get(blockInfo.getFilePath());
+          blockletIndexModel.getBlockMetaInfoMap().get(blockInfo.getFilePath());
       footerCounter++;
       if (blockMetaInfo != null) {
         // this variable will be used for adding the IndexRow entry every time a unique block
@@ -292,7 +292,7 @@ public class BlockIndex extends CoarseGrainIndex
           summaryRow = loadToUnsafeBlock(schema, taskSummarySchema, previousDataFileFooter,
               segmentProperties, getMinMaxCacheColumns(), previousBlockInfo.getFilePath(),
               summaryRow,
-              blockletDataMapInfo.getBlockMetaInfoMap().get(previousBlockInfo.getFilePath()),
+              blockletIndexModel.getBlockMetaInfoMap().get(previousBlockInfo.getFilePath()),
               blockMinValues, blockMaxValues, minMaxFlag);
           totalRowCount += previousDataFileFooter.getNumberOfRows();
           minMaxFlag = new boolean[segmentProperties.getNumberOfColumns()];
@@ -322,7 +322,7 @@ public class BlockIndex extends CoarseGrainIndex
           loadToUnsafeBlock(schema, taskSummarySchema, previousDataFileFooter, segmentProperties,
               getMinMaxCacheColumns(),
               previousDataFileFooter.getBlockInfo().getFilePath(), summaryRow,
-              blockletDataMapInfo.getBlockMetaInfoMap()
+              blockletIndexModel.getBlockMetaInfoMap()
                   .get(previousDataFileFooter.getBlockInfo().getFilePath()),
               blockMinValues, blockMaxValues, minMaxFlag);
       totalRowCount += previousDataFileFooter.getNumberOfRows();
@@ -543,18 +543,18 @@ public class BlockIndex extends CoarseGrainIndex
     return updatedMinMaxValues;
   }
 
-  protected void createMemorySchema(BlockletIndexModel blockletDataMapModel) {
-    memoryDMStore = getMemoryDMStore(blockletDataMapModel.isAddToUnsafe());
+  protected void createMemorySchema(BlockletIndexModel blockletIndexModel) {
+    memoryDMStore = getMemoryDMStore(blockletIndexModel.isAddToUnsafe());
   }
 
   /**
    * Creates the schema to store summary information or the information which can be stored only
-   * once per datamap. It stores datamap level max/min of each column and partition information of
-   * datamap
+   * once per index. It stores index level max/min of each column and partition information of
+   * index
    *
    */
-  protected void createSummaryDMStore(BlockletIndexModel blockletDataMapModel) {
-    taskSummaryDMStore = getMemoryDMStore(blockletDataMapModel.isAddToUnsafe());
+  protected void createSummaryDMStore(BlockletIndexModel blockletIndexModel) {
+    taskSummaryDMStore = getMemoryDMStore(blockletIndexModel.isAddToUnsafe());
   }
 
   @Override
@@ -592,12 +592,12 @@ public class BlockIndex extends CoarseGrainIndex
     }
   }
 
-  // get total block number in this datamap
+  // get total block number in this index
   public int getTotalBlocks() {
     return memoryDMStore.getRowCount();
   }
 
-  // get total blocklet number in this datamap
+  // get total blocklet number in this index
   protected int getTotalBlocklets() {
     ByteBuffer byteBuffer = ByteBuffer.wrap(getBlockletRowCountForEachBlock());
     int sum = 0;
@@ -630,7 +630,7 @@ public class BlockIndex extends CoarseGrainIndex
     if (memoryDMStore.getRowCount() == 0) {
       return new HashMap<>();
     }
-    // if it has partitioned datamap but there is no partitioned information stored, it means
+    // if it has partitioned index but there is no partitioned information stored, it means
     // partitions are dropped so return empty list.
     if (partitions != null) {
       if (!validatePartitionInfo(partitions)) {
@@ -710,7 +710,7 @@ public class BlockIndex extends CoarseGrainIndex
       ExplainCollector.setShowPruningInfo(true);
       ExplainCollector.addTotalBlocklets(totalBlocklets);
       ExplainCollector.addTotalBlocks(getTotalBlocks());
-      ExplainCollector.addDefaultDataMapPruningHit(hitBlocklets);
+      ExplainCollector.addDefaultIndexPruningHit(hitBlocklets);
     }
     return blocklets;
   }
@@ -732,7 +732,7 @@ public class BlockIndex extends CoarseGrainIndex
     if (memoryDMStore.getRowCount() == 0) {
       return new ArrayList<>();
     }
-    // Prune with filters if the partitions are existed in this datamap
+    // Prune with filters if the partitions are existed in this index
     // changed segmentProperties to this.segmentProperties to make sure the pruning with its own
     // segmentProperties.
     // Its a temporary fix. The Interface Index.prune(FilterResolverIntf filterExp,
@@ -741,7 +741,7 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   private boolean validatePartitionInfo(List<PartitionSpec> partitions) {
-    // First get the partitions which are stored inside datamap.
+    // First get the partitions which are stored inside index.
     String[] fileDetails = getFileDetails();
     // Check the exact match of partition information inside the stored partitions.
     boolean found = false;
@@ -1026,7 +1026,7 @@ public class BlockIndex extends CoarseGrainIndex
   public int getNumberOfEntries() {
     if (memoryDMStore != null) {
       if (memoryDMStore.getRowCount() == 0) {
-        // so that one datamap considered as one record
+        // so that one index considered as one record
         return 1;
       } else {
         return memoryDMStore.getRowCount();

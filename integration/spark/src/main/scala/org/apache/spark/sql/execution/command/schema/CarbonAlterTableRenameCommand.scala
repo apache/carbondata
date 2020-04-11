@@ -77,13 +77,13 @@ private[sql] case class CarbonAlterTableRenameCommand(
     }
 
     if (!oldCarbonTable.canAllow(oldCarbonTable, TableOperation.ALTER_RENAME)) {
-      throw new MalformedCarbonCommandException("alter rename is not supported for index datamap")
+      throw new MalformedCarbonCommandException("alter rename is not supported for this table")
     }
     // if table have created MV, not support table rename
     if (MVManagerInSpark.get(sparkSession).hasSchemaOnTable(oldCarbonTable) ||
         oldCarbonTable.hasMVCreated || oldCarbonTable.isMV) {
       throw new MalformedCarbonCommandException(
-        "alter rename is not supported for datamap table or for tables which have child datamap")
+        "alter rename is not supported for MV table or for tables which have child MV")
     }
 
     var timeStamp = 0L

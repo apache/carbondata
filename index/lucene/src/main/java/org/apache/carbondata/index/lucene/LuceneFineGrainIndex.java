@@ -79,7 +79,7 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
   private static final int SEARCH_LIMIT = 100;
 
   /**
-   * searcher object for this datamap
+   * searcher object for this index
    */
   private Map<String, IndexSearcher> indexSearcherMap = null;
 

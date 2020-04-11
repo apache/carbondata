@@ -23,29 +23,29 @@ import java.util.List;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 
 /**
- * It updates the datamap status to the storage. It will have 2 implementations one will be disk
+ * It updates the index status to the storage. It will have 2 implementations one will be disk
  * based and another would be DB based
  *
  * @version 1.4
  */
-public interface DataMapStatusStorageProvider {
+public interface IndexStatusStorageProvider {
 
   /**
-   * It reads and returns all datamap status details from storage.
+   * It reads and returns all index status details from storage.
    *
-   * @return DataMapStatusDetail[] all datamap status details
+   * @return IndexStatusDetail[] all index status details
    * @throws IOException
    */
-  DataMapStatusDetail[] getDataMapStatusDetails() throws IOException;
+  IndexStatusDetail[] getIndexStatusDetails() throws IOException;
 
   /**
    * Update the status of the given datamaps to the passed datamap status.
    *
    * @param indexSchemas schemas of which are need to be updated in datamap status
-   * @param dataMapStatus  status to be updated for the datamap schemas
+   * @param indexStatus  status to be updated for the index schemas
    * @throws IOException
    */
-  void updateDataMapStatus(List<IndexSchema> indexSchemas, DataMapStatus dataMapStatus)
+  void updateIndexStatus(List<IndexSchema> indexSchemas, IndexStatus indexStatus)
       throws IOException;
 
 }

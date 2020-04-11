@@ -45,7 +45,7 @@
         "create materialized view  datamap2  as " +
         "select timeseries(projectjoindate,'hour'),projectcode from maintable")
       val df = sql("select timeseries(projectjoindate,'day'),projectcode from maintable")
-      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap2"))
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap2"))
       checkAnswer(result,df)
       sql("drop materialized view  if exists datamap1")
       sql("drop materialized view  if exists datamap2")
@@ -62,12 +62,12 @@
         "create materialized view  datamap2  as " +
         "select timeseries(projectjoindate,'hour'),projectcode from maintable group by timeseries(projectjoindate,'hour'),projectcode")
       var df = sql("select timeseries(projectjoindate,'day'),projectcode from maintable group by timeseries(projectjoindate,'day'),projectcode")
-      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap2"))
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap2"))
       checkAnswer(result,df)
       df = sql("select timeseries(projectjoindate,'second'),projectcode from maintable group by timeseries(projectjoindate,'second'),projectcode")
-      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap1"))
       df = sql("select timeseries(projectjoindate,'second') from maintable group by timeseries(projectjoindate,'second')")
-      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap1"))
       sql("drop materialized view  if exists datamap1")
       sql("drop materialized view  if exists datamap2")
     }
@@ -79,12 +79,12 @@
         "create materialized view  datamap1  as " +
         "select timeseries(projectjoindate,'second'),projectcode from maintable group by timeseries(projectjoindate,'second'),projectcode")
       var df = sql("select timeseries(projectjoindate,'day'),projectcode from maintable group by timeseries(projectjoindate,'day'),projectcode")
-      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap1"))
       checkAnswer(result,df)
       df = sql("select timeseries(projectjoindate,'second'),projectcode from maintable group by timeseries(projectjoindate,'second'),projectcode")
-      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap1"))
       df = sql("select timeseries(projectjoindate,'second') from maintable group by timeseries(projectjoindate,'second')")
-      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap1"))
       sql("drop materialized view  if exists datamap1")
     }
 
@@ -99,7 +99,7 @@
         "create materialized view  datamap2  as " +
         "select timeseries(projectjoindate,'hour'),sum(projectcode) from maintable group by timeseries(projectjoindate,'hour')")
       val df =sql("select timeseries(projectjoindate,'day'),sum(projectcode) from maintable group by timeseries(projectjoindate,'day')")
-      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap2"))
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap2"))
       checkAnswer(result,df)
       sql("drop materialized view  if exists datamap1")
       sql("drop materialized view  if exists datamap2")
@@ -116,7 +116,7 @@
         "create materialized view  datamap2  as " +
         "select timeseries(projectjoindate,'hour'),projectcode from maintable")
       val df = sql("select timeseries(projectjoindate,'day'),projectcode from maintable where projectcode=8")
-      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap2"))
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap2"))
       checkAnswer(result,df)
       sql("drop materialized view  if exists datamap1")
       sql("drop materialized view  if exists datamap2")
@@ -135,7 +135,7 @@
           "(projectjoindate,'hour'),projectcode")
       val df = sql("select timeseries(projectjoindate,'day'),projectcode from maintable where projectcode=8 " +
                    "group by timeseries(projectjoindate,'day'),projectcode")
-      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap2"))
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap2"))
       checkAnswer(result, df)
       sql("drop materialized view  if exists datamap1")
       sql("drop materialized view  if exists datamap2")
@@ -148,7 +148,7 @@
         "create materialized view  datamap1  as " +
         "select timeseries(projectjoindate,'second'),projectcode from maintable where projectcode=1 group by timeseries(projectjoindate,'second'),projectcode")
       val df = sql("select timeseries(projectjoindate,'day'),projectcode from maintable where projectcode=8 group by timeseries(projectjoindate,'day'),projectcode")
-      assert(!TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
+      assert(!TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap1"))
       checkAnswer(result,df)
       sql("drop materialized view  if exists datamap1")
     }
@@ -164,7 +164,7 @@
         "create materialized view  datamap2  as " +
         "select timeseries(projectjoindate,'hour'),projectcode from maintable")
       val df = sql("select timeseries(projectjoindate,'day') as a,projectcode as b from maintable")
-      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap2"))
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap2"))
       checkAnswer(result,df)
       sql("drop materialized view  if exists datamap1")
       sql("drop materialized view  if exists datamap2")
@@ -181,7 +181,7 @@
         "create materialized view  datamap2  as " +
         "select timeseries(projectjoindate,'hour') as a,projectcode as b from maintable")
       val df = sql("select timeseries(projectjoindate,'day'),projectcode from maintable")
-      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap2"))
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap2"))
       checkAnswer(result,df)
       sql("drop materialized view  if exists datamap1")
       sql("drop materialized view  if exists datamap2")
@@ -198,7 +198,7 @@
         "create materialized view  datamap2  as " +
         "select timeseries(projectjoindate,'hour'),sum(projectcode) from maintable group by timeseries(projectjoindate,'hour')")
       val df = sql("select timeseries(projectjoindate,'day') as a,sum(projectcode) as b from maintable group by timeseries(projectjoindate,'day')")
-      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap2"))
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap2"))
       checkAnswer(result,df)
       sql("drop materialized view  if exists datamap1")
       sql("drop materialized view  if exists datamap2")
@@ -215,7 +215,7 @@
         "create materialized view  datamap2  as " +
         "select timeseries(projectjoindate,'hour') as a,sum(projectcode) as b from maintable group by timeseries(projectjoindate,'hour')")
       val df = sql("select timeseries(projectjoindate,'day'),sum(projectcode) from maintable group by timeseries(projectjoindate,'day')")
-      assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap2"))
+      assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap2"))
       checkAnswer(result,df)
       sql("drop materialized view  if exists datamap1")
       sql("drop materialized view  if exists datamap2")
@@ -238,7 +238,7 @@
         "on (timeseries(t1.projectjoindate,'hour')=timeseries(t2.projectjoindate,'hour')) group by timeseries(t1.projectjoindate,'hour')")
       val df = sql("select timeseries(t1.projectjoindate,'day'),count(timeseries(t2.projectjoindate,'day')),sum(t2.projectcode) from maintable t1 inner join maintable1 t2 " +
           "on (timeseries(t1.projectjoindate,'day')=timeseries(t2.projectjoindate,'day')) group by timeseries(t1.projectjoindate,'day')")
-      assert(!TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap2"))
+      assert(!TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap2"))
       checkAnswer(result,df)
       sql("drop materialized view  if exists datamap1")
       sql("drop materialized view  if exists datamap2")
@@ -255,7 +255,7 @@
         "create materialized view  datamap2  as " +
         "select timeseries(projectjoindate,'hour'),sum(projectcode) from maintable group by timeseries(projectjoindate,'hour')")
       val df = sql("select timeseries(projectjoindate,'day'),sum(projectcode) from maintable where timeseries(projectjoindate,'day')='2016-02-23 00:00:00' group by timeseries(projectjoindate,'day')")
-      assert(!TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap2"))
+      assert(!TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap2"))
       checkAnswer(result,df)
       sql("drop materialized view  if exists datamap1")
       sql("drop materialized view  if exists datamap2")
@@ -272,9 +272,9 @@
       val result = sql("select timeseries(projectjoindate,'week'),sum(projectcode) from maintable group by timeseries(projectjoindate,'week')")
       sql("create materialized view  datamap1  as select timeseries(projectjoindate,'day'),sum(projectcode) from maintable group by timeseries(projectjoindate,'day')")
       val dayDF= sql("select timeseries(projectjoindate,'day'),sum(projectcode) from maintable group by timeseries(projectjoindate,'day')")
-      assert(TestUtil.verifyMVDataMap(dayDF.queryExecution.optimizedPlan, "datamap1"))
+      assert(TestUtil.verifyMVHit(dayDF.queryExecution.optimizedPlan, "datamap1"))
       val weekDF = sql("select timeseries(projectjoindate,'week'),sum(projectcode) from maintable group by timeseries(projectjoindate,'week')")
-      assert(TestUtil.verifyMVDataMap(weekDF.queryExecution.optimizedPlan, "datamap1"))
+      assert(TestUtil.verifyMVHit(weekDF.queryExecution.optimizedPlan, "datamap1"))
       checkAnswer(result, weekDF)
       sql("drop materialized view  if exists datamap1")
       drop()

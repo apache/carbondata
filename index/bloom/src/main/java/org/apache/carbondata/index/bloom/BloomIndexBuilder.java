@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.index.dev.IndexBuilder;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -36,10 +35,10 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 public class BloomIndexBuilder extends AbstractBloomIndexWriter implements IndexBuilder {
 
   BloomIndexBuilder(String tablePath, String indexName, List<CarbonColumn> indexColumns,
-      Segment segment, String shardName, SegmentProperties segmentProperties,
-      int bloomFilterSize, double bloomFilterFpp, boolean bloomCompress) throws IOException {
-    super(tablePath, indexName, indexColumns, segment, shardName, segmentProperties,
-        bloomFilterSize, bloomFilterFpp, bloomCompress);
+      Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp,
+      boolean bloomCompress) throws IOException {
+    super(tablePath, indexName, indexColumns, segment, shardName, bloomFilterSize,
+        bloomFilterFpp, bloomCompress);
   }
 
   @Override

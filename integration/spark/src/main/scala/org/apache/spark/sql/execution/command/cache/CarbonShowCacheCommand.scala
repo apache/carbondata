@@ -425,19 +425,19 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       tableId: String): List[(String, Int, Long, String)] = {
     val dataMaps = IndexStoreManager.getInstance().getTableIndexForAllTables.asScala
     dataMaps.collect {
-      case (table, tableDataMaps) if table.isEmpty ||
+      case (table, tableIndexes) if table.isEmpty ||
                                      (tableId.nonEmpty && tableId.equalsIgnoreCase(table)) =>
-        val sizeAndIndexLengths = tableDataMaps.asScala
-          .collect { case dataMap if
-          dataMap.getIndexSchema.getIndexName.equalsIgnoreCase(tableName) ||
-          dataMap.getIndexFactory.getCarbonTable.getTableUniqueName.equalsIgnoreCase(tableName) =>
-            if (dataMap.getIndexFactory.isInstanceOf[BlockletIndexFactory]) {
-              s"$tableName:${ dataMap.getIndexFactory.getCacheSize }:${
-                dataMap.getIndexSchema.getProviderName}"
+        val sizeAndIndexLengths = tableIndexes.asScala
+          .collect { case index if
+          index.getIndexSchema.getIndexName.equalsIgnoreCase(tableName) ||
+          index.getIndexFactory.getCarbonTable.getTableUniqueName.equalsIgnoreCase(tableName) =>
+            if (index.getIndexFactory.isInstanceOf[BlockletIndexFactory]) {
+              s"$tableName:${ index.getIndexFactory.getCacheSize }:${
+                index.getIndexSchema.getProviderName}"
             } else {
-              s"${ dataMap.getIndexSchema.getIndexName }:${
-                dataMap.getIndexFactory.getCacheSize
-              }:${ dataMap.getIndexSchema.getProviderName }"
+              s"${ index.getIndexSchema.getIndexName }:${
+                index.getIndexFactory.getCacheSize
+              }:${ index.getIndexSchema.getProviderName }"
             }
           }
         sizeAndIndexLengths.map {

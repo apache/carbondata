@@ -127,7 +127,7 @@ case class CarbonCreateTableCommand(
           CarbonCreateTableCommand.synchronized {
             // isVisible property is added to hive table properties to differentiate between main
             // table and mv. It is false only for mv's. This is added
-            // to improve the show tables performance when filtering the datamaps from main tables
+            // to improve the show tables performance when filtering the MV from main tables
             sparkSession.sql(
               s"""CREATE TABLE $dbName.$tableName
                  |(${ rawSchema })

@@ -1297,7 +1297,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists car")
   }
 
-  test("test clearing datamaps") {
+  test("test clearing indexes") {
     import sqlContext.sparkSession.implicits._
     if (!sqlContext.sparkContext.version.startsWith("2.1")) {
       val df = sqlContext.sparkContext.parallelize(1 to 10)

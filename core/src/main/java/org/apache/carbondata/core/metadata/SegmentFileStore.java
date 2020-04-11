@@ -594,11 +594,11 @@ public class SegmentFileStore {
    * @param segmentId
    */
   public static void clearBlockIndexCache(CarbonTable carbonTable, String segmentId) {
-    TableIndex defaultDataMap = IndexStoreManager.getInstance().getDefaultIndex(carbonTable);
+    TableIndex defaultIndex = IndexStoreManager.getInstance().getDefaultIndex(carbonTable);
     LOGGER.info(
         "clearing cache while updating segment file entry in table status file for segmentId: "
             + segmentId);
-    defaultDataMap.getIndexFactory().clear(segmentId);
+    defaultIndex.getIndexFactory().clear(segmentId);
   }
 
   private static CarbonFile[] getSegmentFiles(String segmentPath) {

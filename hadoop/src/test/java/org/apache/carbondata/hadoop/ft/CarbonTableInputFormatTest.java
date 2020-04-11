@@ -146,7 +146,7 @@ public class CarbonTableInputFormatTest {
       Assert.assertTrue("failed", false);
       throw e;
     } finally {
-      creator.clearDataMaps();
+      creator.clearIndexes();
       FileFactory.deleteAllFilesOfDir(new File(outPath));
     }
   }
@@ -166,7 +166,7 @@ public class CarbonTableInputFormatTest {
       e.printStackTrace();
       Assert.assertTrue("failed", false);
     } finally {
-      creator.clearDataMaps();
+      creator.clearIndexes();
     }
   }
 
@@ -186,7 +186,7 @@ public class CarbonTableInputFormatTest {
     } catch (Exception e) {
       Assert.assertTrue("failed", false);
     } finally {
-      creator.clearDataMaps();
+      creator.clearIndexes();
     }
   }
 

@@ -56,7 +56,7 @@ class TestMVTimeSeriesCarbonCreateIndexCommand extends QueryTest with BeforeAndA
     assert(result.get(0).get(1).toString.equalsIgnoreCase("datamap1"))
     assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
     val df = sql("select timeseries(projectjoindate,'second'), sum(projectcode) from maintable group by timeseries(projectjoindate,'second')")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap1"))
     sql("drop materialized view if exists datamap1")
   }
 
@@ -203,8 +203,8 @@ class TestMVTimeSeriesCarbonCreateIndexCommand extends QueryTest with BeforeAndA
       " as select timeseries(projectjoindate,'Second'), sum(projectcode) from maintable group by timeseries(projectjoindate,'Second')")
     val df1 = sql("select timeseries(projectjoindate,'SECOND'), sum(projectcode) from maintable group by timeseries(projectjoindate,'SECOND')")
     val df2 = sql("select timeseries(projectjoinDATE,'SECOnd'), sum(projectcode) from maintable where projectcode=8 group by timeseries(projectjoinDATE,'SECOnd')")
-    TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap1")
-    TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "datamap1")
+    TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "datamap1")
+    TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "datamap1")
     sql("drop materialized view if exists datamap1")
   }
 

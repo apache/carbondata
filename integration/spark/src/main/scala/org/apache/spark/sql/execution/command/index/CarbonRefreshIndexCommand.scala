@@ -31,13 +31,12 @@ import org.apache.spark.sql.secondaryindex.command.SIRebuildSegmentRunner
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
-import org.apache.carbondata.core.metadata.schema.indextable.{IndexMetadata, IndexTableInfo}
+import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
-import org.apache.carbondata.datamap.IndexProvider
+import org.apache.carbondata.index.IndexProvider
 
 /**
  * Rebuild the index through sync with main table data. After sync with parent table's it enables

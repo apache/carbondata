@@ -621,17 +621,17 @@ public final class CarbonProperties {
     }
   }
 
-  public boolean isDataMapParallelLoadingEnabled(String databaseName, String tableName) {
+  public boolean isIndexParallelLoadingEnabled(String databaseName, String tableName) {
     // Check for propertyKey.dbname.table name for session based set for a specific table.
-    String loadDataMapsParallel = getSessionPropertyValue(
+    String loadIndexParallel = getSessionPropertyValue(
         CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL + "." + databaseName + "." + tableName);
     // If table table property is not specified then check for session for all the tables
     // otherwise check in carbon.properties
-    if (loadDataMapsParallel == null) {
-      loadDataMapsParallel =
+    if (loadIndexParallel == null) {
+      loadIndexParallel =
           getProperty(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL, "false");
     }
-    boolean configuredValue = Boolean.parseBoolean(loadDataMapsParallel);
+    boolean configuredValue = Boolean.parseBoolean(loadIndexParallel);
     if (configuredValue) {
       LOGGER.info("Loading datamaps in parallel for " + databaseName + "." + tableName);
     }

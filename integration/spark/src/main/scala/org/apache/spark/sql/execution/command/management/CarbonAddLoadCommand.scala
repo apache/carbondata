@@ -37,7 +37,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
-import org.apache.carbondata.core.index.status.DataMapStatusManager
+import org.apache.carbondata.core.index.status.IndexStatusManager
 import org.apache.carbondata.core.indexstore.{PartitionSpec => CarbonPartitionSpec}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.datatype.Field
@@ -337,7 +337,7 @@ case class CarbonAddLoadCommand(
       LOGGER.error("Data load failed due to failure in table status updation.")
       throw new Exception("Data load failed due to failure in table status updation.")
     }
-    DataMapStatusManager.disableAllLazyDataMaps(carbonTable)
+    IndexStatusManager.disableAllLazyIndexes(carbonTable)
     val viewManager = MVManagerInSpark.get(sparkSession)
     val viewSchemas = new util.ArrayList[MVSchema]()
     for (viewSchema <- viewManager.getSchemasOnTable(carbonTable).asScala) {

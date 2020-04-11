@@ -61,7 +61,7 @@ public class TestBlockletIndex {
       }
     };
 
-    BlockIndex blockletDataMap = new BlockletIndex();
+    BlockIndex blockIndex = new BlockletIndex();
 
     new MockUp<CarbonTable>() {
       @Mock public boolean isHivePartitionTable() {
@@ -69,7 +69,7 @@ public class TestBlockletIndex {
       }
     };
 
-    blockletDataMap.setSegmentPropertiesWrapper(
+    blockIndex.setSegmentPropertiesWrapper(
         new SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper(new CarbonTable(),
             new ArrayList<>()));
     Method method = BlockIndex.class
@@ -81,7 +81,7 @@ public class TestBlockletIndex {
     byte[][] maxValue = { ByteUtil.toBytes("resa") };
     boolean[] minMaxFlag = new boolean[] {true};
     Object result = method
-        .invoke(blockletDataMap, implicitIncludeFilterExecutor, minValue, maxValue, minMaxFlag,
+        .invoke(blockIndex, implicitIncludeFilterExecutor, minValue, maxValue, minMaxFlag,
             "/opt/store/default/carbon_table/Fact/Part0/Segment_0/part-0-0_batchno0-0-1514989110586.carbondata",
             0);
     assert ((boolean) result);

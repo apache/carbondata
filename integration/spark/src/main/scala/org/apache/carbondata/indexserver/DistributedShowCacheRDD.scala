@@ -59,32 +59,32 @@ class DistributedShowCacheRDD(@transient private val ss: SparkSession,
   }
 
   override def internalCompute(split: Partition, context: TaskContext): Iterator[String] = {
-    val dataMaps = IndexStoreManager.getInstance().getTableIndexForAllTables.asScala
+    val indexes = IndexStoreManager.getInstance().getTableIndexForAllTables.asScala
     val tableList = tableUniqueId.split(",")
-    val iterator = dataMaps.collect {
-      case (tableId, tableDataMaps) if tableUniqueId.isEmpty || tableList.contains(tableId) =>
-        val sizeAndIndexLengths = tableDataMaps.asScala
-          .map { dataMap =>
-            val dataMapName = if (dataMap.getIndexFactory.isInstanceOf[BlockletIndexFactory]) {
-              dataMap
+    val iterator = indexes.collect {
+      case (tableId, tableIndexes) if tableUniqueId.isEmpty || tableList.contains(tableId) =>
+        val sizeAndIndexLengths = tableIndexes.asScala
+          .map { index =>
+            val dataMapName = if (index.getIndexFactory.isInstanceOf[BlockletIndexFactory]) {
+              index
                 .getIndexFactory
                 .asInstanceOf[BlockletIndexFactory]
                 .getCarbonTable
                 .getTableUniqueName
             } else {
-              dataMap.getIndexSchema.getRelationIdentifier.getDatabaseName + "_" + dataMap
+              index.getIndexSchema.getRelationIdentifier.getDatabaseName + "_" + index
                 .getIndexSchema.getIndexName
             }
             if (executorCache) {
               val executorIP = s"${ SparkEnv.get.blockManager.blockManagerId.host }_${
                 SparkEnv.get.blockManager.blockManagerId.executorId
               }"
-              s"${ executorIP }:${ dataMap.getIndexFactory.getCacheSize }:${
-                dataMap.getIndexSchema.getProviderName
+              s"${ executorIP }:${ index.getIndexFactory.getCacheSize }:${
+                index.getIndexSchema.getProviderName
               }"
             } else {
-              s"${dataMapName}:${dataMap.getIndexFactory.getCacheSize}:${
-                dataMap.getIndexSchema.getProviderName
+              s"${dataMapName}:${index.getIndexFactory.getCacheSize}:${
+                index.getIndexSchema.getProviderName
               }"
             }
           }

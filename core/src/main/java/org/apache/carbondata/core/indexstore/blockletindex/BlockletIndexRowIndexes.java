@@ -22,7 +22,7 @@ package org.apache.carbondata.core.indexstore.blockletindex;
  */
 public interface BlockletIndexRowIndexes {
 
-  // Each IndexRow Indexes for blocklet and block dataMap
+  // Each IndexRow Indexes for blocklet and block index
   int MIN_VALUES_INDEX = 0;
 
   int MAX_VALUES_INDEX = 1;
@@ -43,14 +43,14 @@ public interface BlockletIndexRowIndexes {
 
   int BLOCK_MIN_MAX_FLAG = 9;
 
-  // below variables are specific for blockletDataMap
+  // below variables are specific for blocklet index
   int BLOCKLET_INFO_INDEX = 10;
 
   int BLOCKLET_PAGE_COUNT_INDEX = 11;
 
   int BLOCKLET_ID_INDEX = 12;
 
-  // Summary dataMap row indexes
+  // Summary row indexes
   int TASK_ROW_COUNT = 0;
 
   int TASK_MIN_VALUES_INDEX = 1;

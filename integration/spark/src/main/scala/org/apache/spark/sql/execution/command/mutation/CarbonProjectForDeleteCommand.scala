@@ -31,7 +31,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.index.IndexStoreManager
-import org.apache.carbondata.core.index.status.DataMapStatusManager
+import org.apache.carbondata.core.index.status.IndexStatusManager
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
@@ -74,8 +74,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
     }
 
     if (!carbonTable.canAllow(carbonTable, TableOperation.DELETE)) {
-      throw new MalformedCarbonCommandException(
-        "delete operation is not supported for index datamap")
+      throw new MalformedCarbonCommandException("delete operation is not supported for index")
     }
 
     IUDCommonUtil.checkIfSegmentListIsSet(sparkSession, plan)
@@ -134,12 +133,12 @@ private[sql] case class CarbonProjectForDeleteCommand(
       HorizontalCompaction.tryHorizontalCompaction(sparkSession, carbonTable,
         isUpdateOperation = false)
 
-      val allDataMapSchemas = IndexStoreManager.getInstance
-        .getDataMapSchemasOfTable(carbonTable).asScala
-        .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                 !dataMapSchema.isIndex).asJava
-      if (!allDataMapSchemas.isEmpty) {
-        DataMapStatusManager.truncateDataMap(allDataMapSchemas)
+      val allIndexSchemas = IndexStoreManager.getInstance
+        .getIndexSchemasOfTable(carbonTable).asScala
+        .filter(indexSchema => null != indexSchema.getRelationIdentifier &&
+                               !indexSchema.isIndex).asJava
+      if (!allIndexSchemas.isEmpty) {
+        IndexStatusManager.truncateIndex(allIndexSchemas)
       }
 
       // Truncate materialized views on the current table.

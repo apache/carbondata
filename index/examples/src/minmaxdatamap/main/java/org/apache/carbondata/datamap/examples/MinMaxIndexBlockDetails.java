@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.datamap.examples;
+package org.apache.carbondata.index.examples;
 
 import java.io.Serializable;
 

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.datamap;
+package org.apache.carbondata.index;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,7 +24,7 @@ import java.util.Map;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
-import org.apache.carbondata.core.index.DataMapProvider;
+import org.apache.carbondata.core.index.CarbonIndexProvider;
 import org.apache.carbondata.core.index.IndexRegistry;
 import org.apache.carbondata.core.index.dev.Index;
 import org.apache.carbondata.core.index.dev.IndexFactory;
@@ -38,7 +38,7 @@ import org.apache.spark.sql.SparkSession;
  * Interface to manipulate the index, All index should implement this interface.
  */
 @InterfaceAudience.Internal
-public class IndexProvider extends DataMapProvider {
+public class IndexProvider extends CarbonIndexProvider {
 
   private SparkSession sparkSession;
   private IndexFactory<? extends Index> indexFactory;
@@ -85,17 +85,17 @@ public class IndexProvider extends DataMapProvider {
     IndexSchema indexSchema = getIndexSchema();
     IndexFactory<? extends Index> indexFactory;
     try {
-      // try to create DataMapClassProvider instance by taking providerName as class name
+      // try to create IndexClassProvider instance by taking providerName as class name
       indexFactory = (IndexFactory<? extends Index>)
           Class.forName(indexSchema.getProviderName()).getConstructors()[0]
               .newInstance(mainTable, indexSchema);
     } catch (ClassNotFoundException e) {
-      // try to create DataMapClassProvider instance by taking providerName as short name
+      // try to create IndexClassProvider instance by taking providerName as short name
       indexFactory =
           IndexRegistry.getIndexFactoryByShortName(mainTable, indexSchema);
     } catch (Throwable e) {
       throw new MetadataProcessException(
-          "failed to create DataMapClassProvider '" + indexSchema.getProviderName() + "'", e);
+          "failed to create IndexClassProvider '" + indexSchema.getProviderName() + "'", e);
     }
     return indexFactory;
   }

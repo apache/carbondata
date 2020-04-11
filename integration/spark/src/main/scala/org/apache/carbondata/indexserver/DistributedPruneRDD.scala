@@ -74,7 +74,7 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
       SparkEnv.get.blockManager.blockManagerId.executorId
     }"
     if (indexInputFormat.isJobToClearIndexes) {
-      // if job is to clear datamaps just clear datamaps from cache and pass empty iterator
+      // if job is to clear indexes just clear indexes from cache and pass empty iterator
       IndexStoreManager.getInstance().clearInvalidIndex(indexInputFormat.getCarbonTable,
         inputSplits.map(_
           .asInstanceOf[IndexInputSplitWrapper].getDistributable.getSegment.getSegmentNo)

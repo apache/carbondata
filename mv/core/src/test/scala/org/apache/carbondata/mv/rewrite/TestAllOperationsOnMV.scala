@@ -71,7 +71,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     checkResult()
   }
 
-  test("test alter add column on datamaptable") {
+  test("test alter add column on MV table") {
     intercept[ProcessMetaDataException] {
       sql("alter table dm1 add columns(d int)")
     }.getMessage.contains("Cannot add columns in a materialized view table default.dm1")
@@ -87,7 +87,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     }.getMessage.contains("Column name cannot be dropped because it exists in mv materialized view: dm1")
   }
 
-  test("test alter drop column on datamaptable") {
+  test("test alter drop column on MV table") {
     intercept[ProcessMetaDataException] {
       sql("alter table dm1 drop columns(maintable_name)")
     }.getMessage.contains("Cannot drop columns present in a materialized view table default.dm1")
@@ -103,7 +103,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     }.getMessage.contains("Column name exists in a MV materialized view. Drop MV materialized view to continue")
   }
 
-  test("test alter rename column on datamaptable") {
+  test("test alter rename column on MV table") {
     intercept[ProcessMetaDataException] {
       sql("alter table dm1 change sum_price sum_cost int")
     }.getMessage.contains("Cannot change data type or rename column for columns " +
@@ -115,7 +115,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     intercept[MalformedCarbonCommandException] {
       sql("alter table maintable rename to maintable_rename")
     }.getMessage.contains("alter rename is not supported for materialized view table or for tables which have child materialized view")
-    //check rename datamaptable
+    //check rename MV
     intercept[MalformedCarbonCommandException] {
       sql("alter table dm1 rename to dm11")
     }.getMessage.contains("alter rename is not supported for materialized view table or for tables which have child materialized view")
@@ -430,7 +430,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("create materialized view dm2 as select to_date(DOB) from maintable where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =120 or DECIMAL_COLUMN1 = 4.34 or Double_COLUMN1 =12345  or INTEGER_COLUMN1 IS NULL")
     checkExistence(sql("select to_date(DOB) from maintable where CUST_ID IS NULL or dob IS NOT NULL or BIGINT_COLUMN1 =120 or DECIMAL_COLUMN1 = 4.34 or Double_COLUMN1 =12345  or INTEGER_COLUMN1 IS NULL"), true, "1975-06-11")
     val df = sql("select to_date(dob) from maintable where CUST_ID IS NULL or dob IS NOT NULL or BIGINT_COLUMN1 =120 or DECIMAL_COLUMN1 = 4.34 or Double_COLUMN1 =12345  or INTEGER_COLUMN1 IS NULL")
-    TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "dm2")
+    TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "dm2")
     sql("drop table IF EXISTS maintable")
   }
 
@@ -463,8 +463,8 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("insert into table maintable select 'abc',21,2000")
     sql("drop materialized view if exists dm_mv ")
     sql("create materialized view dm_mv as select name, sum(price) from maintable group by name")
-    val dataMapTable = CarbonMetadata.getInstance().getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "dm_mv")
-    assert(dataMapTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR).equalsIgnoreCase("zstd"))
+    val mvTable = CarbonMetadata.getInstance().getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "dm_mv")
+    assert(mvTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR).equalsIgnoreCase("zstd"))
     sql("drop table IF EXISTS maintable")
   }
 
@@ -538,7 +538,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop materialized view if exists dm ")
     sql("create materialized view dm  as select dob from maintable where (dob='1975-06-11' or cust_id=2)")
     val df = sql("select dob from maintable where (dob='1975-06-11' or cust_id=2)")
-    TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "dm")
+    TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "dm")
     sql("drop table IF EXISTS maintable")
   }
 
@@ -568,7 +568,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop materialized view if exists mv3")
     sql("create materialized view mv3 as select age,sum(age) from maintable group by age")
     val df = sql("select sum(age) from maintable")
-    TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv3")
+    TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv3")
     checkAnswer(res, df)
     sql("drop materialized view if exists mv3")
     sql("create materialized view mv3 as select age as a,sum(age) as b from maintable group by age")
@@ -589,7 +589,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     }.getMessage.contains("Order by column `c_code` must be present in project columns")
     sql("create materialized view dm1  as select name,c_code from maintable order by c_code")
     val df = sql("select name from maintable order by c_code")
-    TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "dm1")
+    TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "dm1")
     checkAnswer(res, df)
     intercept[Exception] {
       sql("alter table maintable drop columns(c_code)")
@@ -609,10 +609,10 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("create materialized view mv1  as select a.name,a.price from maintable a")
     var dataFrame = sql("select a.name,a.price from maintable a limit 1")
     assert(dataFrame.count() == 1)
-    TestUtil.verifyMVDataMap(dataFrame.queryExecution.optimizedPlan, "mv1")
+    TestUtil.verifyMVHit(dataFrame.queryExecution.optimizedPlan, "mv1")
     dataFrame = sql("select a.name,a.price from maintable a order by a.name limit 1")
     assert(dataFrame.count() == 1)
-    TestUtil.verifyMVDataMap(dataFrame.queryExecution.optimizedPlan, "mv1")
+    TestUtil.verifyMVHit(dataFrame.queryExecution.optimizedPlan, "mv1")
     sql("drop table if exists maintable")
   }
 
@@ -624,11 +624,11 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("create materialized view mv1  as select name,c_code from maintable")
     sql("update maintable set(name) = ('aaa') where c_code = 21").show(false)
     var df = sql("select name,c_code from maintable")
-    TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1")
+    TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1")
     checkAnswer(df, Seq(Row("aaa",21), Row("mno",24)))
     sql("update maintable set(name) = ('mmm') where c_code = 24").show(false)
     df = sql("select name,c_code from maintable")
-    TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "mv1")
+    TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1")
     checkAnswer(df, Seq(Row("aaa",21), Row("mmm",24)))
     sql("drop table IF EXISTS maintable")
   }
@@ -643,18 +643,18 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     val res3 = sql("select c_code,price from maintable")
     sql("create materialized view mv1 as select name,sum(c_code) from maintable group by name")
     val df1 = sql("select name,sum(c_code) from maintable group by name")
-    TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "mv1")
+    TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "mv1")
     checkAnswer(res1, df1)
     val df2 = sql("select name, name,sum(c_code),sum(c_code) from maintable  group by name")
-    TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "mv1")
+    TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "mv1")
     checkAnswer(df2, res2)
     sql("drop materialized view if exists mv2")
     sql("create materialized view mv2 as select c_code,price from maintable")
     val df3 = sql("select c_code,price from maintable")
-    TestUtil.verifyMVDataMap(df3.queryExecution.optimizedPlan, "mv2")
+    TestUtil.verifyMVHit(df3.queryExecution.optimizedPlan, "mv2")
     checkAnswer(res3, df3)
     val df4 = sql("select c_code,price,price,c_code from maintable")
-    TestUtil.verifyMVDataMap(df4.queryExecution.optimizedPlan, "mv2")
+    TestUtil.verifyMVHit(df4.queryExecution.optimizedPlan, "mv2")
     checkAnswer(df4, Seq(Row(21,2000,2000,21), Row(24,3000,3000,24)))
     sql("drop table IF EXISTS maintable")
   }

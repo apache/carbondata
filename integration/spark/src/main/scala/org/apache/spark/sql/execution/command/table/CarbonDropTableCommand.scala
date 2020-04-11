@@ -49,7 +49,7 @@ case class CarbonDropTableCommand(
 
   var carbonTable: CarbonTable = _
   var viewDropCommands : Seq[CarbonDropMVCommand] = Seq.empty
-  var childDropDataMapCommands : Seq[DropIndexCommand] = Seq.empty
+  var childDropIndexCommands : Seq[DropIndexCommand] = Seq.empty
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)

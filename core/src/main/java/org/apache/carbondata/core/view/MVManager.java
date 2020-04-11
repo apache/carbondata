@@ -276,7 +276,7 @@ public abstract class MVManager {
   }
 
   /**
-   * This method will remove all segments of dataMap table in case of Insert-Overwrite/Update/Delete
+   * This method will remove all segments of MV table in case of Insert-Overwrite/Update/Delete
    * operations on main table
    *
    * @param schemas mv schemas

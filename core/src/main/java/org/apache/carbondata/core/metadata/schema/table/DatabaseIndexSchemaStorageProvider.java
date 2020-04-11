@@ -20,14 +20,14 @@ package org.apache.carbondata.core.metadata.schema.table;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
+import org.apache.carbondata.common.exceptions.sql.NoSuchIndexException;
 
 /**
- * Stores datamap schema in database
+ * Stores index schema in database
  */
-public class DatabaseDMSchemaStorageProvider implements DataMapSchemaStorageProvider {
+public class DatabaseIndexSchemaStorageProvider implements IndexSchemaStorageProvider {
 
-  public DatabaseDMSchemaStorageProvider() {
+  public DatabaseIndexSchemaStorageProvider() {
   }
 
   @Override
@@ -36,9 +36,8 @@ public class DatabaseDMSchemaStorageProvider implements DataMapSchemaStorageProv
   }
 
   @Override
-  public IndexSchema retrieveSchema(String dataMapName)
-      throws NoSuchDataMapException {
-    throw new NoSuchDataMapException(dataMapName);
+  public IndexSchema retrieveSchema(String indexName) throws NoSuchIndexException {
+    throw new NoSuchIndexException(indexName);
   }
 
   @Override
@@ -52,7 +51,7 @@ public class DatabaseDMSchemaStorageProvider implements DataMapSchemaStorageProv
   }
 
   @Override
-  public void dropSchema(String dataMapName) {
+  public void dropSchema(String indexName) {
     throw new UnsupportedOperationException("not support dropping Index schema from database");
   }
 }

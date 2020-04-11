@@ -82,7 +82,7 @@ class MVSampleTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_sm1")
     sql(s"create materialized view datamap_sm1  as ${sampleTestCases(0)._2}")
     val df = sql(sampleTestCases(0)._3)
-    assert(!TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_sm1"))
+    assert(!TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_sm1"))
     sql(s"drop materialized view datamap_sm1")
   }
 
@@ -90,7 +90,7 @@ class MVSampleTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_sm2")
     sql(s"create materialized view datamap_sm2  as ${sampleTestCases(2)._2}")
     val df = sql(sampleTestCases(2)._3)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_sm2"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_sm2"))
     sql(s"drop materialized view datamap_sm2")
   }
 
@@ -98,7 +98,7 @@ class MVSampleTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_sm3")
     sql(s"create materialized view datamap_sm3  as ${sampleTestCases(3)._2}")
     val df = sql(sampleTestCases(3)._3)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_sm3"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_sm3"))
     sql(s"drop materialized view datamap_sm3")
   }
 
@@ -106,7 +106,7 @@ class MVSampleTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_sm4")
     sql(s"create materialized view datamap_sm4  as ${sampleTestCases(4)._2}")
     val df = sql(sampleTestCases(4)._3)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_sm4"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_sm4"))
     sql(s"drop materialized view datamap_sm4")
   }
 
@@ -114,7 +114,7 @@ class MVSampleTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_sm5")
     sql(s"create materialized view datamap_sm5  as ${sampleTestCases(5)._2}")
     val df = sql(sampleTestCases(5)._3)
-    assert(!TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_sm5"))
+    assert(!TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_sm5"))
     sql(s"drop materialized view datamap_sm5")
   }
 
@@ -122,7 +122,7 @@ class MVSampleTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_sm6")
     sql(s"create materialized view datamap_sm6  as ${sampleTestCases(6)._2}")
     val df = sql(sampleTestCases(6)._3)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_sm6"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_sm6"))
     sql(s"drop materialized view datamap_sm6")
   }
 
@@ -130,7 +130,7 @@ class MVSampleTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_sm7")
     sql(s"create materialized view datamap_sm7  as ${sampleTestCases(7)._2}")
     val df = sql(sampleTestCases(7)._3)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_sm7"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_sm7"))
     sql(s"drop materialized view datamap_sm7")
   }
 
@@ -138,7 +138,7 @@ class MVSampleTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_sm8")
     sql(s"create materialized view datamap_sm8  as ${sampleTestCases(8)._2}")
     val df = sql(sampleTestCases(8)._3)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_sm8"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_sm8"))
     sql(s"drop materialized view datamap_sm8")
   }
 

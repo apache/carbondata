@@ -44,9 +44,9 @@ public class IndexWrapper extends AbstractIndex {
     super.clear();
     if (blockInfos != null) {
       for (TableBlockInfo blockInfo : blockInfos) {
-        String dataMapWriterPath = blockInfo.getIndexWriterPath();
-        if (dataMapWriterPath != null) {
-          CarbonFile file = FileFactory.getCarbonFile(dataMapWriterPath);
+        String indexWriterPath = blockInfo.getIndexWriterPath();
+        if (indexWriterPath != null) {
+          CarbonFile file = FileFactory.getCarbonFile(indexWriterPath);
           FileFactory.deleteAllCarbonFilesOfDir(file);
         }
       }

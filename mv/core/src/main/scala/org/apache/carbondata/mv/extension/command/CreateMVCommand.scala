@@ -25,13 +25,13 @@ import org.apache.spark.sql.execution.command._
 
 import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.index.{DataMapProvider, IndexStoreManager}
-import org.apache.carbondata.core.index.status.DataMapStatusManager
-import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, IndexProperty}
+import org.apache.carbondata.core.index.{CarbonIndexProvider, IndexStoreManager}
+import org.apache.carbondata.core.index.status.IndexStatusManager
+import org.apache.carbondata.core.metadata.schema.index.{IndexClassProvider, IndexProperty}
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.datamap.DataMapManager
 import org.apache.carbondata.events._
+import org.apache.carbondata.index.IndexManager
 
 /**
  * Create Materialized View Command implementation
@@ -47,7 +47,7 @@ case class CreateMVCommand(
   extends AtomicRunnableCommand {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-  private var dataMapProvider: DataMapProvider = _
+  private var dataMapProvider: CarbonIndexProvider = _
   private var dataMapSchema: IndexSchema = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
@@ -57,10 +57,10 @@ case class CreateMVCommand(
     val mutableMap = mutable.Map[String, String](properties.toSeq: _*)
     mutableMap.put(IndexProperty.DEFERRED_REBUILD, deferredRebuild.toString)
 
-    dataMapSchema = new IndexSchema(mvName, DataMapClassProvider.MV.name())
+    dataMapSchema = new IndexSchema(mvName, IndexClassProvider.MV.name())
     dataMapSchema.setProperties(mutableMap.asJava)
-    dataMapProvider = DataMapManager.get.getDataMapProvider(null, dataMapSchema, sparkSession)
-    if (IndexStoreManager.getInstance().getAllDataMapSchemas.asScala
+    dataMapProvider = IndexManager.get.getIndexProvider(null, dataMapSchema, sparkSession)
+    if (IndexStoreManager.getInstance().getAllIndexSchemas.asScala
       .exists(_.getIndexName.equalsIgnoreCase(dataMapSchema.getIndexName))) {
       if (!ifNotExistsSet) {
         throw new MalformedMVCommandException(
@@ -72,13 +72,13 @@ case class CreateMVCommand(
 
     val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
     val operationContext: OperationContext = new OperationContext()
-    val preExecEvent = CreateDataMapPreExecutionEvent(sparkSession, systemFolderLocation, null)
+    val preExecEvent = CreateMVPreExecutionEvent(sparkSession, systemFolderLocation, null)
     OperationListenerBus.getInstance().fireEvent(preExecEvent, operationContext)
 
     dataMapProvider.initMeta(queryString.orNull)
 
-    val postExecEvent = CreateDataMapPostExecutionEvent(
-      sparkSession, systemFolderLocation, null, DataMapClassProvider.MV.name())
+    val postExecEvent = CreateMVPostExecutionEvent(
+      sparkSession, systemFolderLocation, null, IndexClassProvider.MV.name())
     OperationListenerBus.getInstance().fireEvent(postExecEvent, operationContext)
     Seq.empty
   }
@@ -87,7 +87,7 @@ case class CreateMVCommand(
     if (dataMapProvider != null) {
       dataMapProvider.initData()
       if (!dataMapSchema.isLazy) {
-        DataMapStatusManager.enableDataMap(mvName)
+        IndexStatusManager.enableIndex(mvName)
       }
     }
     Seq.empty

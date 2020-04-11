@@ -50,7 +50,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_tpcds1")
     sql(s"create materialized view datamap_tpcds1  as ${tpcds_1_4_testCases(0)._2}")
     val df = sql(tpcds_1_4_testCases(0)._3)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_tpcds1"))
     sql(s"drop materialized view datamap_tpcds1")
   }
 
@@ -58,7 +58,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_tpcds3")
     sql(s"create materialized view datamap_tpcds3  as ${tpcds_1_4_testCases(2)._2}")
     val df = sql(tpcds_1_4_testCases(2)._3)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds3"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_tpcds3"))
     sql(s"drop materialized view datamap_tpcds3")
   }
 
@@ -66,7 +66,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_tpcds4")
     sql(s"create materialized view datamap_tpcds4  as ${tpcds_1_4_testCases(3)._2}")
     val df = sql(tpcds_1_4_testCases(3)._3)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds4"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_tpcds4"))
     sql(s"drop materialized view datamap_tpcds4")
   }
 
@@ -74,7 +74,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_tpcds5")
     sql(s"create materialized view datamap_tpcds5  as ${tpcds_1_4_testCases(4)._2}")
     val df = sql(tpcds_1_4_testCases(4)._3)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds5"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_tpcds5"))
     sql(s"drop materialized view datamap_tpcds5")
   }
 
@@ -82,7 +82,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_tpcds6")
     sql(s"create materialized view datamap_tpcds6  as ${tpcds_1_4_testCases(5)._2}")
     val df = sql(tpcds_1_4_testCases(5)._3)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds6"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_tpcds6"))
     sql(s"drop materialized view datamap_tpcds6")
   }
 
@@ -90,7 +90,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_tpcds8")
     sql(s"create materialized view datamap_tpcds8  as ${tpcds_1_4_testCases(7)._2}")
     val df = sql(tpcds_1_4_testCases(7)._3)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds8"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_tpcds8"))
     sql(s"drop materialized view datamap_tpcds8")
   }
 
@@ -98,7 +98,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_tpcds11")
     sql(s"create materialized view datamap_tpcds11  as ${tpcds_1_4_testCases(10)._2}")
     val df = sql(tpcds_1_4_testCases(10)._3)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds11"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_tpcds11"))
     sql(s"drop materialized view datamap_tpcds11")
   }
 
@@ -106,7 +106,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_tpcds15")
     sql(s"create materialized view datamap_tpcds15  as ${tpcds_1_4_testCases(14)._2}")
     val df = sql(tpcds_1_4_testCases(14)._3)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds15"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_tpcds15"))
     sql(s"drop materialized view datamap_tpcds15")
   }
 
@@ -114,7 +114,7 @@ class MVTPCDSTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"drop materialized view if exists datamap_tpcds16")
     sql(s"create materialized view datamap_tpcds16  as ${tpcds_1_4_testCases(15)._2}")
     val df = sql(tpcds_1_4_testCases(15)._3)
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap_tpcds16"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap_tpcds16"))
     sql(s"drop materialized view datamap_tpcds16")
   }
 

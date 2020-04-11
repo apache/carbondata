@@ -79,11 +79,11 @@ class SparkCarbonStore extends MetaCachedCarbonStore {
     require(projectColumns != null)
     val table = CarbonEnv
       .getCarbonTable(Some(tableIdentifier.getDatabaseName), tableIdentifier.getTableName)(session)
-    val dataMapFilter = if (filter == null) null else new IndexFilter(table, filter)
+    val indexFilter = if (filter == null) null else new IndexFilter(table, filter)
     val rdd = new CarbonScanRDD[CarbonRow](
       spark = session,
       columnProjection = new CarbonProjection(projectColumns),
-      indexFilter = dataMapFilter,
+      indexFilter = indexFilter,
       identifier = table.getAbsoluteTableIdentifier,
       serializedTableInfo = table.getTableInfo.serialize,
       tableInfo = table.getTableInfo,

@@ -15,10 +15,8 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.datamap;
+package org.apache.carbondata.core.metadata.schema.index;
 
-public class IndexWriterException extends RuntimeException {
-  public IndexWriterException(Throwable cause) {
-    super(cause);
-  }
+public class MVProviderName {
+  public static final String NAME = "mv";
 }

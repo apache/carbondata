@@ -67,7 +67,8 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
         "'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE')")
   }
 
-  private def getDataMaps(dbName: String,
+  private def getIndexes(
+      dbName: String,
       tableName: String,
       segmentId: String,
       isSchemaModified: Boolean = false): List[Index[_ <: Blocklet]] = {
@@ -94,13 +95,13 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     minSchemas.length == expectedLength
   }
 
-  test("verify if number of columns cached are as per the COLUMN_META_CACHE property dataMap instance is as per CACHE_LEVEL property") {
+  test("verify if number of columns cached are as per the COLUMN_META_CACHE property index instance is as per CACHE_LEVEL property") {
     sql("drop table if exists metaCache")
     sql("create table metaCache(name string, c1 string, c2 string) STORED AS carbondata")
     sql("insert into metaCache select 'a','aa','aaa'")
     checkAnswer(sql("select * from metaCache"), Row("a", "aa", "aaa"))
-    var dataMaps = getDataMaps("default", "metaCache", "0")
-    // validate dataMap is non empty, its an instance of BlockIndex and minMaxSchema length is 3
+    var dataMaps = getIndexes("default", "metaCache", "0")
+    // validate index is non empty, its an instance of BlockIndex and minMaxSchema length is 3
     assert(dataMaps.nonEmpty)
     assert(dataMaps(0).isInstanceOf[BlockIndex])
     assert(validateMinMaxColumnsCacheLength(dataMaps, 3, true))
@@ -109,9 +110,9 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
       "alter table metaCache set tblproperties('column_meta_cache'='c2,c1', 'CACHE_LEVEL'='BLOCKLET')")
     // after alter operation cache should be cleaned and cache should be evicted
     checkAnswer(sql("select * from metaCache"), Row("a", "aa", "aaa"))
-    // validate dataMap is non empty, its an instance of BlockletIndex and minMaxSchema length
+    // validate index is non empty, its an instance of BlockletIndex and minMaxSchema length
     // is 1
-    dataMaps = getDataMaps("default", "metaCache", "0")
+    dataMaps = getIndexes("default", "metaCache", "0")
     assert(dataMaps.nonEmpty)
     assert(dataMaps(0).isInstanceOf[BlockletIndex])
     assert(validateMinMaxColumnsCacheLength(dataMaps, 2))
@@ -123,9 +124,9 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
       "alter table metaCache set tblproperties('column_meta_cache'='')")
     // after alter operation cache should be cleaned and cache should be evicted
     checkAnswer(sql("select * from metaCache"), Row("a", "aa", "aaa"))
-    // validate dataMap is non empty, its an instance of BlockletIndex and minMaxSchema length
+    // validate index is non empty, its an instance of BlockletIndex and minMaxSchema length
     // is 0
-    dataMaps = getDataMaps("default", "metaCache", "0")
+    dataMaps = getIndexes("default", "metaCache", "0")
     assert(dataMaps.nonEmpty)
     assert(dataMaps(0).isInstanceOf[BlockletIndex])
     assert(validateMinMaxColumnsCacheLength(dataMaps, 0))
@@ -134,9 +135,9 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     sql(
       "alter table metaCache unset tblproperties('column_meta_cache', 'cache_level')")
     checkAnswer(sql("select * from metaCache"), Row("a", "aa", "aaa"))
-    // validate dataMap is non empty, its an instance of BlockletIndex and minMaxSchema length
+    // validate index is non empty, its an instance of BlockletIndex and minMaxSchema length
     // is 3
-    dataMaps = getDataMaps("default", "metaCache", "0")
+    dataMaps = getIndexes("default", "metaCache", "0")
     assert(dataMaps.nonEmpty)
     assert(dataMaps(0).isInstanceOf[BlockIndex])
     assert(validateMinMaxColumnsCacheLength(dataMaps, 3))

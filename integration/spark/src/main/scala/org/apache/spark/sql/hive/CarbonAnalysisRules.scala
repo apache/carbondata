@@ -35,7 +35,7 @@ import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.IndexStoreManager
-import org.apache.carbondata.core.index.status.DataMapStatusManager
+import org.apache.carbondata.core.index.status.IndexStatusManager
 import org.apache.carbondata.core.view.MVStatus
 import org.apache.carbondata.view.MVManagerInSpark
 
@@ -77,14 +77,14 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
             )
           }
         }
-        val indexSchemas = IndexStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+        val indexSchemas = IndexStoreManager.getInstance().getIndexSchemasOfTable(carbonTable)
         if (carbonTable.hasMVCreated) {
-          val allDataMapSchemas = IndexStoreManager.getInstance
-            .getDataMapSchemasOfTable(carbonTable).asScala
-            .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                     !dataMapSchema.isIndex).asJava
-          allDataMapSchemas.asScala.foreach { dataMapSchema =>
-            DataMapStatusManager.disableDataMap(dataMapSchema.getIndexName)
+          val allIndexSchemas = IndexStoreManager.getInstance
+            .getIndexSchemasOfTable(carbonTable).asScala
+            .filter(indexSchema => null != indexSchema.getRelationIdentifier &&
+                                   !indexSchema.isIndex).asJava
+          allIndexSchemas.asScala.foreach { indexSchema =>
+            IndexStatusManager.disableIndex(indexSchema.getIndexName)
           }
         } else if (!indexSchemas.isEmpty) {
           throw new UnsupportedOperationException(
@@ -233,14 +233,14 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
               )
             }
           }
-          val indexSchemas = IndexStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+          val indexSchemas = IndexStoreManager.getInstance().getIndexSchemasOfTable(carbonTable)
           if (carbonTable.hasMVCreated) {
-            val allDataMapSchemas = IndexStoreManager.getInstance
-              .getDataMapSchemasOfTable(carbonTable).asScala
-              .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                       !dataMapSchema.isIndex).asJava
-            allDataMapSchemas.asScala.foreach { dataMapSchema =>
-              DataMapStatusManager.disableDataMap(dataMapSchema.getIndexName)
+            val allIndexSchemas = IndexStoreManager.getInstance
+              .getIndexSchemasOfTable(carbonTable).asScala
+              .filter(indexSchema => null != indexSchema.getRelationIdentifier &&
+                                     !indexSchema.isIndex).asJava
+            allIndexSchemas.asScala.foreach { indexSchema =>
+              IndexStatusManager.disableIndex(indexSchema.getIndexName)
             }
           } else if (!indexSchemas.isEmpty) {
             throw new UnsupportedOperationException(

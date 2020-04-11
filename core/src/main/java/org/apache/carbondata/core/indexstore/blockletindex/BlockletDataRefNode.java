@@ -199,10 +199,10 @@ public class BlockletDataRefNode implements DataRefNode {
 
   @Override
   public BitSetGroup getIndexedData() {
-    String dataMapWriterPath = blockInfos.get(index).getIndexWriterPath();
-    if (dataMapWriterPath != null) {
+    String indexWriterPath = blockInfos.get(index).getIndexWriterPath();
+    if (indexWriterPath != null) {
       try {
-        FineGrainBlocklet blocklet = blockletSerializer.deserializeBlocklet(dataMapWriterPath);
+        FineGrainBlocklet blocklet = blockletSerializer.deserializeBlocklet(indexWriterPath);
         return blocklet.getBitSetGroup(numberOfPages());
       } catch (IOException e) {
         return null;

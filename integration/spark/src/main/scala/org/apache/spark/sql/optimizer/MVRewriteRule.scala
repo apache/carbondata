@@ -35,7 +35,7 @@ import org.apache.carbondata.view.{MVCatalogInSpark, MVManagerInSpark, MVSchemaW
 import org.apache.carbondata.view.MVFunctions.DUMMY_FUNCTION
 
 /**
- * Analyzer rule to rewrite the query for MV datamap
+ * Analyzer rule to rewrite the query for MV
  */
 class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
 
@@ -92,7 +92,7 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
         return logicalPlan
       }
     }
-    // when first time DataMapCatalogs are initialized, it stores session info also,
+    // when first time MVCatalogs are initialized, it stores session info also,
     // but when carbon session is newly created, catalog map will not be cleared,
     // so if session info is different, remove the entry from map.
     val viewManager = MVManagerInSpark.get(session)
@@ -121,10 +121,10 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
    *
    * SELECT gen_subsumer_0.`UDF:timeseries(projectjoindate, hour)` AS `UDF:timeseries(projectjoi...
    * FROM
-   * (SELECT datamap1_table.`UDF:timeseries_projectjoindate_hour` AS `UDF:timeseries(projectjoin...
+   * (SELECT mv1.`UDF:timeseries_projectjoindate_hour` AS `UDF:timeseries(projectjoin...
    * FROM
-   *     default.datamap1_table
-   * GROUP BY datamap1_table.`UDF:timeseries_projectjoindate_hour`) gen_subsumer_0
+   *     default.mv1
+   * GROUP BY mv1.`UDF:timeseries_projectjoindate_hour`) gen_subsumer_0
    * WHERE
    * (UDF:timeseries(projectjoindate, hour) = TIMESTAMP('2016-02-23 09:00:00.0'))
    *

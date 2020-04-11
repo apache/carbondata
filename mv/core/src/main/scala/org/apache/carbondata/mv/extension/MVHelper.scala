@@ -39,10 +39,10 @@ import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, IndexProperty}
+import org.apache.carbondata.core.metadata.schema.index.{IndexClassProvider, IndexProperty}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema, RelationIdentifier}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.datamap.DataMapManager
+import org.apache.carbondata.index.IndexManager
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan}
 import org.apache.carbondata.mv.plans.util.SQLBuilder
 import org.apache.carbondata.mv.rewrite.{MVUdf, SummaryDatasetCatalog}
@@ -105,8 +105,7 @@ object MVHelper {
 
     val mainTables = getCatalogTables(queryPlan)
     if (mainTables.isEmpty) {
-      throw new MalformedCarbonCommandException(
-        s"Non-Carbon table does not support creating MV datamap")
+      throw new MalformedCarbonCommandException("Non-Carbon table does not support creating MV")
     }
     val modularPlan = validateMVQuery(sparkSession, queryPlan)
     val updatedQueryWithDb = modularPlan.asCompactSQL
@@ -166,7 +165,7 @@ object MVHelper {
       parentTablesList.add(table)
     }
 
-    // Check if load is in progress in any of the parent table mapped to the datamap
+    // Check if load is in progress in any of the parent table mapped to the MV
     parentTablesList.asScala.foreach {
       parentTable =>
         if (SegmentStatusManager.isLoadInProgressInTable(parentTable)) {
@@ -180,11 +179,11 @@ object MVHelper {
     tableProperties.put(CarbonCommonConstants.PARENT_TABLES, parentTables.asScala.mkString(","))
 
     val finalModularPlan = new SQLBuilder(modularPlan).SQLizer.execute(modularPlan)
-    val fieldRelationMap = mvUtil.getFieldsAndDataMapFieldsFromPlan(
+    val fieldRelationMap = mvUtil.getFieldsAndMVFieldsFromPlan(
       finalModularPlan, getRelation(queryPlan))
-    // If dataMap is mapped to single main table, then inherit table properties from main table,
+    // If MV is mapped to single main table, then inherit table properties from main table,
     // else, will use default table properties. If DMProperties contains table properties, then
-    // table properties of datamap table will be updated
+    // table properties of MV table will be updated
     if (parentTablesList.size() == 1 && CarbonSource.isCarbonDataSource(mainTables.head)) {
       inheritTablePropertiesFromMainTable(
         parentTablesList.get(0),
@@ -217,7 +216,7 @@ object MVHelper {
     properties.foreach(t => tableProperties.put(t._1, t._2))
     val usePartitioning = properties.getOrElse("partitioning", "true").toBoolean
 
-    // Inherit partition from parent table if datamap is mapped to single parent table
+    // Inherit partition from parent table if MV is mapped to single parent table
     val partitionerFields = if (parentTablesList.size() == 1) {
       val partitionInfo = parentTablesList.get(0).getPartitionInfo
       val parentPartitionColumns = if (!usePartitioning) {
@@ -262,7 +261,7 @@ object MVHelper {
     CarbonCreateTableCommand(TableNewProcessor(viewTableModel),
       viewTableModel.ifNotExistsSet, Some(viewTablePath), isVisible = false).run(sparkSession)
 
-    // Map list of main table columns mapped to MV table and add to dataMapSchema
+    // Map list of main table columns mapped to MV table
     val mainTableToColumnsMap = new java.util.HashMap[String, util.Set[String]]()
     val mainTableFieldIterator = fieldRelationMap.values.asJava.iterator()
     while (mainTableFieldIterator.hasNext) {
@@ -303,7 +302,7 @@ object MVHelper {
     dataMapSchema.setParentTables(new util.ArrayList[RelationIdentifier](parentIdents.asJava))
     dataMapSchema.getProperties.put(IndexProperty.FULL_REFRESH, isNeedFullRebuild.toString)
     try {
-      IndexStoreManager.getInstance().saveDataMapSchema(dataMapSchema)
+      IndexStoreManager.getInstance().saveIndexSchema(dataMapSchema)
     } catch {
       case ex: Exception =>
         val dropTableCommand = CarbonDropTableCommand(
@@ -319,10 +318,10 @@ object MVHelper {
   private def validateMVQuery(
       sparkSession: SparkSession,
       logicalPlan: LogicalPlan): ModularPlan = {
-    val dataMapProvider = DataMapManager.get().getDataMapProvider(null,
-      new IndexSchema("", DataMapClassProvider.MV.getShortName), sparkSession)
+    val dataMapProvider = IndexManager.get().getIndexProvider(null,
+      new IndexSchema("", IndexClassProvider.MV.getShortName), sparkSession)
     var catalog = IndexStoreManager.getInstance().getMVCatalog(dataMapProvider,
-      DataMapClassProvider.MV.getShortName, false).asInstanceOf[SummaryDatasetCatalog]
+      IndexClassProvider.MV.getShortName, false).asInstanceOf[SummaryDatasetCatalog]
     if (catalog == null) {
       catalog = new SummaryDatasetCatalog(sparkSession)
     }
@@ -479,7 +478,7 @@ object MVHelper {
    * TimeSeries udf function will contain data type as TimeStamp/cast as TimeStamp
    *
    * @param logicalPlan   to be validated
-   * @param dataMapSchema to check if it is lazy/non-lazy datamap
+   * @param dataMapSchema to check if it is lazy/non-lazy MV
    * @return
    */
   private def validateMVTimeSeriesQuery(logicalPlan: LogicalPlan,
@@ -618,7 +617,7 @@ object MVHelper {
       parentTable.getTableInfo.getFactTable.getTableProperties.asScala.getOrElse(
         CarbonCommonConstants.FLAT_FOLDER, CarbonCommonConstants.DEFAULT_FLAT_FOLDER))
 
-    // Datamap table name and columns are automatically added prefix with parent table name
+    // MV table name and columns are automatically added prefix with parent table name
     // in carbon. For convenient, users can type column names same as the ones in select statement
     // when config dmproperties, and here we update column names with prefix.
     // If longStringColumn is not present in dm properties then we take long_string_columns from
@@ -632,8 +631,8 @@ object MVHelper {
       fieldRelationMap foreach (fields => {
         val aggFunc = fields._2.aggregateFunction
         val relationList = fields._2.columnTableRelationList
-        // check if columns present in datamap are long_string_col in parent table. If they are
-        // long_string_columns in parent, make them long_string_columns in datamap
+        // check if columns present in MV are long_string_col in parent table. If they are
+        // long_string_columns in parent, make them long_string_columns in MV
         if (aggFunc.isEmpty && relationList.size == 1 && longStringColumnInParents
           .contains(relationList.head.columnName)) {
           varcharDatamapFields += relationList.head.columnName

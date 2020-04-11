@@ -286,9 +286,9 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public static CarbonInputSplit from(String segmentId, String blockletId, String path, long start,
-      long length, ColumnarFormatVersion version, String dataMapWritePath) {
+      long length, ColumnarFormatVersion version, String indexWritePath) {
     return new CarbonInputSplit(segmentId, blockletId, path, start, length, version, null,
-        dataMapWritePath);
+        indexWritePath);
   }
 
   public static List<TableBlockInfo> createBlocks(List<CarbonInputSplit> splitList) {
@@ -370,8 +370,8 @@ public class CarbonInputSplit extends FileSplit
       detailInfo = new BlockletDetailInfo();
       detailInfo.readFields(in);
     }
-    boolean dataMapWriterPathExists = in.readBoolean();
-    if (dataMapWriterPathExists) {
+    boolean indexWriterPathExists = in.readBoolean();
+    if (indexWriterPathExists) {
       indexWritePath = in.readUTF();
     }
     int validBlockletIdCount = in.readShort();
@@ -611,8 +611,8 @@ public class CarbonInputSplit extends FileSplit
     this.validBlockletIds = validBlockletIds;
   }
 
-  public void setIndexWritePath(String dataMapWritePath) {
-    this.indexWritePath = dataMapWritePath;
+  public void setIndexWritePath(String indexWritePath) {
+    this.indexWritePath = indexWritePath;
   }
 
   public void setSegment(Segment segment) {

@@ -47,17 +47,21 @@ public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrai
   }
 
   /**
-   * Get the datamap for segmentId
+   * Get the index for segmentId
    */
   @Override
   public List<FineGrainIndex> getIndexes(Segment segment) throws IOException {
-    List<FineGrainIndex> lstDataMap = new ArrayList<>();
-    FineGrainIndex dataMap = new LuceneFineGrainIndex(analyzer, getIndexSchema());
-    dataMap.init(new IndexModel(
-        IndexWriter.getDefaultIndexPath(tableIdentifier.getTablePath(),
-            segment.getSegmentNo(), dataMapName), segment.getConfiguration()));
-    lstDataMap.add(dataMap);
-    return lstDataMap;
+    List<FineGrainIndex> indexes = new ArrayList<>();
+    FineGrainIndex index = new LuceneFineGrainIndex(analyzer, getIndexSchema());
+    index.init(
+        new IndexModel(
+            IndexWriter.getDefaultIndexPath(
+                tableIdentifier.getTablePath(),
+                segment.getSegmentNo(),
+                indexName),
+            segment.getConfiguration()));
+    indexes.add(index);
+    return indexes;
   }
 
   @Override
@@ -67,17 +71,17 @@ public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrai
   }
 
   /**
-   * Get datamaps for distributable object.
+   * Get indexes for distributable object.
    */
   @Override
   public List<FineGrainIndex> getIndexes(IndexInputSplit distributable)
       throws IOException {
-    List<FineGrainIndex> lstDataMap = new ArrayList<>();
-    FineGrainIndex dataMap = new LuceneFineGrainIndex(analyzer, getIndexSchema());
+    List<FineGrainIndex> indexes = new ArrayList<>();
+    FineGrainIndex index = new LuceneFineGrainIndex(analyzer, getIndexSchema());
     String indexPath = ((LuceneIndexInputSplit) distributable).getIndexPath();
-    dataMap.init(new IndexModel(indexPath, FileFactory.getConfiguration()));
-    lstDataMap.add(dataMap);
-    return lstDataMap;
+    index.init(new IndexModel(indexPath, FileFactory.getConfiguration()));
+    indexes.add(index);
+    return indexes;
   }
 
   @Override

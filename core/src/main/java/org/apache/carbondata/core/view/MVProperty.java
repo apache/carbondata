@@ -20,7 +20,7 @@ package org.apache.carbondata.core.view;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 
 /**
- * Property that can be specified when creating DataMap
+ * Property that can be specified when creating MV
  */
 @InterfaceAudience.Internal
 public class MVProperty {

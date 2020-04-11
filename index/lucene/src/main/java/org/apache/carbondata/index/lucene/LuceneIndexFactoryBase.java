@@ -101,7 +101,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
   /**
    * index name
    */
-  String dataMapName = null;
+  String indexName = null;
 
   /**
    * table identifier
@@ -121,9 +121,8 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
     Objects.requireNonNull(indexSchema);
 
     this.tableIdentifier = carbonTable.getAbsoluteTableIdentifier();
-    this.dataMapName = indexSchema.getIndexName();
+    this.indexName = indexSchema.getIndexName();
 
-    // validate DataMapSchema and get index columns
     indexedCarbonColumns =  carbonTable.getIndexedColumns(indexSchema.getIndexColumns());
     flushCacheSize = validateAndGetWriteCacheSize(indexSchema);
     storeBlockletWise = validateAndGetStoreBlockletWise(indexSchema);
@@ -172,10 +171,9 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
   }
 
   /**
-   * this method will delete the datamap folders during drop datamap
-   * @throws MalformedIndexCommandException
+   * this method will delete the index folders during drop index
    */
-  private void deleteDatamap() throws MalformedIndexCommandException {
+  private void deleteIndex() throws MalformedIndexCommandException {
     SegmentStatusManager ssm = new SegmentStatusManager(tableIdentifier);
     try {
       List<Segment> validSegments =
@@ -185,18 +183,18 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
       }
     } catch (IOException | RuntimeException ex) {
       throw new MalformedIndexCommandException(
-          "drop datamap failed, failed to delete datamap directory");
+          "drop index failed, failed to delete index directory");
     }
   }
 
   /**
-   * Return a new write for this datamap
+   * Return a new write for this index
    */
   @Override
   public IndexWriter createWriter(Segment segment, String shardName,
       SegmentProperties segmentProperties) {
     LOGGER.info("lucene data write to " + shardName);
-    return new LuceneIndexWriter(getCarbonTable().getTablePath(), dataMapName,
+    return new LuceneIndexWriter(getCarbonTable().getTablePath(), indexName,
         indexMeta.getIndexedColumns(), segment, shardName, flushCacheSize,
         storeBlockletWise);
   }
@@ -204,7 +202,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
   @Override
   public IndexBuilder createBuilder(Segment segment, String shardName,
       SegmentProperties segmentProperties) {
-    return new LuceneIndexBuilder(getCarbonTable().getTablePath(), dataMapName,
+    return new LuceneIndexBuilder(getCarbonTable().getTablePath(), indexName,
         segment, shardName, indexMeta.getIndexedColumns(), flushCacheSize, storeBlockletWise);
   }
 
@@ -213,7 +211,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
    */
   @Override
   public List<IndexInputSplit> toDistributable(Segment segment) {
-    List<IndexInputSplit> lstDataMapDistribute = new ArrayList<>();
+    List<IndexInputSplit> splits = new ArrayList<>();
     CarbonFile[] indexDirs =
         getAllIndexDirs(tableIdentifier.getTablePath(), segment.getSegmentNo());
     if (segment.getFilteredIndexShardNames().size() == 0) {
@@ -223,12 +221,12 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
                 indexDir.getAbsolutePath());
         luceneIndexInputSplit.setSegment(segment);
         luceneIndexInputSplit.setIndexSchema(getIndexSchema());
-        lstDataMapDistribute.add(luceneIndexInputSplit);
+        splits.add(luceneIndexInputSplit);
       }
-      return lstDataMapDistribute;
+      return splits;
     }
     for (CarbonFile indexDir : indexDirs) {
-      // Filter out the tasks which are filtered through CG datamap.
+      // Filter out the tasks which are filtered through CG index.
       if (getIndexLevel() != IndexLevel.FG &&
           !segment.getFilteredIndexShardNames().contains(indexDir.getName())) {
         continue;
@@ -238,9 +236,9 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
           indexDir.getAbsolutePath());
       luceneIndexInputSplit.setSegment(segment);
       luceneIndexInputSplit.setIndexSchema(getIndexSchema());
-      lstDataMapDistribute.add(luceneIndexInputSplit);
+      splits.add(luceneIndexInputSplit);
     }
-    return lstDataMapDistribute;
+    return splits;
   }
 
   @Override
@@ -249,7 +247,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
   }
 
   /**
-   * Clear all datamaps from memory
+   * Clear all indexes from memory
    */
   @Override
   public void clear() {
@@ -264,28 +262,28 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
   @Override
   public void deleteSegmentIndexData(String segmentId) throws IOException {
     try {
-      String datamapPath = CarbonTablePath
-          .getIndexesStorePath(tableIdentifier.getTablePath(), segmentId, dataMapName);
-      if (FileFactory.isFileExist(datamapPath)) {
-        CarbonFile file = FileFactory.getCarbonFile(datamapPath);
+      String indexPath = CarbonTablePath
+          .getIndexesStorePath(tableIdentifier.getTablePath(), segmentId, indexName);
+      if (FileFactory.isFileExist(indexPath)) {
+        CarbonFile file = FileFactory.getCarbonFile(indexPath);
         CarbonUtil.deleteFoldersAndFilesSilent(file);
       }
     } catch (InterruptedException ex) {
-      throw new IOException("drop datamap failed, failed to delete datamap directory");
+      throw new IOException("drop index failed, failed to delete index directory");
     }
   }
 
   @Override
   public void deleteIndexData() {
     try {
-      deleteDatamap();
+      deleteIndex();
     } catch (MalformedIndexCommandException ex) {
-      LOGGER.error("failed to delete datamap directory ", ex);
+      LOGGER.error("failed to delete index directory ", ex);
     }
   }
 
   /**
-   * Return metadata of this datamap
+   * Return metadata of this index
    */
   public IndexMeta getMeta() {
     return indexMeta;
@@ -299,20 +297,20 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
    */
   private CarbonFile[] getAllIndexDirs(String tablePath, String segmentId) {
     List<CarbonFile> indexDirs = new ArrayList<>();
-    List<TableIndex> dataMaps = new ArrayList<>();
+    List<TableIndex> indexes = new ArrayList<>();
     try {
-      // there can be multiple lucene datamaps present on a table, so get all datamaps and form
-      // the path till the index file directories in all datamaps folders present in each segment
-      dataMaps = IndexStoreManager.getInstance().getAllCGAndFGIndexes(getCarbonTable());
+      // there can be multiple lucene index present on a table, so get all indexes and form
+      // the path till the index file directories in all index folders present in each segment
+      indexes = IndexStoreManager.getInstance().getAllCGAndFGIndexes(getCarbonTable());
     } catch (IOException ex) {
-      LOGGER.error("failed to get datamaps");
+      LOGGER.error("failed to get indexes");
     }
-    if (dataMaps.size() > 0) {
-      for (TableIndex dataMap : dataMaps) {
-        if (dataMap.getIndexSchema().getIndexName().equals(this.dataMapName)) {
+    if (indexes.size() > 0) {
+      for (TableIndex index : indexes) {
+        if (index.getIndexSchema().getIndexName().equals(this.indexName)) {
           List<CarbonFile> indexFiles;
           String dmPath = CarbonTablePath.getIndexesStorePath(tablePath, segmentId,
-              dataMap.getIndexSchema().getIndexName());
+              index.getIndexSchema().getIndexName());
           final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath);
           indexFiles = Arrays.asList(dirPath.listFiles(new CarbonFileFilter() {
             @Override

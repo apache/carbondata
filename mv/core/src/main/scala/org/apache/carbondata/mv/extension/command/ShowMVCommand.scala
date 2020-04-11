@@ -28,7 +28,7 @@ import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.{BooleanType, StringType}
 
 import org.apache.carbondata.core.index.IndexStoreManager
-import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
+import org.apache.carbondata.core.metadata.schema.index.IndexClassProvider
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema
 
 /**
@@ -57,21 +57,21 @@ case class ShowMVCommand(tableIdentifier: Option[TableIdentifier])
    * get all MV schema for this table
    */
   def getAllMVSchema(sparkSession: SparkSession): Seq[IndexSchema] = {
-    val dataMapSchemaList = new util.ArrayList[IndexSchema]()
+    val indexSchemaList = new util.ArrayList[IndexSchema]()
     tableIdentifier match {
       case Some(table) =>
         val carbonTable = CarbonEnv.getCarbonTable(table)(sparkSession)
         setAuditTable(carbonTable)
         Checker.validateTableExists(table.database, table.table, sparkSession)
-        val schemaList = IndexStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+        val schemaList = IndexStoreManager.getInstance().getIndexSchemasOfTable(carbonTable)
         if (!schemaList.isEmpty) {
-          dataMapSchemaList.addAll(schemaList)
+          indexSchemaList.addAll(schemaList)
         }
       case _ =>
-        dataMapSchemaList.addAll(IndexStoreManager.getInstance().getAllDataMapSchemas)
+        indexSchemaList.addAll(IndexStoreManager.getInstance().getAllIndexSchemas)
     }
-    dataMapSchemaList.asScala.filter(
-      _.getProviderName.equalsIgnoreCase(DataMapClassProvider.MV.name())
+    indexSchemaList.asScala.filter(
+      _.getProviderName.equalsIgnoreCase(IndexClassProvider.MV.name())
     ).toList
   }
 

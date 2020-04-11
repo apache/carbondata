@@ -51,7 +51,7 @@ object DropCacheMVEventListener extends OperationEventListener {
 
         if (carbonTable.hasMVCreated) {
           val childrenSchemas = IndexStoreManager.getInstance
-            .getDataMapSchemasOfTable(carbonTable).asScala
+            .getIndexSchemasOfTable(carbonTable).asScala
             .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
                                      !dataMapSchema.isIndex)
           dropCacheForChildTables(sparkSession, childrenSchemas)

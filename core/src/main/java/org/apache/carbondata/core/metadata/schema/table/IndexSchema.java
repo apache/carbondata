@@ -31,11 +31,11 @@ import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.index.IndexUtil;
-import org.apache.carbondata.core.index.status.DataMapStatus;
-import org.apache.carbondata.core.index.status.DataMapStatusDetail;
-import org.apache.carbondata.core.index.status.DataMapStatusManager;
+import org.apache.carbondata.core.index.status.IndexStatus;
+import org.apache.carbondata.core.index.status.IndexStatusDetail;
+import org.apache.carbondata.core.index.status.IndexStatusManager;
 import org.apache.carbondata.core.index.status.MVSegmentStatusUtil;
-import org.apache.carbondata.core.metadata.schema.datamap.IndexProperty;
+import org.apache.carbondata.core.metadata.schema.index.IndexProperty;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
@@ -48,7 +48,7 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * It is the new schama of index and it has less fields compare to {{@link IndexSchema}}
+ * It is the new schema of index and it has less fields compare to {{@link IndexSchema}}
  */
 public class IndexSchema implements Serializable, Writable {
 
@@ -310,14 +310,14 @@ public class IndexSchema implements Serializable, Writable {
         relationIdentifier.getTableName();
   }
 
-  public DataMapStatus getStatus() throws IOException {
-    DataMapStatusDetail[] details = DataMapStatusManager.getEnabledDataMapStatusDetails();
-    for (DataMapStatusDetail detail : details) {
+  public IndexStatus getStatus() throws IOException {
+    IndexStatusDetail[] details = IndexStatusManager.getEnabledDataMapStatusDetails();
+    for (IndexStatusDetail detail : details) {
       if (detail.getDataMapName().equalsIgnoreCase(this.getIndexName())) {
-        return DataMapStatus.ENABLED;
+        return IndexStatus.ENABLED;
       }
     }
-    return DataMapStatus.DISABLED;
+    return IndexStatus.DISABLED;
   }
 
   public String getSyncStatus() {

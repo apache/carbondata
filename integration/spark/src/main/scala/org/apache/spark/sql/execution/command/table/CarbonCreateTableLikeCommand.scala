@@ -49,7 +49,7 @@ case class CarbonCreateTableLikeCommand(
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
     if (srcTable.isMV) {
-      throw new MalformedCarbonCommandException("Unsupported operation on child table or datamap")
+      throw new MalformedCarbonCommandException("Unsupported operation on child table or MV")
     }
 
     // copy schema of source table and update fields to target table

@@ -24,7 +24,6 @@ import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
@@ -44,22 +43,20 @@ public abstract class AbstractBloomIndexWriter extends IndexWriter {
   private double bloomFilterFpp;
   private boolean compressBloom;
   protected int currentBlockletId;
-  private List<String> currentDMFiles;
   private List<DataOutputStream> currentDataOutStreams;
   protected List<CarbonBloomFilter> indexBloomFilters;
 
-  AbstractBloomIndexWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
-      Segment segment, String shardName, SegmentProperties segmentProperties,
-      int bloomFilterSize, double bloomFilterFpp, boolean compressBloom)
+  AbstractBloomIndexWriter(String tablePath, String indexName, List<CarbonColumn> indexColumns,
+      Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp,
+      boolean compressBloom)
       throws IOException {
-    super(tablePath, dataMapName, indexColumns, segment, shardName);
+    super(tablePath, indexName, indexColumns, segment, shardName);
     this.bloomFilterSize = bloomFilterSize;
     this.bloomFilterFpp = bloomFilterFpp;
     this.compressBloom = compressBloom;
-    currentDMFiles = new ArrayList<>(indexColumns.size());
     currentDataOutStreams = new ArrayList<>(indexColumns.size());
     indexBloomFilters = new ArrayList<>(indexColumns.size());
-    initDataMapFile();
+    initIndexFile();
     resetBloomFilters();
   }
 
@@ -150,7 +147,7 @@ public abstract class AbstractBloomIndexWriter extends IndexWriter {
 
   protected abstract byte[] convertNonDictionaryValue(int indexColIdx, Object value);
 
-  private void initDataMapFile() throws IOException {
+  private void initIndexFile() throws IOException {
     if (!FileFactory.isFileExist(indexPath)) {
       FileFactory.touchDirectory(FileFactory.getCarbonFile(indexPath));
       if (!FileFactory.isFileExist(indexPath)) {
@@ -165,11 +162,9 @@ public abstract class AbstractBloomIndexWriter extends IndexWriter {
         FileFactory.createNewFile(dmFile);
         dataOutStream = FileFactory.getDataOutputStream(dmFile);
       } catch (IOException e) {
-        CarbonUtil.closeStreams(dataOutStream);
         throw new IOException(e);
       }
 
-      this.currentDMFiles.add(dmFile);
       this.currentDataOutStreams.add(dataOutStream);
     }
   }

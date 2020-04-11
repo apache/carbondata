@@ -201,7 +201,7 @@ case class CarbonCreateMVCommand(
 
     val fieldsMap = MVHelper.getFieldsMapFromPlan(
       new SQLBuilder(modularPlan).SQLizer.execute(modularPlan), getLogicalRelation(logicalPlan))
-    // If dataMap is mapped to single main table, then inherit table properties from main table,
+    // If MV is mapped to single main table, then inherit table properties from main table,
     // else, will use default table properties. If DMProperties contains table properties, then
     // table properties of indexSchema table will be updated
     if (relatedTableList.size() == 1 && CarbonSource.isCarbonDataSource(relatedTables.head)) {

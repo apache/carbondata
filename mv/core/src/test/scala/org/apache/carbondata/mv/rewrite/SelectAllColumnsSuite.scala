@@ -33,7 +33,7 @@ class SelectAllColumnsSuite extends QueryTest {
       sql("select avg(age),avg(height),name from all_table group by name"),
       Seq(Row(26.0, 177.5, "tom")))
     val frame = sql("select avg(age),avg(height),name from all_table group by name")
-    assert(TestUtil.verifyMVDataMap(frame.queryExecution.optimizedPlan, "all_table_mv"))
+    assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "all_table_mv"))
     sql("drop table if exists all_table")
   }
 

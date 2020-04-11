@@ -23,45 +23,60 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 
 /**
- * For handling operation's after finish of index creation over table with index
- * example: bloom index, Lucene index
+ * For handling operation's before start of MV creation
  */
-case class CreateDataMapPostExecutionEvent(sparkSession: SparkSession,
-    storePath: String, tableIdentifier: Option[TableIdentifier], dmProviderName: String)
-  extends Event with CreateDataMapEventsInfo
+case class CreateMVPreExecutionEvent(
+    sparkSession: SparkSession,
+    storePath: String,
+    tableIdentifier: TableIdentifier)
+  extends Event with MVEventsInfo
 
 /**
- * For handling operation's before start of update index datmap status over table with index datamap
- * example: bloom datamap, Lucene datamap
+ * For handling operation's after finish of MV creation
  */
-case class UpdateDataMapPreExecutionEvent(sparkSession: SparkSession,
-    storePath: String, tableIdentifier: TableIdentifier)
-  extends Event with CreateDataMapEventsInfo
+case class CreateMVPostExecutionEvent(
+    sparkSession: SparkSession,
+    storePath: String,
+    tableIdentifier: Option[TableIdentifier],
+    dmProviderName: String)
+  extends Event with MVEventsInfo
 
 /**
- * For handling operation's after finish of  update index datmap status over table with index
- * example: bloom index, Lucene index
+ * For handling operation's before start of update MV status
  */
-case class UpdateDataMapPostExecutionEvent(sparkSession: SparkSession,
-    storePath: String, tableIdentifier: TableIdentifier)
-  extends Event with CreateDataMapEventsInfo
+case class UpdateMVPreExecutionEvent(
+    sparkSession: SparkSession,
+    storePath: String,
+    tableIdentifier: TableIdentifier)
+  extends Event with MVEventsInfo
+
+/**
+ * For handling operation's after finish of  update MV table
+ */
+case class UpdateMVPostExecutionEvent(
+    sparkSession: SparkSession,
+    storePath: String,
+    tableIdentifier: TableIdentifier)
+  extends Event with MVEventsInfo
 
 /**
  * For handling operation's before start of index build over table with index
  * example: bloom index, Lucene index
  */
-case class BuildIndexPreExecutionEvent(sparkSession: SparkSession,
-    identifier: AbsoluteTableIdentifier, dataMapNames: scala.collection.mutable.Seq[String])
-  extends Event with BuildDataMapEventsInfo
+case class BuildIndexPreExecutionEvent(
+    sparkSession: SparkSession,
+    identifier: AbsoluteTableIdentifier,
+    dataMapNames: scala.collection.mutable.Seq[String])
+  extends Event with BuildIndexEventsInfo
 
 /**
  * For handling operation's after finish of index build over table with index
- * example: bloom index, Lucene index
+ * example: bloom index, lucene index
  *
  * @param sparkSession
  * @param identifier
  * @param indexName set to specify index name in rebuild process;
- *               set to Null in loading and compaction and it will deal all datamaps
+ *               set to Null in loading and compaction and it will deal all indexes
  * @param segmentIdList
  * @param isFromRebuild set to false in loading process for skipping lazy index
  */
@@ -70,11 +85,4 @@ case class BuildIndexPostExecutionEvent(sparkSession: SparkSession,
     segmentIdList: Seq[String], isFromRebuild: Boolean)
   extends Event with TableEventInfo
 
-/**
- * For handling operation's before start of index creation over table with index
- * example: bloom index, Lucene index
- */
-case class CreateDataMapPreExecutionEvent(sparkSession: SparkSession,
-    storePath: String, tableIdentifier: TableIdentifier)
-  extends Event with CreateDataMapEventsInfo
 

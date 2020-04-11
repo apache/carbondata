@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.datamap
+package org.apache.carbondata.index
 
 import scala.collection.JavaConverters._
 

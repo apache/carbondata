@@ -655,7 +655,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     assert(exception.getMessage()
       .contains("Unsupported operation on non transactional table"))
 
-    //2. Datamap creation
+    //2. Index creation
     exception = intercept[MalformedCarbonCommandException] {
       sql(
         "CREATE INDEX index ON TABLE sdkOutputTable (name) AS 'bloomfilter'")

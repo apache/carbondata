@@ -41,7 +41,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       "select timeseries(projectjoindate,'minute'), sum(projectcode) from maintable group by timeseries(projectjoindate,'minute')")
     loadData("maintable")
     val df = sql("select timeseries(projectjoindate,'minute'), sum(projectcode) from maintable group by timeseries(projectjoindate,'minute')")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap1"))
     dropDataMap("datamap1")
     sql(
       "create materialized view datamap1 as " +
@@ -50,9 +50,9 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     sql("select * from datamap1").show(false)
     val df1 = sql("select timeseries(projectjoindate,'minute'),sum(projectcode) from maintable where timeseries(projectjoindate,'minute') = '2016-02-23 09:17:00'" +
                   "group by timeseries(projectjoindate,'minute')")
-    assert(TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap1"))
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "datamap1"))
     val df2 = sql("select timeseries(projectjoindate,'MINUTE'), sum(projectcode) from maintable where timeseries(projectjoindate,'MINute') = '2016-02-23 09:17:00' group by timeseries(projectjoindate,'MINUTE')")
-    TestUtil.verifyMVDataMap(df2.queryExecution.optimizedPlan, "datamap1")
+    TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "datamap1")
     dropDataMap("datamap1")
   }
 
@@ -64,7 +64,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     loadData("maintable")
     val df = sql("select timeseries(projectjoindate,'hour'), sum(projectcode) from maintable where timeseries(projectjoindate,'hour') = '2016-02-23 09:00:00' " +
                  "group by timeseries(projectjoindate,'hour')")
-    assert(TestUtil.verifyMVDataMap(df.queryExecution.optimizedPlan, "datamap1"))
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap1"))
     dropDataMap("datamap1")
   }
 
@@ -189,7 +189,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     var df1 = sql("select timeseries(projectjoindate,'month'), max(salary) from maintable where timeseries(projectjoindate,'month') = '2016-03-01 00:00:00' or  timeseries(projectjoindate,'month') = '2016-02-01 00:00:00' group by timeseries(projectjoindate,'month')")
     checkPlan("datamap1", df1)
     df1 = sql("select timeseries(projectjoindate,'MONth'), max(salary) from maintable where timeseries(projectjoindate,'MoNtH') = '2016-03-01 00:00:00' or  timeseries(projectjoinDATE,'MONth') = '2016-02-01 00:00:00' group by timeseries(projectjoindate,'MONth')")
-    TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "datamap1")
+    TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "datamap1")
     sql(
       "create materialized view datamap2 as " +
       "select timeseries(projectjoindate,'month'), max(salary) from maintable where timeseries(projectjoindate,'month') = '2016-03-01 00:00:00' and  timeseries(projectjoindate,'month') = '2016-02-01 00:00:00' group by timeseries(projectjoindate,'month')")
@@ -391,6 +391,6 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
 
   def checkPlan(dataMapName: String, df: DataFrame): Unit = {
     val analyzed = df.queryExecution.optimizedPlan
-    assert(TestUtil.verifyMVDataMap(analyzed, dataMapName))
+    assert(TestUtil.verifyMVHit(analyzed, dataMapName))
   }
 }
