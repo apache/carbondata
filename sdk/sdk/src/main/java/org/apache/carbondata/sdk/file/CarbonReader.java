@@ -57,6 +57,10 @@ public class CarbonReader<T> {
    * Call {@link #builder(String)} to construct an instance
    */
   CarbonReader(List<RecordReader<Void, T>> readers) {
+    if (readers == null) {
+      // In case of pagination, initialize with no reader
+      return;
+    }
     this.initialise = true;
     this.readers = readers;
     this.index = 0;
