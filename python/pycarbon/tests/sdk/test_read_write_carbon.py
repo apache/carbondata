@@ -16,6 +16,7 @@
 import pytest
 
 from pycarbon.sdk.CarbonReader import CarbonReader
+from pycarbon.sdk.PaginationCarbonReader import PaginationCarbonReader
 from pycarbon.sdk.CarbonSchemaReader import CarbonSchemaReader
 from pycarbon.sdk.CarbonWriter import CarbonWriter
 
@@ -25,7 +26,7 @@ import shutil
 import os
 import jnius_config
 
-jnius_config.set_classpath("../../../sdk/sdk/target/carbondata-sdk.jar")
+jnius_config.set_classpath("../../../../sdk/sdk/target/carbondata-sdk.jar")
 IMAGE_DATA_PATH = "./resources"
 
 def test_run_write_carbon():
@@ -466,3 +467,51 @@ def test_run_write_carbon_binary_base64_encode_decodeInJava_many_files():
   reader.close()
 
   shutil.rmtree(path)
+
+
+def test_pagination_carbon_reader():
+  jsonSchema = "[{stringField:string},{shortField:short},{intField:int}]"
+  path = "/tmp/data/writeCarbon" + str(time.time())
+
+  if os.path.exists(path):
+    shutil.rmtree(path)
+
+  writer = CarbonWriter() \
+    .builder() \
+    .outputPath(path) \
+    .withCsvInput(jsonSchema) \
+    .writtenBy("pycarbon") \
+    .build()
+  for i in range(1, 32001):
+    from jnius import autoclass
+    arrayListClass = autoclass("java.util.ArrayList")
+    data_list = arrayListClass()
+    data_list.add("pycarbon")
+    data_list.add(str(i))
+    data_list.add(str(i * 10))
+    writer.write(data_list.toArray())
+  writer.close()
+
+  # build the pagination reader
+  reader_builder = PaginationCarbonReader().builder(path, "temp")
+  reader = reader_builder.build()
+  # read the rows
+  rows = reader.read(100, 200)
+  for k in range(100, 201):
+    val = rows[k - 100][1]
+    assert val == k
+
+  # read the rows
+  rows = reader.read(31000, 31200)
+  for k in range(31000, 31201):
+    val = rows[k - 31000][1]
+    assert val == k
+
+  # check the total row count
+  assert int(reader.getTotalRowsAsString()) == 32000
+
+  # close the reader
+  reader.close()
+
+if __name__ == '__main__':
+    test_pagination_carbon_reader()

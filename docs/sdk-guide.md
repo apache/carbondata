@@ -611,11 +611,16 @@ while (reader.hasNext()) {
 reader.close();
 ```
 
-Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/blob/master/examples/spark/src/main/java/org/apache/carbondata/examples/sdk/CarbonReaderExample.java) in the CarbonData repo.
+1. Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/blob/master/examples/spark/src/main/java/org/apache/carbondata/examples/sdk/CarbonReaderExample.java) in the CarbonData repo.
 
-SDK reader also supports reading carbondata files and filling it to apache arrow vectors.
+2. SDK reader also supports reading carbondata files and filling it to apache arrow vectors.
 Find example code at [ArrowCarbonReaderTest](https://github.com/apache/carbondata/blob/master/sdk/sdk/src/test/java/org/apache/carbondata/sdk/file/ArrowCarbonReaderTest.java) in the CarbonData repo.
 
+3. SDK reader also support reading data with pagination support.
+Find example code at  [PaginationCarbonReaderTest](https://github.com/apache/carbondata/blob/master/sdk/sdk/src/test/java/org/apache/carbondata/sdk/file/PaginationCarbonReaderTest.java) in the CarbonData repo.
+
+Note: For pagination reader configure the LRU cache size as multiple of blocklet size of carbon files to be read.
+Refer "carbon.max.pagination.lru.cache.size.in.mb" from [Configuring CarbonData](https://github.com/apache/carbondata/blob/master/docs/configuration-parameters.md)
 
 ## API List
 
@@ -766,6 +771,41 @@ public VectorSchemaRoot getArrowVectors() throws IOException;
 public static ArrowRecordBatch byteArrayToArrowBatch(byte[] batchBytes, BufferAllocator bufferAllocator) throws IOException;
 ```
 
+### Class org.apache.carbondata.sdk.file.PaginationCarbonReader
+```
+/**
+* Pagination query with from and to range.
+*
+* @param fromRowNumber must be greater than 0 (as row id starts from 1)
+*                      and less than or equals to toRowNumber
+* @param toRowNumber must be greater than 0 (as row id starts from 1)
+*                and greater than or equals to fromRowNumber and should not cross the total rows count
+* @return array of rows between fromRowNumber and toRowNumber (inclusive)
+* @throws Exception
+*/
+public Object[] read(long fromRowNumber, long toRowNumber) throws IOException, InterruptedException;
+```
+
+```
+/**
+* Get total rows in the folder or a list of CarbonData files.
+* It is based on the snapshot of files taken while building the reader.
+*
+* @return total rows from all the files in the reader.
+*/
+public long getTotalRows();
+```
+
+```
+/**
+* Closes the pagination reader, drops the cache and snapshot.
+* Need to build reader again if the files need to be read again.
+* call this when the all pagination queries are finished and can the drop cache.
+*
+* @throws IOException
+*/
+public void close() throws IOException;
+```
 ### Class org.apache.carbondata.sdk.file.CarbonReaderBuilder
 ```
 /**
@@ -827,6 +867,15 @@ public CarbonReaderBuilder withHadoopConf(Configuration conf);
  */
 public CarbonReaderBuilder withHadoopConf(String key, String value);
 ```
+
+```  
+/**
+* If pagination reader is required then set builder for pagination support.
+* 
+* @return CarbonReaderBuilder, current object with updated configuration.
+*/
+public CarbonReaderBuilder withPaginationSupport(); 
+```  
   
 ```
 /**

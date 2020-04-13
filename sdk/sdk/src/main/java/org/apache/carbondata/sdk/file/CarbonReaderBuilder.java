@@ -67,6 +67,7 @@ public class CarbonReaderBuilder {
   private boolean useVectorReader = true;
   private InputSplit inputSplit;
   private boolean useArrowReader;
+  private boolean usePaginationReader;
   private List fileLists;
   private Class<? extends CarbonReadSupport> readSupportClass;
 
@@ -235,6 +236,15 @@ public class CarbonReaderBuilder {
   }
 
   /**
+   * To set the input split before build() to build the reader with the specified input split.
+   *
+   * @param inputSplit CarbonInputSplit
+   */
+  void setInputSplit(InputSplit inputSplit) {
+    this.inputSplit = inputSplit;
+  }
+
+  /**
    * build Arrow carbon reader
    *
    * @param <T>
@@ -245,6 +255,31 @@ public class CarbonReaderBuilder {
   public <T> ArrowCarbonReader<T> buildArrowReader() throws IOException, InterruptedException {
     useArrowReader = true;
     return (ArrowCarbonReader<T>) this.build();
+  }
+
+  /**
+   * If pagination reader is required then set builder for pagination support.
+   *
+   * @return CarbonReaderBuilder, current object with updated configuration.
+   */
+  public CarbonReaderBuilder withPaginationSupport() {
+    usePaginationReader = true;
+    return this;
+  }
+
+  /**
+   * This interface is for python to call java.
+   * Because python cannot use build() which returns superclass.
+   * Casting is not possible from python for java objects.
+   *
+   * If pagination reader is required then set builder for pagination support.
+   *
+   * @return CarbonReaderBuilder, current object with updated configuration.
+   */
+  public <T> PaginationCarbonReader<T> buildPaginationReader()
+      throws IOException, InterruptedException {
+    usePaginationReader = true;
+    return (PaginationCarbonReader<T>) this.build();
   }
 
   private CarbonFileInputFormat prepareFileInputFormat(Job job, boolean enableBlockletDistribution,
@@ -358,25 +393,36 @@ public class CarbonReaderBuilder {
     }
     CarbonTableInputFormat.setCarbonReadSupport(hadoopConf, readSupportClass);
     final Job job = new Job(new JobConf(hadoopConf));
-    CarbonFileInputFormat format = prepareFileInputFormat(job, false, true);
+    CarbonFileInputFormat format = null;
     try {
-      List<InputSplit> splits =
-          format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
-      List<RecordReader<Void, T>> readers = new ArrayList<>(splits.size());
-      for (InputSplit split : splits) {
-        RecordReader reader = getRecordReader(job, format, readers, split);
-        readers.add(reader);
-      }
-      if (useArrowReader) {
-        return new ArrowCarbonReader<>(readers);
-      } else {
+      if (!usePaginationReader) {
+        // block level dummy splits without IO and loading the cache (if filter not present)
+        format = prepareFileInputFormat(job, false, true);
+        List<InputSplit> splits =
+            format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
+        List<RecordReader<Void, T>> readers = new ArrayList<>(splits.size());
+        for (InputSplit split : splits) {
+          RecordReader reader = getRecordReader(job, format, readers, split);
+          readers.add(reader);
+        }
+        if (useArrowReader) {
+          return new ArrowCarbonReader<>(readers);
+        }
         return new CarbonReader<>(readers);
+      } else {
+        // blocklet level splits formed by reading footer and loading the cache
+        format = prepareFileInputFormat(job, true, false);
+        List<InputSplit> splits =
+            format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
+        return new PaginationCarbonReader(splits, this);
       }
     } catch (Exception ex) {
-      // Clear the index cache as it can get added in getSplits() method
-      IndexStoreManager.getInstance().clearIndexCache(
-          format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier(),
-          false);
+      if (format != null) {
+        // Clear the index cache as it can get added in getSplits() method
+        IndexStoreManager.getInstance().clearIndexCache(
+            format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier(),
+            false);
+      }
       throw ex;
     }
   }
