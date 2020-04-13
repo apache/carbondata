@@ -169,6 +169,9 @@ public class ExtendedBlocklet extends Blocklet {
       throws IOException {
     super.write(out);
     if (isCountJob) {
+      // In CarbonInputSplit, getDetailInfo() is a lazy call. we want to avoid this during
+      // countStar query. As rowCount is filled inside getDetailInfo(). In countStar case we may
+      // not have proper row count. So, always take row count from indexRow.
       out.writeLong(inputSplit.getIndexRow().getInt(BlockletIndexRowIndexes.ROW_COUNT_INDEX));
       out.writeUTF(inputSplit.getSegmentId());
     } else {
