@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.indexserver
 
+import java.util
 import java.util.concurrent.Executors
 
 import scala.collection.JavaConverters._
@@ -30,6 +31,7 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
+import org.apache.carbondata.core.datamap.{SegmentProcessor, SegmentWorkStatus}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.{IndexInputFormat, IndexStoreManager}
 import org.apache.carbondata.core.index.dev.expr.IndexInputSplitWrapper
@@ -69,15 +71,17 @@ class DistributedCountRDD(@transient ss: SparkSession, indexInputFormat: IndexIn
       IndexStoreManager.getInstance().clearInvalidSegments(indexInputFormat.getCarbonTable,
         indexInputFormat.getInvalidSegments)
     }
+    val globalQueue = SegmentProcessor.getInstance()
     val futures = if (inputSplits.length <= numOfThreads) {
       inputSplits.map {
-        split => generateFuture(Seq(split))
+        split => generateFuture(Seq(split), globalQueue)
       }
     } else {
       DistributedRDDUtils.groupSplits(inputSplits, numOfThreads).map {
-        splits => generateFuture(splits)
+        splits => generateFuture(splits, globalQueue)
       }
     }
+    // globalQueue.emptyQueue()
     // scalastyle:off awaitresult
     val results = Await.result(Future.sequence(futures), Duration.Inf).flatten
     // scalastyle:on awaitresult
@@ -96,21 +100,82 @@ class DistributedCountRDD(@transient ss: SparkSession, indexInputFormat: IndexIn
     new DistributedPruneRDD(ss, indexInputFormat).partitions
   }
 
-  private def generateFuture(split: Seq[InputSplit])
+  private def generateFuture(split: Seq[InputSplit], globalQueue: SegmentProcessor)
     (implicit executionContext: ExecutionContext) = {
     Future {
-      val segments = split.map { inputSplit =>
+      val segmentsWorkStatus = split.map { inputSplit =>
         val distributable = inputSplit.asInstanceOf[IndexInputSplitWrapper]
         distributable.getDistributable.getSegment
           .setReadCommittedScope(indexInputFormat.getReadCommittedScope)
-        distributable.getDistributable.getSegment
+        // global queue needs to syncronised here because, 2 different threads can return
+        // ifProcessSegments as false.
+        globalQueue.synchronized {
+          val ifSegmentsToProcess = globalQueue.ifProcessSegment(distributable.getDistributable
+            .getSegment.getSegmentNo, indexInputFormat.getCarbonTable.getTableId)
+          val segmentWorkStatusList = new SegmentWorkStatus(distributable.getDistributable
+            .getSegment, !ifSegmentsToProcess)
+          // if ifprocesssegment = true, iswaiting = false and vice versa
+          globalQueue.processSegment(segmentWorkStatusList,
+            indexInputFormat.getCarbonTable.getTableId)
+          segmentWorkStatusList
+        }
       }
-      val defaultIndex = IndexStoreManager.getInstance
+      val segmentsPositive = new util.HashSet[SegmentWorkStatus]()
+      val segmentsNegative = new util.HashSet[SegmentWorkStatus]()
+
+      segmentsWorkStatus.map { iter =>
+        if (!iter.getWaiting) {
+          segmentsPositive.add(iter)
+        } else {
+          segmentsNegative.add(iter)
+        }
+      }
+
+      val defaultDataMap = IndexStoreManager.getInstance
         .getIndex(indexInputFormat.getCarbonTable, split.head
           .asInstanceOf[IndexInputSplitWrapper].getDistributable.getIndexSchema)
-      defaultIndex.getBlockRowCount(segments.toList.asJava, indexInputFormat
-        .getPartitions, defaultIndex).asScala
+      val result = defaultDataMap.getBlockRowCount(segmentsPositive.asScala.map { iter =>
+        iter.getSegment }.toList.asJava, indexInputFormat.getPartitions,
+        defaultDataMap).asScala
+
+      //  updating the waiting status in the global queue
+      segmentsPositive.asScala.foreach { item =>
+        globalQueue.updateWaitingStatus(item, defaultDataMap.getTable.getTableId)
+      }
+
+      // Checking and processing all the remaining segments till all the unprocessed segments are
+      // finished processing
+      while (segmentsNegative != null && !segmentsNegative.isEmpty) {
+        val unProcessedSegmentsWorkStatus = segmentsNegative.asScala.map { iter =>
+          globalQueue.synchronized {
+            globalQueue.ifProcessSegment(iter.getSegment.getSegmentNo, defaultDataMap.getTable
+            .getTableId)
+            globalQueue.processSegment(iter, indexInputFormat.getCarbonTable.getTableId)
+            iter
+          }
+        }.toSeq
+
+        // clearing both the processed and unprocessed segments anf filling them again with
+        // remaining segments
+        segmentsNegative.clear()
+        segmentsPositive.clear()
+        unProcessedSegmentsWorkStatus.map { iter =>
+          if (!iter.getWaiting) {
+            segmentsPositive.add(iter)
+          } else {
+            segmentsNegative.add(iter)
+          }
+        }
+
+        // Combining previous and the current result map.
+        result.asJava.putAll(defaultDataMap
+          .getBlockRowCount(segmentsPositive.asScala.map { iter => iter.getSegment }.toList.asJava,
+            indexInputFormat.getPartitions, defaultDataMap ))
+        segmentsPositive.asScala.map { iter =>
+          globalQueue.updateWaitingStatus(iter, defaultDataMap.getTable.getTableId)
+        }
+      }
+      result
     }
   }
-
 }
