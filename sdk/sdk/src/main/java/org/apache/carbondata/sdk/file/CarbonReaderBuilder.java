@@ -67,6 +67,7 @@ public class CarbonReaderBuilder {
   private boolean useVectorReader = true;
   private InputSplit inputSplit;
   private boolean useArrowReader;
+  private boolean usePaginationReader;
   private List fileLists;
   private Class<? extends CarbonReadSupport> readSupportClass;
 
@@ -234,6 +235,10 @@ public class CarbonReaderBuilder {
     return this;
   }
 
+  public void setInputSplit(InputSplit inputSplit) {
+    this.inputSplit = inputSplit;
+  }
+
   /**
    * build Arrow carbon reader
    *
@@ -245,6 +250,15 @@ public class CarbonReaderBuilder {
   public <T> ArrowCarbonReader<T> buildArrowReader() throws IOException, InterruptedException {
     useArrowReader = true;
     return (ArrowCarbonReader<T>) this.build();
+  }
+
+  /**
+   * With pagination support.
+   *
+   */
+  public CarbonReaderBuilder withPaginationSupport() {
+    usePaginationReader = true;
+    return this;
   }
 
   private CarbonFileInputFormat prepareFileInputFormat(Job job, boolean enableBlockletDistribution,
@@ -358,26 +372,36 @@ public class CarbonReaderBuilder {
     }
     CarbonTableInputFormat.setCarbonReadSupport(hadoopConf, readSupportClass);
     final Job job = new Job(new JobConf(hadoopConf));
-    CarbonFileInputFormat format = prepareFileInputFormat(job, false, true);
+    CarbonFileInputFormat format = null;
     try {
-      List<InputSplit> splits =
-          format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
-      List<RecordReader<Void, T>> readers = new ArrayList<>(splits.size());
-      for (InputSplit split : splits) {
-        RecordReader reader = getRecordReader(job, format, readers, split);
-        readers.add(reader);
-      }
-      if (useArrowReader) {
-        return new ArrowCarbonReader<>(readers);
-      } else {
+      if (!usePaginationReader) {
+        format = prepareFileInputFormat(job, false, true);
+        List<InputSplit> splits =
+            format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
+        List<RecordReader<Void, T>> readers = new ArrayList<>(splits.size());
+        for (InputSplit split : splits) {
+          RecordReader reader = getRecordReader(job, format, readers, split);
+          readers.add(reader);
+        }
+        if (useArrowReader) {
+          return new ArrowCarbonReader<>(readers);
+        }
         return new CarbonReader<>(readers);
+      } else {
+        format = prepareFileInputFormat(job, true, false);
+        List<InputSplit> splits =
+            format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
+        return new PaginationCarbonReader(splits, this);
       }
     } catch (Exception ex) {
-      // Clear the index cache as it can get added in getSplits() method
-      IndexStoreManager.getInstance().clearIndexCache(
-          format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier(),
-          false);
-      throw ex;
+      if (format != null) {
+        // Clear the index cache as it can get added in getSplits() method
+        IndexStoreManager.getInstance().clearIndexCache(
+            format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier(),
+            false);
+        throw ex;
+      }
+      return null;
     }
   }
 
