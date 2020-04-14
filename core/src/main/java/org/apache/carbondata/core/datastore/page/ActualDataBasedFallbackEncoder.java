@@ -64,6 +64,7 @@ public class ActualDataBasedFallbackEncoder
     // be used.
     // This is required to free the memory once it is of no use
     encodedColumnPage.freeMemory();
+    encodedColumnPage.cleanBuffer();
     return fallbackEncodedColumnPage;
   }
 }

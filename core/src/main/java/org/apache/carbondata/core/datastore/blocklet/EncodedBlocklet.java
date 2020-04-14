@@ -192,12 +192,12 @@ public class EncodedBlocklet {
   }
 
   public void clear() {
-    if(null != encodedDimensionColumnPages) {
+    if (null != encodedDimensionColumnPages) {
       for (BlockletEncodedColumnPage blockletEncodedColumnPage : encodedDimensionColumnPages) {
         blockletEncodedColumnPage.cleanBuffer();
       }
     }
-    if(null != encodedMeasureColumnPages) {
+    if (null != encodedMeasureColumnPages) {
       for (BlockletEncodedColumnPage blockletEncodedColumnPage : encodedMeasureColumnPages) {
         blockletEncodedColumnPage.cleanBuffer();
       }
