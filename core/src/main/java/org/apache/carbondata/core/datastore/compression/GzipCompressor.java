@@ -22,6 +22,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import org.apache.carbondata.core.memory.UnsafeMemoryManager;
+
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 
@@ -76,6 +78,8 @@ public class GzipCompressor extends AbstractCompressor {
       }
     } catch (IOException e) {
       throw new RuntimeException("Error during Compression writing step ", e);
+    } finally {
+      UnsafeMemoryManager.destroyDirectByteBuffer(input);
     }
     return output.toByteArray();
   }
