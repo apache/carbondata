@@ -149,7 +149,7 @@ public class CarbonTableReader {
           config).getLastModifiedTime();
       carbonTableCacheModel.setCurrentSchemaTime(latestTime);
       if (!carbonTableCacheModel.isValid()) {
-        // Invalidate datamaps
+        // Invalidate indexes
         IndexStoreManager.getInstance()
             .clearIndex(carbonTableCacheModel.getCarbonTable().getAbsoluteTableIdentifier());
       }

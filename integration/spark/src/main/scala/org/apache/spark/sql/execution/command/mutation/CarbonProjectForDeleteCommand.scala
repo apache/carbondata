@@ -133,14 +133,6 @@ private[sql] case class CarbonProjectForDeleteCommand(
       HorizontalCompaction.tryHorizontalCompaction(sparkSession, carbonTable,
         isUpdateOperation = false)
 
-      val allIndexSchemas = IndexStoreManager.getInstance
-        .getIndexSchemasOfTable(carbonTable).asScala
-        .filter(indexSchema => null != indexSchema.getRelationIdentifier &&
-                               !indexSchema.isIndex).asJava
-      if (!allIndexSchemas.isEmpty) {
-        IndexStatusManager.truncateIndex(allIndexSchemas)
-      }
-
       // Truncate materialized views on the current table.
       val viewManager = MVManagerInSpark.get(sparkSession)
       val viewSchemas = viewManager.getSchemasOnTable(carbonTable)

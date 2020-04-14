@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -70,16 +69,6 @@ public class ExplainCollector {
 
   public static ExplainCollector get() {
     return INSTANCE;
-  }
-
-  public static void recordMatchedOlapDataMap(String dataMapProvider, String dataMapName) {
-    if (enabled()) {
-      Objects.requireNonNull(dataMapProvider);
-      Objects.requireNonNull(dataMapName);
-      ExplainCollector profiler = get();
-      profiler.mvProviders.add(dataMapProvider);
-      profiler.mvNames.add(dataMapName);
-    }
   }
 
   public static void addPruningInfo(String tableName) {

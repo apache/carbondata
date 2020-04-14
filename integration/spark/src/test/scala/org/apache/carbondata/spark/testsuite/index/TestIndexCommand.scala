@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.testsuite.datamap
+package org.apache.carbondata.spark.testsuite.index
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
@@ -31,78 +31,78 @@ class TestIndexCommand extends QueryTest with BeforeAndAfterAll {
   val testData = s"$resourcesPath/sample.csv"
 
   override def beforeAll {
-    sql("drop table if exists datamaptest")
-    sql("drop table if exists datamapshowtest")
+    sql("drop table if exists indextest")
+    sql("drop table if exists indexshowtest")
     sql("drop table if exists uniqdata")
-    sql("create table datamaptest (a string, b string, c string) STORED AS carbondata")
+    sql("create table indextest (a string, b string, c string) STORED AS carbondata")
   }
 
   val newClass = "org.apache.spark.sql.CarbonSource"
 
   test("test index create: don't support using non-exist class") {
     intercept[MetadataProcessException] {
-      sql(s"CREATE INDEX datamap1 ON datamaptest (a) AS '$newClass'")
+      sql(s"CREATE INDEX index1 ON indextest (a) AS '$newClass'")
     }
   }
 
   test("test index create with properties: don't support using non-exist class") {
     intercept[MetadataProcessException] {
-      sql(s"CREATE INDEX datamap2 ON datamaptest (a) AS '$newClass' PROPERTIES('key'='value')")
+      sql(s"CREATE INDEX index2 ON indextest (a) AS '$newClass' PROPERTIES('key'='value')")
     }
   }
 
   test("test index create with existing name: don't support using non-exist class") {
     intercept[MetadataProcessException] {
       sql(
-        s"CREATE INDEX datamap2 ON datamaptest (a) AS '$newClass' PROPERTIES('key'='value')")
+        s"CREATE INDEX index2 ON indextest (a) AS '$newClass' PROPERTIES('key'='value')")
     }
   }
 
   test("test show indexes with no index") {
-    sql("drop table if exists datamapshowtest")
-    sql("create table datamapshowtest (a string, b string, c string) STORED AS carbondata")
-    assert(sql("show indexes on datamapshowtest").collect().length == 0)
+    sql("drop table if exists indexshowtest")
+    sql("create table indexshowtest (a string, b string, c string) STORED AS carbondata")
+    assert(sql("show indexes on indexshowtest").collect().length == 0)
   }
 
   test("test show indexes: show index property related information") {
-    val tableName = "datamapshowtest"
-    val datamapName = "bloomdatamap"
-    val datamapName2 = "bloomdatamap2"
-    val datamapName3 = "bloomdatamap3"
+    val tableName = "indexshowtest"
+    val indexName = "bloomindex"
+    val indexName2 = "bloomindex2"
+    val indexName3 = "bloomindex3"
     sql(s"drop table if exists $tableName")
     // for index
     sql(s"create table $tableName (a string, b string, c string) STORED AS carbondata")
     sql(
       s"""
-         | create index $datamapName
+         | create index $indexName
          | on $tableName (a)
          | as 'bloomfilter'
          | PROPERTIES ('bloom_size'='32000', 'bloom_fpp'='0.001')
        """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $datamapName2
+         | CREATE INDEX $indexName2
          | on table $tableName (b)
          | as 'bloomfilter'
        """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $datamapName3
+         | CREATE INDEX $indexName3
          | on table $tableName (c)
          | as 'bloomfilter'
        """.stripMargin)
     var result = sql(s"show indexes on $tableName").cache()
     checkAnswer(sql(s"show indexes on $tableName"),
-      Seq(Row(datamapName, "bloomfilter", "a", "'INDEX_COLUMNS'='a','bloom_fpp'='0.001','bloom_size'='32000'", "ENABLED", "NA"),
-        Row(datamapName2, "bloomfilter", "b", "'INDEX_COLUMNS'='b'", "ENABLED", "NA"),
-        Row(datamapName3, "bloomfilter", "c", "'INDEX_COLUMNS'='c'", "ENABLED", "NA")))
+      Seq(Row(indexName, "bloomfilter", "a", "'INDEX_COLUMNS'='a','bloom_fpp'='0.001','bloom_size'='32000'", "ENABLED", "NA"),
+        Row(indexName2, "bloomfilter", "b", "'INDEX_COLUMNS'='b'", "ENABLED", "NA"),
+        Row(indexName3, "bloomfilter", "c", "'INDEX_COLUMNS'='c'", "ENABLED", "NA")))
     result.unpersist()
     sql(s"drop table if exists $tableName")
 
   }
 
   test("test don't support lucene on binary data type") {
-    val tableName = "datamapshowtest20"
+    val tableName = "indexshowtest20"
     sql(s"drop table if exists $tableName")
 
     sql(s"CREATE TABLE $tableName(id int, name string, city string, age string, image binary)" +
@@ -156,7 +156,7 @@ class TestIndexCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists uniqdata")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
       CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT)
-    sql("drop table if exists datamaptest")
-    sql("drop table if exists datamapshowtest")
+    sql("drop table if exists indextest")
+    sql("drop table if exists indexshowtest")
   }
 }

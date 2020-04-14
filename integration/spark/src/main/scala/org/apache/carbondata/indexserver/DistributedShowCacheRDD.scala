@@ -65,7 +65,7 @@ class DistributedShowCacheRDD(@transient private val ss: SparkSession,
       case (tableId, tableIndexes) if tableUniqueId.isEmpty || tableList.contains(tableId) =>
         val sizeAndIndexLengths = tableIndexes.asScala
           .map { index =>
-            val dataMapName = if (index.getIndexFactory.isInstanceOf[BlockletIndexFactory]) {
+            val indexName = if (index.getIndexFactory.isInstanceOf[BlockletIndexFactory]) {
               index
                 .getIndexFactory
                 .asInstanceOf[BlockletIndexFactory]
@@ -83,7 +83,7 @@ class DistributedShowCacheRDD(@transient private val ss: SparkSession,
                 index.getIndexSchema.getProviderName
               }"
             } else {
-              s"${dataMapName}:${index.getIndexFactory.getCacheSize}:${
+              s"${indexName}:${index.getIndexFactory.getCacheSize}:${
                 index.getIndexSchema.getProviderName
               }"
             }

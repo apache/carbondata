@@ -28,7 +28,7 @@ import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
 import org.apache.carbondata.core.index.dev.Index;
 import org.apache.carbondata.core.index.dev.IndexFactory;
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider;
+import org.apache.carbondata.core.metadata.index.IndexType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 
@@ -69,8 +69,8 @@ public class IndexRegistry {
     String providerName = indexSchema.getProviderName();
     try {
       registerIndex(
-          CarbonIndexProvider.get(providerName).getClassName(),
-          CarbonIndexProvider.get(providerName).getIndexProviderName());
+          IndexType.get(providerName).getClassName(),
+          IndexType.get(providerName).getIndexProviderName());
     } catch (UnsupportedOperationException ex) {
       throw new MalformedIndexCommandException("Index '" + providerName + "' not found", ex);
     }

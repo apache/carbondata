@@ -28,7 +28,7 @@ import org.apache.spark.sql.secondaryindex.command.IndexModel
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.events.LoadEvents.LoadTablePreStatusUpdateEvent
@@ -59,7 +59,7 @@ class SILoadEventListener extends OperationEventListener with Logging {
           .lookupRelation(Some(carbonLoadModel.getDatabaseName),
             carbonLoadModel.getTableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
         val indexMetadata = carbonTable.getIndexMetadata
-        val secondaryIndexProvider = CarbonIndexProvider.SI.getIndexProviderName
+        val secondaryIndexProvider = IndexType.SI.getIndexProviderName
         if (null != indexMetadata && null != indexMetadata.getIndexesMap &&
             null != indexMetadata.getIndexesMap.get(secondaryIndexProvider)) {
           val indexTables = indexMetadata.getIndexesMap

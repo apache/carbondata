@@ -63,12 +63,12 @@ case class Relation(output: Seq[AttributeReference], catalogTable: Option[Catalo
  */
 object MVHelper {
 
-  def createMVDataMap(
+  def createMV(
       sparkSession: SparkSession,
-      dataMapSchema: IndexSchema,
+      schema: IndexSchema,
       queryString: String,
       ifNotExistsSet: Boolean = false): Unit = {
-    val properties = dataMapSchema.getProperties.asScala
+    val properties = schema.getProperties.asScala
     if (properties.contains("streaming") && properties("streaming").equalsIgnoreCase("true")) {
       throw new MalformedCarbonCommandException(
         s"Materialized view does not support streaming"
@@ -109,7 +109,7 @@ object MVHelper {
     }
     val modularPlan = validateMVQuery(sparkSession, queryPlan)
     val updatedQueryWithDb = modularPlan.asCompactSQL
-    val (timeSeriesColumn, granularity) = validateMVTimeSeriesQuery(queryPlan, dataMapSchema)
+    val (timeSeriesColumn, granularity) = validateMVTimeSeriesQuery(queryPlan, schema)
     val isQueryNeedFullRebuild = checkIsQueryNeedFullRebuild(queryPlan)
     val hasNonCarbonProvider = checkMainTableHasNonCarbonSource(mainTables)
     val isNeedFullRebuild = isQueryNeedFullRebuild || hasNonCarbonProvider
@@ -175,7 +175,7 @@ object MVHelper {
         }
     }
 
-    tableProperties.put(CarbonCommonConstants.DATAMAP_NAME, dataMapSchema.getIndexName)
+    tableProperties.put(CarbonCommonConstants.MV_NAME, schema.getIndexName)
     tableProperties.put(CarbonCommonConstants.PARENT_TABLES, parentTables.asScala.mkString(","))
 
     val finalModularPlan = new SQLBuilder(modularPlan).SQLizer.execute(modularPlan)
@@ -239,7 +239,7 @@ object MVHelper {
     }
 
     val viewTableIdentifier = TableIdentifier(
-      dataMapSchema.getIndexName + "_table", mainTables.head.identifier.database)
+      schema.getIndexName + "_table", mainTables.head.identifier.database)
 
     // prepare table model of the collected tokens
     val viewTableModel: TableModel = CarbonParserUtil.prepareTableModel(
@@ -278,15 +278,15 @@ object MVHelper {
           }
       }
     }
-    dataMapSchema.setMainTableColumnList(mainTableToColumnsMap)
-    dataMapSchema.setColumnsOrderMap(columnOrderMap)
+    schema.setMainTableColumnList(mainTableToColumnsMap)
+    schema.setColumnsOrderMap(columnOrderMap)
     if (null != granularity && null != timeSeriesColumn) {
-      dataMapSchema.setCtasQuery(queryString)
-      dataMapSchema.setTimeSeries(true)
+      schema.setCtasQuery(queryString)
+      schema.setTimeSeries(true)
     } else {
-      dataMapSchema.setCtasQuery(updatedQueryWithDb)
+      schema.setCtasQuery(updatedQueryWithDb)
     }
-    dataMapSchema.setRelationIdentifier(
+    schema.setRelationIdentifier(
       new RelationIdentifier(
         viewTableIdentifier.database.get,
         viewTableIdentifier.table,
@@ -298,17 +298,17 @@ object MVHelper {
       relationIdentifier.setProvider(table.provider.get)
       relationIdentifier
     }
-    dataMapSchema.getRelationIdentifier.setTablePath(viewTablePath)
-    dataMapSchema.setParentTables(new util.ArrayList[RelationIdentifier](parentIdents.asJava))
-    dataMapSchema.getProperties.put(IndexProperty.FULL_REFRESH, isNeedFullRebuild.toString)
+    schema.getRelationIdentifier.setTablePath(viewTablePath)
+    schema.setParentTables(new util.ArrayList[RelationIdentifier](parentIdents.asJava))
+    schema.getProperties.put(IndexProperty.FULL_REFRESH, isNeedFullRebuild.toString)
     try {
-      IndexStoreManager.getInstance().saveIndexSchema(dataMapSchema)
+      IndexStoreManager.getInstance().saveIndexSchema(schema)
     } catch {
       case ex: Exception =>
         val dropTableCommand = CarbonDropTableCommand(
           ifExistsSet = true,
-          new Some[String](dataMapSchema.getRelationIdentifier.getDatabaseName),
-          dataMapSchema.getRelationIdentifier.getTableName,
+          new Some[String](schema.getRelationIdentifier.getDatabaseName),
+          schema.getRelationIdentifier.getTableName,
           dropChildTable = true)
         dropTableCommand.run(sparkSession)
         throw ex
@@ -318,9 +318,9 @@ object MVHelper {
   private def validateMVQuery(
       sparkSession: SparkSession,
       logicalPlan: LogicalPlan): ModularPlan = {
-    val dataMapProvider = IndexManager.get().getIndexProvider(null,
+    val indexProvider = IndexManager.get().getIndexProvider(null,
       new IndexSchema("", IndexClassProvider.MV.getShortName), sparkSession)
-    var catalog = IndexStoreManager.getInstance().getMVCatalog(dataMapProvider,
+    var catalog = IndexStoreManager.getInstance().getMVCatalog(indexProvider,
       IndexClassProvider.MV.getShortName, false).asInstanceOf[SummaryDatasetCatalog]
     if (catalog == null) {
       catalog = new SummaryDatasetCatalog(sparkSession)
@@ -478,11 +478,11 @@ object MVHelper {
    * TimeSeries udf function will contain data type as TimeStamp/cast as TimeStamp
    *
    * @param logicalPlan   to be validated
-   * @param dataMapSchema to check if it is lazy/non-lazy MV
+   * @param schema to check if it is lazy/non-lazy MV
    * @return
    */
   private def validateMVTimeSeriesQuery(logicalPlan: LogicalPlan,
-      dataMapSchema: IndexSchema): (String, String) = {
+      schema: IndexSchema): (String, String) = {
     var timeSeriesColumn: String = null
     var granularity: String = null
     logicalPlan.transformExpressions {
@@ -524,7 +524,7 @@ object MVHelper {
     }
     // timeseries column and granularity is not null, then validate
     if (null != timeSeriesColumn && null != granularity) {
-      if (dataMapSchema.isLazy) {
+      if (schema.isLazy) {
         throw new MalformedCarbonCommandException(
           "MV TimeSeries queries does not support Lazy Rebuild")
       }
@@ -554,10 +554,10 @@ object MVHelper {
         case head :: tail =>
           // Collect the first relation which matched the condition
           val validRelation = fieldRelations.zipWithIndex.collectFirst {
-            case ((field, dataMapField), index) if
-            dataMapField.columnTableRelationList.nonEmpty &&
-            head.equals(dataMapField.columnTableRelationList.head.columnName) &&
-            dataMapField.aggregateFunction.isEmpty =>
+            case ((field, mvField), index) if
+            mvField.columnTableRelationList.nonEmpty &&
+            head.equals(mvField.columnTableRelationList.head.columnName) &&
+            mvField.aggregateFunction.isEmpty =>
               (PartitionerField(field.name.get,
                 field.dataType,
                 field.columnComment), allPartitionColumn.indexOf(head))
@@ -627,7 +627,7 @@ object MVHelper {
       val longStringColumnInParents = parentTable.getTableInfo.getFactTable.getTableProperties
         .asScala
         .getOrElse(CarbonCommonConstants.LONG_STRING_COLUMNS, "").split(",").map(_.trim)
-      val varcharDatamapFields = scala.collection.mutable.ArrayBuffer.empty[String]
+      val varcharmvFields = scala.collection.mutable.ArrayBuffer.empty[String]
       fieldRelationMap foreach (fields => {
         val aggFunc = fields._2.aggregateFunction
         val relationList = fields._2.columnTableRelationList
@@ -635,11 +635,11 @@ object MVHelper {
         // long_string_columns in parent, make them long_string_columns in MV
         if (aggFunc.isEmpty && relationList.size == 1 && longStringColumnInParents
           .contains(relationList.head.columnName)) {
-          varcharDatamapFields += relationList.head.columnName
+          varcharmvFields += relationList.head.columnName
         }
       })
-      if (varcharDatamapFields.nonEmpty) {
-        longStringColumn = Option(varcharDatamapFields.mkString(","))
+      if (varcharmvFields.nonEmpty) {
+        longStringColumn = Option(varcharmvFields.mkString(","))
       }
     }
 
@@ -680,9 +680,9 @@ object MVHelper {
     val parentDictExclude = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
       .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE, "").split(",")
 
-    val newLocalDictInclude = getDataMapColumns(parentDictInclude, fields, fieldRelationMap)
+    val newLocalDictInclude = getMVColumns(parentDictInclude, fields, fieldRelationMap)
 
-    val newLocalDictExclude = getDataMapColumns(parentDictExclude, fields, fieldRelationMap)
+    val newLocalDictExclude = getMVColumns(parentDictExclude, fields, fieldRelationMap)
 
     if (newLocalDictInclude.nonEmpty) {
       tableProperties
@@ -696,12 +696,12 @@ object MVHelper {
     val parentInvertedIndex = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
       .getOrElse(CarbonCommonConstants.INVERTED_INDEX, "").split(",")
 
-    val newInvertedIndex = getDataMapColumns(parentInvertedIndex, fields, fieldRelationMap)
+    val newInvertedIndex = getMVColumns(parentInvertedIndex, fields, fieldRelationMap)
 
     val parentNoInvertedIndex = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
       .getOrElse(CarbonCommonConstants.NO_INVERTED_INDEX, "").split(",")
 
-    val newNoInvertedIndex = getDataMapColumns(parentNoInvertedIndex, fields, fieldRelationMap)
+    val newNoInvertedIndex = getMVColumns(parentNoInvertedIndex, fields, fieldRelationMap)
 
     if (newInvertedIndex.nonEmpty) {
       tableProperties
@@ -714,9 +714,9 @@ object MVHelper {
 
   }
 
-  private def getDataMapColumns(parentColumns: Array[String], fields: Seq[Field],
+  private def getMVColumns(parentColumns: Array[String], fields: Seq[Field],
       fieldRelationMap: scala.collection.mutable.LinkedHashMap[Field, MVField]) = {
-    val dataMapColumns = parentColumns.flatMap(parentcol =>
+    val mvColumns = parentColumns.flatMap(parentcol =>
       fields.collect {
         case col if fieldRelationMap(col).aggregateFunction.isEmpty &&
                     fieldRelationMap(col).columnTableRelationList.size == 1 &&
@@ -724,7 +724,7 @@ object MVHelper {
                       fieldRelationMap(col).columnTableRelationList.head.columnName) =>
           col.column
       })
-    dataMapColumns
+    mvColumns
   }
 
 }

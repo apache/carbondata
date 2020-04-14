@@ -64,12 +64,12 @@ public class DiskBasedIndexStatusProvider implements IndexStatusStorageProvider 
   private static final Logger LOG =
       LogServiceFactory.getLogService(DiskBasedIndexStatusProvider.class.getName());
 
-  private static final String DATAMAP_STATUS_FILE = "datamapstatus";
+  private static final String INDEX_STATUS_FILE = "indexstatus";
 
   @Override
   public IndexStatusDetail[] getIndexStatusDetails() throws IOException {
     String statusPath = CarbonProperties.getInstance().getSystemFolderLocation()
-        + CarbonCommonConstants.FILE_SEPARATOR + DATAMAP_STATUS_FILE;
+        + CarbonCommonConstants.FILE_SEPARATOR + INDEX_STATUS_FILE;
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
@@ -85,7 +85,7 @@ public class DiskBasedIndexStatusProvider implements IndexStatusStorageProvider 
       buffReader = new BufferedReader(inStream);
       indexStatusDetails = gsonObjectToRead.fromJson(buffReader, IndexStatusDetail[].class);
     } catch (IOException e) {
-      LOG.error("Failed to read datamap status", e);
+      LOG.error("Failed to read index status", e);
       throw e;
     } finally {
       CarbonUtil.closeStreams(buffReader, inStream, dataInputStream);
@@ -100,8 +100,8 @@ public class DiskBasedIndexStatusProvider implements IndexStatusStorageProvider 
   }
 
   /**
-   * Update or add the status of passed datamaps with the given datamapstatus. If the datamapstatus
-   * given is enabled/disabled then updates/adds the datamap, in case of drop it just removes it
+   * Update or add the status of passed indexes with the given indexstatus. If the indexstatus
+   * given is enabled/disabled then updates/adds the index, in case of drop it just removes it
    * from the file.
    * This method always overwrites the old file.
    * @param indexSchemas schemas of which are need to be updated in index status
@@ -115,27 +115,27 @@ public class DiskBasedIndexStatusProvider implements IndexStatusStorageProvider 
       // There is nothing to update
       return;
     }
-    ICarbonLock carbonTableStatusLock = getDataMapStatusLock();
+    ICarbonLock carbonTableStatusLock = getIndexStatusLock();
     boolean locked = false;
     try {
       locked = carbonTableStatusLock.lockWithRetries();
       if (locked) {
-        LOG.info("Datamap status lock has been successfully acquired.");
+        LOG.info("index status lock has been successfully acquired.");
         if (indexStatus == IndexStatus.ENABLED && !indexSchemas.get(0).isIndex()) {
-          // Enable datamap only if datamap tables and main table are in sync
+          // Enable index only if index tables and main table are in sync
           if (!canIndexBeEnabled(indexSchemas.get(0))) {
             return;
           }
         }
         IndexStatusDetail[] indexStatusDetails = getIndexStatusDetails();
-        List<IndexStatusDetail> dataMapStatusList = Arrays.asList(indexStatusDetails);
-        dataMapStatusList = new ArrayList<>(dataMapStatusList);
+        List<IndexStatusDetail> indexStatusList = Arrays.asList(indexStatusDetails);
+        indexStatusList = new ArrayList<>(indexStatusList);
         List<IndexStatusDetail> changedStatusDetails = new ArrayList<>();
         List<IndexStatusDetail> newStatusDetails = new ArrayList<>();
         for (IndexSchema indexSchema : indexSchemas) {
           boolean exists = false;
-          for (IndexStatusDetail statusDetail : dataMapStatusList) {
-            if (statusDetail.getDataMapName().equals(indexSchema.getIndexName())) {
+          for (IndexStatusDetail statusDetail : indexStatusList) {
+            if (statusDetail.getIndexName().equals(indexSchema.getIndexName())) {
               statusDetail.setStatus(indexStatus);
               changedStatusDetails.add(statusDetail);
               exists = true;
@@ -148,15 +148,15 @@ public class DiskBasedIndexStatusProvider implements IndexStatusStorageProvider 
         }
         // Add the newly added index to the list.
         if (newStatusDetails.size() > 0 && indexStatus != IndexStatus.DROPPED) {
-          dataMapStatusList.addAll(newStatusDetails);
+          indexStatusList.addAll(newStatusDetails);
         }
         // In case of dropped index, just remove from the list.
         if (indexStatus == IndexStatus.DROPPED) {
-          dataMapStatusList.removeAll(changedStatusDetails);
+          indexStatusList.removeAll(changedStatusDetails);
         }
         writeLoadDetailsIntoFile(CarbonProperties.getInstance().getSystemFolderLocation()
-                + CarbonCommonConstants.FILE_SEPARATOR + DATAMAP_STATUS_FILE,
-            dataMapStatusList.toArray(new IndexStatusDetail[dataMapStatusList.size()]));
+                + CarbonCommonConstants.FILE_SEPARATOR + INDEX_STATUS_FILE,
+            indexStatusList.toArray(new IndexStatusDetail[indexStatusList.size()]));
       } else {
         String errorMsg = "Upadating index status is failed due to another process taken the lock"
             + " for updating it";
@@ -165,7 +165,7 @@ public class DiskBasedIndexStatusProvider implements IndexStatusStorageProvider 
       }
     } finally {
       if (locked) {
-        CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.DATAMAP_STATUS_LOCK);
+        CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.INDEX_STATUS_LOCK);
       }
     }
   }
@@ -174,7 +174,7 @@ public class DiskBasedIndexStatusProvider implements IndexStatusStorageProvider 
    * This method checks if main table and index table are synchronised or not. If synchronised
    * return true to enable the index
    *
-   * @param indexSchema of datamap to be disabled or enabled
+   * @param indexSchema of index to be disabled or enabled
    * @return flag to enable or disable index
    * @throws IOException
    */
@@ -227,7 +227,7 @@ public class DiskBasedIndexStatusProvider implements IndexStatusStorageProvider 
     BufferedWriter brWriter = null;
     DataOutputStream dataOutputStream = null;
     Gson gsonObjectToWrite = new Gson();
-    // write the updated data into the datamap status file.
+    // write the updated data into the index status file.
     try {
       dataOutputStream = fileWrite.openForWrite(FileWriteOperation.OVERWRITE);
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
@@ -249,9 +249,9 @@ public class DiskBasedIndexStatusProvider implements IndexStatusStorageProvider 
 
   }
 
-  private static ICarbonLock getDataMapStatusLock() {
+  private static ICarbonLock getIndexStatusLock() {
     return CarbonLockFactory
         .getSystemLevelCarbonLockObj(CarbonProperties.getInstance().getSystemFolderLocation(),
-            LockUsage.DATAMAP_STATUS_LOCK);
+            LockUsage.INDEX_STATUS_LOCK);
   }
 }

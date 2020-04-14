@@ -28,24 +28,24 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 public class IndexStatusDetail implements Serializable {
 
   private static final long serialVersionUID = 1570997199499681821L;
-  private String dataMapName;
+  private String indexName;
 
   private IndexStatus status;
 
   public IndexStatusDetail() {
   }
 
-  public IndexStatusDetail(String dataMapName, IndexStatus status) {
-    this.dataMapName = dataMapName;
+  public IndexStatusDetail(String indexName, IndexStatus status) {
+    this.indexName = indexName;
     this.status = status;
   }
 
-  public String getDataMapName() {
-    return dataMapName;
+  public String getIndexName() {
+    return indexName;
   }
 
-  public void setDataMapName(String dataMapName) {
-    this.dataMapName = dataMapName;
+  public void setIndexName(String indexName) {
+    this.indexName = indexName;
   }
 
   public IndexStatus getStatus() {

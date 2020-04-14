@@ -93,15 +93,9 @@ trait SqlAstBuilderHelper extends SparkSqlAstBuilder {
 
   override def visitShowTables(ctx: ShowTablesContext): LogicalPlan = {
     withOrigin(ctx) {
-      if (CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,
-          CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT).toBoolean) {
-        super.visitShowTables(ctx)
-      } else {
         CarbonShowTablesCommand(
           Option(ctx.db).map(_.getText),
           Option(ctx.pattern).map(string))
-      }
     }
   }
 

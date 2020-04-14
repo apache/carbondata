@@ -28,10 +28,10 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.index.dev.DataMapModel;
-import org.apache.carbondata.core.index.dev.cgindex.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.index.dev.IndexModel;
+import org.apache.carbondata.core.index.dev.cgindex.CoarseGrainIndex;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.indexstore.Blocklet;
@@ -54,14 +54,14 @@ import org.apache.hadoop.fs.PathFilter;
 public class MinMaxIndex extends CoarseGrainIndex {
 
   private static final Logger LOGGER =
-      LogServiceFactory.getLogService(MinMaxIndexDataMap.class.getName());
+      LogServiceFactory.getLogService(MinMaxIndex.class.getName());
 
   private String[] indexFilePath;
 
-  private MinMaxIndexBlockDetails[][] readMinMaxDataMap;
+  private MinMaxIndexBlockDetails[][] readMinMaxIndex;
 
   @Override
-  public void init(DataMapModel model) throws MemoryException, IOException {
+  public void init(IndexModel model) throws MemoryException, IOException {
     Path indexPath = FileFactory.getPath(model.getFilePath());
 
     FileSystem fs = FileFactory.getFileSystem(indexPath);
@@ -82,10 +82,10 @@ public class MinMaxIndex extends CoarseGrainIndex {
     });
 
     this.indexFilePath = new String[indexFileStatus.length];
-    this.readMinMaxDataMap = new MinMaxIndexBlockDetails[indexFileStatus.length][];
+    this.readMinMaxIndex = new MinMaxIndexBlockDetails[indexFileStatus.length][];
     for (int i = 0; i < indexFileStatus.length; i++) {
       this.indexFilePath[i] = indexFileStatus[i].getPath().toString();
-      this.readMinMaxDataMap[i] = readJson(this.indexFilePath[i]);
+      this.readMinMaxIndex[i] = readJson(this.indexFilePath[i]);
     }
   }
 
@@ -127,27 +127,27 @@ public class MinMaxIndex extends CoarseGrainIndex {
     List<Blocklet> blocklets = new ArrayList<>();
 
     if (filterExp == null) {
-      for (int i = 0; i < readMinMaxDataMap.length; i++) {
-        for (int j = 0; j < readMinMaxDataMap[i].length; j++) {
+      for (int i = 0; i < readMinMaxIndex.length; i++) {
+        for (int j = 0; j < readMinMaxIndex[i].length; j++) {
           blocklets.add(new Blocklet(indexFilePath[i],
-              String.valueOf(readMinMaxDataMap[i][j].getBlockletId())));
+              String.valueOf(readMinMaxIndex[i][j].getBlockletId())));
         }
       }
     } else {
       FilterExecuter filterExecuter =
           FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null, false);
-      for (int blkIdx = 0; blkIdx < readMinMaxDataMap.length; blkIdx++) {
-        for (int blkltIdx = 0; blkltIdx < readMinMaxDataMap[blkIdx].length; blkltIdx++) {
+      for (int blkIdx = 0; blkIdx < readMinMaxIndex.length; blkIdx++) {
+        for (int blkltIdx = 0; blkltIdx < readMinMaxIndex[blkIdx].length; blkltIdx++) {
 
           BitSet bitSet = filterExecuter.isScanRequired(
-              readMinMaxDataMap[blkIdx][blkltIdx].getMaxValues(),
-              readMinMaxDataMap[blkIdx][blkltIdx].getMinValues(), null);
+              readMinMaxIndex[blkIdx][blkltIdx].getMaxValues(),
+              readMinMaxIndex[blkIdx][blkltIdx].getMinValues(), null);
           if (!bitSet.isEmpty()) {
             String blockFileName = indexFilePath[blkIdx].substring(
                 indexFilePath[blkIdx].lastIndexOf(File.separatorChar) + 1,
                 indexFilePath[blkIdx].indexOf(".minmaxindex"));
             Blocklet blocklet = new Blocklet(blockFileName,
-                String.valueOf(readMinMaxDataMap[blkIdx][blkltIdx].getBlockletId()));
+                String.valueOf(readMinMaxIndex[blkIdx][blkltIdx].getBlockletId()));
             LOGGER.info(String.format("Need to scan block#%s -> blocklet#%s, %s",
                 blkIdx, blkltIdx, blocklet));
             blocklets.add(blocklet);
@@ -168,7 +168,7 @@ public class MinMaxIndex extends CoarseGrainIndex {
 
   @Override
   public void clear() {
-    readMinMaxDataMap = null;
+    readMinMaxIndex = null;
   }
 
   @Override

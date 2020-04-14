@@ -35,7 +35,7 @@ import BloomCoarseGrainIndexTestUtil.deleteFile
 import BloomCoarseGrainIndexTestUtil.createFile
 import BloomCoarseGrainIndexTestUtil.checkBasicQuery
 import org.apache.carbondata.core.index.status.IndexStatus
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 
 class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
   val bigFile = s"$resourcesPath/bloom_datamap_function_test_big.csv"
@@ -79,7 +79,7 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(
       s"""
@@ -92,7 +92,7 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | OPTIONS('header'='false')
          """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
@@ -125,7 +125,7 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(
       s"""
@@ -138,7 +138,7 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | OPTIONS('header'='false')
          """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
@@ -170,7 +170,7 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(
       s"""
@@ -183,7 +183,7 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
          | OPTIONS('header'='false')
          """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
@@ -876,7 +876,7 @@ object IndexStatusUtil {
       indexName: String,
       indexStatus: String,
       sparkSession: SparkSession,
-      indexProvider: CarbonIndexProvider): Unit = {
+      indexProvider: IndexType): Unit = {
     val carbonTable = CarbonEnv.getCarbonTable(Some(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
       tableName)(sparkSession)
     val secondaryIndexMap = carbonTable.getIndexesMap.get(indexProvider.getIndexProviderName)

@@ -91,7 +91,7 @@ public class IndexSchema implements Serializable, Writable {
   protected TableSchema childSchema;
 
   /**
-   * main table column list mapped to datamap table
+   * main table column list mapped to index table
    */
   private Map<String, Set<String>> mainTableColumnList;
 
@@ -311,9 +311,9 @@ public class IndexSchema implements Serializable, Writable {
   }
 
   public IndexStatus getStatus() throws IOException {
-    IndexStatusDetail[] details = IndexStatusManager.getEnabledDataMapStatusDetails();
+    IndexStatusDetail[] details = IndexStatusManager.getEnabledIndexStatusDetails();
     for (IndexStatusDetail detail : details) {
-      if (detail.getDataMapName().equalsIgnoreCase(this.getIndexName())) {
+      if (detail.getIndexName().equalsIgnoreCase(this.getIndexName())) {
         return IndexStatus.ENABLED;
       }
     }

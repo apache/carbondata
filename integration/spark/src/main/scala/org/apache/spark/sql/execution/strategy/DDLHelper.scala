@@ -454,16 +454,10 @@ object DDLHelper {
       showTablesCommand: ShowTablesCommand,
       sparkSession: SparkSession
   ): Seq[SparkPlan] = {
-    if (CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,
-        CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT).toBoolean) {
-      Nil
-    } else {
-      ExecutedCommandExec(CarbonShowTablesCommand(
-        showTablesCommand.databaseName,
-        showTablesCommand.tableIdentifierPattern
-      )) :: Nil
-    }
+    ExecutedCommandExec(CarbonShowTablesCommand(
+      showTablesCommand.databaseName,
+      showTablesCommand.tableIdentifierPattern
+    )) :: Nil
   }
 
   //////////////////////////////////////////////////////////////////////////////////

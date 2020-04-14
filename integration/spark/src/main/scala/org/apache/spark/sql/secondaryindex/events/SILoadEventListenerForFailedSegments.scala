@@ -33,7 +33,7 @@ import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -65,7 +65,7 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
             carbonLoadModel.getTableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
         val indexMetadata = carbonTable.getIndexMetadata
         val mainTableDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
-        val secondaryIndexProvider = CarbonIndexProvider.SI.getIndexProviderName
+        val secondaryIndexProvider = IndexType.SI.getIndexProviderName
         if (null != indexMetadata && null != indexMetadata.getIndexesMap &&
             null != indexMetadata.getIndexesMap.get(secondaryIndexProvider)) {
           val indexTables = indexMetadata.getIndexesMap

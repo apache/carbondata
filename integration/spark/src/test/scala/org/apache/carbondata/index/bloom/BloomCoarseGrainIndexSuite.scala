@@ -28,8 +28,8 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedIndexCommandException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.index.status.{IndexStatusManager, IndexStatus}
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.index.status.{IndexStatus, IndexStatusManager}
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.util.CarbonProperties
 
 class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
@@ -55,76 +55,76 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     sql(s"DROP TABLE IF EXISTS $bloomSampleTable")
   }
 
-  private def sql(sqlText: String, dataMapName: String, shouldHit: Boolean): DataFrame = {
+  private def sql(sqlText: String, indexName: String, shouldHit: Boolean): DataFrame = {
     // ignore checking index hit, because bloom bloom index may be skipped if
     // default blocklet index pruned all the blocklets.
     // We cannot tell whether the index will be hit from the query.
     sql(sqlText)
   }
 
-  private def checkQuery(dataMapName: String, shouldHit: Boolean = true) = {
+  private def checkQuery(indexName: String, shouldHit: Boolean = true) = {
     /**
      * queries that use equal operator
      */
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where id = 1", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id = 1", indexName, shouldHit),
       sql(s"select * from $normalTable where id = 1"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where id = 999", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id = 999", indexName, shouldHit),
       sql(s"select * from $normalTable where id = 999"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city = 'city_1'", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city = 'city_1'", indexName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_1'"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city = 'city_999'", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city = 'city_999'", indexName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_999'"))
     // query with two index_columns
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where id = 1 and city='city_1'", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id = 1 and city='city_1'", indexName, shouldHit),
       sql(s"select * from $normalTable where id = 1 and city='city_1'"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where id = 999 and city='city_999'", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id = 999 and city='city_999'", indexName, shouldHit),
       sql(s"select * from $normalTable where id = 999 and city='city_999'"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city = 'city_1' and id = 0", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city = 'city_1' and id = 0", indexName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_1' and id = 0"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city = 'city_999' and name='n999'", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city = 'city_999' and name='n999'", indexName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_999' and name='n999'"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city = 'city_999' and name='n1'", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city = 'city_999' and name='n1'", indexName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_999' and name='n1'"))
 
     /**
      * queries that use in operator
      */
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where id in (1)", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id in (1)", indexName, shouldHit),
       sql(s"select * from $normalTable where id in (1)"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where id in (999)", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id in (999)", indexName, shouldHit),
       sql(s"select * from $normalTable where id in (999)"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city in( 'city_1')", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city in( 'city_1')", indexName, shouldHit),
       sql(s"select * from $normalTable where city in( 'city_1')"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city in ('city_999')", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city in ('city_999')", indexName, shouldHit),
       sql(s"select * from $normalTable where city in ('city_999')"))
     // query with two index_columns
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where id in (1) and city in ('city_1')", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id in (1) and city in ('city_1')", indexName, shouldHit),
       sql(s"select * from $normalTable where id in (1) and city in ('city_1')"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where id in (999) and city in ('city_999')", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where id in (999) and city in ('city_999')", indexName, shouldHit),
       sql(s"select * from $normalTable where id in (999) and city in ('city_999')"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city in ('city_1') and id in (0)", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city in ('city_1') and id in (0)", indexName, shouldHit),
       sql(s"select * from $normalTable where city in ('city_1') and id in (0)"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city in ('city_999') and name in ('n999')", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city in ('city_999') and name in ('n999')", indexName, shouldHit),
       sql(s"select * from $normalTable where city in ('city_999') and name in ('n999')"))
     checkAnswer(
-      sql(s"select * from $bloomSampleTable where city in ('city_999') and name in ('n1')", dataMapName, shouldHit),
+      sql(s"select * from $bloomSampleTable where city in ('city_999') and name in ('n1')", indexName, shouldHit),
       sql(s"select * from $normalTable where city in ('city_999') and name in ('n1')"))
 
     checkAnswer(
@@ -155,7 +155,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     // load two segments
     (1 to 2).foreach { i =>
@@ -171,7 +171,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          """.stripMargin)
     }
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(s"SHOW INDEXES ON TABLE $bloomSampleTable").show(false)
     checkExistence(sql(s"SHOW INDEXES ON TABLE $bloomSampleTable"), true, indexName)
@@ -291,7 +291,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | properties('BLOOM_SIZE'='640000')
       """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(
       s"""
@@ -304,11 +304,11 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | OPTIONS('header'='false')
          """.stripMargin)
 
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     // once we rebuild, it should be enabled
     sql(s"REFRESH INDEX $indexName ON $bloomSampleTable")
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.ENABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     sql(s"SHOW INDEXES ON $bloomSampleTable").show(false)
     checkExistence(sql(s"SHOW INDEXES ON $bloomSampleTable"), true, indexName)
@@ -325,7 +325,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
          | LOAD DATA LOCAL INPATH '$smallFile' INTO TABLE $bloomSampleTable
          | OPTIONS('header'='false')
          """.stripMargin)
-    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(), sqlContext.sparkSession, CarbonIndexProvider.BLOOMFILTER)
+    IndexStatusUtil.checkIndexStatus(bloomSampleTable, indexName, IndexStatus.DISABLED.name(), sqlContext.sparkSession, IndexType.BLOOMFILTER)
 
     checkQuery(indexName, shouldHit = false)
 
@@ -458,12 +458,12 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
 
   test("test create indexes on different column but hit only one") {
     val originDistributedIndexStatus = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
-      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT
+      CarbonCommonConstants.USE_DISTRIBUTED_INDEX,
+      CarbonCommonConstants.USE_DISTRIBUTED_INDEX_DEFAULT
     )
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP, "true")
+      .addProperty(CarbonCommonConstants.USE_DISTRIBUTED_INDEX, "true")
     val index1 = "index1"
     val index2 = "index2"
     sql(
@@ -494,7 +494,7 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
     assert(sql(s"SELECT * FROM $bloomSampleTable WHERE city='shanghai'").count() == 1)
 
     // recover original setting
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.USE_DISTRIBUTED_INDEX,
       originDistributedIndexStatus)
   }
 

@@ -29,7 +29,7 @@ import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
@@ -52,8 +52,8 @@ object Compactor {
     if (null == indexProviderMap) {
       throw new Exception("Secondary index load failed")
     }
-    val iterator = if (null != indexProviderMap.get(CarbonIndexProvider.SI.getIndexProviderName)) {
-      indexProviderMap.get(CarbonIndexProvider.SI.getIndexProviderName).entrySet().iterator()
+    val iterator = if (null != indexProviderMap.get(IndexType.SI.getIndexProviderName)) {
+      indexProviderMap.get(IndexType.SI.getIndexProviderName).entrySet().iterator()
     } else {
       java.util.Collections.emptyIterator()
     }

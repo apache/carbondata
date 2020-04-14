@@ -49,10 +49,10 @@ Disable DataMap
 > The datamap by default is enabled. To support tuning on query, we can disable a specific datamap during query to observe whether we can gain performance enhancement from it. This is effective only for current session.
 
   ```
-  // disable the datamap
-  SET carbon.datamap.visible.dbName.tableName.dataMapName = false
-  // enable the datamap
-  SET carbon.datamap.visible.dbName.tableName.dataMapName = true
+  // disable the index
+  SET carbon.index.visible.dbName.tableName.dataMapName = false
+  // enable the index
+  SET carbon.index.visible.dbName.tableName.dataMapName = true
   ```
 
 

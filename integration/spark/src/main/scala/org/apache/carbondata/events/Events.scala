@@ -204,7 +204,7 @@ trait MVEventsInfo {
 trait BuildIndexEventsInfo {
   val sparkSession: SparkSession
   val identifier: AbsoluteTableIdentifier
-  val dataMapNames: scala.collection.mutable.Seq[String]
+  val indexNames: scala.collection.mutable.Seq[String]
 }
 
 /**

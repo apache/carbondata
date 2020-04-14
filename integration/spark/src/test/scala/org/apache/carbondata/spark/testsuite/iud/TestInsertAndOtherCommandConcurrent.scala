@@ -302,7 +302,7 @@ object Global {
 
 class WaitingIndexFactory(
     carbonTable: CarbonTable,
-    dataMapSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, dataMapSchema) {
+    indexSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, indexSchema) {
 
   override def fireEvent(event: Event): Unit = ???
 
@@ -313,8 +313,8 @@ class WaitingIndexFactory(
   override def getIndexes(segment: Segment): util.List[CoarseGrainIndex] = ???
 
   override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): IndexWriter = {
-    new IndexWriter(carbonTable.getTablePath, dataMapSchema.getIndexName,
-      carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns), segment, shardName) {
+    new IndexWriter(carbonTable.getTablePath, indexSchema.getIndexName,
+      carbonTable.getIndexedColumns(indexSchema.getIndexColumns), segment, shardName) {
       override def onPageAdded(blockletId: Int, pageId: Int, pageSize: Int, pages: Array[ColumnPage]): Unit = { }
 
       override def onBlockletEnd(blockletId: Int): Unit = { }
@@ -337,7 +337,7 @@ class WaitingIndexFactory(
     }
   }
 
-  override def getMeta: IndexMeta = new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns), Seq(ExpressionType.EQUALS).asJava)
+  override def getMeta: IndexMeta = new IndexMeta(carbonTable.getIndexedColumns(indexSchema.getIndexColumns), Seq(ExpressionType.EQUALS).asJava)
 
   override def toDistributable(segmentId: Segment): util.List[IndexInputSplit] = {
     util.Collections.emptyList()

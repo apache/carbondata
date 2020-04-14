@@ -33,9 +33,9 @@ public interface MVCatalog<T> {
 
   /**
    * Unregister schema from catalog.
-   * @param dataMapName
+   * @param mvName
    */
-  void unregisterSchema(String dataMapName);
+  void unregisterSchema(String mvName);
 
   /**
    * List all registered valid schema catalogs

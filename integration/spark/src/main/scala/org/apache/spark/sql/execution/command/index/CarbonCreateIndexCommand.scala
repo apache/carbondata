@@ -34,7 +34,7 @@ import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.index.IndexProperty
 import org.apache.carbondata.core.metadata.schema.indextable.{IndexMetadata, IndexTableInfo}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
@@ -140,7 +140,7 @@ case class CarbonCreateIndexCommand(
               "column '%s' already has %s index created",
               column.getColName, indexProviderName))
           }
-          val isBloomFilter = CarbonIndexProvider.BLOOMFILTER.getIndexProviderName
+          val isBloomFilter = IndexType.BLOOMFILTER.getIndexProviderName
             .equalsIgnoreCase(indexProviderName)
           if (isBloomFilter) {
             if (column.getDataType == DataTypes.BINARY) {
@@ -287,7 +287,7 @@ case class CarbonCreateIndexCommand(
     val indexCarbonColumns = parentTable.getIndexedColumns(indexColumns)
     val unique: util.Set[String] = new util.HashSet[String]
     for (indexColumn <- indexCarbonColumns.asScala) {
-      if (indexProvider.equalsIgnoreCase(CarbonIndexProvider.LUCENE.getIndexProviderName)) {
+      if (indexProvider.equalsIgnoreCase(IndexType.LUCENE.getIndexProviderName)) {
         // validate whether it is string column.
         if (indexColumn.getDataType != DataTypes.STRING) {
           throw new MalformedIndexCommandException(String.format(

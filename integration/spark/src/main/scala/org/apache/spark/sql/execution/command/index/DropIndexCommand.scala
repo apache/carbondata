@@ -32,7 +32,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 /**
@@ -59,7 +59,7 @@ private[sql] case class DropIndexCommand(
         throw new MalformedIndexCommandException("Index with name " + indexName + " does not exist")
       }
     }
-    if (parentTable.getIndexTableNames(CarbonIndexProvider.SI.getIndexProviderName)
+    if (parentTable.getIndexTableNames(IndexType.SI.getIndexProviderName)
       .contains(indexName)) {
       isSecondaryIndex = true
     } else {
@@ -181,7 +181,7 @@ private[sql] case class DropIndexCommand(
         if (null != indexMetadata && null != indexMetadata.getIndexesMap) {
           val hasCgFgIndexes =
             !(indexMetadata.getIndexesMap.size() == 1 &&
-              indexMetadata.getIndexesMap.containsKey(CarbonIndexProvider.SI.getIndexProviderName))
+              indexMetadata.getIndexesMap.containsKey(IndexType.SI.getIndexProviderName))
           if (hasCgFgIndexes) {
             CarbonIndexUtil
               .addOrModifyTableProperty(parentCarbonTable,

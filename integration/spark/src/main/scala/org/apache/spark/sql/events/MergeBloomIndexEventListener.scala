@@ -25,7 +25,7 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.index.IndexStoreManager
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.events._
 import org.apache.carbondata.index.CarbonMergeBloomIndexFilesRDD
 
@@ -34,30 +34,30 @@ class MergeBloomIndexEventListener extends OperationEventListener with Logging {
 
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     event match {
-      case datamapPostEvent: BuildIndexPostExecutionEvent =>
+      case indexPostEvent: BuildIndexPostExecutionEvent =>
         LOGGER.info("Load post status event-listener called for merge bloom index")
-        val carbonTableIdentifier = datamapPostEvent.identifier
+        val carbonTableIdentifier = indexPostEvent.identifier
         val carbonTable = IndexStoreManager.getInstance().getCarbonTable(carbonTableIdentifier)
-        val tableDataMaps = IndexStoreManager.getInstance().getAllCGAndFGIndexes(carbonTable)
+        val tableIndexes = IndexStoreManager.getInstance().getAllCGAndFGIndexes(carbonTable)
         val sparkSession = SparkSession.getActiveSession.get
 
         // filter out bloom indexSchema
-        var index = tableDataMaps.asScala.filter(
+        var index = tableIndexes.asScala.filter(
           _.getIndexSchema.getProviderName.equalsIgnoreCase(
-            CarbonIndexProvider.BLOOMFILTER.getIndexProviderName))
+            IndexType.BLOOMFILTER.getIndexProviderName))
 
-        if (datamapPostEvent.isFromRebuild) {
-          if (null != datamapPostEvent.indexName) {
+        if (indexPostEvent.isFromRebuild) {
+          if (null != indexPostEvent.indexName) {
             // for rebuild process
             index = index.filter(
-              _.getIndexSchema.getIndexName.equalsIgnoreCase(datamapPostEvent.indexName))
+              _.getIndexSchema.getIndexName.equalsIgnoreCase(indexPostEvent.indexName))
           }
         } else {
           // for load process, skip lazy indexSchema
           index = index.filter(!_.getIndexSchema.isLazy)
         }
 
-        val segmentIds = datamapPostEvent.segmentIdList
+        val segmentIds = indexPostEvent.segmentIdList
         if (index.size > 0 && segmentIds.size > 0) {
           // we extract bloom indexSchema name and index columns here
           // because TableIndex is not serializable

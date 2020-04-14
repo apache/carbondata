@@ -525,7 +525,7 @@ object CarbonScalaUtil {
   /**
    * Create indexSchema provider using class name
    */
-  def createDataMapProvider(
+  def createIndexProvider(
       className: String,
       sparkSession: SparkSession,
       table: CarbonTable,

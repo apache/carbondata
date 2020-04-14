@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.testsuite.datamap
+package org.apache.carbondata.spark.testsuite.index
 
 import java.util
 
@@ -42,7 +42,7 @@ import org.apache.carbondata.events.Event
 
 class C2IndexFactory(
     carbonTable: CarbonTable,
-    dataMapSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, dataMapSchema) {
+    indexSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, indexSchema) {
 
   var identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
@@ -55,10 +55,10 @@ class C2IndexFactory(
   override def getIndexes(segment: Segment): util.List[CoarseGrainIndex] = ???
 
   override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): IndexWriter =
-    IndexWriterSuite.dataMapWriterC2Mock(identifier, "testdm", segment, shardName)
+    IndexWriterSuite.indexWriterC2Mock(identifier, "testdm", segment, shardName)
 
   override def getMeta: IndexMeta =
-    new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns), List(ExpressionType.EQUALS).asJava)
+    new IndexMeta(carbonTable.getIndexedColumns(indexSchema.getIndexColumns), List(ExpressionType.EQUALS).asJava)
 
   /**
    * Get all distributable objects of a segmentId
@@ -209,9 +209,9 @@ object IndexWriterSuite {
 
   var callbackSeq: Seq[String] = Seq[String]()
 
-  def dataMapWriterC2Mock(identifier: AbsoluteTableIdentifier, dataMapName:String, segment: Segment,
+  def indexWriterC2Mock(identifier: AbsoluteTableIdentifier, indexName:String, segment: Segment,
       shardName: String) =
-    new IndexWriter(identifier.getTablePath, dataMapName, Seq().asJava, segment, shardName) {
+    new IndexWriter(identifier.getTablePath, indexName, Seq().asJava, segment, shardName) {
 
       override def onPageAdded(
           blockletId: Int,

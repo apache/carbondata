@@ -492,7 +492,7 @@ public class BlockletIndexUtil {
   }
 
   /**
-   * Validate whether load datamaps parallel is SET or not
+   * Validate whether load indexes parallel is SET or not
    *
    * @param carbonTable
    * @return

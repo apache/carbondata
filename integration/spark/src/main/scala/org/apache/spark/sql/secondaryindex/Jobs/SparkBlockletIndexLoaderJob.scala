@@ -103,15 +103,15 @@ class IndexCacher(
   override def call(): Unit = {
     // if schema is modified then populate the segmentProperties cache
     if (carbonTable.getTableInfo.isSchemaModified) {
-      val dataMaps: util.List[BlockIndex] = indexWrapper._2.getBlockletIndexWrapper
+      val indexes: util.List[BlockIndex] = indexWrapper._2.getBlockletIndexWrapper
         .getIndexes
       val wrapper = SegmentPropertiesAndSchemaHolder.getInstance()
         .addSegmentProperties(carbonTable,
           indexWrapper._2.getColumnSchemaList,
           indexWrapper._1.getSegmentId)
-      // update all dataMaps with new segmentPropertyIndex
-      dataMaps.asScala.foreach { dataMap =>
-        dataMap.setSegmentPropertiesWrapper(wrapper)
+      // update all indexes with new segmentPropertyIndex
+      indexes.asScala.foreach { index =>
+        index.setSegmentPropertiesWrapper(wrapper)
       }
     }
     // create identifier wrapper object

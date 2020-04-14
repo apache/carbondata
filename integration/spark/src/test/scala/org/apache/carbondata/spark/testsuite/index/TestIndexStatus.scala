@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.testsuite.datamap
+package org.apache.carbondata.spark.testsuite.index
 
 import java.io.File
 import java.util
@@ -50,80 +50,80 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
   }
 
   test("indexSchema status enable for new indexSchema") {
-    sql("DROP TABLE IF EXISTS datamapstatustest")
+    sql("DROP TABLE IF EXISTS indexstatustest")
     sql(
       """
-        | CREATE TABLE datamapstatustest(id int, name string, city string, age int)
+        | CREATE TABLE indexstatustest(id int, name string, city string, age int)
         | STORED AS carbondata TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
       """.stripMargin)
     sql(
-      s"""create index statusdatamap on table datamapstatustest (name)
+      s"""create index statusindex on table indexstatustest (name)
          |as '${classOf[TestIndexFactory].getName}'
          | """.stripMargin)
-    checkIndexStatus("datamapstatustest", "statusdatamap", IndexStatus.ENABLED.name())
-    sql("DROP TABLE IF EXISTS datamapstatustest")
+    checkIndexStatus("indexstatustest", "statusindex", IndexStatus.ENABLED.name())
+    sql("DROP TABLE IF EXISTS indexstatustest")
   }
 
   test("indexSchema status disable for new indexSchema with deferred rebuild") {
-    sql("DROP TABLE IF EXISTS datamapstatustest")
+    sql("DROP TABLE IF EXISTS indexstatustest")
     sql(
       """
-        | CREATE TABLE datamapstatustest(id int, name string, city string, age int)
+        | CREATE TABLE indexstatustest(id int, name string, city string, age int)
         | STORED AS carbondata TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
       """.stripMargin)
     sql(
-      s"""create index statusdatamap
-         |on table datamapstatustest (name)
+      s"""create index statusindex
+         |on table indexstatustest (name)
          |as '${classOf[TestIndexFactory].getName}'
          |with deferred refresh
          | """.stripMargin)
-    checkIndexStatus("datamapstatustest", "statusdatamap", IndexStatus.DISABLED.name())
-    sql("DROP TABLE IF EXISTS datamapstatustest")
+    checkIndexStatus("indexstatustest", "statusindex", IndexStatus.DISABLED.name())
+    sql("DROP TABLE IF EXISTS indexstatustest")
   }
 
   test("indexSchema status disable after new load  with deferred rebuild") {
-    sql("DROP TABLE IF EXISTS datamapstatustest1")
+    sql("DROP TABLE IF EXISTS indexstatustest1")
     sql(
       """
-        | CREATE TABLE datamapstatustest1(id int, name string, city string, age int)
+        | CREATE TABLE indexstatustest1(id int, name string, city string, age int)
         | STORED AS carbondata TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
       """.stripMargin)
     sql(
-      s"""create index statusdatamap1
-         |on table datamapstatustest1 (name)
+      s"""create index statusindex1
+         |on table indexstatustest1 (name)
          |as '${classOf[TestIndexFactory].getName}'
          |with deferred refresh
          | """.stripMargin)
 
-    checkIndexStatus("datamapstatustest1", "statusdatamap1",IndexStatus.DISABLED.name())
+    checkIndexStatus("indexstatustest1", "statusindex1",IndexStatus.DISABLED.name())
 
-    sql(s"LOAD DATA LOCAL INPATH '$testData' into table datamapstatustest1")
-    checkIndexStatus("datamapstatustest1", "statusdatamap1",IndexStatus.DISABLED.name())
-    sql("DROP TABLE IF EXISTS datamapstatustest1")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table indexstatustest1")
+    checkIndexStatus("indexstatustest1", "statusindex1",IndexStatus.DISABLED.name())
+    sql("DROP TABLE IF EXISTS indexstatustest1")
   }
 
   test("indexSchema status with REFRESH INDEX") {
-    sql("DROP TABLE IF EXISTS datamapstatustest2")
+    sql("DROP TABLE IF EXISTS indexstatustest2")
     sql(
       """
-        | CREATE TABLE datamapstatustest2(id int, name string, city string, age int)
+        | CREATE TABLE indexstatustest2(id int, name string, city string, age int)
         | STORED AS carbondata TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
       """.stripMargin)
     sql(
-      s"""create index statusdatamap2
-         | on table datamapstatustest2 (name)
+      s"""create index statusindex2
+         | on table indexstatustest2 (name)
          |as '${classOf[TestIndexFactory].getName}'
          |with deferred refresh
          | """.stripMargin)
 
-    checkIndexStatus("datamapstatustest2", "statusdatamap2", IndexStatus.DISABLED.name())
+    checkIndexStatus("indexstatustest2", "statusindex2", IndexStatus.DISABLED.name())
 
-    sql(s"LOAD DATA LOCAL INPATH '$testData' into table datamapstatustest2")
-    checkIndexStatus("datamapstatustest2", "statusdatamap2",  IndexStatus.DISABLED.name())
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table indexstatustest2")
+    checkIndexStatus("indexstatustest2", "statusindex2",  IndexStatus.DISABLED.name())
 
-    sql(s"REFRESH INDEX statusdatamap2 on table datamapstatustest2")
-    checkIndexStatus("datamapstatustest2", "statusdatamap2", IndexStatus.ENABLED.name())
-    sql("DROP TABLE IF EXISTS datamapstatustest2")
+    sql(s"REFRESH INDEX statusindex2 on table indexstatustest2")
+    checkIndexStatus("indexstatustest2", "statusindex2", IndexStatus.ENABLED.name())
+    sql("DROP TABLE IF EXISTS indexstatustest2")
   }
 
   private def checkIndexStatus(tableName: String, indexName: String, indexStatus: String): Unit = {
@@ -142,16 +142,16 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
   }
 
   private def drop = {
-    sql("drop table if exists datamapstatustest")
-    sql("drop table if exists datamapshowtest")
-    sql("drop table if exists datamapstatustest1")
-    sql("drop table if exists datamapstatustest2")
+    sql("drop table if exists indexstatustest")
+    sql("drop table if exists indexshowtest")
+    sql("drop table if exists indexstatustest1")
+    sql("drop table if exists indexstatustest2")
   }
 }
 
 class TestIndexFactory(
     carbonTable: CarbonTable,
-    dataMapSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, dataMapSchema) {
+    indexSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, indexSchema) {
 
   override def fireEvent(event: Event): Unit = ???
 
@@ -166,7 +166,7 @@ class TestIndexFactory(
   }
 
   override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): IndexWriter = {
-    new IndexWriter(carbonTable.getTablePath, "testdm", carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns),
+    new IndexWriter(carbonTable.getTablePath, "testdm", carbonTable.getIndexedColumns(indexSchema.getIndexColumns),
       segment, shardName) {
       override def onPageAdded(blockletId: Int, pageId: Int, pageSize: Int, pages: Array[ColumnPage]): Unit = { }
 
@@ -187,7 +187,7 @@ class TestIndexFactory(
   }
 
   override def getMeta: IndexMeta = {
-    new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns),
+    new IndexMeta(carbonTable.getIndexedColumns(indexSchema.getIndexColumns),
       Seq(ExpressionType.EQUALS).asJava)
   }
 

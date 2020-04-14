@@ -21,9 +21,9 @@ package org.apache.carbondata.core.metadata.schema.index;
  * Please refer {{org.apache.spark.sql.parser.CarbonSpark2SqlParser}}
  */
 public enum IndexClassProvider {
-  LUCENE("org.apache.carbondata.datamap.lucene.LuceneFineGrainIndexFactory", "lucene"),
-  BLOOMFILTER("org.apache.carbondata.datamap.bloom.BloomCoarseGrainIndexFactory", "bloomfilter"),
-  MV("org.apache.carbondata.core.datamap.MVDataMap", "mv");
+  LUCENE("org.apache.carbondata.index.lucene.LuceneFineGrainIndexFactory", "lucene"),
+  BLOOMFILTER("org.apache.carbondata.index.bloom.BloomCoarseGrainIndexFactory", "bloomfilter"),
+  MV("org.apache.carbondata.core.index.MVDataMap", "mv");
 
   /**
    * Fully qualified class name of index
@@ -48,10 +48,10 @@ public enum IndexClassProvider {
     return shortName;
   }
 
-  private boolean isEqual(String dataMapClass) {
-    return (dataMapClass != null &&
-        (dataMapClass.equals(className) ||
-            dataMapClass.equalsIgnoreCase(shortName)));
+  private boolean isEqual(String indexClass) {
+    return (indexClass != null &&
+        (indexClass.equals(className) ||
+            indexClass.equalsIgnoreCase(shortName)));
   }
 
   public static IndexClassProvider get(String indexProviderName) {

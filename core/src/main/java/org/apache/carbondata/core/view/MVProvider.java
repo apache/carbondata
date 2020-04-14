@@ -303,7 +303,7 @@ public class MVProvider {
       }
     } finally {
       if (locked) {
-        CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.DATAMAP_STATUS_LOCK);
+        CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.INDEX_STATUS_LOCK);
       }
     }
   }

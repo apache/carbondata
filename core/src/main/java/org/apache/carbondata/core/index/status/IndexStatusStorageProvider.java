@@ -39,9 +39,9 @@ public interface IndexStatusStorageProvider {
   IndexStatusDetail[] getIndexStatusDetails() throws IOException;
 
   /**
-   * Update the status of the given datamaps to the passed datamap status.
+   * Update the status of the given indexes to the passed index status.
    *
-   * @param indexSchemas schemas of which are need to be updated in datamap status
+   * @param indexSchemas schemas of which are need to be updated in index status
    * @param indexStatus  status to be updated for the index schemas
    * @throws IOException
    */

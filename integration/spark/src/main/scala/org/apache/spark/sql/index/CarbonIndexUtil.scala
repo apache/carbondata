@@ -37,7 +37,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.indextable.{IndexMetadata, IndexTableInfo}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
@@ -89,7 +89,7 @@ object CarbonIndexUtil {
   def getSecondaryIndexes(carbonTable: CarbonTable): java.util.List[String] = {
     val indexMetadata = carbonTable.getIndexMetadata
     val secondaryIndexesTables = if (null != indexMetadata) {
-     indexMetadata.getIndexTables(CarbonIndexProvider.SI.getIndexProviderName)
+     indexMetadata.getIndexTables(IndexType.SI.getIndexProviderName)
     } else {
       new java.util.ArrayList[String]
     }
@@ -102,7 +102,7 @@ object CarbonIndexUtil {
     val cgAndFgIndexes = if (null != indexMetadata) {
       val indexesMap = indexMetadata.getIndexesMap
       indexesMap.asScala.filter(provider =>
-        !provider._1.equalsIgnoreCase(CarbonIndexProvider.SI.getIndexProviderName)).asJava
+        !provider._1.equalsIgnoreCase(IndexType.SI.getIndexProviderName)).asJava
     } else {
       new util.HashMap[String, util.Map[String, util.Map[String, String]]]()
     }
@@ -123,7 +123,7 @@ object CarbonIndexUtil {
   .Map[String, Array[String]] = {
     val indexes = scala.collection.mutable.Map[String, Array[String]]()
     val carbonTable = relation.carbonRelation.carbonTable
-    val indexInfo = carbonTable.getIndexInfo(CarbonIndexProvider.SI.getIndexProviderName)
+    val indexInfo = carbonTable.getIndexInfo(IndexType.SI.getIndexProviderName)
     if (null != indexInfo) {
       IndexTableInfo.fromGson(indexInfo).foreach { indexTableInfo =>
         indexes.put(indexTableInfo.getTableName, indexTableInfo.getIndexCols.asScala.toArray)
@@ -237,7 +237,7 @@ object CarbonIndexUtil {
       sparkSession: SparkSession): Seq[CarbonTable] = {
     val indexMetadata = carbonTable.getIndexMetadata
     val siIndexesMap = if (null != indexMetadata) {
-      indexMetadata.getIndexesMap.get(CarbonIndexProvider.SI.getIndexProviderName)
+      indexMetadata.getIndexesMap.get(IndexType.SI.getIndexProviderName)
     } else {
       new util.HashMap[String, util.Map[String, util.Map[String, String]]]()
     }

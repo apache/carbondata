@@ -35,7 +35,7 @@ import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.IndexStoreManager
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.index.IndexProperty
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
@@ -72,7 +72,7 @@ case class ShowIndexesCommand(
     if (!indexesProviderMap.isEmpty) {
       val indexTableMap = indexesProviderMap.asScala
       if (indexTableMap.nonEmpty) {
-        val secondaryIndex = indexTableMap.get(CarbonIndexProvider.SI.getIndexProviderName)
+        val secondaryIndex = indexTableMap.get(IndexType.SI.getIndexProviderName)
         var finalIndexList: Seq[(String, String, String, String, String, String)] = Seq.empty
 
         if (secondaryIndex.isDefined && null != secondaryIndex.get) {
@@ -106,7 +106,7 @@ case class ShowIndexesCommand(
         }
 
         indexesProviderMap.asScala
-          .filter(map => !map._1.equalsIgnoreCase(CarbonIndexProvider.SI.getIndexProviderName))
+          .filter(map => !map._1.equalsIgnoreCase(IndexType.SI.getIndexProviderName))
           .values.foreach { index =>
           val indexIterator = index.entrySet().iterator()
           while (indexIterator.hasNext) {

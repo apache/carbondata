@@ -142,12 +142,12 @@ public abstract class CarbonIndexProvider {
             indexSchema.getRelationIdentifier().getDatabaseName(),
             indexSchema.getRelationIdentifier().getTablePath(),
             indexSchema.getRelationIdentifier().getTableId());
-    AbsoluteTableIdentifier dataMapTableAbsoluteTableIdentifier =
+    AbsoluteTableIdentifier childTableAbsoluteTableIdentifier =
         table.getAbsoluteTableIdentifier();
     // Clean up the old invalid segment data before creating a new entry for new load.
     SegmentStatusManager.deleteLoadsAndUpdateMetadata(table, false, null);
     SegmentStatusManager segmentStatusManager =
-        new SegmentStatusManager(dataMapTableAbsoluteTableIdentifier);
+        new SegmentStatusManager(childTableAbsoluteTableIdentifier);
     Map<String, List<String>> segmentMapping = new HashMap<>();
     // Acquire table status lock to handle concurrent dataloading
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
@@ -157,10 +157,10 @@ public abstract class CarbonIndexProvider {
             "Acquired lock for table" + indexSchema.getRelationIdentifier().getDatabaseName()
                 + "." + indexSchema.getRelationIdentifier().getTableName()
                 + " for table status updation");
-        String dataMapTableMetadataPath =
+        String childTableMetadataPath =
             CarbonTablePath.getMetadataPath(indexSchema.getRelationIdentifier().getTablePath());
         LoadMetadataDetails[] loadMetaDataDetails =
-            SegmentStatusManager.readLoadMetadata(dataMapTableMetadataPath);
+            SegmentStatusManager.readLoadMetadata(childTableMetadataPath);
         // Mark for delete all stale loadMetadetail
         for (LoadMetadataDetails loadMetadataDetail : loadMetaDataDetails) {
           if ((loadMetadataDetail.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS
@@ -180,7 +180,7 @@ public abstract class CarbonIndexProvider {
               if ((loadMetaDetail.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS
                   || loadMetaDetail.getSegmentStatus()
                   == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) && SegmentStatusManager
-                  .isLoadInProgress(dataMapTableAbsoluteTableIdentifier,
+                  .isLoadInProgress(childTableAbsoluteTableIdentifier,
                       loadMetaDetail.getLoadName())) {
                 throw new RuntimeException("Rebuild to index " + indexSchema.getIndexName()
                     + " is already in progress");
@@ -324,9 +324,9 @@ public abstract class CarbonIndexProvider {
             indexSegmentList.addAll(segmentMaps.get(table));
           }
         }
-        List<String> dataMapSegmentList = new ArrayList<>(indexSegmentList);
+        List<String> childTableSegmentList = new ArrayList<>(indexSegmentList);
         indexSegmentList.removeAll(mainTableSegmentList);
-        mainTableSegmentList.removeAll(dataMapSegmentList);
+        mainTableSegmentList.removeAll(childTableSegmentList);
         if (ifTableStatusUpdateRequired && mainTableSegmentList.isEmpty()) {
           SegmentStatusManager.writeLoadDetailsIntoFile(CarbonTablePath
                   .getTableStatusFilePath(indexSchema.getRelationIdentifier().getTablePath()),

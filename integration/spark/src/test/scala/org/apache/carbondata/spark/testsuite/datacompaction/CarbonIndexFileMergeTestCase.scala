@@ -459,13 +459,13 @@ class CarbonIndexFileMergeTestCase
 
   private def mergeFileNameIsNull(segmentId: String, dbName: String, tableName: String): Boolean = {
     val carbonTable = CarbonEnv.getCarbonTable(Option(dbName), tableName)(sqlContext.sparkSession)
-    val dataMapFactory = IndexStoreManager.getInstance().getDefaultIndex(carbonTable)
+    val indexFactory = IndexStoreManager.getInstance().getDefaultIndex(carbonTable)
       .getIndexFactory
     val method = classOf[BlockletIndexFactory]
       .getDeclaredMethod("getTableBlockIndexUniqueIdentifiers", classOf[Segment])
     method.setAccessible(true)
     val segment = new Segment(segmentId)
-    val identifiers = method.invoke(dataMapFactory, segment)
+    val identifiers = method.invoke(indexFactory, segment)
       .asInstanceOf[util.Set[TableBlockIndexUniqueIdentifier]].asScala
     assert(identifiers.size == 1)
     identifiers.forall(identifier => identifier.getMergeIndexFileName == null)

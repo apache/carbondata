@@ -62,20 +62,6 @@ case class CarbonCleanFilesCommand(
     setAuditInfo(Map(
       "force" -> forceTableClean.toString,
       "internal" -> isInternalCleanCall.toString))
-    if (carbonTable.hasMVCreated) {
-      val allIndexSchemas = IndexStoreManager.getInstance
-        .getIndexSchemasOfTable(carbonTable).asScala
-        .filter(indexSchema => null != indexSchema.getRelationIdentifier &&
-                               !indexSchema.isIndex)
-      cleanFileCommands = allIndexSchemas.map {
-        indexSchema =>
-          val relationIdentifier = indexSchema.getRelationIdentifier
-          CarbonCleanFilesCommand(
-            Some(relationIdentifier.getDatabaseName), Some(relationIdentifier.getTableName),
-            isInternalCleanCall = true)
-      }.toList
-      cleanFileCommands.foreach(_.processMetadata(sparkSession))
-    }
     val viewSchemas =
       MVManagerInSpark.get(sparkSession).getSchemasOnTable(carbonTable)
     if (!viewSchemas.isEmpty) {

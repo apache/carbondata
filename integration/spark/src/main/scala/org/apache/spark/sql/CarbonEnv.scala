@@ -172,7 +172,7 @@ object CarbonEnv {
       .addListener(classOf[DropTableCacheEvent], DropCacheMVEventListener)
       .addListener(classOf[DropTableCacheEvent], DropCacheBloomEventListener)
       .addListener(classOf[ShowTableCacheEvent], ShowCachePreMVEventListener)
-      .addListener(classOf[ShowTableCacheEvent], ShowCacheDataMapEventListener)
+      .addListener(classOf[ShowTableCacheEvent], ShowCacheIndexEventListener)
       .addListener(classOf[LoadTablePreStatusUpdateEvent], new SILoadEventListener)
       .addListener(classOf[LoadTablePostStatusUpdateEvent],
         new SILoadEventListenerForFailedSegments)

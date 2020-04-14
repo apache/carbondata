@@ -25,11 +25,11 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
-  val inputFile = s"$resourcesPath/minmax_datamap_input.csv"
+class MinMaxIndexSuite extends QueryTest with BeforeAndAfterAll {
+  val inputFile = s"$resourcesPath/minmax_index_input.csv"
   val normalTable = "carbonNormal"
   val minMaxDMSampleTable = "carbonMinMax"
-  val dataMapName = "minmax_dm"
+  val indexName = "minmax_dm"
   val lineNum = 500000
 
   override protected def beforeAll(): Unit = {
@@ -37,7 +37,7 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $minMaxDMSampleTable")
   }
-  
+
   test("test minmax index") {
     sql(
       s"""
@@ -53,8 +53,8 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
         |  """.stripMargin)
     sql(
       s"""
-        | CREATE INDEX $dataMapName ON TABLE $minMaxDMSampleTable
-        | AS '${classOf[MinMaxIndexDataMapFactory].getName}'
+        | CREATE INDEX $indexName ON TABLE $minMaxDMSampleTable
+        | AS '${classOf[MinMaxIndexIndexFactory].getName}'
       """.stripMargin)
 
     sql(

@@ -29,14 +29,14 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.index.Segment;
+import org.apache.carbondata.core.index.dev.IndexWriter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -46,7 +46,7 @@ import com.google.gson.Gson;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-public class MinMaxDataWriter extends DataMapWriter {
+public class MinMaxDataWriter extends IndexWriter {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(TableInfo.class.getName());
@@ -67,9 +67,9 @@ public class MinMaxDataWriter extends DataMapWriter {
    */
   private Map<Integer, Integer> origin2MinMaxOrdinal = new HashMap<>();
 
-  public MinMaxDataWriter(CarbonTable carbonTable, DataMapSchema dataMapSchema, Segment segment,
+  public MinMaxDataWriter(CarbonTable carbonTable, IndexSchema indexSchema, Segment segment,
       String shardName, List<CarbonColumn> indexColumns) {
-    super(carbonTable.getTablePath(), dataMapSchema.getDataMapName(), indexColumns, segment,
+    super(carbonTable.getTablePath(), indexSchema.getIndexName(), indexColumns, segment,
         shardName);
     this.columnCnt = indexColumns.size();
     for (CarbonColumn col : indexColumns) {
@@ -240,7 +240,7 @@ public class MinMaxDataWriter extends DataMapWriter {
    */
   public void writeMinMaxIndexFile(List<MinMaxIndexBlockDetails> minMaxIndexBlockDetails,
       String blockId) throws IOException {
-    String filePath = dataMapPath + File.separator + blockId + ".minmaxindex";
+    String filePath = indexPath + File.separator + blockId + ".minmaxindex";
     BufferedWriter brWriter = null;
     DataOutputStream dataOutStream = null;
     try {

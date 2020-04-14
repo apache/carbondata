@@ -154,8 +154,8 @@ public class DiskBasedDMSchemaStoraheProviderSuite {
   }
 
   private boolean existsSchema(IndexSchema schema, CarbonFile[] carbonFiles) {
-    for (CarbonFile dataMapSchema : carbonFiles) {
-      if (dataMapSchema.getName().contains(schema.getIndexName())) {
+    for (CarbonFile indexSchema : carbonFiles) {
+      if (indexSchema.getName().contains(schema.getIndexName())) {
         return true;
       }
     }

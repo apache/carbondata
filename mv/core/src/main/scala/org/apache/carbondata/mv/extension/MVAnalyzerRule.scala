@@ -44,7 +44,7 @@ import org.apache.carbondata.mv.rewrite.{MVUdf, SummaryDataset, SummaryDatasetCa
 class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
   // TODO Find way better way to get the provider.
-  private val dataMapProvider =
+  private val indexProvider =
     IndexManager.get().getIndexProvider(null,
       new IndexSchema("", IndexClassProvider.MV.getShortName), sparkSession)
 
@@ -84,13 +84,13 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
         Aggregate(grp, aExp, child)
     }
     if (needAnalysis) {
-      var catalog = IndexStoreManager.getInstance().getMVCatalog(dataMapProvider,
+      var catalog = IndexStoreManager.getInstance().getMVCatalog(indexProvider,
         IndexClassProvider.MV.getShortName, false).asInstanceOf[SummaryDatasetCatalog]
       // when first time MV catalog are initialized, it stores session info also,
       // but when carbon session is newly created, catalog map will not be cleared,
       // so if session info is different, remove the entry from map.
       if (catalog != null && !catalog.mvSession.sparkSession.equals(sparkSession)) {
-        catalog = IndexStoreManager.getInstance().getMVCatalog(dataMapProvider,
+        catalog = IndexStoreManager.getInstance().getMVCatalog(indexProvider,
           IndexClassProvider.MV.getShortName, true).asInstanceOf[SummaryDatasetCatalog]
       }
       if (catalog != null && isValidPlan(plan, catalog)) {
@@ -164,7 +164,7 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
   def isValidPlan(plan: LogicalPlan, catalog: SummaryDatasetCatalog): Boolean = {
     if (!plan.isInstanceOf[Command]  && !plan.isInstanceOf[DeserializeToObject]) {
       val catalogs = extractCatalogs(plan)
-      !isDataMapReplaced(catalog.listAllValidSchema(), catalogs) &&
+      !isIndexReplaced(catalog.listAllValidSchema(), catalogs) &&
       isMVExists(catalog.listAllValidSchema(), catalogs) &&
       !isSegmentSetForMainTable(catalogs)
     } else {
@@ -178,7 +178,7 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
    * @param mvdataSetArray Array of available mvdataset which include modular plans
    * @return Boolean whether already indexSchema replaced in the plan or not
    */
-  def isDataMapReplaced(
+  def isIndexReplaced(
       mvdataSetArray: Array[SummaryDataset],
       catalogs: Seq[Option[CatalogTable]]): Boolean = {
     catalogs.exists { c =>
@@ -191,7 +191,7 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
   }
 
   /**
-   * Check whether any suitable datamaps(like datamap which parent tables are present in the plan)
+   * Check whether any suitable indexes(like index which parent tables are present in the plan)
    * exists for this plan.
    *
    * @param mvs

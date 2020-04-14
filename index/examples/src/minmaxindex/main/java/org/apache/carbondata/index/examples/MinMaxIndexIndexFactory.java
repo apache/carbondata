@@ -26,20 +26,20 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.index.DataMapDistributable;
-import org.apache.carbondata.core.index.DataMapMeta;
-import org.apache.carbondata.core.index.Segment;
-import org.apache.carbondata.core.index.dev.DataMapBuilder;
-import org.apache.carbondata.core.index.dev.DataMapModel;
-import org.apache.carbondata.core.index.dev.DataMapWriter;
-import org.apache.carbondata.core.index.dev.cgindex.CoarseGrainDataMap;
-import org.apache.carbondata.core.index.dev.cgindex.CoarseGrainDataMapFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.features.TableOperation;
+import org.apache.carbondata.core.index.IndexDistributable;
+import org.apache.carbondata.core.index.IndexMeta;
+import org.apache.carbondata.core.index.Segment;
+import org.apache.carbondata.core.index.dev.IndexBuilder;
+import org.apache.carbondata.core.index.dev.IndexModel;
+import org.apache.carbondata.core.index.dev.IndexWriter;
+import org.apache.carbondata.core.index.dev.cgindex.CoarseGrainIndex;
+import org.apache.carbondata.core.index.dev.cgindex.CoarseGrainIndexFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -48,15 +48,15 @@ import org.apache.carbondata.events.Event;
 /**
  * Min Max Index Factory
  */
-public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
+public class MinMaxIndexIndexFactory extends CoarseGrainIndexFactory {
   private static final Logger LOGGER = LogServiceFactory.getLogService(
-      MinMaxIndexDataMapFactory.class.getName());
-  private DataMapMeta dataMapMeta;
-  private String dataMapName;
+      MinMaxIndexIndexFactory.class.getName());
+  private IndexMeta indexMeta;
+  private String indexName;
   private AbsoluteTableIdentifier identifier;
 
-  public MinMaxIndexDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
-    super(carbonTable, dataMapSchema);
+  public MinMaxIndexIndexFactory(CarbonTable carbonTable, IndexSchema indexSchema) {
+    super(carbonTable, indexSchema);
 
     // this is an example for indexSchema, we can choose the columns and operations that
     // will be supported by this indexSchema. Furthermore, we can add cache-support for this indexSchema.
@@ -73,7 +73,7 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
     optOperations.add(ExpressionType.LESSTHAN_EQUALTO);
     optOperations.add(ExpressionType.NOT_EQUALS);
     LOGGER.error("support operations: " + StringUtils.join(optOperations, ", "));
-    this.dataMapMeta = new DataMapMeta(allColumns, optOperations);
+    this.indexMeta = new IndexMeta(allColumns, optOperations);
   }
 
   /**
@@ -84,14 +84,14 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
    * @return
    */
   @Override
-  public DataMapWriter createWriter(Segment segment, String shardName,
+  public IndexWriter createWriter(Segment segment, String shardName,
       SegmentProperties segmentProperties) {
-    return new MinMaxDataWriter(getCarbonTable(), getDataMapSchema(), segment, shardName,
-        dataMapMeta.getIndexedColumns());
+    return new MinMaxDataWriter(getCarbonTable(), getIndexSchema(), segment, shardName,
+        indexMeta.getIndexedColumns());
   }
 
   @Override
-  public DataMapBuilder createBuilder(Segment segment, String shardName,
+  public IndexBuilder createBuilder(Segment segment, String shardName,
       SegmentProperties segmentProperties) throws IOException {
     return null;
   }
@@ -104,17 +104,16 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
    * @throws IOException
    */
   @Override
-  public List<MinMaxIndex> getDataMaps(Segment segment)
+  public List<MinMaxIndex> getIndexes(Segment segment)
       throws IOException {
     List<MinMaxIndex> indexes = new ArrayList<>();
     // Form a MinMaxIndex.
     MinMaxIndex index = new MinMaxIndex();
     try {
-      index.init(new DataMapModel(
-          MinMaxDataWriter.genDataMapStorePath(
+      index.init(new IndexModel(
+          MinMaxDataWriter.genIndexStorePath(
               CarbonTablePath.getSegmentPath(
-                  identifier.getTablePath(), segment.getSegmentNo()),
-              dataMapName), new Configuration(false)));
+                  identifier.getTablePath(), segment.getSegmentNo()), indexName), new Configuration(false)));
     } catch (MemoryException ex) {
       throw new IOException(ex);
     }
@@ -127,7 +126,7 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
    * @return
    */
   @Override
-  public List<DataMapDistributable> toDistributable(Segment segment) {
+  public List<IndexDistributable> toDistributable(Segment segment) {
     return null;
   }
 
@@ -148,9 +147,9 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
   }
 
   @Override
-  public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable)
+  public List<CoarseGrainIndex> getIndexes(IndexDistributable distributable)
       throws IOException {
-    return getDataMaps(distributable.getSegment());
+    return getIndexes(distributable.getSegment());
   }
 
   @Override
@@ -159,17 +158,17 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
   }
 
   @Override
-  public DataMapMeta getMeta() {
-    return this.dataMapMeta;
+  public IndexMeta getMeta() {
+    return this.indexMeta;
   }
 
   @Override
-  public void deleteDatamapData(Segment segment) throws IOException {
+  public void deleteIndexData(Segment segment) throws IOException {
 
   }
 
   @Override
-  public void deleteDatamapData() {
+  public void deleteIndexData() {
 
   }
 

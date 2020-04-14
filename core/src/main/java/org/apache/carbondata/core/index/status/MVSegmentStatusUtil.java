@@ -30,7 +30,7 @@ import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import com.google.gson.Gson;
 
 /**
- * Utility class to get updated segment mapping for datamap table
+ * Utility class to get updated segment mapping for index table
  */
 public class MVSegmentStatusUtil {
 
@@ -43,12 +43,12 @@ public class MVSegmentStatusUtil {
   }
 
   /**
-   * In case of compaction on dataMap table,this method will merge the segment list of main table
+   * In case of compaction on index table,this method will merge the segment list of main table
    * and return updated segment mapping
    *
    * @param mergedLoadName      to find which all segments are merged to new compacted segment
-   * @param indexSchema       of datamap table
-   * @param loadMetadataDetails of datamap table
+   * @param indexSchema       of index table
+   * @param loadMetadataDetails of index table
    * @return updated segment map after merging segment list
    */
   public static String getUpdatedSegmentMap(String mergedLoadName, IndexSchema indexSchema,

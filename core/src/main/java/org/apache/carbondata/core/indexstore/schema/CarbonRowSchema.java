@@ -69,7 +69,7 @@ public abstract class CarbonRowSchema implements Serializable {
    * schema type
    * @return
    */
-  public abstract DataMapSchemaType getSchemaType();
+  public abstract IndexSchemaType getSchemaType();
 
   /*
  * It has always fixed length, length cannot be updated later.
@@ -98,8 +98,8 @@ public abstract class CarbonRowSchema implements Serializable {
     }
 
     @Override
-    public DataMapSchemaType getSchemaType() {
-      return DataMapSchemaType.FIXED;
+    public IndexSchemaType getSchemaType() {
+      return IndexSchemaType.FIXED;
     }
   }
 
@@ -121,8 +121,8 @@ public abstract class CarbonRowSchema implements Serializable {
     }
 
     @Override
-    public DataMapSchemaType getSchemaType() {
-      return isVarcharType ? DataMapSchemaType.VARIABLE_INT : DataMapSchemaType.VARIABLE_SHORT;
+    public IndexSchemaType getSchemaType() {
+      return isVarcharType ? IndexSchemaType.VARIABLE_INT : IndexSchemaType.VARIABLE_SHORT;
     }
   }
 
@@ -145,12 +145,12 @@ public abstract class CarbonRowSchema implements Serializable {
     }
 
     @Override
-    public DataMapSchemaType getSchemaType() {
-      return DataMapSchemaType.STRUCT;
+    public IndexSchemaType getSchemaType() {
+      return IndexSchemaType.STRUCT;
     }
   }
 
-  public enum DataMapSchemaType {
+  public enum IndexSchemaType {
     FIXED, VARIABLE_INT, VARIABLE_SHORT, STRUCT
   }
 }

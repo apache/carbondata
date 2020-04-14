@@ -50,7 +50,7 @@ import org.apache.log4j.Logger;
 
 public class IndexUtil {
 
-  private static final String DATA_MAP_DSTR = "mapreduce.input.carboninputformat.datamapdstr";
+  private static final String INDEX_DSTR = "mapreduce.input.carboninputformat.indexdstr";
 
   public static final String EMBEDDED_JOB_NAME =
       "org.apache.carbondata.indexserver.EmbeddedIndexJob";
@@ -86,7 +86,7 @@ public class IndexUtil {
       throws IOException {
     if (IndexJob != null) {
       String toString = ObjectSerializationUtil.convertObjectToString(IndexJob);
-      configuration.set(DATA_MAP_DSTR, toString);
+      configuration.set(INDEX_DSTR, toString);
     }
   }
 
@@ -97,7 +97,7 @@ public class IndexUtil {
    * @throws IOException
    */
   public static IndexJob getIndexJob(Configuration configuration) throws IOException {
-    String jobString = configuration.get(DATA_MAP_DSTR);
+    String jobString = configuration.get(INDEX_DSTR);
     if (jobString != null) {
       return (IndexJob) ObjectSerializationUtil.convertStringToObject(jobString);
     }
@@ -149,7 +149,7 @@ public class IndexUtil {
   public static IndexJob getEmbeddedJob() {
     IndexJob indexJob = (IndexJob) IndexUtil.createIndexJob(EMBEDDED_JOB_NAME);
     if (indexJob == null) {
-      throw new ExceptionInInitializerError("Unable to create EmbeddedDataMapJob");
+      throw new ExceptionInInitializerError("Unable to create EmbeddedIndexJob");
     }
     return indexJob;
   }

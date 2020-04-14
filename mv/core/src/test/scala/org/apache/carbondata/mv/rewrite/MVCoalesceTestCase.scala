@@ -84,10 +84,10 @@ class MVCoalesceTestCase  extends QueryTest with BeforeAndAfterAll  {
 }
 
 object TestUtil {
-  def verifyMVHit(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
+  def verifyMVHit(logicalPlan: LogicalPlan, mvName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get
     }
-    tables.exists(_.identifier.table.equalsIgnoreCase(dataMapName))
+    tables.exists(_.identifier.table.equalsIgnoreCase(mvName))
   }
 }

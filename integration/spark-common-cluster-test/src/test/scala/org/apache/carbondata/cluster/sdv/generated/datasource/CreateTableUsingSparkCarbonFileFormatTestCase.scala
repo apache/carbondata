@@ -26,6 +26,7 @@ import org.apache.commons.lang.RandomStringUtils
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.apache.spark.sql.common.util.DataSourceTestUtil._
 import org.apache.spark.util.SparkUtil
+
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
@@ -34,8 +35,9 @@ import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 
 class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with BeforeAndAfterAll {
@@ -198,7 +200,7 @@ class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with Before
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
     assert(new File(writerPath).exists())
-    clearDataMapCache
+    clearIndexCache
     cleanTestData()
   }
 
@@ -252,12 +254,12 @@ class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with Before
     }
   }
 
-  private def clearDataMapCache(): Unit = {
+  private def clearIndexCache(): Unit = {
     if (!sqlContext.sparkContext.version.startsWith("2.1")) {
-      val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
-      DataMapStoreManager.getInstance()
-        .clearDataMaps(AbsoluteTableIdentifier.from(writerPath))
-      assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+      val mapSize = IndexStoreManager.getInstance().getTableIndexForAllTables.size()
+      IndexStoreManager.getInstance()
+        .clearIndex(AbsoluteTableIdentifier.from(writerPath))
+      assert(mapSize > IndexStoreManager.getInstance().getTableIndexForAllTables.size())
     }
   }
 
@@ -331,7 +333,7 @@ class CreateTableUsingSparkCarbonFileFormatTestCase extends FunSuite with Before
     checkAnswer(sql("select name from sdkOutputTableWithoutSchema where age = 2"),
       Seq(Row("name_2")))
     sql("DROP TABLE sdkOutputTableWithoutSchema")
-    clearDataMapCache
+    clearIndexCache
     cleanTestData()
   }
 }

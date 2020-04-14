@@ -24,11 +24,11 @@ public class IndexSchemaFactory {
   public static final IndexSchemaFactory INSTANCE = new IndexSchemaFactory();
 
   public static IndexSchemaStorageProvider getIndexSchemaStorageProvider() {
-    String provider = CarbonProperties.getDataMapStorageProvider();
+    String provider = CarbonProperties.getIndexStorageProvider();
     switch (provider) {
-      case CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DATABASE:
+      case CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DATABASE:
         return new DatabaseIndexSchemaStorageProvider();
-      case CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DISK:
+      case CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DISK:
       default:
         return new DiskBasedIndexSchemaStorageProvider(
             CarbonProperties.getInstance().getSystemFolderLocation());

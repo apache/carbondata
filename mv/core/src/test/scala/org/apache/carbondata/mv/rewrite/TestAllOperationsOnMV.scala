@@ -573,7 +573,7 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop materialized view if exists mv3")
     sql("create materialized view mv3 as select age as a,sum(age) as b from maintable group by age")
     val df1 = sql("select age,sum(age) from maintable group by age")
-    TestUtil.verifyMVDataMap(df1.queryExecution.optimizedPlan, "mv3")
+    TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "mv3")
     checkAnswer(res1, df1)
     sql("drop table if exists maintable")
   }

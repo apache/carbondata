@@ -361,7 +361,6 @@ case class CarbonAlterTableCompactionCommand(
         if (CompactionType.IUD_UPDDEL_DELTA != compactionType) {
           updateLock.unlock()
         }
-        IndexStatusManager.disableAllLazyIndexes(carbonTable)
         val viewManager = MVManagerInSpark.get(sqlContext.sparkSession)
         val viewSchemas = new util.ArrayList[MVSchema]()
         for (viewSchema <- viewManager.getSchemasOnTable(carbonTable).asScala) {

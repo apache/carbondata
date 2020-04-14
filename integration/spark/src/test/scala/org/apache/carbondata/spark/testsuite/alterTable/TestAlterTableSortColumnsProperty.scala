@@ -123,12 +123,12 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
       "alter_sc_bloom",
       Map("sort_scope"->"local_sort", "sort_columns"->"stringField")
     )
-    createBloomDataMap("alter_sc_bloom", "alter_sc_bloom_dm1")
+    createBloomIndex("alter_sc_bloom", "alter_sc_bloom_dm1")
     createTable(
       "alter_sc_bloom_base",
       Map("sort_scope"->"local_sort", "sort_columns"->"stringField")
     )
-    createBloomDataMap("alter_sc_bloom_base", "alter_sc_bloom_base_dm1")
+    createBloomIndex("alter_sc_bloom_base", "alter_sc_bloom_base_dm1")
     createTable(
       "alter_sc_agg",
       Map("sort_scope"->"local_sort", "sort_columns"->"intField")
@@ -208,10 +208,10 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     // decimalField decimal(25, 4),
   }
 
-  private def createBloomDataMap(tableName: String, dataMapName: String): Unit = {
+  private def createBloomIndex(tableName: String, indexName: String): Unit = {
     sql(
       s"""
-         | CREATE INDEX $dataMapName
+         | CREATE INDEX $indexName
          | ON TABLE $tableName (smallIntField,floatField,timestampField,dateField,stringField)
          | AS 'bloomfilter'
          | PROPERTIES(
@@ -546,16 +546,16 @@ class TestAlterTableSortColumnsProperty extends QueryTest with BeforeAndAfterAll
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     val tableName = "alter_sc_bloom"
-    val dataMapName = "alter_sc_bloom_dm1"
+    val indexName = "alter_sc_bloom_dm1"
     val baseTableName = "alter_sc_bloom_base"
     loadData(tableName, baseTableName)
-    checkExistence(sql(s"SHOW INDEXES ON TABLE $tableName"), true, "bloomfilter", dataMapName)
-    checkExistence(sql(s"EXPLAIN SELECT * FROM $tableName WHERE smallIntField = 3"), true, "bloomfilter", dataMapName)
+    checkExistence(sql(s"SHOW INDEXES ON TABLE $tableName"), true, "bloomfilter", indexName)
+    checkExistence(sql(s"EXPLAIN SELECT * FROM $tableName WHERE smallIntField = 3"), true, "bloomfilter", indexName)
     checkAnswer(sql(s"select * from $tableName where smallIntField = 3 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 3 order by floatField"))
 
     sql(s"alter table $tableName set tblproperties('sort_scope'='global_sort', 'sort_columns'='smallIntField, charField')")
     loadData(tableName, baseTableName)
-    checkExistence(sql(s"EXPLAIN SELECT * FROM $tableName WHERE smallIntField = 3"), true, "bloomfilter", dataMapName)
+    checkExistence(sql(s"EXPLAIN SELECT * FROM $tableName WHERE smallIntField = 3"), true, "bloomfilter", indexName)
     checkAnswer(sql(s"select * from $tableName where smallIntField = 3 order by floatField"), sql(s"select * from $baseTableName where smallIntField = 3 order by floatField"))
   }
 

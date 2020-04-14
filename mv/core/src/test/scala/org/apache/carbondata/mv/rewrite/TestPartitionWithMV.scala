@@ -254,16 +254,16 @@ class TestPartitionWithMV extends QueryTest with BeforeAndAfterAll with BeforeAn
     sql("alter table droppartition drop partition(year=2015,month=2,day=3)")
     sql("clean files for table droppartition")
     val table = CarbonEnv.getCarbonTable(Option("partition_mv"), "droppartition")(sqlContext.sparkSession)
-    val dataMapTable = CarbonEnv.getCarbonTable(Option("partition_mv"), "droppartition")(sqlContext.sparkSession)
-    val dataMaptablePath = dataMapTable.getTablePath
+    val mvTable = CarbonEnv.getCarbonTable(Option("partition_mv"), "droppartition")(sqlContext.sparkSession)
+    val mvtablePath = mvTable.getTablePath
     val tablePath = table.getTablePath
     val carbonFiles = FileFactory.getCarbonFile(tablePath).listFiles().filter{
       file => file.getName.equalsIgnoreCase("year=2015")
     }
-    val dataMapCarbonFiles = FileFactory.getCarbonFile(dataMaptablePath).listFiles().filter{
+    val mvCarbonFiles = FileFactory.getCarbonFile(mvtablePath).listFiles().filter{
       file => file.getName.equalsIgnoreCase("year=2015")
     }
-    assert(dataMapCarbonFiles.length == 0)
+    assert(mvCarbonFiles.length == 0)
     assert(carbonFiles.length == 0)
   }
 

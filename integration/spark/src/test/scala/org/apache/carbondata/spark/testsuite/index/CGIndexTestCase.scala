@@ -16,7 +16,7 @@
  */
 
 
-package org.apache.carbondata.spark.testsuite.datamap
+package org.apache.carbondata.spark.testsuite.index
 
 import java.io.{ByteArrayInputStream, DataOutputStream, ObjectInputStream, ObjectOutputStream}
 
@@ -53,14 +53,14 @@ import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlo
 
 class CGIndexFactory(
     carbonTable: CarbonTable,
-    dataMapSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, dataMapSchema) {
+    indexSchema: IndexSchema) extends CoarseGrainIndexFactory(carbonTable, indexSchema) {
   var identifier: AbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
   /**
    * Return a new write for this indexSchema
    */
   override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): IndexWriter = {
-    new CGIndexWriter(carbonTable, segment, shardName, dataMapSchema)
+    new CGIndexWriter(carbonTable, segment, shardName, indexSchema)
   }
 
   /**
@@ -69,7 +69,7 @@ class CGIndexFactory(
   override def getIndexes(segment: Segment): java.util.List[CoarseGrainIndex] = {
     val path = identifier.getTablePath
     val file = FileFactory.getCarbonFile(
-      path + "/" + dataMapSchema.getIndexName + "/" + segment.getSegmentNo)
+      path + "/" + indexSchema.getIndexName + "/" + segment.getSegmentNo)
 
     val files = file.listFiles()
     files.map {f =>
@@ -107,7 +107,7 @@ class CGIndexFactory(
   override def toDistributable(segment: Segment): java.util.List[IndexInputSplit] = {
     val path = identifier.getTablePath
     val file = FileFactory.getCarbonFile(
-      path + "/" + dataMapSchema.getIndexName + "/" + segment.getSegmentNo)
+      path + "/" + indexSchema.getIndexName + "/" + segment.getSegmentNo)
 
     val files = file.listFiles()
     files.map { f =>
@@ -117,7 +117,7 @@ class CGIndexFactory(
   }
 
   /**
-   * Clear all datamaps from memory
+   * Clear all indexs from memory
    */
   override def clear(): Unit = {
 
@@ -127,7 +127,7 @@ class CGIndexFactory(
    * Return metadata of this indexSchema
    */
   override def getMeta: IndexMeta = {
-    new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns),
+    new IndexMeta(carbonTable.getIndexedColumns(indexSchema.getIndexColumns),
       List(ExpressionType.EQUALS, ExpressionType.IN).asJava)
   }
 
@@ -176,11 +176,11 @@ class CGIndex extends CoarseGrainIndex {
   /**
    * It is called to load the data map to memory or to initialize it.
    */
-  override def init(dataMapModel: IndexModel): Unit = {
-    val indexPath = FileFactory.getPath(dataMapModel.getFilePath)
+  override def init(indexModel: IndexModel): Unit = {
+    val indexPath = FileFactory.getPath(indexModel.getFilePath)
     this.shardName = indexPath.getName
 
-    this.filePath = dataMapModel.getFilePath + "/testcg.indexSchema"
+    this.filePath = indexModel.getFilePath + "/testcg.indexSchema"
     val carbonFile = FileFactory.getCarbonFile(filePath)
     val size = carbonFile.getSize
     FileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath))
@@ -250,7 +250,7 @@ class CGIndex extends CoarseGrainIndex {
   override def isScanRequired(filterExp: FilterResolverIntf): Boolean = ???
 
   /**
-   * clears all the resources for datamaps
+   * clears all the resources for indexs
    */
   override def finish() = {
     ???
@@ -263,9 +263,9 @@ class CGIndexWriter(
     carbonTable: CarbonTable,
     segment: Segment,
     shardName: String,
-    dataMapSchema: IndexSchema)
-  extends IndexWriter(carbonTable.getTablePath, dataMapSchema.getIndexName,
-    carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns), segment, shardName) {
+    indexSchema: IndexSchema)
+  extends IndexWriter(carbonTable.getTablePath, indexSchema.getIndexName,
+    carbonTable.getIndexedColumns(indexSchema.getIndexColumns), segment, shardName) {
 
   val blockletList = new ArrayBuffer[Array[Byte]]()
   val maxMin = new ArrayBuffer[(Int, (Array[Byte], Array[Byte]))]()
@@ -380,41 +380,41 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test cg index") {
-    sql("DROP TABLE IF EXISTS datamap_test_cg")
+    sql("DROP TABLE IF EXISTS index_test_cg")
     sql(
       """
-        | CREATE TABLE datamap_test_cg(id INT, name STRING, city STRING, age INT)
+        | CREATE TABLE index_test_cg(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
-    sql(s"create index cgdatamap on table datamap_test_cg (name)" +
+    sql(s"create index cgindex on table index_test_cg (name)" +
         s"as '${classOf[CGIndexFactory].getName}' ")
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test_cg OPTIONS('header'='false')")
-    checkAnswer(sql("select * from datamap_test_cg where name='n502670'"),
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test_cg OPTIONS('header'='false')")
+    checkAnswer(sql("select * from index_test_cg where name='n502670'"),
       sql("select * from normal_test where name='n502670'"))
   }
 
   test("test cg index with 2 indexes ") {
-    sql("DROP TABLE IF EXISTS datamap_test")
+    sql("DROP TABLE IF EXISTS index_test")
     sql(
       """
-        | CREATE TABLE datamap_test(id INT, name STRING, city STRING, age INT)
+        | CREATE TABLE index_test(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
-    sql(s"create index ggdatamap1 on table datamap_test (name) as '${classOf[CGIndexFactory].getName}' ")
-    sql(s"create index ggdatamap2 on table datamap_test (city) as '${classOf[CGIndexFactory].getName}' ")
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
-    checkAnswer(sql("select * from datamap_test where name='n502670' and city='c2670'"),
+    sql(s"create index ggindex1 on table index_test (name) as '${classOf[CGIndexFactory].getName}' ")
+    sql(s"create index ggindex2 on table index_test (city) as '${classOf[CGIndexFactory].getName}' ")
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test OPTIONS('header'='false')")
+    checkAnswer(sql("select * from index_test where name='n502670' and city='c2670'"),
       sql("select * from normal_test where name='n502670' and city='c2670'"))
   }
 
   test("test invisible index during query") {
-    val tableName = "datamap_test"
-    val dataMapName1 = "datamap1"
-    val dataMapName2 = "datamap2"
-    sql(s"DROP INDEX IF EXISTS $dataMapName1 ON TABLE $tableName")
-    sql(s"DROP INDEX IF EXISTS $dataMapName2 ON TABLE $tableName")
+    val tableName = "index_test"
+    val indexName1 = "index1"
+    val indexName2 = "index2"
+    sql(s"DROP INDEX IF EXISTS $indexName1 ON TABLE $tableName")
+    sql(s"DROP INDEX IF EXISTS $indexName2 ON TABLE $tableName")
     sql(s"DROP TABLE IF EXISTS $tableName")
     sql(
       s"""
@@ -425,69 +425,69 @@ class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     // register indexSchema writer
     sql(
       s"""
-         | CREATE INDEX $dataMapName1
+         | CREATE INDEX $indexName1
          | ON TABLE $tableName (name)
          | AS '${classOf[CGIndexFactory].getName}'
       """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $dataMapName2
+         | CREATE INDEX $indexName2
          | ON TABLE $tableName (city)
          | AS '${classOf[CGIndexFactory].getName}'
        """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE $tableName OPTIONS('header'='false')")
     val df1 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
     assert(df1(0).getString(0).contains("CG Index"))
-    assert(df1(0).getString(0).contains(dataMapName1))
-    assert(df1(0).getString(0).contains(dataMapName2))
+    assert(df1(0).getString(0).contains(indexName1))
+    assert(df1(0).getString(0).contains(indexName2))
 
-    // make datamap1 invisible
-    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$dataMapName1 = false")
+    // make index1 invisible
+    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$indexName1 = false")
     val df2 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
     val e = intercept[Exception] {
-      assert(df2(0).getString(0).contains(dataMapName1))
+      assert(df2(0).getString(0).contains(indexName1))
     }
-    assert(e.getMessage.contains("did not contain \"" + dataMapName1))
-    assert(df2(0).getString(0).contains(dataMapName2))
+    assert(e.getMessage.contains("did not contain \"" + indexName1))
+    assert(df2(0).getString(0).contains(indexName2))
     checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
 
-    // also make datamap2 invisible
-    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$dataMapName2 = false")
+    // also make index2 invisible
+    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$indexName2 = false")
     checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
     val df3 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
     val e31 = intercept[Exception] {
-      assert(df3(0).getString(0).contains(dataMapName1))
+      assert(df3(0).getString(0).contains(indexName1))
     }
-    assert(e31.getMessage.contains("did not contain \"" + dataMapName1))
+    assert(e31.getMessage.contains("did not contain \"" + indexName1))
     val e32 = intercept[Exception] {
-      assert(df3(0).getString(0).contains(dataMapName2))
+      assert(df3(0).getString(0).contains(indexName2))
     }
-    assert(e32.getMessage.contains("did not contain \"" + dataMapName2))
+    assert(e32.getMessage.contains("did not contain \"" + indexName2))
 
-    // make datamap1,datamap2 visible
-    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$dataMapName1 = true")
-    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$dataMapName1 = true")
+    // make index1,index2 visible
+    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$indexName1 = true")
+    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$indexName1 = true")
     checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
     val df4 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
-    assert(df4(0).getString(0).contains(dataMapName1))
+    assert(df4(0).getString(0).contains(indexName1))
     val e41 = intercept[Exception] {
-      assert(df3(0).getString(0).contains(dataMapName2))
+      assert(df3(0).getString(0).contains(indexName2))
     }
-    assert(e41.getMessage.contains("did not contain \"" + dataMapName2))
+    assert(e41.getMessage.contains("did not contain \"" + indexName2))
   }
 
   override protected def afterAll(): Unit = {
     defaultConfig()
     CompactionSupportGlobalSortBigFileTest.deleteFile(file2)
     sql("DROP TABLE IF EXISTS normal_test")
-    sql("DROP TABLE IF EXISTS datamap_test")
-    sql("DROP TABLE IF EXISTS datamap_test_cg")
-    sql("DROP TABLE IF EXISTS datamap_store_test")
-    sql("DROP TABLE IF EXISTS datamap_store_test1")
-    sql("DROP TABLE IF EXISTS datamap_store_test2")
+    sql("DROP TABLE IF EXISTS index_test")
+    sql("DROP TABLE IF EXISTS index_test_cg")
+    sql("DROP TABLE IF EXISTS index_store_test")
+    sql("DROP TABLE IF EXISTS index_store_test1")
+    sql("DROP TABLE IF EXISTS index_store_test2")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
         CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)

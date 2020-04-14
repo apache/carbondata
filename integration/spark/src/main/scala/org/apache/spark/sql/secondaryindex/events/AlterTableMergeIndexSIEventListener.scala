@@ -36,7 +36,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
@@ -73,9 +73,9 @@ class AlterTableMergeIndexSIEventListener
                 String.valueOf(loadMetadataDetails.getLoadStartTime))
           })
           if (!indexProviderMap.isEmpty) {
-            if (null != indexProviderMap.get(CarbonIndexProvider.SI.getIndexProviderName)) {
+            if (null != indexProviderMap.get(IndexType.SI.getIndexProviderName)) {
               val secondaryIndexIterator = indexProviderMap
-                .get(CarbonIndexProvider.SI.getIndexProviderName).entrySet().iterator()
+                .get(IndexType.SI.getIndexProviderName).entrySet().iterator()
               while (secondaryIndexIterator.hasNext) {
                 val index = secondaryIndexIterator.next()
                 val secondaryIndex = IndexModel(Some(carbonMainTable.getDatabaseName),

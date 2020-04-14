@@ -30,15 +30,15 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedIndexCommandException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.index.status.{IndexStatusManager, IndexStatus}
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.index.status.{IndexStatus, IndexStatusManager}
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.index.bloom.IndexStatusUtil
 
 class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
   val originDistributedIndexStatus = CarbonProperties.getInstance().getProperty(
-    CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
-    CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT
+    CarbonCommonConstants.USE_DISTRIBUTED_INDEX,
+    CarbonCommonConstants.USE_DISTRIBUTED_INDEX_DEFAULT
   )
   val file2 = resourcesPath + "/datamap_input.csv"
 
@@ -50,7 +50,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     LuceneFineGrainIndexSuite.createFile(file2)
     sql("create database if not exists lucene")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP, "true")
+      .addProperty(CarbonCommonConstants.USE_DISTRIBUTED_INDEX, "true")
     sql("use lucene")
     sql("DROP TABLE IF EXISTS normal_test")
     sql(
@@ -191,7 +191,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("SELECT * FROM index_test1 WHERE TEXT_MATCH('name:n10')"), sql(s"select * from index_test1 where name='n10'"))
 
     var carbonTable = CarbonEnv.getCarbonTable(Some("lucene"), "index_test1")(sqlContext.sparkSession)
-    var indexes = carbonTable.getIndexMetadata.getIndexesMap.get(CarbonIndexProvider.LUCENE.getIndexProviderName)
+    var indexes = carbonTable.getIndexMetadata.getIndexesMap.get(IndexType.LUCENE.getIndexProviderName)
       .asScala.filter(p => p._2.get(CarbonCommonConstants.INDEX_STATUS).equalsIgnoreCase(IndexStatus.ENABLED.name()))
     assert(indexes.exists(p => p._1.equals("dm12") && p._2.get(CarbonCommonConstants.INDEX_STATUS) == IndexStatus.ENABLED.name()))
 
@@ -679,7 +679,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
          | WITH DEFERRED REFRESH
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test5 OPTIONS('header'='false')")
-    val map = IndexStatusManager.readDataMapStatusMap()
+    val map = IndexStatusManager.readIndexStatusMap()
     assert(!map.get("dm").isEnabled)
     sql("REFRESH INDEX dm ON TABLE index_test5")
     checkAnswer(sql("SELECT * FROM index_test5 WHERE TEXT_MATCH('city:c020')"),
@@ -893,7 +893,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS,
         CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
+      .addProperty(CarbonCommonConstants.USE_DISTRIBUTED_INDEX,
         originDistributedIndexStatus)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,

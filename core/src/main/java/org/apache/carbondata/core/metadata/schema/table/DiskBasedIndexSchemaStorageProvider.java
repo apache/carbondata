@@ -61,7 +61,7 @@ public class DiskBasedIndexSchemaStorageProvider implements IndexSchemaStoragePr
 
   public DiskBasedIndexSchemaStorageProvider(String storePath) {
     this.storePath = CarbonUtil.checkAndAppendHDFSUrl(storePath);
-    this.mdtFilePath = storePath + CarbonCommonConstants.FILE_SEPARATOR + "datamap.mdtfile";
+    this.mdtFilePath = storePath + CarbonCommonConstants.FILE_SEPARATOR + "index.mdtfile";
   }
 
   @Override

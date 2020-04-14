@@ -58,23 +58,14 @@ public class IndexStatusManager {
    * TODO Use factory when we have more storage providers
    */
   private static IndexStatusStorageProvider storageProvider =
-      getDataMapStatusStorageProvider();
+      getIndexStatusStorageProvider();
 
   /**
-   * Reads all datamap status file
+   * Get enabled index status details
    * @return
    * @throws IOException
    */
-  public static IndexStatusDetail[] readDataMapStatusDetails() throws IOException {
-    return storageProvider.getIndexStatusDetails();
-  }
-
-  /**
-   * Get enabled datamap status details
-   * @return
-   * @throws IOException
-   */
-  public static IndexStatusDetail[] getEnabledDataMapStatusDetails() throws IOException {
+  public static IndexStatusDetail[] getEnabledIndexStatusDetails() throws IOException {
     IndexStatusDetail[] indexStatusDetails = storageProvider.getIndexStatusDetails();
     List<IndexStatusDetail> statusDetailList = new ArrayList<>();
     for (IndexStatusDetail statusDetail : indexStatusDetails) {
@@ -85,11 +76,11 @@ public class IndexStatusManager {
     return statusDetailList.toArray(new IndexStatusDetail[statusDetailList.size()]);
   }
 
-  public static Map<String, IndexStatusDetail> readDataMapStatusMap() throws IOException {
+  public static Map<String, IndexStatusDetail> readIndexStatusMap() throws IOException {
     IndexStatusDetail[] details = storageProvider.getIndexStatusDetails();
     Map<String, IndexStatusDetail> map = new HashMap<>(details.length);
     for (IndexStatusDetail detail : details) {
-      map.put(detail.getDataMapName(), detail);
+      map.put(detail.getIndexName(), detail);
     }
     return map;
   }
@@ -109,13 +100,13 @@ public class IndexStatusManager {
   public static void disableAllLazyIndexes(CarbonTable table) throws IOException {
     List<IndexSchema> allIndexSchemas =
         IndexStoreManager.getInstance().getIndexSchemasOfTable(table);
-    List<IndexSchema> dataMapToBeDisabled = new ArrayList<>(allIndexSchemas.size());
+    List<IndexSchema> indexToBeDisabled = new ArrayList<>(allIndexSchemas.size());
     for (IndexSchema indexSchema : allIndexSchemas) {
       if (indexSchema.isLazy()) {
-        dataMapToBeDisabled.add(indexSchema);
+        indexToBeDisabled.add(indexSchema);
       }
     }
-    storageProvider.updateIndexStatus(dataMapToBeDisabled, IndexStatus.DISABLED);
+    storageProvider.updateIndexStatus(indexToBeDisabled, IndexStatus.DISABLED);
   }
 
   public static void enableIndex(String indexName) throws IOException, NoSuchIndexException {
@@ -142,7 +133,7 @@ public class IndexStatusManager {
   }
 
   /**
-   * This method will remove all segments of dataMap table in case of Insert-Overwrite/Update/Delete
+   * This method will remove all segments of index table in case of Insert-Overwrite/Update/Delete
    * operations on main table
    *
    * @param allIndexSchemas of main carbon table
@@ -154,52 +145,52 @@ public class IndexStatusManager {
       if (!indexSchema.isLazy()) {
         disableIndex(indexSchema.getIndexName());
       }
-      RelationIdentifier dataMapRelationIdentifier = indexSchema.getRelationIdentifier();
+      RelationIdentifier indexRelationIdentifier = indexSchema.getRelationIdentifier();
       SegmentStatusManager segmentStatusManager = new SegmentStatusManager(AbsoluteTableIdentifier
-          .from(dataMapRelationIdentifier.getTablePath(),
-              dataMapRelationIdentifier.getDatabaseName(),
-              dataMapRelationIdentifier.getTableName()));
+          .from(indexRelationIdentifier.getTablePath(),
+              indexRelationIdentifier.getDatabaseName(),
+              indexRelationIdentifier.getTableName()));
       ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
       try {
         if (carbonLock.lockWithRetries()) {
-          LOGGER.info("Acquired lock for table" + dataMapRelationIdentifier.getDatabaseName() + "."
-              + dataMapRelationIdentifier.getTableName() + " for table status updation");
+          LOGGER.info("Acquired lock for table" + indexRelationIdentifier.getDatabaseName() + "."
+              + indexRelationIdentifier.getTableName() + " for table status updation");
           String metaDataPath =
-              CarbonTablePath.getMetadataPath(dataMapRelationIdentifier.getTablePath());
+              CarbonTablePath.getMetadataPath(indexRelationIdentifier.getTablePath());
           LoadMetadataDetails[] loadMetadataDetails =
               SegmentStatusManager.readLoadMetadata(metaDataPath);
           for (LoadMetadataDetails entry : loadMetadataDetails) {
             entry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
           }
           SegmentStatusManager.writeLoadDetailsIntoFile(
-              CarbonTablePath.getTableStatusFilePath(dataMapRelationIdentifier.getTablePath()),
+              CarbonTablePath.getTableStatusFilePath(indexRelationIdentifier.getTablePath()),
               loadMetadataDetails);
         } else {
           LOGGER.error("Not able to acquire the lock for Table status updation for table "
-              + dataMapRelationIdentifier.getDatabaseName() + "." + dataMapRelationIdentifier
+              + indexRelationIdentifier.getDatabaseName() + "." + indexRelationIdentifier
               .getTableName());
         }
       } finally {
         if (carbonLock.unlock()) {
           LOGGER.info(
-              "Table unlocked successfully after table status updation" + dataMapRelationIdentifier
-                  .getDatabaseName() + "." + dataMapRelationIdentifier.getTableName());
+              "Table unlocked successfully after table status updation" + indexRelationIdentifier
+                  .getDatabaseName() + "." + indexRelationIdentifier.getTableName());
         } else {
           LOGGER.error(
-              "Unable to unlock Table lock for table" + dataMapRelationIdentifier.getDatabaseName()
-                  + "." + dataMapRelationIdentifier.getTableName()
+              "Unable to unlock Table lock for table" + indexRelationIdentifier.getDatabaseName()
+                  + "." + indexRelationIdentifier.getTableName()
                   + " during table status updation");
         }
       }
     }
   }
 
-  public static IndexStatusStorageProvider getDataMapStatusStorageProvider() {
-    String providerProperties = CarbonProperties.getDataMapStorageProvider();
+  public static IndexStatusStorageProvider getIndexStatusStorageProvider() {
+    String providerProperties = CarbonProperties.getIndexStorageProvider();
     switch (providerProperties) {
-      case CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DATABASE:
+      case CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DATABASE:
         return new DatabaseIndexStatusProvider();
-      case CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DISK:
+      case CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DISK:
       default:
         return new DiskBasedIndexStatusProvider();
     }

@@ -205,7 +205,7 @@ public final class CarbonProperties {
       case CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB:
         validateAndGetLocalDictionarySizeThresholdInMB();
         break;
-      case CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE:
+      case CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE:
         validateDMSchemaStorageProvider();
         break;
       // TODO : Validation for carbon.lock.type should be handled for addProperty flow
@@ -624,16 +624,16 @@ public final class CarbonProperties {
   public boolean isIndexParallelLoadingEnabled(String databaseName, String tableName) {
     // Check for propertyKey.dbname.table name for session based set for a specific table.
     String loadIndexParallel = getSessionPropertyValue(
-        CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL + "." + databaseName + "." + tableName);
+        CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL + "." + databaseName + "." + tableName);
     // If table table property is not specified then check for session for all the tables
     // otherwise check in carbon.properties
     if (loadIndexParallel == null) {
       loadIndexParallel =
-          getProperty(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL, "false");
+          getProperty(CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL, "false");
     }
     boolean configuredValue = Boolean.parseBoolean(loadIndexParallel);
     if (configuredValue) {
-      LOGGER.info("Loading datamaps in parallel for " + databaseName + "." + tableName);
+      LOGGER.info("Loading indexes in parallel for " + databaseName + "." + tableName);
     }
     return configuredValue;
   }
@@ -1741,25 +1741,25 @@ public final class CarbonProperties {
 
   private void validateDMSchemaStorageProvider() {
     String provider =
-        carbonProperties.getProperty(CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE);
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE);
     if (provider == null) {
       carbonProperties.setProperty(
-          CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE,
-          CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DEFAULT);
+          CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE,
+          CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DEFAULT);
     } else {
       switch (provider.toUpperCase()) {
-        case CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DISK:
+        case CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DISK:
           break;
-        case  CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DATABASE:
+        case  CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DATABASE:
           break;
         default:
           LOGGER.warn("The value \"" + provider + "\" configured for key "
-              + CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE
+              + CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE
               + " is invalid for current file system. Use the default value "
-              + CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DEFAULT + " instead.");
+              + CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DEFAULT + " instead.");
           carbonProperties.setProperty(
-              CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE,
-              CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DEFAULT);
+              CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE,
+              CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DEFAULT);
       }
     }
   }
@@ -1988,11 +1988,11 @@ public final class CarbonProperties {
     }
   }
 
-  public static String getDataMapStorageProvider() {
+  public static String getIndexStorageProvider() {
     String provider = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE);
+        .getProperty(CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE);
     if (provider == null) {
-      return CarbonCommonConstants.CARBON_DATAMAP_SCHEMA_STORAGE_DEFAULT;
+      return CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DEFAULT;
     }
     return provider.toUpperCase();
   }

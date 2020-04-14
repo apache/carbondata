@@ -47,7 +47,7 @@ public class IndexManager {
     org.apache.carbondata.core.index.CarbonIndexProvider provider;
     if (indexSchema.getProviderName().equalsIgnoreCase(IndexClassProvider.MV.toString())) {
       provider = (org.apache.carbondata.core.index.CarbonIndexProvider) CarbonScalaUtil
-          .createDataMapProvider("org.apache.carbondata.mv.extension.MVDataMapProvider",
+          .createIndexProvider("org.apache.carbondata.mv.extension.MVDataMapProvider",
               sparkSession, mainTable, indexSchema);
     } else {
       provider =

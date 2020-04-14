@@ -1032,7 +1032,6 @@ object CarbonDataRDDFactory {
       LOGGER.error(errorMessage)
       throw new Exception(errorMessage)
     } else {
-      IndexStatusManager.disableAllLazyIndexes(carbonTable)
       val viewManager = MVManagerInSpark.get(session)
       val viewSchemas = new util.ArrayList[MVSchema]()
       for (viewSchema <- viewManager.getSchemasOnTable(carbonTable).asScala) {
@@ -1042,13 +1041,6 @@ object CarbonDataRDDFactory {
       }
       viewManager.setStatus(viewSchemas, MVStatus.DISABLED)
       if (overwriteTable) {
-        val allIndexSchemas = IndexStoreManager.getInstance
-          .getIndexSchemasOfTable(carbonTable).asScala
-          .filter(indexSchema => null != indexSchema.getRelationIdentifier &&
-                                 !indexSchema.isIndex).asJava
-        if (!allIndexSchemas.isEmpty) {
-          IndexStatusManager.truncateIndex(allIndexSchemas)
-        }
         if (!viewSchemas.isEmpty) {
           viewManager.onTruncate(viewSchemas)
         }

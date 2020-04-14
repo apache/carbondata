@@ -122,7 +122,7 @@ public class BlockletIndexStore
           blockletIndexWrapper =
               new BlockletIndexWrapper(identifier.getSegmentId(), indexes);
         } else {
-          // if the identifier is a merge file then collect the index files and load the datamaps
+          // if the identifier is a merge file then collect the index files and load the indexes
           List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
               BlockletIndexUtil.getIndexFileIdentifiersFromMergeFile(identifier, indexFileStore);
           for (TableBlockIndexUniqueIdentifier blockIndexUniqueIdentifier :
@@ -152,7 +152,7 @@ public class BlockletIndexStore
                   blockletIndexWrapper.getMemorySize(), expiration_time);
         }
       } catch (Throwable e) {
-        // clear all the memory used by datamaps loaded
+        // clear all the memory used by indexes loaded
         for (Index index : indexes) {
           index.clear();
         }
@@ -174,7 +174,7 @@ public class BlockletIndexStore
         new ArrayList<>(tableSegmentUniqueIdentifiers.size());
     List<TableBlockIndexUniqueIdentifierWrapper> missedIdentifiersWrapper = new ArrayList<>();
     BlockletIndexWrapper blockletIndexWrapper = null;
-    // Get the datamaps for each indexfile from cache.
+    // Get the indexes for each indexfile from cache.
     try {
       for (TableBlockIndexUniqueIdentifierWrapper
                identifierWrapper : tableSegmentUniqueIdentifiers) {
@@ -234,7 +234,7 @@ public class BlockletIndexStore
       if (null != indexes && !indexes.isEmpty()) {
         String segmentId =
             tableSegmentUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier().getSegmentId();
-        // as segmentId will be same for all the dataMaps and segmentProperties cache is
+        // as segmentId will be same for all the indexes and segmentProperties cache is
         // maintained at segment level so it need to be called only once for clearing
         SegmentPropertiesAndSchemaHolder.getInstance()
             .invalidate(segmentId, indexes.get(0).getSegmentPropertiesWrapper(),
@@ -249,7 +249,7 @@ public class BlockletIndexStore
   public void put(TableBlockIndexUniqueIdentifierWrapper tableBlockIndexUniqueIdentifierWrapper,
       BlockletIndexWrapper wrapper) throws IOException {
     // As dataMap will use unsafe memory, it is not recommended to overwrite an existing entry
-    // as in that case clearing unsafe memory need to be taken card. If at all datamap entry
+    // as in that case clearing unsafe memory need to be taken card. If at all index entry
     // in the cache need to be overwritten then use the invalidate interface
     // and then use the put interface
     if (null == getIfPresent(tableBlockIndexUniqueIdentifierWrapper)) {

@@ -113,7 +113,7 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
     var isUpdateTableStatusRequired = false
     val uuid = ""
     try {
-      val (tableIndexes, dataMapOperationContext) =
+      val (tableIndexes, indexOperationContext) =
         CommonLoadUtils.firePreLoadEvents(
           sparkSession = sparkSession,
           carbonLoadModel = carbonLoadModel,
@@ -171,7 +171,7 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
       CommonLoadUtils.firePostLoadEvents(sparkSession,
         carbonLoadModel,
         tableIndexes,
-        dataMapOperationContext,
+        indexOperationContext,
         table,
         operationContext)
     } catch {

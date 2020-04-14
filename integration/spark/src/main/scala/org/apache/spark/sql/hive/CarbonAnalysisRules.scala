@@ -77,23 +77,6 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
             )
           }
         }
-        val indexSchemas = IndexStoreManager.getInstance().getIndexSchemasOfTable(carbonTable)
-        if (carbonTable.hasMVCreated) {
-          val allIndexSchemas = IndexStoreManager.getInstance
-            .getIndexSchemasOfTable(carbonTable).asScala
-            .filter(indexSchema => null != indexSchema.getRelationIdentifier &&
-                                   !indexSchema.isIndex).asJava
-          allIndexSchemas.asScala.foreach { indexSchema =>
-            IndexStatusManager.disableIndex(indexSchema.getIndexName)
-          }
-        } else if (!indexSchemas.isEmpty) {
-          throw new UnsupportedOperationException(
-            "Update operation is not supported for table which has index datamaps")
-        }
-        if (carbonTable.isMV) {
-          throw new UnsupportedOperationException(
-            "Update operation is not supported for mv indexSchema table")
-        }
       }
       val tableRelation =
         alias match {
@@ -232,19 +215,6 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
                 MVStatus.DISABLED
               )
             }
-          }
-          val indexSchemas = IndexStoreManager.getInstance().getIndexSchemasOfTable(carbonTable)
-          if (carbonTable.hasMVCreated) {
-            val allIndexSchemas = IndexStoreManager.getInstance
-              .getIndexSchemasOfTable(carbonTable).asScala
-              .filter(indexSchema => null != indexSchema.getRelationIdentifier &&
-                                     !indexSchema.isIndex).asJava
-            allIndexSchemas.asScala.foreach { indexSchema =>
-              IndexStatusManager.disableIndex(indexSchema.getIndexName)
-            }
-          } else if (!indexSchemas.isEmpty) {
-            throw new UnsupportedOperationException(
-              "Delete operation is not supported for table which has index datamaps")
           }
         }
         // include tuple id in subquery

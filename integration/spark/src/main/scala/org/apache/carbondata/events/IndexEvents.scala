@@ -66,7 +66,7 @@ case class UpdateMVPostExecutionEvent(
 case class BuildIndexPreExecutionEvent(
     sparkSession: SparkSession,
     identifier: AbsoluteTableIdentifier,
-    dataMapNames: scala.collection.mutable.Seq[String])
+    indexNames: scala.collection.mutable.Seq[String])
   extends Event with BuildIndexEventsInfo
 
 /**

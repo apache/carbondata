@@ -237,18 +237,18 @@ private[mv] class Navigator(catalog: SummaryDatasetCatalog, session: MVSession) 
   def unifySubsumer1(
       subsumer: ModularPlan,
       subsumee: ModularPlan,
-      dataMapRelation: ModularPlan): ModularPlan = {
+      mvRelation: ModularPlan): ModularPlan = {
     // Update MV table relation to the subsumer modular plan
     val updatedSubsumer = subsumer match {
       // In case of order by it adds extra select but that can be ignored while doing selection.
       case s@Select(_, _, _, _, _, Seq(g: GroupBy), _, _, _, _) =>
-        s.copy(children = Seq(g.copy(modularPlan = Some(dataMapRelation))),
+        s.copy(children = Seq(g.copy(modularPlan = Some(mvRelation))),
           outputList = updateDuplicateColumns(s.outputList))
       case s: Select => s
-        .copy(modularPlan = Some(dataMapRelation),
+        .copy(modularPlan = Some(mvRelation),
           outputList = updateDuplicateColumns(s.outputList))
       case g: GroupBy => g
-        .copy(modularPlan = Some(dataMapRelation),
+        .copy(modularPlan = Some(mvRelation),
           outputList = updateDuplicateColumns(g.outputList))
       case other => other
     }

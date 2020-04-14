@@ -34,7 +34,7 @@ import org.apache.spark.sql.secondaryindex.load.Compactor
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.Segment
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.events.{AlterTableCompactionPreStatusUpdateEvent, Event, OperationContext, OperationEventListener}
@@ -69,8 +69,8 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
                 String.valueOf(loadMetadataDetails.getLoadStartTime))
           })
           if (!indexProviderMap.isEmpty &&
-              null != indexProviderMap.get(CarbonIndexProvider.SI.getIndexProviderName)) {
-            val iterator = indexProviderMap.get(CarbonIndexProvider.SI.getIndexProviderName)
+              null != indexProviderMap.get(IndexType.SI.getIndexProviderName)) {
+            val iterator = indexProviderMap.get(IndexType.SI.getIndexProviderName)
               .entrySet().iterator()
             while (iterator.hasNext) {
               val index = iterator.next()

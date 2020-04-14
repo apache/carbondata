@@ -43,7 +43,7 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICar
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry, SchemaReader}
 import org.apache.carbondata.core.metadata.schema.indextable.{IndexMetadata, IndexTableInfo}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
@@ -261,7 +261,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       val indexTableCols = indexModel.columnNames.asJava
       indexProperties.put(CarbonCommonConstants.INDEX_COLUMNS, indexTableCols.asScala.mkString(","))
       indexProperties.put(CarbonCommonConstants.INDEX_PROVIDER,
-        CarbonIndexProvider.SI.getIndexProviderName)
+        IndexType.SI.getIndexProviderName)
       val indexInfo = IndexTableUtil.checkAndAddIndexTable(
         oldIndexInfo,
         new IndexTableInfo(
@@ -306,7 +306,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       } else {
         new IndexMetadata(false)
       }
-      parentIndexMetadata.addIndexTableInfo(CarbonIndexProvider.SI.getIndexProviderName,
+      parentIndexMetadata.addIndexTableInfo(IndexType.SI.getIndexProviderName,
         indexTableName,
         indexProperties)
       carbonTable.getTableInfo.getFactTable.getTableProperties
@@ -353,7 +353,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
           .collect()
       }
 
-      CarbonIndexUtil.addIndexTableInfo(CarbonIndexProvider.SI.getIndexProviderName,
+      CarbonIndexUtil.addIndexTableInfo(IndexType.SI.getIndexProviderName,
         carbonTable,
         indexTableName,
         indexProperties)

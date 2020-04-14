@@ -24,7 +24,7 @@ import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 /**
  * It saves/serializes the array of {{@link IndexStatusDetail}} to database folder.
  * It ensures the data consistance while concurrent write through write lock. It saves the status
- * to the datamapstatus under the database folder.
+ * to the indexstatus under the database folder.
  * Now the implement not finished, it used to disable Index in multi-tenant scenario.
  */
 public class DatabaseIndexStatusProvider implements IndexStatusStorageProvider {
@@ -35,12 +35,12 @@ public class DatabaseIndexStatusProvider implements IndexStatusStorageProvider {
   }
 
   /**
-   * Update or add the status of passed datamaps with the given datamapstatus. If the datamapstatus
-   * given is enabled/disabled then updates/adds the datamap, in case of drop it just removes it
+   * Update or add the status of passed indexes with the given indexstatus. If the indexstatus
+   * given is enabled/disabled then updates/adds the index, in case of drop it just removes it
    * from the file.
    * This method always overwrites the old file.
-   * @param indexSchemas schemas of which are need to be updated in datamap status
-   * @param dataMapStatus  status to be updated for the datamap schemas
+   * @param indexSchemas schemas of which are need to be updated in index status
+   * @param indexStatus  status to be updated for the index schemas
    */
   @Override
   public void updateIndexStatus(

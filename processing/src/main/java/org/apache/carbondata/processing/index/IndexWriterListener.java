@@ -58,7 +58,7 @@ public class IndexWriterListener {
   }
 
   /**
-   * register all datamap writer for specified table and segment
+   * register all index writer for specified table and segment
    */
   public void registerAllWriter(CarbonTable carbonTable, String segmentId,
       String taskNo, SegmentProperties segmentProperties) {
@@ -68,13 +68,13 @@ public class IndexWriterListener {
     try {
       tableIndices = IndexStoreManager.getInstance().getAllCGAndFGIndexes(carbonTable);
     } catch (IOException e) {
-      LOG.error("Error while retrieving datamaps", e);
+      LOG.error("Error while retrieving indexes", e);
       throw new RuntimeException(e);
     }
     tblIdentifier = carbonTable.getCarbonTableIdentifier();
     for (TableIndex tableIndex : tableIndices) {
-      // register it only if it is not lazy datamap, for lazy datamap, user
-      // will rebuild the datamap manually
+      // register it only if it is not lazy index, for lazy index, user
+      // will rebuild the index manually
       if (!tableIndex.getIndexSchema().isLazy()) {
         IndexFactory factory = tableIndex.getIndexFactory();
         register(factory, segmentId, taskNo, segmentProperties);
@@ -146,7 +146,7 @@ public class IndexWriterListener {
   }
 
   /**
-   * Pick corresponding column pages and add to all registered datamap
+   * Pick corresponding column pages and add to all registered index
    *
    * @param pageId     sequence number of page, start from 0
    * @param tablePage  page data
@@ -169,7 +169,7 @@ public class IndexWriterListener {
   }
 
   /**
-   * Finish all datamap writers
+   * Finish all index writers
    */
   public void finish() throws IOException {
     for (List<IndexWriter> writers : registry.values()) {

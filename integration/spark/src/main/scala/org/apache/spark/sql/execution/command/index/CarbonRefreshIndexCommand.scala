@@ -33,7 +33,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.index.IndexProvider
@@ -53,7 +53,7 @@ case class CarbonRefreshIndexCommand(
     val parentTable = CarbonEnv.getCarbonTable(parentTableIdent)(sparkSession)
     setAuditTable(parentTable)
     val indexProviderMap = parentTable.getIndexesMap
-    val secondaryIndexes = indexProviderMap.get(CarbonIndexProvider.SI.getIndexProviderName)
+    val secondaryIndexes = indexProviderMap.get(IndexType.SI.getIndexProviderName)
     if (null != secondaryIndexes && secondaryIndexes.containsKey(indexName)) {
       val indexTable = try {
         CarbonEnv.getCarbonTable(parentTableIdent.database, indexName)(sparkSession)

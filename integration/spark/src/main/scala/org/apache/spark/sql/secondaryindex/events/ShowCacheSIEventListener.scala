@@ -22,7 +22,7 @@ import org.apache.log4j.Logger
 import org.apache.spark.sql.CarbonEnv
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata
 import org.apache.carbondata.events.{Event, OperationContext, OperationEventListener, ShowTableCacheEvent}
 
@@ -48,7 +48,7 @@ object ShowCacheSIEventListener extends OperationEventListener {
           .asInstanceOf[List[(String, String)]]
 
         val indexTables = carbonTable.getIndexTableNames(
-          CarbonIndexProvider.SI.getIndexProviderName).asScala
+          IndexType.SI.getIndexProviderName).asScala
         // if there are no index tables for a given fact table do not perform any action
         operationContext.setProperty(carbonTable.getTableUniqueName, indexTables.map {
           indexTable =>

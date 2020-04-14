@@ -26,7 +26,7 @@ import org.apache.spark.sql.hive._
 import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.events.{AlterTableRenamePostEvent, Event, OperationContext, OperationEventListener}
 
@@ -51,7 +51,7 @@ class AlterTableRenameEventListener extends OperationEventListener with Logging 
         val table: CarbonTable = metastore
           .lookupRelation(Some(oldDatabaseName), newTableName)(sparkSession)
           .asInstanceOf[CarbonRelation].carbonTable
-        table.getIndexTableNames(CarbonIndexProvider.SI.getIndexProviderName)
+        table.getIndexTableNames(IndexType.SI.getIndexProviderName)
           .asScala.map {
           entry =>
             CarbonSessionCatalogUtil.getClient(sparkSession).runSqlHive(

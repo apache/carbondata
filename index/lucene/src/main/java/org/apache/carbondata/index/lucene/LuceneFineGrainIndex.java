@@ -198,7 +198,7 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
   }
 
   /**
-   * Prune the datamap with filter expression. It returns the list of
+   * Prune the index with filter expression. It returns the list of
    * blocklets where these filters can exist.
    */
   @Override

@@ -53,7 +53,7 @@ public class CarbonLockUtil {
         LOGGER.info("Clean files lock has been successfully released");
       } else if (locktype.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
         LOGGER.info("Delete segments lock has been successfully released");
-      } else if (locktype.equals(LockUsage.DATAMAP_STATUS_LOCK)) {
+      } else if (locktype.equals(LockUsage.INDEX_STATUS_LOCK)) {
         LOGGER.info("Index status lock has been successfully released");
       }
     } else {
@@ -65,7 +65,7 @@ public class CarbonLockUtil {
         LOGGER.info("Not able to release the clean files lock");
       } else if (locktype.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
         LOGGER.info("Not able to release the delete segments lock");
-      } else if (locktype.equals(LockUsage.DATAMAP_STATUS_LOCK)) {
+      } else if (locktype.equals(LockUsage.INDEX_STATUS_LOCK)) {
         LOGGER.info("Not able to release the index status lock");
       }
     }

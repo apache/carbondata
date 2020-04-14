@@ -33,7 +33,7 @@ import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.index.IndexStoreManager
 import org.apache.carbondata.core.indexstore.BlockletIndexWrapper
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexFactory
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, ShowTableCacheEvent}
@@ -207,7 +207,7 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       Seq()
     }
 
-    val (indexAllIndexSize, indexAllDatamapSize) = if (isDistributedPruningEnabled) {
+    val (indexAllIndexSize, allIndexSize) = if (isDistributedPruningEnabled) {
       getIndexServerCacheSizeForCurrentDB
     } else {
       (0L, 0L)
@@ -217,9 +217,9 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
         carbonTable =>
           carbonTable.getTablePath
       }
-      val (driverIndexSize, driverDatamapSize) = getAllDriverCacheSize(tablePaths.toList)
-      if (driverIndexSize + driverDatamapSize != 0 && driverRows.nonEmpty) {
-        (Seq(Row("TOTAL", driverIndexSize, driverDatamapSize, "DRIVER")) ++
+      val (driverIndexSize, driverTableIndexSize) = getAllDriverCacheSize(tablePaths.toList)
+      if (driverIndexSize + driverTableIndexSize != 0 && driverRows.nonEmpty) {
+        (Seq(Row("TOTAL", driverIndexSize, driverTableIndexSize, "DRIVER")) ++
          driverRows).collect {
           case row if row.getLong(1) != 0L || row.getLong(2) != 0L =>
             Row(row(0), bytesToDisplaySize(row.getLong(1)),
@@ -232,9 +232,9 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       Seq()
     }
 
-    val indexDisplayRows = if (indexAllIndexSize + indexAllDatamapSize != 0 &&
+    val indexDisplayRows = if (indexAllIndexSize + allIndexSize != 0 &&
                                indexServerRows.nonEmpty) {
-      (Seq(Row("TOTAL", indexAllIndexSize, indexAllDatamapSize, "INDEX SERVER")) ++
+      (Seq(Row("TOTAL", indexAllIndexSize, allIndexSize, "INDEX SERVER")) ++
        indexServerRows).collect {
         case row if row.getLong(1) != 0L || row.getLong(2) != 0L =>
           Row(row.get(0), bytesToDisplaySize(row.getLong(1)),
@@ -250,7 +250,7 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       numOfIndexFiles: Int = 0): Seq[Row] = {
     if (CacheProvider.getInstance().getCarbonCache != null) {
       val childTableList = getChildTableList(carbonTable)(sparkSession)
-      val (parentMetaCacheInfo, dataMapCacheInfo) = collectDriverMetaCacheInfo(carbonTable
+      val (parentMetaCacheInfo, indexCacheInfo) = collectDriverMetaCacheInfo(carbonTable
         .getTableUniqueName, carbonTable.getTableId) match {
         case list =>
           val parentCache = list
@@ -259,10 +259,10 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
             case Nil => ("", 0, 0L, "")
             case head :: _ => head
           }
-          val dataMapList = list
+          val indexList = list
             .filter(!_._4.equalsIgnoreCase(BlockletIndexFactory.INDEX_SCHEMA
               .getProviderName))
-          (parentCache, dataMapList)
+          (parentCache, indexList)
         case Nil => (("", 0, 0L, ""), Nil)
       }
       val childMetaCacheInfos = childTableList.flatMap {
@@ -276,7 +276,7 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
             case childMeta if childMeta._3 != 0 =>
               Row(childMeta._1, childMeta._3, 0L, childTable._2)
           }
-      } ++ dataMapCacheInfo.collect {
+      } ++ indexCacheInfo.collect {
         case childMeta if childMeta._3 != 0 =>
           Row(childMeta._1, childMeta._3, 0L, childMeta._4)
       }
@@ -297,18 +297,18 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
   override protected def opName: String = "SHOW CACHE"
 
   private def makeRows(tableResult: Seq[Row], carbonTable: CarbonTable) = {
-    var (indexSize, datamapSize) = (tableResult.head.getLong(1), 0L)
+    var (indexSize, allIndexSize) = (tableResult.head.getLong(1), 0L)
     tableResult.drop(2).foreach {
       row =>
         indexSize += row.getLong(1)
-        datamapSize += row.getLong(2)
+        allIndexSize += row.getLong(2)
     }
-    if (indexSize == 0 && datamapSize == 0) {
+    if (indexSize == 0 && allIndexSize == 0) {
       Seq()
     } else {
       Seq(Row(carbonTable.getDatabaseName + "." + carbonTable.getTableName,
         indexSize,
-        datamapSize))
+        allIndexSize))
     }
   }
 
@@ -325,7 +325,7 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       childTable =>
         val tableName = childTable._1.replace("-", "_")
         if (childTable._2
-          .equalsIgnoreCase(CarbonIndexProvider.BLOOMFILTER.getIndexProviderName)) {
+          .equalsIgnoreCase(IndexType.BLOOMFILTER.getIndexProviderName)) {
           val childCache = getTableCache(cache, tableName)._2
           if (childCache != 0) {
             Seq(Row(tableName, 0L, childCache, childTable._2))
@@ -423,8 +423,8 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
 
   private def collectDriverMetaCacheInfo(tableName: String,
       tableId: String): List[(String, Int, Long, String)] = {
-    val dataMaps = IndexStoreManager.getInstance().getTableIndexForAllTables.asScala
-    dataMaps.collect {
+    val indexes = IndexStoreManager.getInstance().getTableIndexForAllTables.asScala
+    indexes.collect {
       case (table, tableIndexes) if table.isEmpty ||
                                      (tableId.nonEmpty && tableId.equalsIgnoreCase(table)) =>
         val sizeAndIndexLengths = tableIndexes.asScala
@@ -450,7 +450,7 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
 
   private def getIndexServerCacheSizeForCurrentDB: (Long, Long) = {
     var (allIndexSize, allDatamapSize) = (0L, 0L)
-    val bloomFilterIdentifier = CarbonIndexProvider.BLOOMFILTER.getIndexProviderName
+    val bloomFilterIdentifier = IndexType.BLOOMFILTER.getIndexProviderName
     cacheResult.foreach {
       case (_, _, sum, provider) =>
         provider.toLowerCase match {

@@ -78,16 +78,16 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     val carbonTable = relation.carbonTable
     assert(carbonTable.getTableInfo.isSchemaModified == isSchemaModified)
     val segment: Segment = Segment.getSegment(segmentId, carbonTable.getTablePath)
-    val defaultDataMap: TableIndex = IndexStoreManager.getInstance()
+    val defaultIndex: TableIndex = IndexStoreManager.getInstance()
       .getDefaultIndex(carbonTable)
-    val dataMaps: List[Index[_ <: Blocklet]] = defaultDataMap.getIndexFactory
+    val indexes: List[Index[_ <: Blocklet]] = defaultIndex.getIndexFactory
       .getIndexes(segment).asScala.toList
-    dataMaps
+    indexes
   }
 
-  private def validateMinMaxColumnsCacheLength(dataMaps: List[Index[_ <: Blocklet]],
+  private def validateMinMaxColumnsCacheLength(indexes: List[Index[_ <: Blocklet]],
       expectedLength: Int, storeBlockletCount: Boolean = false): Boolean = {
-    val segmentPropertiesWrapper = dataMaps(0).asInstanceOf[BlockIndex].getSegmentPropertiesWrapper
+    val segmentPropertiesWrapper = indexes(0).asInstanceOf[BlockIndex].getSegmentPropertiesWrapper
     val summarySchema = segmentPropertiesWrapper.getTaskSummarySchemaForBlock(storeBlockletCount, false)
     val minSchemas = summarySchema(BlockletIndexRowIndexes.TASK_MIN_VALUES_INDEX)
       .asInstanceOf[CarbonRowSchema.StructCarbonRowSchema]
@@ -100,11 +100,11 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     sql("create table metaCache(name string, c1 string, c2 string) STORED AS carbondata")
     sql("insert into metaCache select 'a','aa','aaa'")
     checkAnswer(sql("select * from metaCache"), Row("a", "aa", "aaa"))
-    var dataMaps = getIndexes("default", "metaCache", "0")
+    var indexes = getIndexes("default", "metaCache", "0")
     // validate index is non empty, its an instance of BlockIndex and minMaxSchema length is 3
-    assert(dataMaps.nonEmpty)
-    assert(dataMaps(0).isInstanceOf[BlockIndex])
-    assert(validateMinMaxColumnsCacheLength(dataMaps, 3, true))
+    assert(indexes.nonEmpty)
+    assert(indexes(0).isInstanceOf[BlockIndex])
+    assert(validateMinMaxColumnsCacheLength(indexes, 3, true))
     // alter table to add column_meta_cache and cache_level
     sql(
       "alter table metaCache set tblproperties('column_meta_cache'='c2,c1', 'CACHE_LEVEL'='BLOCKLET')")
@@ -112,10 +112,10 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     checkAnswer(sql("select * from metaCache"), Row("a", "aa", "aaa"))
     // validate index is non empty, its an instance of BlockletIndex and minMaxSchema length
     // is 1
-    dataMaps = getIndexes("default", "metaCache", "0")
-    assert(dataMaps.nonEmpty)
-    assert(dataMaps(0).isInstanceOf[BlockletIndex])
-    assert(validateMinMaxColumnsCacheLength(dataMaps, 2))
+    indexes = getIndexes("default", "metaCache", "0")
+    assert(indexes.nonEmpty)
+    assert(indexes(0).isInstanceOf[BlockletIndex])
+    assert(validateMinMaxColumnsCacheLength(indexes, 2))
 
     // alter table to add same value as previous with order change for column_meta_cache and cache_level
     sql(
@@ -126,10 +126,10 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     checkAnswer(sql("select * from metaCache"), Row("a", "aa", "aaa"))
     // validate index is non empty, its an instance of BlockletIndex and minMaxSchema length
     // is 0
-    dataMaps = getIndexes("default", "metaCache", "0")
-    assert(dataMaps.nonEmpty)
-    assert(dataMaps(0).isInstanceOf[BlockletIndex])
-    assert(validateMinMaxColumnsCacheLength(dataMaps, 0))
+    indexes = getIndexes("default", "metaCache", "0")
+    assert(indexes.nonEmpty)
+    assert(indexes(0).isInstanceOf[BlockletIndex])
+    assert(validateMinMaxColumnsCacheLength(indexes, 0))
 
     // alter table to cache no column in column_meta_cache
     sql(
@@ -137,10 +137,10 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     checkAnswer(sql("select * from metaCache"), Row("a", "aa", "aaa"))
     // validate index is non empty, its an instance of BlockletIndex and minMaxSchema length
     // is 3
-    dataMaps = getIndexes("default", "metaCache", "0")
-    assert(dataMaps.nonEmpty)
-    assert(dataMaps(0).isInstanceOf[BlockIndex])
-    assert(validateMinMaxColumnsCacheLength(dataMaps, 3))
+    indexes = getIndexes("default", "metaCache", "0")
+    assert(indexes.nonEmpty)
+    assert(indexes(0).isInstanceOf[BlockIndex])
+    assert(validateMinMaxColumnsCacheLength(indexes, 3))
   }
 
   test("test UPDATE scenario after column_meta_cache") {

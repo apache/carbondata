@@ -31,7 +31,7 @@ import org.apache.spark.util.AlterTableUtil
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo
 import org.apache.carbondata.events._
 import org.apache.carbondata.events.exception.PostEventException
@@ -81,7 +81,7 @@ class AlterTableColumnRenameEventListener extends OperationEventListener with Lo
         val carbonColumn = carbonColumns.filter(_.getColName.equalsIgnoreCase(oldColumnName))
         var indexTablesToRenameColumn: Seq[String] = Seq.empty
         val secondaryIndexMap =
-          carbonTable.getIndexesMap.get(CarbonIndexProvider.SI.getIndexProviderName)
+          carbonTable.getIndexesMap.get(IndexType.SI.getIndexProviderName)
         if (null != secondaryIndexMap) {
           val iterator = secondaryIndexMap.entrySet().iterator()
           while (iterator.hasNext) {

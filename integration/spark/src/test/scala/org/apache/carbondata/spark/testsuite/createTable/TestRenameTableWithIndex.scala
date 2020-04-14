@@ -123,9 +123,9 @@ class TestRenameTableWithIndex extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE fact_table2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    sql("drop materialized view if exists datamap1")
-    sql("create materialized view datamap1 as select empname, designation from fact_table2")
-    sql(s"refresh materialized view datamap1")
+    sql("drop materialized view if exists mv1")
+    sql("create materialized view mv1 as select empname, designation from fact_table2")
+    sql(s"refresh materialized view mv1")
 
     sql(
       s"""

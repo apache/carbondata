@@ -337,7 +337,6 @@ case class CarbonAddLoadCommand(
       LOGGER.error("Data load failed due to failure in table status updation.")
       throw new Exception("Data load failed due to failure in table status updation.")
     }
-    IndexStatusManager.disableAllLazyIndexes(carbonTable)
     val viewManager = MVManagerInSpark.get(sparkSession)
     val viewSchemas = new util.ArrayList[MVSchema]()
     for (viewSchema <- viewManager.getSchemasOnTable(carbonTable).asScala) {

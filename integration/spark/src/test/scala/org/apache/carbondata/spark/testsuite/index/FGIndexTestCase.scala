@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.spark.testsuite.datamap
+package org.apache.carbondata.spark.testsuite.index
 
 import java.io.{ByteArrayInputStream, DataOutputStream, ObjectInputStream, ObjectOutputStream}
 
@@ -51,13 +51,13 @@ import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
 class FGIndexFactory(carbonTable: CarbonTable,
-    dataMapSchema: IndexSchema) extends FineGrainIndexFactory(carbonTable, dataMapSchema) {
+    indexSchema: IndexSchema) extends FineGrainIndexFactory(carbonTable, indexSchema) {
 
   /**
    * Return a new write for this indexSchema
    */
   override def createWriter(segment: Segment, dataWritePath: String, segmentProperties: SegmentProperties): IndexWriter = {
-    new FGIndexWriter(carbonTable, segment, dataWritePath, dataMapSchema)
+    new FGIndexWriter(carbonTable, segment, dataWritePath, indexSchema)
   }
 
   /**
@@ -65,7 +65,7 @@ class FGIndexFactory(carbonTable: CarbonTable,
    */
   override def getIndexes(segment: Segment): java.util.List[FineGrainIndex] = {
     val path = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segment.getSegmentNo)
-    val file = FileFactory.getCarbonFile(path+ "/" +dataMapSchema.getIndexName)
+    val file = FileFactory.getCarbonFile(path + "/" + indexSchema.getIndexName)
 
     val files = file.listFiles()
     files.map { f =>
@@ -93,7 +93,7 @@ class FGIndexFactory(carbonTable: CarbonTable,
   override def toDistributable(segment: Segment): java.util.List[IndexInputSplit] = {
     val path = carbonTable.getTablePath
     val file = FileFactory.getCarbonFile(
-      path + "/" + dataMapSchema.getIndexName + "/" + segment.getSegmentNo)
+      path + "/" + indexSchema.getIndexName + "/" + segment.getSegmentNo)
 
     val files = file.listFiles()
     files.map { f =>
@@ -113,7 +113,7 @@ class FGIndexFactory(carbonTable: CarbonTable,
   }
 
   /**
-   * Clear all datamaps from memory
+   * Clear all indexs from memory
    */
   override def clear(): Unit = {
   }
@@ -122,7 +122,7 @@ class FGIndexFactory(carbonTable: CarbonTable,
    * Return metadata of this indexSchema
    */
   override def getMeta: IndexMeta = {
-    new IndexMeta(carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns),
+    new IndexMeta(carbonTable.getIndexedColumns(indexSchema.getIndexColumns),
       List(ExpressionType.EQUALS, ExpressionType.IN).asJava)
   }
 
@@ -172,8 +172,8 @@ class FGIndex extends FineGrainIndex {
   /**
    * It is called to load the data map to memory or to initialize it.
    */
-  override def init(dataMapModel: IndexModel): Unit = {
-    this.filePath = dataMapModel.getFilePath
+  override def init(indexModel: IndexModel): Unit = {
+    this.filePath = indexModel.getFilePath
     val carbonFile = FileFactory.getCarbonFile(filePath)
     taskName = carbonFile.getName
     val size = carbonFile.getSize
@@ -275,7 +275,7 @@ class FGIndex extends FineGrainIndex {
   override def isScanRequired(filterExp: FilterResolverIntf): Boolean = ???
 
   /**
-   * clears all the resources for datamaps
+   * clears all the resources for indexs
    */
   override def finish() = {
 
@@ -285,9 +285,9 @@ class FGIndex extends FineGrainIndex {
 }
 
 class FGIndexWriter(carbonTable: CarbonTable,
-    segment: Segment, shardName: String, dataMapSchema: IndexSchema)
-  extends IndexWriter(carbonTable.getTablePath, dataMapSchema.getIndexName,
-    carbonTable.getIndexedColumns(dataMapSchema.getIndexColumns), segment, shardName) {
+    segment: Segment, shardName: String, indexSchema: IndexSchema)
+  extends IndexWriter(carbonTable.getTablePath, indexSchema.getIndexName,
+    carbonTable.getIndexedColumns(indexSchema.getIndexColumns), segment, shardName) {
 
   var taskName: String = _
   val fgwritepath = indexPath
@@ -458,59 +458,59 @@ class FGIndexTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test fg indexSchema") {
-    sql("DROP TABLE IF EXISTS datamap_test")
+    sql("DROP TABLE IF EXISTS index_test")
     sql(
       """
-        | CREATE TABLE datamap_test(id INT, name STRING, city STRING, age INT)
+        | CREATE TABLE index_test(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
-    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test")
+    val table = CarbonMetadata.getInstance().getCarbonTable("default_index_test")
     // register indexSchema writer
     sql(
       s"""
-         | CREATE INDEX ggdatamap
-         | ON TABLE datamap_test (name)
+         | CREATE INDEX ggindex
+         | ON TABLE index_test (name)
          | AS '${classOf[FGIndexFactory].getName}'
        """.stripMargin)
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
-    checkAnswer(sql("select * from datamap_test where name='n502670'"),
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test OPTIONS('header'='false')")
+    checkAnswer(sql("select * from index_test where name='n502670'"),
       sql("select * from normal_test where name='n502670'"))
   }
 
-  test("test fg indexSchema with 2 datamaps ") {
-    sql("DROP TABLE IF EXISTS datamap_test")
+  test("test fg indexSchema with 2 indexs ") {
+    sql("DROP TABLE IF EXISTS index_test")
     sql(
       """
-        | CREATE TABLE datamap_test(id INT, name STRING, city STRING, age INT)
+        | CREATE TABLE index_test(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
-    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamap_test")
+    val table = CarbonMetadata.getInstance().getCarbonTable("default_index_test")
     // register indexSchema writer
     sql(
       s"""
-         | CREATE INDEX ggdatamap1
-         | ON TABLE datamap_test (name)
+         | CREATE INDEX ggindex1
+         | ON TABLE index_test (name)
          | AS '${classOf[FGIndexFactory].getName}'
        """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX ggdatamap2
-         | ON TABLE datamap_test (city)
+         | CREATE INDEX ggindex2
+         | ON TABLE index_test (city)
          | AS '${classOf[FGIndexFactory].getName}'
        """.stripMargin)
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
-    checkAnswer(sql("select * from datamap_test where name='n502670' and city='c2670'"),
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test OPTIONS('header'='false')")
+    checkAnswer(sql("select * from index_test where name='n502670' and city='c2670'"),
       sql("select * from normal_test where name='n502670' and city='c2670'"))
-    checkAnswer(sql("select * from datamap_test where name='n502670' or city='c2670'"),
+    checkAnswer(sql("select * from index_test where name='n502670' or city='c2670'"),
       sql("select * from normal_test where name='n502670' or city='c2670'"))
   }
 
   test("test invisible indexSchema during query") {
-    val tableName = "datamap_test"
-    val dataMapName1 = "datamap1"
-    val dataMapName2 = "datamap2"
+    val tableName = "index_test"
+    val indexName1 = "index1"
+    val indexName2 = "index2"
     sql(s"DROP TABLE IF EXISTS $tableName")
     sql(
       s"""
@@ -521,63 +521,63 @@ class FGIndexTestCase extends QueryTest with BeforeAndAfterAll {
     // register indexSchema writer
     sql(
       s"""
-         | CREATE INDEX $dataMapName1
+         | CREATE INDEX $indexName1
          | ON TABLE $tableName (name)
          | AS '${classOf[FGIndexFactory].getName}'
       """.stripMargin)
     sql(
       s"""
-         | CREATE INDEX $dataMapName2
+         | CREATE INDEX $indexName2
          | ON TABLE $tableName (city)
          | AS '${classOf[FGIndexFactory].getName}'
        """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE $tableName OPTIONS('header'='false')")
     val df1 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
     assert(df1(0).getString(0).contains("FG Index"))
-    assert(df1(0).getString(0).contains(dataMapName1))
-    assert(df1(0).getString(0).contains(dataMapName2))
+    assert(df1(0).getString(0).contains(indexName1))
+    assert(df1(0).getString(0).contains(indexName2))
 
-    // make datamap1 invisible
-    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$dataMapName1 = false")
+    // make index1 invisible
+    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$indexName1 = false")
     val df2 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
     val e = intercept[Exception] {
-      assert(df2(0).getString(0).contains(dataMapName1))
+      assert(df2(0).getString(0).contains(indexName1))
     }
-    assert(e.getMessage.contains("did not contain \"" + dataMapName1))
-    assert(df2(0).getString(0).contains(dataMapName2))
+    assert(e.getMessage.contains("did not contain \"" + indexName1))
+    assert(df2(0).getString(0).contains(indexName2))
     checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
 
-    // also make datamap2 invisible
-    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$dataMapName2 = false")
+    // also make index2 invisible
+    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$indexName2 = false")
     checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
     val df3 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
     val e31 = intercept[Exception] {
-      assert(df3(0).getString(0).contains(dataMapName1))
+      assert(df3(0).getString(0).contains(indexName1))
     }
-    assert(e31.getMessage.contains("did not contain \"" + dataMapName1))
+    assert(e31.getMessage.contains("did not contain \"" + indexName1))
     val e32 = intercept[Exception] {
-      assert(df3(0).getString(0).contains(dataMapName2))
+      assert(df3(0).getString(0).contains(indexName2))
     }
-    assert(e32.getMessage.contains("did not contain \"" + dataMapName2))
+    assert(e32.getMessage.contains("did not contain \"" + indexName2))
 
-    // make datamap1,datamap2 visible
-    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$dataMapName1 = true")
-    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$dataMapName2 = true")
+    // make index1,index2 visible
+    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$indexName1 = true")
+    sql(s"SET ${CarbonCommonConstants.CARBON_INDEX_VISIBLE}default.$tableName.$indexName2 = true")
     checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
       sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
     val df4 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
-    assert(df4(0).getString(0).contains(dataMapName1))
-    assert(df4(0).getString(0).contains(dataMapName2))
+    assert(df4(0).getString(0).contains(indexName1))
+    assert(df4(0).getString(0).contains(indexName2))
   }
 
   override protected def afterAll(): Unit = {
     defaultConfig()
 //    CompactionSupportGlobalSortBigFileTest.deleteFile(file2)
 //    sql("DROP TABLE IF EXISTS normal_test")
-//    sql("DROP TABLE IF EXISTS datamap_test")
-//    sql("DROP TABLE IF EXISTS datamap_testFG")
+//    sql("DROP TABLE IF EXISTS index_test")
+//    sql("DROP TABLE IF EXISTS index_testFG")
 //    CarbonProperties.getInstance()
 //      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
 //        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)

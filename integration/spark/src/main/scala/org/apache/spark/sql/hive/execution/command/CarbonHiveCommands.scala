@@ -109,13 +109,13 @@ object CarbonSetCommand {
       if (key.split("\\.").length == 6) {
         sessionParams.addProperty(key.toLowerCase, value)
       }
-    } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL)) {
+    } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL)) {
       if (key.split("\\.").length == 6 || key.split("\\.").length == 4) {
         sessionParams.addProperty(key.toLowerCase(), value)
       }
       else {
         throw new MalformedCarbonCommandException(
-          "property should be in \" carbon.load.datamaps.parallel.<database_name>" +
+          "property should be in \" carbon.load.indexes.parallel.<database_name>" +
           ".<table_name>=<true/false> \" format.")
       }
     } else if (key.startsWith(CarbonLoadOptionConstants.CARBON_TABLE_LOAD_SORT_SCOPE)) {

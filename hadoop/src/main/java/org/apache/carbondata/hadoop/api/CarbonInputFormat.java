@@ -531,8 +531,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     ExplainCollector.setFilterStatement(
         filter.getExpression() == null ? "none" : filter.getExpression().getStatement());
     boolean distributedCG = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
-            CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT));
+        .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_INDEX,
+            CarbonCommonConstants.USE_DISTRIBUTED_INDEX_DEFAULT));
     IndexJob indexJob = IndexUtil.getIndexJob(job.getConfiguration());
     List<PartitionSpec> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
     // First prune using default index on driver side.

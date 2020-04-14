@@ -467,7 +467,7 @@ class QueryRewrite private (
 
   /**
    * Updates the expressions as per the subsumer output expressions. It is needed to update the
-   * expressions as per the datamap table relation
+   * expressions as per the index table relation
    *
    * @param expressions        expressions which are needed to update
    * @param aliasName          table alias name
@@ -542,7 +542,7 @@ class QueryRewrite private (
    * aggregation function or group by functions on the mv table.
    */
   private def isFullRefresh(mvPlanWrapper: MVPlanWrapper): Boolean = {
-    val fullRefresh = mvPlanWrapper.dataMapSchema.getProperties.get(IndexProperty.FULL_REFRESH)
+    val fullRefresh = mvPlanWrapper.indexSchema.getProperties.get(IndexProperty.FULL_REFRESH)
     if (fullRefresh != null) {
       fullRefresh.toBoolean
     } else {
@@ -551,11 +551,11 @@ class QueryRewrite private (
   }
 
   private def getUpdatedOutputList(outputList: Seq[NamedExpression],
-      dataMapTableRelation: Option[ModularPlan]): Seq[NamedExpression] = {
-    dataMapTableRelation.collect {
+      mvTableRelation: Option[ModularPlan]): Seq[NamedExpression] = {
+    mvTableRelation.collect {
       case mv: MVPlanWrapper =>
-        val dataMapSchema = mv.dataMapSchema
-        val columnsOrderMap = dataMapSchema.getColumnsOrderMap
+        val mvSchema = mv.indexSchema
+        val columnsOrderMap = mvSchema.getColumnsOrderMap
         if (null != columnsOrderMap && !columnsOrderMap.isEmpty) {
           val updatedOutputList = new util.ArrayList[NamedExpression]()
           var i = 0

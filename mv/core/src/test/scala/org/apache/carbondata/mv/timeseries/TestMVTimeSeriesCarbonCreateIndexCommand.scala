@@ -48,32 +48,32 @@ class TestMVTimeSeriesCarbonCreateIndexCommand extends QueryTest with BeforeAndA
   }
 
   test("test mv_timeseries create materialized view") {
-    sql("drop materialized view if exists datamap1")
+    sql("drop materialized view if exists mv1")
     sql(
-      "create materialized view datamap1 " +
+      "create materialized view mv1 " +
       " as select timeseries(projectjoindate,'second'), sum(projectcode) from maintable group by timeseries(projectjoindate,'second')")
     val result = sql("show materialized views on table maintable").collectAsList()
-    assert(result.get(0).get(1).toString.equalsIgnoreCase("datamap1"))
+    assert(result.get(0).get(1).toString.equalsIgnoreCase("mv1"))
     assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
     val df = sql("select timeseries(projectjoindate,'second'), sum(projectcode) from maintable group by timeseries(projectjoindate,'second')")
-    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "datamap1"))
-    sql("drop materialized view if exists datamap1")
+    assert(TestUtil.verifyMVHit(df.queryExecution.optimizedPlan, "mv1"))
+    sql("drop materialized view if exists mv1")
   }
 
   test("test mv_timeseries create lazy materialized view") {
-    sql("drop materialized view if exists datamap1")
+    sql("drop materialized view if exists mv1")
     intercept[MalformedCarbonCommandException] {
       sql(
-        "create materialized view datamap1 with deferred refresh as " +
+        "create materialized view mv1 with deferred refresh as " +
         "select timeseries(projectjoindate,'second') from maintable group by timeseries(projectjoindate,'second')")
     }.getMessage.contains("MV TimeSeries queries does not support Lazy Rebuild")
   }
 
   test("test mv_timeseries create materialized view with multiple granularity") {
-    sql("drop materialized view if exists datamap1")
+    sql("drop materialized view if exists mv1")
     intercept[MalformedCarbonCommandException] {
       sql(
-        "create materialized view datamap1 as " +
+        "create materialized view mv1 as " +
         "select timeseries(projectjoindate,'second'), timeseries(projectjoindate,'hour') from maintable")
     }.getMessage.contains("Multiple timeseries udf functions are defined in Select statement with different granularities")
   }
@@ -82,12 +82,12 @@ class TestMVTimeSeriesCarbonCreateIndexCommand extends QueryTest with BeforeAndA
     sql("drop table IF EXISTS maintable_new")
     sql("CREATE TABLE maintable_new (projectcode int, projectjoindate date, projectenddate Timestamp,attendance int) " +
         "STORED AS carbondata")
-    sql("drop materialized view if exists datamap1")
+    sql("drop materialized view if exists mv1")
     sql(
-      "create materialized view datamap1 as " +
+      "create materialized view mv1 as " +
       "select timeseries(projectjoindate,'day') from maintable_new")
     val result = sql("show materialized views on table maintable_new").collectAsList()
-    assert(result.get(0).get(1).toString.equalsIgnoreCase("datamap1"))
+    assert(result.get(0).get(1).toString.equalsIgnoreCase("mv1"))
     assert(result.get(0).get(2).toString.equalsIgnoreCase("ENABLED"))
     sql("drop table IF EXISTS maintable_new")
   }
@@ -96,116 +96,116 @@ class TestMVTimeSeriesCarbonCreateIndexCommand extends QueryTest with BeforeAndA
     sql("drop table IF EXISTS maintable_new")
     sql("CREATE TABLE maintable_new (projectcode int, projectjoindate date, projectenddate Timestamp,attendance int) " +
         "STORED AS carbondata")
-    sql("drop materialized view if exists datamap1")
+    sql("drop materialized view if exists mv1")
     intercept[MalformedCarbonCommandException] {
       sql(
-        "create materialized view datamap1 as " +
+        "create materialized view mv1 as " +
         "select timeseries(projectjoindate,'second') from maintable_new")
     }.getMessage.contains("Granularity should be of DAY/WEEK/MONTH/YEAR, for timeseries column of Date type")
     intercept[MalformedCarbonCommandException] {
       sql(
-        "create materialized view datamap1 as " +
+        "create materialized view mv1 as " +
         "select timeseries(projectjoindate,'five_minute') from maintable_new")
     }.getMessage.contains("Granularity should be of DAY/WEEK/MONTH/YEAR, for timeseries column of Date type")
     intercept[MalformedCarbonCommandException] {
       sql(
-        "create materialized view datamap1 as " +
+        "create materialized view mv1 as " +
         "select timeseries(projectjoindate,'hour') from maintable_new")
       }.getMessage.contains("Granularity should be of DAY/WEEK/MONTH/YEAR, for timeseries column of Date type")
     sql("drop table IF EXISTS maintable_new")
   }
 
   test("test mv_timeseries for same event_column with different granularities") {
-    def dropDataMaps = {
-      sql("drop materialized view if exists datamap1")
-      sql("drop materialized view if exists datamap2")
-      sql("drop materialized view if exists datamap3")
-      sql("drop materialized view if exists datamap4")
-      sql("drop materialized view if exists datamap5")
+    def dropMaterializedViews = {
+      sql("drop materialized view if exists mv1")
+      sql("drop materialized view if exists mv2")
+      sql("drop materialized view if exists mv3")
+      sql("drop materialized view if exists mv4")
+      sql("drop materialized view if exists mv5")
     }
-    dropDataMaps
+    dropMaterializedViews
     sql(
-      "create materialized view datamap1 as " +
+      "create materialized view mv1 as " +
       "select timeseries(projectjoindate,'second'), sum(projectcode) from maintable group by timeseries(projectjoindate,'second')")
     sql(
-      "create materialized view datamap2 as " +
+      "create materialized view mv2 as " +
       "select timeseries(projectjoindate,'hour'), sum(projectcode) from maintable group by timeseries(projectjoindate,'hour')")
     sql(
-      "create materialized view datamap3 as " +
+      "create materialized view mv3 as " +
       "select timeseries(projectjoindate,'minute'), sum(projectcode) from maintable group by timeseries(projectjoindate,'minute')")
     sql(
-      "create materialized view datamap4 as " +
+      "create materialized view mv4 as " +
       "select timeseries(projectjoindate,'day'), sum(projectcode) from maintable group by timeseries(projectjoindate,'day')")
     sql(
-      "create materialized view datamap5 as " +
+      "create materialized view mv5 as " +
       "select timeseries(projectjoindate,'year'), sum(projectcode) from maintable group by timeseries(projectjoindate,'year')")
-    dropDataMaps
+    dropMaterializedViews
   }
 
   test("test mv_timeseries create materialized view with more event_columns") {
-    sql("drop materialized view if exists datamap1")
+    sql("drop materialized view if exists mv1")
     intercept[MalformedCarbonCommandException] {
       sql(
-        "create materialized view datamap1 as " +
+        "create materialized view mv1 as " +
         "select timeseries(projectjoindate,'hour'), timeseries(projectenddate,'hour') from maintable")
     }.getMessage.contains(
         "Multiple timeseries udf functions are defined in Select statement with different timestamp columns")
   }
 
   test("test mv_timeseries create materialized view with same granularity and different ctas") {
-    sql("drop materialized view if exists datamap1")
+    sql("drop materialized view if exists mv1")
     sql(
-      "create materialized view datamap1 as " +
+      "create materialized view mv1 as " +
       "select timeseries(projectjoindate,'second'), sum(projectcode) from maintable group by timeseries(projectjoindate,'second')")
-    sql("drop materialized view if exists datamap2")
+    sql("drop materialized view if exists mv2")
     sql(
-      "create materialized view datamap2 as " +
+      "create materialized view mv2 as " +
       "select timeseries(projectjoindate,'second'), sum(projectcode) from maintable where projectjoindate='29-06-2008 00:00:00.0' " +
       "group by timeseries(projectjoindate,'second')")
-    sql("drop materialized view if exists datamap1")
-    sql("drop materialized view if exists datamap2")
+    sql("drop materialized view if exists mv1")
+    sql("drop materialized view if exists mv2")
   }
 
   test("insert and create materialized view in progress") {
-    sql("drop materialized view if exists datamap1")
+    sql("drop materialized view if exists mv1")
     val query = s"LOAD DATA local inpath '$resourcesPath/data_big.csv' INTO TABLE maintable  " +
                 s"OPTIONS('DELIMITER'= ',')"
     val executorService = Executors.newFixedThreadPool(4)
     executorService.submit(new QueryTask(query))
     intercept[UnsupportedOperationException] {
       sql(
-        "create materialized view datamap1 as " +
+        "create materialized view mv1 as " +
         "select timeseries(projectjoindate,'year'), sum(projectcode) from maintable group by timeseries(projectjoindate,'year')")
     }.getMessage
       .contains("Cannot create mv materialized view table when insert is in progress on parent table: maintable")
     executorService.shutdown()
     executorService.awaitTermination(2, TimeUnit.HOURS)
-    sql("drop materialized view if exists datamap1")
+    sql("drop materialized view if exists mv1")
   }
 
   test("test create materialized view with incorrect timeseries_column and granularity") {
-    sql("drop materialized view if exists datamap2")
+    sql("drop materialized view if exists mv2")
     intercept[MalformedCarbonCommandException] {
       sql(
-        "create materialized view datamap2 as " +
+        "create materialized view mv2 as " +
         "select timeseries(projectjoindate,'time'), sum(projectcode) from maintable group by timeseries(projectjoindate,'time')")
     }.getMessage.contains("Granularity time is invalid")
     intercept[MalformedCarbonCommandException] {
       sql(
-        "create materialized view datamap2 as " +
+        "create materialized view mv2 as " +
         "select timeseries(empname,'second'), sum(projectcode) from maintable group by timeseries(empname,'second')")
     }.getMessage.contains("MV Timeseries is only supported on Timestamp/Date column")
   }
 
   test("test timeseries with case sensitive granularity") {
-    sql("drop materialized view if exists datamap1")
-    sql("create materialized view datamap1 " +
+    sql("drop materialized view if exists mv1")
+    sql("create materialized view mv1 " +
       " as select timeseries(projectjoindate,'Second'), sum(projectcode) from maintable group by timeseries(projectjoindate,'Second')")
     val df1 = sql("select timeseries(projectjoindate,'SECOND'), sum(projectcode) from maintable group by timeseries(projectjoindate,'SECOND')")
     val df2 = sql("select timeseries(projectjoinDATE,'SECOnd'), sum(projectcode) from maintable where projectcode=8 group by timeseries(projectjoinDATE,'SECOnd')")
-    TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "datamap1")
-    TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "datamap1")
-    sql("drop materialized view if exists datamap1")
+    TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "mv1")
+    TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "mv1")
+    sql("drop materialized view if exists mv1")
   }
 
   class QueryTask(query: String) extends Callable[String] {

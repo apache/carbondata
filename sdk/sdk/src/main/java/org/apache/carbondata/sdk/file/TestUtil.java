@@ -148,7 +148,7 @@ public class TestUtil {
    */
   public static boolean cleanMdtFile() {
     String fileName = CarbonProperties.getInstance().getSystemFolderLocation()
-            + CarbonCommonConstants.FILE_SEPARATOR + "datamap.mdtfile";
+            + CarbonCommonConstants.FILE_SEPARATOR + "index.mdtfile";
     try {
       if (FileFactory.isFileExist(fileName)) {
         File file = new File(fileName);
@@ -170,7 +170,7 @@ public class TestUtil {
    */
   public static boolean verifyMdtFile() {
     String fileName = CarbonProperties.getInstance().getSystemFolderLocation()
-            + CarbonCommonConstants.FILE_SEPARATOR + "datamap.mdtfile";
+            + CarbonCommonConstants.FILE_SEPARATOR + "index.mdtfile";
     try {
       if (FileFactory.isFileExist(fileName)) {
         return true;

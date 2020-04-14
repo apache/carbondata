@@ -45,7 +45,7 @@ private[mv] case class SummaryDataset(
 /**
  * It is wrapper on indexSchema relation along with schema.
  */
-case class MVPlanWrapper(plan: ModularPlan, dataMapSchema: IndexSchema) extends ModularPlan {
+case class MVPlanWrapper(plan: ModularPlan, indexSchema: IndexSchema) extends ModularPlan {
   override def output: Seq[Attribute] = plan.output
 
   override def children: Seq[ModularPlan] = plan.children
@@ -106,9 +106,9 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
     writeLock {
       val currentDatabase = sparkSession.catalog.currentDatabase
 
-      // This is required because datamap schemas are across databases, so while loading the
-      // catalog, if the datamap is in database other than sparkSession.currentDataBase(), then it
-      // fails to register, so set the database present in the dataMapSchema Object
+      // This is required because index schemas are across databases, so while loading the
+      // catalog, if the index is in database other than sparkSession.currentDataBase(), then it
+      // fails to register, so set the database present in the schema Object
       setCurrentDataBase(indexSchema.getRelationIdentifier.getDatabaseName)
       val mvPlan = try {
         MVParser.getMVPlan(indexSchema.getCtasQuery, sparkSession)
@@ -186,10 +186,10 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
   }
 
   override def listAllValidSchema(): Array[SummaryDataset] = {
-    val statusDetails = IndexStatusManager.getEnabledDataMapStatusDetails
-    // Only select the enabled datamaps for the query.
+    val statusDetails = IndexStatusManager.getEnabledIndexStatusDetails
+    // Only select the enabled indexes for the query.
     val enabledDataSets = summaryDatasets.filter { p =>
-      statusDetails.exists(_.getDataMapName.equalsIgnoreCase(p.indexSchema.getIndexName))
+      statusDetails.exists(_.getIndexName.equalsIgnoreCase(p.indexSchema.getIndexName))
     }
     enabledDataSets.toArray
   }
@@ -273,10 +273,10 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
   private[mv] def lookupFeasibleSummaryDatasets(plan: ModularPlan): Seq[SummaryDataset] = {
     readLock {
       val sig = plan.signature
-      val statusDetails = IndexStatusManager.getEnabledDataMapStatusDetails
-      // Only select the enabled datamaps for the query.
+      val statusDetails = IndexStatusManager.getEnabledIndexStatusDetails
+      // Only select the enabled indexes for the query.
       val enabledDataSets = summaryDatasets.filter { p =>
-        statusDetails.exists(_.getDataMapName.equalsIgnoreCase(p.indexSchema.getIndexName))
+        statusDetails.exists(_.getIndexName.equalsIgnoreCase(p.indexSchema.getIndexName))
       }
 
       //  ****not sure what enabledDataSets is used for ****

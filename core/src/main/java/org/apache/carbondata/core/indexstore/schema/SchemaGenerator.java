@@ -172,8 +172,8 @@ public class SchemaGenerator {
 
   /**
    * Creates the schema to store summary information or the information which can be stored only
-   * once per datamap. It stores datamap level max/min of each column and partition information of
-   * datamap
+   * once per index. It stores index level max/min of each column and partition information of
+   * index
    *
    * @param segmentProperties
    */

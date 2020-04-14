@@ -48,7 +48,7 @@ object ShowCachePreMVEventListener extends OperationEventListener {
 }
 
 
-object ShowCacheDataMapEventListener extends OperationEventListener {
+object ShowCacheIndexEventListener extends OperationEventListener {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 

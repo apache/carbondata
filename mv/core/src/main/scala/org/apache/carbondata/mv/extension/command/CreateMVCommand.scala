@@ -36,7 +36,7 @@ import org.apache.carbondata.index.IndexManager
 /**
  * Create Materialized View Command implementation
  * It will create the MV table, load the MV table (if deferred rebuild is false),
- * and register the MV schema in [[IndexStoreManager]]
+ * and register the MV mvSchema in [[IndexStoreManager]]
  */
 case class CreateMVCommand(
     mvName: String,
@@ -47,8 +47,8 @@ case class CreateMVCommand(
   extends AtomicRunnableCommand {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-  private var dataMapProvider: CarbonIndexProvider = _
-  private var dataMapSchema: IndexSchema = _
+  private var indexProvider: CarbonIndexProvider = _
+  private var mvSchema: IndexSchema = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
 
@@ -57,14 +57,14 @@ case class CreateMVCommand(
     val mutableMap = mutable.Map[String, String](properties.toSeq: _*)
     mutableMap.put(IndexProperty.DEFERRED_REBUILD, deferredRebuild.toString)
 
-    dataMapSchema = new IndexSchema(mvName, IndexClassProvider.MV.name())
-    dataMapSchema.setProperties(mutableMap.asJava)
-    dataMapProvider = IndexManager.get.getIndexProvider(null, dataMapSchema, sparkSession)
+    mvSchema = new IndexSchema(mvName, IndexClassProvider.MV.name())
+    mvSchema.setProperties(mutableMap.asJava)
+    indexProvider = IndexManager.get.getIndexProvider(null, mvSchema, sparkSession)
     if (IndexStoreManager.getInstance().getAllIndexSchemas.asScala
-      .exists(_.getIndexName.equalsIgnoreCase(dataMapSchema.getIndexName))) {
+      .exists(_.getIndexName.equalsIgnoreCase(mvSchema.getIndexName))) {
       if (!ifNotExistsSet) {
         throw new MalformedMVCommandException(
-          s"Materialized view with name ${dataMapSchema.getIndexName} already exists")
+          s"Materialized view with name ${mvSchema.getIndexName} already exists")
       } else {
         return Seq.empty
       }
@@ -75,7 +75,7 @@ case class CreateMVCommand(
     val preExecEvent = CreateMVPreExecutionEvent(sparkSession, systemFolderLocation, null)
     OperationListenerBus.getInstance().fireEvent(preExecEvent, operationContext)
 
-    dataMapProvider.initMeta(queryString.orNull)
+    indexProvider.initMeta(queryString.orNull)
 
     val postExecEvent = CreateMVPostExecutionEvent(
       sparkSession, systemFolderLocation, null, IndexClassProvider.MV.name())
@@ -84,9 +84,9 @@ case class CreateMVCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    if (dataMapProvider != null) {
-      dataMapProvider.initData()
-      if (!dataMapSchema.isLazy) {
+    if (indexProvider != null) {
+      indexProvider.initData()
+      if (!mvSchema.isLazy) {
         IndexStatusManager.enableIndex(mvName)
       }
     }
@@ -94,7 +94,7 @@ case class CreateMVCommand(
   }
 
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
-    if (dataMapProvider != null) {
+    if (indexProvider != null) {
       DropMVCommand(mvName, true).run(sparkSession)
     }
     Seq.empty

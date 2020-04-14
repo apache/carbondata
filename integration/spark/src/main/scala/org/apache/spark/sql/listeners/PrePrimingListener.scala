@@ -33,7 +33,7 @@ object PrePrimingEventListener extends OperationEventListener {
       operationContext: OperationContext): Unit = {
     val prePrimingEvent = event.asInstanceOf[IndexServerLoadEvent]
     val carbonTable = prePrimingEvent.carbonTable
-    val dataMapFormat = new IndexInputFormat(carbonTable,
+    val indexInputFormat = new IndexInputFormat(carbonTable,
       null,
       prePrimingEvent.segment.asJava,
       prePrimingEvent.invalidsegment.asJava,
@@ -44,7 +44,7 @@ object PrePrimingEventListener extends OperationEventListener {
       true)
     if (prePrimingEvent.segment.length != 0) {
       try {
-        IndexServer.getClient.getCount(dataMapFormat)
+        IndexServer.getClient.getCount(indexInputFormat)
       }
       catch {
         // Consider a scenario where prepriming is in progress and the index server crashes, in

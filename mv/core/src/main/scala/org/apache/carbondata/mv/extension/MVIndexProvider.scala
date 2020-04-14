@@ -54,7 +54,7 @@ class MVIndexProvider(
       throw new MalformedMVCommandException(
         "select statement is mandatory")
     }
-    MVHelper.createMVDataMap(
+    MVHelper.createMV(
       sparkSession,
       indexSchema,
       ctasSqlStatement,
@@ -119,7 +119,7 @@ class MVIndexProvider(
   @throws[IOException]
   override def rebuildInternal(newLoadName: String,
       segmentMap: java.util.Map[String, java.util.List[String]],
-      dataMapTable: CarbonTable): Boolean = {
+      childTable: CarbonTable): Boolean = {
     val ctasQuery = indexSchema.getCtasQuery
     if (ctasQuery != null) {
       val identifier = indexSchema.getRelationIdentifier
@@ -138,9 +138,9 @@ class MVIndexProvider(
       val segmentMapIterator = segmentMap.entrySet().iterator()
       while (segmentMapIterator.hasNext) {
         val entry = segmentMapIterator.next()
-        setSegmentsToLoadDataMap(entry.getKey, entry.getValue)
+        setSegmentsToLoadChildTable(entry.getKey, entry.getValue)
       }
-      val header = dataMapTable.getTableInfo.getFactTable.getListOfColumns.asScala
+      val header = childTable.getTableInfo.getFactTable.getListOfColumns.asScala
         .filter { column =>
           !column.getColumnName
             .equalsIgnoreCase(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)
@@ -151,7 +151,7 @@ class MVIndexProvider(
         options = scala.collection.immutable.Map("fileheader" -> header),
         isOverwriteTable,
         logicalPlan = updatedQuery.queryExecution.analyzed,
-        tableInfo = dataMapTable.getTableInfo,
+        tableInfo = childTable.getTableInfo,
         internalOptions = Map("mergedSegmentName" -> newLoadName,
           CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true"))
       try {
@@ -164,11 +164,11 @@ class MVIndexProvider(
           LOGGER.error("Data Load failed for Index: ", ex)
           CarbonLoaderUtil.updateTableStatusInCaseOfFailure(
             newLoadName,
-            dataMapTable.getAbsoluteTableIdentifier,
-            dataMapTable.getTableName,
-            dataMapTable.getDatabaseName,
-            dataMapTable.getTablePath,
-            dataMapTable.getMetadataPath)
+            childTable.getAbsoluteTableIdentifier,
+            childTable.getTableName,
+            childTable.getDatabaseName,
+            childTable.getTablePath,
+            childTable.getMetadataPath)
           throw ex
       } finally {
         unsetMainTableSegments()
@@ -180,7 +180,7 @@ class MVIndexProvider(
   /**
    * This method will set main table segments which needs to be loaded to the MV
    */
-  private def setSegmentsToLoadDataMap(tableUniqueName: String,
+  private def setSegmentsToLoadChildTable(tableUniqueName: String,
       mainTableSegmentList: java.util.List[String]): Unit = {
     CarbonUtils
       .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +

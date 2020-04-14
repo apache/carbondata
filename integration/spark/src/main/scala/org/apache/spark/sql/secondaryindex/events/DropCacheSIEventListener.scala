@@ -24,7 +24,7 @@ import org.apache.spark.sql.execution.command.cache.CarbonDropCacheCommand
 import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.events.{DropTableCacheEvent, Event, OperationContext, OperationEventListener}
 
 object DropCacheSIEventListener extends OperationEventListener {
@@ -42,7 +42,7 @@ object DropCacheSIEventListener extends OperationEventListener {
         }
 
         val allIndexTables = carbonTable.getIndexTableNames(
-          CarbonIndexProvider.SI.getIndexProviderName)
+          IndexType.SI.getIndexProviderName)
         val dbName = carbonTable.getDatabaseName
         for (indexTableName <- allIndexTables.asScala) {
           try {

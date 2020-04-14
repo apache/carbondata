@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.spark.sql.secondaryindex.exception.IndexTableExistException;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider;
+import org.apache.carbondata.core.metadata.index.IndexType;
 import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo;
 
 public class IndexTableUtil {
@@ -41,7 +41,7 @@ public class IndexTableUtil {
     if (isSecondaryIndex) {
       for (IndexTableInfo indexTable : indexTableInfos) {
         if (indexTable.getIndexProperties().get(CarbonCommonConstants.INDEX_PROVIDER)
-            .equalsIgnoreCase(CarbonIndexProvider.SI.getIndexProviderName())) {
+            .equalsIgnoreCase(IndexType.SI.getIndexProviderName())) {
           if (indexTable.getIndexCols().size() == newIndexTable.getIndexCols().size()) {
             //If column order is not same, then also index table creation should be successful
             //eg., index1 is a,b,d and index2 is a,d,b. Both table creation should be successful

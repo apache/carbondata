@@ -414,7 +414,7 @@ public class TablePage {
       } else if (type == ColumnType.PLAIN_VALUE) {
         page = noDictDimensionPages[++noDictDimensionIndex];
       } else {
-        // do not support datamap on complex column
+        // do not support index on complex column
         continue;
       }
       String fieldName = spec.getDimensionSpec(i).getFieldName();

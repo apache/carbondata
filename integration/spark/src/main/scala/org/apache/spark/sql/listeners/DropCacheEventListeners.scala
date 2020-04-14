@@ -28,7 +28,7 @@ import org.apache.spark.sql.execution.command.cache.{CacheUtil, CarbonDropCacheC
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.index.IndexStoreManager
-import org.apache.carbondata.core.metadata.index.CarbonIndexProvider
+import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema
 import org.apache.carbondata.events.{DropTableCacheEvent, Event, OperationContext, OperationEventListener}
 
@@ -52,8 +52,8 @@ object DropCacheMVEventListener extends OperationEventListener {
         if (carbonTable.hasMVCreated) {
           val childrenSchemas = IndexStoreManager.getInstance
             .getIndexSchemasOfTable(carbonTable).asScala
-            .filter(dataMapSchema => null != dataMapSchema.getRelationIdentifier &&
-                                     !dataMapSchema.isIndex)
+            .filter(indexSchema => null != indexSchema.getRelationIdentifier &&
+                                   !indexSchema.isIndex)
           dropCacheForChildTables(sparkSession, childrenSchemas)
         }
     }
@@ -96,7 +96,7 @@ object DropCacheBloomEventListener extends OperationEventListener {
         val carbonTable = dropCacheEvent.carbonTable
         val cache = CacheProvider.getInstance().getCarbonCache
         val indexProviderMap = carbonTable.getIndexesMap
-        val bloomIndexProvider = CarbonIndexProvider.BLOOMFILTER.getIndexProviderName
+        val bloomIndexProvider = IndexType.BLOOMFILTER.getIndexProviderName
         if (!indexProviderMap.isEmpty && null != indexProviderMap.get(bloomIndexProvider)) {
           val bloomIndexes = indexProviderMap.get(bloomIndexProvider)
           val bloomIndexIterator = bloomIndexes.entrySet().iterator()

@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.core.metadata.index;
 
-public enum CarbonIndexProvider {
+public enum IndexType {
   LUCENE("org.apache.carbondata.index.lucene.LuceneFineGrainIndexFactory", "lucene"),
   BLOOMFILTER("org.apache.carbondata.index.bloom.BloomCoarseGrainIndexFactory", "bloomfilter"),
   SI("", "si");
@@ -33,7 +33,7 @@ public enum CarbonIndexProvider {
    */
   private String shortName;
 
-  CarbonIndexProvider(String className, String shortName) {
+  IndexType(String className, String shortName) {
     this.className = className;
     this.shortName = shortName;
   }
@@ -52,7 +52,7 @@ public enum CarbonIndexProvider {
             indexClass.equalsIgnoreCase(shortName)));
   }
 
-  public static CarbonIndexProvider get(String indexProviderName) {
+  public static IndexType get(String indexProviderName) {
     if (LUCENE.isEqual(indexProviderName)) {
       return LUCENE;
     } else if (BLOOMFILTER.isEqual(indexProviderName)) {
