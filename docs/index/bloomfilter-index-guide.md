@@ -15,59 +15,59 @@
     limitations under the License.
 -->
 
-# CarbonData BloomFilter DataMap
+# CarbonData BloomFilter Index
 
-* [DataMap Management](#datamap-management)
-* [BloomFilter Datamap Introduction](#bloomfilter-datamap-introduction)
+* [Index Management](#index-management)
+* [BloomFilter Index Introduction](#bloomfilter-index-introduction)
 * [Loading Data](#loading-data)
 * [Querying Data](#querying-data)
-* [Data Management](#data-management-with-bloomfilter-datamap)
+* [Data Management](#data-management-with-bloomfilter-index)
 * [Useful Tips](#useful-tips)
 
-#### DataMap Management
-Creating BloomFilter DataMap
+#### Index Management
+Creating BloomFilter Index
   ```
-  CREATE DATAMAP [IF NOT EXISTS] datamap_name
-  ON TABLE main_table
-  USING 'bloomfilter'
-  DMPROPERTIES ('index_columns'='city, name', 'BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')
-  ```
-
-Dropping Specified DataMap
-  ```
-  DROP DATAMAP [IF EXISTS] datamap_name
-  ON TABLE main_table
+  CREATE INDEX [IF NOT EXISTS] index_name
+  ON TABLE main_table (city,name)
+  AS 'bloomfilter'
+  PROPERTIES ('BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')
   ```
 
-Showing all DataMaps on this table
+Dropping Specified Index
   ```
-  SHOW DATAMAP
+  DROP INDEX [IF EXISTS] index_name
   ON TABLE main_table
   ```
 
-Disable DataMap
-> The datamap by default is enabled. To support tuning on query, we can disable a specific datamap during query to observe whether we can gain performance enhancement from it. This is effective only for current session.
+Showing all Indexes on this table
+  ```
+  SHOW INDEXES
+  ON TABLE main_table
+  ```
+
+Disable Index
+> The index by default is enabled. To support tuning on query, we can disable a specific index during query to observe whether we can gain performance enhancement from it. This is effective only for current session.
 
   ```
   // disable the index
-  SET carbon.index.visible.dbName.tableName.dataMapName = false
+  SET carbon.index.visible.dbName.tableName.indexName = false
   // enable the index
-  SET carbon.index.visible.dbName.tableName.dataMapName = true
+  SET carbon.index.visible.dbName.tableName.indexName = true
   ```
 
 
-## BloomFilter DataMap Introduction
+## BloomFilter Index Introduction
 A Bloom filter is a space-efficient probabilistic data structure that is used to test whether an element is a member of a set.
-Carbondata introduced BloomFilter as an index datamap to enhance the performance of querying with precise value.
+Carbondata introduced BloomFilter as an index to enhance the performance of querying with precise value.
 It is well suitable for queries that do precise match on high cardinality columns(such as Name/ID).
 Internally, CarbonData maintains a BloomFilter per blocklet for each index column to indicate that whether a value of the column is in this blocklet.
-Just like the other datamaps, BloomFilter datamap is managed along with main tables by CarbonData.
-User can create BloomFilter datamap on specified columns with specified BloomFilter configurations such as size and probability.
+Just like the other indexes, BloomFilter index is managed along with main tables by CarbonData.
+User can create BloomFilter index on specified columns with specified BloomFilter configurations such as size and probability.
 
-For instance, main table called **datamap_test** which is defined as:
+For instance, main table called **index_test** which is defined as:
 
   ```
-  CREATE TABLE datamap_test (
+  CREATE TABLE index_test (
     id string,
     name string,
     age int,
@@ -83,24 +83,25 @@ since `id` is in the sort_columns and it is orderd,
 query on it will be fast because CarbonData can skip all the irrelative blocklets.
 But queries on `name` may be bad since the blocklet minmax may not help,
 because in each blocklet the range of the value of `name` may be the same -- all from A* to z*.
-In this case, user can create a BloomFilter DataMap on column `name`.
-Moreover, user can also create a BloomFilter DataMap on the sort_columns.
+In this case, user can create a BloomFilter Index on column `name`.
+Moreover, user can also create a BloomFilter Index on the sort_columns.
 This is useful if user has too many segments and the range of the value of sort_columns are almost the same.
 
-User can create BloomFilter DataMap using the Create DataMap DDL:
+User can create BloomFilter Index using the Create Index DDL:
 
   ```
-  CREATE DATAMAP dm
-  ON TABLE datamap_test
-  USING 'bloomfilter'
-  DMPROPERTIES ('INDEX_COLUMNS' = 'name,id', 'BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001', 'BLOOM_COMPRESS'='true')
+  CREATE INDEX dm
+  ON TABLE index_test (name,id)
+  AS 'bloomfilter'
+  PROPERTIES ('BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001', 'BLOOM_COMPRESS'='true')
   ```
 
-**Properties for BloomFilter DataMap**
+Here, (name,id) are INDEX_COLUMNS. Carbondata will generate BloomFilter index on these columns. Queries on these columns are usually like 'COL = VAL'.
+
+**Properties for BloomFilter Index**
 
 | Property | Is Required | Default Value | Description |
 |-------------|----------|--------|---------|
-| INDEX_COLUMNS | YES |  | Carbondata will generate BloomFilter index on these columns. Queries on these columns are usually like 'COL = VAL'. |
 | BLOOM_SIZE | NO | 640000 | This value is internally used by BloomFilter as the number of expected insertions, it will affect the size of BloomFilter index. Since each blocklet has a BloomFilter here, so the default value is the approximate distinct index values in a blocklet assuming that each blocklet contains 20 pages and each page contains 32000 records. The value should be an integer. |
 | BLOOM_FPP | NO | 0.00001 | This value is internally used by BloomFilter as the False-Positive Probability, it will affect the size of bloomfilter index as well as the number of hash functions for the BloomFilter. The value should be in the range (0, 1). In one test scenario, a 96GB TPCH customer table with bloom_size=320000 and bloom_fpp=0.00001 will result in 18 false positive samples. |
 | BLOOM_COMPRESS | NO | true | Whether to compress the BloomFilter index files. |
@@ -108,41 +109,41 @@ User can create BloomFilter DataMap using the Create DataMap DDL:
 
 ## Loading Data
 When loading data to main table, BloomFilter files will be generated for all the
-index_columns given in DMProperties which contains the blockletId and a BloomFilter for each index column.
-These index files will be written inside a folder named with DataMap name
+index_columns provided in the CREATE statement which contains the blockletId and a BloomFilter for each index column.
+These index files will be written inside a folder named with Index name
 inside each segment folders.
 
 
 ## Querying Data
 
-User can verify whether a query can leverage BloomFilter DataMap by executing `EXPLAIN` command,
-which will show the transformed logical plan, and thus user can check whether the BloomFilter DataMap can skip blocklets during the scan.
-If the DataMap does not prune blocklets well, you can try to increase the value of property `BLOOM_SIZE` and decrease the value of property `BLOOM_FPP`.
+User can verify whether a query can leverage BloomFilter Index by executing `EXPLAIN` command,
+which will show the transformed logical plan, and thus user can check whether the BloomFilter Index can skip blocklets during the scan.
+If the Index does not prune blocklets well, you can try to increase the value of property `BLOOM_SIZE` and decrease the value of property `BLOOM_FPP`.
 
-## Data Management With BloomFilter DataMap
-Data management with BloomFilter DataMap has no difference with that on Lucene DataMap.
-You can refer to the corresponding section in `CarbonData Lucene DataMap`.
+## Data Management With BloomFilter Index
+Data management with BloomFilter Index has no difference with that on Lucene Index.
+You can refer to the corresponding section in [CarbonData Lucene Index](https://github.com/apache/carbondata/blob/master/docs/index/lucene-index-guide.md)
 
 ## Useful Tips
-+ BloomFilter DataMap is suggested to be created on the high cardinality columns.
++ BloomFilter Index is suggested to be created on the high cardinality columns.
  Query conditions on these columns are always simple `equal` or `in`,
  such as 'col1=XX', 'col1 in (XX, YY)'.
-+ We can create multiple BloomFilter DataMaps on one table,
- but we do recommend you to create one BloomFilter DataMap that contains multiple index columns,
++ We can create multiple BloomFilter Indexes on one table,
+ but we do recommend you to create one BloomFilter Index that contains multiple index columns,
  because the data loading and query performance will be better.
 + `BLOOM_FPP` is only the expected number from user, the actually FPP may be worse.
- If the BloomFilter DataMap does not work well,
+ If the BloomFilter Index does not work well,
  you can try to increase `BLOOM_SIZE` and decrease `BLOOM_FPP` at the same time.
  Notice that bigger `BLOOM_SIZE` will increase the size of index file
  and smaller `BLOOM_FPP` will increase runtime calculation while performing query.
-+ '0' skipped blocklets of BloomFilter DataMap in explain output indicates that
- BloomFilter DataMap does not prune better than Main DataMap.
- (For example since the data is not ordered, a specific value may be contained in many blocklets. In this case, bloom may not work better than Main DataMap.)
++ '0' skipped blocklets of BloomFilter Index in explain output indicates that
+ BloomFilter Index does not prune better than Main Index.
+ (For example since the data is not ordered, a specific value may be contained in many blocklets. In this case, bloom may not work better than Main Index.)
  If this occurs very often, it means that current BloomFilter is useless. You can disable or drop it.
- Sometimes we cannot see any pruning result about BloomFilter DataMap in the explain output,
- this indicates that the previous DataMap has pruned all the blocklets and there is no need to continue pruning.
-+ In some scenarios, the BloomFilter DataMap may not enhance the query performance significantly
+ Sometimes we cannot see any pruning result about BloomFilter Index in the explain output,
+ this indicates that the previous Index has pruned all the blocklets and there is no need to continue pruning.
++ In some scenarios, the BloomFilter Index may not enhance the query performance significantly
  but if it can reduce the number of spark task,
- there is still a chance that BloomFilter DataMap can enhance the performance for concurrent query.
-+ Note that BloomFilter DataMap will decrease the data loading performance and may cause slightly storage expansion (for DataMap index file).
+ there is still a chance that BloomFilter Index can enhance the performance for concurrent query.
++ Note that BloomFilter Index will decrease the data loading performance and may cause slightly storage expansion (for index file).
 

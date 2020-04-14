@@ -53,11 +53,11 @@ CarbonData is built using Apache Maven, to [build CarbonData](https://github.com
  * [CarbonData Data Manipulation Language](https://github.com/apache/carbondata/blob/master/docs/dml-of-carbondata.md) 
  * [CarbonData Streaming Ingestion](https://github.com/apache/carbondata/blob/master/docs/streaming-guide.md) 
  * [Configuring CarbonData](https://github.com/apache/carbondata/blob/master/docs/configuration-parameters.md) 
- * [DataMap Developer Guide](https://github.com/apache/carbondata/blob/master/docs/datamap-developer-guide.md) 
+ * [Index Developer Guide](https://github.com/apache/carbondata/blob/master/docs/index-developer-guide.md) 
  * [Data Types](https://github.com/apache/carbondata/blob/master/docs/supported-data-types-in-carbondata.md) 
-* [CarbonData DataMap Management](https://github.com/apache/carbondata/blob/master/docs/datamap/datamap-management.md) 
- * [CarbonData BloomFilter DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/bloomfilter-datamap-guide.md) 
- * [CarbonData Lucene DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/lucene-datamap-guide.md) 
+* [CarbonData Index Management](https://github.com/apache/carbondata/blob/master/docs/index/index-management.md) 
+ * [CarbonData BloomFilter Index](https://github.com/apache/carbondata/blob/master/docs/index/bloomfilter-index-guide.md) 
+ * [CarbonData Lucene Index](https://github.com/apache/carbondata/blob/master/docs/index/lucene-index-guide.md) 
  * [CarbonData MV DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/mv-datamap-guide.md)
 * [Carbondata Secondary Index](https://github.com/apache/carbondata/blob/master/docs/index/secondary-index-guide.md)
 * [SDK Guide](https://github.com/apache/carbondata/blob/master/docs/sdk-guide.md) 
@@ -70,7 +70,7 @@ CarbonData is built using Apache Maven, to [build CarbonData](https://github.com
 
 ##  Integration
 * [Hive](https://github.com/apache/carbondata/blob/master/docs/hive-guide.md)
-* [Presto](https://github.com/apache/carbondata/blob/master/docs/presto-guide.md)
+* [Presto](https://github.com/apache/carbondata/blob/master/docs/prestodb-guide.md)
 * [Alluxio](https://github.com/apache/carbondata/blob/master/docs/alluxio-guide.md)
 
 ## Other Technical Material

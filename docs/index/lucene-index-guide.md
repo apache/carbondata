@@ -15,46 +15,47 @@
     limitations under the License.
 -->
 
-# CarbonData Lucene DataMap (Alpha Feature)
+# CarbonData Lucene Index (Alpha Feature)
   
-* [DataMap Management](#datamap-management)
-* [Lucene Datamap](#lucene-datamap-introduction)
+* [Index Management](#index-management)
+* [Lucene Index](#lucene-index-introduction)
 * [Loading Data](#loading-data)
 * [Querying Data](#querying-data)
-* [Data Management](#data-management-with-lucene-datamap)
+* [Data Management](#data-management-with-lucene-index)
 
-#### DataMap Management 
-Lucene DataMap can be created using following DDL
+#### Index Management 
+Lucene Index can be created using following DDL
   ```
-  CREATE DATAMAP [IF NOT EXISTS] datamap_name
-  ON TABLE main_table
-  USING 'lucene'
-  DMPROPERTIES ('index_columns'='city, name', ...)
+  CREATE INDEX [IF NOT EXISTS] index_name
+  ON TABLE main_table (index_columns)
+  AS 'lucene'
+  [PROPERTIES ('key'='value')]
   ```
+index_columns is the list of string columns on which lucene creates indexes.
 
-DataMap can be dropped using following DDL:
+Index can be dropped using following DDL:
   ```
-  DROP DATAMAP [IF EXISTS] datamap_name
-  ON TABLE main_table
-  ```
-To show all DataMaps created, use:
-  ```
-  SHOW DATAMAP 
+  DROP INDEX [IF EXISTS] index_name
   ON TABLE main_table
   ```
-It will show all DataMaps created on main table.
+To show all Indexes created, use:
+  ```
+  SHOW INDEXES
+  ON TABLE main_table
+  ```
+It will show all Indexes created on main table.
 
 
-## Lucene DataMap Introduction
+## Lucene Index Introduction
   Lucene is a high performance, full featured text search engine. Lucene is integrated to carbon as
-  an index datamap and managed along with main tables by CarbonData. User can create lucene datamap 
+  an index and managed along with main tables by CarbonData. User can create lucene index 
   to improve query performance on string columns which has content of more length. So, user can 
   search tokenized word or pattern of it using lucene query on text content.
   
-  For instance, main table called **datamap_test** which is defined as:
+  For instance, main table called **index_test** which is defined as:
   
   ```
-  CREATE TABLE datamap_test (
+  CREATE TABLE index_test (
     name string,
     age int,
     city string,
@@ -62,28 +63,26 @@ It will show all DataMaps created on main table.
   STORED AS carbondata
   ```
   
-  User can create Lucene datamap using the Create DataMap DDL:
+  User can create Lucene index using the Create Index DDL:
   
   ```
-  CREATE DATAMAP dm
-  ON TABLE datamap_test
-  USING 'lucene'
-  DMPROPERTIES ('INDEX_COLUMNS' = 'name, country',)
+  CREATE INDEX dm
+  ON TABLE index_test (name,country)
+  AS 'lucene'
   ```
 
-**DMProperties**
-1. INDEX_COLUMNS: The list of string columns on which lucene creates indexes.
-2. FLUSH_CACHE: size of the cache to maintain in Lucene writer, if specified then it tries to 
+**Properties**
+1. FLUSH_CACHE: size of the cache to maintain in Lucene writer, if specified then it tries to 
    aggregate the unique data till the cache limit and flush to Lucene. It is best suitable for low 
    cardinality dimensions.
-3. SPLIT_BLOCKLET: when made as true then store the data in blocklet wise in lucene , it means new 
+2. SPLIT_BLOCKLET: when made as true then store the data in blocklet wise in lucene , it means new 
    folder will be created for each blocklet, thus, it eliminates storing blockletid in lucene and 
    also it makes lucene small chunks of data.
    
 ## Loading data
 When loading data to main table, lucene index files will be generated for all the
-index_columns(String Columns) given in DMProperties which contains information about the data
-location of index_columns. These index files will be written inside a folder named with datamap name
+index_columns(String Columns) given in CREATE statement which contains information about the data
+location of index_columns. These index files will be written inside a folder named with index name
 inside each segment folders.
 
 A system level configuration carbon.lucene.compression.mode can be added for best compression of
@@ -99,7 +98,7 @@ fired, two jobs are fired. The first job writes the temporary files in folder cr
 which contains lucene's seach results and these files will be read in second job to give faster 
 results. These temporary files will be cleared once the query finishes.
 
-User can verify whether a query can leverage Lucene datamap or not by executing `EXPLAIN`
+User can verify whether a query can leverage Lucene index or not by executing `EXPLAIN`
 command, which will show the transformed logical plan, and thus user can check whether TEXT_MATCH()
 filter is applied on query or not.
 
@@ -109,50 +108,50 @@ filter condition like 'AND','OR' must be in upper case.
 
       Ex: 
       ```
-      select * from datamap_test where TEXT_MATCH('name:*10 AND name:*n*')
+      select * from index_test where TEXT_MATCH('name:*10 AND name:*n*')
       ```
      
 2. Query supports only one TEXT_MATCH udf for filter condition and not multiple udfs.
 
    The following query is supported:
    ```
-   select * from datamap_test where TEXT_MATCH('name:*10 AND name:*n*')
+   select * from index_test where TEXT_MATCH('name:*10 AND name:*n*')
    ```
        
    The following query is not supported:
    ```
-   select * from datamap_test where TEXT_MATCH('name:*10) AND TEXT_MATCH(name:*n*')
+   select * from index_test where TEXT_MATCH('name:*10) AND TEXT_MATCH(name:*n*')
    ```
        
           
 Below like queries can be converted to text_match queries as following:
 ```
-select * from datamap_test where name='n10'
+select * from index_test where name='n10'
 
-select * from datamap_test where name like 'n1%'
+select * from index_test where name like 'n1%'
 
-select * from datamap_test where name like '%10'
+select * from index_test where name like '%10'
 
-select * from datamap_test where name like '%n%'
+select * from index_test where name like '%n%'
 
-select * from datamap_test where name like '%10' and name not like '%n%'
+select * from index_test where name like '%10' and name not like '%n%'
 ```
 Lucene TEXT_MATCH Queries:
 ```
-select * from datamap_test where TEXT_MATCH('name:n10')
+select * from index_test where TEXT_MATCH('name:n10')
 
-select * from datamap_test where TEXT_MATCH('name:n1*')
+select * from index_test where TEXT_MATCH('name:n1*')
 
-select * from datamap_test where TEXT_MATCH('name:*10')
+select * from index_test where TEXT_MATCH('name:*10')
 
-select * from datamap_test where TEXT_MATCH('name:*n*')
+select * from index_test where TEXT_MATCH('name:*n*')
 
-select * from datamap_test where TEXT_MATCH('name:*10 -name:*n*')
+select * from index_test where TEXT_MATCH('name:*10 -name:*n*')
 ```
 **Note:** For lucene queries and syntax, refer to [lucene-syntax](http://www.lucenetutorial.com/lucene-query-syntax.html)
 
-## Data Management with lucene datamap
-Once there is lucene datamap is created on the main table, following command on the main
+## Data Management with lucene index
+Once there is lucene index is created on the main table, following command on the main
 table
 is not supported:
 1. Data management command: `UPDATE/DELETE`.

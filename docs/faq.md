@@ -25,7 +25,6 @@
 * [What is Carbon Lock Type?](#what-is-carbon-lock-type)
 * [How to resolve Abstract Method Error?](#how-to-resolve-abstract-method-error)
 * [How Carbon will behave when execute insert operation in abnormal scenarios?](#how-carbon-will-behave-when-execute-insert-operation-in-abnormal-scenarios)
-* [Why aggregate query is not fetching data from aggregate table?](#why-aggregate-query-is-not-fetching-data-from-aggregate-table)
 * [Why all executors are showing success in Spark UI even after Dataload command failed at Driver side?](#why-all-executors-are-showing-success-in-spark-ui-even-after-dataload-command-failed-at-driver-side)
 * [Why different time zone result for select query output when query SDK writer output?](#why-different-time-zone-result-for-select-query-output-when-query-sdk-writer-output)
 * [How to check LRU cache memory footprint?](#how-to-check-lru-cache-memory-footprint)
@@ -161,42 +160,6 @@ INSERT INTO TABLE carbon_table SELECT id, city FROM source_table;
 **Scenario 3** :
 
 When the column type in carbon table is different from the column specified in select statement. The insert operation will still success, but you may get NULL in result, because NULL will be substitute value when conversion type failed.
-
-## Why aggregate query is not fetching data from aggregate table?
-Following are the aggregate queries that won't fetch data from aggregate table:
-
-- **Scenario 1** :
-When SubQuery predicate is present in the query.
-
-Example:
-
-```
-create table gdp21(cntry smallint, gdp double, y_year date) stored as carbondata;
-create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp21 group by cntry;
-select ctry from pop1 where ctry in (select cntry from gdp21 group by cntry);
-```
-
-- **Scenario 2** : 
-When aggregate function along with 'in' filter.
-
-Example:
-
-```
-create table gdp21(cntry smallint, gdp double, y_year date) stored as carbondata;
-create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp21 group by cntry;
-select cntry, sum(gdp) from gdp21 where cntry in (select ctry from pop1) group by cntry;
-```
-
-- **Scenario 3** : 
-When aggregate function having 'join' with equal filter.
-
-Example:
-
-```
-create table gdp21(cntry smallint, gdp double, y_year date) stored as carbondata;
-create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp21 group by cntry;
-select cntry,sum(gdp) from gdp21,pop1 where cntry=ctry group by cntry;
-```
 
 ## Why all executors are showing success in Spark UI even after Dataload command failed at Driver side?
 Spark executor shows task as failed after the maximum number of retry attempts, but loading the data having bad records and BAD_RECORDS_ACTION (carbon.bad.records.action) is set as "FAIL" will attempt only once but will send the signal to driver as failed instead of throwing the exception to retry, as there is no point to retry if bad record found and BAD_RECORDS_ACTION is set to fail. Hence the Spark executor displays this one attempt as successful but the command has actually failed to execute. Task attempts or executor logs can be checked to observe the failure reason.

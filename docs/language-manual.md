@@ -27,7 +27,8 @@ CarbonData has its own parser, in addition to Spark's SQL Parser, to parse and p
   - [Index](./index/index-management.md)
     - [Bloom](./index/bloomfilter-index-guide.md)
     - [Lucene](./index/lucene-index-guide.md)
-  - Materialized Views (MV)
+    - [Secondary-index](./index/secondary-index-guide.md)
+  - [Materialized Views (MV)](./index/mv-guide.md)
   - [Streaming](./streaming-guide.md)
 - Data Manipulation Statements
   - [DML:](./dml-of-carbondata.md) [Load](./dml-of-carbondata.md#load-data), [Insert](./dml-of-carbondata.md#insert-data-into-carbondata-table), [Update](./dml-of-carbondata.md#update), [Delete](./dml-of-carbondata.md#delete)
