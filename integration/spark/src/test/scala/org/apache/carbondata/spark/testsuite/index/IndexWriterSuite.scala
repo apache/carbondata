@@ -98,7 +98,7 @@ class C2IndexFactory(
    * Get the indexSchema for segmentId and partitionSpecs
    */
   override def getIndexes(segment: Segment,
-      partitions: util.List[PartitionSpec]): util.List[CoarseGrainIndex] = {
+      partitions: util.Set[String]): util.List[CoarseGrainIndex] = {
     ???
   }
 }

@@ -156,7 +156,7 @@ class FGIndexFactory(carbonTable: CarbonTable,
    * Get the indexSchema for segmentId
    */
   override def getIndexes(segment: Segment,
-      partitions: java.util.List[PartitionSpec]): java.util.List[FineGrainIndex] = {
+      partitions: java.util.Set[String]): java.util.List[FineGrainIndex] = {
     getIndexes(segment)
   }
 }
@@ -196,7 +196,6 @@ class FGIndex extends FineGrainIndex {
   override def prune(
       filterExp: FilterResolverIntf,
       segmentProperties: SegmentProperties,
-      partitions: java.util.List[PartitionSpec],
       filterExecuter: FilterExecuter,
       carbonTable: CarbonTable): java.util.List[FineGrainBlocklet] = {
     val buffer: ArrayBuffer[Expression] = new ArrayBuffer[Expression]()

@@ -187,11 +187,10 @@ public class IndexUtil {
    @param carbonTable
    @param indexExprWrapper
    @param validSegments
-   @param partitionsToPrune
    @throws IOException
    */
   public static void loadIndexes(CarbonTable carbonTable, IndexExprWrapper indexExprWrapper,
-      List<Segment> validSegments, List<PartitionSpec> partitionsToPrune) throws IOException {
+      List<Segment> validSegments) throws IOException {
     if (!CarbonProperties.getInstance()
         .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName())
         && BlockletIndexUtil.loadIndexesParallel(carbonTable)) {
@@ -202,21 +201,17 @@ public class IndexUtil {
           getValidAndInvalidSegments(carbonTable, FileFactory.getConfiguration());
       List<Segment> invalidSegments = validAndInvalidSegmentsInfo.getInvalidSegments();
       FileInputFormat indexFormat =
-          createIndexJob(carbonTable, indexExprWrapper, validSegments, invalidSegments,
-              partitionsToPrune, className, false);
+          createIndexJob(carbonTable, indexExprWrapper, validSegments, className);
       indexJob.execute(carbonTable, indexFormat);
     }
   }
 
   private static FileInputFormat createIndexJob(CarbonTable carbonTable,
-      IndexExprWrapper indexExprWrapper, List<Segment> validsegments,
-      List<Segment> invalidSegments, List<PartitionSpec> partitionsToPrune, String clsName,
-      boolean isJobToClearIndexes) {
+      IndexExprWrapper indexExprWrapper, List<Segment> validsegments, String clsName) {
     try {
       Constructor<?> cons = Class.forName(clsName).getDeclaredConstructors()[0];
       return (FileInputFormat) cons
-          .newInstance(carbonTable, indexExprWrapper, validsegments, invalidSegments,
-              partitionsToPrune, isJobToClearIndexes);
+          .newInstance(carbonTable, indexExprWrapper, validsegments);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

@@ -18,7 +18,7 @@
 package org.apache.carbondata.core.indexstore;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Set;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.index.Segment;
@@ -38,7 +38,7 @@ public interface SegmentPropertiesFetcher {
   SegmentProperties getSegmentProperties(Segment segment)
       throws IOException;
 
-  SegmentProperties getSegmentProperties(Segment segment, List<PartitionSpec> partitionSpecs)
+  SegmentProperties getSegmentProperties(Segment segment, Set<String> partitionsToPrune)
       throws IOException;
 
   SegmentProperties getSegmentPropertiesFromIndex(Index coarseGrainIndex);

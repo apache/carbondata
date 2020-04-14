@@ -160,7 +160,7 @@ class CGIndexFactory(
    * Get the indexSchema for segmentId and partitionSpecs
    */
   override def getIndexes(segment: Segment,
-      partitions: java.util.List[PartitionSpec]): java.util.List[CoarseGrainIndex] = {
+      partitions: java.util.Set[String]): java.util.List[CoarseGrainIndex] = {
     getIndexes(segment);
   }
 }
@@ -201,7 +201,6 @@ class CGIndex extends CoarseGrainIndex {
   override def prune(
       filterExp: FilterResolverIntf,
       segmentProperties: SegmentProperties,
-      partitions: java.util.List[PartitionSpec],
       filterExecuter: FilterExecuter,
       carbonTable: CarbonTable): java.util.List[Blocklet] = {
     val buffer: ArrayBuffer[Expression] = new ArrayBuffer[Expression]()

@@ -43,19 +43,18 @@ public interface Index<T extends Blocklet> {
   void init(IndexModel indexModel) throws IOException;
 
   /**
-   * Prune the table with resolved filter expression and partition information.
+   * Prune the table with resolved filter expression.
    * It returns the list of blocklets where these filters can exist.
    */
   List<T> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions, FilterExecuter filterExecuter, CarbonTable table)
-      throws IOException;
+      FilterExecuter filterExecuter, CarbonTable table) throws IOException;
 
   /**
-   * Prune the table with filter expression and partition information. It returns the list of
+   * Prune the table with filter expression. It returns the list of
    * blocklets where these filters can exist.
    */
   List<T> prune(Expression filter, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions, CarbonTable carbonTable, FilterExecuter filterExecuter);
+      CarbonTable carbonTable, FilterExecuter filterExecuter);
 
   /**
    * Prune the data maps for finding the row count. It returns a Map of

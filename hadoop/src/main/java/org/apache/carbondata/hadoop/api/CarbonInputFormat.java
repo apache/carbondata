@@ -559,7 +559,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       if (carbonTable.isTransactionalTable()) {
         IndexExprWrapper indexExprWrapper =
             IndexChooser.getDefaultIndex(getOrCreateCarbonTable(job.getConfiguration()), null);
-        IndexUtil.loadIndexes(carbonTable, indexExprWrapper, segmentIds, partitionsToPrune);
+        IndexUtil.loadIndexes(carbonTable, indexExprWrapper, segmentIds);
       }
       prunedBlocklets = defaultIndex.prune(segmentIds, filter, partitionsToPrune);
 

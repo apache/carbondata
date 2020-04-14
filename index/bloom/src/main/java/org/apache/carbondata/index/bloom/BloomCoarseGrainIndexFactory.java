@@ -46,7 +46,6 @@ import org.apache.carbondata.core.index.dev.IndexBuilder;
 import org.apache.carbondata.core.index.dev.IndexFactory;
 import org.apache.carbondata.core.index.dev.IndexWriter;
 import org.apache.carbondata.core.index.dev.cgindex.CoarseGrainIndex;
-import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -284,7 +283,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
   }
 
   @Override
-  public List<CoarseGrainIndex> getIndexes(Segment segment, List<PartitionSpec> partitionSpecs)
+  public List<CoarseGrainIndex> getIndexes(Segment segment, Set<String> partitionsToPrune)
       throws IOException {
     return getIndexes(segment);
   }

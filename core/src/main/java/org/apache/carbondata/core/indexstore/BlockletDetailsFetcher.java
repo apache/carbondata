@@ -19,6 +19,7 @@ package org.apache.carbondata.core.indexstore;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.carbondata.core.index.Segment;
 
@@ -54,7 +55,7 @@ public interface BlockletDetailsFetcher {
    * @param segment
    * @return
    */
-  List<Blocklet> getAllBlocklets(Segment segment, List<PartitionSpec> partitions)
+  List<Blocklet> getAllBlocklets(Segment segment, Set<String> partitions)
       throws IOException;
 
   /**

@@ -478,7 +478,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
     IndexExprWrapper indexExprWrapper =
         IndexChooser.getDefaultIndex(getOrCreateCarbonTable(job.getConfiguration()), null);
-    IndexUtil.loadIndexes(table, indexExprWrapper, filteredSegment, partitions);
+    IndexUtil.loadIndexes(table, indexExprWrapper, filteredSegment);
     if (isIUDTable || isUpdateFlow) {
       Map<String, Long> blockletToRowCountMap = new HashMap<>();
       if (CarbonProperties.getInstance()

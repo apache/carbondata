@@ -40,7 +40,7 @@ public abstract class CoarseGrainIndex implements Index<Blocklet> {
 
   @Override
   public List<Blocklet> prune(Expression expression, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions, CarbonTable carbonTable, FilterExecuter filterExecuter) {
+      CarbonTable carbonTable, FilterExecuter filterExecuter) {
     throw new UnsupportedOperationException("Filter expression not supported");
   }
 

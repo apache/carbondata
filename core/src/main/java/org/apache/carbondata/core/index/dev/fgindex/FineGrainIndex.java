@@ -39,7 +39,7 @@ public abstract class FineGrainIndex implements Index<FineGrainBlocklet> {
 
   @Override
   public List<FineGrainBlocklet> prune(Expression filter, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions, CarbonTable carbonTable, FilterExecuter filterExecuter) {
+      CarbonTable carbonTable, FilterExecuter filterExecuter) {
     throw new UnsupportedOperationException("Filter expression not supported");
   }
 

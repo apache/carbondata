@@ -32,7 +32,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.dev.IndexModel;
 import org.apache.carbondata.core.index.dev.fgindex.FineGrainBlocklet;
 import org.apache.carbondata.core.index.dev.fgindex.FineGrainIndex;
-import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -203,8 +202,8 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
    */
   @Override
   public List<FineGrainBlocklet> prune(FilterResolverIntf filterExp,
-      SegmentProperties segmentProperties, List<PartitionSpec> partitions,
-      FilterExecuter filterExecuter, CarbonTable carbonTable) throws IOException {
+      SegmentProperties segmentProperties, FilterExecuter filterExecuter,
+      CarbonTable carbonTable) throws IOException {
 
     // convert filter expr into lucene list query
     List<String> fields = new ArrayList<String>();
