@@ -58,6 +58,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonVectorizedRecordReader.class.getName());
+  private static final int DEFAULT_BATCH_SIZE = 4 * 1024;
 
   private CarbonColumnarBatch carbonColumnarBatch;
 
@@ -66,6 +67,8 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   private int batchIdx = 0;
 
   private int numBatched = 0;
+
+  private int rowId = 0;
 
   private AbstractDetailQueryResultIterator iterator;
 
@@ -126,6 +129,10 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     if (batchIdx >= numBatched) {
       if (!nextBatch()) return false;
     }
+    while (rowId < carbonColumnarBatch.getRowCounter() && carbonColumnarBatch
+        .getFilteredRows()[rowId]) {
+      rowId++;
+    }
     ++batchIdx;
     return true;
   }
@@ -138,6 +145,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
       if (numBatched == 0) {
         return nextBatch();
       }
+      rowId = 0;
       batchIdx = 0;
       return true;
     }
@@ -186,7 +194,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
       }
       carbonColumnarBatch = new CarbonColumnarBatch(vectors,
           CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT,
-          new boolean[] {});
+          new boolean[DEFAULT_BATCH_SIZE]);
     }
   }
 
@@ -203,7 +211,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
         row[i] = row[projectionMapping.get(i)];
       } else {
         Object data = carbonColumnarBatch.columnVectors[projectionMapping.get(i)]
-                .getData(batchIdx - 1);
+                .getData(rowId);
         if (carbonColumnarBatch.columnVectors[i].getType() == DataTypes.STRING
                 || carbonColumnarBatch.columnVectors[i].getType() == DataTypes.VARCHAR) {
           if (data == null) {
@@ -219,10 +227,11 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
           }
         } else {
           row[i] = carbonColumnarBatch.columnVectors[projectionMapping.get(i)]
-                  .getData(batchIdx - 1);
+                  .getData(rowId);
         }
       }
     }
+    rowId++;
     return row;
   }
 
