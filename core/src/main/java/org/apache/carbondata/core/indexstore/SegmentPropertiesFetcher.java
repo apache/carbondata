@@ -18,11 +18,13 @@
 package org.apache.carbondata.core.indexstore;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Set;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.index.dev.Index;
+
+import org.apache.hadoop.fs.Path;
 
 /**
  * Fetches the detailed segmentProperties which has more information to execute the query
@@ -38,7 +40,7 @@ public interface SegmentPropertiesFetcher {
   SegmentProperties getSegmentProperties(Segment segment)
       throws IOException;
 
-  SegmentProperties getSegmentProperties(Segment segment, List<PartitionSpec> partitionSpecs)
+  SegmentProperties getSegmentProperties(Segment segment, Set<Path> partitionLocations)
       throws IOException;
 
   SegmentProperties getSegmentPropertiesFromIndex(Index coarseGrainIndex);

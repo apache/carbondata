@@ -23,6 +23,7 @@ import java.util.concurrent.{Callable, ExecutorService, Executors, Future}
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, SaveMode}
@@ -373,7 +374,7 @@ class WaitingIndexFactory(
    * Get the index for segmentId and partitionSpecs
    */
   override def getIndexes(segment: Segment,
-      partitions: util.List[PartitionSpec]): util.List[CoarseGrainIndex] = {
+      partitionLocations: util.Set[Path]): util.List[CoarseGrainIndex] = {
     ???
   }
 }

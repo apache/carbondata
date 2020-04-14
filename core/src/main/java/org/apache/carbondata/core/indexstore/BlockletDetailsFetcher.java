@@ -19,8 +19,11 @@ package org.apache.carbondata.core.indexstore;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.carbondata.core.index.Segment;
+
+import org.apache.hadoop.fs.Path;
 
 /**
  * Fetches the detailed blocklet which has more information to execute the query
@@ -54,7 +57,7 @@ public interface BlockletDetailsFetcher {
    * @param segment
    * @return
    */
-  List<Blocklet> getAllBlocklets(Segment segment, List<PartitionSpec> partitions)
+  List<Blocklet> getAllBlocklets(Segment segment, Set<Path> partitionLocations)
       throws IOException;
 
   /**

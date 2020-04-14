@@ -22,6 +22,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -34,7 +35,6 @@ import org.apache.carbondata.core.index.dev.cgindex.{CoarseGrainIndex, CoarseGra
 import org.apache.carbondata.core.index.dev.{IndexBuilder, IndexWriter}
 import org.apache.carbondata.core.index.status.IndexStatus
 import org.apache.carbondata.core.index.{IndexInputSplit, IndexMeta, Segment}
-import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, IndexSchema}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
@@ -246,7 +246,7 @@ class TestIndexFactory(
    * Get the indexSchema for segmentId and partitionSpecs
    */
   override def getIndexes(segment: Segment,
-      partitions: util.List[PartitionSpec]): util.List[CoarseGrainIndex] = {
+      partitionLocations: util.Set[Path]): util.List[CoarseGrainIndex] = {
     ???
   }
 }

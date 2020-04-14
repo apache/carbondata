@@ -721,14 +721,14 @@ public class BlockIndex extends CoarseGrainIndex
 
   @Override
   public List<Blocklet> prune(Expression expression, SegmentProperties properties,
-      List<PartitionSpec> partitions, CarbonTable carbonTable, FilterExecuter filterExecuter) {
+      CarbonTable carbonTable, FilterExecuter filterExecuter) {
     return prune(new IndexFilter(properties, carbonTable, expression).getResolver(), properties,
-        partitions, filterExecuter, carbonTable);
+        filterExecuter, carbonTable);
   }
 
   @Override
   public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      List<PartitionSpec> partitions, FilterExecuter filterExecuter, CarbonTable table) {
+      FilterExecuter filterExecuter, CarbonTable table) {
     if (memoryDMStore.getRowCount() == 0) {
       return new ArrayList<>();
     }

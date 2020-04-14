@@ -20,6 +20,7 @@ package org.apache.carbondata.index.lucene;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedIndexCommandException;
@@ -31,9 +32,10 @@ import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.index.dev.IndexModel;
 import org.apache.carbondata.core.index.dev.IndexWriter;
 import org.apache.carbondata.core.index.dev.fgindex.FineGrainIndex;
-import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
+
+import org.apache.hadoop.fs.Path;
 
 /**
  * FG level of lucene Index
@@ -65,7 +67,7 @@ public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrai
   }
 
   @Override
-  public List<FineGrainIndex> getIndexes(Segment segment, List<PartitionSpec> partitions)
+  public List<FineGrainIndex> getIndexes(Segment segment, Set<Path> partitionLocations)
       throws IOException {
     return getIndexes(segment);
   }

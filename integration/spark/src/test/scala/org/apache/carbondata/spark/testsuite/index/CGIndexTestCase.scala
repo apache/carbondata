@@ -25,6 +25,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -160,7 +161,7 @@ class CGIndexFactory(
    * Get the indexSchema for segmentId and partitionSpecs
    */
   override def getIndexes(segment: Segment,
-      partitions: java.util.List[PartitionSpec]): java.util.List[CoarseGrainIndex] = {
+      partitionLocations: java.util.Set[Path]): java.util.List[CoarseGrainIndex] = {
     getIndexes(segment);
   }
 }
@@ -201,7 +202,6 @@ class CGIndex extends CoarseGrainIndex {
   override def prune(
       filterExp: FilterResolverIntf,
       segmentProperties: SegmentProperties,
-      partitions: java.util.List[PartitionSpec],
       filterExecuter: FilterExecuter,
       carbonTable: CarbonTable): java.util.List[Blocklet] = {
     val buffer: ArrayBuffer[Expression] = new ArrayBuffer[Expression]()

@@ -412,8 +412,7 @@ object BroadCastSIFilterPushJoin {
     IndexUtil.loadIndexes(
       carbonTable,
       indexExprWrapper,
-      segmentIds,
-      CarbonInputFormat.getPartitionsToPrune(configuration))
+      segmentIds)
     blockletMap.pruneSegments(segmentIds, filterResolverIntf)
   }
 

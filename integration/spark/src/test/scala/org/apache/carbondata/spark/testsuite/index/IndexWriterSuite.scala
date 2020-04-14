@@ -21,6 +21,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.scalatest.BeforeAndAfterAll
@@ -98,7 +99,7 @@ class C2IndexFactory(
    * Get the indexSchema for segmentId and partitionSpecs
    */
   override def getIndexes(segment: Segment,
-      partitions: util.List[PartitionSpec]): util.List[CoarseGrainIndex] = {
+      partitionLocations: util.Set[Path]): util.List[CoarseGrainIndex] = {
     ???
   }
 }
