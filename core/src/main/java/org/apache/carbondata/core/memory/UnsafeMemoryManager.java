@@ -224,33 +224,14 @@ public class UnsafeMemoryManager {
     if (!toBeDestroyed.isDirect()) {
       return;
     }
-    Method cleanerMethod = null;
     try {
-      cleanerMethod = toBeDestroyed.getClass().getMethod("cleaner");
-    } catch (NoSuchMethodException e) {
-      throw new RuntimeException(e);
-    }
-    cleanerMethod.setAccessible(true);
-    Object cleaner = null;
-    try {
-      cleaner = cleanerMethod.invoke(toBeDestroyed);
-    } catch (IllegalAccessException e) {
-      throw new RuntimeException(e);
-    } catch (InvocationTargetException e) {
-      throw new RuntimeException(e);
-    }
-    Method cleanMethod = null;
-    try {
-      cleanMethod = cleaner.getClass().getMethod("clean");
-    } catch (NoSuchMethodException e) {
-      throw new RuntimeException(e);
-    }
-    cleanMethod.setAccessible(true);
-    try {
+      Method cleanerMethod = toBeDestroyed.getClass().getMethod("cleaner");
+      cleanerMethod.setAccessible(true);
+      Object cleaner = cleanerMethod.invoke(toBeDestroyed);
+      Method cleanMethod = cleaner.getClass().getMethod("clean");
+      cleanMethod.setAccessible(true);
       cleanMethod.invoke(cleaner);
-    } catch (IllegalAccessException e) {
-      throw new RuntimeException(e);
-    } catch (InvocationTargetException e) {
+    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
       throw new RuntimeException(e);
     }
   }
