@@ -192,6 +192,16 @@ public class EncodedBlocklet {
   }
 
   public void clear() {
+    if (null != encodedDimensionColumnPages) {
+      for (BlockletEncodedColumnPage blockletEncodedColumnPage : encodedDimensionColumnPages) {
+        blockletEncodedColumnPage.cleanBuffer();
+      }
+    }
+    if (null != encodedMeasureColumnPages) {
+      for (BlockletEncodedColumnPage blockletEncodedColumnPage : encodedMeasureColumnPages) {
+        blockletEncodedColumnPage.cleanBuffer();
+      }
+    }
     this.numberOfPages = 0;
     this.encodedDimensionColumnPages = null;
     this.blockletSize = 0;

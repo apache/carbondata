@@ -217,4 +217,11 @@ public class BlockletEncodedColumnPage {
           new ActualDataBasedFallbackEncoder(encodedColumnPage, pageIndex)));
     }
   }
+
+  public void cleanBuffer() {
+    for (EncodedColumnPage encodedColumnPage : encodedColumnPageList) {
+      encodedColumnPage.cleanBuffer();
+    }
+  }
+
 }

@@ -26,6 +26,7 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 
+import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.util.ByteUtil;
 
 public abstract class AbstractCompressor implements Compressor {
@@ -33,9 +34,13 @@ public abstract class AbstractCompressor implements Compressor {
   @Override
   public ByteBuffer compressShort(short[] unCompInput) {
     ByteBuffer unCompBuffer = ByteBuffer.allocateDirect(unCompInput.length * ByteUtil.SIZEOF_SHORT);
-    unCompBuffer.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(unCompInput);
-    unCompBuffer.position(unCompBuffer.limit());
-    return compressByte(unCompBuffer);
+    try {
+      unCompBuffer.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(unCompInput);
+      unCompBuffer.position(unCompBuffer.limit());
+      return compressByte(unCompBuffer);
+    } finally {
+      UnsafeMemoryManager.destroyDirectByteBuffer(unCompBuffer);
+    }
   }
 
   @Override
@@ -51,9 +56,13 @@ public abstract class AbstractCompressor implements Compressor {
   @Override
   public ByteBuffer compressInt(int[] unCompInput) {
     ByteBuffer unCompBuffer = ByteBuffer.allocateDirect(unCompInput.length * ByteUtil.SIZEOF_INT);
-    unCompBuffer.order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().put(unCompInput);
-    unCompBuffer.position(unCompBuffer.limit());
-    return compressByte(unCompBuffer);
+    try {
+      unCompBuffer.order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().put(unCompInput);
+      unCompBuffer.position(unCompBuffer.limit());
+      return compressByte(unCompBuffer);
+    } finally {
+      UnsafeMemoryManager.destroyDirectByteBuffer(unCompBuffer);
+    }
   }
 
   @Override
@@ -69,9 +78,13 @@ public abstract class AbstractCompressor implements Compressor {
   @Override
   public ByteBuffer compressLong(long[] unCompInput) {
     ByteBuffer unCompBuffer = ByteBuffer.allocateDirect(unCompInput.length * ByteUtil.SIZEOF_LONG);
-    unCompBuffer.order(ByteOrder.LITTLE_ENDIAN).asLongBuffer().put(unCompInput);
-    unCompBuffer.position(unCompBuffer.limit());
-    return compressByte(unCompBuffer);
+    try {
+      unCompBuffer.order(ByteOrder.LITTLE_ENDIAN).asLongBuffer().put(unCompInput);
+      unCompBuffer.position(unCompBuffer.limit());
+      return compressByte(unCompBuffer);
+    } finally {
+      UnsafeMemoryManager.destroyDirectByteBuffer(unCompBuffer);
+    }
   }
 
   @Override
@@ -87,9 +100,13 @@ public abstract class AbstractCompressor implements Compressor {
   @Override
   public ByteBuffer compressFloat(float[] unCompInput) {
     ByteBuffer unCompBuffer = ByteBuffer.allocateDirect(unCompInput.length * ByteUtil.SIZEOF_FLOAT);
-    unCompBuffer.order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer().put(unCompInput);
-    unCompBuffer.position(unCompBuffer.limit());
-    return compressByte(unCompBuffer);
+    try {
+      unCompBuffer.order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer().put(unCompInput);
+      unCompBuffer.position(unCompBuffer.limit());
+      return compressByte(unCompBuffer);
+    } finally {
+      UnsafeMemoryManager.destroyDirectByteBuffer(unCompBuffer);
+    }
   }
 
   @Override
@@ -106,9 +123,13 @@ public abstract class AbstractCompressor implements Compressor {
   public ByteBuffer compressDouble(double[] unCompInput) {
     ByteBuffer unCompBuffer =
         ByteBuffer.allocateDirect(unCompInput.length * ByteUtil.SIZEOF_DOUBLE);
-    unCompBuffer.order(ByteOrder.LITTLE_ENDIAN).asDoubleBuffer().put(unCompInput);
-    unCompBuffer.position(unCompBuffer.limit());
-    return compressByte(unCompBuffer);
+    try {
+      unCompBuffer.order(ByteOrder.LITTLE_ENDIAN).asDoubleBuffer().put(unCompInput);
+      unCompBuffer.position(unCompBuffer.limit());
+      return compressByte(unCompBuffer);
+    } finally {
+      UnsafeMemoryManager.destroyDirectByteBuffer(unCompBuffer);
+    }
   }
 
   @Override

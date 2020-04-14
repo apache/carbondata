@@ -23,6 +23,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.LocalDictColumnPage;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
+import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
 
@@ -98,5 +99,9 @@ public class EncodedColumnPage {
       LocalDictColumnPage page = (LocalDictColumnPage) actualPage;
       page.freeMemoryForce();
     }
+  }
+
+  public void cleanBuffer() {
+    UnsafeMemoryManager.destroyDirectByteBuffer(encodedData);
   }
 }

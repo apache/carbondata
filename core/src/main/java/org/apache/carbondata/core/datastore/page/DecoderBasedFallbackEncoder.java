@@ -126,6 +126,7 @@ public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColu
     // fallBackEncodedColumnPage is created using new page of actual data
     // This is required to free the memory once it is of no use
     actualDataColumnPage.freeMemory();
+    encodedColumnPage.cleanBuffer();
     return fallBackEncodedColumnPage;
   }
 
