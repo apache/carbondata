@@ -349,8 +349,14 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       scanBuilder: (Seq[Attribute], Seq[Expression], Seq[Filter], Seq[PartitionSpec])
         => RDD[InternalRow]): CodegenSupport = {
     val table = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-    val extraRdd = MixedFormatHandler.extraRDD(relation, rawProjects, filterPredicates,
-      new TableStatusReadCommittedScope(table.identifier, FileFactory.getConfiguration),
+    val readCommittedScope = new TableStatusReadCommittedScope(
+      table.identifier,
+      FileFactory.getConfiguration)
+    val extraRdd = MixedFormatHandler.extraRDD(
+      relation,
+      rawProjects,
+      filterPredicates,
+      readCommittedScope,
       table.identifier)
     val projects = rawProjects.map {p =>
       p.transform {
@@ -441,6 +447,14 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         metadata,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]],
         extraRdd)
+      if (scan.isInstanceOf[CarbonDataSourceScan] && table.carbonTable.isTransactionalTable) {
+        // set the read committed scope and reuse in the scanRDD
+        scan.inputRDDs().head match {
+          case rdd: CarbonScanRDD[InternalRow] =>
+            rdd.setReadCommittedScope(readCommittedScope)
+          case _ =>
+        }
+      }
       // Check whether spark should handle row filters in case of vector flow.
       if (!vectorPushRowFilters && scan.isInstanceOf[CarbonDataSourceScan]) {
         // Here carbon only do page pruning and row level pruning will be done by spark.
@@ -522,6 +536,14 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         metadata,
         newRequestedColumns,
         extraRdd)
+      if (scan.isInstanceOf[CarbonDataSourceScan] && table.carbonTable.isTransactionalTable) {
+        // set the read committed scope and reuse in the scanRDD
+        scan.inputRDDs().head match {
+          case rdd: CarbonScanRDD[InternalRow] =>
+            rdd.setReadCommittedScope(readCommittedScope)
+          case _ =>
+        }
+      }
       // Check whether spark should handle row filters in case of vector flow.
       if (!vectorPushRowFilters &&
           scan.isInstanceOf[CarbonDataSourceScan] &&
