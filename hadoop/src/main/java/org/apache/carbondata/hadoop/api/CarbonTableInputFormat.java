@@ -572,4 +572,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
     return readCommittedScope;
   }
+
+  public void setReadCommittedScope(ReadCommittedScope readCommittedScope) {
+    this.readCommittedScope = readCommittedScope;
+  }
 }

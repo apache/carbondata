@@ -50,6 +50,7 @@ import org.apache.carbondata.core.index.{IndexFilter, Segment}
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.conditional.ImplicitExpression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
@@ -98,6 +99,8 @@ class CarbonScanRDD[T: ClassTag](
 
   private var segmentsToAccess: Array[Segment] = _
 
+  private var readCommittedScope: ReadCommittedScope = _
+
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def internalGetPartitions: Array[Partition] = {
@@ -133,6 +136,11 @@ class CarbonScanRDD[T: ClassTag](
       // get splits
       getSplitsStartTime = System.currentTimeMillis()
       if (null == splits) {
+        format match {
+          case inputFormat: CarbonTableInputFormat[Object] =>
+            inputFormat.setReadCommittedScope(readCommittedScope)
+          case _ =>
+        }
         splits = format.getSplits(job)
       }
       getSplitsEndTime = System.currentTimeMillis()
@@ -780,5 +788,9 @@ class CarbonScanRDD[T: ClassTag](
     if (null != indexFilter) {
       indexFilter.setExpression(new AndExpression(indexFilter.getExpression, expressionVal))
     }
+  }
+
+  def setReadCommittedScope(readCommittedScope: ReadCommittedScope): Unit = {
+    this.readCommittedScope = readCommittedScope
   }
 }
