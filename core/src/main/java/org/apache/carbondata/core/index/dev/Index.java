@@ -67,7 +67,7 @@ public interface Index<T extends Blocklet> {
    * blockletpath and the row count
    */
   Map<String, Long> getRowCountForEachBlock(Segment segment, List<PartitionSpec> partitions,
-      Map<String, Long> blockletToRowCountMap);
+      Map<String, Long> blockletToRowCountMap, boolean isIUDFlow);
 
   // TODO Move this method to Abstract class
   /**

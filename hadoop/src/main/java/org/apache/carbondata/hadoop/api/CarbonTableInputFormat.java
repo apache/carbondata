@@ -500,13 +500,13 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
             throw e;
           }
           TableIndex defaultIndex = IndexStoreManager.getInstance().getDefaultIndex(table);
-          blockletToRowCountMap
-              .putAll(defaultIndex.getBlockRowCount(filteredSegment, partitions, defaultIndex));
+          blockletToRowCountMap.putAll(
+              defaultIndex.getBlockRowCount(filteredSegment, partitions, defaultIndex, true));
         }
       } else {
         TableIndex defaultIndex = IndexStoreManager.getInstance().getDefaultIndex(table);
         blockletToRowCountMap
-            .putAll(defaultIndex.getBlockRowCount(filteredSegment, partitions, defaultIndex));
+            .putAll(defaultIndex.getBlockRowCount(filteredSegment, partitions, defaultIndex, true));
       }
       // key is the (segmentId","+blockletPath) and key is the row count of that blocklet
       for (Map.Entry<String, Long> eachBlocklet : blockletToRowCountMap.entrySet()) {

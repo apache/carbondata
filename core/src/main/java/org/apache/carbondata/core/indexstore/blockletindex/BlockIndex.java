@@ -613,7 +613,7 @@ public class BlockIndex extends CoarseGrainIndex
         taskSummaryDMStore.getIndexRow(getTaskSummarySchema(), 0).getLong(TASK_ROW_COUNT);
     if (totalRowCount == 0) {
       Map<String, Long> blockletToRowCountMap = new HashMap<>();
-      getRowCountForEachBlock(segment, partitions, blockletToRowCountMap);
+      getRowCountForEachBlock(segment, partitions, blockletToRowCountMap, false);
       for (long blockletRowCount : blockletToRowCountMap.values()) {
         totalRowCount += blockletRowCount;
       }
@@ -626,13 +626,13 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   public Map<String, Long> getRowCountForEachBlock(Segment segment, List<PartitionSpec> partitions,
-      Map<String, Long> blockletToRowCountMap) {
+      Map<String, Long> blockletToRowCountMap, boolean isIUDFlow) {
     if (memoryDMStore.getRowCount() == 0) {
       return new HashMap<>();
     }
     // if it has partitioned index but there is no partitioned information stored, it means
     // partitions are dropped so return empty list.
-    if (partitions != null) {
+    if (partitions != null && isIUDFlow) {
       if (!validatePartitionInfo(partitions)) {
         return new HashMap<>();
       }

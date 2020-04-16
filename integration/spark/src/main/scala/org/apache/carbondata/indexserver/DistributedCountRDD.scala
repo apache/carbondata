@@ -109,7 +109,7 @@ class DistributedCountRDD(@transient ss: SparkSession, indexInputFormat: IndexIn
         .getIndex(indexInputFormat.getCarbonTable, split.head
           .asInstanceOf[IndexInputSplitWrapper].getDistributable.getIndexSchema)
       defaultIndex.getBlockRowCount(segments.toList.asJava, indexInputFormat
-        .getPartitions, defaultIndex).asScala
+        .getPartitions, defaultIndex, false).asScala
     }
   }
 

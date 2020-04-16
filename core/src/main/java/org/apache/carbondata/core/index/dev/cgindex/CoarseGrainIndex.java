@@ -51,7 +51,7 @@ public abstract class CoarseGrainIndex implements Index<Blocklet> {
 
   @Override
   public Map<String, Long> getRowCountForEachBlock(Segment segment, List<PartitionSpec> partitions,
-      Map<String, Long> blockletToRowCountMap) {
+      Map<String, Long> blockletToRowCountMap, boolean isIUDFlow) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 

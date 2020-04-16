@@ -601,14 +601,14 @@ public final class TableIndex extends OperationEventListener {
    * @throws IOException
    */
   public Map<String, Long> getBlockRowCount(List<Segment> allsegments,
-      final List<PartitionSpec> partitions, TableIndex defaultIndex)
+      final List<PartitionSpec> partitions, TableIndex defaultIndex, boolean isIUDFlow)
       throws IOException {
     List<Segment> segments = getCarbonSegments(allsegments);
     Map<String, Long> blockletToRowCountMap = new HashMap<>();
     for (Segment segment : segments) {
       List<CoarseGrainIndex> indexes = defaultIndex.getIndexFactory().getIndexes(segment);
       for (CoarseGrainIndex index : indexes) {
-        index.getRowCountForEachBlock(segment, partitions, blockletToRowCountMap);
+        index.getRowCountForEachBlock(segment, partitions, blockletToRowCountMap, isIUDFlow);
       }
     }
     return blockletToRowCountMap;
