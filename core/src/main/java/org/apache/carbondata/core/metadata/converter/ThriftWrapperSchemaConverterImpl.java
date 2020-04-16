@@ -605,6 +605,14 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
           .setLocalDictColumnsToWrapperSchema(listOfColumns, externalTableSchema.tableProperties,
               externalTableSchema.tableProperties
                   .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE));
+      String handler = externalTableSchema.tableProperties.get(CarbonCommonConstants.INDEX_HANDLER);
+      if (handler != null) {
+        for (ColumnSchema columnSchema : listOfColumns) {
+          if (handler.equalsIgnoreCase(columnSchema.getColumnName())) {
+            columnSchema.setIndexColumn(true);
+          }
+        }
+      }
     }
     wrapperTableSchema.setListOfColumns(listOfColumns);
     wrapperTableSchema.setSchemaEvolution(
