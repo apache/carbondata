@@ -251,8 +251,10 @@ class CarbonFileMetastore extends CarbonMetaStore {
     try {
       lookupRelation(tableIdentifier)(sparkSession)
     } catch {
-      case _: Exception =>
+      case _: NoSuchTableException =>
         return false
+      case ex: Exception =>
+        throw ex
     }
     true
   }
