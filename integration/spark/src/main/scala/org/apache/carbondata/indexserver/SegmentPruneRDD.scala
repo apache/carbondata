@@ -32,6 +32,15 @@ class SegmentPruneRDD(@transient private val ss: SparkSession,
     dataMapFormat: IndexInputFormat)
   extends CarbonRDD[(String, SegmentWrapper)](ss, Nil) {
 
+  override protected def getPreferredLocations(split: Partition): Seq[String] = {
+    val locations = split.asInstanceOf[IndexRDDPartition].getLocations
+    if (locations != null) {
+      locations.toSeq
+    } else {
+      Seq()
+    }
+  }
+
   override protected def internalGetPartitions: Array[Partition] = {
     new DistributedPruneRDD(ss, dataMapFormat).partitions
   }
