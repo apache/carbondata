@@ -34,7 +34,7 @@ class CarbonDataSourceScan(
     val partitioning: Partitioning,
     val md: Map[String, String],
     identifier: Option[TableIdentifier],
-    @transient private val logicalRelation: LogicalRelation)
+    @transient val logicalRelation: LogicalRelation)
   extends FileSourceScanExec(
     relation,
     output,

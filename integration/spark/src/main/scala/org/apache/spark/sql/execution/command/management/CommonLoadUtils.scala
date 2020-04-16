@@ -291,7 +291,8 @@ object CommonLoadUtils {
         isDataFrame,
         optionsFinal,
         options,
-        isOverwriteTable)
+        isOverwriteTable,
+        sparkSession)
     operationContext.setProperty("isOverwrite", isOverwriteTable)
     OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
     // Add pre event listener for index datamap

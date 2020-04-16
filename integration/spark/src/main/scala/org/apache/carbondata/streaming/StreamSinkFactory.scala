@@ -102,7 +102,8 @@ object StreamSinkFactory {
       false,
       parameters.asJava,
       parameters.asJava,
-      false
+      false,
+      sparkSession
     )
     OperationListenerBus.getInstance().fireEvent(loadTablePreExecutionEvent, operationContext)
     // prepare the stream segment
