@@ -76,6 +76,11 @@ public interface Index<T extends Blocklet> {
   boolean isScanRequired(FilterResolverIntf filterExp);
 
   /**
+   * Validate Partition info, to check if any partitions is dropped
+   */
+  boolean validatePartitionInfo(List<PartitionSpec> partitions);
+
+  /**
    * Clear complete index table and release memory.
    */
   void clear();

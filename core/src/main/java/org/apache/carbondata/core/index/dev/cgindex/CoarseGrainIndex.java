@@ -56,6 +56,11 @@ public abstract class CoarseGrainIndex implements Index<Blocklet> {
   }
 
   @Override
+  public boolean validatePartitionInfo(List<PartitionSpec> partitions) {
+    throw new UnsupportedOperationException("Operation not supported");
+  }
+
+  @Override
   public int getNumberOfEntries() {
     // keep default, one record in one index
     return 1;
