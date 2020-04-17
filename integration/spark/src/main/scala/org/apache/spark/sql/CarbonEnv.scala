@@ -23,6 +23,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.events.{MergeBloomIndexEventListener, MergeIndexEventListener}
+import org.apache.spark.sql.execution.command.CreateFunctionCommand
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.listeners._
 import org.apache.spark.sql.profiler.Profiler
@@ -74,7 +75,15 @@ class CarbonEnv {
 
     sparkSession.udf.register("getTupleId", () => "")
     sparkSession.udf.register("getPositionId", () => "")
-    sparkSession.udf.register("NI", (anyRef: AnyRef) => true)
+    // add NI as a temp function, for queries to not hit SI table, it will be added as HiveSimpleUDF
+    CreateFunctionCommand(
+      databaseName = None,
+      functionName = "NI",
+      className = "org.apache.spark.sql.hive.NonIndexUDFExpression",
+      resources = Seq(),
+      isTemp = true,
+      ignoreIfExists = false,
+      replace = true).run(sparkSession)
 
     // register for lucene indexSchema
     // TODO: move it to proper place, it should be registered by indexSchema implementation
