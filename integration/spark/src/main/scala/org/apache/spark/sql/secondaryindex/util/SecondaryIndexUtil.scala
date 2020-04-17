@@ -18,7 +18,7 @@ package org.apache.spark.sql.secondaryindex.util
 
 import java.io.IOException
 import java.util
-import java.util.{Collections, Comparator, List}
+import java.util.{Collections, Comparator}
 
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks
@@ -35,6 +35,7 @@ import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.{TableBlockInfo, TaskBlockInfo}
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
@@ -44,6 +45,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.core.util.path.CarbonTablePath.DataFileUtil
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
@@ -197,6 +199,10 @@ object SecondaryIndexUtil {
       }
       if (finalMergeStatus) {
         if (null != mergeStatus && mergeStatus.length != 0) {
+          deleteOldIndexOrMergeIndexFiles(
+            carbonLoadModel.getFactTimeStamp,
+            validSegments,
+            indexCarbonTable)
           mergedSegments.asScala.map { seg =>
             val file = SegmentFileStore.writeSegmentFile(
               indexCarbonTable,
@@ -277,6 +283,25 @@ object SecondaryIndexUtil {
         LOGGER.error(s"Merge data files request failed for table " +
                      s"${indexCarbonTable.getDatabaseName}.${indexCarbonTable.getTableName}")
         throw new Exception("Merge data files Failure in Merger Rdd.", e)
+    }
+  }
+
+  /**
+   * This method deletes the old index files or merge index file after data files merge
+   */
+  private def deleteOldIndexOrMergeIndexFiles(
+      factTimeStamp: Long,
+      validSegments: util.List[Segment],
+      indexCarbonTable: CarbonTable): Unit = {
+    // delete the index/merge index carbonFile of old data files
+    validSegments.asScala.foreach { segment =>
+      SegmentFileStore.getIndexFilesListForSegment(segment, indexCarbonTable.getTablePath)
+        .asScala
+        .foreach { indexFile =>
+          if (DataFileUtil.getTimeStampFromFileName(indexFile).toLong < factTimeStamp) {
+            FileFactory.getCarbonFile(indexFile).delete()
+          }
+        }
     }
   }
 

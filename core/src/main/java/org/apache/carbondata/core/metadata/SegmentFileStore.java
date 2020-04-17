@@ -1245,6 +1245,24 @@ public class SegmentFileStore {
   }
 
   /**
+   * This method returns the list of indx/merge index files for a segment in carbonTable.
+   */
+  public static Set<String> getIndexFilesListForSegment(Segment segment, String tablePath)
+      throws IOException {
+    Set<String> indexFiles;
+    if (segment.getSegmentFileName() == null) {
+      String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segment.getSegmentNo());
+      indexFiles =
+          new SegmentIndexFileStore().getMergeOrIndexFilesFromSegment(segmentPath).keySet();
+    } else {
+      SegmentFileStore segmentFileStore =
+          new SegmentFileStore(tablePath, segment.getSegmentFileName());
+      indexFiles = segmentFileStore.getIndexOrMergeFiles().keySet();
+    }
+    return indexFiles;
+  }
+
+  /**
    * It contains the segment information like location, partitions and related index files
    */
   public static class SegmentFile implements Serializable {
