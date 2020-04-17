@@ -331,20 +331,6 @@ class CarbonSIRebuildRDD[K, V](
           val carbonFile = FileFactory.getCarbonFile(split.getFilePath)
           carbonFile.delete()
         }
-
-        // delete the indexfile/merge index carbonFile of old data files
-        val segmentPath = FileFactory.getCarbonFile(indexTable.getSegmentPath(segmentId))
-        val indexFiles = segmentPath.listFiles(new CarbonFileFilter {
-          override def accept(carbonFile: CarbonFile): Boolean = {
-            (carbonFile.getName.endsWith(CarbonTablePath.INDEX_FILE_EXT) ||
-             carbonFile.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) &&
-            DataFileUtil.getTimeStampFromFileName(carbonFile.getAbsolutePath).toLong <
-            carbonLoadModelCopy.getFactTimeStamp
-          }
-        })
-        indexFiles.foreach { indexFile =>
-          indexFile.delete()
-        }
       }
 
       private def deleteLocalDataFolders(): Unit = {
