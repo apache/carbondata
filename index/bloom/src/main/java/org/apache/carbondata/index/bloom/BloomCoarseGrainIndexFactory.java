@@ -56,6 +56,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 /**
@@ -283,7 +284,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
   }
 
   @Override
-  public List<CoarseGrainIndex> getIndexes(Segment segment, Set<String> partitionsToPrune)
+  public List<CoarseGrainIndex> getIndexes(Segment segment, Set<Path> partitionLocations)
       throws IOException {
     return getIndexes(segment);
   }

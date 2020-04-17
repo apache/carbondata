@@ -35,6 +35,8 @@ import org.apache.carbondata.core.index.dev.fgindex.FineGrainIndex;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 
+import org.apache.hadoop.fs.Path;
+
 /**
  * FG level of lucene Index
  */
@@ -65,7 +67,7 @@ public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrai
   }
 
   @Override
-  public List<FineGrainIndex> getIndexes(Segment segment, Set<String> partitions)
+  public List<FineGrainIndex> getIndexes(Segment segment, Set<Path> partitionLocations)
       throws IOException {
     return getIndexes(segment);
   }

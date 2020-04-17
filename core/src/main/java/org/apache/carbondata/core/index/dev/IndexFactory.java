@@ -37,6 +37,8 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.events.Event;
 
+import org.apache.hadoop.fs.Path;
+
 /**
  * Factory class for creating the index.
  */
@@ -97,10 +99,10 @@ public abstract class IndexFactory<T extends Index> {
    * matches the partition.
    */
   public Map<Segment, List<CoarseGrainIndex>> getIndexes(List<Segment> segments,
-      Set<String> partitionsToPrune, IndexFilter indexFilter) throws IOException {
+      Set<Path> partitionLocations, IndexFilter indexFilter) throws IOException {
     Map<Segment, List<CoarseGrainIndex>> indexes = new HashMap<>();
     for (Segment segment : segments) {
-      indexes.put(segment, (List<CoarseGrainIndex>) this.getIndexes(segment, partitionsToPrune));
+      indexes.put(segment, (List<CoarseGrainIndex>) this.getIndexes(segment, partitionLocations));
     }
     return indexes;
   }
@@ -113,7 +115,7 @@ public abstract class IndexFactory<T extends Index> {
   /**
    * Get the index for segmentId with matched partitions
    */
-  public abstract List<T> getIndexes(Segment segment, Set<String> partitionsToPrune)
+  public abstract List<T> getIndexes(Segment segment, Set<Path> partitionLocations)
       throws IOException;
 
   /**

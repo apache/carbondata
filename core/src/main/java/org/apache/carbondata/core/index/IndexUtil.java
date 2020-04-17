@@ -197,9 +197,6 @@ public class IndexUtil {
       String clsName = "org.apache.spark.sql.secondaryindex.Jobs.SparkBlockletIndexLoaderJob";
       IndexJob indexJob = (IndexJob) createIndexJob(clsName);
       String className = "org.apache.spark.sql.secondaryindex.Jobs.BlockletIndexInputFormat";
-      SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
-          getValidAndInvalidSegments(carbonTable, FileFactory.getConfiguration());
-      List<Segment> invalidSegments = validAndInvalidSegmentsInfo.getInvalidSegments();
       FileInputFormat indexFormat =
           createIndexJob(carbonTable, indexExprWrapper, validSegments, className);
       indexJob.execute(carbonTable, indexFormat);
@@ -207,11 +204,11 @@ public class IndexUtil {
   }
 
   private static FileInputFormat createIndexJob(CarbonTable carbonTable,
-      IndexExprWrapper indexExprWrapper, List<Segment> validsegments, String clsName) {
+      IndexExprWrapper indexExprWrapper, List<Segment> validSegments, String clsName) {
     try {
       Constructor<?> cons = Class.forName(clsName).getDeclaredConstructors()[0];
       return (FileInputFormat) cons
-          .newInstance(carbonTable, indexExprWrapper, validsegments);
+          .newInstance(carbonTable, indexExprWrapper, validSegments);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

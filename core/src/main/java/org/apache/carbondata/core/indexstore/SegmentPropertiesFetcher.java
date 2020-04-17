@@ -24,6 +24,8 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.index.dev.Index;
 
+import org.apache.hadoop.fs.Path;
+
 /**
  * Fetches the detailed segmentProperties which has more information to execute the query
  */
@@ -38,7 +40,7 @@ public interface SegmentPropertiesFetcher {
   SegmentProperties getSegmentProperties(Segment segment)
       throws IOException;
 
-  SegmentProperties getSegmentProperties(Segment segment, Set<String> partitionsToPrune)
+  SegmentProperties getSegmentProperties(Segment segment, Set<Path> partitionLocations)
       throws IOException;
 
   SegmentProperties getSegmentPropertiesFromIndex(Index coarseGrainIndex);

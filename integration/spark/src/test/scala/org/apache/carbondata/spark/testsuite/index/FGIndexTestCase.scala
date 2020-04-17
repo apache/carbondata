@@ -23,6 +23,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -156,7 +157,7 @@ class FGIndexFactory(carbonTable: CarbonTable,
    * Get the indexSchema for segmentId
    */
   override def getIndexes(segment: Segment,
-      partitions: java.util.Set[String]): java.util.List[FineGrainIndex] = {
+      partitionLocations: java.util.Set[Path]): java.util.List[FineGrainIndex] = {
     getIndexes(segment)
   }
 }

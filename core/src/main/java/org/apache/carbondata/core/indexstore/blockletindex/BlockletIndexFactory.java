@@ -72,6 +72,8 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
+import org.apache.hadoop.fs.Path;
+
 /**
  * Index for blocklet
  */
@@ -142,7 +144,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
    * Get the index for all segments
    */
   public Map<Segment, List<CoarseGrainIndex>> getIndexes(List<Segment> segments,
-      Set<String> partitionsToPrune, IndexFilter filter) throws IOException {
+      Set<Path> partitionLocations, IndexFilter filter) throws IOException {
     List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers =
         new ArrayList<>();
     Map<Segment, List<CoarseGrainIndex>> indexMap = new HashMap<>();
@@ -151,9 +153,9 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
       segmentMap.put(segment.getSegmentNo(), segment);
       Set<TableBlockIndexUniqueIdentifier> identifiers =
           getTableBlockIndexUniqueIdentifiers(segment);
-      if (!partitionsToPrune.isEmpty()) {
+      if (!partitionLocations.isEmpty()) {
         // get tableBlockIndexUniqueIdentifierWrappers from segment file info
-        getTableBlockUniqueIdentifierWrappers(partitionsToPrune,
+        getTableBlockUniqueIdentifierWrappers(partitionLocations,
             tableBlockIndexUniqueIdentifierWrappers, identifiers);
       } else {
         SegmentMetaDataInfo segmentMetaDataInfo = segment.getSegmentMetaDataInfo();
@@ -189,19 +191,19 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   }
 
   /**
-   * get tableBlockUniqueIdentifierWrappers from segment info. If partitionsToPrune is defined,
+   * get tableBlockUniqueIdentifierWrappers from segment info. If partitionLocations is defined,
    * then get tableBlockUniqueIdentifierWrappers for the matched partitions.
    */
-  private void getTableBlockUniqueIdentifierWrappers(Set<String> partitionsToPrune,
+  private void getTableBlockUniqueIdentifierWrappers(Set<Path> partitionLocations,
       List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers,
       Set<TableBlockIndexUniqueIdentifier> identifiers) {
     for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier : identifiers) {
-      if (!partitionsToPrune.isEmpty()) {
+      if (!partitionLocations.isEmpty()) {
         // add only tableBlockUniqueIdentifier that matches the partition
         // get the indexFile Parent path and compare with the PartitionPath, if matches, then add
         // the corresponding tableBlockIndexUniqueIdentifier for pruning
-        if (partitionsToPrune.contains(
-            FileFactory.getUpdatedFilePath(tableBlockIndexUniqueIdentifier.getIndexFilePath()))) {
+        if (partitionLocations
+            .contains(new Path(tableBlockIndexUniqueIdentifier.getIndexFilePath()))) {
           tableBlockIndexUniqueIdentifierWrappers.add(
               new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier,
                   this.getCarbonTable()));
@@ -330,13 +332,13 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
 
   @Override
   public List<CoarseGrainIndex> getIndexes(Segment segment,
-      Set<String> partitionsToPrune) throws IOException {
+      Set<Path> partitionLocations) throws IOException {
     List<CoarseGrainIndex> indexes = new ArrayList<>();
     Set<TableBlockIndexUniqueIdentifier> identifiers =
         getTableBlockIndexUniqueIdentifiers(segment);
     List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers =
         new ArrayList<>(identifiers.size());
-    getTableBlockUniqueIdentifierWrappers(partitionsToPrune,
+    getTableBlockUniqueIdentifierWrappers(partitionLocations,
         tableBlockIndexUniqueIdentifierWrappers, identifiers);
     List<BlockletIndexWrapper> blockletIndexWrappers =
         cache.getAll(tableBlockIndexUniqueIdentifierWrappers);
@@ -628,9 +630,9 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   }
 
   @Override
-  public SegmentProperties getSegmentProperties(Segment segment, Set<String> partitionsToPrune)
+  public SegmentProperties getSegmentProperties(Segment segment, Set<Path> partitionLocations)
       throws IOException {
-    List<CoarseGrainIndex> indexes = getIndexes(segment, partitionsToPrune);
+    List<CoarseGrainIndex> indexes = getIndexes(segment, partitionLocations);
     assert (indexes.size() > 0);
     CoarseGrainIndex coarseGrainIndex = indexes.get(0);
     assert (coarseGrainIndex instanceof BlockIndex);
@@ -646,10 +648,10 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   }
 
   @Override
-  public List<Blocklet> getAllBlocklets(Segment segment, Set<String> partitionLocs)
+  public List<Blocklet> getAllBlocklets(Segment segment, Set<Path> partitionLocations)
       throws IOException {
     List<Blocklet> blocklets = new ArrayList<>();
-    List<CoarseGrainIndex> indexes = getIndexes(segment, partitionLocs);
+    List<CoarseGrainIndex> indexes = getIndexes(segment, partitionLocations);
     if (indexes.size() == 0) {
       return blocklets;
     }

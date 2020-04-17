@@ -60,6 +60,7 @@ import org.apache.carbondata.events.Event;
 import org.apache.carbondata.events.OperationContext;
 import org.apache.carbondata.events.OperationEventListener;
 
+import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 /**
@@ -123,9 +124,9 @@ public final class TableIndex extends OperationEventListener {
     List<Segment> segments = getCarbonSegments(allsegments);
     final Map<Segment, List<Index>> indexes;
     boolean isFilterPresent = filter != null && !filter.isEmpty();
-    Set<String> partitionsToPrune = getPartitionsToPrune(partitions);
-    if (table.isHivePartitionTable() && isFilterPresent && !partitionsToPrune.isEmpty()) {
-      indexes = indexFactory.getIndexes(segments, partitionsToPrune, filter);
+    Set<Path> partitionLocations = getPartitionLocations(partitions);
+    if (table.isHivePartitionTable() && isFilterPresent && !partitionLocations.isEmpty()) {
+      indexes = indexFactory.getIndexes(segments, partitionLocations, filter);
     } else {
       indexes = indexFactory.getIndexes(segments, filter);
     }
@@ -159,9 +160,9 @@ public final class TableIndex extends OperationEventListener {
       // driver should have minimum threads opened to support multiple concurrent queries.
       if (filter == null || filter.isEmpty()) {
         // if filter is not passed, then return all the blocklets.
-        return pruneWithoutFilter(segments, partitionsToPrune, blocklets);
+        return pruneWithoutFilter(segments, partitionLocations, blocklets);
       }
-      return pruneWithFilter(segments, filter, partitionsToPrune, blocklets, indexes);
+      return pruneWithFilter(segments, filter, partitionLocations, blocklets, indexes);
     }
     // handle by multi-thread
     List<ExtendedBlocklet> extendedBlocklets = pruneMultiThread(
@@ -180,9 +181,10 @@ public final class TableIndex extends OperationEventListener {
   }
 
   private List<ExtendedBlocklet> pruneWithoutFilter(List<Segment> segments,
-      Set<String> partitions, List<ExtendedBlocklet> blocklets) throws IOException {
+      Set<Path> partitionLocations, List<ExtendedBlocklet> blocklets) throws IOException {
     for (Segment segment : segments) {
-      List<Blocklet> allBlocklets = blockletDetailsFetcher.getAllBlocklets(segment, partitions);
+      List<Blocklet> allBlocklets =
+          blockletDetailsFetcher.getAllBlocklets(segment, partitionLocations);
       blocklets.addAll(
           addSegmentId(blockletDetailsFetcher.getExtendedBlocklets(allBlocklets, segment),
               segment));
@@ -190,19 +192,18 @@ public final class TableIndex extends OperationEventListener {
     return blocklets;
   }
 
-  private Set<String> getPartitionsToPrune(List<PartitionSpec> partitionSpecs) {
-    Set<String> partitionsToPrune = new HashSet<>();
+  private Set<Path> getPartitionLocations(List<PartitionSpec> partitionSpecs) {
+    Set<Path> partitionsLocations = new HashSet<>();
     if (null != partitionSpecs) {
       for (PartitionSpec partitionSpec : partitionSpecs) {
-        partitionsToPrune
-            .add(FileFactory.getUpdatedFilePath(partitionSpec.getLocation().toUri().getPath()));
+        partitionsLocations.add(partitionSpec.getLocation());
       }
     }
-    return partitionsToPrune;
+    return partitionsLocations;
   }
 
   private List<ExtendedBlocklet> pruneWithFilter(List<Segment> segments, IndexFilter filter,
-      Set<String> partitionsToPrune, List<ExtendedBlocklet> blocklets,
+      Set<Path> partitionLocations, List<ExtendedBlocklet> blocklets,
       Map<Segment, List<Index>> indexes) throws IOException {
     for (Segment segment : segments) {
       if (indexes.get(segment).isEmpty() || indexes.get(segment) == null) {
@@ -211,7 +212,7 @@ public final class TableIndex extends OperationEventListener {
       boolean isExternalSegment = segment.getSegmentPath() != null;
       List<Blocklet> pruneBlocklets = new ArrayList<>();
       SegmentProperties segmentProperties =
-          segmentPropertiesFetcher.getSegmentProperties(segment, partitionsToPrune);
+          segmentPropertiesFetcher.getSegmentProperties(segment, partitionLocations);
       if (filter.isResolvedOnSegment(segmentProperties)) {
         FilterExecuter filterExecuter;
         if (!isExternalSegment) {
@@ -503,7 +504,7 @@ public final class TableIndex extends OperationEventListener {
       FilterResolverIntf filterExp, List<PartitionSpec> partitions) throws IOException {
     List<ExtendedBlocklet> detailedBlocklets = new ArrayList<>();
     List<Blocklet> blocklets = new ArrayList<>();
-    Set<String> partitionsToPrune = getPartitionsToPrune(partitions);
+    Set<Path> partitionsToPrune = getPartitionLocations(partitions);
     SegmentProperties segmentProperties = segmentPropertiesFetcher
         .getSegmentProperties(distributable.getSegment(), partitionsToPrune);
     FilterExecuter filterExecuter = FilterUtil
