@@ -67,13 +67,18 @@ public interface Index<T extends Blocklet> {
    * blockletpath and the row count
    */
   Map<String, Long> getRowCountForEachBlock(Segment segment, List<PartitionSpec> partitions,
-      Map<String, Long> blockletToRowCountMap, boolean isIUDFlow);
+      Map<String, Long> blockletToRowCountMap);
 
   // TODO Move this method to Abstract class
   /**
    * Validate whether the current segment needs to be fetching the required data
    */
   boolean isScanRequired(FilterResolverIntf filterExp);
+
+  /**
+   * Validate Partition info, to check if any partitions is dropped
+   */
+  boolean validatePartitionInfo(List<PartitionSpec> partitions);
 
   /**
    * Clear complete index table and release memory.

@@ -613,7 +613,14 @@ public class BlockIndex extends CoarseGrainIndex
         taskSummaryDMStore.getIndexRow(getTaskSummarySchema(), 0).getLong(TASK_ROW_COUNT);
     if (totalRowCount == 0) {
       Map<String, Long> blockletToRowCountMap = new HashMap<>();
-      getRowCountForEachBlock(segment, partitions, blockletToRowCountMap, false);
+      // if it has partitioned index but there is no partitioned information stored, it means
+      // partitions are dropped so return empty list.
+      if (partitions != null) {
+        if (validatePartitionInfo(partitions)) {
+          return totalRowCount;
+        }
+      }
+      getRowCountForEachBlock(segment, partitions, blockletToRowCountMap);
       for (long blockletRowCount : blockletToRowCountMap.values()) {
         totalRowCount += blockletRowCount;
       }
@@ -626,16 +633,9 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   public Map<String, Long> getRowCountForEachBlock(Segment segment, List<PartitionSpec> partitions,
-      Map<String, Long> blockletToRowCountMap, boolean isIUDFlow) {
+      Map<String, Long> blockletToRowCountMap) {
     if (memoryDMStore.getRowCount() == 0) {
       return new HashMap<>();
-    }
-    // if it has partitioned index but there is no partitioned information stored, it means
-    // partitions are dropped so return empty list.
-    if (partitions != null && isIUDFlow) {
-      if (!validatePartitionInfo(partitions)) {
-        return new HashMap<>();
-      }
     }
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     int numEntries = memoryDMStore.getRowCount();
@@ -740,7 +740,10 @@ public class BlockIndex extends CoarseGrainIndex
     return prune(filterExp, filterExecuter, segmentProperties);
   }
 
-  private boolean validatePartitionInfo(List<PartitionSpec> partitions) {
+  public boolean validatePartitionInfo(List<PartitionSpec> partitions) {
+    if (memoryDMStore.getRowCount() == 0) {
+      return true;
+    }
     // First get the partitions which are stored inside index.
     String[] fileDetails = getFileDetails();
     // Check the exact match of partition information inside the stored partitions.
@@ -752,7 +755,7 @@ public class BlockIndex extends CoarseGrainIndex
         break;
       }
     }
-    return found;
+    return !found;
   }
 
   @Override

@@ -50,7 +50,12 @@ public abstract class FineGrainIndex implements Index<FineGrainBlocklet> {
 
   @Override
   public Map<String, Long> getRowCountForEachBlock(Segment segment, List<PartitionSpec> partitions,
-      Map<String, Long> blockletToRowCountMap, boolean isIUDFlow) {
+      Map<String, Long> blockletToRowCountMap) {
+    throw new UnsupportedOperationException("Operation not supported");
+  }
+
+  @Override
+  public boolean validatePartitionInfo(List<PartitionSpec> partitions) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 

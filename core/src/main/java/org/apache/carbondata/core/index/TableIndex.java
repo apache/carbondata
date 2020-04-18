@@ -601,14 +601,38 @@ public final class TableIndex extends OperationEventListener {
    * @throws IOException
    */
   public Map<String, Long> getBlockRowCount(List<Segment> allsegments,
-      final List<PartitionSpec> partitions, TableIndex defaultIndex, boolean isIUDFlow)
+      final List<PartitionSpec> partitions, TableIndex defaultIndex)
       throws IOException {
     List<Segment> segments = getCarbonSegments(allsegments);
     Map<String, Long> blockletToRowCountMap = new HashMap<>();
     for (Segment segment : segments) {
       List<CoarseGrainIndex> indexes = defaultIndex.getIndexFactory().getIndexes(segment);
       for (CoarseGrainIndex index : indexes) {
-        index.getRowCountForEachBlock(segment, partitions, blockletToRowCountMap, isIUDFlow);
+        if (null != partitions) {
+          // if it has partitioned index but there is no partitioned information stored, it means
+          // partitions are dropped so return empty list.
+          if (index.validatePartitionInfo(partitions)) {
+            return new HashMap<>();
+          }
+        }
+        index.getRowCountForEachBlock(segment, partitions, blockletToRowCountMap);
+      }
+    }
+    return blockletToRowCountMap;
+  }
+
+  /**
+   * Get the mapping of blocklet path and row count for all blocks. This method skips the
+   * validation of partition info for countStar job.
+   */
+  public Map<String, Long> getBlockRowCount(TableIndex defaultIndex, List<Segment> allsegments,
+      final List<PartitionSpec> partitions) throws IOException {
+    List<Segment> segments = getCarbonSegments(allsegments);
+    Map<String, Long> blockletToRowCountMap = new HashMap<>();
+    for (Segment segment : segments) {
+      List<CoarseGrainIndex> indexes = defaultIndex.getIndexFactory().getIndexes(segment);
+      for (CoarseGrainIndex index : indexes) {
+        index.getRowCountForEachBlock(segment, partitions, blockletToRowCountMap);
       }
     }
     return blockletToRowCountMap;
