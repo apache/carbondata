@@ -85,7 +85,7 @@ case class CarbonCreateIndexCommand(
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
-    if (parentTable.isIndexTable) {
+    if (parentTable.isMV || parentTable.isIndexTable) {
       throw new MalformedIndexCommandException(
         "Cannot create index on child table `" + indexName + "`")
     }
