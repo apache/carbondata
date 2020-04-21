@@ -103,6 +103,7 @@ public class DefaultFileTypeProvider implements FileTypeInterface {
       case LOCAL:
         return new LocalCarbonFile(FileFactory.getUpdatedFilePath(path));
       case HDFS:
+      case HDFS_LOCAL:
         return new HDFSCarbonFile(path, conf);
       case S3:
         return new S3CarbonFile(path, conf);
