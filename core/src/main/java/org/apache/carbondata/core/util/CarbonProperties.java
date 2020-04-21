@@ -1850,17 +1850,24 @@ public final class CarbonProperties {
    * This method validates the numOfThreadsForPruning
    */
   public static int getNumOfThreadsForPruning() {
-    int numOfThreadsForPruning = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING,
-            CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT));
-    if (numOfThreadsForPruning > Integer
-        .parseInt(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT)
-        || numOfThreadsForPruning < 1) {
-      LOGGER.info("Invalid value for carbon.max.driver.threads.for.block.pruning, value :"
-          + numOfThreadsForPruning + " .using the default threads : "
-          + CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT);
-      numOfThreadsForPruning = Integer
-          .parseInt(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT);
+    int numOfThreadsForPruning;
+    String maxDriverThreadsForBockPruning =
+        CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING;
+    int defaultNumberOfThreads =
+        Integer.parseInt(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT);
+    String logMessage = " is not a valid input for " + maxDriverThreadsForBockPruning
+        + ". Using the default number of threads : " + defaultNumberOfThreads;
+    try {
+      numOfThreadsForPruning = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(maxDriverThreadsForBockPruning, String.valueOf(defaultNumberOfThreads)));
+      if (numOfThreadsForPruning > defaultNumberOfThreads || numOfThreadsForPruning < 1) {
+        LOGGER.info(numOfThreadsForPruning + logMessage);
+        numOfThreadsForPruning = defaultNumberOfThreads;
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info(
+          CarbonProperties.getInstance().getProperty(maxDriverThreadsForBockPruning + logMessage));
+      numOfThreadsForPruning = defaultNumberOfThreads;
     }
     return numOfThreadsForPruning;
   }

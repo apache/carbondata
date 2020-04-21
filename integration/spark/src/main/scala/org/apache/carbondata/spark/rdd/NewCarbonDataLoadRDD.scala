@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
 
 import scala.collection.mutable
+import scala.util.Try
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
@@ -135,7 +136,8 @@ class NewCarbonDataLoadRDD[K, V](
 
         val preFetch = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
           .USE_PREFETCH_WHILE_LOADING, CarbonCommonConstants.USE_PREFETCH_WHILE_LOADING_DEFAULT)
-        carbonLoadModel.setPreFetch(preFetch.toBoolean)
+        carbonLoadModel.setPreFetch(Try(preFetch.toBoolean).getOrElse(CarbonCommonConstants
+          .USE_PREFETCH_WHILE_LOADING_DEFAULT.toBoolean))
         val recordReaders = getInputIterators
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
