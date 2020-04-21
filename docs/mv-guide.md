@@ -47,10 +47,10 @@
  Materialized view can be refreshed on commit or on manual. Once materialized views are created, 
  CarbonData's MVRewriteRule helps to select the most efficient materialized view based on 
  the user query and rewrite the SQL to select the data from materialized view instead of 
- related tables. Since the data size of materialized view is smaller and data is pre-processed, 
+ fact tables. Since the data size of materialized view is smaller and data is pre-processed, 
  user queries are much faster.
  
- For instance, related table called **sales** which is defined as.
+ For instance, fact table called **sales** which is defined as.
  
    ```
      CREATE TABLE sales (
@@ -76,8 +76,8 @@
 
  **NOTE**:
    * Group by and Order by columns has to be provided in projection list while creating materialized view.
-   * If only single related table is involved in materialized view creation, then TableProperties of 
-     related table (if not present in a aggregate function like sum(col)) listed below will be 
+   * If only single fact table is involved in materialized view creation, then TableProperties of 
+     fact table (if not present in a aggregate function like sum(col)) listed below will be 
      inherited to materialized view.
        1. SORT_COLUMNS
        2. SORT_SCOPE
@@ -90,7 +90,7 @@
        9. INVERTED_INDEX
        10. NO_INVERTED_INDEX
        11. COLUMN_COMPRESSOR
-   * Creating materialized view with select query containing only project of all columns of related 
+   * Creating materialized view with select query containing only project of all columns of fact 
      table is unsupported.
      **Example:**
        If table 'x' contains columns 'a,b,c', then creating MV Index with below queries is not supported.
@@ -100,7 +100,7 @@
      LOCAL_DICTIONARY_EXCLUDE, INVERTED_INDEX, NO_INVERTED_INDEX, SORT_COLUMNS, LONG_STRING_COLUMNS, 
      RANGE_COLUMN & COLUMN_META_CACHE.
    * TableProperty given in Properties will be considered for materialized view creation, even though 
-     if same property is inherited from related table, which allows user to provide different table 
+     if same property is inherited from fact table, which allows user to provide different table 
      properties for materialized view.
    * Materialized view creation with limit or union all CTAS queries is unsupported.
    * Materialized view does not support streaming.
@@ -111,7 +111,7 @@
  candidates and process the the ModularPlan based on registered summary data sets. Then,
  materialized view for this query will be selected among the candidates.
 
- For the related table **sales** and materialized view **agg_sales** created above, following queries
+ For the fact table **sales** and materialized view **agg_sales** created above, following queries
    ```
      SELECT country, sex, sum(quantity), avg(price) FROM sales GROUP BY country, sex
      SELECT sex, sum(quantity) FROM sales GROUP BY sex
@@ -119,7 +119,7 @@
    ```
 
  will be transformed by CarbonData's query planner to query against materialized view **agg_sales** 
- instead of the related table **sales**.
+ instead of the fact table **sales**.
  
  However, for following queries
 
@@ -129,7 +129,7 @@
      SELECT country, max(price) FROM sales GROUP BY country
    ```
 
- will query against related table **sales** only, because it does not satisfy materialized view
+ will query against fact table **sales** only, because it does not satisfy materialized view
  selection logic.
 
 ## Loading data
@@ -140,8 +140,8 @@
  view will be triggered by the CREATE MATERIALIZED VIEW statement when user creates the materialized 
  view.
 
- For incremental loads to related table, data to materialized view will be loaded once the 
- corresponding related table load is completed.
+ For incremental loads to fact table, data to materialized view will be loaded once the 
+ corresponding fact table load is completed.
 
 ### Loading data on manual
 
@@ -149,9 +149,9 @@
  command. Materialized view will be in DISABLED state in below scenarios.
 
    * when materialized view is created.
-   * when data of related table and materialized view are not in sync.
+   * when data of fact table and materialized view are not in sync.
   
- User should fire REFRESH MATERIALIZED VIEW command to sync all segments of related table with 
+ User should fire REFRESH MATERIALIZED VIEW command to sync all segments of fact table with 
  materialized view and which ENABLES the materialized view for query.
 
  Command example:
@@ -161,25 +161,25 @@
 
 ### Loading data to multiple materialized views
 
- During load to related table, if anyone of the load to materialized view fails, then that 
+ During load to fact table, if anyone of the load to materialized view fails, then that 
  corresponding materialized view will be DISABLED and load to other materialized views mapped 
- to related table will continue. 
+ to fact table will continue. 
 
  User can fire REFRESH MATERIALIZED VIEW command to sync or else the subsequent table load 
  will load the old failed loads along with current load and enable the disabled materialized view.
 
  **NOTE**:
-   * In case of InsertOverwrite/Update operation on related table, all segments of materialized view 
+   * In case of InsertOverwrite/Update operation on fact table, all segments of materialized view 
      will be MARKED_FOR_DELETE and reload to Index table will happen by REFRESH MATERIALIZED VIEW, 
      in case of materialized view which refresh on manual and once the InsertOverwrite/Update 
-     operation on related table is finished, in case of materialized view which refresh on commit.
-   * In case of full scan query, Data Size and Index Size of related table and materialized view 
-     will not the same, as related table and materialized view has different column names.
+     operation on fact table is finished, in case of materialized view which refresh on commit.
+   * In case of full scan query, Data Size and Index Size of fact table and materialized view 
+     will not the same, as fact table and materialized view has different column names.
 
 ## Querying data
 
- Queries are to be made on related table. While doing query planning, internally CarbonData will check
- materialized views which associated the related table, and do query plan transformation accordingly.
+ Queries are to be made on fact table. While doing query planning, internally CarbonData will check
+ materialized views which associated the fact table, and do query plan transformation accordingly.
  
  User can verify whether a query can leverage materialized view or not by executing `EXPLAIN` command, 
  which will show the transformed logical plan, and thus user can check whether materialized view 
@@ -187,16 +187,16 @@
 
 ## Compacting
 
- Running Compaction command (`ALTER TABLE COMPACT`)[COMPACTION TYPE-> MINOR/MAJOR] on related table 
- will automatically compact the materialized view created on the related table, once compaction 
- on related table is done.
+ Running Compaction command (`ALTER TABLE COMPACT`)[COMPACTION TYPE-> MINOR/MAJOR] on fact table 
+ will automatically compact the materialized view created on the fact table, once compaction 
+ on fact table is done.
 
 ## Data Management
 
- In current implementation, data consistency needs to be maintained for both related table and 
+ In current implementation, data consistency needs to be maintained for both fact table and 
  materialized views. 
  
- Once there is materialized view created on the related table, following command on the related
+ Once there is materialized view created on the fact table, following command on the fact
  table is not supported:
  
    1. Data management command: `DELETE SEGMENT`.
@@ -206,16 +206,16 @@
       materialized view, if not, the operation is allowed, otherwise operation will be rejected by
       throwing exception.
    3. Partition management command: `ALTER TABLE ADD/DROP PARTITION`. Note that dropping a partition
-      will be allowed only if partition is participating in all indexes associated with related table.
+      will be allowed only if partition is participating in all indexes associated with fact table.
       Drop Partition is not allowed, if any materialized view is associated with more than one 
-      related table. Drop Partition directly on materialized view is not allowed.
+      fact table. Drop Partition directly on materialized view is not allowed.
    4. Complex Datatype's for materialized view is not supported.
    
- However, there is still way to support these operations on related table, in current CarbonData
+ However, there is still way to support these operations on fact table, in current CarbonData
  release, user can do as following:
  
    1. Remove the materialized by `DROP MATERIALIZED VIEW` command.
-   2. Carry out the data management operation on related table.
+   2. Carry out the data management operation on fact table.
    3. Create the materialized view again by `CREATE MATERIALIZED VIEW` command.
    
  Basically, user can manually trigger the operation by re-building the materialized view.
@@ -266,7 +266,7 @@
  Users can create materialized views with time series queries like the below example:
 
    ```
-     CREATE MATERIALIZED VIEW agg_sales
+     CREATE MATERIALIZED VIEW agg_sales AS
      SELECT timeseries(order_time, 'minute'),avg(price)
      FROM sales
      GROUP BY timeseries(order_time, 'minute')
@@ -283,7 +283,7 @@
  
    ```
      +---------------------------------------+----------------+
-     |UDF:timeseries(projectjoindate, minute)|avg(projectcode)|
+     |UDF:timeseries(order_toie, minute)     |avg(price)      |
      +---------------------------------------+----------------+
      |2016-02-23 09:01:00                    |3.5             |
      |2016-02-23 09:07:00                    |5.0             |
