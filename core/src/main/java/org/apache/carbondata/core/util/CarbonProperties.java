@@ -624,12 +624,12 @@ public final class CarbonProperties {
   public boolean isIndexParallelLoadingEnabled(String databaseName, String tableName) {
     // Check for propertyKey.dbname.table name for session based set for a specific table.
     String loadIndexParallel = getSessionPropertyValue(
-        CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL + "." + databaseName + "." + tableName);
+        CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL + databaseName + "." + tableName);
     // If table table property is not specified then check for session for all the tables
     // otherwise check in carbon.properties
     if (loadIndexParallel == null) {
-      loadIndexParallel =
-          getProperty(CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL, "false");
+      loadIndexParallel = getProperty(CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL,
+          CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL_DEFAULT);
     }
     boolean configuredValue = Boolean.parseBoolean(loadIndexParallel);
     if (configuredValue) {
