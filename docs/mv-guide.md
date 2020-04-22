@@ -39,9 +39,9 @@
      EXPLAIN SELECT a, sum(b) FROM maintable GROUP BY a;
    ```
 
-## Introduction
+## Introductions
 
- Materialized views are created as sub-queries. User can create limitless materialized view to 
+ Materialized views are created as a queries. User can create limitless materialized view to 
  improve query performance provided the storage requirements and loading time is acceptable.
  
  Materialized view can be refreshed on commit or on manual. Once materialized views are created, 
@@ -152,7 +152,7 @@
    * when data of fact table and materialized view are not in sync.
   
  User should fire REFRESH MATERIALIZED VIEW command to sync all segments of fact table with 
- materialized view and which ENABLES the materialized view for query.
+ materialized view, which ENABLES the materialized view for query.
 
  Command example:
    ```
@@ -179,7 +179,8 @@
 ## Querying data
 
  Queries are to be made on fact table. While doing query planning, internally CarbonData will check
- materialized views which associated the fact table, and do query plan transformation accordingly.
+ for the materialized views which are associated with the fact table, and do query plan 
+ transformation accordingly.
  
  User can verify whether a query can leverage materialized view or not by executing `EXPLAIN` command, 
  which will show the transformed logical plan, and thus user can check whether materialized view 
