@@ -352,7 +352,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
       throws IOException {
     SegmentBlockIndexInfo segmentBlockIndexInfo = segmentMap.get(segment.getSegmentNo());
     Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = null;
-    if (null != segmentBlockIndexInfo) {
+    if (null != segmentBlockIndexInfo && null != segmentBlockIndexInfo.getSegmentMetaDataInfo()) {
       segment.setSegmentMetaDataInfo(
           segmentMap.get(segment.getSegmentNo()).getSegmentMetaDataInfo());
       return segmentBlockIndexInfo.getTableBlockIndexUniqueIdentifiers();
@@ -698,12 +698,11 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
 
   private Set<TableBlockIndexUniqueIdentifier> getTableSegmentUniqueIdentifiers(Segment segment)
       throws IOException {
-    Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
-        segmentMap.get(segment.getSegmentNo()).getTableBlockIndexUniqueIdentifiers();
-    if (tableBlockIndexUniqueIdentifiers == null) {
-      tableBlockIndexUniqueIdentifiers = BlockletIndexUtil.getSegmentUniqueIdentifiers(segment);
+    SegmentBlockIndexInfo segmentBlockIndexInfo = segmentMap.get(segment.getSegmentNo());
+    if (segmentBlockIndexInfo == null) {
+      return BlockletIndexUtil.getSegmentUniqueIdentifiers(segment);
     }
-    return tableBlockIndexUniqueIdentifiers;
+    return segmentBlockIndexInfo.getTableBlockIndexUniqueIdentifiers();
   }
 
   public void updateSegmentIndex(

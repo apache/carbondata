@@ -1561,6 +1561,9 @@ public final class CarbonCommonConstants {
   @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_LOAD_INDEXES_PARALLEL = "carbon.load.indexes.parallel.";
 
+  // Default value for parallel index loading
+  public static final String CARBON_LOAD_INDEXES_PARALLEL_DEFAULT = "false";
+
   // by default lucene will not store or create index for stop words like "is","the", if this
   // property is set to true lucene will index for stop words also and gives result for the filter
   // with stop words(example: TEXT_MATCH('description':'the'))

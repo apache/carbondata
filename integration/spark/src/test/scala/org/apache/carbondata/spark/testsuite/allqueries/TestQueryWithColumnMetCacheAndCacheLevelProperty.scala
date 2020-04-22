@@ -23,13 +23,13 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, Row}
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.dev.Index
-import org.apache.carbondata.core.index.{IndexStoreManager, IndexChooser, IndexFilter, Segment, TableIndex}
+import org.apache.carbondata.core.index.{IndexChooser, IndexFilter, IndexStoreManager, Segment, TableIndex}
 import org.apache.carbondata.core.indexstore.Blocklet
-import org.apache.carbondata.core.indexstore.blockletindex.{BlockIndex, BlockletIndexRowIndexes, BlockletIndex}
+import org.apache.carbondata.core.indexstore.blockletindex.{BlockIndex, BlockletIndex, BlockletIndexRowIndexes}
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
@@ -43,14 +43,20 @@ import org.apache.carbondata.core.util.CarbonProperties
 /**
  * test class for validating COLUMN_META_CACHE and CACHE_LEVEL
  */
-class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with BeforeAndAfterAll {
+class TestQueryWithColumnMetCacheAndCacheLevelProperty
+  extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
 
   override def beforeAll(): Unit = {
     dropSchema
   }
 
-  override def afterAll(): Unit = {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT,CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT)
+  override def afterEach(): Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT,
+        CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL,
+        CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL_DEFAULT)
     dropSchema
   }
 
@@ -58,6 +64,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     sql("drop table if exists metaCache")
     sql("drop table if exists column_min_max_cache_test")
     sql("drop table if exists minMaxSerialize")
+    sql("drop table if exists parallel_index_load")
   }
 
   private def createAndLoadTable(cacheLevel: String): Unit = {
@@ -96,7 +103,6 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
   }
 
   test("verify if number of columns cached are as per the COLUMN_META_CACHE property index instance is as per CACHE_LEVEL property") {
-    sql("drop table if exists metaCache")
     sql("create table metaCache(name string, c1 string, c2 string) STORED AS carbondata")
     sql("insert into metaCache select 'a','aa','aaa'")
     checkAnswer(sql("select * from metaCache"), Row("a", "aa", "aaa"))
@@ -144,7 +150,6 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
   }
 
   test("test UPDATE scenario after column_meta_cache") {
-    sql("drop table if exists metaCache")
     sql("create table metaCache(name string, c1 string, c2 string) STORED AS carbondata TBLPROPERTIES('COLUMN_META_CACHE'='')")
     sql("insert into metaCache select 'a','aa','aaa'")
     sql("insert into metaCache select 'b','bb','bbb'")
@@ -153,7 +158,6 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
   }
 
   test("test queries with column_meta_cache and cache_level='BLOCK'") {
-    dropSchema
     // set cache_level
     createAndLoadTable("BLOCK")
     // check count(*)
@@ -189,7 +193,6 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
   }
 
   test("test queries with column_meta_cache and cache_level='BLOCKLET'") {
-    dropSchema
     // set cache_level
     createAndLoadTable("BLOCKLET")
     // check count(*)
@@ -225,7 +228,6 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
   }
 
   test("test update on column cached") {
-    dropSchema
     // set cache_level
     createAndLoadTable("BLOCKLET")
     sql("update column_min_max_cache_test set (designation)=('SEG') where empname='ayushi'").show()
@@ -236,7 +238,6 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
   }
 
   test("test update on column not cached") {
-    dropSchema
     // set cache_level
     createAndLoadTable("BLOCKLET")
     sql(
@@ -261,7 +262,6 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
   }
 
   test("verify min/max getting serialized to executor when cache_level = blocklet") {
-    sql("drop table if exists minMaxSerialize")
     sql("create table minMaxSerialize(name string, c1 string, c2 string) STORED AS carbondata TBLPROPERTIES('CACHE_LEVEL'='BLOCKLET', 'COLUMN_META_CACHE'='c1,c2')")
     sql("insert into minMaxSerialize select 'a','aa','aaa'")
     checkAnswer(sql("select * from minMaxSerialize where name='a'"), Row("a", "aa", "aaa"))
@@ -340,5 +340,14 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     sql("DROP table IF EXISTS carbonCahe")
   }
 
-
+  test("Test query with parallel index load") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL, "true")
+    sql("CREATE table parallel_index_load (a STRING, b STRING, c INT) STORED AS carbondata")
+    sql("insert into parallel_index_load select 'aa', 'bb', 1")
+    sql("insert into parallel_index_load select 'cc', 'dd', 2")
+    sql("insert into parallel_index_load select 'ee', 'ff', 3")
+    sql("select a, b from parallel_index_load").collect()
+    assert(sql("select a, b from parallel_index_load").count() == 3)
+  }
 }
