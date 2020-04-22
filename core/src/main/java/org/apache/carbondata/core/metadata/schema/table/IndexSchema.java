@@ -22,7 +22,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -63,11 +62,6 @@ public class IndexSchema implements Serializable, Writable {
   protected Map<String, String> properties;
 
   /**
-   * Identifiers of parent tables of the MV
-   */
-  protected List<RelationIdentifier> parentTables;
-
-  /**
    * child table schema
    */
   protected TableSchema childSchema;
@@ -106,14 +100,6 @@ public class IndexSchema implements Serializable, Writable {
 
   public void setProperties(Map<String, String> properties) {
     this.properties = properties;
-  }
-
-  public void setParentTables(List<RelationIdentifier> parentTables) {
-    this.parentTables = parentTables;
-  }
-
-  public List<RelationIdentifier> getParentTables() {
-    return parentTables;
   }
 
   /**
@@ -210,14 +196,6 @@ public class IndexSchema implements Serializable, Writable {
   @Override
   public int hashCode() {
     return Objects.hash(indexName);
-  }
-
-  /**
-   * Return true if this Index can support incremental build
-   */
-  public boolean canBeIncrementalBuild() {
-    String prop = getProperties().get(IndexProperty.FULL_REFRESH);
-    return prop == null || prop.equalsIgnoreCase("false");
   }
 
 }

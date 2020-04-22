@@ -1272,6 +1272,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     var df1 = sql("select cast(m_month + 1000 AS INT) as a, c_code as abc from maintable")
     assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "da_cast"))
     df1 = sql("select cast(m_month + 1000 AS INT), c_code from maintable")
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "da_cast"))
     sql("drop materialized view if exists da_cast")
     sql(
       "create materialized view da_cast as select cast(m_month + 1000 AS INT), c_code from maintable")

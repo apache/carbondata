@@ -2245,11 +2245,6 @@ public final class CarbonCommonConstants {
   public static final String CARBON_ENABLE_AUDIT_DEFAULT = "true";
 
   /**
-   * This property will be used to store mv name
-   */
-  public static final String MV_NAME = "mv_name";
-
-  /**
    * This property will be used to store table name's related with mv
    */
   public static final String MV_RELATED_TABLES = "mv_related_tables";

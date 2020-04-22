@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.view.timeseries
 
+import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.view.rewrite.TestUtil
@@ -238,6 +239,7 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test mvtimeseries with alias") {
+    val result = sql("select timeseries(projectjoindate,'month'),projectcode from maintable group by timeseries(projectjoindate,'month'),projectcode")
     dropMV("mv1")
     sql(
       "create materialized view mv1 as " +
@@ -248,6 +250,11 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     // TODO: fix the base issue of alias with group by
     //   val df2 = sql("select timeseries(projectjoindate,'month'),projectcode from maintable group by timeseries(projectjoindate,'month'),projectcode")
     //   checkPlan("mv1", df2)
+    val df2 = sql("select timeseries(projectjoindate,'month'),projectcode from maintable group by timeseries(projectjoindate,'month'),projectcode")
+    checkPlan("mv1", df2)
+    checkAnswer(result, df2)
+    val df4 = sql("select timeseries(projectjoindate,'month'),projectcode as y from maintable group by timeseries(projectjoindate,'month'),projectcode")
+    checkPlan("mv1", df4)
     dropMV("mv1")
     sql(
       "create materialized view mv1 as " +
@@ -289,6 +296,11 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true")
     dropMV("mv1")
+    intercept[MalformedMVCommandException] {
+      sql(
+        "create materialized view mv1 as " +
+          "select timeseries(projectjoindate,'month') ,sum(projectcode),sum(projectcode)  from maintable group by timeseries(projectjoindate,'month')")
+    }
     sql(
       "create materialized view mv1 as " +
       "select timeseries(projectjoindate,'month') ,sum(projectcode)  from maintable group by timeseries(projectjoindate,'month')")
