@@ -585,7 +585,7 @@
       <properties>
         <spark.version>2.4.5</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
-        <scala.version>2.11.8</scala.version>
+        <scala.version>2.11.12</scala.version>
       </properties>
       <build>
         <plugins>
