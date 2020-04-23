@@ -41,8 +41,8 @@
 
 ## Introductions
 
- Materialized views are created as a queries. User can create limitless materialized view to 
- improve query performance provided the storage requirements and loading time is acceptable.
+ Materialized views are created as tables from queries. User can create limitless materialized view 
+ to improve query performance provided the storage requirements and loading time is acceptable.
  
  Materialized view can be refreshed on commit or on manual. Once materialized views are created, 
  CarbonData's MVRewriteRule helps to select the most efficient materialized view based on 
