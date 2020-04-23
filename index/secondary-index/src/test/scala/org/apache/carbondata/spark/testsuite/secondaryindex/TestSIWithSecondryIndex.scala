@@ -28,6 +28,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
+
 import org.apache.spark.sql.test.util.QueryTest
 
 class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
@@ -35,6 +37,8 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("drop index if exists si_altercolumn on table_WithSIAndAlter")
     sql("drop table if exists table_WithSIAndAlter")
+    sql("drop table if exists table_drop_columns")
+    sql("drop table if exists table_drop_columns_fail")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
@@ -59,6 +63,27 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
       val value = carbonTable.getTableInfo.getFactTable.getTableProperties.get(key)
       expectedValue.equals(value)
     }
+  }
+
+  test ("test alter drop all columns of the SI table") {
+    sql("create table table_drop_columns (name string, id string, country string) stored as carbondata")
+    sql("insert into table_drop_columns select 'xx', '1', 'china'")
+    sql("create index index_1 on table table_drop_columns(id, country) as 'carbondata'")
+    // alter table to drop all the columns used in index
+    sql("alter table table_drop_columns drop columns(id, country)")
+    sql("insert into table_drop_columns select 'xy'")
+    assert(sql("show indexes on table_drop_columns").collect().isEmpty)
+  }
+
+  test ("test alter drop few columns of the SI table") {
+    sql("create table table_drop_columns_fail (name string, id string, country string) stored as carbondata")
+    sql("insert into table_drop_columns_fail select 'xx', '1', 'china'")
+    sql("create index index_1 on table table_drop_columns_fail(id, country) as 'carbondata'")
+    // alter table to drop few columns used in index. This should fail as we are not dropping all
+    // the index columns
+    assert(intercept[ProcessMetaDataException](sql(
+      "alter table table_drop_columns_fail drop columns(id)")).getMessage
+      .contains("Alter table drop column operation failed:"))
   }
 
   test("Test secondry index data count") {
@@ -229,5 +254,7 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists column_meta_cache")
     sql("drop table if exists uniqdata")
     sql("drop table if exists uniqdataTable")
+    sql("drop table if exists table_drop_columns")
+    sql("drop table if exists table_drop_columns_fail")
   }
 }

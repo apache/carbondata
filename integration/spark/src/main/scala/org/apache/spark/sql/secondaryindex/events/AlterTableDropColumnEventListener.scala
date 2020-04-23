@@ -24,9 +24,9 @@ import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.execution.command.AlterTableDropColumnModel
 import org.apache.spark.sql.execution.command.index.DropIndexCommand
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.index.CarbonIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.events.{AlterTableDropColumnPreEvent, Event, OperationContext, OperationEventListener}
 
@@ -71,27 +71,26 @@ class AlterTableDropColumnEventListener extends OperationEventListener {
       return
     }
     secondaryIndexMap.asScala.foreach(indexTable => {
-        var colSize = 0
-        indexTable._2.asScala.foreach(column =>
-          if (alterTableDropColumnModel.columns.contains(column)) {
-            colSize += 1
-          })
-        if (colSize > 0) {
-          if (colSize == indexTable._2.size) {
-            indexTableToDrop ++= Seq(indexTable._1)
-          } else {
-            sys
-              .error(s"Index Table [${
-                indexTable
-                  ._1
-              }] exists with combination of provided drop column(s) and other columns, drop " +
-                     s"index table & retry")
-          }
+      val indexColumns = indexTable._2.asScala(CarbonCommonConstants.INDEX_COLUMNS).split(",")
+      val colSize = alterTableDropColumnModel.columns.intersect(indexColumns).size
+      if (colSize > 0) {
+        if (colSize == indexColumns.size) {
+          indexTableToDrop ++= Seq(indexTable._1)
+        } else {
+          sys
+            .error(s"Index Table [${
+              indexTable._1
+            }] exists with combination of provided drop column(s) and other columns, drop " +
+                   s"index table & retry")
         }
-      })
+      }
+    })
     indexTableToDrop.foreach { indexTable =>
-      DropIndexCommand(ifExistsSet = true, Some(dbName), indexTable.toLowerCase, tableName)
-        .run(sparkSession)
+      DropIndexCommand(ifExistsSet = true,
+        Some(dbName),
+        tableName,
+        indexTable.toLowerCase,
+        needLock = false).run(sparkSession)
     }
   }
 }

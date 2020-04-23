@@ -33,7 +33,6 @@ import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand, MatchResetCommand}
 import org.apache.spark.sql.secondaryindex.command.CarbonCreateSecondaryIndexCommand
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 
 /**
@@ -230,7 +229,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           case c: Exception =>
             sys.error("Operation not allowed on non-carbon table")
         }
-      case dropIndex@DropIndexCommand(ifExistsSet, databaseNameOp, parentTableName, tableName) =>
+      case dropIndex@DropIndexCommand(ifExistsSet, databaseNameOp, parentTableName, tableName, _) =>
         val tableIdentifier = TableIdentifier(parentTableName, databaseNameOp)
         val isParentTableExists = sparkSession.sessionState.catalog.tableExists(tableIdentifier)
         if (!isParentTableExists) {
