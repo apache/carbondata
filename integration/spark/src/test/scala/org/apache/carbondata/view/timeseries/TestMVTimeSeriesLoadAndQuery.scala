@@ -247,9 +247,6 @@ class TestMVTimeSeriesLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     loadData("maintable")
     val df1 = sql("select timeseries(projectjoindate,'month') as t,projectcode as y from maintable group by timeseries(projectjoindate,'month'),projectcode")
     checkPlan("mv1", df1)
-    // TODO: fix the base issue of alias with group by
-    //   val df2 = sql("select timeseries(projectjoindate,'month'),projectcode from maintable group by timeseries(projectjoindate,'month'),projectcode")
-    //   checkPlan("mv1", df2)
     val df2 = sql("select timeseries(projectjoindate,'month'),projectcode from maintable group by timeseries(projectjoindate,'month'),projectcode")
     checkPlan("mv1", df2)
     checkAnswer(result, df2)
