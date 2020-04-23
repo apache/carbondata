@@ -351,6 +351,14 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
                 'false', 'parentTablePath' = '${carbonTable.getTablePath}',
                 'parentTableId' = '${carbonTable.getCarbonTableIdentifier.getTableId}')""")
           .collect()
+
+        // Refresh the index table
+        CarbonEnv
+          .getInstance(sparkSession)
+          .carbonMetaStore
+          .lookupRelation(indexModel.dbName, indexTableName)(sparkSession)
+          .asInstanceOf[CarbonRelation]
+          .carbonTable
       }
 
       CarbonIndexUtil.addIndexTableInfo(IndexType.SI.getIndexProviderName,

@@ -42,7 +42,8 @@ private[sql] case class DropIndexCommand(
     ifExistsSet: Boolean,
     dbNameOp: Option[String],
     parentTableName: String = null,
-    indexName: String)
+    indexName: String,
+    needLock: Boolean = true)
   extends RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
@@ -74,7 +75,11 @@ private[sql] case class DropIndexCommand(
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = CarbonEnv.getDatabaseName(dbNameOp)(sparkSession)
     var tableIdentifierForAcquiringLock: AbsoluteTableIdentifier = null
-    val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.DROP_TABLE_LOCK)
+    val locksToBeAcquired = if (needLock) {
+      List(LockUsage.METADATA_LOCK, LockUsage.DROP_TABLE_LOCK)
+    } else {
+      List.empty
+    }
     val catalog = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     // flag to check if folders and files can be successfully deleted
     var isValidDeletion = false
