@@ -74,46 +74,25 @@ public class MVProvider {
 
   private static final String STATUS_FILE_NAME = "mv_status";
 
-  private final String storeLocation;
-
   private final Map<String, SchemaProvider> schemaProviders = new ConcurrentHashMap<>();
-
-  private MVProvider(String storeLocation) {
-    this.storeLocation = storeLocation;
-  }
-
-  public static MVProvider get() {
-    String storeLocation =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION);
-    if (storeLocation == null) {
-      throw new RuntimeException(
-          "Property [" + CarbonCommonConstants.STORE_LOCATION + "] is not set.");
-    }
-    return new MVProvider(storeLocation);
-  }
 
   private static String getSchemaPath(String schemaRoot, String viewName) {
     return schemaRoot + CarbonCommonConstants.FILE_SEPARATOR + "mv_schema." + viewName;
   }
 
-  private SchemaProvider getSchemaProvider(String databaseName) {
+  private SchemaProvider getSchemaProvider(MVManager viewManager, String databaseName) {
     String databaseNameUpper = databaseName.toUpperCase();
     SchemaProvider schemaProvider = this.schemaProviders.get(databaseNameUpper);
     if (schemaProvider == null) {
       synchronized (this.schemaProviders) {
         schemaProvider = this.schemaProviders.get(databaseNameUpper);
         if (schemaProvider == null) {
-          String databaseLocation;
-          if (databaseNameUpper.equalsIgnoreCase(CarbonCommonConstants.DATABASE_DEFAULT_NAME)) {
-            databaseLocation = CarbonUtil.checkAndAppendHDFSUrl(this.storeLocation);
-          } else {
-            databaseLocation = CarbonUtil.checkAndAppendHDFSUrl(this.storeLocation +
-                CarbonCommonConstants.FILE_SEPARATOR + databaseName + ".db");
-          }
-          if (!FileFactory.getCarbonFile(databaseLocation).exists()) {
+          String databaseLocation = viewManager.getDatabaseLocation(databaseName);
+          CarbonFile databasePath = FileFactory.getCarbonFile(databaseLocation);
+          if (!databasePath.exists()) {
             return null;
           }
-          schemaProvider = new SchemaProvider(databaseLocation);
+          schemaProvider = new SchemaProvider(databasePath.getCanonicalPath());
           this.schemaProviders.put(databaseNameUpper, schemaProvider);
         }
       }
@@ -121,18 +100,18 @@ public class MVProvider {
     return schemaProvider;
   }
 
-  public MVSchema getSchema(MVManager viewManager,
-                            String databaseName, String viewName) throws IOException {
-    SchemaProvider schemaProvider = this.getSchemaProvider(databaseName);
+  public MVSchema getSchema(MVManager viewManager, String databaseName,
+                            String viewName) throws IOException {
+    SchemaProvider schemaProvider = this.getSchemaProvider(viewManager, databaseName);
     if (schemaProvider == null) {
       return null;
     }
     return schemaProvider.retrieveSchema(viewManager, viewName);
   }
 
-  List<MVSchema> getSchemas(MVManager viewManager,
-                            String databaseName, CarbonTable carbonTable) throws IOException {
-    SchemaProvider schemaProvider = this.getSchemaProvider(databaseName);
+  List<MVSchema> getSchemas(MVManager viewManager, String databaseName,
+                            CarbonTable carbonTable) throws IOException {
+    SchemaProvider schemaProvider = this.getSchemaProvider(viewManager, databaseName);
     if (schemaProvider == null) {
       return Collections.emptyList();
     } else {
@@ -140,9 +119,8 @@ public class MVProvider {
     }
   }
 
-  List<MVSchema> getSchemas(MVManager viewManager,
-                            String databaseName) throws IOException {
-    SchemaProvider schemaProvider = this.getSchemaProvider(databaseName);
+  List<MVSchema> getSchemas(MVManager viewManager, String databaseName) throws IOException {
+    SchemaProvider schemaProvider = this.getSchemaProvider(viewManager, databaseName);
     if (schemaProvider == null) {
       return Collections.emptyList();
     } else {
@@ -152,16 +130,16 @@ public class MVProvider {
 
   void saveSchema(MVManager viewManager, String databaseName,
                   MVSchema viewSchema) throws IOException {
-    SchemaProvider schemaProvider = this.getSchemaProvider(databaseName);
+    SchemaProvider schemaProvider = this.getSchemaProvider(viewManager, databaseName);
     if (schemaProvider == null) {
       throw new IOException("Database [" + databaseName + "] is not found.");
     }
     schemaProvider.saveSchema(viewManager, viewSchema);
   }
 
-  public void dropSchema(String databaseName, String viewName)
-      throws IOException {
-    SchemaProvider schemaProvider = this.getSchemaProvider(databaseName);
+  public void dropSchema(MVManager viewManager, String databaseName,
+                         String viewName)throws IOException {
+    SchemaProvider schemaProvider = this.getSchemaProvider(viewManager, databaseName);
     if (schemaProvider == null) {
       throw new IOException("Materialized view with name " + databaseName + "." + viewName +
           " does not exists in storage");
@@ -169,22 +147,16 @@ public class MVProvider {
     schemaProvider.dropSchema(viewName);
   }
 
-  private String getStatusFileName(String databaseName) {
-    if (databaseName.equalsIgnoreCase("default")) {
-      return this.storeLocation +
-          CarbonCommonConstants.FILE_SEPARATOR + "_system" +
-          CarbonCommonConstants.FILE_SEPARATOR + STATUS_FILE_NAME;
-    } else {
-      return this.storeLocation +
-          CarbonCommonConstants.FILE_SEPARATOR + databaseName + ".db" +
-          CarbonCommonConstants.FILE_SEPARATOR + "_system" +
-          CarbonCommonConstants.FILE_SEPARATOR + STATUS_FILE_NAME;
-    }
+  private String getStatusFileName(MVManager viewManager, String databaseName) {
+    String databaseLocation = viewManager.getDatabaseLocation(databaseName);
+    return FileFactory.getCarbonFile(databaseLocation).getCanonicalPath() +
+            CarbonCommonConstants.FILE_SEPARATOR + "_system" +
+            CarbonCommonConstants.FILE_SEPARATOR + STATUS_FILE_NAME;
   }
 
-  public List<MVStatusDetail> getStatusDetails(String databaseName)
+  public List<MVStatusDetail> getStatusDetails(MVManager viewManager, String databaseName)
       throws IOException {
-    String statusPath = this.getStatusFileName(databaseName);
+    String statusPath = this.getStatusFileName(viewManager, databaseName);
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
@@ -228,7 +200,7 @@ public class MVProvider {
    * @param schemaList schemas of which are need to be updated in mv status
    * @param status  status to be updated for the mv schemas
    */
-  public void updateStatus(List<MVSchema> schemaList,
+  public void updateStatus(MVManager viewManager, List<MVSchema> schemaList,
       MVStatus status) throws IOException {
     if (schemaList == null || schemaList.size() == 0) {
       // There is nothing to update
@@ -245,11 +217,11 @@ public class MVProvider {
       schemas.add(schema);
     }
     for (Map.Entry<String, List<MVSchema>> entry : schemasMapByDatabase.entrySet()) {
-      this.updateStatus(entry.getKey(), entry.getValue(), status);
+      this.updateStatus(viewManager, entry.getKey(), entry.getValue(), status);
     }
   }
 
-  private void updateStatus(String databaseName, List<MVSchema> schemaList,
+  private void updateStatus(MVManager viewManager, String databaseName, List<MVSchema> schemaList,
       MVStatus status) throws IOException {
     ICarbonLock carbonTableStatusLock = getStatusLock(databaseName);
     boolean locked = false;
@@ -264,7 +236,7 @@ public class MVProvider {
           }
         }
         List<MVStatusDetail> statusDetailList =
-            new ArrayList<>(getStatusDetails(databaseName));
+            new ArrayList<>(getStatusDetails(viewManager, databaseName));
         List<MVStatusDetail> changedStatusDetails = new ArrayList<>();
         List<MVStatusDetail> newStatusDetails = new ArrayList<>();
         for (MVSchema schema : schemaList) {
@@ -292,9 +264,9 @@ public class MVProvider {
           statusDetailList.removeAll(changedStatusDetails);
         }
         writeLoadDetailsIntoFile(
-            this.getStatusFileName(databaseName),
+            this.getStatusFileName(viewManager, databaseName),
             statusDetailList.toArray(
-                new MVStatusDetail[statusDetailList.size()]));
+                    new MVStatusDetail[statusDetailList.size()]));
       } else {
         String errorMsg = "Updating MV status is failed due to another process taken the lock"
             + " for updating it";

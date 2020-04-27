@@ -40,6 +40,10 @@ class MVManagerInSpark(session: SparkSession) extends MVManager {
       CarbonUtils.threadUnset(CarbonCommonConstants.DISABLE_SQL_REWRITE)
     }
   }
+
+  override def getDatabaseLocation(databaseName: String): String = {
+    CarbonEnv.getDatabaseLocation(databaseName, session)
+  }
 }
 
 object MVManagerInSpark {
