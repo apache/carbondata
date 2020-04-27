@@ -87,19 +87,12 @@ public class MVProvider {
       synchronized (this.schemaProviders) {
         schemaProvider = this.schemaProviders.get(databaseNameUpper);
         if (schemaProvider == null) {
-          final String databaseLocation = viewManager.getDatabaseLocation(databaseName);
-          final String databaseLocationWithHDFSUrl;
-          if (databaseNameUpper.equalsIgnoreCase(CarbonCommonConstants.DATABASE_DEFAULT_NAME)) {
-            databaseLocationWithHDFSUrl = CarbonUtil.checkAndAppendHDFSUrl(databaseLocation);
-          } else {
-            databaseLocationWithHDFSUrl = CarbonUtil.checkAndAppendHDFSUrl(
-                databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + databaseName + ".db"
-            );
-          }
-          if (!FileFactory.getCarbonFile(databaseLocationWithHDFSUrl).exists()) {
+          final String databaseLocation = FileFactory.getCarbonFile(
+                  viewManager.getDatabaseLocation(databaseName)).getCanonicalPath();
+          if (!FileFactory.getCarbonFile(databaseLocation).exists()) {
             return null;
           }
-          schemaProvider = new SchemaProvider(databaseLocationWithHDFSUrl);
+          schemaProvider = new SchemaProvider(databaseLocation);
           this.schemaProviders.put(databaseNameUpper, schemaProvider);
         }
       }
@@ -155,17 +148,10 @@ public class MVProvider {
   }
 
   private String getStatusFileName(MVManager viewManager, String databaseName) {
-    final String databaseLocation = viewManager.getDatabaseLocation(databaseName);
-    if (databaseName.equalsIgnoreCase("default")) {
-      return databaseLocation +
-          CarbonCommonConstants.FILE_SEPARATOR + "_system" +
-          CarbonCommonConstants.FILE_SEPARATOR + STATUS_FILE_NAME;
-    } else {
-      return databaseLocation +
-          CarbonCommonConstants.FILE_SEPARATOR + databaseName + ".db" +
-          CarbonCommonConstants.FILE_SEPARATOR + "_system" +
-          CarbonCommonConstants.FILE_SEPARATOR + STATUS_FILE_NAME;
-    }
+    String databaseLocation = viewManager.getDatabaseLocation(databaseName);
+    return FileFactory.getCarbonFile(databaseLocation).getCanonicalPath() +
+            CarbonCommonConstants.FILE_SEPARATOR + "_system" +
+            CarbonCommonConstants.FILE_SEPARATOR + STATUS_FILE_NAME;
   }
 
   public List<MVStatusDetail> getStatusDetails(MVManager viewManager, String databaseName)

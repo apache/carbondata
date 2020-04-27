@@ -321,7 +321,8 @@ case class CarbonCreateMVCommand(
           ifExistsSet = true,
           Option(schema.getIdentifier.getDatabaseName),
           schema.getIdentifier.getTableName,
-          dropChildTable = true)
+          dropChildTable = true,
+          isInternalCall = true)
         dropTableCommand.run(session)
         throw exception
     }
