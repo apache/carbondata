@@ -323,19 +323,25 @@ object CarbonEnv {
     var databaseLocation =
       sparkSession.sessionState.catalog.asInstanceOf[SessionCatalog].getDatabaseMetadata(dbName)
         .locationUri.toString
+    LOGGER.info("##### databaseLocation is" + databaseLocation)
     // for default database and db ends with .db
     // check whether the carbon store and hive store is same or different.
     if ((!EnvHelper.isLegacy(sparkSession)) &&
         (dbName.equals("default") || databaseLocation.endsWith(".db"))) {
       val carbonStorePath = CarbonProperties.getStorePath()
+      LOGGER.info("##### didn't enter " + carbonStorePath)
       val hiveStorePath = sparkSession.conf.get("spark.sql.warehouse.dir", carbonStorePath)
+      LOGGER.info("##### hiveStorePath " + hiveStorePath)
       // if carbon.store does not point to spark.sql.warehouse.dir then follow the old table path
       // format
       if (carbonStorePath != null && !hiveStorePath.equals(carbonStorePath)) {
         databaseLocation = CarbonProperties.getStorePath +
                            CarbonCommonConstants.FILE_SEPARATOR +
                            dbName
+        LOGGER.info("##### newwwww " + databaseLocation)
       }
+    } else {
+      LOGGER.info("##### didn't enter " )
     }
     databaseLocation
   }
@@ -356,12 +362,14 @@ object CarbonEnv {
     }
   }
 
-  private def newTablePath(
+  def newTablePath(
       databaseNameOp: Option[String],
       tableName: String
   )(sparkSession: SparkSession): String = {
     val dbName = getDatabaseName(databaseNameOp)(sparkSession)
+    LOGGER.info("##### dbName is" + dbName)
     val dbLocation = getDatabaseLocation(dbName, sparkSession)
+    LOGGER.info("##### dbLocation is" + dbLocation)
     dbLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
   }
 

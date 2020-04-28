@@ -22,7 +22,7 @@ import scala.collection.mutable
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, TableAlreadyExistsException}
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, MetadataCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
@@ -76,7 +76,9 @@ case class RefreshCarbonTableCommand(
         true
     }
     if (isCarbonDataSource) {
-      val tablePath = CarbonEnv.getTablePath(databaseNameOp, tableName.toLowerCase)(sparkSession)
+      LOGGER.info("##### warehouse dir is" + sparkSession.conf.get("spark.sql.warehouse.dir"))
+      val tablePath = CarbonEnv.newTablePath(databaseNameOp, tableName.toLowerCase)(sparkSession)
+      LOGGER.info("##### tablePath dir is" + tablePath)
       val identifier = AbsoluteTableIdentifier.from(tablePath, databaseName, tableName.toLowerCase)
       // check the existence of the schema file to know its a carbon table
       val schemaFilePath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
@@ -87,9 +89,16 @@ case class RefreshCarbonTableCommand(
         val tableInfo = SchemaReader.getTableInfo(identifier)
         // refresh the column schema in case of store before V3
         refreshColumnSchema(tableInfo)
-
-        // 2.2 register the table with the hive
-        registerTableWithHive(databaseName, tableName, tableInfo, tablePath)(sparkSession)
+        try {
+          // 2.2 register the table with the hive
+          registerTableWithHive(databaseName, tableName, tableInfo, tablePath)(sparkSession)
+        } catch {
+          case _: TableAlreadyExistsException =>
+            // drop from the hive
+            CarbonEnv.getInstance(sparkSession).carbonMetaStore.dropTable(identifier)(sparkSession)
+            // register again with hive
+            registerTableWithHive(databaseName, tableName, tableInfo, tablePath)(sparkSession)
+        }
         // Register partitions to hive metastore in case of hive partitioning carbon table
         if (tableInfo.getFactTable.getPartitionInfo != null &&
             tableInfo.getFactTable.getPartitionInfo.getPartitionType == PartitionType.NATIVE_HIVE) {
