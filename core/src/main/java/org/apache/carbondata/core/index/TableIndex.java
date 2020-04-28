@@ -623,7 +623,7 @@ public final class TableIndex extends OperationEventListener {
 
   /**
    * Get the mapping of blocklet path and row count for all blocks. This method skips the
-   * validation of partition info for countStar job.
+   * validation of partition info for countStar job with indexserver enabled.
    */
   public Map<String, Long> getBlockRowCount(TableIndex defaultIndex, List<Segment> allsegments,
       final List<PartitionSpec> partitions) throws IOException {
