@@ -1292,6 +1292,18 @@ public final class CarbonCommonConstants {
    */
   public static final String MIN_MAX_DEFAULT_VALUE = "true";
 
+  /**
+   * max SDK pagination lru cache size in MB upto which lru cache will be loaded in memory
+   */
+  @CarbonProperty
+  public static final String CARBON_MAX_PAGINATION_LRU_CACHE_SIZE_IN_MB =
+      "carbon.max.pagination.lru.cache.size.in.mb";
+
+  /**
+   * max SDK lru cache size default value in MB
+   */
+  public static final String CARBON_MAX_PAGINATION_LRU_CACHE_SIZE_IN_MB_DEFAULT = "-1";
+
   @CarbonProperty(dynamicConfigurable = true)
   public static final String ENABLE_VECTOR_READER = "carbon.enable.vector.reader";
 

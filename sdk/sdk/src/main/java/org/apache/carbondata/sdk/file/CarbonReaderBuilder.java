@@ -19,6 +19,7 @@ package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -235,7 +236,12 @@ public class CarbonReaderBuilder {
     return this;
   }
 
-  public void setInputSplit(InputSplit inputSplit) {
+  /**
+   * To set the input split before build() to build the reader with the specified input split.
+   *
+   * @param inputSplit CarbonInputSplit
+   */
+  void setInputSplit(InputSplit inputSplit) {
     this.inputSplit = inputSplit;
   }
 
@@ -253,8 +259,9 @@ public class CarbonReaderBuilder {
   }
 
   /**
-   * With pagination support.
+   * If pagination reader is required then set builder for pagination support.
    *
+   * @return CarbonReaderBuilder, current object with updated configuration.
    */
   public CarbonReaderBuilder withPaginationSupport() {
     usePaginationReader = true;
@@ -375,6 +382,7 @@ public class CarbonReaderBuilder {
     CarbonFileInputFormat format = null;
     try {
       if (!usePaginationReader) {
+        // block level dummy splits without IO and loading the cache (if filter not present)
         format = prepareFileInputFormat(job, false, true);
         List<InputSplit> splits =
             format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
@@ -388,6 +396,7 @@ public class CarbonReaderBuilder {
         }
         return new CarbonReader<>(readers);
       } else {
+        // blocklet level splits formed by reading footer and loading the cache
         format = prepareFileInputFormat(job, true, false);
         List<InputSplit> splits =
             format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));

@@ -611,11 +611,16 @@ while (reader.hasNext()) {
 reader.close();
 ```
 
-Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/blob/master/examples/spark/src/main/java/org/apache/carbondata/examples/sdk/CarbonReaderExample.java) in the CarbonData repo.
+1. Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/blob/master/examples/spark/src/main/java/org/apache/carbondata/examples/sdk/CarbonReaderExample.java) in the CarbonData repo.
 
-SDK reader also supports reading carbondata files and filling it to apache arrow vectors.
+2. SDK reader also supports reading carbondata files and filling it to apache arrow vectors.
 Find example code at [ArrowCarbonReaderTest](https://github.com/apache/carbondata/blob/master/sdk/sdk/src/test/java/org/apache/carbondata/sdk/file/ArrowCarbonReaderTest.java) in the CarbonData repo.
 
+3. SDK reader also support reading data with pagination support.
+Find example code at  [PaginationCarbonReaderTest](https://github.com/apache/carbondata/blob/master/sdk/sdk/src/test/java/org/apache/carbondata/sdk/file/PaginationCarbonReaderTest.java) in the CarbonData repo.
+
+Note: For pagination reader configure the LRU cache size as multiple of blocklet size of carbon files to be read.
+Refer "carbon.max.pagination.lru.cache.size.in.mb" from [Configuring CarbonData](https://github.com/apache/carbondata/blob/master/docs/configuration-parameters.md)
 
 ## API List
 
@@ -766,6 +771,39 @@ public VectorSchemaRoot getArrowVectors() throws IOException;
 public static ArrowRecordBatch byteArrayToArrowBatch(byte[] batchBytes, BufferAllocator bufferAllocator) throws IOException;
 ```
 
+### Class org.apache.carbondata.sdk.file.PaginationCarbonReader
+```
+/**
+* Pagination query with from and to range.
+*
+* @param from must be greater than 0 and <= to
+* @param to must be >= from and not outside the total rows
+* @return array of rows between from and to (inclusive)
+* @throws Exception
+*/
+public Object[] read(long from, long to) throws IOException, InterruptedException;
+```
+
+```
+/**
+* Get total rows in the folder.
+* It is based on the snapshot of files taken while building the reader.
+*
+* @return total rows from all the files in the reader.
+*/
+public long getTotalRows();
+```
+
+```
+/**
+* Closes the pagination reader, drops the cache and snapshot.
+* Need to build reader again if the files need to be read again.
+* Suggest to call this when new files are added in the folder.
+*
+* @throws IOException
+*/
+public void close() throws IOException;
+```
 ### Class org.apache.carbondata.sdk.file.CarbonReaderBuilder
 ```
 /**
@@ -827,6 +865,15 @@ public CarbonReaderBuilder withHadoopConf(Configuration conf);
  */
 public CarbonReaderBuilder withHadoopConf(String key, String value);
 ```
+
+```  
+/**
+* If pagination reader is required then set builder for pagination support.
+* 
+* @return CarbonReaderBuilder, current object with updated configuration.
+*/
+public CarbonReaderBuilder withPaginationSupport(); 
+```  
   
 ```
 /**
