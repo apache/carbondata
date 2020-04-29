@@ -35,11 +35,7 @@ public class ZstdCompressor extends AbstractCompressor {
   @Override
   public ByteBuffer compressByte(ByteBuffer compInput) {
     compInput.flip();
-    if (compInput.isDirect()) {
-      return Zstd.compress(compInput, COMPRESS_LEVEL);
-    } else {
-      return ByteBuffer.wrap(Zstd.compress(compInput.array(), COMPRESS_LEVEL));
-    }
+    return ByteBuffer.wrap(Zstd.compress(compInput.array(), COMPRESS_LEVEL));
   }
 
   @Override

@@ -362,7 +362,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   @Override
   public ByteBuffer getByteBuffer() {
     int numRow = getEndLoop();
-    ByteBuffer out = ByteBuffer.allocateDirect(numRow * eachRowSize);
+    ByteBuffer out = ByteBuffer.allocate(numRow * eachRowSize);
     CarbonUnsafe.getUnsafe().copyMemory(
         memoryBlock.getBaseOffset(), ((DirectBuffer)out).address(), numRow * eachRowSize);
     return out;

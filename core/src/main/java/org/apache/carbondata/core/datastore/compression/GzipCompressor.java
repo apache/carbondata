@@ -61,26 +61,6 @@ public class GzipCompressor extends AbstractCompressor {
   }
 
   /**
-   * This method takes the ByteBuffer data and Compresses in gzip format
-   *
-   * @param input compression input
-   * @return Compressed Byte Array
-   */
-  private byte[] compressData(ByteBuffer input) {
-    input.flip();
-    int initialSize = (input.limit() / 2) == 0 ? input.limit() : input.limit() / 2;
-    ByteArrayOutputStream output = new ByteArrayOutputStream(initialSize);
-    try (GzipCompressorOutputStream stream = new GzipCompressorOutputStream(output)) {
-      for (int i = 0; i < input.limit(); i++) {
-        stream.write(input.get(i));
-      }
-    } catch (IOException e) {
-      throw new RuntimeException("Error during Compression writing step ", e);
-    }
-    return output.toByteArray();
-  }
-
-  /**
    * This method takes the Byte Array data and Decompresses in gzip format
    *
    * @param data   Data Byte Array for Compression
@@ -112,12 +92,7 @@ public class GzipCompressor extends AbstractCompressor {
 
   @Override
   public ByteBuffer compressByte(ByteBuffer compInput) {
-    if (compInput.isDirect()) {
-      return ByteBuffer.wrap(compressData(compInput));
-    } else {
-      byte[] output = compressData(compInput.array(), 0, compInput.position());
-      return ByteBuffer.wrap(output);
-    }
+    return ByteBuffer.wrap(compressData(compInput.array(), 0, compInput.position()));
   }
 
   @Override

@@ -60,18 +60,7 @@ public class SnappyCompressor extends AbstractCompressor {
 
   @Override
   public ByteBuffer compressByte(ByteBuffer compInput) {
-    int inputLength = compInput.position();
-    ByteBuffer output = ByteBuffer.allocateDirect(Snappy.maxCompressedLength(inputLength));
-    int outputSize;
-    compInput.flip();
-    try {
-      outputSize = Snappy.compress(compInput, output);
-    } catch (IOException e) {
-      LOGGER.error(e.getMessage(), e);
-      throw new RuntimeException(e);
-    }
-    output.limit(outputSize);
-    return output;
+    return compressByte(compInput.array());
   }
 
   @Override

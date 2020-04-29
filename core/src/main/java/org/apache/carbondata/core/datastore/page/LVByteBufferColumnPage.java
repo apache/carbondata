@@ -59,7 +59,7 @@ public class LVByteBufferColumnPage extends ColumnPage {
     rowOffset = ColumnPage.newPage(
         new ColumnPageEncoderMeta(spec, DataTypes.INT, columnPageEncoderMeta.getCompressorName()),
         pageSize + 1);
-    byteBuffer = ByteBuffer.allocateDirect((int)(pageSize * DEFAULT_ROW_SIZE * FACTOR));
+    byteBuffer = ByteBuffer.allocate((int)(pageSize * DEFAULT_ROW_SIZE * FACTOR));
     numRows = 0;
     totalLength = 0;
   }
@@ -117,7 +117,7 @@ public class LVByteBufferColumnPage extends ColumnPage {
     int capacity = byteBuffer.capacity();
     if (totalLength + requestSize > capacity) {
       int newSize = Math.max(2 * capacity, totalLength + requestSize);
-      ByteBuffer newBuffer = ByteBuffer.allocateDirect(newSize);
+      ByteBuffer newBuffer = ByteBuffer.allocate(newSize);
       CarbonUnsafe.getUnsafe().copyMemory(((DirectBuffer)byteBuffer).address(),
           ((DirectBuffer)newBuffer).address(), capacity);
       newBuffer.position(byteBuffer.position());
