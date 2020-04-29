@@ -87,12 +87,12 @@ public class MVProvider {
       synchronized (this.schemaProviders) {
         schemaProvider = this.schemaProviders.get(databaseNameUpper);
         if (schemaProvider == null) {
-          final String databaseLocation = FileFactory.getCarbonFile(
-                  viewManager.getDatabaseLocation(databaseName)).getCanonicalPath();
-          if (!FileFactory.getCarbonFile(databaseLocation).exists()) {
+          String databaseLocation = viewManager.getDatabaseLocation(databaseName);
+          CarbonFile databasePath = FileFactory.getCarbonFile(databaseLocation);
+          if (!databasePath.exists()) {
             return null;
           }
-          schemaProvider = new SchemaProvider(databaseLocation);
+          schemaProvider = new SchemaProvider(databasePath.getCanonicalPath());
           this.schemaProviders.put(databaseNameUpper, schemaProvider);
         }
       }
@@ -100,8 +100,8 @@ public class MVProvider {
     return schemaProvider;
   }
 
-  public MVSchema getSchema(MVManager viewManager, String databaseName, String viewName)
-      throws IOException {
+  public MVSchema getSchema(MVManager viewManager, String databaseName,
+                            String viewName) throws IOException {
     SchemaProvider schemaProvider = this.getSchemaProvider(viewManager, databaseName);
     if (schemaProvider == null) {
       return null;
@@ -109,8 +109,8 @@ public class MVProvider {
     return schemaProvider.retrieveSchema(viewManager, viewName);
   }
 
-  List<MVSchema> getSchemas(MVManager viewManager, String databaseName, CarbonTable carbonTable)
-      throws IOException {
+  List<MVSchema> getSchemas(MVManager viewManager, String databaseName,
+                            CarbonTable carbonTable) throws IOException {
     SchemaProvider schemaProvider = this.getSchemaProvider(viewManager, databaseName);
     if (schemaProvider == null) {
       return Collections.emptyList();
@@ -128,8 +128,8 @@ public class MVProvider {
     }
   }
 
-  void saveSchema(MVManager viewManager, String databaseName, MVSchema viewSchema)
-      throws IOException {
+  void saveSchema(MVManager viewManager, String databaseName,
+                  MVSchema viewSchema) throws IOException {
     SchemaProvider schemaProvider = this.getSchemaProvider(viewManager, databaseName);
     if (schemaProvider == null) {
       throw new IOException("Database [" + databaseName + "] is not found.");
@@ -137,8 +137,8 @@ public class MVProvider {
     schemaProvider.saveSchema(viewManager, viewSchema);
   }
 
-  public void dropSchema(MVManager viewManager, String databaseName, String viewName)
-      throws IOException {
+  public void dropSchema(MVManager viewManager, String databaseName,
+                         String viewName)throws IOException {
     SchemaProvider schemaProvider = this.getSchemaProvider(viewManager, databaseName);
     if (schemaProvider == null) {
       throw new IOException("Materialized view with name " + databaseName + "." + viewName +
@@ -200,8 +200,8 @@ public class MVProvider {
    * @param schemaList schemas of which are need to be updated in mv status
    * @param status  status to be updated for the mv schemas
    */
-  public void updateStatus(MVManager viewManager, List<MVSchema> schemaList, MVStatus status)
-      throws IOException {
+  public void updateStatus(MVManager viewManager, List<MVSchema> schemaList,
+      MVStatus status) throws IOException {
     if (schemaList == null || schemaList.size() == 0) {
       // There is nothing to update
       return;
@@ -265,8 +265,8 @@ public class MVProvider {
         }
         writeLoadDetailsIntoFile(
             this.getStatusFileName(viewManager, databaseName),
-            statusDetailList.toArray(new MVStatusDetail[statusDetailList.size()])
-        );
+            statusDetailList.toArray(
+                    new MVStatusDetail[statusDetailList.size()]));
       } else {
         String errorMsg = "Updating MV status is failed due to another process taken the lock"
             + " for updating it";
