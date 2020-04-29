@@ -68,6 +68,7 @@ import io.prestosql.spi.connector.FixedSplitSource;
 import io.prestosql.spi.connector.SchemaTableName;
 import io.prestosql.spi.connector.TableNotFoundException;
 import io.prestosql.spi.predicate.TupleDomain;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
@@ -118,8 +119,12 @@ public class CarbondataSplitManager extends HiveSplitManager {
     if (!table.getStorage().getStorageFormat().getInputFormat().contains("carbon")) {
       return super.getSplits(transactionHandle, session, tableHandle, splitSchedulingStrategy);
     }
-    String location = table.getStorage().getLocation();
-
+    // for hive metastore, get table location from catalog table's tablePath
+    String location = table.getStorage().getSerdeParameters().get("tablePath");
+    if (StringUtils.isEmpty(location))  {
+      // file metastore case tablePath can be null, so get from location
+      location = table.getStorage().getLocation();
+    }
     String queryId = System.nanoTime() + "";
     QueryStatistic statistic = new QueryStatistic();
     QueryStatisticsRecorder statisticRecorder = CarbonTimeStatisticsFactory.createDriverRecorder();
