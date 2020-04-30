@@ -378,7 +378,7 @@ object CarbonDataRDDFactory {
             val convertedRdd = CommonLoadUtils.getConvertedInternalRow(
               colSchema,
               scanResultRdd.get,
-              isInsertFromStageCommand = false)
+              isGlobalSortPartition = false)
             if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
               DataLoadProcessBuilderOnSpark.insertDataUsingGlobalSortWithInternalRow(sqlContext
                 .sparkSession,
