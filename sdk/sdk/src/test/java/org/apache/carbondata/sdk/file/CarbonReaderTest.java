@@ -445,8 +445,6 @@ public class CarbonReaderTest extends TestCase {
   public void testReadWithFilterEqualSet() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
-    DataMapStoreManager.getInstance()
-        .clearDataMaps(AbsoluteTableIdentifier.from(path));
     Field[] fields = new Field[3];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
