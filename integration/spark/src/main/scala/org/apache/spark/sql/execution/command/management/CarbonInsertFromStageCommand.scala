@@ -44,7 +44,6 @@ import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusMan
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.processing.loading.FailureCauses
-import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
@@ -353,10 +352,8 @@ case class CarbonInsertFromStageCommand(
         CarbonInsertIntoCommand(
           databaseNameOp = Option(table.getDatabaseName),
           tableName = table.getTableName,
-          options = scala.collection.immutable.Map(
-            "fileheader" -> header,
-            "binary_decoder" -> "base64",
-            DataLoadProcessorConstants.IS_INSERT_STAGE_COMMAND -> "true"),
+          options = scala.collection.immutable.Map("fileheader" -> header,
+            "binary_decoder" -> "base64"),
           isOverwriteTable = false,
           logicalPlan = selectedDataFrame.queryExecution.analyzed,
           tableInfo = table.getTableInfo,

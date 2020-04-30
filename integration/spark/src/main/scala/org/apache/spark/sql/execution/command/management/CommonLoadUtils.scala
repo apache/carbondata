@@ -550,8 +550,7 @@ object CommonLoadUtils {
       curAttributes: Seq[AttributeReference],
       sortScope: SortScopeOptions.SortScope,
       table: CarbonTable,
-      partition: Map[String, Option[String]],
-      isInsertFromStageCommand: Boolean): (LogicalPlan, Int, Option[RDD[InternalRow]]) = {
+      partition: Map[String, Option[String]]): (LogicalPlan, Int, Option[RDD[InternalRow]]) = {
     // keep partition column to end if exists
     var colSchema = table.getTableInfo
       .getFactTable
@@ -574,7 +573,7 @@ object CommonLoadUtils {
     val updatedRdd: RDD[InternalRow] = CommonLoadUtils.getConvertedInternalRow(
       colSchema,
       rdd,
-      isInsertFromStageCommand)
+      sortScope == SortScopeOptions.SortScope.GLOBAL_SORT)
     transformQuery(updatedRdd,
       sparkSession,
       loadModel,
@@ -728,7 +727,7 @@ object CommonLoadUtils {
   def getConvertedInternalRow(
       columnSchema: Seq[ColumnSchema],
       rdd: RDD[InternalRow],
-      isInsertFromStageCommand: Boolean): RDD[InternalRow] = {
+      isGlobalSortPartition: Boolean): RDD[InternalRow] = {
     // Converts the data as per the loading steps before give it to writer or sorter
     var timeStampIndex = scala.collection.mutable.Set[Int]()
     var dateIndex = scala.collection.mutable.Set[Int]()
@@ -746,8 +745,9 @@ object CommonLoadUtils {
       i = i + 1
     }
     val updatedRdd: RDD[InternalRow] = rdd.map { internalRowOriginal =>
-      val internalRow = if (isInsertFromStageCommand) {
-        // Insert stage command, logical plan already consist of LogicalRDD of internalRow.
+      val internalRow = if (isGlobalSortPartition) {
+        // Insert stage command & global sort partition flow (where we persist rdd[internalRow]),
+        // logical plan already consist of LogicalRDD of internalRow.
         // When it is converted to DataFrame, spark is reusing the same internalRow.
         // So, need to have a copy before the last transformation.
         // TODO: Even though copying internalRow is faster, we should avoid it
@@ -977,9 +977,7 @@ object CommonLoadUtils {
               attributes,
               sortScope,
               table,
-              loadParams.finalPartition,
-              loadParams.optionsOriginal
-                .contains(DataLoadProcessorConstants.IS_INSERT_STAGE_COMMAND))
+              loadParams.finalPartition)
           partitionsLen = partitions
           persistedRDD = persistedRDDLocal
           transformedPlan
