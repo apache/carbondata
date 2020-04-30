@@ -71,7 +71,7 @@ public class CarbonReader<T> {
    * Return true if has next row
    */
   public boolean hasNext() throws IOException, InterruptedException {
-    if (0 == readers.size()) {
+    if (0 == readers.size() || currentReader == null) {
       return false;
     }
     validateReader();
