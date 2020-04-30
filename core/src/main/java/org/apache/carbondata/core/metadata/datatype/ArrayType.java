@@ -77,7 +77,4 @@ public class ArrayType extends DataType {
     return elementName;
   }
 
-  public void setElementName(String elementName) {
-    this.elementName = elementName;
-  }
 }

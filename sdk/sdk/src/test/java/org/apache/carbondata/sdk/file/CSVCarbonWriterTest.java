@@ -702,7 +702,7 @@ public class CSVCarbonWriterTest {
         String[] row = new String[]{
           "robot" + (i % 10),
           String.valueOf(i),
-          String.valueOf(i + "." + i),
+          i + "." + i,
           "sunflowers" + (i % 10) + "\002" + "modelarts/image_classification" + "\002" + "2019-03-30 17:22:31" + "\002" + "{\"@modelarts:start_index\":0,\"@modelarts:end_index\":5}"
             + "\001" +
             "roses" + (i % 10) + "\002" + "modelarts/image_classification" + "\002" + "2019-03-30 17:22:32" + "\002" + "{\"@modelarts:start_index\":0,\"@modelarts:end_index\":5}"};
@@ -794,7 +794,7 @@ public class CSVCarbonWriterTest {
         String[] row = new String[]{
           "robot" + (i % 10),
           String.valueOf(i),
-          String.valueOf(i + "." + i),
+          i + "." + i,
           "sunflowers" + (i % 10) + "\002" + "modelarts/image_classification" + "\002" + "2019-03-30 17:22:31" + "\002" + "{\"@modelarts:start_index\":0,\"@modelarts:end_index\":5}"
             + "\001" +
             "roses" + (i % 10) + "\002" + "modelarts/image_classification" + "\002" + "2019-03-30 17:22:32" + "\002" + "{\"@modelarts:start_index\":0,\"@modelarts:end_index\":5}"};

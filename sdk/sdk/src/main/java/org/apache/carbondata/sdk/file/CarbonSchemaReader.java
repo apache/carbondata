@@ -47,11 +47,11 @@ import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.sdk.file.arrow.ArrowConverter;
 
+import org.apache.hadoop.conf.Configuration;
+
 import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 import static org.apache.carbondata.core.util.path.CarbonTablePath.CARBON_DATA_EXT;
 import static org.apache.carbondata.core.util.path.CarbonTablePath.INDEX_FILE_EXT;
-
-import org.apache.hadoop.conf.Configuration;
 
 /**
  * Schema reader for carbon files, including carbondata file, carbonindex file, and schema file
@@ -280,15 +280,17 @@ public class CarbonSchemaReader {
     return readSchema(indexFilePath, false);
   }
 
-  public static StructField getStructChildren(CarbonTable table, String columnName) {
+  public static List<StructField> getChildrenCommon(CarbonTable table, String columnName) {
     List<CarbonDimension> list = table.getChildren(columnName);
     List<StructField> structFields = new ArrayList<StructField>();
     for (int i = 0; i < list.size(); i++) {
       CarbonDimension carbonDimension = list.get(i);
       if (DataTypes.isStructType(carbonDimension.getDataType())) {
-        return getStructChildren(table, carbonDimension.getColName());
+        structFields.add(getStructChildren(table, carbonDimension.getColName()));
+        return structFields;
       } else if (DataTypes.isArrayType(carbonDimension.getDataType())) {
-        return getArrayChildren(table, carbonDimension.getColName());
+        structFields.add(getArrayChildren(table, carbonDimension.getColName()));
+        return structFields;
       } else if (DataTypes.isMapType(carbonDimension.getDataType())) {
         //TODO
       } else {
@@ -296,25 +298,16 @@ public class CarbonSchemaReader {
         structFields.add(new StructField(columnSchema.getColumnName(), columnSchema.getDataType()));
       }
     }
+    return structFields;
+  }
+
+  public static StructField getStructChildren(CarbonTable table, String columnName) {
+    List<StructField> structFields = getChildrenCommon(table, columnName);
     return new StructField(columnName, DataTypes.createStructType(structFields));
   }
 
   public static StructField getArrayChildren(CarbonTable table, String columnName) {
-    List<CarbonDimension> list = table.getChildren(columnName);
-    List<StructField> structFields = new ArrayList<StructField>();
-    for (int i = 0; i < list.size(); i++) {
-      CarbonDimension carbonDimension = list.get(i);
-      if (DataTypes.isStructType(carbonDimension.getDataType())) {
-        return getStructChildren(table, carbonDimension.getColName());
-      } else if (DataTypes.isArrayType(carbonDimension.getDataType())) {
-        return getArrayChildren(table, carbonDimension.getColName());
-      } else if (DataTypes.isMapType(carbonDimension.getDataType())) {
-        //TODO
-      } else {
-        ColumnSchema columnSchema = carbonDimension.getColumnSchema();
-        structFields.add(new StructField(columnSchema.getColumnName(), columnSchema.getDataType()));
-      }
-    }
+    List<StructField> structFields = getChildrenCommon(table, columnName);
     return structFields.get(0);
   }
 
@@ -332,17 +325,17 @@ public class CarbonSchemaReader {
     String tableName = "UnknownTable" + UUID.randomUUID();
     CarbonTable table = CarbonTable.buildTable(folderPath, tableName, conf);
     List<ColumnSchema> columnSchemaList = table.getTableInfo().getFactTable().getListOfColumns();
-    int sum = 0;
+    int numOfChildren = 0;
     for (ColumnSchema columnSchema : columnSchemaList) {
-      if (!(columnSchema.getColumnName().contains("."))) {
-        sum++;
+      if (!(columnSchema.getColumnName().contains(CarbonCommonConstants.POINT))) {
+        numOfChildren++;
       }
     }
-    Field[] fields = new Field[sum];
+    Field[] fields = new Field[numOfChildren];
 
     int indexOfFields = 0;
-    for (ColumnSchema columnSchema : table.getTableInfo().getFactTable().getListOfColumns()) {
-      if (!columnSchema.getColumnName().contains(".")) {
+    for (ColumnSchema columnSchema : columnSchemaList) {
+      if (!columnSchema.getColumnName().contains(CarbonCommonConstants.POINT)) {
         if (DataTypes.isStructType(columnSchema.getDataType())) {
           StructField structField = getStructChildren(table, columnSchema.getColumnName());
           List<StructField> list = new ArrayList<>();
