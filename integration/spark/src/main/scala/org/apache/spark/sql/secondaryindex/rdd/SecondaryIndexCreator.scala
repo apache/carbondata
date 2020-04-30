@@ -91,6 +91,7 @@ object SecondaryIndexCreator {
 
     var segmentLocks: ListBuffer[ICarbonLock] = ListBuffer.empty
     val validSegments: java.util.List[String] = new util.ArrayList[String]()
+    val skippedSegments: java.util.List[String] = new util.ArrayList[String]()
     var validSegmentList = List.empty[String]
 
     try {
@@ -110,6 +111,7 @@ object SecondaryIndexCreator {
           // skipped segments load will be handled in SILoadEventListenerForFailedSegments
           validSegments.add(eachSegment)
         } else {
+          skippedSegments.add(eachSegment)
           LOGGER.error(s"Not able to acquire the segment lock for table" +
                        s" ${indexCarbonTable.getTableUniqueName} for segment: $eachSegment. " +
                        s"Skipping this segment from loading.")
@@ -321,6 +323,18 @@ object SecondaryIndexCreator {
       segmentLocks.foreach(segmentLock => {
         segmentLock.unlock()
       })
+      // if some segments are skipped, disable the SI table so that
+      // SILoadEventListenerForFailedSegments will take care to load to these segments in next
+      // consecutive load to main table.
+      if (!skippedSegments.isEmpty) {
+        secondaryIndexModel.sqlContext.sparkSession.sql(
+          s"""ALTER TABLE ${
+            secondaryIndexModel
+              .carbonLoadModel
+              .getDatabaseName
+          }.${ secondaryIndexModel.secondaryIndex.indexName } SET
+             |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin).collect()
+      }
       try {
         if (!isCompactionCall) {
           SegmentStatusManager
