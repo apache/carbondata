@@ -22,7 +22,6 @@ import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 
 import org.apache.log4j.Logger;
 import org.xerial.snappy.Snappy;
@@ -70,8 +69,6 @@ public class SnappyCompressor extends AbstractCompressor {
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
-    } finally {
-      UnsafeMemoryManager.destroyDirectByteBuffer(compInput);
     }
     output.limit(outputSize);
     return output;

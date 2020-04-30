@@ -379,6 +379,9 @@ public class LVByteBufferColumnPage extends ColumnPage {
       rowOffset.freeMemory();
       rowOffset = null;
     }
+    if (null != byteBuffer) {
+      UnsafeMemoryManager.destroyDirectByteBuffer(byteBuffer);
+    }
   }
 
   @Override
