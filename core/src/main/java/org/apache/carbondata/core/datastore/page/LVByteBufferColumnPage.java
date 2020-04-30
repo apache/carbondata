@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
+import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
@@ -121,6 +122,7 @@ public class LVByteBufferColumnPage extends ColumnPage {
       CarbonUnsafe.getUnsafe().copyMemory(((DirectBuffer)byteBuffer).address(),
           ((DirectBuffer)newBuffer).address(), capacity);
       newBuffer.position(byteBuffer.position());
+      UnsafeMemoryManager.destroyDirectByteBuffer(byteBuffer);
       byteBuffer = newBuffer;
     }
   }
@@ -373,7 +375,10 @@ public class LVByteBufferColumnPage extends ColumnPage {
 
   @Override
   public void freeMemory() {
-
+    if (null != rowOffset) {
+      rowOffset.freeMemory();
+      rowOffset = null;
+    }
   }
 
   @Override

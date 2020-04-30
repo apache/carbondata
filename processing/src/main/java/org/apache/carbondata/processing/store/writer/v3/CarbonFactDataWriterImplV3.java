@@ -159,10 +159,12 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
               blockletDataHolder.getNumberOfPagesAdded() +
               " :Rows Added: " + blockletDataHolder.getTotalRows());
         }
-
-        // write the data
-        writeBlockletToFile();
-
+        try {
+          // write the data
+          writeBlockletToFile();
+        } finally {
+          blockletDataHolder.clear();
+        }
       }
       if (!isAdded) {
         addPageData(tablePage);
@@ -177,7 +179,11 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       if (blockletDataHolder.getNumberOfPagesAdded() > 0) {
         LOGGER.info("Number of Pages for blocklet is: " + blockletDataHolder.getNumberOfPagesAdded()
             + " :Rows Added: " + blockletDataHolder.getTotalRows());
-        writeBlockletToFile();
+        try {
+          writeBlockletToFile();
+        } finally {
+          blockletDataHolder.clear();
+        }
       }
     }
   }
@@ -227,9 +233,6 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     } catch (IOException e) {
       LOGGER.error("Problem while writing file", e);
       throw new CarbonDataWriterException("Problem while writing file", e);
-    } finally {
-      // clear the data holder
-      blockletDataHolder.clear();
     }
 
   }
