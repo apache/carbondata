@@ -91,9 +91,9 @@ public class CarbonReader<T> {
         readers.set(index, null);
         index++;
         currentReader = readers.get(index);
-        boolean result = currentReader.nextKeyValue();
-        if (result) {
-          return result;
+        boolean hasNext = currentReader.nextKeyValue();
+        if (hasNext) {
+          return hasNext;
         }
       }
     }
