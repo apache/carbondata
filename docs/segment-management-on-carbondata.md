@@ -62,7 +62,7 @@ concept which helps to maintain consistency of data and easy transaction managem
 
   When more detail of the segment is required, user can issue SHOW SEGMENT by query.    
     
-  The query should against table name with '_segments' appended and select from following fields:
+  The query should be against table name with '_segments' appended and select from following fields:
     
 - id: String, the id of the segment
 - status: String, status of the segment
@@ -149,7 +149,7 @@ concept which helps to maintain consistency of data and easy transaction managem
   **NOTE:**
   carbon.input.segments: Specifies the segment IDs to be queried. This property allows you to query specified segments of the specified table. The CarbonScan will read data from specified segments only.
 
-  If user wants to query with segments reading in multi threading mode, then CarbonSession. threadSet can be used instead of SET query.
+  If user wants to query with segments reading in multi-threading mode, then CarbonSession.threadSet can be used instead of SET query.
   ```
   CarbonSession.threadSet ("carbon.input.segments.<database_name>.<table_name>","<list of segment IDs>");
   ```
@@ -159,14 +159,14 @@ concept which helps to maintain consistency of data and easy transaction managem
   SET carbon.input.segments.<database_name>.<table_name> = *;
   ```
 
-  If user wants to query with segments reading in multi threading mode, then CarbonSession. threadSet can be used instead of SET query. 
+  If user wants to query with segments reading in multi-threading mode, then CarbonSession.threadSet can be used instead of SET query.
   ```
   CarbonSession.threadSet ("carbon.input.segments.<database_name>.<table_name>","*");
   ```
 
   **Examples:**
 
-  * Example to show the list of segment IDs,segment status, and other required details and then specify the list of segments to be read.
+  * Example to show the list of segment IDs, segment status, and other required details and then specify the list of segments to be read.
 
   ```
   SHOW SEGMENTS FOR carbontable1;
@@ -174,13 +174,13 @@ concept which helps to maintain consistency of data and easy transaction managem
   SET carbon.input.segments.db.carbontable1 = 1,3,9;
   ```
 
-  * Example to query with segments reading in multi threading mode:
+  * Example to query with segments reading in multi-threading mode:
 
   ```
   CarbonSession.threadSet ("carbon.input.segments.db.carbontable_Multi_Thread","1,3");
   ```
 
-  * Example for threadset in multithread environment (following shows how it is used in Scala code):
+  * Example for threadset in multi-thread environment (following shows how it is used in Scala code):
 
   ```
   def main(args: Array[String]) {

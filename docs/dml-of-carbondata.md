@@ -50,7 +50,7 @@ CarbonData DML statements are documented here,which includes:
 | ------------------------------------------------------- | ------------------------------------------------------------ |
 | [DELIMITER](#delimiter)                                 | Character used to separate the data in the input csv file    |
 | [QUOTECHAR](#quotechar)                                 | Character used to quote the data in the input csv file       |
-| [LINE_SEPARATOR](#line_separator)                       | Characters used to specify the line separator in the input csv file. If not provide, csv parser will detect it automatically. | 
+| [LINE_SEPARATOR](#line_separator)                       | Characters used to specify the line separator in the input csv file. If not provided, csv parser will detect it automatically. | 
 | [COMMENTCHAR](#commentchar)                             | Character used to comment the rows in the input csv file. Those rows will be skipped from processing |
 | [HEADER](#header)                                       | Whether the input csv files have header row                  |
 | [FILEHEADER](#fileheader)                               | If header is not present in the input csv, what is the column names to be used for data read from input csv |
@@ -60,6 +60,7 @@ CarbonData DML statements are documented here,which includes:
 | [SKIP_EMPTY_LINE](#skip_empty_line)                     | Whether empty lines in input csv file should be skipped or loaded as null row |
 | [COMPLEX_DELIMITER_LEVEL_1](#complex_delimiter_level_1) | Starting delimiter for complex type data in input csv file   |
 | [COMPLEX_DELIMITER_LEVEL_2](#complex_delimiter_level_2) | Ending delimiter for complex type data in input csv file     |
+| [COMPLEX_DELIMITER_LEVEL_3](#complex_delimiter_level_3) | Ending delimiter for nested complex type data in input csv file of level 3. |
 | [DATEFORMAT](#dateformattimestampformat)                | Format of date in the input csv file                         |
 | [TIMESTAMPFORMAT](#dateformattimestampformat)           | Format of timestamp in the input csv file                    |
 | [SORT_COLUMN_BOUNDS](#sort-column-bounds)               | How to partition the sort columns to make the evenly distributed |
@@ -69,7 +70,6 @@ CarbonData DML statements are documented here,which includes:
 | [IS_EMPTY_DATA_BAD_RECORD](#bad-records-handling)       | Whether empty data of a column to be considered as bad record or not |
 | [GLOBAL_SORT_PARTITIONS](#global_sort_partitions)       | Number of partition to use for shuffling of data during sorting |
 | [SCALE_FACTOR](#scale_factor)                           | Control the partition size for RANGE_COLUMN feature          |
-| [CARBON_OPTIONS_BINARY_DECODER]                         | Support configurable decode for loading from csv             |
 -
   You can use the following options to load data:
 
@@ -127,12 +127,12 @@ CarbonData DML statements are documented here,which includes:
     ```
     
     Priority order for choosing Sort Scope is:
-    1. Load Data Command
-    2. CARBON.TABLE.LOAD.SORT.SCOPE.<db>.<table> session property
-    3. Table level Sort Scope
-    4. CARBON.OPTIONS.SORT.SCOPE session property
-    5. Default Value: NO_SORT
-
+    * Load Data Command
+    * ```CARBON.TABLE.LOAD.SORT.SCOPE.<db>.<table>``` session property.
+    * Table level Sort Scope
+    * ```CARBON.OPTIONS.SORT.SCOPE``` session property
+    * Default Value: NO_SORT
+    
   - ##### MULTILINE:
 
     CSV with new line character in quotes.
@@ -189,7 +189,7 @@ CarbonData DML statements are documented here,which includes:
     ```
     OPTIONS('DATEFORMAT' = 'yyyy-MM-dd','TIMESTAMPFORMAT'='yyyy-MM-dd HH:mm:ss')
     ```
-    **NOTE:** Date formats are specified by date pattern strings. The date pattern letters in CarbonData are same as in JAVA. Refer to [SimpleDateFormat](http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html).
+    **NOTE:** Date formats are specified by date pattern strings. The date pattern in CarbonData is the same as in JAVA. Refer to [SimpleDateFormat](http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html).
 
   - ##### SORT COLUMN BOUNDS:
 
@@ -205,8 +205,7 @@ CarbonData DML statements are documented here,which includes:
     * SORT_COLUMN_BOUNDS will be used only when the SORT_SCOPE is 'local_sort'.
     * Carbondata will use these bounds as ranges to process data concurrently during the final sort procedure. The records will be sorted and written out inside each partition. Since the partition is sorted, all records will be sorted.
     * The option works better if your CPU usage during loading is low. If your current system CPU usage is high, better not to use this option. Besides, it depends on the user to specify the bounds. If user does not know the exactly bounds to make the data distributed evenly among the bounds, loading performance will still be better than before or at least the same as before.
-    * Users can find more information about this option in the description of PR1953.
-
+    * Users can find more information about this option in the description of [PR1953](https://github.com/apache/carbondata/pull/1953).
 
   - ##### BAD RECORDS HANDLING:
 
@@ -219,61 +218,57 @@ CarbonData DML statements are documented here,which includes:
     OPTIONS('BAD_RECORDS_LOGGER_ENABLE'='true', 'BAD_RECORD_PATH'='hdfs://hacluster/tmp/carbon', 'BAD_RECORDS_ACTION'='REDIRECT', 'IS_EMPTY_DATA_BAD_RECORD'='false')
     ```
 
-  **NOTE:**
-  * BAD_RECORDS_ACTION property can have four type of actions for bad records FORCE, REDIRECT, IGNORE and FAIL.
-  * FAIL option is its Default value. If the FAIL option is used, then data loading fails if any bad records are found.
-  * If the REDIRECT option is used, CarbonData will add all bad records in to a separate CSV file. However, this file must not be used for subsequent data loading because the content may not exactly match the source record. You are advised to cleanse the original source record for further data ingestion. This option is used to remind you which records are bad records.
-  * If the FORCE option is used, then it auto-converts the data by storing the bad records as NULL before Loading data.
-  * If the IGNORE option is used, then bad records are neither loaded nor written to the separate CSV file.
-  * In loaded data, if all records are bad records, the BAD_RECORDS_ACTION is invalid and the load operation fails.
-  * The default maximum number of characters per column is 32000. If there are more than 32000 characters in a column, please refer to *String longer than 32000 characters* section.
-  * Since Bad Records Path can be specified in create, load and carbon properties. 
-    Therefore, value specified in load will have the highest priority, and value specified in carbon properties will have the least priority.
+    **NOTE:**
+    * BAD_RECORDS_ACTION property can have four types of actions for bad records FORCE, REDIRECT, IGNORE, and FAIL.
+    * FAIL option is its Default value. If the FAIL option is used, then data loading fails if any bad records are found.
+    * If the REDIRECT option is used, CarbonData will add all bad records into a separate CSV file. However, this file must not be used for subsequent data loading because the content may not exactly match the source record. You are advised to cleanse the source record for further data ingestion. This option is used to remind you which records are bad.
+    * If the FORCE option is used, then it auto-converts the data by storing the bad records as NULL before Loading data.
+    * If the IGNORE option is used, then bad records are neither loaded nor written to the separate CSV file.
+    * In loaded data, if all records are bad records, the BAD_RECORDS_ACTION is invalid and the load operation fails.
+    * The default maximum number of characters per column is 32000. If there are more than 32000 characters in a column, please refer to [String longer than 32000 characters](https://github.com/apache/carbondata/blob/master/docs/ddl-of-carbondata.md#string-longer-than-32000-characters) section.
+    * Since Bad Records Path can be specified in create, load and carbon properties. 
+      Therefore, the value specified in load will have the highest priority, and value specified in carbon properties will have the least priority.
 
-  Example:
+    Example:
 
-  ```
-  LOAD DATA INPATH 'filepath.csv' INTO TABLE tablename
-  OPTIONS('BAD_RECORDS_LOGGER_ENABLE'='true','BAD_RECORD_PATH'='hdfs://hacluster/tmp/carbon',
-  'BAD_RECORDS_ACTION'='REDIRECT','IS_EMPTY_DATA_BAD_RECORD'='false')
-  ```
+    ```
+    LOAD DATA INPATH 'filepath.csv' INTO TABLE tablename
+    OPTIONS('BAD_RECORDS_LOGGER_ENABLE'='true','BAD_RECORD_PATH'='hdfs://hacluster/tmp/carbon',
+    'BAD_RECORDS_ACTION'='REDIRECT','IS_EMPTY_DATA_BAD_RECORD'='false')
+    ```
 
   - ##### GLOBAL_SORT_PARTITIONS:
 
-    If the SORT_SCOPE is defined as GLOBAL_SORT, then user can specify the number of partitions to use while shuffling data for sort using GLOBAL_SORT_PARTITIONS. If it is not configured, or configured less than 1, then it uses the number of map task as reduce task. It is recommended that each reduce task deal with 512MB-1GB data.
+    If the SORT_SCOPE is defined as GLOBAL_SORT, then the user can specify the number of partitions to use while shuffling data for sort using GLOBAL_SORT_PARTITIONS. If it is not configured, or configured less than 1, then it uses the number of map tasks as reduce tasks. It is recommended that each reduce task deals with 512MB-1GB data.
     For RANGE_COLUMN, GLOBAL_SORT_PARTITIONS is used to specify the number of range partitions also.
-    GLOBAL_SORT_PARTITIONS should be specified optimally during RANGE_COLUMN LOAD because if a higher number is configured then the load time may be less but it will result in creation of more files which would degrade the query and compaction performance.
-    Conversely, if less partitions are configured then the load performance may degrade due to less use of parallelism but the query and compaction will become faster. Hence the user may choose optimal number depending on the use case.
-  ```
-  OPTIONS('GLOBAL_SORT_PARTITIONS'='2')
-  ```
+    GLOBAL_SORT_PARTITIONS should be specified optimally during RANGE_COLUMN LOAD because if a higher number is configured then the load time may be less but it will result in the creation of more files which would degrade the query and compaction performance.
+    Conversely, if fewer partitions are configured then the load performance may degrade due to less use of parallelism but the query and compaction will become faster. Hence the user may choose an optimal number depending on the use case.
+    ```
+    OPTIONS('GLOBAL_SORT_PARTITIONS'='2')
+    ```
 
-   **NOTE:**
-   * GLOBAL_SORT_PARTITIONS should be Integer type, the range is [1,Integer.MaxValue].
-   * It is only used when the SORT_SCOPE is GLOBAL_SORT.
+     **NOTE:**
+     * GLOBAL_SORT_PARTITIONS should be Integer type, the range is [1,Integer.MaxValue].
+     * It is only used when the SORT_SCOPE is GLOBAL_SORT.
 
-   - ##### SCALE_FACTOR
+  - ##### SCALE_FACTOR
 
-   For RANGE_COLUMN, SCALE_FACTOR is used to control the number of range partitions as following.
-   ```
-     splitSize = max(blocklet_size, (block_size - blocklet_size)) * scale_factor
-     numPartitions = total size of input data / splitSize
-   ```
-   The default value is 3, and the range is [1, 300].
+    For RANGE_COLUMN, SCALE_FACTOR is used to control the number of range partitions as following.
+    ```
+      splitSize = max(blocklet_size, (block_size - blocklet_size)) * scale_factor
+      numPartitions = total size of input data / splitSize
+    ```
+    The default value is 3, and the range is [1, 300].
+ 
+    ```
+      OPTIONS('SCALE_FACTOR'='10')
+    ```
+    **NOTE:**
+    * If both GLOBAL_SORT_PARTITIONS and SCALE_FACTOR are used at the same time, only GLOBAL_SORT_PARTITIONS is valid.
+    * The compaction on RANGE_COLUMN will use LOCAL_SORT by default.
 
-   ```
-     OPTIONS('SCALE_FACTOR'='10')
-   ```
-   **NOTE:**
-   * If both GLOBAL_SORT_PARTITIONS and SCALE_FACTOR are used at the same time, only GLOBAL_SORT_PARTITIONS is valid.
-   * The compaction on RANGE_COLUMN will use LOCAL_SORT by default.
 
-   - ##### CARBON_ENABLE_RANGE_COMPACTION
-
-   To configure Ranges-based Compaction to be used or not for RANGE_COLUMN.
-   The default value is 'true'.
-
-### INSERT DATA INTO CARBONDATA TABLE
+## INSERT DATA INTO CARBONDATA TABLE
 
   This command inserts data into a CarbonData table, it is defined as a combination of two queries Insert and Select query respectively. 
   It inserts records from a source table into a target CarbonData table, the source table can be a Hive table, Parquet table or a CarbonData table itself. 
@@ -284,7 +279,7 @@ CarbonData DML statements are documented here,which includes:
   [ WHERE { <filter_condition> } ]
   ```
 
-  You can also omit the `table` keyword and write your query as:
+  User can also omit the `table` keyword and write the query as:
 
   ```
   INSERT INTO <CARBONDATA TABLE> SELECT * FROM sourceTableName 
@@ -316,12 +311,12 @@ CarbonData DML statements are documented here,which includes:
   INSERT OVERWRITE TABLE table1 SELECT * FROM TABLE2
   ```
 
-### INSERT DATA INTO CARBONDATA TABLE From Stage Input Files
+## INSERT DATA INTO CARBONDATA TABLE From Stage Input Files
 
   Stage input files are data files written by external application (such as Flink). These files 
   are committed but not loaded into the table. 
   
-  You can use this command to insert them into the table, so that making them visible for query.
+  User can use this command to insert them into the table, thus making them visible for a query.
   
   ```
   INSERT INTO <CARBONDATA TABLE> STAGE OPTIONS(property_name=property_value, ...)
@@ -334,7 +329,7 @@ CarbonData DML statements are documented here,which includes:
 | [BATCH_FILE_ORDER](#batch_file_order)                   | The order type of stage files in per processing                     |
 
 -
-  You can use the following options to load data:
+  User can use the following options to load data:
 
   - ##### BATCH_FILE_COUNT: 
     The number of stage files per processing.
@@ -352,18 +347,18 @@ CarbonData DML statements are documented here,which includes:
     OPTIONS('batch_file_order'='DESC')
     ```
 
-  Examples:
-  ```
-  INSERT INTO table1 STAGE
+    Examples:
+    ```
+    INSERT INTO table1 STAGE
+  
+    INSERT INTO table1 STAGE OPTIONS('batch_file_count' = '5')
+    Note: This command uses the default file order, will insert the earliest stage files into the table.
+  
+    INSERT INTO table1 STAGE OPTIONS('batch_file_count' = '5', 'batch_file_order'='DESC')
+    Note: This command will insert the latest stage files into the table.
+    ```
 
-  INSERT INTO table1 STAGE OPTIONS('batch_file_count' = '5')
-  Note: This command use the default file order, will insert the earliest stage files into the table.
-
-  INSERT INTO table1 STAGE OPTIONS('batch_file_count' = '5', 'batch_file_order'='DESC')
-  Note: This command will insert the latest stage files into the table.
-  ```
-
-### Load Data Using Static Partition 
+## Load Data Using Static Partition 
 
   This command allows you to load data using static partition.
 
@@ -386,7 +381,7 @@ CarbonData DML statements are documented here,which includes:
   SELECT <columns list excluding partition columns> FROM another_user
   ```
 
-### Load Data Using Dynamic Partition
+## Load Data Using Dynamic Partition
 
   This command allows you to load data using dynamic partition. If partition spec is not specified, then the partition is considered as dynamic.
 
@@ -512,7 +507,7 @@ CarbonData DML statements are documented here,which includes:
 
   - **Minor Compaction**
 
-  In Minor compaction, user can specify the number of loads to be merged. 
+  In Minor compaction, the user can specify the number of loads to be merged. 
   Minor compaction triggers for every data load if the parameter carbon.enable.auto.load.merge is set to true. 
   If any segments are available to be merged, then compaction will run parallel with data load, there are 2 levels in minor compaction:
   * Level 1: Merging of the segments which are not yet compacted.
