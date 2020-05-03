@@ -35,11 +35,11 @@
      INSERT INTO maintable SELECT 1, 'ab', 2;
      CREATE MATERIALIZED VIEW view1 AS SELECT a, sum(b) FROM maintable GROUP BY a;
      SELECT a, sum(b) FROM maintable GROUP BY a;
-     // NOTE: run explain query and check if query hits the Index table from the plan
+     // NOTE: run explain query and check if query hits the mv table from the plan
      EXPLAIN SELECT a, sum(b) FROM maintable GROUP BY a;
    ```
 
-## Introductions
+## Introduction
 
  Materialized views are created as tables from queries. User can create limitless materialized view 
  to improve query performance provided the storage requirements and loading time is acceptable.
@@ -93,7 +93,7 @@
    * Creating materialized view with select query containing only project of all columns of fact 
      table is unsupported.
      **Example:**
-       If table 'x' contains columns 'a,b,c', then creating MV Index with below queries is not supported.
+       If table 'x' contains columns 'a,b,c', then creating MV with below queries is not supported.
          1. ```SELECT a,b,c FROM x```
          2. ```SELECT * FROM x```
    * TableProperties can be provided in Properties excluding LOCAL_DICTIONARY_INCLUDE,
@@ -170,7 +170,7 @@
 
  **NOTE**:
    * In case of InsertOverwrite/Update operation on fact table, all segments of materialized view 
-     will be MARKED_FOR_DELETE and reload to Index table will happen by REFRESH MATERIALIZED VIEW, 
+     will be MARKED_FOR_DELETE and reload to mv table will happen by REFRESH MATERIALIZED VIEW, 
      in case of materialized view which refresh on manual and once the InsertOverwrite/Update 
      operation on fact table is finished, in case of materialized view which refresh on commit.
    * In case of full scan query, Data Size and Index Size of fact table and materialized view 
@@ -207,7 +207,7 @@
       materialized view, if not, the operation is allowed, otherwise operation will be rejected by
       throwing exception.
    3. Partition management command: `ALTER TABLE ADD/DROP PARTITION`. Note that dropping a partition
-      will be allowed only if partition is participating in all indexes associated with fact table.
+      will be allowed only if partition is participating in all materialized views associated with fact table.
       Drop Partition is not allowed, if any materialized view is associated with more than one 
       fact table. Drop Partition directly on materialized view is not allowed.
    4. Complex Datatype's for materialized view is not supported.
@@ -215,7 +215,7 @@
  However, there is still way to support these operations on fact table, in current CarbonData
  release, user can do as following:
  
-   1. Remove the materialized by `DROP MATERIALIZED VIEW` command.
+   1. Remove the materialized view by `DROP MATERIALIZED VIEW` command.
    2. Carry out the data management operation on fact table.
    3. Create the materialized view again by `CREATE MATERIALIZED VIEW` command.
    

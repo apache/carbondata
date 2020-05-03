@@ -37,15 +37,15 @@ EXPLAIN SELECT a from maintable where c = 'cd';
 ```
 
 ## Secondary Index Introduction
-  Sencondary index tables are created as a indexes and managed as child tables internally by
-  Carbondata. Users can create secondary index based on the column position in main table(Recommended
+  Secondary index tables are created as indexes and managed as child tables internally by
+  Carbondata. Users can create a secondary index based on the column position in the main table(Recommended
   for right columns) and the queries should have filter on that column to improve the filter query
   performance.
   
-  SI tables will always be loaded non-lazy way. Once SI table is created, Carbondata's 
+  Data refresh to the secondary index is always automatic. Once SI table is created, Carbondata's 
   CarbonOptimizer with the help of `CarbonSITransformationRule`, transforms the query plan to hit the
   SI table based on the filter condition or set of filter conditions present in the query.
-  So first level of pruning will be done on SI table as it stores blocklets and main table/parent
+  So the first level of pruning will be done on the SI table as it stores blocklets and main table/parent
   table pruning will be based on the SI output, which helps in giving the faster query results with
   better pruning.
 
@@ -56,7 +56,7 @@ EXPLAIN SELECT a from maintable where c = 'cd';
    ON TABLE maintable(index_column)
    AS
    'carbondata'
-   [TBLPROPERTIES('table_blocksize'='1')]
+   [PROPERTIES('table_blocksize'='1')]
    ```
   For instance, main table called **sales** which is defined as
 
@@ -78,13 +78,13 @@ EXPLAIN SELECT a from maintable where c = 'cd';
   ON TABLE sales(user_id)
   AS
   'carbondata'
-  TBLPROPERTIES('table_blocksize'='1')
+  PROPERTIES('table_blocksize'='1')
   ```
  
  
 #### How SI tables are selected
 
-When a user executes a filter query, during query planning phase, CarbonData with help of
+When a user executes a filter query, during the query planning phase, CarbonData with the help of
 `CarbonSITransformationRule`, checks if there are any index tables present on the filter column of
 query. If there are any, then filter query plan will be transformed such a way that, execution will
 first hit the corresponding SI table and give input to main table for further pruning.
@@ -135,17 +135,17 @@ Running Compaction command (`ALTER TABLE COMPACT`)[COMPACTION TYPE-> MINOR/MAJOR
 automatically delete all the old segments of SI and creates a new segment with same name as main
 table compacted segmet and loads data to it.
 
-### Compacting SI table's individual segment(s) through REBUILD command
-Where there are so many small files present in the SI table, then we can use REBUILD command to
+### Compacting SI table's individual segment(s) through REFRESH INDEX command
+Where there are so many small files present in the SI table, then we can use REFRESH INDEX command to
 compact the files within an SI segment to avoid many small files.
 
   ```
-  REBUILD INDEX sales_index
+  REFRESH INDEX sales_index
   ```
-This command merges data files in  each segment of SI table.
+This command merges data files in each segment of SI table.
 
   ```
-  REBUILD INDEX sales_index WHERE SEGMENT.ID IN(1)
+  REFRESH INDEX sales_index WHERE SEGMENT.ID IN(1)
   ```
 This command merges data files within specified segment of SI table.
 
