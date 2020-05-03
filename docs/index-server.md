@@ -19,9 +19,8 @@
 
 ## Background
 
-Carbon currently prunes and caches all block/blocklet datamap index information into the driver for
-normal table, for Bloom/Index datamaps the JDBC driver will launch a job to prune and cache the
-datamaps in executors.
+Carbon currently prunes and caches all block/blocklet index information into the driver for
+normal table, for Bloom/Lucene indexes the JDBC driver will launch a job to prune and cache in executors.
 
 This causes the driver to become a bottleneck in the following ways:
 1. If the cache size becomes huge(70-80% of the driver memory) then there can be excessive GC in
@@ -52,8 +51,7 @@ This mapping will be maintained for each table and will enable the index server 
 cache location for each segment.
 
 2. Cache size held by each executor: 
-    This mapping will be used to distribute the segments equally(on the basis of size) among the 
-    executors.
+This mapping will be used to distribute the segments equally(on the basis of size) among the executors.
   
 Once a request is received each segment would be iterated over and
 checked against tableToExecutorMapping to find if a executor is already
@@ -82,6 +80,15 @@ the pruned blocklets which would be further used for result fetching.
 
 **Note:** Multiple JDBC drivers can connect to the index server to use the cache.
 
+## Enabling Size based distribution for Legacy stores
+The default round robin based distribution causes unequal distribution of cache among the executors, which can cause any one of the executors to be bloated with too much cache resulting in performance degrade.
+This problem can be solved by running the `upgrade_segment` command which will fill the data size values for each segment in the tablestatus file. Any cache loaded after this can use the traditional size based distribution.
+
+#### Example
+```
+alter table table1 compact 'upgrade_segment';
+```
+
 ## Reallocation of executor
 In case executor(s) become dead/unavailable then the segments that were
 earlier being handled by those would be reassigned to some other
@@ -102,7 +109,7 @@ In case of any failure the index server would fallback to embedded mode
 which means that the JDBCServer would take care of distributed pruning.
 A similar job would be fired by the JDBCServer which would take care of
 pruning using its own executors. If for any reason the embedded mode
-also fails to prune the datamaps then the job would be passed on to
+also fails to prune the indexes then the job would be passed on to
 driver.
 
 **NOTE:** In case of embedded mode a job would be fired after pruning to clear the
@@ -120,7 +127,7 @@ The user can set the location for these files by using 'carbon.indexserver.temp.
 the files are written in the path /tmp/indexservertmp.
 
 ## Prepriming
-As each query is responsible for caching the pruned datamaps, thus a lot of execution time is wasted in reading the 
+As each query is responsible for caching the pruned indexes, thus a lot of execution time is wasted in reading the 
 files and caching the datmaps for the first query.
 To avoid this problem we have introduced Pre-Priming which allows each data manipulation command like load, insert etc 
 to fire a request to the index server to load the corresponding segments into the index server.
@@ -152,11 +159,11 @@ The user can enable prepriming by using 'carbon.indexserver.enable.prepriming' =
 | carbon.index.server.ip |    NA   |   Specify the IP/HOST on which the server would be started. Better to specify the private IP. | 
 | carbon.index.server.port | NA | The port on which the index server has to be started. |
 |carbon.index.server.max.worker.threads| 500 | Number of RPC handlers to open for accepting the requests from JDBC driver. Max accepted value is Integer.Max. Refer: [Hive configuration](https://github.com/apache/hive/blob/master/common/src/java/org/apache/hadoop/hive/conf/HiveConf.java#L3441) |
-|carbon.max.executor.lru.cache.size|  NA | Maximum memory **(in MB)** upto which the executor process can cache the data (DataMaps and reverse dictionary values). Only integer values greater than 0 are accepted. **NOTE:** Mandatory for the user to set. |
+|carbon.max.executor.lru.cache.size|  NA | Maximum memory **(in MB)** upto which the executor process can cache the data (Indexes and reverse dictionary values). Only integer values greater than 0 are accepted. **NOTE:** Mandatory for the user to set. |
 |carbon.index.server.max.jobname.length|NA|The max length of the job to show in the index server application UI. For bigger queries this may impact performance as the whole string would be sent from JDBCServer to IndexServer.|
 |carbon.max.executor.threads.for.block.pruning|4| max executor threads used for block pruning. |
 |carbon.index.server.inmemory.serialization.threshold.inKB|300|Max in memory serialization size after reaching threshold data will be written to file. Min value that the user can set is 0KB and max is 102400KB. |
-|carbon.indexserver.temp.path|tablePath| The folder to write the split files if in memory datamap size for network transfers crossed the 'carbon.index.server.inmemory.serialization.threshold.inKB' limit.|
+|carbon.indexserver.temp.path|tablePath| The folder to write the split files if in memory index cache size for network transfers crossed the 'carbon.index.server.inmemory.serialization.threshold.inKB' limit.|
 
 
 ##### spark-defaults.conf(only for secure mode)

@@ -64,7 +64,7 @@ carbon.sql("LOAD DATA INPATH '<hdfs store path>/sample.csv' INTO TABLE hive_carb
 scala>carbon.sql("SELECT * FROM hive_carbon").show()
 ```
 
-## Query Data in Hive
+## Configure Carbon in Hive
 ### Configure hive classpath
 ```
 mkdir hive/auxlibs/
@@ -93,6 +93,17 @@ Carbon Jars to be copied to the above paths.
 $HIVE_HOME/bin/beeline
 ```
 
+### Write data from hive
+
+ - Write data from hive into carbondata format.
+ 
+ ```
+create table hive_carbon(id int, name string, scale decimal, country string, salary double) stored by 'org.apache.carbondata.hive.CarbonStorageHandler';
+insert into hive_carbon select * from parquetTable;
+```
+
+**Note**: Only non-transactional tables are supported when created through hive. This means that the standard carbon folder structure would not be followed and all files would be written in a flat folder structure.
+
 ### Query data from hive
 
  - This is to read the carbon table through Hive. It is the integration of the carbon with Hive.
@@ -105,13 +116,10 @@ These properties helps to recursively traverse through the directories to read t
 
 ### Example
 ```
- - In case if the carbon table is not set with the SERDE and the INPUTFORMAT/OUTPUTFORMAT, user can create a new hive managed table like below with the required details for the hive to read.
-create table hive_carbon_1(id int, name string, scale decimal, country string, salary double) ROW FORMAT SERDE 'org.apache.carbondata.hive.CarbonHiveSerDe' WITH SERDEPROPERTIES ('mapreduce.input.carboninputformat.databaseName'='default', 'mapreduce.input.carboninputformat.tableName'='HIVE_CARBON_EXAMPLE') STORED AS INPUTFORMAT 'org.apache.carbondata.hive.MapredCarbonInputFormat' OUTPUTFORMAT 'org.apache.carbondata.hive.MapredCarbonOutputFormat' LOCATION 'location_to_the_carbon_table';
-
  - Query the table
-select * from hive_carbon_1;
-select count(*) from hive_carbon_1;
-select * from hive_carbon_1 order by id;
+select * from hive_carbon;
+select count(*) from hive_carbon;
+select * from hive_carbon order by id;
 ```
 
 ### Note
