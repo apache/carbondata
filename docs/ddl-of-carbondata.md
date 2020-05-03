@@ -20,7 +20,6 @@
 CarbonData DDL statements are documented here,which includes:
 
 * [CREATE TABLE](#create-table)
-  * [Dictionary Encoding](#dictionary-encoding-configuration)
   * [Local Dictionary](#local-dictionary-configuration)
   * [Inverted Index](#inverted-index-configuration)
   * [Sort Columns](#sort-columns-configuration)
@@ -31,7 +30,7 @@ CarbonData DDL statements are documented here,which includes:
   * [Caching Column Min/Max](#caching-minmax-value-for-required-columns)
   * [Caching Level](#caching-at-block-or-blocklet-level)
   * [Hive/Parquet folder Structure](#support-flat-folder-same-as-hiveparquet)
-  * [Extra Long String columns](#string-longer-than-32000-characters)
+  * [Long String columns](#string-longer-than-32000-characters)
   * [Compression for Table](#compression-for-table)
   * [Bad Records Path](#bad-records-path) 
   * [Load Minimum Input File Size](#load-minimum-data-size)
@@ -115,7 +114,7 @@ CarbonData DDL statements are documented here,which includes:
 
    - ##### Local Dictionary Configuration
 
-   Columns for which dictionary is not generated needs more storage space and in turn more IO. Also since more data will have to be read during query, query performance also would suffer.Generating dictionary per blocklet for such columns would help in saving storage space and assist in improving query performance as carbondata is optimized for handling dictionary encoded columns more effectively.Generating dictionary internally per blocklet is termed as local dictionary. Please refer to [File structure of Carbondata](./file-structure-of-carbondata.md) for understanding about the file structure of carbondata and meaning of terms like blocklet.
+   Columns for which dictionary is not generated needs more storage space and in turn more IO. Also since more data will have to be read during query, query performance also would suffer. Generating dictionary per blocklet for such columns would help in saving storage space and assist in improving query performance as carbondata is optimized for handling dictionary encoded columns more effectively.Generating dictionary internally per blocklet is termed as local dictionary. Please refer to [File structure of Carbondata](./file-structure-of-carbondata.md) for understanding about the file structure of carbondata and meaning of terms like blocklet.
 
    Local Dictionary helps in:
    1. Getting more compression.
@@ -200,7 +199,7 @@ CarbonData DDL statements are documented here,which includes:
      **NOTE**: Columns specified in INVERTED_INDEX should also be present in SORT_COLUMNS.
 
      ```
-     TBLPROPERTIES ('SORT_COLUMNS'='column2,column3','NO_INVERTED_INDEX'='column1', 'INVERTED_INDEX'='column2, column3')
+     TBLPROPERTIES ('SORT_COLUMNS'='column2,column3', 'INVERTED_INDEX'='column2, column3')
      ```
 
    - ##### Sort Columns Configuration
@@ -215,7 +214,7 @@ CarbonData DDL statements are documented here,which includes:
      TBLPROPERTIES ('SORT_COLUMNS'='column1, column3')
      ```
 
-     **NOTE**: Sort_Columns for Complex datatype columns and binary data type is not supported.
+     **NOTE**: Sort_Columns for Complex datatype columns, binary, double, float, decimal data type is not supported.
 
    - ##### Sort Scope Configuration
    
@@ -240,7 +239,7 @@ CarbonData DDL statements are documented here,which includes:
      revenue INT)
    STORED AS carbondata
    TBLPROPERTIES ('SORT_COLUMNS'='productName,storeCity',
-                  'SORT_SCOPE'='NO_SORT')
+                  'SORT_SCOPE'='LOCAL_SORT')
    ```
 
    **NOTE:** CarbonData also supports "using carbondata". Find example code at [SparkSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark/src/main/scala/org/apache/carbondata/examples/SparkSessionExample.scala) in the CarbonData repo.
@@ -453,11 +452,11 @@ CarbonData DDL statements are documented here,which includes:
    - ##### Compression for table
 
      Data compression is also supported by CarbonData.
-     By default, Snappy is used to compress the data. CarbonData also supports ZSTD compressor.
+     By default, Snappy is used to compress the data. CarbonData also supports ZSTD and GZIP compressors.
+     
      User can specify the compressor in the table property:
-
      ```
-     TBLPROPERTIES('carbon.column.compressor'='snappy')
+     TBLPROPERTIES('carbon.column.compressor'='GZIP')
      ```
      or
      ```
@@ -588,7 +587,7 @@ CarbonData DDL statements are documented here,which includes:
          | STORED AS carbondata
          | LOCATION '$storeLocation/origin'
       """.stripMargin)
-  checkAnswer(sql("SELECT count(*) from source"), sql("SELECT count(*) from origin"))
+  sql("SELECT count(*) from source").show()
   ```
 
 ### Create external table on Non-Transactional table data location.
@@ -608,12 +607,10 @@ CarbonData DDL statements are documented here,which includes:
   This can be SDK output or C++ SDK output. Refer [SDK Guide](./sdk-guide.md) and [C++ SDK Guide](./csdk-guide.md). 
 
   **Note:**
-  1. Dropping of the external table should not delete the files present in the location.
+  1. Dropping of the external table will not delete the files present in the location.
   2. When external table is created on non-transactional table data, 
     external table will be registered with the schema of carbondata files.
-    If multiple files with different schema is present, exception will be thrown.
-    So, If table registered with one schema and files are of different schema, 
-    suggest to drop the external table and create again to register table with new schema.  
+    If multiple files have the same column with different datatypes then exception will be thrown.  
 
 
 ## CREATE DATABASE 
@@ -680,6 +677,7 @@ CarbonData DDL statements are documented here,which includes:
       **NOTE:** Add Complex datatype columns is not supported.
 
 Users can specify which columns to include and exclude for local dictionary generation after adding new columns. These will be appended with the already existing local dictionary include and exclude columns of main table respectively.
+     
      ```
      ALTER TABLE carbon ADD COLUMNS (a1 STRING, b1 STRING) TBLPROPERTIES('LOCAL_DICTIONARY_INCLUDE'='a1','LOCAL_DICTIONARY_EXCLUDE'='b1')
      ```
@@ -1038,7 +1036,7 @@ Users can specify which columns to include and exclude for local dictionary gene
   ``` 
   
   This shows the overall memory consumed in the cache by categories - index files, dictionary and 
-  datamaps. This also shows the cache usage by all the tables and children tables in the current 
+  indexes. This also shows the cache usage by all the tables and children tables in the current 
   database.
   
    ```sql
@@ -1054,7 +1052,7 @@ Users can specify which columns to include and exclude for local dictionary gene
   ```
   
   This shows detailed information on cache usage by the table `tableName` and its carbonindex files, 
-  its dictionary files, its datamaps and children tables.
+  its dictionary files, its indexes and children tables.
   
   This command is not allowed on child tables.
 
@@ -1063,7 +1061,7 @@ Users can specify which columns to include and exclude for local dictionary gene
    ```
     
   This clears any entry in cache by the table `tableName`, its carbonindex files, 
-  its dictionary files, its datamaps and children tables.
+  its dictionary files, its indexes and children tables.
     
   This command is not allowed on child tables.
 
