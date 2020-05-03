@@ -142,7 +142,7 @@ class CarbonDataFileMergeTestCaseOnSI
     checkAnswer(sql("""Select count(*) from nonindexmerge where name='n164419'"""), rows)
   }
 
-  test("Verify command of REBUILD INDEX command with invalid segments") {
+  test("Verify command of REFRESH INDEX command with invalid segments") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_SI_SEGMENT_MERGE, "false")
     sql("DROP TABLE IF EXISTS nonindexmerge")

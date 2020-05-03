@@ -35,17 +35,17 @@
      INSERT INTO maintable SELECT 1, 'ab', 2;
      CREATE MATERIALIZED VIEW view1 AS SELECT a, sum(b) FROM maintable GROUP BY a;
      SELECT a, sum(b) FROM maintable GROUP BY a;
-     // NOTE: run explain query and check if query hits the Index table from the plan
+     // NOTE: run explain query and check if query hits the mv table from the plan
      EXPLAIN SELECT a, sum(b) FROM maintable GROUP BY a;
    ```
 
-## Introductions
+## Introduction
 
- Materialized views are created as tables from queries. User can create limitless materialized view 
+ Materialized views are created as tables from queries. Users can create limitless materialized views 
  to improve query performance provided the storage requirements and loading time is acceptable.
  
  Materialized view can be refreshed on commit or on manual. Once materialized views are created, 
- CarbonData's MVRewriteRule helps to select the most efficient materialized view based on 
+ CarbonData's `MVRewriteRule` helps to select the most efficient materialized view based on 
  the user query and rewrite the SQL to select the data from materialized view instead of 
  fact tables. Since the data size of materialized view is smaller and data is pre-processed, 
  user queries are much faster.
@@ -63,7 +63,7 @@
      STORED AS carbondata
    ```
 
- User can create materialized view using the CREATE MATERIALIZED VIEW statement.
+ Users can create a materialized view using the CREATE MATERIALIZED VIEW statement.
  
    ```
      CREATE MATERIALIZED VIEW agg_sales
@@ -75,7 +75,7 @@
    ```
 
  **NOTE**:
-   * Group by and Order by columns has to be provided in projection list while creating materialized view.
+   * Group by and Order by columns has to be provided in the projection list while creating a materialized view.
    * If only single fact table is involved in materialized view creation, then TableProperties of 
      fact table (if not present in a aggregate function like sum(col)) listed below will be 
      inherited to materialized view.
@@ -93,7 +93,7 @@
    * Creating materialized view with select query containing only project of all columns of fact 
      table is unsupported.
      **Example:**
-       If table 'x' contains columns 'a,b,c', then creating MV Index with below queries is not supported.
+       If table 'x' contains columns 'a,b,c', then creating MV with below queries is not supported.
          1. ```SELECT a,b,c FROM x```
          2. ```SELECT * FROM x```
    * TableProperties can be provided in Properties excluding LOCAL_DICTIONARY_INCLUDE,
@@ -107,9 +107,9 @@
 
 #### How materialized views are selected
 
- When a user query is submitted, during query planning phase, CarbonData will collect modular plan
- candidates and process the the ModularPlan based on registered summary data sets. Then,
- materialized view for this query will be selected among the candidates.
+ When a user query is submitted, during the query planning phase, CarbonData will collect modular plan
+ candidates and process the ModularPlan based on registered summary data sets. Then,
+ a materialized view for this query will be selected among the candidates.
 
  For the fact table **sales** and materialized view **agg_sales** created above, following queries
    ```
@@ -140,7 +140,7 @@
  view will be triggered by the CREATE MATERIALIZED VIEW statement when user creates the materialized 
  view.
 
- For incremental loads to fact table, data to materialized view will be loaded once the 
+ For incremental loads to the fact table, data to materialized view will be loaded once the 
  corresponding fact table load is completed.
 
 ### Loading data on manual
@@ -148,7 +148,7 @@
  In case of WITH DEFERRED REFRESH, data load to materialized view will be triggered by the refresh 
  command. Materialized view will be in DISABLED state in below scenarios.
 
-   * when materialized view is created.
+   * when a materialized view is created.
    * when data of fact table and materialized view are not in sync.
   
  User should fire REFRESH MATERIALIZED VIEW command to sync all segments of fact table with 
@@ -163,27 +163,27 @@
 
  During load to fact table, if anyone of the load to materialized view fails, then that 
  corresponding materialized view will be DISABLED and load to other materialized views mapped 
- to fact table will continue. 
+ to the fact table will continue. 
 
  User can fire REFRESH MATERIALIZED VIEW command to sync or else the subsequent table load 
  will load the old failed loads along with current load and enable the disabled materialized view.
 
  **NOTE**:
    * In case of InsertOverwrite/Update operation on fact table, all segments of materialized view 
-     will be MARKED_FOR_DELETE and reload to Index table will happen by REFRESH MATERIALIZED VIEW, 
+     will be MARKED_FOR_DELETE and reload to mv table will happen by REFRESH MATERIALIZED VIEW, 
      in case of materialized view which refresh on manual and once the InsertOverwrite/Update 
      operation on fact table is finished, in case of materialized view which refresh on commit.
    * In case of full scan query, Data Size and Index Size of fact table and materialized view 
-     will not the same, as fact table and materialized view has different column names.
+     will not be the same, as fact table and materialized view have different column names.
 
 ## Querying data
 
- Queries are to be made on fact table. While doing query planning, internally CarbonData will check
+ Queries are to be made on the fact table. While doing query planning, internally CarbonData will check
  for the materialized views which are associated with the fact table, and do query plan 
  transformation accordingly.
  
- User can verify whether a query can leverage materialized view or not by executing `EXPLAIN` command, 
- which will show the transformed logical plan, and thus user can check whether materialized view 
+ Users can verify whether a query can leverage materialized view or not by executing the `EXPLAIN` command, 
+ which will show the transformed logical plan, and thus the user can check whether a materialized view 
  is selected.
 
 ## Compacting
@@ -207,7 +207,7 @@
       materialized view, if not, the operation is allowed, otherwise operation will be rejected by
       throwing exception.
    3. Partition management command: `ALTER TABLE ADD/DROP PARTITION`. Note that dropping a partition
-      will be allowed only if partition is participating in all indexes associated with fact table.
+      will be allowed only if the partition column of fact table is participating in all of the table's materialized views.
       Drop Partition is not allowed, if any materialized view is associated with more than one 
       fact table. Drop Partition directly on materialized view is not allowed.
    4. Complex Datatype's for materialized view is not supported.
@@ -215,7 +215,7 @@
  However, there is still way to support these operations on fact table, in current CarbonData
  release, user can do as following:
  
-   1. Remove the materialized by `DROP MATERIALIZED VIEW` command.
+   1. Remove the materialized view by `DROP MATERIALIZED VIEW` command.
    2. Carry out the data management operation on fact table.
    3. Create the materialized view again by `CREATE MATERIALIZED VIEW` command.
    
@@ -273,14 +273,14 @@
      GROUP BY timeseries(order_time, 'minute')
    ```
  And execute the below query to check time series data. In this example, a materialized view of 
- aggregated table on price column will be created, which will be aggregated on every one minute.
+ the aggregated table on the price column will be created, which will be aggregated every one minute.
   
    ```
      SELECT timeseries(order_time,'minute'), avg(price)
      FROM sales
      GROUP BY timeseries(order_time,'minute')
    ```
- Find below the result of above query aggregated over minute.
+ Find below the result of the above query aggregated over a minute.
  
    ```
      +---------------------------------------+----------------+
@@ -300,19 +300,17 @@
  granularity provided during creation and stored on each segment.
  
  **NOTE**:
-   1. Single select statement cannot contain time series udf(s) neither with different granularity
-      nor with different timestamp/date columns.
-   2. Retention policies for time series is not supported yet.
+   1. Retention policies for time series is not supported yet.
  
 ## Time Series RollUp Support
 
- Time series queries can be rolled up from existing materialized view.
+ Time series queries can be rolled up from an existing materialized view.
  
 ### Query RollUp
 
  Consider an example where the query is on hour level granularity, but the materialized view
  with hour level granularity is not present but materialized view with minute level granularity is 
- present, then we can get the data from minute level and the aggregate the hour level data and 
+ present, then we can get the data from minute level and aggregate the hour level data and 
  give output. This is called query rollup.
  
  Consider if user create's below time series materialized view,
@@ -334,10 +332,10 @@
    ```
 
  Then, the above query can be rolled up from materialized view 'agg_sales', by adding hour
- level time series aggregation on minute level aggregation. Users can fire explain command
- to check if query is rolled up from existing materialized view.
+ level time series aggregation on minute level aggregation. Users can fire the `EXPLAIN` command
+ to check if a query is rolled up from an existing materialized view.
  
   **NOTE**:
-    1. Queries cannot be rolled up, if filter contains time series function.
+    1. Queries cannot be rolled up, if the filter contains a time series function.
     2. Roll up is not yet supported for queries having join clause or order by functions.
   
