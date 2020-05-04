@@ -36,6 +36,7 @@ import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.annotations.CarbonProperty;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.BLOCKLET_SIZE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
@@ -1585,33 +1586,11 @@ public final class CarbonProperties {
   }
 
   /**
-   * Get the configured system folder location.
-   * @return
+   * Get the system folder location based on database location.
    */
-  public String getSystemFolderLocation() {
-    return getSystemFolderLocation(null);
-  }
-
-  /**
-   * Get the configured system folder location.
-   * @return
-   */
-  public String getSystemFolderLocation(String databaseName) {
-    String systemLocation = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION);
-    if (systemLocation == null) {
-      systemLocation = getStorePath();
-    }
-    if (systemLocation != null) {
-      systemLocation = CarbonUtil.checkAndAppendFileSystemURIScheme(systemLocation);
-      systemLocation = FileFactory.getUpdatedFilePath(systemLocation);
-    }
-    if (databaseName == null) {
-      return systemLocation + CarbonCommonConstants.FILE_SEPARATOR + "_system";
-    } else {
-      return systemLocation + CarbonCommonConstants.FILE_SEPARATOR +
-          databaseName + CarbonCommonConstants.FILE_SEPARATOR + "_system";
-    }
+  public String getSystemFolderLocationPerDatabase(String databaseLocation) {
+    return databaseLocation + CarbonCommonConstants.FILE_SEPARATOR
+        + CarbonTablePath.SYSTEM_FOLDER_DIR;
   }
 
   /**

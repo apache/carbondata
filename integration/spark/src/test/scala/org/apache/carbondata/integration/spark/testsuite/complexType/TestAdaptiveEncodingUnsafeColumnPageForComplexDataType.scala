@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
-import java.io.File
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.integration.spark.testsuite.complexType.TestAdaptiveComplexType
@@ -35,7 +33,6 @@ class TestAdaptiveEncodingUnsafeColumnPageForComplexDataType
 
   override def beforeAll(): Unit = {
 
-    new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
     sql("DROP TABLE IF EXISTS adaptive")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,

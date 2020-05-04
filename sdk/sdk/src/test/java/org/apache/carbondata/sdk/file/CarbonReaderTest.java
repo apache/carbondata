@@ -42,9 +42,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.log4j.Logger;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -66,22 +64,6 @@ import static org.apache.carbondata.core.scan.filter.FilterUtil.prepareEqualToEx
 import static org.apache.carbondata.core.scan.filter.FilterUtil.prepareOrExpression;
 
 public class CarbonReaderTest extends TestCase {
-
-  @Before
-  public void cleanFile() {
-    assert (TestUtil.cleanMdtFile());
-  }
-
-  @After
-  public void verifyDMFile() {
-    assert (!TestUtil.verifyMdtFile());
-    String path = "./testWriteFiles";
-    try {
-      FileUtils.deleteDirectory(new File(path));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
 
   @Test
   public void testWriteAndReadFiles() throws IOException, InterruptedException {
@@ -1061,15 +1043,6 @@ public class CarbonReaderTest extends TestCase {
   @Override
   public void setUp() {
     carbonProperties = CarbonProperties.getInstance();
-    String path = null;
-    try {
-      path = new File(CarbonReaderTest.class.getResource("/").getPath() + "../")
-          .getCanonicalPath().replaceAll("\\\\", "/");
-    } catch (IOException e) {
-      assert (false);
-    }
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, path);
   }
 
   private static final Logger LOGGER =

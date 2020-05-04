@@ -33,39 +33,16 @@ import org.apache.carbondata.core.metadata.datatype.Field;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.CarbonProperties;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import org.apache.avro.Schema;
 
 public class AvroCarbonWriterTest {
   private String path = "./AvroCarbonWriterSuiteWriteFiles";
-
-  @Before
-  public void cleanFile() {
-    String path = null;
-    try {
-      path = new File(AvroCarbonWriterTest.class.getResource("/").getPath() + "../")
-          .getCanonicalPath().replaceAll("\\\\", "/");
-    } catch (IOException e) {
-      assert (false);
-    }
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, path);
-    assert (TestUtil.cleanMdtFile());
-  }
-
-  @After
-  public void verifyDMFile() throws IOException {
-    FileUtils.deleteDirectory(new File(path));
-    assert (!TestUtil.verifyMdtFile());
-  }
 
   @Test
   public void testWriteBasic() throws IOException {

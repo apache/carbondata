@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.index.bloom
 
-import java.io.File
 import java.util.{Random, UUID}
 
 import scala.collection.JavaConverters._
@@ -45,7 +44,6 @@ class BloomCoarseGrainIndexFunctionSuite  extends QueryTest with BeforeAndAfterA
 
   override protected def beforeAll(): Unit = {
     deleteFile(bigFile)
-    new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
     createFile(bigFile, line = 2000)
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomSampleTable")

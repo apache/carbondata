@@ -124,11 +124,6 @@ object TestQueryExecutor {
       } else {
         s"$target/bad_store"
       }
-  val systemFolderPath = if (hdfsUrl.startsWith("hdfs://")) {
-    s"$hdfsUrl/systemfolder" + System.nanoTime()
-  } else {
-    s"$target/systemfolder"
-  }
   createDirectory(badStoreLocation)
 
   val hiveresultpath = if (hdfsUrl.startsWith("hdfs://")) {
@@ -173,7 +168,6 @@ object TestQueryExecutor {
     .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, badStoreLocation)
     .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "1024")
     .addProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE, "1024")
-    .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, systemFolderPath)
     .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT, "40")
 
   private def lookupQueryExecutor: Class[_] = {

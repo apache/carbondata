@@ -352,12 +352,6 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT_DEFAULT = "200";
 
-  /**
-   * System older location to store system level data like index schema and status files.
-   */
-  @CarbonProperty
-  public static final String CARBON_SYSTEM_FOLDER_LOCATION = "carbon.system.folder.location";
-
   @CarbonProperty
   public static final String CARBON_INDEX_SCHEMA_STORAGE = "carbon.index.schema.storage";
 

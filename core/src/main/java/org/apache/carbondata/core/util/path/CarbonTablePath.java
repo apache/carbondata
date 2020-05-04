@@ -62,6 +62,8 @@ public class CarbonTablePath {
   public static final String  SUCCESS_FILE_SUBFIX = ".success";
   private static final String SNAPSHOT_FILE_NAME = "snapshot";
 
+  public static final String SYSTEM_FOLDER_DIR = "_system";
+
   /**
    * This class provides static utility only.
    */

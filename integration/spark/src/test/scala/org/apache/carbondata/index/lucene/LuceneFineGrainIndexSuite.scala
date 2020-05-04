@@ -45,7 +45,6 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop database if exists lucene cascade")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
-    new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
     LuceneFineGrainIndexSuite.createFile(file2)
     sql("create database if not exists lucene")
     CarbonProperties.getInstance()

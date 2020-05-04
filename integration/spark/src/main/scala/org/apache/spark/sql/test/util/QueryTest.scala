@@ -29,7 +29,7 @@ import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
-import org.apache.carbondata.core.util.{CarbonProperties, SessionParams, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 
 
 
@@ -166,8 +166,7 @@ class QueryTest extends PlanTest {
 
   def setCarbonProperties(propertiesString: String): Unit = {
     val properties = propertiesString.split(", ", -1)
-    val exclude = Set("carbon.system.folder.location",
-      "carbon.badRecords.location",
+    val exclude = Set("carbon.badRecords.location",
       "carbon.storelocation")
     properties.foreach { property =>
       val entry = property.split("=")

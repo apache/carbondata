@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.integration.spark.testsuite.complexType
 
-import java.io.File
-
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -35,7 +33,6 @@ class TestAdaptiveEncodingUnsafeHeapColumnPageForComplexDataType
 
   override def beforeAll(): Unit = {
 
-    new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
     sql("DROP TABLE IF EXISTS adaptive")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,

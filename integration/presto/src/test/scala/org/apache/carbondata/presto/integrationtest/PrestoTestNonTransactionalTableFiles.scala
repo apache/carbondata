@@ -43,14 +43,11 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
   private val rootPath = new File(this.getClass.getResource("/").getPath
                                   + "../../../..").getCanonicalPath
   private val storePath = s"$rootPath/integration/presto/target/store"
-  private val systemPath = s"$rootPath/integration/presto/target/system"
   private val writerPath = storePath + "/sdk_output/files"
   private val prestoServer = new PrestoServer
   private var varcharString = new String
 
   override def beforeAll: Unit = {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
-      systemPath)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,
       "Presto")
     val map = new util.HashMap[String, String]()

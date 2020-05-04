@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.spark.testsuite.index
 
-import java.io.File
 import java.util
 
 import scala.collection.JavaConverters._
@@ -45,7 +44,6 @@ class TestIndexStatus extends QueryTest with BeforeAndAfterAll {
   val testData = s"$resourcesPath/sample.csv"
 
   override def beforeAll: Unit = {
-    new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
     drop
   }
 
