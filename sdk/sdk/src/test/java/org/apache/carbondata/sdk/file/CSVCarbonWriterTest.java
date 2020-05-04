@@ -42,14 +42,11 @@ import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonFooterReaderV3;
-import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.FileFooter3;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import static org.apache.carbondata.sdk.file.utils.SDKUtil.readObjects;
@@ -58,27 +55,6 @@ import static org.apache.carbondata.sdk.file.utils.SDKUtil.readObjects;
  * Test suite for {@link CSVCarbonWriter}
  */
 public class CSVCarbonWriterTest {
-
-  @Before
-  public void cleanFile() {
-    String path = null;
-    try {
-      path = new File(CSVCarbonWriterTest.class.getResource("/").getPath() + "../")
-          .getCanonicalPath().replaceAll("\\\\", "/");
-    } catch (IOException e) {
-      assert (false);
-    }
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, path)
-        .addProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE,
-            String.valueOf(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT));
-    assert (TestUtil.cleanMdtFile());
-  }
-
-  @After
-  public void verifyDMFile() {
-    assert (!TestUtil.verifyMdtFile());
-  }
 
   @Test
   public void testWriteFiles() throws IOException {

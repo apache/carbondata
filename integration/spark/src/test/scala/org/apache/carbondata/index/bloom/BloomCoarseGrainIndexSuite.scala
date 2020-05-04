@@ -41,7 +41,6 @@ class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with B
   val indexName = "bloom_dm"
 
   override protected def beforeAll(): Unit = {
-    new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     createFile(bigFile, line = 50000)

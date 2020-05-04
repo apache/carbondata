@@ -27,8 +27,6 @@ import java.io.InputStream;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.util.CarbonProperties;
 
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericData;
@@ -137,47 +135,6 @@ public class TestUtil {
 
     if (dataFiles.length == 0) {
       throw new RuntimeException("Test failed: dataFiles is empty");
-    }
-  }
-
-  /**
-   * verify whether the file exists
-   * if delete the file success or file not exists, then return true; otherwise return false
-   *
-   * @return boolean
-   */
-  public static boolean cleanMdtFile() {
-    String fileName = CarbonProperties.getInstance().getSystemFolderLocation()
-            + CarbonCommonConstants.FILE_SEPARATOR + "index.mdtfile";
-    try {
-      if (FileFactory.isFileExist(fileName)) {
-        File file = new File(fileName);
-        return file.delete();
-      } else {
-        return true;
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
-      return false;
-    }
-  }
-
-  /**
-   * verify whether the mdt file exists
-   * if the file exists, then return true; otherwise return false
-   *
-   * @return boolean
-   */
-  public static boolean verifyMdtFile() {
-    String fileName = CarbonProperties.getInstance().getSystemFolderLocation()
-            + CarbonCommonConstants.FILE_SEPARATOR + "index.mdtfile";
-    try {
-      if (FileFactory.isFileExist(fileName)) {
-        return true;
-      }
-      return false;
-    } catch (IOException e) {
-      throw new RuntimeException("IO exception:", e);
     }
   }
 }

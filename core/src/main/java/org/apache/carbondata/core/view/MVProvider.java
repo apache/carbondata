@@ -185,11 +185,10 @@ public class MVProvider {
     return Arrays.asList(statusDetails);
   }
 
-  private static ICarbonLock getStatusLock(String databaseName) {
-    return CarbonLockFactory
-        .getSystemLevelCarbonLockObj(
-            CarbonProperties.getInstance().getSystemFolderLocation(databaseName),
-            LockUsage.MATERIALIZED_VIEW_STATUS_LOCK);
+  private static ICarbonLock getStatusLock(String databaseLocation) {
+    return CarbonLockFactory.getSystemLevelCarbonLockObj(
+        CarbonProperties.getInstance().getSystemFolderLocationPerDatabase(databaseLocation),
+        LockUsage.MATERIALIZED_VIEW_STATUS_LOCK);
   }
 
   /**
@@ -223,7 +222,9 @@ public class MVProvider {
 
   private void updateStatus(MVManager viewManager, String databaseName, List<MVSchema> schemaList,
       MVStatus status) throws IOException {
-    ICarbonLock carbonTableStatusLock = getStatusLock(databaseName);
+    String databaseLocation =
+        FileFactory.getCarbonFile(viewManager.getDatabaseLocation(databaseName)).getCanonicalPath();
+    ICarbonLock carbonTableStatusLock = getStatusLock(databaseLocation);
     boolean locked = false;
     try {
       locked = carbonTableStatusLock.lockWithRetries();
@@ -379,10 +380,10 @@ public class MVProvider {
 
     SchemaProvider(String databaseLocation) {
       final String systemDirectory =
-          databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + "_system";
+          CarbonProperties.getInstance().getSystemFolderLocationPerDatabase(databaseLocation);
       this.systemDirectory = systemDirectory;
-      this.schemaIndexFilePath = systemDirectory + CarbonCommonConstants.FILE_SEPARATOR +
-          "mv_schema_index";
+      this.schemaIndexFilePath =
+          systemDirectory + CarbonCommonConstants.FILE_SEPARATOR + "mv_schema_index";
     }
 
     void saveSchema(MVManager viewManager, MVSchema viewSchema)

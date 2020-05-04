@@ -361,7 +361,6 @@ class CGIndexWriter(
 class CGIndexTestCase extends QueryTest with BeforeAndAfterAll {
 
   val file2 = resourcesPath + "/compaction/fil2.csv"
-  val systemFolderStoreLocation = CarbonProperties.getInstance().getSystemFolderLocation
 
   override protected def beforeAll(): Unit = {
     //n should be about 5000000 of reset if size is default 1024

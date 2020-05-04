@@ -27,7 +27,6 @@ import org.scalatest.{BeforeAndAfterAll, FunSuiteLike}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.presto.server.PrestoServer
 
@@ -40,7 +39,6 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
   private val rootPath = new File(this.getClass.getResource("/").getPath
                                   + "../../../..").getCanonicalPath
   private val storePath = s"$rootPath/integration/presto/target/store"
-  private val systemPath = s"$rootPath/integration/presto/target/system"
   private val prestoServer = new PrestoServer
 
   // Table schema:
@@ -72,8 +70,6 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
     import org.apache.carbondata.presto.util.CarbonDataStoreCreator
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
-      systemPath)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,
       "Presto")
     val map = new util.HashMap[String, String]()

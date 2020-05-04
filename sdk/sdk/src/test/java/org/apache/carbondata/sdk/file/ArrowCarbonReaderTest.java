@@ -39,28 +39,10 @@ import org.apache.arrow.vector.VectorLoader;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 public class ArrowCarbonReaderTest extends TestCase {
-
-  @Before
-  public void cleanFile() {
-    assert (TestUtil.cleanMdtFile());
-  }
-
-  @After
-  public void verifyDMFile() {
-    assert (!TestUtil.verifyMdtFile());
-    String path = "./testWriteFiles";
-    try {
-      FileUtils.deleteDirectory(new File(path));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
 
   @Test
   public void testArrowReader() {
