@@ -959,11 +959,6 @@ public final class CarbonCommonConstants {
   public static final String ENABLE_OFFHEAP_SORT_DEFAULT = "true";
 
   @CarbonProperty
-  public static final String ENABLE_INMEMORY_MERGE_SORT = "enable.inmemory.merge.sort";
-
-  public static final String ENABLE_INMEMORY_MERGE_SORT_DEFAULT = "false";
-
-  @CarbonProperty
   public static final String OFFHEAP_SORT_CHUNK_SIZE_IN_MB = "offheap.sort.chunk.size.inmb";
 
   public static final String OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT = "64";
