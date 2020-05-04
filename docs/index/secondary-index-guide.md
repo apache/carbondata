@@ -58,6 +58,8 @@ EXPLAIN SELECT a from maintable where c = 'cd';
    'carbondata'
    [PROPERTIES('table_blocksize'='1')]
    ```
+> NOTE: Keywords given inside `[]` is optional.
+
   For instance, main table called **sales** which is defined as
 
   ```
@@ -86,8 +88,8 @@ EXPLAIN SELECT a from maintable where c = 'cd';
 
 When a user executes a filter query, during the query planning phase, CarbonData with the help of
 `CarbonSITransformationRule`, checks if there are any index tables present on the filter column of
-query. If there are any, then filter query plan will be transformed in such a way that, execution will
-first hit the corresponding SI table and give input to main table for further pruning.
+query. If there are any, then the filter query plan will be transformed in such a way that execution will
+first hit the corresponding SI table and give input to the main table for further pruning.
 
 
 For the main table **sales** and SI table  **index_sales** created above, following queries
@@ -113,14 +115,14 @@ also load data to the SI table with the same number of segments as the main tabl
 the main table will also load data to the SI table.
 
  **NOTE**:
- * In case of data load failure to SI table, then we make the SI table disable by setting a hive serde
+ * In case of data load failure to the SI table, then we make the SI table disable by setting a hive serde
  property. The subsequent main table load will load the old failed loads along with current load and
  makes the SI table enable and available for query.
 
 ## Querying data
 Direct query can be made on SI tables to check the data present in position reference columns.
 When a filter query is fired, and if the filter column is a secondary index column, then plan is
-transformed accordingly to hit SI table first to make better pruning with main table and in turn
+transformed accordingly to hit the SI table first to make better pruning with the main table and in turn
 helps for faster query results.
 
 Users can verify whether a query can leverage the SI table or not by executing the `EXPLAIN`
@@ -142,24 +144,24 @@ compact the files within an SI segment to avoid many small files.
   ```
   REFRESH INDEX sales_index
   ```
-This command merges data files in each segment of SI table.
+This command merges data files in each segment of the SI table.
 
   ```
   REFRESH INDEX sales_index WHERE SEGMENT.ID IN(1)
   ```
-This command merges data files within specified segment of SI table.
+This command merges data files within a specified segment of the SI table.
 
 ## How to skip Secondary Index?
 When Secondary indexes are created on a table(s), data fetching happens from secondary
 indexes created on the main tables for better performance. But sometimes, data fetching from the
-secondary index might degrade query performance in case where the data is sparse and most of the
+secondary index might degrade query performance in cases where the data is sparse and most of the
 blocklets need to be scanned. So to avoid such secondary indexes, we use NI as a function on filters
-with in WHERE clause.
+within WHERE clause.
 
   ```
   SELECT country, sex from sales where NI(user_id = 'xxx')
   ```
-The above query ignores column `user_id` from secondary index and fetch data from the main table.
+The above query ignores column `user_id` from the secondary index and fetches data from the main table.
 
 ## DDLs on Secondary Index
 
@@ -168,7 +170,7 @@ This command is used to get information about all the secondary indexes on a tab
 
 Syntax
   ```
-  SHOW INDEXES  on [db_name.]table_name
+  SHOW INDEXES ON [TABLE] [db_name.]table_name
   ```
 
 ### Drop index Command
@@ -176,7 +178,7 @@ This command is used to drop an existing secondary index on a table
 
 Syntax
   ```
-  DROP INDEX [IF EXISTS] index_name on [db_name.]table_name
+  DROP INDEX [IF EXISTS] index_name ON [TABLE] [db_name.]table_name
   ```
 
 ### Register index Command
@@ -185,5 +187,5 @@ where we have old stores.
 
 Syntax
   ```
-  REGISTER INDEX TABLE index_name ON [db_name.]table_name
+  REGISTER INDEX TABLE index_name ON [TABLE] [db_name.]table_name
   ```

@@ -36,14 +36,15 @@ Creating BloomFilter Index
 Dropping Specified Index
   ```
   DROP INDEX [IF EXISTS] index_name
-  ON TABLE main_table
+  ON [TABLE] main_table
   ```
 
 Showing all Indexes on this table
   ```
   SHOW INDEXES
-  ON TABLE main_table
+  ON [TABLE] main_table
   ```
+> NOTE: Keywords given inside `[]` is optional.
 
 Disable Index
 > The index by default is enabled. To support tuning on query, we can disable a specific index during query to observe whether we can gain performance enhancement from it. This is effective only for current session.
@@ -59,7 +60,7 @@ Disable Index
 ## BloomFilter Index Introduction
 A Bloom filter is a space-efficient probabilistic data structure that is used to test whether an element is a member of a set.
 Carbondata introduced BloomFilter as an index to enhance the performance of querying with precise value.
-It is well suitable for queries that do precise match on high cardinality columns(such as Name/ID).
+It is well suitable for queries that do precise matching on high cardinality columns(such as Name/ID).
 Internally, CarbonData maintains a BloomFilter per blocklet for each index column to indicate that whether a value of the column is in this blocklet.
 Just like the other indexes, BloomFilter index is managed along with main tables by CarbonData.
 User can create BloomFilter index on specified columns with specified BloomFilter configurations such as size and probability.
@@ -79,7 +80,7 @@ For instance, main table called **index_test** which is defined as:
 
 In the above example, `id` and `name` are high cardinality columns
 and we always query on `id` and `name` with precise value.
-since `id` is in the sort_columns and it is orderd,
+since `id` is in the sort_columns and it is ordered,
 query on it will be fast because CarbonData can skip all the irrelative blocklets.
 But queries on `name` may be bad since the blocklet minmax may not help,
 because in each blocklet the range of the value of `name` may be the same -- all from A* to z*.
@@ -145,5 +146,5 @@ You can refer to the corresponding section in [CarbonData Lucene Index](https://
 + In some scenarios, the BloomFilter Index may not enhance the query performance significantly
  but if it can reduce the number of spark task,
  there is still a chance that BloomFilter Index can enhance the performance for concurrent query.
-+ Note that BloomFilter Index will decrease the data loading performance and may cause slightly storage expansion (for index file).
++ Note that BloomFilter Index will decrease the data loading performance and may cause slight storage expansion (for index file).
 

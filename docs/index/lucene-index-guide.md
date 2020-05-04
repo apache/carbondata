@@ -36,14 +36,15 @@ index_columns is the list of string columns on which lucene creates indexes.
 Index can be dropped using following DDL:
   ```
   DROP INDEX [IF EXISTS] index_name
-  ON TABLE main_table
+  ON [TABLE] main_table
   ```
 To show all Indexes created, use:
   ```
   SHOW INDEXES
-  ON TABLE main_table
+  ON [TABLE] main_table
   ```
-It will show all Indexes created on main table.
+It will show all Indexes created on the main table.
+> NOTE: Keywords given inside `[]` is optional.
 
 
 ## Lucene Index Introduction
@@ -83,7 +84,7 @@ It will show all Indexes created on main table.
 When loading data to main table, lucene index files will be generated for all the
 index_columns(String Columns) given in CREATE statement which contains information about the data
 location of index_columns. These index files will be written inside a folder named with index name
-inside each segment folders.
+inside each segment folder.
 
 A system level configuration `carbon.lucene.compression.mode` can be added for best compression of
 lucene index files. The default value is speed, where the index writing speed will be more. If the
@@ -91,7 +92,7 @@ value is compression, the index file size will be compressed.
 
 ## Querying data
 As a technique for query acceleration, Lucene indexes cannot be queried directly.
-Queries are to be made on main table. When a query with TEXT_MATCH('name:c10') or 
+Queries are to be made on the main table. When a query with TEXT_MATCH('name:c10') or 
 TEXT_MATCH_WITH_LIMIT('name:n10',10)[the second parameter represents the number of result to be 
 returned, if user does not specify this value, all results will be returned without any limit] is 
 fired, two jobs will be launched. The first job writes the temporary files in folder created at table level 
@@ -103,8 +104,8 @@ command, which will show the transformed logical plan, and thus user can check w
 filter is applied on query or not.
 
 **Note:**
- 1. The filter columns in TEXT_MATCH or TEXT_MATCH_WITH_LIMIT must be always in lower case and 
-filter condition like 'AND','OR' must be in upper case.
+ 1. The filter columns in TEXT_MATCH or TEXT_MATCH_WITH_LIMIT must be always in lowercase and 
+filter conditions like 'AND','OR' must be in upper case.
 
       Ex: 
       ```
