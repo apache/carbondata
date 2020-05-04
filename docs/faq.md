@@ -42,7 +42,6 @@
 - [Failed to load data on the cluster](#failed-to-load-data-on-the-cluster)
 - [Failed to insert data on the cluster](#failed-to-insert-data-on-the-cluster)
 - [Failed to execute Concurrent Operations(Load,Insert,Update) on table by multiple workers](#failed-to-execute-concurrent-operations-on-table-by-multiple-workers)
-- [Failed to create a table with a single numeric column](#failed-to-create-a-table-with-a-single-numeric-column)
 - [Failed to create_index and drop index is also not working](#failed-to-create-index-and-drop-index-is-also-not-working)
 
 ## 
@@ -279,7 +278,7 @@ java.io.FileNotFoundException: hdfs:/localhost:9000/carbon/store/default/hdfstab
   2. Use the following command :
 
   ```
-  mvn -Pspark-2.4 -Dspark.version {yourSparkVersion} clean package
+  mvn -Pspark-2.4 -Dspark.version={yourSparkVersion} clean package
   ```
   
 Note : Refrain from using "mvn clean package" without specifying the profile.
@@ -388,7 +387,7 @@ Note : Refrain from using "mvn clean package" without specifying the profile.
 
    Follow the steps to ensure the following configuration files are consistent across all the nodes:
 
-   1. Copy the core-site.xml, hive-site.xml, yarn-site,carbon.properties files from the master node to all the other nodes in the cluster.
+   1. Copy the core-site.xml, hive-site.xml, yarn-site, carbon.properties files from the master node to all the other nodes in the cluster.
       For example, you can use scp to copy this file to all the nodes.
 
       Note : Set the path to hdfs ddl in carbon.properties in the master node.
@@ -419,7 +418,7 @@ Note : Refrain from using "mvn clean package" without specifying the profile.
 
    Follow the steps to ensure the following configuration files are consistent across all the nodes:
 
-   1. Copy the core-site.xml, hive-site.xml, yarn-site,carbon.properties files from the master node to all the other nodes in the cluster.
+   1. Copy the core-site.xml, hive-site.xml, yarn-site, carbon.properties files from the master node to all the other nodes in the cluster.
       For example, you can use scp to copy this file to all the nodes.
 
       Note : Set the path to hdfs ddl in carbon.properties in the master node.
@@ -443,24 +442,6 @@ Note : Refrain from using "mvn clean package" without specifying the profile.
   **Procedure**
 
   Worker must wait for the query execution to complete and the table to release the lock for another query execution to succeed.
-
-## Failed to create a table with a single numeric column
-
-  **Symptom**
-
-  Execution fails with the following exception :
-
-  ```
-  Table creation fails.
-  ```
-
-  **Possible Cause**
-
-  Behaviour not supported.
-
-  **Procedure**
-
-  A single column that can be considered as dimension is mandatory for table creation.
 
 ## Failed to create index and drop index is also not working
   
