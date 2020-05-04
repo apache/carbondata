@@ -28,8 +28,8 @@ This tutorial provides a quick introduction to using current integration/presto 
 ### Installing Presto
 
 To know about which version of presto is supported by this version of carbon, visit 
-https://github.com/apache/carbondata/blob/master/integration/presto/pom.xml
-and look for ```<presto.version>```
+https://github.com/apache/carbondata/blob/master/pom.xml
+and look for ```<presto.version>``` inside `prestosql` profile.
 
 _Example:_ 
   `<presto.version>316</presto.version>`
@@ -139,11 +139,15 @@ Then, `query.max-memory=<30GB * number of nodes>`.
 
 ##### Configuring Carbondata in Presto
 1. Create a file named `carbondata.properties` in the `catalog` folder and set the required properties on all the nodes.
+2. As carbondata connector extends hive connector all the configurations(including S3) is same as hive connector.
+Just replace the connector name in hive configuration and copy same to carbondata.properties
+`connector.name = carbondata`
 
 ### Add Plugins
 
 1. Create a directory named `carbondata` in plugin directory of presto.
-2. Copy `carbondata` jars to `plugin/carbondata` directory on all nodes.
+2. Copy all the jars from ../integration/presto/target/carbondata-presto-X.Y.Z-SNAPSHOT to `plugin/carbondata` directory on all nodes.
+
 
 ### Start Presto Server on all nodes
 
@@ -294,6 +298,6 @@ carbondata files.
 
 ### Supported features of presto carbon
 Presto carbon only supports reading the carbon table which is written by spark carbon or carbon SDK. 
-During reading, it supports the non-distributed datamaps like block datamap and bloom datamap.
+During reading, it supports the non-distributed index like block index and bloom index.
 It doesn't support Materialized View as it needs query plan to be changed and presto does not allow it.
-Also Presto carbon supports streaming segment read from streaming table created by spark.
+Also, Presto carbon supports streaming segment read from streaming table created by spark.
