@@ -45,7 +45,7 @@
  to improve query performance provided the storage requirements and loading time is acceptable.
  
  Materialized view can be refreshed on commit or on manual. Once materialized views are created, 
- CarbonData's MVRewriteRule helps to select the most efficient materialized view based on 
+ CarbonData's `MVRewriteRule` helps to select the most efficient materialized view based on 
  the user query and rewrite the SQL to select the data from materialized view instead of 
  fact tables. Since the data size of materialized view is smaller and data is pre-processed, 
  user queries are much faster.
@@ -63,7 +63,7 @@
      STORED AS carbondata
    ```
 
- User can create materialized view using the CREATE MATERIALIZED VIEW statement.
+ Users can create a materialized view using the CREATE MATERIALIZED VIEW statement.
  
    ```
      CREATE MATERIALIZED VIEW agg_sales
@@ -108,7 +108,7 @@
 #### How materialized views are selected
 
  When a user query is submitted, during query planning phase, CarbonData will collect modular plan
- candidates and process the the ModularPlan based on registered summary data sets. Then,
+ candidates and process the ModularPlan based on registered summary data sets. Then,
  materialized view for this query will be selected among the candidates.
 
  For the fact table **sales** and materialized view **agg_sales** created above, following queries
@@ -182,8 +182,8 @@
  for the materialized views which are associated with the fact table, and do query plan 
  transformation accordingly.
  
- User can verify whether a query can leverage materialized view or not by executing `EXPLAIN` command, 
- which will show the transformed logical plan, and thus user can check whether materialized view 
+ Users can verify whether a query can leverage materialized view or not by executing the `EXPLAIN` command, 
+ which will show the transformed logical plan, and thus the user can check whether a materialized view 
  is selected.
 
 ## Compacting

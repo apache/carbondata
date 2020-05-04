@@ -85,20 +85,20 @@ index_columns(String Columns) given in CREATE statement which contains informati
 location of index_columns. These index files will be written inside a folder named with index name
 inside each segment folders.
 
-A system level configuration carbon.lucene.compression.mode can be added for best compression of
+A system level configuration `carbon.lucene.compression.mode` can be added for best compression of
 lucene index files. The default value is speed, where the index writing speed will be more. If the
 value is compression, the index file size will be compressed.
 
 ## Querying data
 As a technique for query acceleration, Lucene indexes cannot be queried directly.
-Queries are to be made on main table. when a query with TEXT_MATCH('name:c10') or 
+Queries are to be made on main table. When a query with TEXT_MATCH('name:c10') or 
 TEXT_MATCH_WITH_LIMIT('name:n10',10)[the second parameter represents the number of result to be 
 returned, if user does not specify this value, all results will be returned without any limit] is 
-fired, two jobs are fired. The first job writes the temporary files in folder created at table level 
-which contains lucene's seach results and these files will be read in second job to give faster 
+fired, two jobs will be launched. The first job writes the temporary files in folder created at table level 
+which contains lucene's search results and these files will be read in second job to give faster 
 results. These temporary files will be cleared once the query finishes.
 
-User can verify whether a query can leverage Lucene index or not by executing `EXPLAIN`
+User can verify whether a query can leverage Lucene index or not by executing the `EXPLAIN`
 command, which will show the transformed logical plan, and thus user can check whether TEXT_MATCH()
 filter is applied on query or not.
 
@@ -124,7 +124,7 @@ filter condition like 'AND','OR' must be in upper case.
    ```
        
           
-Below like queries can be converted to text_match queries as following:
+Below `like` queries can be converted to text_match queries as following:
 ```
 select * from index_test where name='n10'
 
@@ -151,9 +151,8 @@ select * from index_test where TEXT_MATCH('name:*10 -name:*n*')
 **Note:** For lucene queries and syntax, refer to [lucene-syntax](http://www.lucenetutorial.com/lucene-query-syntax.html)
 
 ## Data Management with lucene index
-Once there is lucene index is created on the main table, following command on the main
-table
-is not supported:
+Once there is a lucene index created on the main table, following command on the main
+table is not supported:
 1. Data management command: `UPDATE/DELETE`.
 2. Schema management command: `ALTER TABLE DROP COLUMN`, `ALTER TABLE CHANGE DATATYPE`, 
 `ALTER TABLE RENAME`.

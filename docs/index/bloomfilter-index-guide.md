@@ -96,7 +96,7 @@ User can create BloomFilter Index using the Create Index DDL:
   PROPERTIES ('BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001', 'BLOOM_COMPRESS'='true')
   ```
 
-Here, (name,id) are INDEX_COLUMNS. Carbondata will generate BloomFilter index on these columns. Queries on these columns are usually like 'COL = VAL'.
+Here, (name,id) are INDEX_COLUMNS. Carbondata will generate BloomFilter index on these columns. Queries on these columns are usually like `'COL = VAL'`.
 
 **Properties for BloomFilter Index**
 
@@ -131,7 +131,7 @@ You can refer to the corresponding section in [CarbonData Lucene Index](https://
 + We can create multiple BloomFilter Indexes on one table,
  but we do recommend you to create one BloomFilter Index that contains multiple index columns,
  because the data loading and query performance will be better.
-+ `BLOOM_FPP` is only the expected number from user, the actually FPP may be worse.
++ `BLOOM_FPP` is only the expected number from user, the actual FPP may be worse.
  If the BloomFilter Index does not work well,
  you can try to increase `BLOOM_SIZE` and decrease `BLOOM_FPP` at the same time.
  Notice that bigger `BLOOM_SIZE` will increase the size of index file

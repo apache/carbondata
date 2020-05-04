@@ -30,7 +30,7 @@ Start spark-sql in terminal and run the following queries,
 ```
 CREATE TABLE maintable(a int, b string, c string) stored as carbondata;
 insert into maintable select 1, 'ab', 'cd';
-CREATE index inex1 on table maintable(c) AS 'carbondata';
+CREATE index index1 on table maintable(c) AS 'carbondata';
 SELECT a from maintable where c = 'cd';
 // NOTE: run explain query and check if query hits the SI table from the plan
 EXPLAIN SELECT a from maintable where c = 'cd';
@@ -49,7 +49,7 @@ EXPLAIN SELECT a from maintable where c = 'cd';
   table pruning will be based on the SI output, which helps in giving the faster query results with
   better pruning.
 
-  Secondary Index table can be create with below syntax
+  Secondary Index table can be created with the below syntax
 
    ```
    CREATE INDEX [IF NOT EXISTS] index_name
@@ -86,7 +86,7 @@ EXPLAIN SELECT a from maintable where c = 'cd';
 
 When a user executes a filter query, during the query planning phase, CarbonData with the help of
 `CarbonSITransformationRule`, checks if there are any index tables present on the filter column of
-query. If there are any, then filter query plan will be transformed such a way that, execution will
+query. If there are any, then filter query plan will be transformed in such a way that, execution will
 first hit the corresponding SI table and give input to main table for further pruning.
 
 
@@ -105,12 +105,12 @@ will be transformed by CarbonData's `CarbonSITransformationRule` to query agains
 
 ### Loading data to Secondary Index table(s).
 
-*case1:* When SI table is created and the main table does not have any data. In this case every
-consecutive load will load to SI table once main table data load is finished.
+*case1:* When the SI table is created and the main table does not have any data. In this case every
+consecutive load to the main table, will load data to the SI table once the main table data load is finished.
 
-*case2:* When SI table is created and main table already contains some data, then SI creation will
-also load to SI table with same number of segments as main table. There after, consecutive load to
-main table will load to SI table also.
+*case2:* When the SI table is created and the main table already contains some data, then SI creation will
+also load data to the SI table with the same number of segments as the main table. Thereafter, consecutive load to
+the main table will also load data to the SI table.
 
  **NOTE**:
  * In case of data load failure to SI table, then we make the SI table disable by setting a hive serde
@@ -118,14 +118,14 @@ main table will load to SI table also.
  makes the SI table enable and available for query.
 
 ## Querying data
-Direct query can be made on SI tables to see the data present in position reference columns.
-When a filter query is fired, if the filter column is a secondary index column, then plan is
+Direct query can be made on SI tables to check the data present in position reference columns.
+When a filter query is fired, and if the filter column is a secondary index column, then plan is
 transformed accordingly to hit SI table first to make better pruning with main table and in turn
 helps for faster query results.
 
-User can verify whether a query can leverage SI table or not by executing `EXPLAIN`
-command, which will show the transformed logical plan, and thus user can check whether SI table
-table is selected.
+Users can verify whether a query can leverage the SI table or not by executing the `EXPLAIN`
+command, which will show the transformed logical plan, and thus users can check whether the SI table
+is selected.
 
 
 ## Compacting SI table
@@ -133,10 +133,10 @@ table is selected.
 ### Compacting SI table table through Main Table compaction
 Running Compaction command (`ALTER TABLE COMPACT`)[COMPACTION TYPE-> MINOR/MAJOR] on main table will
 automatically delete all the old segments of SI and creates a new segment with same name as main
-table compacted segmet and loads data to it.
+table compacted segment and loads data to it.
 
 ### Compacting SI table's individual segment(s) through REFRESH INDEX command
-Where there are so many small files present in the SI table, then we can use REFRESH INDEX command to
+Where there are so many small files present in the SI table, then we can use the REFRESH INDEX command to
 compact the files within an SI segment to avoid many small files.
 
   ```
@@ -150,7 +150,7 @@ This command merges data files in each segment of SI table.
 This command merges data files within specified segment of SI table.
 
 ## How to skip Secondary Index?
-When Secondary indexes are created on a table(s), always data fetching happens from secondary
+When Secondary indexes are created on a table(s), data fetching happens from secondary
 indexes created on the main tables for better performance. But sometimes, data fetching from the
 secondary index might degrade query performance in case where the data is sparse and most of the
 blocklets need to be scanned. So to avoid such secondary indexes, we use NI as a function on filters
@@ -159,7 +159,7 @@ with in WHERE clause.
   ```
   SELECT country, sex from sales where NI(user_id = 'xxx')
   ```
-The above query ignores column user_id from secondary index and fetch data from main table.
+The above query ignores column `user_id` from secondary index and fetch data from the main table.
 
 ## DDLs on Secondary Index
 
