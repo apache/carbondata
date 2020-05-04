@@ -54,7 +54,7 @@
     BEGIN_TIME bigint,
     HOST String,
     Dime_1 String,
-    counter_1, Decimal
+    counter_1 Decimal,
     ...
     
     )STORED AS carbondata
@@ -79,7 +79,7 @@
       BEGIN_TIME bigint,
       HOST String,
       Dime_1 String,
-      counter_1, Decimal
+      counter_1 Decimal,
       ...
       
       )STORED AS carbondata
@@ -128,6 +128,9 @@
 
   **NOTE:**
   + BloomFilter can be created to enhance performance for queries with precise equal/in conditions. You can find more information about it in BloomFilter index [document](./index/bloomfilter-index-guide.md).
+  + Lucene index can be created on string columns which has content of more length to enhance the query performance. You can find more information about it in Lucene index [document](./index/lucene-index-guide.md).
+  + Secondary index can be created based on the column position in main table(Recommended for right columns) and the queries should have filter on that column to improve the filter query performance. You can find more information about it in secondary index [document](./index/secondary-index-guide.md).
+  + Materialized view can be created to improve query performance provided the storage requirements and loading time is acceptable. You can find more information about it in materialized view [document](./mv-guide.md).
 
 
 ## Configuration for Optimizing Data Loading performance for Massive Data
@@ -141,12 +144,12 @@
 | Parameter | Default Value | Description/Tuning |
 |-----------|-------------|--------|
 |carbon.number.of.cores.while.loading|Default: 2. This value should be >= 2|Specifies the number of cores used for data processing during data loading in CarbonData. |
-|carbon.sort.size|Default: 100000. The value should be >= 100.|Threshold to write local file in sort step when loading data|
-|carbon.sort.file.write.buffer.size|Default:  16384.|CarbonData sorts and writes data to intermediate files to limit the memory usage. This configuration determines the buffer size to be used for reading and writing such files. |
+|carbon.sort.size|Default: 100000. The value should be >= 1000.|Threshold to write local file in sort step when loading data|
+|carbon.sort.file.write.buffer.size|Default:  16384. The value should be >= 10240 and <= 10485760.|CarbonData sorts and writes data to intermediate files to limit the memory usage. This configuration determines the buffer size to be used for reading and writing such files. |
 |carbon.merge.sort.reader.thread|Default: 3 |Specifies the number of cores used for temp file merging during data loading in CarbonData.|
 |carbon.merge.sort.prefetch|Default: true | You may want set this value to false if you have not enough memory|
 
-  For example, if there are 10 million records, and i have only 16 cores, 64GB memory, will be loaded to CarbonData table.
+  For example, if there are 10 million records, and I have only 16 cores, 64 GB memory will be loaded to CarbonData table.
   Using the default configuration  always fail in sort step. Modify carbon.properties as suggested below:
 
   ```
@@ -172,7 +175,6 @@
 | carbon.use.local.dir | spark/carbonlib/carbon.properties | Data loading | Whether use YARN local directories for multi-table load disk load balance | If this is set it to true CarbonData will use YARN local directories for multi-table load disk load balance, that will improve the data load performance. |
 | carbon.sort.temp.compressor | spark/carbonlib/carbon.properties | Data loading | Specify the name of compressor to compress the intermediate sort temporary files during sort procedure in data loading. | The optional values are 'SNAPPY','GZIP','BZIP2','LZ4','ZSTD', and empty. Specially, empty means that Carbondata will not compress the sort temp files. This parameter will be useful if you encounter disk bottleneck. |
 | carbon.load.skewedDataOptimization.enabled | spark/carbonlib/carbon.properties | Data loading | Whether to enable size based block allocation strategy for data loading. | When loading, carbondata will use file size based block allocation strategy for task distribution. It will make sure that all the executors process the same size of data -- It's useful if the size of your input data files varies widely, say 1MB to 1GB. |
-| carbon.load.min.size.enabled | spark/carbonlib/carbon.properties | Data loading | Whether to enable node minumun input data size allocation strategy for data loading.| When loading, carbondata will use node minumun input data size allocation strategy for task distribution. It will make sure the nodes load the minimum amount of data -- It's useful if the size of your input data files very small, say 1MB to 256MB,Avoid generating a large number of small files. |
 
   Note: If your CarbonData instance is provided only for query, you may specify the property 'spark.speculation=true' which is in conf directory of spark.
 
