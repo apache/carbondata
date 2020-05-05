@@ -125,9 +125,9 @@ with Serializable {
     optionsFinal.put(
       "fileheader",
       dataSchema.fields.map(_.name.toLowerCase).mkString(",") + "," + partitionStr)
+    optionsFinal.put("header", "false")
     val optionsLocal = new mutable.HashMap[String, String]()
     optionsLocal ++= options
-    optionsLocal += (("header", "false"))
     new CarbonLoadModelBuilder(table).build(
       optionsLocal.toMap.asJava,
       optionsFinal,
