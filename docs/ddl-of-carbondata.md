@@ -610,7 +610,7 @@ CarbonData DDL statements are documented here,which includes:
   1. Dropping of the external table will not delete the files present in the location.
   2. When external table is created on non-transactional table data, 
     external table will be registered with the schema of carbondata files.
-    If multiple files with different schema is present, exception will be thrown.  
+    If multiple files have the same column with different datatypes then exception will be thrown.  
 
 
 ## CREATE DATABASE 
