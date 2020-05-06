@@ -43,15 +43,15 @@ import org.apache.carbondata.core.util.CustomIndex;
 @InterfaceAudience.Internal
 public class PolygonExpression extends UnknownExpression implements ConditionalExpression {
   private String polygon;
-  private CustomIndex<List<Long[]>> handler;
+  private CustomIndex<List<Long[]>> instance;
   private List<Long[]> ranges = new ArrayList<Long[]>();
   private ColumnExpression column;
   private ExpressionResult trueExpRes;
   private ExpressionResult falseExpRes;
 
-  public PolygonExpression(String polygon, String columnName, CustomIndex handler) {
+  public PolygonExpression(String polygon, String columnName, CustomIndex indexInstance) {
     this.polygon = polygon;
-    this.handler = handler;
+    this.instance = indexInstance;
     this.column = new ColumnExpression(columnName, DataTypes.LONG);
     this.trueExpRes = new ExpressionResult(DataTypes.BOOLEAN, true);
     this.falseExpRes = new ExpressionResult(DataTypes.BOOLEAN, false);
@@ -61,7 +61,7 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
     // Validate the ranges
     for (Long[] range : ranges) {
       if (range.length != 2) {
-        throw new RuntimeException("Handler query must return list of ranges with each range "
+        throw new RuntimeException("Query processor must return list of ranges with each range "
             + "containing minimum and maximum values");
       }
     }
@@ -72,7 +72,7 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
    */
   private void processExpression() {
     try {
-      ranges = handler.query(polygon);
+      ranges = instance.query(polygon);
       validate(ranges);
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -138,13 +138,13 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
 
   private void writeObject(ObjectOutputStream out) throws IOException {
     out.writeObject(polygon);
-    out.writeObject(handler);
+    out.writeObject(instance);
     out.writeObject(column);
   }
 
   private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
     polygon = (String) in.readObject();
-    handler = (CustomIndex<List<Long[]>>) in.readObject();
+    instance = (CustomIndex<List<Long[]>>) in.readObject();
     column = (ColumnExpression) in.readObject();
     ranges = new ArrayList<Long[]>();
     trueExpRes = new ExpressionResult(DataTypes.BOOLEAN, true);

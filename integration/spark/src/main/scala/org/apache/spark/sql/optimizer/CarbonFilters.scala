@@ -145,8 +145,8 @@ object CarbonFilters {
         case TextMatchLimit(queryString, maxDoc) =>
           Some(new MatchExpression(queryString, Try(maxDoc.toInt).getOrElse(Integer.MAX_VALUE)))
         case InPolygon(queryString) =>
-          val (columnName, handler) = GeoUtils.getGeoHashHandler(tableProperties)
-          Some(new CarbonPolygonExpression(queryString, columnName, handler))
+          val (columnName, instance) = GeoUtils.getGeoHashHandler(tableProperties)
+          Some(new CarbonPolygonExpression(queryString, columnName, instance))
         case _ => None
       }
     }

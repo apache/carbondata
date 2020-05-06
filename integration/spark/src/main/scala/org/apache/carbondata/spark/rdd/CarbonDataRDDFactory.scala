@@ -375,13 +375,13 @@ object CarbonDataRDDFactory {
               .getFactTable
               .getListOfColumns
               .asScala
-              .filterNot(col => col.isInvisible || col.isIndexColumn || col.isComplexColumn)
+              .filterNot(col => col.isInvisible || col.isSpatialColumn || col.isComplexColumn)
             val convertedRdd = CommonLoadUtils.getConvertedInternalRow(
               colSchema,
               scanResultRdd.get,
               isGlobalSortPartition = false)
             if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) &&
-                !carbonLoadModel.isIndexColumnsPresent) {
+                !carbonLoadModel.isNonSchemaColumnsPresent) {
               DataLoadProcessBuilderOnSpark.insertDataUsingGlobalSortWithInternalRow(sqlContext
                 .sparkSession,
                 convertedRdd,

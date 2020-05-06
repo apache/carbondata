@@ -121,7 +121,10 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
 
   private boolean isSortColumn = false;
 
-  private boolean indexColumn = false;
+  /**
+   *  Whether it is a spatial index column
+   */
+  private boolean spatialColumn = false;
 
   /**
    * aggregate function used in pre aggregate table
@@ -535,7 +538,7 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
       }
     }
     out.writeBoolean(isLocalDictColumn);
-    out.writeBoolean(indexColumn);
+    out.writeBoolean(spatialColumn);
   }
 
   @Override
@@ -585,7 +588,7 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
       }
     }
     this.isLocalDictColumn = in.readBoolean();
-    this.indexColumn = in.readBoolean();
+    this.spatialColumn = in.readBoolean();
   }
 
   /**
@@ -595,14 +598,6 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
   public boolean isComplexColumn() {
     return this.getColumnName()
         .contains(".val") || this.getColumnName().contains(".");
-  }
-
-  public boolean isIndexColumn() {
-    return indexColumn;
-  }
-
-  public void setIndexColumn(boolean indexColumn) {
-    this.indexColumn = indexColumn;
   }
 
   public ColumnSchema clone() {
@@ -616,5 +611,22 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
     } catch (IOException | CloneNotSupportedException e) {
       throw new RuntimeException("Error occur while cloning ColumnSchema", e);
     }
+  }
+
+  /**
+   * Checks whether it is a spatial index column.
+   * @return Returns True if the column is a spatial index column. Otherwise returns False.
+   */
+  public boolean isSpatialColumn() {
+    return spatialColumn;
+  }
+
+  /**
+   * Set the column spatial index property. True or False to indicate column is a spatial index
+   * column or not respectively.
+   * @param spatialColumn True or False
+   */
+  public void setSpatialColumn(boolean spatialColumn) {
+    this.spatialColumn = spatialColumn;
   }
 }

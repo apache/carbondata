@@ -56,24 +56,24 @@ private[sql] case class CarbonDescribeFormattedCommand(
 
     val carbonTable = relation.carbonTable
     val tblProps = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
-    // Append index handler columns
-    val indexes = tblProps.get(CarbonCommonConstants.INDEX_HANDLER)
+    // Append spatial index columns
+    val indexes = tblProps.get(CarbonCommonConstants.SPATIAL_INDEX)
     if (indexes.isDefined) {
       results ++= Seq(
         ("", "", ""),
-        ("## Custom Index Information", "", "")
+        ("## Spatial Index Information", "", "")
       )
       val indexList = indexes.get.split(",").map(_.trim)
       indexList.zip(Stream from 1).foreach {
         case(index, count) =>
           results ++= Seq(
-            ("Type", tblProps(s"${ CarbonCommonConstants.INDEX_HANDLER }.$index.type"), ""),
-            ("Class", tblProps(s"${ CarbonCommonConstants.INDEX_HANDLER }.$index.class"), ""),
+            ("Type", tblProps(s"${ CarbonCommonConstants.SPATIAL_INDEX }.$index.type"), ""),
+            ("Class", tblProps(s"${ CarbonCommonConstants.SPATIAL_INDEX }.$index.class"), ""),
             ("Column Name", index, ""),
             ("Column Data Type",
-              tblProps(s"${ CarbonCommonConstants.INDEX_HANDLER }.$index.datatype"), ""),
+              tblProps(s"${ CarbonCommonConstants.SPATIAL_INDEX }.$index.datatype"), ""),
             ("Sources Columns",
-              tblProps(s"${ CarbonCommonConstants.INDEX_HANDLER }.$index.sourcecolumns"), ""))
+              tblProps(s"${ CarbonCommonConstants.SPATIAL_INDEX }.$index.sourcecolumns"), ""))
           if (indexList.length != count) {
             results ++= Seq(("", "", ""))
           }

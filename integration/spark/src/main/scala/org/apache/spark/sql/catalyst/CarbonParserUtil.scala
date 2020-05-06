@@ -40,6 +40,7 @@ import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, CustomIndex}
+import org.apache.carbondata.geo.GeoConstants
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, DataTypeConverterUtil}
 
@@ -90,45 +91,45 @@ object CarbonParserUtil {
   }
 
   /**
-   * The method parses, validates and processes the index_handler property.
+   * The method parses, validates and processes the spatial_index property.
    * @param tableProperties Table properties
    * @param tableFields Sequence of table fields
    * @return <Seq[Field]> Sequence of index fields to add to table fields
    */
-  private def processIndexProperty(tableProperties: mutable.Map[String, String],
+  private def processSpatialIndexProperty(tableProperties: mutable.Map[String, String],
       tableFields: Seq[Field]): Seq[Field] = {
-    val option = tableProperties.get(CarbonCommonConstants.INDEX_HANDLER)
+    val option = tableProperties.get(CarbonCommonConstants.SPATIAL_INDEX)
     val fields = ListBuffer[Field]()
     if (option.isDefined) {
       if (option.get.trim.isEmpty) {
         throw new MalformedCarbonCommandException(
-          s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property is invalid. " +
+          s"Carbon ${ CarbonCommonConstants.SPATIAL_INDEX } property is invalid. " +
           s"Option value is empty.")
       }
-      option.get.split(",").map(_.trim).foreach { handler =>
-        // Validate target column name
-        if (tableFields.exists(_.column.equalsIgnoreCase(handler))) {
+      option.get.split(",").map(_.trim).foreach { indexName =>
+        // Validate index column name
+        if (tableFields.exists(_.column.equalsIgnoreCase(indexName))) {
           throw new MalformedCarbonCommandException(
-            s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property is invalid. " +
-            s"handler: $handler must not match with any other column name in the table")
+            s"Carbon ${ CarbonCommonConstants.SPATIAL_INDEX } property is invalid. " +
+            s"index: $indexName must not match with any other column name in the table")
         }
-        val TYPE = s"${ CarbonCommonConstants.INDEX_HANDLER }.$handler.type"
-        val SOURCE_COLUMNS = s"${ CarbonCommonConstants.INDEX_HANDLER }.$handler.sourcecolumns"
+        val TYPE = s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.type"
+        val SOURCE_COLUMNS = s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.sourcecolumns"
         val SOURCE_COLUMN_TYPES
-        = s"${ CarbonCommonConstants.INDEX_HANDLER }.$handler.sourcecolumntypes"
-        val HANDLER_CLASS = s"${ CarbonCommonConstants.INDEX_HANDLER }.$handler.class"
-        val HANDLER_INSTANCE = s"${ CarbonCommonConstants.INDEX_HANDLER }.$handler.instance"
+        = s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.sourcecolumntypes"
+        val SPATIAL_INDEX_CLASS = s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.class"
+        val SPATIAL_INDEX_INSTANCE = s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.instance"
 
-        val handlerType = tableProperties.get(TYPE)
-        if (handlerType.isEmpty || handlerType.get.trim.isEmpty) {
+        val spatialIndexType = tableProperties.get(TYPE)
+        if (spatialIndexType.isEmpty || spatialIndexType.get.trim.isEmpty) {
           throw new MalformedCarbonCommandException(
-            s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property is invalid. " +
+            s"Carbon ${ CarbonCommonConstants.SPATIAL_INDEX } property is invalid. " +
             s"$TYPE property must be specified.")
         }
         val sourceColumnsOption = tableProperties.get(SOURCE_COLUMNS)
         if (sourceColumnsOption.isEmpty || sourceColumnsOption.get.trim.isEmpty) {
           throw new MalformedCarbonCommandException(
-            s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property is invalid. " +
+            s"Carbon ${ CarbonCommonConstants.SPATIAL_INDEX } property is invalid. " +
             s"$SOURCE_COLUMNS property must be specified.")
         }
         val sourcesWithoutSpaces = sourceColumnsOption.get.replaceAll("\\s", "")
@@ -136,7 +137,7 @@ object CarbonParserUtil {
         val sources = sourcesWithoutSpaces.split(",")
         if (sources.distinct.length != sources.size) {
           throw new MalformedCarbonCommandException(
-            s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property is invalid. " +
+            s"Carbon ${ CarbonCommonConstants.SPATIAL_INDEX } property is invalid. " +
             s"$SOURCE_COLUMNS property cannot have duplicate columns.")
         }
         val sourceTypes = StringBuilder.newBuilder
@@ -145,44 +146,44 @@ object CarbonParserUtil {
             case Some(field) => sourceTypes.append(field.dataType.get).append(",")
             case None =>
               throw new MalformedCarbonCommandException(
-                s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property is invalid. " +
+                s"Carbon ${ CarbonCommonConstants.SPATIAL_INDEX } property is invalid. " +
                 s"Source column: $column in property " +
                 s"$SOURCE_COLUMNS must be a column in the table.")
           }
         }
         tableProperties.put(SOURCE_COLUMNS, sourcesWithoutSpaces)
         tableProperties.put(SOURCE_COLUMN_TYPES, sourceTypes.dropRight(1).toString())
-        val handlerClass = tableProperties.get(HANDLER_CLASS)
-        val handlerClassName: String = handlerClass match {
+        val spatialIndexClass = tableProperties.get(SPATIAL_INDEX_CLASS)
+        val spatialIndexClassName: String = spatialIndexClass match {
           case Some(className) => className.trim
           case None =>
-            // use handler type to find the default implementation
-            if (handlerType.get.trim.equalsIgnoreCase(CarbonCommonConstants.GEOHASH)) {
+            // use spatial index type to find the default implementation
+            if (spatialIndexType.get.trim.equalsIgnoreCase(GeoConstants.GEOHASH)) {
               // Use GeoHash default implementation
-              val className = CustomIndex.CUSTOM_INDEX_DEFAULT_IMPL
-              tableProperties.put(HANDLER_CLASS, className)
+              val className = "org.apache.carbondata.geo.GeoHashIndex"
+              tableProperties.put(SPATIAL_INDEX_CLASS, className)
               className
             } else {
               throw new MalformedCarbonCommandException(
-                s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property is invalid. " +
-                s"Unsupported value: ${ handlerType.get } specified for property $TYPE.")
+                s"Carbon ${ CarbonCommonConstants.SPATIAL_INDEX } property is invalid. " +
+                s"Unsupported value: ${ spatialIndexType.get } specified for property $TYPE.")
             }
         }
         try {
-          val handlerClass: Class[_] = java.lang.Class.forName(handlerClassName)
-          val instance = handlerClass.newInstance().asInstanceOf[CustomIndex[_]]
-          instance.init(handler, tableProperties.asJava)
-          tableProperties.put(HANDLER_INSTANCE, CustomIndex.getCustomInstance(instance))
+          val spatialIndexClass : Class[_] = java.lang.Class.forName(spatialIndexClassName)
+          val instance = spatialIndexClass.newInstance().asInstanceOf[CustomIndex[_]]
+          instance.init(indexName, tableProperties.asJava)
+          tableProperties.put(SPATIAL_INDEX_INSTANCE, CustomIndex.getCustomInstance(instance))
         } catch {
           case ex@(_: ClassNotFoundException | _: InstantiationError | _: IllegalAccessException |
                    _: ClassCastException) =>
-            val err = s"Carbon ${ CarbonCommonConstants.INDEX_HANDLER } property process failed. "
+            val err = s"Carbon ${ CarbonCommonConstants.SPATIAL_INDEX } property process failed. "
             LOGGER.error(err, ex)
             throw new MalformedCarbonCommandException(err, ex)
         }
-        // Add index handler as a sort column if it is not already present in it.
-        CarbonScalaUtil.addIndexHandlerToSortColumns(handler, sources, tableProperties)
-        fields += Field(handler, Some("BigInt"), Some(handler), Some(null), index = true)
+        // Insert spatial column as a sort column if it is not already present in it.
+        CarbonScalaUtil.insertColumnToSortColumns(indexName, sources, tableProperties)
+        fields += Field(indexName, Some("BigInt"), Some(indexName), Some(null), spatialIndex = true)
       }
     }
     fields
@@ -210,8 +211,8 @@ object CarbonParserUtil {
       isAlterFlow: Boolean = false,
       tableComment: Option[String] = None): TableModel = {
 
-    // Process index handler property
-    val indexFields = processIndexProperty(tableProperties, fields)
+    // Process spatial index property
+    val indexFields = processSpatialIndexProperty(tableProperties, fields)
     val allFields = fields ++ indexFields
 
     // do not allow below key words as column name
@@ -336,7 +337,7 @@ object CarbonParserUtil {
 
     if (tableProperties.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
       // validate the column_meta_cache option
-      val tableColumns = dims.view.filterNot(_.index).map(x => x.name.get) ++
+      val tableColumns = dims.view.filterNot(_.spatialIndex).map(x => x.name.get) ++
                          msrs.map(x => x.name.get)
       CommonUtil.validateColumnMetaCacheFields(
         dbName.getOrElse(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
@@ -1102,7 +1103,7 @@ object CarbonParserUtil {
           field.precision, field.scale, field.rawSchema, field.columnComment)
       case "bigint" => Field(field.column, Some("BigInt"), field.name, Some(null), field.parent,
         field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
-        field.columnComment, field.index)
+        field.columnComment, field.spatialIndex)
       case "decimal" => Field(field.column, Some("Decimal"), field.name, Some(null), field.parent,
         field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
         field.columnComment)

@@ -74,7 +74,7 @@ object CarbonSparkUtil {
     val columnSchemas: mutable.Buffer[ColumnSchema] = carbonTable.getTableInfo.getFactTable.
       getListOfColumns.asScala
       .filter(cSchema => !cSchema.isInvisible && cSchema.getSchemaOrdinal != -1 &&
-                         !cSchema.isIndexColumn).sortWith(_.getSchemaOrdinal < _.getSchemaOrdinal)
+                         !cSchema.isSpatialColumn).sortWith(_.getSchemaOrdinal < _.getSchemaOrdinal)
     val columnList = columnSchemas.toList.asJava
     carbonRelation.dimensionsAttr.foreach(attr => {
       val carbonColumn = carbonTable.getColumnByName(attr.name)

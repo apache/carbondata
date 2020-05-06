@@ -496,8 +496,8 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
     }
     columnSchema.foreach {
       col =>
-        if (col.isIndexColumn) {
-          carbonLoadModel.setIndexColumnsPresent(true)
+        if (col.isSpatialColumn) {
+          carbonLoadModel.setNonSchemaColumnsPresent(true)
         } else {
           var skipPartitionColumn = false
           if (partitionColumnNames != null &&

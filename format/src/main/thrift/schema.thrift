@@ -135,9 +135,9 @@ struct ColumnSchema{
 	17: optional list<ParentColumnTableRelation> parentColumnTableRelations;
 
   /**
-   * To specify if it is an index column. Its Default value is false
+   * To specify if it is a spatial index column. Its Default value is false
 	 */
-	18: optional bool indexColumn;
+	18: optional bool spatialColumn;
 }
 
 /**
