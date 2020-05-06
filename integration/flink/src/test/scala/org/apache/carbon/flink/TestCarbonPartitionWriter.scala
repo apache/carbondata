@@ -32,11 +32,15 @@ import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.core.fs.Path
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.test.util.QueryTest
+
 import scala.collection.JavaConverters._
 
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.test.util.QueryTest
 
 class TestCarbonPartitionWriter extends QueryTest {
 
@@ -206,6 +210,88 @@ class TestCarbonPartitionWriter extends QueryTest {
     }
   }
 
+  test("Refresh mv after insert into partition table from stage") {
+    val viewName = "flink_mv"
+
+    sql(s"DROP TABLE IF EXISTS $tableName").collect()
+    sql(
+      s"""
+         | CREATE TABLE $tableName (stringField string, intField int, shortField short)
+         | STORED AS carbondata
+         | PARTITIONED BY (hour_ string, date_ string)
+         | TBLPROPERTIES ('SORT_COLUMNS'='hour_,date_,stringField', 'SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin
+    ).collect()
+
+    val rootPath = System.getProperty("user.dir") + "/target/test-classes"
+
+    val dataTempPath = rootPath + "/data/temp/"
+
+    try {
+      val tablePath = storeLocation + "/" + tableName + "/"
+
+      val writerProperties = newWriterProperties(dataTempPath, storeLocation)
+      val carbonProperties = newCarbonProperties(storeLocation)
+
+      val environment = StreamExecutionEnvironment.getExecutionEnvironment
+      environment.setParallelism(6)
+      environment.enableCheckpointing(2000L)
+      environment.setRestartStrategy(RestartStrategies.noRestart)
+
+      val dataCount = 1000
+      val source = new TestSource(dataCount) {
+        @throws[InterruptedException]
+        override def get(index: Int): Array[AnyRef] = {
+          val data = new Array[AnyRef](7)
+          data(0) = "test" + index
+          data(1) = 2.asInstanceOf[AnyRef]
+          data(2) = 12345.asInstanceOf[AnyRef]
+          data(3) = Integer.toString(TestSource.randomCache.get().nextInt(24))
+          data(4) = "20191218"
+          data
+        }
+
+        @throws[InterruptedException]
+        override def onFinish(): Unit = {
+          Thread.sleep(5000L)
+        }
+      }
+      val stream = environment.addSource(source)
+      val factory = CarbonWriterFactory.builder("Local").build(
+        "default",
+        tableName,
+        tablePath,
+        new Properties,
+        writerProperties,
+        carbonProperties
+      )
+      val streamSink = StreamingFileSink.forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory).build
+
+      stream.keyBy(new KeySelector[Array[AnyRef], AnyRef] {
+        override def getKey(value: Array[AnyRef]): AnyRef = value(3) // return hour_
+      }).addSink(streamSink)
+
+      try environment.execute
+      catch {
+        case exception: Exception =>
+          // TODO
+          throw new UnsupportedOperationException(exception)
+      }
+      assertResult(false)(FileFactory
+        .getCarbonFile(CarbonTablePath.getStageDir(tablePath)).listFiles().isEmpty)
+
+      sql(s"CREATE MATERIALIZED VIEW $viewName AS SELECT sum(intField) FROM $tableName")
+      sql(s"INSERT INTO $tableName STAGE")
+      assert(isTableAppearedInPlan(
+        sql(s"SELECT sum(intField) FROM $tableName").queryExecution.optimizedPlan, viewName))
+      checkAnswer(sql(s"SELECT sum(intField) FROM $tableName"), Seq(Row(2000)))
+
+    } finally {
+      sql(s"DROP MATERIALIZED VIEW $viewName").collect()
+      sql(s"DROP TABLE IF EXISTS $tableName").collect()
+    }
+  }
+
   private def newWriterProperties(
      dataTempPath: String,
      storeLocation: String) = {
@@ -224,6 +310,14 @@ class TestCarbonPartitionWriter extends QueryTest {
     properties.setProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB, "1024")
     properties.setProperty("binary_decoder", "base64")
     properties
+  }
+
+  def isTableAppearedInPlan(logicalPlan: LogicalPlan, tableName: String): Boolean = {
+    val tables = logicalPlan collect {
+      case relation: LogicalRelation => relation.catalogTable.get
+      case relation: HiveTableRelation => relation.tableMeta
+    }
+    tables.exists(_.identifier.table.equalsIgnoreCase(tableName))
   }
 
   private def collectStageInputs(loadDetailsDir: String): Seq[StageInput] = {

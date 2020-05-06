@@ -42,6 +42,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager, StageInput}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.events.OperationContext
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -287,6 +288,20 @@ case class CarbonInsertFromStageCommand(
       val segmentMetaDataAccumulator = spark.sqlContext
         .sparkContext
         .collectionAccumulator[Map[String, SegmentMetaDataInfo]]
+
+      val operationContext = new OperationContext
+      val (tableIndexes, indexOperationContext) = CommonLoadUtils.firePreLoadEvents(
+        sparkSession = spark,
+        carbonLoadModel = loadModel,
+        uuid = "",
+        factPath = "",
+        optionsFinal = options.asJava,
+        options = options.asJava,
+        isOverwriteTable = false,
+        isDataFrame = true,
+        updateModel = None,
+        operationContext = operationContext)
+
       if (table.getBucketingInfo == null) {
         DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
           spark,
@@ -315,6 +330,13 @@ case class CarbonInsertFromStageCommand(
         table.getCarbonTableIdentifier.getTableId,
         new SegmentFileStore(table.getTablePath, segmentFileName),
         SegmentStatus.SUCCESS)
+
+      CommonLoadUtils.firePostLoadEvents(spark,
+        loadModel,
+        tableIndexes,
+        indexOperationContext,
+        table,
+        operationContext)
     } catch {
       case ex: Throwable =>
         LOGGER.error(s"failed to insert ${table.getDatabaseName}.${table.getTableName}", ex)

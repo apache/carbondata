@@ -307,6 +307,78 @@ class TestCarbonWriter extends QueryTest {
     }
   }
 
+    test("Refresh mv after insert into fact table from stage") {
+    val viewName = "flink_mv"
+
+    sql(s"DROP MATERIALIZED VIEW IF EXISTS $viewName").collect()
+    sql(s"DROP TABLE IF EXISTS $tableName").collect()
+    sql(
+      s"""
+         | CREATE TABLE $tableName (stringField string, intField int, shortField short)
+         | STORED AS carbondata
+      """.stripMargin
+    ).collect()
+
+    val rootPath = System.getProperty("user.dir") + "/target/test-classes"
+
+    val dataTempPath = rootPath + "/data/temp/"
+
+    try {
+      val tablePath = storeLocation + "/" + tableName + "/"
+
+      val writerProperties = newWriterProperties(dataTempPath, storeLocation)
+      val carbonProperties = newCarbonProperties(storeLocation)
+
+      val environment = StreamExecutionEnvironment.getExecutionEnvironment
+      environment.setParallelism(1)
+      environment.enableCheckpointing(2000L)
+      environment.setRestartStrategy(RestartStrategies.noRestart)
+
+      val dataCount = 1000
+      val source = new TestSource(dataCount) {
+        @throws[InterruptedException]
+        override def get(index: Int): Array[AnyRef] = {
+          Thread.sleep(1L)
+          val data = new Array[AnyRef](3)
+          data(0) = "test" + index
+          data(1) = index.asInstanceOf[AnyRef]
+          data(2) = 12345.asInstanceOf[AnyRef]
+          data
+        }
+
+        @throws[InterruptedException]
+        override def onFinish(): Unit = {
+          Thread.sleep(5000L)
+        }
+      }
+      val stream = environment.addSource(source)
+      val factory = CarbonWriterFactory.builder("Local").build(
+        "default",
+        tableName,
+        tablePath,
+        new Properties,
+        writerProperties,
+        carbonProperties
+      )
+      val streamSink = StreamingFileSink.forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory).build
+
+      stream.addSink(streamSink)
+
+      try environment.execute
+      catch {
+        case exception: Exception =>
+          // TODO
+          throw new UnsupportedOperationException(exception)
+      }
+
+      sql(s"CREATE MATERIALIZED VIEW $viewName AS SELECT count(1) FROM $tableName")
+      sql(s"INSERT INTO $tableName STAGE")
+      checkAnswer(sql(s"SELECT * FROM $viewName"), Seq(Row(1000)))
+    } finally {
+      sql(s"DROP MATERIALIZED VIEW $viewName").collect()
+      sql(s"DROP TABLE IF EXISTS $tableName").collect()
+    }
+  }
 
   private def newWriterProperties(
     dataTempPath: String,
