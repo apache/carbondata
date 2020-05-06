@@ -332,7 +332,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
         while (internalHasNext() && count < batchSize) {
           CarbonRow carbonRow =
               new CarbonRow(convertToNoDictionaryToBytes(currentIterator.next(), dataFields));
-          if (configuration.isIndexColumnsPresent()) {
+          if (configuration.isNonSchemaColumnsPresent()) {
             carbonRow = converter.convert(carbonRow);
           }
           if (isBucketColumnEnabled) {
@@ -346,7 +346,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
         while (internalHasNext() && count < batchSize) {
           CarbonRow carbonRow = new CarbonRow(
               convertToNoDictionaryToBytesWithoutReArrange(currentIterator.next(), dataFields));
-          if (configuration.isIndexColumnsPresent()) {
+          if (configuration.isNonSchemaColumnsPresent()) {
             carbonRow = converter.convert(carbonRow);
           }
           if (isBucketColumnEnabled) {
@@ -367,7 +367,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     private Object[] convertToNoDictionaryToBytes(Object[] data, DataField[] dataFields) {
       Object[] newData = new Object[dataFields.length];
       for (int i = 0; i < dataFields.length; i++) {
-        if (dataFields[i].getColumn().isIndexColumn()) {
+        if (dataFields[i].getColumn().isSpatialColumn()) {
           continue;
         }
         if (i < noDictionaryMapping.length && noDictionaryMapping[i]) {
@@ -412,7 +412,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       Object[] newData = new Object[dataFields.length];
       // now dictionary is removed, no need of no dictionary mapping
       for (int i = 0, index = 0; i < dataFields.length; i++) {
-        if (dataFields[i].getColumn().isIndexColumn()) {
+        if (dataFields[i].getColumn().isSpatialColumn()) {
           continue;
         }
         if (DataTypeUtil.isPrimitiveColumn(dataTypes[i])) {

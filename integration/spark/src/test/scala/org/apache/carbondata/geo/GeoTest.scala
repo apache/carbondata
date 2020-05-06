@@ -14,18 +14,18 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
     drop()
   }
 
-  test("Invalid geo index handler property") {
-    // Handler name must not match with table column name.  Fails to create table.
+  test("Invalid spatial index property") {
+    // Index name must not match with table column name.  Fails to create table.
     var exception = intercept[MalformedCarbonCommandException](sql(
       s"""
          | CREATE TABLE malformed(timevalue BIGINT, longitude LONG, latitude LONG)
          | COMMENT "This is a malformed table"
          | STORED AS carbondata
-         | TBLPROPERTIES ('INDEX_HANDLER'='longitude')
+         | TBLPROPERTIES ('SPATIAL_INDEX'='longitude')
       """.stripMargin))
 
     assert(exception.getMessage.contains(
-      "handler: longitude must not match with any other column name in the table"))
+      "index: longitude must not match with any other column name in the table"))
 
     // Type property is not configured. Fails to create table.
     exception = intercept[MalformedCarbonCommandException](sql(
@@ -33,11 +33,11 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
          | CREATE TABLE malformed(timevalue BIGINT, longitude LONG, latitude LONG)
          | COMMENT "This is a malformed table"
          | STORED AS carbondata
-         | TBLPROPERTIES ('INDEX_HANDLER'='mygeohash')
+         | TBLPROPERTIES ('SPATIAL_INDEX'='mygeohash')
       """.stripMargin))
 
     assert(exception.getMessage.contains(
-      s"${CarbonCommonConstants.INDEX_HANDLER}.mygeohash.type property must be specified"))
+      s"${CarbonCommonConstants.SPATIAL_INDEX}.mygeohash.type property must be specified"))
 
     // Source columns are not configured. Fails to create table.
     exception = intercept[MalformedCarbonCommandException](sql(
@@ -45,11 +45,11 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
          | CREATE TABLE malformed(timevalue BIGINT, longitude LONG, latitude LONG)
          | COMMENT "This is a malformed table"
          | STORED AS carbondata
-         | TBLPROPERTIES ('INDEX_HANDLER'='mygeohash', 'INDEX_HANDLER.mygeohash.type'='geohash')
+         | TBLPROPERTIES ('SPATIAL_INDEX'='mygeohash', 'SPATIAL_INDEX.mygeohash.type'='geohash')
       """.stripMargin))
 
     assert(exception.getMessage.contains(
-      s"${CarbonCommonConstants.INDEX_HANDLER}.mygeohash.sourcecolumns property must be " +
+      s"${CarbonCommonConstants.SPATIAL_INDEX}.mygeohash.sourcecolumns property must be " +
       s"specified."))
 
     // Source columns must be present in the table. Fails to create table.
@@ -58,20 +58,20 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
          | CREATE TABLE malformed(timevalue BIGINT, longitude LONG, latitude LONG)
          | COMMENT "This is a malformed table"
          | STORED AS carbondata
-         | TBLPROPERTIES ('INDEX_HANDLER'='mygeohash', 'INDEX_HANDLER.mygeohash.type'='geohash',
-         | 'INDEX_HANDLER.mygeohash.sourcecolumns'='unknown1, unknown2')
+         | TBLPROPERTIES ('SPATIAL_INDEX'='mygeohash', 'SPATIAL_INDEX.mygeohash.type'='geohash',
+         | 'SPATIAL_INDEX.mygeohash.sourcecolumns'='unknown1, unknown2')
       """.stripMargin))
 
     assert(exception.getMessage.contains(
       s"Source column: unknown1 in property " +
-      s"${CarbonCommonConstants.INDEX_HANDLER}.mygeohash.sourcecolumns must be a column in the " +
+      s"${CarbonCommonConstants.SPATIAL_INDEX}.mygeohash.sourcecolumns must be a column in the " +
       s"table."))
   }
 
   test("test geo table create and load and check describe formatted") {
     createTable()
     loadData()
-    // Test if index handler column is added as a sort column
+    // Test if spatial index column is added as a sort column
     val descTable = sql(s"describe formatted $table1").collect
     descTable.find(_.get(0).toString.contains("Sort Scope")) match {
       case Some(row) => assert(row.get(1).toString.contains("LOCAL_SORT"))
@@ -141,16 +141,16 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
            | longitude LONG,
            | latitude LONG) COMMENT "This is a GeoTable" PARTITIONED BY (timevalue BIGINT)
            | STORED AS carbondata
-           | TBLPROPERTIES ('INDEX_HANDLER'='mygeohash',
-           | 'INDEX_HANDLER.mygeohash.type'='geohash',
-           | 'INDEX_HANDLER.mygeohash.sourcecolumns'='longitude, latitude',
-           | 'INDEX_HANDLER.mygeohash.originLatitude'='39.832277',
-           | 'INDEX_HANDLER.mygeohash.gridSize'='50',
-           | 'INDEX_HANDLER.mygeohash.minLongitude'='115.811865',
-           | 'INDEX_HANDLER.mygeohash.maxLongitude'='116.782233',
-           | 'INDEX_HANDLER.mygeohash.minLatitude'='39.832277',
-           | 'INDEX_HANDLER.mygeohash.maxLatitude'='40.225281',
-           | 'INDEX_HANDLER.mygeohash.conversionRatio'='1000000')
+           | TBLPROPERTIES ('SPATIAL_INDEX'='mygeohash',
+           | 'SPATIAL_INDEX.mygeohash.type'='geohash',
+           | 'SPATIAL_INDEX.mygeohash.sourcecolumns'='longitude, latitude',
+           | 'SPATIAL_INDEX.mygeohash.originLatitude'='39.832277',
+           | 'SPATIAL_INDEX.mygeohash.gridSize'='50',
+           | 'SPATIAL_INDEX.mygeohash.minLongitude'='115.811865',
+           | 'SPATIAL_INDEX.mygeohash.maxLongitude'='116.782233',
+           | 'SPATIAL_INDEX.mygeohash.minLatitude'='39.832277',
+           | 'SPATIAL_INDEX.mygeohash.maxLatitude'='40.225281',
+           | 'SPATIAL_INDEX.mygeohash.conversionRatio'='1000000')
        """.stripMargin)
     loadData()
     checkAnswer(
@@ -183,16 +183,16 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
            | longitude LONG,
            | latitude LONG) COMMENT "This is a GeoTable"
            | STORED AS carbondata
-           | TBLPROPERTIES ($customProperties 'INDEX_HANDLER'='mygeohash',
-           | 'INDEX_HANDLER.mygeohash.type'='geohash',
-           | 'INDEX_HANDLER.mygeohash.sourcecolumns'='longitude, latitude',
-           | 'INDEX_HANDLER.mygeohash.originLatitude'='39.832277',
-           | 'INDEX_HANDLER.mygeohash.gridSize'='50',
-           | 'INDEX_HANDLER.mygeohash.minLongitude'='115.811865',
-           | 'INDEX_HANDLER.mygeohash.maxLongitude'='116.782233',
-           | 'INDEX_HANDLER.mygeohash.minLatitude'='39.832277',
-           | 'INDEX_HANDLER.mygeohash.maxLatitude'='40.225281',
-           | 'INDEX_HANDLER.mygeohash.conversionRatio'='1000000')
+           | TBLPROPERTIES ($customProperties 'SPATIAL_INDEX'='mygeohash',
+           | 'SPATIAL_INDEX.mygeohash.type'='geohash',
+           | 'SPATIAL_INDEX.mygeohash.sourcecolumns'='longitude, latitude',
+           | 'SPATIAL_INDEX.mygeohash.originLatitude'='39.832277',
+           | 'SPATIAL_INDEX.mygeohash.gridSize'='50',
+           | 'SPATIAL_INDEX.mygeohash.minLongitude'='115.811865',
+           | 'SPATIAL_INDEX.mygeohash.maxLongitude'='116.782233',
+           | 'SPATIAL_INDEX.mygeohash.minLatitude'='39.832277',
+           | 'SPATIAL_INDEX.mygeohash.maxLatitude'='40.225281',
+           | 'SPATIAL_INDEX.mygeohash.conversionRatio'='1000000')
        """.stripMargin)
   }
 

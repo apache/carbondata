@@ -23,27 +23,28 @@ import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CustomIndex
+import org.apache.carbondata.geo.GeoConstants
 
 object GeoUtils {
   def getGeoHashHandler(tableProperties: mutable.Map[String, String])
                         : (String, CustomIndex[_]) = {
-    val indexProperty = tableProperties.get(CarbonCommonConstants.INDEX_HANDLER)
+    val indexProperty = tableProperties.get(CarbonCommonConstants.SPATIAL_INDEX)
     if (indexProperty.isEmpty || indexProperty.get.trim.isEmpty) {
       CarbonException.analysisException(
-        s"Table do not have ${CarbonCommonConstants.INDEX_HANDLER} property " +
-        s"with ${CarbonCommonConstants.GEOHASH} type handler")
+        s"Table do not have ${CarbonCommonConstants.SPATIAL_INDEX} property " +
+        s"with ${GeoConstants.GEOHASH} type")
     }
-    val handler = indexProperty.get.split(",").map(_.trim).filter(handler =>
-      CarbonCommonConstants.GEOHASH.equalsIgnoreCase(
-        tableProperties.getOrElse(s"${CarbonCommonConstants.INDEX_HANDLER}.$handler.type", "")))
-      .map(handler => (handler,
-        tableProperties.get(s"${CarbonCommonConstants.INDEX_HANDLER}.$handler.instance")))
+    val handler = indexProperty.get.split(",").map(_.trim).filter(indexName =>
+      GeoConstants.GEOHASH.equalsIgnoreCase(
+        tableProperties.getOrElse(s"${CarbonCommonConstants.SPATIAL_INDEX}.$indexName.type", "")))
+      .map(indexName => (indexName,
+        tableProperties.get(s"${CarbonCommonConstants.SPATIAL_INDEX}.$indexName.instance")))
     if (handler.isEmpty || handler.length != 1 || handler(0)._1.isEmpty
       || handler(0)._2.isEmpty) {
       CarbonException.analysisException(
-        s"Table do not have ${CarbonCommonConstants.INDEX_HANDLER} property " +
-        s"with ${CarbonCommonConstants.GEOHASH} type handler")
+        s"Table do not have ${CarbonCommonConstants.SPATIAL_INDEX} property " +
+        s"with ${GeoConstants.GEOHASH} type index")
     }
-    (handler(0) _1, CustomIndex.getCustomInstance(handler(0)._2.get))
+    (handler(0)._1, CustomIndex.getCustomInstance(handler(0)._2.get))
   }
 }
