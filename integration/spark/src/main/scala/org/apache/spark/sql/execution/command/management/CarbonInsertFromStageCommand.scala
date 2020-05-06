@@ -327,7 +327,7 @@ case class CarbonInsertFromStageCommand(
         operationContext = operationContext)
       // in case of insert stage files, added the below property to avoid merge index and
       // fire event to load data to secondary index
-      operationContext.setProperty("isInsertStage", "true")
+      operationContext.setProperty(CarbonCommonConstants.IS_INSERT_STAGE, "true")
       val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
         new LoadTablePreStatusUpdateEvent(
           table.getCarbonTableIdentifier,

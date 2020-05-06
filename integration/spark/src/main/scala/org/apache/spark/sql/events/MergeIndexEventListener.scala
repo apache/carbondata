@@ -29,6 +29,8 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.MergeIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{DataLoadMetrics, ObjectSerializationUtil}
@@ -43,8 +45,8 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
     event match {
       case preStatusUpdateEvent: LoadTablePreStatusUpdateEvent =>
         // skip merge index in case of insert stage flow
-        if (null != operationContext.getProperty("isInsertStage") &&
-            operationContext.getProperty("isInsertStage").equals("true")) {
+        if (null != operationContext.getProperty(CarbonCommonConstants.IS_INSERT_STAGE) &&
+          operationContext.getProperty(CarbonCommonConstants.IS_INSERT_STAGE).equals("true")) {
           return
         }
         LOGGER.info("Load post status event-listener called for merge index")
