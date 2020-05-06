@@ -54,7 +54,7 @@ public class TestBlockletIndex {
 
     new MockUp<ImplicitIncludeFilterExecutorImpl>() {
       @Mock BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
-          String uniqueBlockPath, boolean[] isMinMaxSet) {
+          String uniqueBlockPath, boolean[] isMinMaxSet, String shortBlockId) {
         BitSet bitSet = new BitSet(1);
         bitSet.set(8);
         return bitSet;
@@ -71,7 +71,7 @@ public class TestBlockletIndex {
 
     blockIndex.setSegmentPropertiesWrapper(
         new SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper(new CarbonTable(),
-            new ArrayList<>()));
+            new ArrayList<>(), "0"));
     Method method = BlockIndex.class
         .getDeclaredMethod("addBlockBasedOnMinMaxValue", FilterExecuter.class, byte[][].class,
             byte[][].class, boolean[].class, String.class, int.class);

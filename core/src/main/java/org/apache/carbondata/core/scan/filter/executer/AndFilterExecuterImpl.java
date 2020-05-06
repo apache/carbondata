@@ -96,11 +96,12 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
 
   @Override
   public BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
-      String uniqueBlockPath, boolean[] isMinMaxSet) {
+      String uniqueBlockPath, boolean[] isMinMaxSet, String shortBlockId) {
     BitSet leftFilters = null;
     if (leftExecuter instanceof ImplicitColumnFilterExecutor) {
       leftFilters = ((ImplicitColumnFilterExecutor) leftExecuter)
-          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath, isMinMaxSet);
+          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath, isMinMaxSet,
+              shortBlockId);
     } else {
       leftFilters = leftExecuter
           .isScanRequired(maxValue, minValue, isMinMaxSet);
@@ -111,7 +112,8 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
     BitSet rightFilter = null;
     if (rightExecuter instanceof ImplicitColumnFilterExecutor) {
       rightFilter = ((ImplicitColumnFilterExecutor) rightExecuter)
-          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath, isMinMaxSet);
+          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath, isMinMaxSet,
+              shortBlockId);
     } else {
       rightFilter = rightExecuter.isScanRequired(maxValue, minValue, isMinMaxSet);
     }

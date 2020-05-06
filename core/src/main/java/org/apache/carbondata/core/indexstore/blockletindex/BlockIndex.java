@@ -63,6 +63,7 @@ import org.apache.carbondata.core.scan.filter.executer.ImplicitColumnFilterExecu
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.BlockletIndexUtil;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -793,9 +794,14 @@ public class BlockIndex extends CoarseGrainIndex
     BitSet bitSet = null;
     if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
       String uniqueBlockPath;
-      if (segmentPropertiesWrapper.getCarbonTable().isHivePartitionTable()) {
-        uniqueBlockPath = filePath
-            .substring(segmentPropertiesWrapper.getCarbonTable().getTablePath().length() + 1);
+      String blockId = null;
+      CarbonTable carbonTable = segmentPropertiesWrapper.getCarbonTable();
+      if (carbonTable.isHivePartitionTable()) {
+        uniqueBlockPath = filePath.substring(carbonTable.getTablePath().length() + 1);
+        boolean isStandardTable = CarbonUtil.isStandardCarbonTable(carbonTable);
+        blockId = CarbonUtil.getBlockId(carbonTable.getAbsoluteTableIdentifier(), filePath,
+            segmentPropertiesWrapper.getSegmentId(), carbonTable.isTransactionalTable(),
+            isStandardTable, carbonTable.isHivePartitionTable());
       } else {
         uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1);
       }
@@ -804,8 +810,15 @@ public class BlockIndex extends CoarseGrainIndex
       if (blockletId != -1) {
         uniqueBlockPath = uniqueBlockPath + CarbonCommonConstants.FILE_SEPARATOR + blockletId;
       }
+      String shortBlockId;
+      if (carbonTable.isHivePartitionTable() && null != blockId) {
+        shortBlockId = CarbonTablePath.getShortBlockId(blockId);
+      } else {
+        shortBlockId = CarbonTablePath.getShortBlockId(uniqueBlockPath);
+      }
       bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
-          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath, minMaxFlag);
+          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath, minMaxFlag,
+              shortBlockId);
     } else {
       bitSet = filterExecuter.isScanRequired(maxValue, minValue, minMaxFlag);
     }

@@ -41,6 +41,7 @@ import org.apache.carbondata.core.stats.QueryStatisticsModel;
 import org.apache.carbondata.core.util.BitSetGroup;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * Below class will be used for filter query processing
@@ -131,7 +132,8 @@ public class BlockletFilterScanner extends BlockletFullScanner {
         bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
             .isFilterValuesPresentInBlockOrBlocklet(
                 dataBlock.getColumnsMaxValue(),
-                dataBlock.getColumnsMinValue(), blockletId, dataBlock.minMaxFlagArray());
+                dataBlock.getColumnsMinValue(), blockletId, dataBlock.minMaxFlagArray(),
+                CarbonTablePath.getShortBlockId(blockletId));
       } else {
         bitSet = this.filterExecuter
             .isScanRequired(dataBlock.getColumnsMaxValue(),
