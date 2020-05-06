@@ -140,7 +140,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
   protected List<org.apache.carbondata.format.BlockletIndex> blockletIndex;
 
   /**
-   * listener to write data map
+   * listener to write index
    */
   protected IndexWriterListener listener;
   /**

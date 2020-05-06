@@ -625,7 +625,7 @@ object CarbonDataRDDFactory {
         true
       } catch {
         case ex: Exception =>
-          LOGGER.error("Problem while committing data maps", ex)
+          LOGGER.error("Problem while committing indexes", ex)
           false
       }
       if (!done || !commitComplete) {

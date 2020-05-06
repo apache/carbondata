@@ -873,7 +873,7 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   /**
-   * Get the index file name of the blocklet data map
+   * Get the index file name of the blocklet index
    *
    * @return
    */

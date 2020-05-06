@@ -266,7 +266,7 @@ public class BlockletIndexStore
         lruCache.put(tableBlockIndexUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()
             .getUniqueTableSegmentIdentifier(), wrapper, wrapper.getMemorySize(), expirationTime);
       } catch (Throwable e) {
-        // clear all the memory acquired by data map in case of any failure
+        // clear all the memory acquired by index in case of any failure
         for (Index blockletIndex : indexes) {
           blockletIndex.clear();
         }

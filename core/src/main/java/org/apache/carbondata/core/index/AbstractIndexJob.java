@@ -26,7 +26,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 /**
- * abstract class for data map job
+ * abstract class for index job
  */
 public abstract class AbstractIndexJob implements IndexJob {
 

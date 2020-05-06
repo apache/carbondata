@@ -366,7 +366,7 @@ public class MVProvider {
   }
 
   /**
-   * Data map schema provider of a database.
+   * Index schema provider of a database.
    */
   private static final class SchemaProvider {
 

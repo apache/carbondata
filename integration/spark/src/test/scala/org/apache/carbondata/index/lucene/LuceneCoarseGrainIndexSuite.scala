@@ -42,7 +42,7 @@ class LuceneCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE normal_test OPTIONS('header'='false')")
   }
 
-  test("test lucene coarse grain data map") {
+  test("test lucene coarse grain index") {
     sql("DROP TABLE IF EXISTS datamap_test")
     sql(
       """
