@@ -48,7 +48,7 @@ public class IndexWriterListener {
   private static final Logger LOG = LogServiceFactory.getLogService(
       IndexWriterListener.class.getCanonicalName());
 
-  // list indexed column -> list of data map writer
+  // list indexed column -> list of index writer
   private Map<List<CarbonColumn>, List<IndexWriter>> registry = new ConcurrentHashMap<>();
   // table for this listener
   private CarbonTableIdentifier tblIdentifier;
@@ -91,7 +91,7 @@ public class IndexWriterListener {
     assert (segmentId != null);
     IndexMeta meta = factory.getMeta();
     if (meta == null) {
-      // if data map does not have meta, no need to register
+      // if index does not have meta, no need to register
       return;
     }
     List<CarbonColumn> columns = factory.getMeta().getIndexedColumns();

@@ -99,7 +99,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
       if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
         throw new ConcurrentOperationException(carbonTable, "loading", "alter table rename")
       }
-      // invalid data map for the old table, see CARBON-1690
+      // invalid index for the old table, see CARBON-1690
       val oldAbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       IndexStoreManager.getInstance().clearIndex(oldAbsoluteTableIdentifier)
       // get the latest carbon table and check for column existence

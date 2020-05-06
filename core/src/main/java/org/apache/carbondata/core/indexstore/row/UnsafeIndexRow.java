@@ -24,7 +24,7 @@ import static org.apache.carbondata.core.memory.CarbonUnsafe.BYTE_ARRAY_OFFSET;
 import static org.apache.carbondata.core.memory.CarbonUnsafe.getUnsafe;
 
 /**
- * Unsafe implementation of data map row.
+ * Unsafe implementation of index row.
  */
 public class UnsafeIndexRow extends IndexRow {
 

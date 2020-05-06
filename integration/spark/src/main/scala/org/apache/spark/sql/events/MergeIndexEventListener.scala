@@ -29,6 +29,8 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.MergeIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{DataLoadMetrics, ObjectSerializationUtil}
@@ -42,6 +44,11 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     event match {
       case preStatusUpdateEvent: LoadTablePreStatusUpdateEvent =>
+        // skip merge index in case of insert stage flow
+        if (null != operationContext.getProperty(CarbonCommonConstants.IS_INSERT_STAGE) &&
+          operationContext.getProperty(CarbonCommonConstants.IS_INSERT_STAGE).equals("true")) {
+          return
+        }
         LOGGER.info("Load post status event-listener called for merge index")
         val loadModel = preStatusUpdateEvent.getCarbonLoadModel
         val carbonTable = loadModel.getCarbonDataLoadSchema.getCarbonTable
@@ -90,7 +97,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
             loadModel.setMetrics(metrics)
             LOGGER.info("Total time taken for merge index " +
                         (System.currentTimeMillis() - startTime))
-            // clear Block dataMap Cache
+            // clear Block index Cache
             MergeIndexUtil.clearBlockIndexCache(carbonTable, Seq(loadModel.getSegmentId))
           }
         }
@@ -148,7 +155,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
                 readFileFooterFromCarbonDataFile = true)
               LOGGER.info("Total time taken for merge index "
                           + (System.currentTimeMillis() - startTime) + "ms")
-              // clear Block dataMap Cache
+              // clear Block index Cache
               MergeIndexUtil.clearBlockIndexCache(carbonMainTable, segmentsToMerge)
               val requestMessage = "Compaction request completed for table " +
                 s"${ carbonMainTable.getDatabaseName }.${ carbonMainTable.getTableName }"

@@ -21,7 +21,7 @@ import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 /**
- * Data map row.
+ * Index row.
  */
 public class IndexRowImpl extends IndexRow {
 

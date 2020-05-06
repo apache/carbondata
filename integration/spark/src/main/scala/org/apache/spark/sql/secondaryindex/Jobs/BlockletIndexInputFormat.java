@@ -57,7 +57,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.log4j.Logger;
 
 /**
- * class to load blocklet data map
+ * class to load blocklet index
  */
 public class BlockletIndexInputFormat
     extends FileInputFormat<TableBlockIndexUniqueIdentifier, BlockletIndexDetailsWithSchema>
@@ -179,7 +179,7 @@ public class BlockletIndexInputFormat
             String segmentId =
                 tableBlockIndexUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()
                     .getSegmentId();
-            // as segmentId will be same for all the dataMaps and segmentProperties cache is
+            // as segmentId will be same for all the indexes and segmentProperties cache is
             // maintained at segment level so it need to be called only once for clearing
             SegmentPropertiesAndSchemaHolder.getInstance()
                 .invalidate(segmentId, wrapper.getIndexes().get(0).getSegmentPropertiesWrapper(),

@@ -34,8 +34,8 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 class BloomCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
   val carbonSession = sqlContext.sparkSession
-  val bigFile = s"$resourcesPath/bloom_datamap_input_big.csv"
-  val smallFile = s"$resourcesPath/bloom_datamap_input_small.csv"
+  val bigFile = s"$resourcesPath/bloom_index_input_big.csv"
+  val smallFile = s"$resourcesPath/bloom_index_input_small.csv"
   val normalTable = "carbon_normal"
   val bloomSampleTable = "carbon_bloom"
   val indexName = "bloom_dm"

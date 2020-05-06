@@ -2427,4 +2427,9 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String DISABLE_SQL_REWRITE = "disable_sql_rewrite";
+
+  /**
+   * property which defines the insert stage flow
+   */
+  public static final String IS_INSERT_STAGE = "is_insert_stage";
 }

@@ -119,7 +119,7 @@ class IndexCacher(
         TableBlockIndexUniqueIdentifierWrapper(
           indexWrapper._1,
           carbonTable)
-    // add dataMap to cache
+    // add indexes to cache
     cacheableIndex
       .cache(tableBlockIndexUniqueIdentifierWrapper,
         indexWrapper._2.getBlockletIndexWrapper)
@@ -134,7 +134,7 @@ class IndexLoaderPartition(rddId: Int, idx: Int, val inputSplit: InputSplit)
 }
 
 /**
- * This RDD is used to load the dataMaps of a segment
+ * This RDD is used to load the indexes of a segment
  *
  * @param ss
  * @param indexFormat

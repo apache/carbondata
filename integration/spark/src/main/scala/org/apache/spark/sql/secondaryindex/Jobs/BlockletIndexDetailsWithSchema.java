@@ -26,7 +26,7 @@ import org.apache.carbondata.core.indexstore.blockletindex.BlockIndex;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
- * class that holds dataMaps, column cardinality, columnSchema and other related information for
+ * class that holds indexes, column cardinality, columnSchema and other related information for
  * BlockletIndexInputFormate return value
  * TODO: When this code is moved to open source, this class can be removed and the required code
  * can be added to BlockletIndexWrapper class
@@ -44,8 +44,8 @@ public class BlockletIndexDetailsWithSchema implements Serializable {
     this.blockletIndexWrapper = blockletIndexWrapper;
     List<BlockIndex> indexes = blockletIndexWrapper.getIndexes();
     if (!indexes.isEmpty()) {
-      // In one task all dataMaps will have the same cardinality and schema therefore
-      // segmentPropertyIndex can be fetched from one dataMap
+      // In one task all indexes will have the same cardinality and schema therefore
+      // segmentPropertyIndex can be fetched from one index
       SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper
           segmentPropertiesWrapper = indexes.get(0).getSegmentPropertiesWrapper();
       // flag to check whether carbon table schema is modified. ColumnSchemaList will be

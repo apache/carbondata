@@ -427,7 +427,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       List<PartitionSpec> partitions, boolean isUpdateFlow) throws IOException {
     // Normal query flow goes to CarbonInputFormat#getPrunedBlocklets and initialize the
     // pruning info for table we queried. But here count star query without filter uses a different
-    // query plan, and no pruning info is initialized. When it calls default data map to
+    // query plan, and no pruning info is initialized. When it calls default index to
     // prune(with a null filter), exception will occur during setting pruning info.
     // Considering no useful information about block/blocklet pruning for such query
     // (actually no pruning), so we disable explain collector here

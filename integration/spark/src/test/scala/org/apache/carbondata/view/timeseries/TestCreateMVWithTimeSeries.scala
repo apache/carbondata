@@ -26,7 +26,7 @@ import org.apache.carbondata.view.rewrite.TestUtil
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-class TestMVTimeSeriesCarbonCreateIndexCommand extends QueryTest with BeforeAndAfterAll {
+class TestCreateMVWithTimeSeries extends QueryTest with BeforeAndAfterAll {
 
   private val timestampFormat = CarbonProperties.getInstance()
     .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)

@@ -671,7 +671,7 @@ public final class TableIndex extends OperationEventListener {
       for (Index index : indices) {
         if (index.isScanRequired(filterExp)) {
           // If any one task in a given segment contains the data that means the segment need to
-          // be scanned and we need to validate further data maps in the same segment
+          // be scanned and we need to validate further indexes in the same segment
           prunedSegments.add(segment);
           break;
         }

@@ -26,7 +26,7 @@ import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
- * Store the data map row @{@link IndexRow} data to memory.
+ * Store the index row @{@link IndexRow} data to memory.
  */
 public class SafeMemoryDMStore extends AbstractMemoryDMStore {
 

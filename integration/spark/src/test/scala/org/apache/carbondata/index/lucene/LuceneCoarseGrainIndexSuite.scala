@@ -26,7 +26,7 @@ import org.scalatest.{BeforeAndAfterAll, Ignore}
 @Ignore
 class LuceneCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
-  val file2 = resourcesPath + "/datamap_input.csv"
+  val file2 = resourcesPath + "/index_input.csv"
 
   override protected def beforeAll(): Unit = {
     //n should be about 5000000 of reset if size is default 1024
@@ -42,11 +42,11 @@ class LuceneCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE normal_test OPTIONS('header'='false')")
   }
 
-  test("test lucene coarse grain data map") {
-    sql("DROP TABLE IF EXISTS datamap_test")
+  test("test lucene coarse grain index") {
+    sql("DROP TABLE IF EXISTS index_test")
     sql(
       """
-        | CREATE TABLE datamap_test(id INT, name STRING, city STRING, age INT)
+        | CREATE TABLE index_test(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
       """.stripMargin)
@@ -54,20 +54,20 @@ class LuceneCoarseGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE INDEX dm
-         | ON datamap_test (name, city)
+         | ON index_test (name, city)
          | AS 'lucene'
       """.stripMargin)
 
-    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE index_test OPTIONS('header'='false')")
 
-    checkAnswer(sql("select * from datamap_test where name='n502670'"),
+    checkAnswer(sql("select * from index_test where name='n502670'"),
       sql("select * from normal_test where name='n502670'"))
   }
 
   override protected def afterAll(): Unit = {
     LuceneFineGrainIndexSuite.deleteFile(file2)
     sql("DROP TABLE IF EXISTS normal_test")
-    sql("DROP TABLE IF EXISTS datamap_test")
+    sql("DROP TABLE IF EXISTS index_test")
   }
 
 }

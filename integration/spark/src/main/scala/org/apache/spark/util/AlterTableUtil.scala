@@ -800,7 +800,7 @@ object AlterTableUtil {
   }
 
   private def clearCache(carbonTable: CarbonTable): Unit = {
-    // clear dataMap cache
+    // clear indexes cache
     IndexStoreManager.getInstance().clearIndex(carbonTable.getAbsoluteTableIdentifier)
     // clear segmentProperties Cache
     SegmentPropertiesAndSchemaHolder.getInstance()

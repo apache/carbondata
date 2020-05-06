@@ -67,8 +67,8 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       } else {
         Seq(
           AttributeReference("Identifier", StringType, nullable = false)(),
-          AttributeReference("Index size", StringType, nullable = false)(),
-          AttributeReference("Datamap size", StringType, nullable = false)(),
+          AttributeReference("Table Index size", StringType, nullable = false)(),
+          AttributeReference("CgAndFg Index size", StringType, nullable = false)(),
           AttributeReference("Cache Location", StringType, nullable = false)())
       }
     } else {
@@ -217,9 +217,9 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
         carbonTable =>
           carbonTable.getTablePath
       }
-      val (driverIndexSize, driverTableIndexSize) = getAllDriverCacheSize(tablePaths.toList)
-      if (driverIndexSize + driverTableIndexSize != 0 && driverRows.nonEmpty) {
-        (Seq(Row("TOTAL", driverIndexSize, driverTableIndexSize, "DRIVER")) ++
+      val (driverIndexSize, allCgAndFgIndexSize) = getAllDriverCacheSize(tablePaths.toList)
+      if (driverIndexSize + allCgAndFgIndexSize != 0 && driverRows.nonEmpty) {
+        (Seq(Row("TOTAL", driverIndexSize, allCgAndFgIndexSize, "DRIVER")) ++
          driverRows).collect {
           case row if row.getLong(1) != 0L || row.getLong(2) != 0L =>
             Row(row(0), bytesToDisplaySize(row.getLong(1)),
@@ -393,7 +393,6 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
     (sparkSession: SparkSession): List[(String, String, String)] = {
     val showTableCacheEvent = ShowTableCacheEvent(carbonTable, sparkSession, internalCall)
     val operationContext = new OperationContext
-    // datamapName -> (datamapProviderName, indexSize, datamapSize)
     operationContext.setProperty(carbonTable.getTableUniqueName, List())
     OperationListenerBus.getInstance.fireEvent(showTableCacheEvent, operationContext)
     operationContext.getProperty(carbonTable.getTableUniqueName)
@@ -404,21 +403,21 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
     val cache = CacheProvider.getInstance().getCarbonCache
     // Scan whole cache and fill the entries for All-Database-All-Tables
     // and Current-Database-All-Tables
-    var (allIndexSize, allDatamapSize) = (0L, 0L)
+    var (allTableIndexSize, allCgAndFgIndexSize) = (0L, 0L)
     var dbIndexSize = 0L
     cache.getCacheMap.asScala.foreach {
       case (key, cacheable) =>
         cacheable match {
           case _: BlockletIndexWrapper =>
-            allIndexSize += cacheable.getMemorySize
+            allTableIndexSize += cacheable.getMemorySize
             if (tablePaths.exists { path => key.startsWith(path) }) {
               dbIndexSize += cacheable.getMemorySize
             }
           case _ =>
-            allDatamapSize += cacheable.getMemorySize
+            allCgAndFgIndexSize += cacheable.getMemorySize
         }
     }
-    (allIndexSize, allDatamapSize)
+    (allTableIndexSize, allCgAndFgIndexSize)
   }
 
   private def collectDriverMetaCacheInfo(tableName: String,
@@ -449,18 +448,18 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
   }
 
   private def getIndexServerCacheSizeForCurrentDB: (Long, Long) = {
-    var (allIndexSize, allDatamapSize) = (0L, 0L)
+    var (allIndexSize, allCgAndFgIndexSize) = (0L, 0L)
     val bloomFilterIdentifier = IndexType.BLOOMFILTER.getIndexProviderName
     cacheResult.foreach {
       case (_, _, sum, provider) =>
         provider.toLowerCase match {
           case `bloomFilterIdentifier` =>
-            allDatamapSize += sum
+            allCgAndFgIndexSize += sum
           case _ =>
             allIndexSize += sum
         }
     }
-    (allIndexSize, allDatamapSize)
+    (allIndexSize, allCgAndFgIndexSize)
   }
 
 }

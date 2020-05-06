@@ -24,7 +24,7 @@ import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 /**
- * Store the data map row @{@link IndexRow}
+ * Store the index row @{@link IndexRow}
  */
 public abstract class AbstractMemoryDMStore implements Serializable {
 
