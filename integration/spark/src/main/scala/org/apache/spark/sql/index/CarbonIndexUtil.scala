@@ -99,7 +99,7 @@ object CarbonIndexUtil {
   def getCGAndFGIndexes(carbonTable: CarbonTable): java.util.Map[String,
     util.Map[String, util.Map[String, String]]] = {
     val indexMetadata = carbonTable.getIndexMetadata
-    val cgAndFgIndexes = if (null != indexMetadata) {
+    val cgAndFgIndexes = if (null != indexMetadata && null != indexMetadata.getIndexesMap) {
       val indexesMap = indexMetadata.getIndexesMap
       indexesMap.asScala.filter(provider =>
         !provider._1.equalsIgnoreCase(IndexType.SI.getIndexProviderName)).asJava
@@ -236,7 +236,7 @@ object CarbonIndexUtil {
   def getIndexCarbonTables(carbonTable: CarbonTable,
       sparkSession: SparkSession): Seq[CarbonTable] = {
     val indexMetadata = carbonTable.getIndexMetadata
-    val siIndexesMap = if (null != indexMetadata) {
+    val siIndexesMap = if (null != indexMetadata && null != indexMetadata.getIndexesMap) {
       indexMetadata.getIndexesMap.get(IndexType.SI.getIndexProviderName)
     } else {
       new util.HashMap[String, util.Map[String, util.Map[String, String]]]()
