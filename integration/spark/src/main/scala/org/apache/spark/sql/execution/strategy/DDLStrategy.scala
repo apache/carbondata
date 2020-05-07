@@ -59,18 +59,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       case loadData: LoadDataCommand
         if isCarbonTable(loadData.table) =>
         ExecutedCommandExec(DMLHelper.loadData(loadData, sparkSession)) :: Nil
-      case InsertIntoCarbonTable(
-      relation: CarbonDatasourceHadoopRelation, partition, child: LogicalPlan, overwrite, _) =>
-        ExecutedCommandExec(
-          CarbonInsertIntoCommand(
-            databaseNameOp = Some(relation.carbonRelation.databaseName),
-            tableName = relation.carbonRelation.tableName,
-            options = scala.collection.immutable
-              .Map("fileheader" -> relation.tableSchema.get.fields.map(_.name).mkString(",")),
-            isOverwriteTable = overwrite,
-            logicalPlan = child,
-            tableInfo = relation.carbonRelation.carbonTable.getTableInfo,
-            partition = partition)) :: Nil
+      case insert: InsertIntoCarbonTable =>
+        ExecutedCommandExec(CarbonPlanHelper.insertInto(insert)) :: Nil
       case insert: InsertIntoHadoopFsRelationCommand
         if insert.catalogTable.isDefined && isCarbonTable(insert.catalogTable.get.identifier) =>
         DataWritingCommandExec(DMLHelper.insertInto(insert), planLater(insert.query)) :: Nil
