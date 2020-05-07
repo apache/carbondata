@@ -44,6 +44,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.view._
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, SimpleModularizer}
@@ -84,9 +85,14 @@ case class CarbonCreateMVCommand(
     }
 
     val identifier = TableIdentifier(name, Option(databaseName))
+    val databaseLocation = viewManager.getDatabaseLocation(databaseName)
+    val systemDirectoryPath = CarbonProperties.getInstance()
+      .getSystemFolderLocationPerDatabase(FileFactory
+        .getCarbonFile(databaseLocation)
+        .getCanonicalPath)
     val operationContext: OperationContext = new OperationContext()
     OperationListenerBus.getInstance().fireEvent(
-      CreateMVPreExecutionEvent(session, identifier),
+      CreateMVPreExecutionEvent(session, systemDirectoryPath, identifier),
       operationContext)
 
     val catalogFactory = new MVCatalogFactory[MVSchemaWrapper] {
@@ -121,7 +127,7 @@ case class CarbonCreateMVCommand(
     }
 
     OperationListenerBus.getInstance().fireEvent(
-      CreateMVPostExecutionEvent(session, identifier),
+      CreateMVPostExecutionEvent(session, systemDirectoryPath, identifier),
       operationContext)
 
     this.viewSchema = schema

@@ -20,31 +20,43 @@ package org.apache.carbondata.view
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 
-import org.apache.carbondata.events.Event
+import org.apache.carbondata.events.{Event, MVEventsInfo}
 
 /**
- * For handling operation's before start of mv creation
+ * For handling operation's before start of MV creation
  */
-case class CreateMVPreExecutionEvent(sparkSession: SparkSession,
-    tableIdentifier: TableIdentifier) extends Event
+case class CreateMVPreExecutionEvent(
+    sparkSession: SparkSession,
+    systemDirectoryPath: String,
+    tableIdentifier: TableIdentifier)
+  extends Event with MVEventsInfo
 
 /**
- * For handling operation's after finish of mv creation
+ * For handling operation's after finish of MV creation
  */
-case class CreateMVPostExecutionEvent(sparkSession: SparkSession,
-    tableIdentifier: TableIdentifier) extends Event
+case class CreateMVPostExecutionEvent(
+    sparkSession: SparkSession,
+    systemDirectoryPath: String,
+    tableIdentifier: TableIdentifier)
+  extends Event with MVEventsInfo
 
 /**
- * For handling operation's before start of update mv status
+ * For handling operation's before start of update MV status
  */
-case class UpdateMVPreExecutionEvent(sparkSession: SparkSession,
-    tableIdentifier: TableIdentifier) extends Event
+case class UpdateMVPreExecutionEvent(
+    sparkSession: SparkSession,
+    systemDirectoryPath: String,
+    tableIdentifier: TableIdentifier)
+  extends Event with MVEventsInfo
 
 /**
- * For handling operation's after finish of update mv status
+ * For handling operation's after finish of  update MV table
  */
-case class UpdateMVPostExecutionEvent(sparkSession: SparkSession,
-    tableIdentifier: TableIdentifier) extends Event
+case class UpdateMVPostExecutionEvent(
+    sparkSession: SparkSession,
+    systemDirectoryPath: String,
+    tableIdentifier: TableIdentifier)
+  extends Event with MVEventsInfo
 
 /**
  * For handling operation's before start of mv refresh

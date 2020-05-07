@@ -23,43 +23,6 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 
 /**
- * For handling operation's before start of MV creation
- */
-case class CreateMVPreExecutionEvent(
-    sparkSession: SparkSession,
-    storePath: String,
-    tableIdentifier: TableIdentifier)
-  extends Event with MVEventsInfo
-
-/**
- * For handling operation's after finish of MV creation
- */
-case class CreateMVPostExecutionEvent(
-    sparkSession: SparkSession,
-    storePath: String,
-    tableIdentifier: Option[TableIdentifier],
-    dmProviderName: String)
-  extends Event with MVEventsInfo
-
-/**
- * For handling operation's before start of update MV status
- */
-case class UpdateMVPreExecutionEvent(
-    sparkSession: SparkSession,
-    storePath: String,
-    tableIdentifier: TableIdentifier)
-  extends Event with MVEventsInfo
-
-/**
- * For handling operation's after finish of  update MV table
- */
-case class UpdateMVPostExecutionEvent(
-    sparkSession: SparkSession,
-    storePath: String,
-    tableIdentifier: TableIdentifier)
-  extends Event with MVEventsInfo
-
-/**
  * For handling operation's before start of index build over table with index
  * example: bloom index, Lucene index
  */
