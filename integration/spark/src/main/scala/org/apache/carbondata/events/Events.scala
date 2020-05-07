@@ -195,7 +195,7 @@ trait CreateCarbonRelationEventInfo {
  */
 trait MVEventsInfo {
   val sparkSession: SparkSession
-  val storePath: String
+  val systemDirectoryPath: String
 }
 
 /**
