@@ -24,6 +24,10 @@ import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStr
 import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonPreInsertionCasts}
 import org.apache.spark.sql.parser.CarbonExtensionSqlParser
 
+/**
+ * use SparkSessionExtensions to inject Carbon's extensions.
+ * @since 2.0
+ */
 class CarbonExtensions extends (SparkSessionExtensions => Unit) {
 
   override def apply(extensions: SparkSessionExtensions): Unit = {

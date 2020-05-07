@@ -123,7 +123,7 @@ Apache Spark Shell provides a simple way to learn the API, as well as a powerful
 
 #### Basics
 
-###### Option 1: Using CarbonSession
+###### Option 1: Using CarbonSession (deprecated since 2.0)
 Start Spark shell by running the following command in the Spark directory:
 
 ```
