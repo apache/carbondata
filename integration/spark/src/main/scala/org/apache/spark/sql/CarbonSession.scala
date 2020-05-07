@@ -40,11 +40,17 @@ import org.apache.carbondata.streaming.CarbonStreamingQueryListener
  * Session implementation for {org.apache.spark.sql.SparkSession}
  * Implemented this class only to use our own SQL DDL commands.
  * User needs to use {CarbonSession.getOrCreateCarbon} to create Carbon session.
+ *
+ * @deprecated Since 2.0, only use for backward compatibility,
+ *             please switch to use {@link CarbonExtensions}.
  */
+@Deprecated
 class CarbonSession(@transient val sc: SparkContext,
     @transient private val existingSharedState: Option[SharedState],
     @transient private val useHiveMetaStore: Boolean = true
 ) extends SparkSession(sc) { self =>
+
+  logWarning("CarbonSession is deprecated since 2.0, please switch to CarbonExtensions")
 
   def this(sc: SparkContext) {
     this(sc, None)
