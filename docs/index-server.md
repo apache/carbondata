@@ -160,10 +160,10 @@ The user can enable prepriming by using 'carbon.indexserver.enable.prepriming' =
 | carbon.index.server.port | NA | The port on which the index server has to be started. |
 |carbon.index.server.max.worker.threads| 500 | Number of RPC handlers to open for accepting the requests from JDBC driver. Max accepted value is Integer.Max. Refer: [Hive configuration](https://github.com/apache/hive/blob/master/common/src/java/org/apache/hadoop/hive/conf/HiveConf.java#L3441) |
 |carbon.max.executor.lru.cache.size|  NA | Maximum memory **(in MB)** upto which the executor process can cache the data (Indexes and reverse dictionary values). Only integer values greater than 0 are accepted. **NOTE:** Mandatory for the user to set. |
-|carbon.index.server.max.jobname.length|NA|The max length of the job to show in the index server application UI. For bigger queries this may impact performance as the whole string would be sent from JDBCServer to IndexServer.|
+|carbon.index.server.max.jobname.length|50|The max length of the job to show in the index server application UI. For bigger queries this may impact performance as the whole string would be sent from JDBCServer to IndexServer.|
 |carbon.max.executor.threads.for.block.pruning|4| max executor threads used for block pruning. |
 |carbon.index.server.inmemory.serialization.threshold.inKB|300|Max in memory serialization size after reaching threshold data will be written to file. Min value that the user can set is 0KB and max is 102400KB. |
-|carbon.indexserver.temp.path|tablePath| The folder to write the split files if in memory index cache size for network transfers crossed the 'carbon.index.server.inmemory.serialization.threshold.inKB' limit.|
+|carbon.indexserver.temp.path|/tmp/indexservertmp folder| The folder to write the split files if in memory index cache size for network transfers crossed the 'carbon.index.server.inmemory.serialization.threshold.inKB' limit.|
 
 
 ##### spark-defaults.conf(only for secure mode)
