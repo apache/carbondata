@@ -130,6 +130,7 @@
     <scala.version>2.11.8</scala.version>
     <hadoop.deps.scope>compile</hadoop.deps.scope>
     <spark.version>2.3.4</spark.version>
+    <spark.binary.version>2.3</spark.binary.version>
     <spark.deps.scope>compile</spark.deps.scope>
     <scala.deps.scope>compile</scala.deps.scope>
     <dev.path>${basedir}/dev</dev.path>
@@ -548,7 +549,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>flatten-maven-plugin</artifactId>
-            <!--<version>1.2.2</version>-->
+            <version>1.2.2</version>
             <configuration>
             </configuration>
             <executions>
@@ -619,7 +620,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>flatten-maven-plugin</artifactId>
-            <!--<version>1.2.2</version>-->
+            <version>1.2.2</version>
             <configuration>
             </configuration>
             <executions>

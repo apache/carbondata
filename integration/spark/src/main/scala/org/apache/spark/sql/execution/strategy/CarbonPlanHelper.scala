@@ -18,12 +18,12 @@
 package org.apache.spark.sql.execution.strategy
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, InsertIntoCarbonTable, SparkSession}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.{ExecutedCommandExec, RunnableCommand}
-import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompactionCommand
+import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableColRenameDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.types.StructField
@@ -33,6 +33,18 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.core.util.DataTypeUtil
 
 object CarbonPlanHelper {
+
+  def insertInto(insertInto: InsertIntoCarbonTable): CarbonInsertIntoCommand = {
+    CarbonInsertIntoCommand(
+      databaseNameOp = Some(insertInto.table.carbonRelation.databaseName),
+      tableName = insertInto.table.carbonRelation.tableName,
+      options = scala.collection.immutable
+        .Map("fileheader" -> insertInto.table.tableSchema.get.fields.map(_.name).mkString(",")),
+      isOverwriteTable = insertInto.overwrite,
+      logicalPlan = insertInto.child,
+      tableInfo = insertInto.table.carbonRelation.carbonTable.getTableInfo,
+      partition = insertInto.partition.map(entry => (entry._1.toLowerCase, entry._2)))
+  }
 
   def addColumn(
       addColumnCommand: CarbonAlterTableAddColumnCommand,

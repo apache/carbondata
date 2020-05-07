@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.Strings
@@ -519,6 +519,40 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("drop table origin_csv")
   }
 
+  test("test partition column case insensitive: insert into") {
+    sql(
+      """create table cs_insert_p
+        |(id int, Name string)
+        |stored as carbondata
+        |partitioned by (c1 int, c2 int, C3 string)""".stripMargin)
+    sql("alter table cs_insert_p drop if exists partition(C1=1, C2=111, c3='2019-11-18')")
+    sql("alter table cs_insert_p add if not exists partition(C1=1, c2=111, C3='2019-11-18')")
+    sql(
+      """insert into table cs_insert_p
+        | partition(c1=3, C2=111, c3='2019-11-18')
+        | select 200, 'cc'""".stripMargin)
+    checkAnswer(sql("select count(*) from cs_insert_p"), Seq(Row(1)))
+    sql("alter table cs_insert_p drop if exists partition(C1=3, C2=111, c3='2019-11-18')")
+    checkAnswer(sql("select count(*) from cs_insert_p"), Seq(Row(0)))
+  }
+
+  test("test partition column case insensitive: load data") {
+    sql(
+      """
+        | CREATE TABLE cs_load_p (doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (empnO int, empnAme String, designaTion String)
+        | STORED AS carbondata
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE cs_load_p PARTITION(empNo='99', empName='ravi', Designation='xx')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE cs_load_p PARTITION(empno='100', emPname='indra', designation='yy')""")
+    checkAnswer(sql("show partitions cs_load_p"), Seq(
+      Row("empno=100/empname=indra/designation=yy"),
+      Row("empno=99/empname=ravi/designation=xx")))
+  }
+
   def verifyInsertForPartitionTable(tableName: String, sort_scope: String): Unit = {
     sql(s"drop table if exists $tableName")
     sql(
@@ -628,6 +662,8 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("drop table if exists restorepartition")
     sql("drop table if exists casesensitivepartition")
     sql("drop table if exists new_par")
+    sql("drop table if exists cs_insert_p")
+    sql("drop table if exists cs_load_p")
   }
 
 }
