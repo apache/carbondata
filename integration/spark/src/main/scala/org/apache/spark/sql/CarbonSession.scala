@@ -50,6 +50,8 @@ class CarbonSession(@transient val sc: SparkContext,
     @transient private val useHiveMetaStore: Boolean = true
 ) extends SparkSession(sc) { self =>
 
+  logWarning("CarbonSession is deprecated since 2.0, please switch to CarbonExtensions")
+
   def this(sc: SparkContext) {
     this(sc, None)
   }
