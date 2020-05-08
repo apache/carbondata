@@ -210,6 +210,21 @@ RESET
 | carbon.table.load.sort.scope.<db_name>.<table_name> | Overrides the SORT_SCOPE provided in CREATE TABLE.           |
 | carbon.options.global.sort.partitions     | Specifies the number of partitions to be used during global sort.   |
 | carbon.options.serialization.null.format  | Default Null value representation in the data being loaded. **NOTE:** Refer to [Data Loading Configuration](#data-loading-configuration)#carbon.options.serialization.null.format for detailed information. |
+| carbon.number.of.cores.while.loading      | Specifies number of cores to be used while loading data. **NOTE:** Refer to [Data Loading Configuration](#data-loading-configuration)#carbon.number.of.cores.while.loading for detailed information. |
+| carbon.number.of.cores.while.compacting   | Specifies number of cores to be used while compacting data. **NOTE:** Refer to [Data Loading Configuration](#data-loading-configuration)#carbon.number.of.cores.while.compacting for detailed information. |
+| enable.offheap.sort                       | To enable off-heap memory usage. **NOTE:** Refer to [Data Loading Configuration](#data-loading-configuration)#enable.offheap.sort for detailed information. |
+| carbon.blockletgroup.size.in.mb           | Specifies the size of each blocklet group. **NOTE:** Refer to [Data Loading Configuration](#data-loading-configuration)#carbon.blockletgroup.size.in.mb for detailed information. |
+| carbon.enable.auto.load.merge             | To enable compaction along with data loading. **NOTE:** Refer to [Compaction Configuration](#compaction-configuration)#carbon.enable.auto.load.merge for detailed information. |
+| carbon.major.compaction.size              | To configure major compaction size. **NOTE:** Refer to [Compaction Configuration](#compaction-configuration)#carbon.major.compaction.size for detailed information. |
+| carbon.compaction.level.threshold         | To configure compaction threshold. **NOTE:** Refer to [Compaction Configuration](#compaction-configuration)#carbon.compaction.level.threshold for detailed information. |
+| carbon.enable.vector.reader               | To enable fetching data as columnar batch of size 4*1024 rows instead of fetching a row at a time. **NOTE:** Refer to [Query Configuration](#query-configuration)#carbon.enable.vector.reader for detailed information. |
+| enable.unsafe.in.query.processing         | To enable use of unsafe functions while scanning the data during query. **NOTE:** Refer to [Query Configuration](#query-configuration)#enable.unsafe.in.query.processing for detailed information. |
+| carbon.push.rowfilters.for.vector         | To enable complete row filters handling by carbon in case of vector. **NOTE:** Refer to [Query Configuration](#query-configuration)#carbon.push.rowfilters.for.vector for detailed information. |
+| carbon.query.stage.input.enable           | To make query to include staged input files. **NOTE:** Refer to [Query Configuration](#query-configuration)#carbon.query.stage.input.enable for detailed information. |
+| carbon.input.segments.<db_name>.<table_name> | To specify the segment ids to query from the table. segments ids are separated by comma. |
+| carbon.index.visible.<db_name>.<table_name>.<index_name> | To specify query on ***db_name.table_name*** to not use the index ***index_name***. |
+| carbon.load.indexes.parallel.<db_name>.<table_name> | To enable parallel index loading for a table. when db_name.table_name are not specified, i.e., when ***carbon.load.indexes.parallel.*** is set, it applies for all the tables of the session. |
+| carbon.enable.index.server                | To use index server for caching and pruning. This property can be used for a session or for a particular table with ***carbon.enable.index.server.<db_name>.<table_name>***. |
 
 **Examples:**
 

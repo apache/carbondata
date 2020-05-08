@@ -1303,7 +1303,7 @@ public final class CarbonCommonConstants {
    * if process crashed when overwriting the table status file.
    * To protect from file corruption, user can enable this property.
    */
-  @CarbonProperty(dynamicConfigurable = true)
+  @CarbonProperty
   public static final String ENABLE_TABLE_STATUS_BACKUP = "carbon.enable.tablestatus.backup";
 
   public static final String ENABLE_TABLE_STATUS_BACKUP_DEFAULT = "false";
