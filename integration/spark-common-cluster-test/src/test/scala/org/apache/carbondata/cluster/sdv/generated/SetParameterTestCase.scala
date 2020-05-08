@@ -231,6 +231,27 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
     assert(getLogFileCount("default", "carbon_table_load", "0") >= 1)
   }
 
+  test("TC_013-test set dynamic properties") {
+    sql("SET carbon.number.of.cores.while.loading=8")
+    sql("SET carbon.number.of.cores.while.compacting=8")
+    sql("SET enable.offheap.sort=true")
+    sql("SET carbon.blockletgroup.size.in.mb=1")
+    sql("SET carbon.enable.auto.load.merge=true")
+    sql("SET carbon.major.compaction.size=1")
+    sql("SET carbon.compaction.level.threshold=3,2")
+    sql("SET carbon.enable.vector.reader=true")
+    sql("SET enable.unsafe.in.query.processing=true")
+    sql("SET carbon.push.rowfilters.for.vector=true")
+    sql("SET carbon.query.stage.input.enable=true")
+    sql("SET carbon.input.segments.default.source=*")
+    sql("SET carbon.input.segments.default.source=0,1")
+    sql("SET carbon.index.visible.default.source.bloom=true")
+    sql("SET carbon.load.indexes.parallel.default.source=true")
+    sql("SET carbon.enable.index.server=false")
+    sql("SET carbon.enable.index.server.default.source=false")
+    sql("RESET")
+  }
+
   private def getLogFileCount(dbName: String, tableName: String, segment: String): Int = {
     var path = resourcesPath + "/" + dbName + "/" + tableName + "/" + segment + "/" + segment
     val carbonFiles = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter {
