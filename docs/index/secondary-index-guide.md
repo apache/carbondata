@@ -142,12 +142,12 @@ Where there are so many small files present in the SI table, then we can use the
 compact the files within an SI segment to avoid many small files.
 
   ```
-  REFRESH INDEX sales_index
+  REFRESH INDEX sales_index ON TABLE sales
   ```
 This command merges data files in each segment of the SI table.
 
   ```
-  REFRESH INDEX sales_index WHERE SEGMENT.ID IN(1)
+  REFRESH INDEX sales_index ON TABLE sales WHERE SEGMENT.ID IN(1)
   ```
 This command merges data files within a specified segment of the SI table.
 
