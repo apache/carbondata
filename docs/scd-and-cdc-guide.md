@@ -40,79 +40,23 @@ Below API merges the datasets online and applies the actions as per the conditio
           .insertExpr(insertMap)
           .whenNotMatchedAndExistsOnlyOnTarget(<condition>)
           .delete()
-          .insertHistoryTableExpr(insertMap_d, <table_name>)
           .execute()
 ```
+
+#### MERGE API Operation Semantics
+Below is the detailed description of the `merge` API operation.
+* `merge` will merge the datasets based on a condition.
+* `whenMatched` clauses are executed when a source row matches a target table row based on the match condition.
+   These clauses have the following semantics.
+    * `whenMatched` clauses can have at most one updateExpr and one delete action. The `updateExpr` action in merge only updates the specified columns of the matched target row. The `delete` action deletes the matched row.
+    * If there are two `whenMatched` clauses, then they are evaluated in order they are specified. The first clause must have a clause condition (otherwise the second clause is never executed).
+    * If both `whenMatched` clauses have conditions and neither of the conditions are true for a matching source-target row pair, then the matched target row is left unchanged.
+* `whenNotMatched` clause is executed when a source row does not match any target row based on the match condition.
+   * `whenNotMatched` clause can have only the `insertExpr` action. The new row is generated based on the specified column and corresponding expressions. Users do not need to specify all the columns in the target table. For unspecified target columns, NULL is inserted.
+* `whenNotMatchedAndExistsOnlyOnTarget` clause is executed when row does not match source and exists only in target. This clause can have only delete action.
+
 **NOTE:** SQL syntax for merge is not yet supported.
 
-##### Example code sample to implement ccd scenario
+##### Example code to implement cdc/scd scenario
 
-```scala
-// Import dependencies.
-import scala.collection.JavaConverters._
-
-import org.apache.spark.sql._
-import org.apache.spark.sql.types.{BooleanType, IntegerType, StringType, StructField, StructType}
-import org.apache.spark.sql.CarbonSession._
-import org.apache.spark.sql.test.SparkTestQueryExecutor
-
-object TestCCD {
-  def main(args: Array[String]): Unit = {
-
-    // Create/Get sparkSession and sqlContext
-    val spark: SparkSession = SparkTestQueryExecutor.spark
-    val sqlContext: SQLContext = spark.sqlContext
-
-    // create a target data frame
-    val initDataFrame = sqlContext.sparkSession.createDataFrame(Seq(
-      Row("a", "0"),
-      Row("b", "1"),
-      Row("c", "2"),
-      Row("d", "3")
-    ).asJava, StructType(Seq(StructField("key", StringType), StructField("value", StringType))))
-
-    initDataFrame.write
-      .format("carbondata")
-      .option("tableName", "target")
-      .mode(SaveMode.Overwrite)
-      .save()
-    val target = sqlContext.read.format("carbondata").option("tableName", "target").load()
-
-    // create a cdc/scd scenario
-    var cdc =
-      sqlContext.sparkSession.createDataFrame(Seq(
-        Row("a", "10", false, 0),
-        Row("a", null, true, 1), // a was updated and then deleted
-        Row("b", null, true, 2), // b was just deleted once
-        Row("c", null, true, 3), // c was deleted and then updated twice
-        Row("c", "20", false, 4),
-        Row("c", "200", false, 5),
-        Row("e", "100", false, 6) // new key
-      ).asJava,
-        StructType(Seq(StructField("key", StringType),
-          StructField("newValue", StringType),
-          StructField("deleted", BooleanType), StructField("time", IntegerType))))
-    cdc.createOrReplaceTempView("changes")
-
-    cdc = spark.sql(
-      "SELECT key, latest.newValue as newValue, latest.deleted as deleted FROM " +
-        "( SELECT key, max(struct(time, newValue, deleted)) as latest FROM changes GROUP BY key)")
-
-    val updateMap = Map("key" -> "B.key", "value" -> "B.newValue").asInstanceOf[Map[Any, Any]]
-
-    val insertMap = Map("key" -> "B.key", "value" -> "B.newValue").asInstanceOf[Map[Any, Any]]
-
-    // merge cdc to target dataset
-    target.as("A").merge(cdc.as("B"), "A.key=B.key").
-      whenMatched("B.deleted=false").
-      updateExpr(updateMap).
-      whenNotMatched("B.deleted=false").
-      insertExpr(insertMap).
-      whenMatched("B.deleted=true").
-      delete().execute()
-
-    // run select query and check results
-    spark.sql("select * from target").show()
-  }
-}
-```
+Please refer example class [MergeTestCase](https://github.com/apache/carbondata/blob/master/integration/spark/src/test/scala/org/apache/carbondata/spark/testsuite/merge/MergeTestCase.scala) to understand and implement scd and cdc scenarios.
