@@ -42,8 +42,7 @@ import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{SegmentStatusManager, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataLoadMetrics}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.view.{MVSchema, MVStatus}
 import org.apache.carbondata.events._
@@ -177,6 +176,7 @@ case class CarbonAlterTableCompactionCommand(
         .getOrElse(CarbonCommonConstants.COMPRESSOR,
           CompressorFactory.getInstance().getCompressor.getName)
       carbonLoadModel.setColumnCompressor(columnCompressor)
+      carbonLoadModel.setMetrics(new DataLoadMetrics())
 
       var storeLocation = System.getProperty("java.io.tmpdir")
       storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()

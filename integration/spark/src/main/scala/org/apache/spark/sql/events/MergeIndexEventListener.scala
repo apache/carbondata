@@ -29,10 +29,9 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.MergeIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{ObjectSerializationUtil, OutputFilesInfoHolder}
+import org.apache.carbondata.core.util.{DataLoadMetrics, ObjectSerializationUtil}
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.events.LoadEvents.LoadTablePreStatusUpdateEvent
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
@@ -86,9 +85,9 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
               },
               currPartitionSpec = currPartitionSpecOption
             )
-            val outputFilesInfoHolder = new OutputFilesInfoHolder
-            loadModel.setOutputFilesInfoHolder(outputFilesInfoHolder)
-            loadModel.getOutputFilesInfoHolder.setMergeIndexSize(indexSize)
+            val metrics = new DataLoadMetrics
+            metrics.setMergeIndexSize(indexSize)
+            loadModel.setMetrics(metrics)
             LOGGER.info("Total time taken for merge index " +
                         (System.currentTimeMillis() - startTime))
             // clear Block dataMap Cache

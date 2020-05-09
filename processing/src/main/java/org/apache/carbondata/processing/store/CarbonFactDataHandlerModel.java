@@ -40,7 +40,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.OutputFilesInfoHolder;
+import org.apache.carbondata.core.util.DataLoadMetrics;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.index.IndexWriterListener;
@@ -160,7 +160,7 @@ public class CarbonFactDataHandlerModel {
   // this will help in knowing complex byte array will be divided into how may new pages.
   private int noDictAllComplexColumnDepth;
 
-  private OutputFilesInfoHolder outputFilesInfoHolder;
+  private DataLoadMetrics metrics;
 
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
@@ -249,8 +249,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.indexWriterlistener = listener;
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
     carbonFactDataHandlerModel.initNumberOfCores();
-    carbonFactDataHandlerModel
-        .setOutputFilesInfoHolder(configuration.getOutputFilesInfoHolder());
+    carbonFactDataHandlerModel.setMetrics(configuration.getMetrics());
     return carbonFactDataHandlerModel;
   }
 
@@ -321,7 +320,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel
         .setColumnLocalDictGenMap(CarbonUtil.getLocalDictionaryModel(carbonTable));
     carbonFactDataHandlerModel.sortScope = carbonTable.getSortScope();
-    carbonFactDataHandlerModel.setOutputFilesInfoHolder(loadModel.getOutputFilesInfoHolder());
+    carbonFactDataHandlerModel.setMetrics(loadModel.getMetrics());
     return carbonFactDataHandlerModel;
   }
 
@@ -657,12 +656,12 @@ public class CarbonFactDataHandlerModel {
     this.noDictAllComplexColumnDepth = noDictAllComplexColumnDepth;
   }
 
-  public OutputFilesInfoHolder getOutputFilesInfoHolder() {
-    return outputFilesInfoHolder;
+  public DataLoadMetrics getMetrics() {
+    return metrics;
   }
 
-  public void setOutputFilesInfoHolder(OutputFilesInfoHolder outputFilesInfoHolder) {
-    this.outputFilesInfoHolder = outputFilesInfoHolder;
+  public void setMetrics(DataLoadMetrics metrics) {
+    this.metrics = metrics;
   }
 }
 

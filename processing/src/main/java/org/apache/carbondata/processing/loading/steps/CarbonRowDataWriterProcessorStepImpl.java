@@ -418,6 +418,9 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
           carbonFactHandler.closeHandler();
         }
       }
+      if (configuration.getMetrics() != null) {
+        configuration.getMetrics().addOutputRows(rowCounter.get());
+      }
     }
   }
 }

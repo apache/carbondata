@@ -2628,25 +2628,26 @@ public final class CarbonUtil {
   public static void copyCarbonDataFileToCarbonStorePath(
       String localFilePath,
       String targetPath, long fileSizeInBytes,
-      OutputFilesInfoHolder outputFilesInfoHolder) throws CarbonDataWriterException {
+      DataLoadMetrics metrics) throws CarbonDataWriterException {
     if (targetPath.endsWith(".tmp") && localFilePath
         .endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
       // for partition case, write carbondata file directly to final path, keep index in temp path.
       // This can improve the commit job performance on s3a.
       targetPath =
           targetPath.substring(0, targetPath.lastIndexOf("/"));
-      if (outputFilesInfoHolder != null) {
-        outputFilesInfoHolder.addToPartitionPath(targetPath);
+      if (metrics != null) {
+        metrics.addToPartitionPath(targetPath);
       }
     }
     long targetSize = copyCarbonDataFileToCarbonStorePath(localFilePath, targetPath,
         fileSizeInBytes);
-    if (outputFilesInfoHolder != null) {
+    if (metrics != null) {
       // Storing the number of files written by each task.
-      outputFilesInfoHolder.incrementCount();
+      metrics.incrementCount();
       // Storing the files written by each task.
-      outputFilesInfoHolder.addToOutputFiles(targetPath + localFilePath
+      metrics.addToOutputFiles(targetPath + localFilePath
           .substring(localFilePath.lastIndexOf(File.separator)) + ":" + targetSize);
+      metrics.addOutputBytes(targetSize);
     }
   }
 

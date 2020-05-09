@@ -48,8 +48,8 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.DataLoadMetrics;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.OutputFilesInfoHolder;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.ThriftWriter;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
@@ -151,7 +151,7 @@ public class HiveCarbonUtil {
       throw new RuntimeException(e);
     }
     loadModel.setSkipParsers();
-    loadModel.setOutputFilesInfoHolder(new OutputFilesInfoHolder());
+    loadModel.setMetrics(new DataLoadMetrics());
     return loadModel;
   }
 

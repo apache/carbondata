@@ -31,7 +31,7 @@ import org.apache.carbondata.core.metadata.schema.SortColumnRangeInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.util.OutputFilesInfoHolder;
+import org.apache.carbondata.core.util.DataLoadMetrics;
 
 public class CarbonDataLoadConfiguration {
 
@@ -98,7 +98,7 @@ public class CarbonDataLoadConfiguration {
 
   private int numberOfLoadingCores;
 
-  private OutputFilesInfoHolder outputFilesInfoHolder;
+  private DataLoadMetrics metrics;
 
   /**
    * Whether index columns are present. This flag should be set only when all the schema
@@ -378,12 +378,12 @@ public class CarbonDataLoadConfiguration {
     this.segmentPath = segmentPath;
   }
 
-  public OutputFilesInfoHolder getOutputFilesInfoHolder() {
-    return outputFilesInfoHolder;
+  public DataLoadMetrics getMetrics() {
+    return metrics;
   }
 
-  public void setOutputFilesInfoHolder(OutputFilesInfoHolder outputFilesInfoHolder) {
-    this.outputFilesInfoHolder = outputFilesInfoHolder;
+  public void setMetrics(DataLoadMetrics metrics) {
+    this.metrics = metrics;
   }
 
   public boolean isIndexColumnsPresent() {

@@ -20,6 +20,7 @@ package org.apache.spark.sql.util
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.executor.OutputMetrics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
@@ -35,6 +36,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.util.DataLoadMetrics
 
 object SparkSQLUtil {
   def sessionState(sparkSession: SparkSession): SessionState = sparkSession.sessionState
@@ -166,5 +168,12 @@ object SparkSQLUtil {
      * input. Hence, using below API which creates dataframe from tablename.
      */
     sparkSession.sqlContext.table(carbonTable.getTableName)
+  }
+
+  def setOutputMetrics(outputMetrics: OutputMetrics, dataLoadMetrics: DataLoadMetrics): Unit = {
+    if (dataLoadMetrics != null && outputMetrics != null) {
+      outputMetrics.setBytesWritten(dataLoadMetrics.getNumOutputBytes)
+      outputMetrics.setRecordsWritten(dataLoadMetrics.getNumOutputRows)
+    }
   }
 }

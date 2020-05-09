@@ -21,10 +21,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OutputFilesInfoHolder implements Serializable {
-
-  private static final long serialVersionUID = -1401375818456585241L;
-
+/**
+ * store data loading metrics
+ */
+public class DataLoadMetrics implements Serializable {
   // stores the count of files written per task
   private int fileCount;
 
@@ -36,6 +36,58 @@ public class OutputFilesInfoHolder implements Serializable {
   private List<String> partitionPath;
 
   private long mergeIndexSize;
+
+  private long numOutputBytes = 0L;
+
+  private long numOutputRows = 0L;
+
+  public int getFileCount() {
+    return fileCount;
+  }
+
+  public void setFileCount(int fileCount) {
+    this.fileCount = fileCount;
+  }
+
+  public List<String> getOutputFiles() {
+    return outputFiles;
+  }
+
+  public void setOutputFiles(List<String> outputFiles) {
+    this.outputFiles = outputFiles;
+  }
+
+  public List<String> getPartitionPath() {
+    return partitionPath;
+  }
+
+  public void setPartitionPath(List<String> partitionPath) {
+    this.partitionPath = partitionPath;
+  }
+
+  public long getMergeIndexSize() {
+    return mergeIndexSize;
+  }
+
+  public void setMergeIndexSize(long mergeIndexSize) {
+    this.mergeIndexSize = mergeIndexSize;
+  }
+
+  public long getNumOutputBytes() {
+    return numOutputBytes;
+  }
+
+  public void setNumOutputBytes(long numOutputBytes) {
+    this.numOutputBytes = numOutputBytes;
+  }
+
+  public long getNumOutputRows() {
+    return numOutputRows;
+  }
+
+  public void setNumOutputRows(long numOutputRows) {
+    this.numOutputRows = numOutputRows;
+  }
 
   public synchronized void incrementCount() {
     // can call in multiple threads in single task
@@ -56,23 +108,11 @@ public class OutputFilesInfoHolder implements Serializable {
     partitionPath.add(path);
   }
 
-  public int getFileCount() {
-    return fileCount;
+  public synchronized void addOutputBytes(long numOutputBytes) {
+    this.numOutputBytes += numOutputBytes;
   }
 
-  public List<String> getOutputFiles() {
-    return outputFiles;
-  }
-
-  public List<String> getPartitionPath() {
-    return partitionPath;
-  }
-
-  public long getMergeIndexSize() {
-    return mergeIndexSize;
-  }
-
-  public void setMergeIndexSize(long mergeIndexSize) {
-    this.mergeIndexSize = mergeIndexSize;
+  public synchronized void addOutputRows(long numOutputRows) {
+    this.numOutputRows += numOutputRows;
   }
 }

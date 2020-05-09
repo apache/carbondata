@@ -28,7 +28,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
-import org.apache.carbondata.core.util.OutputFilesInfoHolder;
+import org.apache.carbondata.core.util.DataLoadMetrics;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 public class CarbonLoadModel implements Serializable {
@@ -226,7 +226,7 @@ public class CarbonLoadModel implements Serializable {
    */
   private int bucketId;
 
-  private OutputFilesInfoHolder outputFilesInfoHolder;
+  private DataLoadMetrics metrics;
 
   private boolean skipParsers = false;
 
@@ -428,7 +428,7 @@ public class CarbonLoadModel implements Serializable {
     copy.rangePartitionColumn = rangePartitionColumn;
     copy.scaleFactor = scaleFactor;
     copy.totalSize = totalSize;
-    copy.outputFilesInfoHolder = outputFilesInfoHolder;
+    copy.metrics = metrics;
     copy.isLoadWithoutConverterWithoutReArrangeStep = isLoadWithoutConverterWithoutReArrangeStep;
     return copy;
   }
@@ -482,7 +482,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.rangePartitionColumn = rangePartitionColumn;
     copyObj.scaleFactor = scaleFactor;
     copyObj.totalSize = totalSize;
-    copyObj.outputFilesInfoHolder = outputFilesInfoHolder;
+    copyObj.metrics = metrics;
     copyObj.isLoadWithoutConverterStep = isLoadWithoutConverterStep;
     copyObj.isLoadWithoutConverterWithoutReArrangeStep = isLoadWithoutConverterWithoutReArrangeStep;
     return copyObj;
@@ -881,12 +881,12 @@ public class CarbonLoadModel implements Serializable {
     return scaleFactor;
   }
 
-  public OutputFilesInfoHolder getOutputFilesInfoHolder() {
-    return outputFilesInfoHolder;
+  public DataLoadMetrics getMetrics() {
+    return metrics;
   }
 
-  public void setOutputFilesInfoHolder(OutputFilesInfoHolder outputFilesInfoHolder) {
-    this.outputFilesInfoHolder = outputFilesInfoHolder;
+  public void setMetrics(DataLoadMetrics metrics) {
+    this.metrics = metrics;
   }
 
   public boolean isIndexColumnsPresent() {

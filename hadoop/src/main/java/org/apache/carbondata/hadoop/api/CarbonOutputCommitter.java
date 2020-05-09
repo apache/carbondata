@@ -285,7 +285,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     String segmentFileName = SegmentFileStore.genSegmentFileName(
         loadModel.getSegmentId(), String.valueOf(loadModel.getFactTimeStamp()));
     newMetaEntry.setSegmentFile(segmentFileName + CarbonTablePath.SEGMENT_EXT);
-    newMetaEntry.setIndexSize("" + loadModel.getOutputFilesInfoHolder().getMergeIndexSize());
+    newMetaEntry.setIndexSize("" + loadModel.getMetrics().getMergeIndexSize());
     if (!StringUtils.isEmpty(size)) {
       newMetaEntry.setDataSize(size);
     }
