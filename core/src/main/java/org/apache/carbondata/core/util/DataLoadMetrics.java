@@ -41,28 +41,16 @@ public class DataLoadMetrics implements Serializable {
 
   private long numOutputRows = 0L;
 
-  public int getFileCount() {
+  public synchronized int getFileCount() {
     return fileCount;
   }
 
-  public void setFileCount(int fileCount) {
-    this.fileCount = fileCount;
-  }
-
-  public List<String> getOutputFiles() {
+  public synchronized List<String> getOutputFiles() {
     return outputFiles;
   }
 
-  public void setOutputFiles(List<String> outputFiles) {
-    this.outputFiles = outputFiles;
-  }
-
-  public List<String> getPartitionPath() {
+  public synchronized List<String> getPartitionPath() {
     return partitionPath;
-  }
-
-  public void setPartitionPath(List<String> partitionPath) {
-    this.partitionPath = partitionPath;
   }
 
   public long getMergeIndexSize() {
@@ -73,20 +61,12 @@ public class DataLoadMetrics implements Serializable {
     this.mergeIndexSize = mergeIndexSize;
   }
 
-  public long getNumOutputBytes() {
+  public synchronized long getNumOutputBytes() {
     return numOutputBytes;
   }
 
-  public void setNumOutputBytes(long numOutputBytes) {
-    this.numOutputBytes = numOutputBytes;
-  }
-
-  public long getNumOutputRows() {
+  public synchronized long getNumOutputRows() {
     return numOutputRows;
-  }
-
-  public void setNumOutputRows(long numOutputRows) {
-    this.numOutputRows = numOutputRows;
   }
 
   public synchronized void incrementCount() {
