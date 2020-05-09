@@ -201,8 +201,7 @@ void outputPath(char *path);
  *
  * @param argc argc argument counter, the number of projection column
  * @param argv argv is a string array of columns that needs to be sorted.
- *                  If it is null or by default all dimensions are selected for sorting
- *                  If it is empty array, no columns are sorted
+ *                  If it is null or empty array, no columns are selected for sorting.
  */
 void sortBy(int argc, char *argv[]);
 ```

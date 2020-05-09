@@ -316,8 +316,7 @@ public CarbonWriterBuilder localDictionaryThreshold(int localDictionaryThreshold
  * Sets the list of columns that needs to be in sorted order
  *
  * @param sortColumns is a string array of columns that needs to be sorted.
- *                    If it is null or by default all dimensions are selected for sorting
- *                    If it is empty array, no columns are sorted
+ *                    If it is null or empty array, no columns are selected for sorting.
  * @return updated CarbonWriterBuilder
  */
 public CarbonWriterBuilder sortBy(String[] sortColumns);
