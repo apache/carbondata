@@ -210,7 +210,7 @@ public final class DataLoadProcessBuilder {
     }
     configuration.setSkipParsers(loadModel.isSkipParsers());
     configuration.setTaskNo(loadModel.getTaskNo());
-    configuration.setOutputFilesInfoHolder(loadModel.getOutputFilesInfoHolder());
+    configuration.setMetrics(loadModel.getMetrics());
     String[] complexDelimiters = new String[loadModel.getComplexDelimiters().size()];
     loadModel.getComplexDelimiters().toArray(complexDelimiters);
     configuration

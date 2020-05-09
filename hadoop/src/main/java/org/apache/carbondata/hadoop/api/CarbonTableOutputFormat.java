@@ -38,9 +38,9 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
+import org.apache.carbondata.core.util.DataLoadMetrics;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
-import org.apache.carbondata.core.util.OutputFilesInfoHolder;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
 import org.apache.carbondata.processing.loading.ComplexDelimitersEnum;
@@ -242,7 +242,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
   public RecordWriter<NullWritable, ObjectArrayWritable> getRecordWriter(
       final TaskAttemptContext taskAttemptContext) throws IOException {
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
-    loadModel.setOutputFilesInfoHolder(new OutputFilesInfoHolder());
+    loadModel.setMetrics(new DataLoadMetrics());
     String appName =
         taskAttemptContext.getConfiguration().get(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME);
     if (null != appName) {
@@ -317,7 +317,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     model.setDatabaseName(CarbonTableOutputFormat.getDatabaseName(conf));
     model.setTableName(CarbonTableOutputFormat.getTableName(conf));
     model.setCarbonTransactionalTable(true);
-    model.setOutputFilesInfoHolder(new OutputFilesInfoHolder());
+    model.setMetrics(new DataLoadMetrics());
     CarbonTable carbonTable = getCarbonTable(conf);
 
     // global dictionary is not supported since 2.0
@@ -482,17 +482,17 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
           // clean up the folders and files created locally for data load operation
           TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
         }
-        OutputFilesInfoHolder outputFilesInfoHolder = loadModel.getOutputFilesInfoHolder();
-        if (null != outputFilesInfoHolder) {
+        DataLoadMetrics metrics = loadModel.getMetrics();
+        if (null != metrics) {
           taskAttemptContext.getConfiguration()
-              .set("carbon.number.of.output.files", outputFilesInfoHolder.getFileCount() + "");
-          if (outputFilesInfoHolder.getOutputFiles() != null) {
+              .set("carbon.number.of.output.files", metrics.getFileCount() + "");
+          if (metrics.getOutputFiles() != null) {
             appendConfiguration(taskAttemptContext.getConfiguration(), "carbon.output.files.name",
-                outputFilesInfoHolder.getOutputFiles());
+                metrics.getOutputFiles());
           }
-          if (outputFilesInfoHolder.getPartitionPath() != null) {
+          if (metrics.getPartitionPath() != null) {
             appendConfiguration(taskAttemptContext.getConfiguration(),
-                "carbon.output.partitions.name", outputFilesInfoHolder.getPartitionPath());
+                "carbon.output.partitions.name", metrics.getPartitionPath());
           }
         }
         LOG.info("Closed writer task " + taskAttemptContext.getTaskAttemptID());

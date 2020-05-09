@@ -37,6 +37,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataLoadMetrics;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
@@ -296,6 +297,8 @@ public class CarbonLoadModelBuilder {
     validateAndSetBinaryDecoder(carbonLoadModel);
 
     validateRangeColumn(optionsFinal, carbonLoadModel);
+
+    carbonLoadModel.setMetrics(new DataLoadMetrics());
   }
 
   private void validateRangeColumn(Map<String, String> optionsFinal,

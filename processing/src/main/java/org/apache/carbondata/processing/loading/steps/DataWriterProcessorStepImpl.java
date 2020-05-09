@@ -258,6 +258,9 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
           carbonFactHandler.closeHandler();
         }
       }
+      if (configuration.getMetrics() != null) {
+        configuration.getMetrics().addOutputRows(rowCounter.get());
+      }
     }
   }
 }

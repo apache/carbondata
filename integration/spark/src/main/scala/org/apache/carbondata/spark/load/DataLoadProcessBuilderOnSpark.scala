@@ -165,8 +165,10 @@ object DataLoadProcessBuilderOnSpark {
     sc.runJob(sortRDD, (context: TaskContext, rows: Iterator[CarbonRow]) => {
       setTaskListener(model.getTableName, model.getSegmentId, segmentMetaDataAccumulator)
       val loadModel = modelBroadcast.value.getCopyWithTaskNo(context.partitionId.toString)
+      loadModel.setMetrics(new DataLoadMetrics())
       DataLoadProcessorStepOnSpark.writeFunc(
         rows, context.partitionId, loadModel, writeStepRowCounter, conf.value.value)
+      SparkSQLUtil.setOutputMetrics(context.taskMetrics().outputMetrics, loadModel.getMetrics)
     })
 
     // clean cache only if persisted and keeping unpersist non-blocking as non-blocking call will
@@ -252,8 +254,10 @@ object DataLoadProcessBuilderOnSpark {
     sc.runJob(newRDD, (context: TaskContext, rows: Iterator[CarbonRow]) => {
       setTaskListener(model.getTableName, model.getSegmentId, segmentMetaDataAccumulator)
       val loadModel = modelBroadcast.value.getCopyWithTaskNo(context.partitionId.toString)
+      loadModel.setMetrics(new DataLoadMetrics())
       DataLoadProcessorStepOnSpark.writeFunc(rows, context.partitionId, loadModel,
         writeStepRowCounter, conf.value.value)
+      SparkSQLUtil.setOutputMetrics(context.taskMetrics().outputMetrics, loadModel.getMetrics)
     })
     // clean cache only if persisted and keeping unpersist non-blocking as non-blocking call will
     // not have any functional impact as spark automatically monitors the cache usage on each node

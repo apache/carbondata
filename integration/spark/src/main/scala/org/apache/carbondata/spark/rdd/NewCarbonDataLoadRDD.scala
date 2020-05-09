@@ -33,6 +33,7 @@ import org.apache.spark.serializer.SerializerInstance
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.ExecutionErrors
+import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.{CollectionAccumulator, SparkUtil}
 
 import org.apache.carbondata.common.CarbonIterator
@@ -160,6 +161,7 @@ class NewCarbonDataLoadRDD[K, V](
         executor.execute(model,
           loader.storeLocation,
           recordReaders)
+        executor.close()
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
@@ -174,6 +176,7 @@ class NewCarbonDataLoadRDD[K, V](
           LOGGER.error(e)
           throw e
       } finally {
+        SparkSQLUtil.setOutputMetrics(context.taskMetrics().outputMetrics, model.getMetrics)
         // clean up the folders and files created locally for data load operation
         TableProcessingOperations.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
@@ -316,6 +319,7 @@ class NewDataFrameLoaderRDD[K, V](
             carbonLoadModel.getTableName,
             carbonLoadModel.getSegment.getSegmentNo))
         executor.execute(model, loader.storeLocation, recordReaders.toArray)
+        executor.close()
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
@@ -328,6 +332,7 @@ class NewDataFrameLoaderRDD[K, V](
           LOGGER.error(e)
           throw e
       } finally {
+        SparkSQLUtil.setOutputMetrics(context.taskMetrics().outputMetrics, model.getMetrics)
         // clean up the folders and files created locally for data load operation
         TableProcessingOperations.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.

@@ -48,7 +48,7 @@ import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.OutputFilesInfoHolder;
+import org.apache.carbondata.core.util.DataLoadMetrics;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileWriter;
 import org.apache.carbondata.format.BlockIndex;
@@ -150,7 +150,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
 
   protected ExecutorService fallbackExecutorService;
 
-  private OutputFilesInfoHolder outputFilesInfoHolder;
+  private DataLoadMetrics metrics;
 
   public AbstractFactDataWriter(CarbonFactDataHandlerModel model) {
     this.model = model;
@@ -202,7 +202,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
           "FallbackPool:" + model.getTableName() + ", range: " + model.getBucketId(),
               true));
     }
-    this.outputFilesInfoHolder = this.model.getOutputFilesInfoHolder();
+    this.metrics = this.model.getMetrics();
   }
 
   /**
@@ -270,7 +270,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
         } else {
           if (copyInCurrentThread) {
             CarbonUtil.copyCarbonDataFileToCarbonStorePath(carbonDataFileTempPath,
-                model.getCarbonDataDirectoryPath(), fileSizeInBytes, outputFilesInfoHolder);
+                model.getCarbonDataDirectoryPath(), fileSizeInBytes, metrics);
             FileFactory.deleteFile(carbonDataFileTempPath);
           } else {
             executorServiceSubmitList
@@ -438,7 +438,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     if (!enableDirectlyWriteDataToStorePath) {
       CarbonUtil
           .copyCarbonDataFileToCarbonStorePath(indexFileName, model.getCarbonDataDirectoryPath(),
-              fileSizeInBytes, outputFilesInfoHolder);
+              fileSizeInBytes, metrics);
       FileFactory.deleteFile(indexFileName);
     }
   }
@@ -504,7 +504,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     @Override
     public Void call() throws Exception {
       CarbonUtil.copyCarbonDataFileToCarbonStorePath(fileName, model.getCarbonDataDirectoryPath(),
-          fileSizeInBytes, outputFilesInfoHolder);
+          fileSizeInBytes, metrics);
       FileFactory.deleteFile(fileName);
       return null;
     }
