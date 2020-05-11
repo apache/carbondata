@@ -103,7 +103,7 @@ class SparkCarbonFileFormat extends FileFormat
     var schema = new StructType
     val fields = tableInfo.getFactTable.getListOfColumns.asScala.map { col =>
       // TODO find better way to know its a child
-      if (!col.getColumnName.contains(".")) {
+      if (!col.isComplexColumn) {
         Some((col.getSchemaOrdinal,
           StructField(col.getColumnName,
             SparkTypeConverter.convertCarbonToSparkDataType(col, table))))

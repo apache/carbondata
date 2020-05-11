@@ -858,7 +858,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     List<String> projectColumns = new ArrayList<>();
     // complex type and add just the parent column name while skipping the child columns.
     for (ColumnSchema col : colList) {
-      if (!col.getColumnName().contains(".")) {
+      if (!col.isComplexColumn()) {
         projectColumns.add(col.getColumnName());
       }
     }

@@ -111,7 +111,7 @@ public class Util {
     List<ColumnSchema> columns = table.getTableInfo().getFactTable().getListOfColumns();
     List<ColumnSchema> validColumnSchema = new ArrayList<>();
     for (ColumnSchema column : columns) {
-      if (!column.isInvisible() && !column.getColumnName().contains(".")) {
+      if (!column.isInvisible() && !column.isIndexColumn() && !column.isComplexColumn()) {
         validColumnSchema.add(column);
       }
     }
