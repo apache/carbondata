@@ -18,7 +18,7 @@ package org.apache.carbondata.spark.testsuite.standardpartition
 
 import java.io.{File, FileWriter, IOException}
 import java.util
-import java.util.concurrent.{Callable, Executors, ExecutorService}
+import java.util.concurrent.{Callable, ExecutorService, Executors}
 
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.conf.Configuration
@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.Strings
@@ -551,6 +551,19 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     checkAnswer(sql("show partitions cs_load_p"), Seq(
       Row("empno=100/empname=indra/designation=yy"),
       Row("empno=99/empname=ravi/designation=xx")))
+  }
+
+  test("test create partition table with all the columns as partition columns") {
+    sql("drop table if exists partitionall_columns")
+    val ex = intercept[AnalysisException] {
+      sql(
+        """
+          | CREATE TABLE partitionall_columns
+          | PARTITIONED BY (empno int,empname String, designation String)
+          | STORED AS carbondata
+      """.stripMargin)
+    }
+    assert(ex.getMessage().equalsIgnoreCase("Cannot use all columns for partition columns;"))
   }
 
   def verifyInsertForPartitionTable(tableName: String, sort_scope: String): Unit = {
