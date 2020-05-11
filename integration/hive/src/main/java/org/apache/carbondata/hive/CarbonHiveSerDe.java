@@ -32,6 +32,7 @@ import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.hadoop.conf.Configuration;
@@ -115,7 +116,8 @@ public class CarbonHiveSerDe extends AbstractSerDe {
   private void inferSchema(Properties tbl, List<String> columnNames, List<TypeInfo> columnTypes) {
     if (columnNames.size() == 0 && columnTypes.size() == 0) {
       String external = tbl.getProperty("EXTERNAL");
-      String location = tbl.getProperty(hive_metastoreConstants.META_TABLE_LOCATION);
+      String location = CarbonUtil.checkAndAppendFileSystemURIScheme(
+          tbl.getProperty(hive_metastoreConstants.META_TABLE_LOCATION));
       if (external != null && "TRUE".equals(external) && location != null) {
         String[] names =
             tbl.getProperty(hive_metastoreConstants.META_TABLE_NAME).split("\\.");

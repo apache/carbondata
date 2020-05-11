@@ -22,6 +22,7 @@ import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonSource, Row, Sp
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType}
 import org.apache.spark.sql.execution.command.{CreateDataSourceTableCommand, DropTableCommand, MetadataCommand}
+import org.apache.spark.sql.execution.datasources.PartitioningUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 
@@ -66,7 +67,16 @@ case class CarbonCreateDataSourceTableCommand(
 
     val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val (tableInfo, catalogTable) = CarbonSource.createTableMeta(sparkSession, table, metaStore)
+    // Since we are creating as Hive table, if while creating hive compatible way, if it fails,then
+    // it will fall back to save its metadata in the Spark SQL specific way, so partition validation
+    // fails when we try to store in hive compatible way, so in retry it might pass, so doing the
+    // partition validation here only.
+    // Refer: org.apache.spark.sql.hive.HiveExternalCatalog.scala#createDataSourceTable
 
+    val caseSensitiveAnalysis = sparkSession.sessionState.conf.caseSensitiveAnalysis
+    PartitioningUtils.validatePartitionColumn(catalogTable.schema,
+      catalogTable.partitionColumnNames,
+      caseSensitiveAnalysis)
     val rows = try {
       CreateDataSourceTableCommand(
         catalogTable,
