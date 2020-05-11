@@ -409,27 +409,28 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     private Object[] convertToNoDictionaryToBytesWithoutReArrange(Object[] data,
         DataField[] dataFields) {
-      Object[] newData = new Object[data.length];
+      Object[] newData = new Object[dataFields.length];
       // now dictionary is removed, no need of no dictionary mapping
-      for (int i = 0; i < data.length; i++) {
+      for (int i = 0, index = 0; i < dataFields.length; i++) {
         if (dataFields[i].getColumn().isIndexColumn()) {
           continue;
         }
         if (DataTypeUtil.isPrimitiveColumn(dataTypes[i])) {
           // keep the no dictionary measure column as original data
-          newData[i] = data[i];
+          newData[i] = data[index];
         } else if (dataTypes[i].isComplexType()) {
-          getComplexTypeByteArray(newData, i, data, dataFields[i], i, true);
-        } else if (dataTypes[i] == DataTypes.DATE && data[i] instanceof Long) {
+          getComplexTypeByteArray(newData, i, data, dataFields[i], index, true);
+        } else if (dataTypes[i] == DataTypes.DATE && data[index] instanceof Long) {
           if (dateDictionaryGenerator == null) {
             dateDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
                 .getDirectDictionaryGenerator(dataTypes[i], dataFields[i].getDateFormat());
           }
-          newData[i] = dateDictionaryGenerator.generateKey((long) data[i]);
+          newData[i] = dateDictionaryGenerator.generateKey((long) data[index]);
         } else {
           newData[i] =
-              DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(data[i], dataTypes[i]);
+              DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(data[index], dataTypes[i]);
         }
+        index++;
       }
       return newData;
     }

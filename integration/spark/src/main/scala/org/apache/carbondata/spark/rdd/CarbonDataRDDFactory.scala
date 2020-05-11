@@ -374,12 +374,14 @@ object CarbonDataRDDFactory {
               .getTableInfo
               .getFactTable
               .getListOfColumns
-              .asScala.filterNot(col => col.isInvisible || col.getColumnName.contains("."))
+              .asScala
+              .filterNot(col => col.isInvisible || col.isIndexColumn || col.isComplexColumn)
             val convertedRdd = CommonLoadUtils.getConvertedInternalRow(
               colSchema,
               scanResultRdd.get,
               isGlobalSortPartition = false)
-            if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
+            if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) &&
+                !carbonLoadModel.isIndexColumnsPresent) {
               DataLoadProcessBuilderOnSpark.insertDataUsingGlobalSortWithInternalRow(sqlContext
                 .sparkSession,
                 convertedRdd,
