@@ -212,7 +212,7 @@ object CommonLoadUtils {
       options: Map[String, String]): util.Map[String, String] = {
     val tableProperties = table.getTableInfo.getFactTable.getTableProperties
     val optionsFinal = LoadOption.fillOptionWithDefaultValue(options.asJava)
-    // For legacy store, it used a different header option by default.
+    // For legacy store, it uses a different header option by default.
     EnvHelper.setDefaultHeader(SparkSQLUtil.getSparkSession, optionsFinal)
     /**
      * Priority of sort_scope assignment :
