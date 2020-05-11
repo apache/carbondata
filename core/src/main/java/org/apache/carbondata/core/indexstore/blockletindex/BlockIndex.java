@@ -794,14 +794,16 @@ public class BlockIndex extends CoarseGrainIndex
     BitSet bitSet = null;
     if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
       String uniqueBlockPath;
-      String blockId = null;
       CarbonTable carbonTable = segmentPropertiesWrapper.getCarbonTable();
       if (carbonTable.isHivePartitionTable()) {
-        uniqueBlockPath = filePath.substring(carbonTable.getTablePath().length() + 1);
         boolean isStandardTable = CarbonUtil.isStandardCarbonTable(carbonTable);
-        blockId = CarbonUtil.getBlockId(carbonTable.getAbsoluteTableIdentifier(), filePath,
-            segmentPropertiesWrapper.getSegmentId(), carbonTable.isTransactionalTable(),
-            isStandardTable, carbonTable.isHivePartitionTable());
+        // While data loading to SI created on Partition table, on partition directory, '/' will be
+        // replaced with '#', to support multi level partitioning. For example, BlockId will be
+        // look like `part1=1#part2=2/xxxxxxxxx`. During query also, blockId should be
+        // replaced by '#' in place of '/', to match and prune data on SI table.
+        uniqueBlockPath = CarbonUtil.getBlockId(carbonTable.getAbsoluteTableIdentifier(), filePath,
+                "", carbonTable.isTransactionalTable(),
+                isStandardTable, carbonTable.isHivePartitionTable());
       } else {
         uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1);
       }
@@ -810,15 +812,8 @@ public class BlockIndex extends CoarseGrainIndex
       if (blockletId != -1) {
         uniqueBlockPath = uniqueBlockPath + CarbonCommonConstants.FILE_SEPARATOR + blockletId;
       }
-      String shortBlockId;
-      if (carbonTable.isHivePartitionTable() && null != blockId) {
-        shortBlockId = CarbonTablePath.getShortBlockId(blockId);
-      } else {
-        shortBlockId = CarbonTablePath.getShortBlockId(uniqueBlockPath);
-      }
       bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
-          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath, minMaxFlag,
-              shortBlockId);
+          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath, minMaxFlag);
     } else {
       bitSet = filterExecuter.isScanRequired(maxValue, minValue, minMaxFlag);
     }

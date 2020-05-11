@@ -25,6 +25,7 @@ import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.BitSetGroup;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * This class will implement the blocklet and block pruning logic based
@@ -78,9 +79,10 @@ public class ImplicitIncludeFilterExecutorImpl
 
   @Override
   public BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
-      String uniqueBlockPath, boolean[] isMinMaxSet, String shortBlockId) {
+      String uniqueBlockPath, boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     boolean isScanRequired = false;
+    String shortBlockId = CarbonTablePath.getShortBlockId(uniqueBlockPath);
     if (uniqueBlockPath.endsWith(".carbondata")) {
       if (dimColumnEvaluatorInfo.getFilterValues().getImplicitColumnFilterBlockToBlockletsMap()
           .containsKey(shortBlockId)) {

@@ -99,8 +99,8 @@ public class SegmentPropertiesAndSchemaHolder {
   public SegmentPropertiesWrapper addSegmentProperties(CarbonTable carbonTable,
       List<ColumnSchema> columnsInTable, String segmentId) {
     SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper segmentPropertiesWrapper =
-        new SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper(carbonTable, columnsInTable,
-            segmentId);
+        new SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper(carbonTable,
+            columnsInTable);
     SegmentIdAndSegmentPropertiesIndexWrapper segmentIdSetAndIndexWrapper =
         this.segmentPropWrapperToSegmentSetMap.get(segmentPropertiesWrapper);
     if (null == segmentIdSetAndIndexWrapper) {
@@ -283,7 +283,6 @@ public class SegmentPropertiesAndSchemaHolder {
     private SegmentProperties segmentProperties;
     private List<CarbonColumn> minMaxCacheColumns;
     private CarbonTable carbonTable;
-    private String segmentId;
     // in case of hybrid store we can have block as well as blocklet schema
     // Scenario: When there is a hybrid store in which few loads are from legacy store which do
     // not contain the blocklet information and hence they will be, by default have cache_level as
@@ -298,11 +297,9 @@ public class SegmentPropertiesAndSchemaHolder {
     private CarbonRowSchema[] fileFooterEntrySchemaForBlock;
     private CarbonRowSchema[] fileFooterEntrySchemaForBlocklet;
 
-    public SegmentPropertiesWrapper(CarbonTable carbonTable, List<ColumnSchema> columnsInTable,
-        String segmentId) {
+    public SegmentPropertiesWrapper(CarbonTable carbonTable, List<ColumnSchema> columnsInTable) {
       this.carbonTable = carbonTable;
       this.columnsInTable = columnsInTable;
-      this.segmentId = segmentId;
     }
 
     public CarbonTable getCarbonTable() {
@@ -483,9 +480,6 @@ public class SegmentPropertiesAndSchemaHolder {
       return minMaxCacheColumns;
     }
 
-    public String getSegmentId() {
-      return segmentId;
-    }
   }
 
   /**

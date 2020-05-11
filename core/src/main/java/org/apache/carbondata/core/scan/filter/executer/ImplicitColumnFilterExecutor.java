@@ -35,7 +35,7 @@ public interface ImplicitColumnFilterExecutor {
    * @return
    */
   BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
-      String uniqueBlockPath, boolean[] isMinMaxSet, String shortBlockId);
+      String uniqueBlockPath, boolean[] isMinMaxSet);
 
   /**
    * This method will validate the abstract index
