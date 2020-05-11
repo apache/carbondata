@@ -162,6 +162,13 @@ case class MVCatalogInSpark(session: SparkSession)
     }
   }
 
+  /**
+   * Check and return mv having same query already present in the catalog
+   */
+  def getMVWithSameQueryPresent(query: LogicalPlan): Option[MVSchemaWrapper] = {
+    lookupSchema(query)
+  }
+
   /** Returns feasible registered mv schemas for processing the given ModularPlan. */
   private def lookupSchema(plan: LogicalPlan): Option[MVSchemaWrapper] = {
     withReadLock {
