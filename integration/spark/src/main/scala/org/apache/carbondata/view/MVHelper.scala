@@ -289,8 +289,8 @@ object MVHelper {
             if (null != relation) {
               relatedFields += RelatedFieldWrapper(
                 relation.database,
-                reference.name,
-                relation.identifier.table)
+                relation.identifier.table,
+                reference.name)
             }
         }
         findDuplicateColumns(fieldColumnsMap, alias.sql, columns, true)
