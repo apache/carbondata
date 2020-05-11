@@ -18,6 +18,8 @@ limitations under the License.
 
 -->
 
+# Carbon Flink Integration Guide
+
 ## Usage scenarios
   
   A typical scenario is that the data is cleaned and preprocessed by Flink, and then written to Carbon, 
@@ -44,7 +46,7 @@ limitations under the License.
 
 ### Writing process
 
-  Typical flink stream: Source -> Process -> Output(Carbon Writer Sink)
+  Typical flink stream: `Source -> Process -> Output(Carbon Writer Sink)`
   
   Pseudo code and description: 
   
