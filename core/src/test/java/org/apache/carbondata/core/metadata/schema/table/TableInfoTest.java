@@ -127,7 +127,7 @@ public class TableInfoTest extends TestCase {
         + "\"tableProperties\":{\"sort_columns\":\"c1\",\"comment\":\"\","
         + "\"local_dictionary_enable\":\"true\"}},\"lastUpdatedTime\":1530534235537,"
         + "\"tablePath\":\"/store/carbonversion_1_1/testinttype1\","
-        + "\"isTransactionalTable\":true,\"dataMapSchemaList\":[],"
+        + "\"isTransactionalTable\":true,"
         + "\"parentRelationIdentifiers\":[],\"isSchemaModified\":false}");
     TableInfo tableInfo = CarbonUtil.convertGsonToTableInfo(properties);
     // the schema evolution should not be null
@@ -164,42 +164,7 @@ public class TableInfoTest extends TestCase {
         + "\":[{\"timeStamp\":1531389794988,\"added\":[],\"removed\":[]}]},"
         + "\"tableProperties\":{\"sort_columns\":\"c1\",\"comment\":\"\"}},"
         + "\"lastUpdatedTime\":1531389794988,\"tablePath\":"
-        + "\"/opt/store/carbonversion_1_3/testinttype3\",\"dataMapSchemaList\":"
-        + "[{\"dataMapName\":\"dm1\",\"className\":"
-        + "\"org.apache.carbondata.core.datamap.AggregateDataMap\","
-        + "\"relationIdentifier\":{\"databaseName\":\"carbonversion_1_3\","
-        + "\"tableName\":\"testinttype3_dm1\",\"tableId\":"
-        + "\"97ccae02-c821-4601-a782-69e715671419\"},\"childSchema\":"
-        + "{\"tableId\":\"97ccae02-c821-4601-a782-69e715671419\",\"tableName\":"
-        + "\"testinttype3_dm1\",\"listOfColumns\":[{\"dataType\":{\"id\":0,"
-        + "\"precedenceOrder\":0,\"name\":\"STRING\",\"sizeInBytes\":-1},"
-        + "\"columnName\":\"testinttype3_c1\",\"columnUniqueId\":"
-        + "\"e72ec46b-f41d-43e8-82d9-9b44714a3f36\",\"columnReferenceId\":"
-        + "\"e72ec46b-f41d-43e8-82d9-9b44714a3f36\",\"isColumnar\":true,\"encodingList"
-        + "\":[\"INVERTED_INDEX\"],\"isDimensionColumn\":true,\"columnGroupId\":-1,"
-        + "\"scale\":-1,\"precision\":-1,\"schemaOrdinal\":0,\"numberOfChild\":0,"
-        + "\"invisible\":false,\"isSortColumn\":true,\"aggFunction\":\"\","
-        + "\"parentColumnTableRelations\":[{\"relationIdentifier\":{\"databaseName\":"
-        + "\"carbonversion_1_3\",\"tableName\":\"testinttype3\",\"tableId\":"
-        + "\"453fa0dd-721d-41b7-9378-f6d6122daf36\"},\"columnId\":"
-        + "\"c84e7e3b-5682-4b46-8c72-0f2f341a0a49\",\"columnName\":\"c1\"}],"
-        + "\"timeSeriesFunction\":\"\"},{\"dataType\":{\"id\":7,\"precedenceOrder\":5,"
-        + "\"name\":\"LONG\",\"sizeInBytes\":8},\"columnName\":\"testinttype3_c2_sum\","
-        + "\"columnUniqueId\":\"4d77c528-c830-4f8b-943b-bac9ee9f9af7\",\"columnReferenceId"
-        + "\":\"4d77c528-c830-4f8b-943b-bac9ee9f9af7\",\"isColumnar\":true,\"encodingList"
-        + "\":[],\"isDimensionColumn\":false,\"columnGroupId\":-1,\"scale\":-1,\"precision"
-        + "\":-1,\"schemaOrdinal\":1,\"numberOfChild\":0,\"invisible\":false,\"isSortColumn"
-        + "\":false,\"aggFunction\":\"sum\",\"parentColumnTableRelations\":"
-        + "[{\"relationIdentifier\":{\"databaseName\":\"carbonversion_1_3\",\"tableName"
-        + "\":\"testinttype3\",\"tableId\":\"453fa0dd-721d-41b7-9378-f6d6122daf36\"},"
-        + "\"columnId\":\"008dc283-beca-4a3e-ad40-b7916aa67795\",\"columnName\":\"c2\"}],"
-        + "\"timeSeriesFunction\":\"\"}],\"schemaEvalution\":{\"schemaEvolutionEntryList\":"
-        + "[{\"timeStamp\":1531389797829,\"added\":[],\"removed\":[]}]},\"tableProperties\""
-        + ":{\"sort_scope\":\"LOCAL_SORT\",\"sort_columns\":\"testinttype3_c1\","
-        + "\"table_blocksize\":\"1024\",\"comment\":\"\"}},\"properties\":"
-        + "{\"QUERYTYPE\":\"AGGREGATION\",\"CHILD_SELECT QUERY\":"
-        + "\"c2VsZWN0IGMxLCBzdW0oYzIpIGZyb20gdGVzdGludHR5cGUzIGdyb3VwIGJ5IGMx\"}}],"
-        + "\"parentRelationIdentifiers\":[],\"isSchemaModified\":false}");
+        + "\"/opt/store/carbonversion_1_3/testinttype3\"}");
     TableInfo tableInfo = CarbonUtil.convertGsonToTableInfo(properties);
     // the schema evolution should not be null
     assertTrue(null != tableInfo.getFactTable());

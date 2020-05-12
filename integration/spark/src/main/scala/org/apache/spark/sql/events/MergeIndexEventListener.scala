@@ -97,7 +97,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
             loadModel.setMetrics(metrics)
             LOGGER.info("Total time taken for merge index " +
                         (System.currentTimeMillis() - startTime))
-            // clear Block dataMap Cache
+            // clear Block index Cache
             MergeIndexUtil.clearBlockIndexCache(carbonTable, Seq(loadModel.getSegmentId))
           }
         }
@@ -155,7 +155,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
                 readFileFooterFromCarbonDataFile = true)
               LOGGER.info("Total time taken for merge index "
                           + (System.currentTimeMillis() - startTime) + "ms")
-              // clear Block dataMap Cache
+              // clear Block index Cache
               MergeIndexUtil.clearBlockIndexCache(carbonMainTable, segmentsToMerge)
               val requestMessage = "Compaction request completed for table " +
                 s"${ carbonMainTable.getDatabaseName }.${ carbonMainTable.getTableName }"

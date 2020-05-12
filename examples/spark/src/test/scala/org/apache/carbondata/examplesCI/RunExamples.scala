@@ -104,7 +104,7 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
     TableLevelCompactionOptionExample.exampleBody(spark)
   }
 
-  test("LuceneDataMapExample") {
+  test("LuceneIndexExample") {
     LuceneIndexExample.exampleBody(spark)
   }
 

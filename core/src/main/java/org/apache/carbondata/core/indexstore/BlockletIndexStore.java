@@ -248,7 +248,7 @@ public class BlockletIndexStore
   @Override
   public void put(TableBlockIndexUniqueIdentifierWrapper tableBlockIndexUniqueIdentifierWrapper,
       BlockletIndexWrapper wrapper) throws IOException {
-    // As dataMap will use unsafe memory, it is not recommended to overwrite an existing entry
+    // As index will use unsafe memory, it is not recommended to overwrite an existing entry
     // as in that case clearing unsafe memory need to be taken card. If at all index entry
     // in the cache need to be overwritten then use the invalidate interface
     // and then use the put interface

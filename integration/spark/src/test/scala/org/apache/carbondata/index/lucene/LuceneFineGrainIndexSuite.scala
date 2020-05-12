@@ -39,7 +39,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     CarbonCommonConstants.USE_DISTRIBUTED_INDEX,
     CarbonCommonConstants.USE_DISTRIBUTED_INDEX_DEFAULT
   )
-  val file2 = resourcesPath + "/datamap_input.csv"
+  val file2 = resourcesPath + "/index_input.csv"
 
   override protected def beforeAll(): Unit = {
     sql("drop database if exists lucene cascade")
@@ -786,7 +786,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
 
   test("test lucene index on null values") {
     sql("DROP TABLE IF EXISTS index_test4")
-    sql("DROP TABLE IF EXISTS datamap_copy")
+    sql("DROP TABLE IF EXISTS index_copy")
     sql(
       """
         | CREATE TABLE index_test4(id INT, name STRING, city STRING, age INT)
@@ -796,7 +796,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       """
-        | CREATE TABLE datamap_copy(id INT, name STRING, city STRING, age INT)
+        | CREATE TABLE index_copy(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT',
         | 'CACHE_LEVEL'='BLOCKLET')
@@ -804,7 +804,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("insert into index_test4 select 1,'name','city',20")
     sql("insert into index_test4 select 2,'name1','city1',20")
     sql("insert into index_test4 select 25,cast(null as string),'city2',NULL")
-    sql("insert into datamap_copy select * from index_test4")
+    sql("insert into index_copy select * from index_test4")
     sql(
       s"""
          | CREATE INDEX dm4
@@ -812,9 +812,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
          | AS 'lucene'
       """.stripMargin)
     checkAnswer(sql("SELECT * FROM index_test4 WHERE TEXT_MATCH('name:n*')"),
-      sql(s"select * from datamap_copy where name like '%n%'"))
+      sql(s"select * from index_copy where name like '%n%'"))
     sql("drop table index_test4")
-    sql("drop table datamap_copy")
+    sql("drop table index_copy")
   }
 
   test("test create index: unable to create same index for one column") {
@@ -881,7 +881,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS index_test4")
     sql("DROP TABLE IF EXISTS index_test5")
     sql("DROP TABLE IF EXISTS index_test7")
-    sql("DROP TABLE IF EXISTS datamap_main")
+    sql("DROP TABLE IF EXISTS index_main")
     sql("DROP TABLE IF EXISTS table_stop")
     sql("use default")
     sql("drop database if exists lucene cascade")
