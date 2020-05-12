@@ -186,7 +186,7 @@ case class CarbonMergeDataSetCommand(
     CarbonInsertIntoWithDf(
       databaseNameOp = Some(carbonTable.getDatabaseName),
       tableName = carbonTable.getTableName,
-      options = Map(("fileheader" -> header)),
+      options = Map("fileheader" -> header, "sort_scope" -> "nosort"),
       isOverwriteTable = false,
       dataFrame = loadDF.select(tableCols.map(col): _*),
       updateModel = updateTableModel,
@@ -267,7 +267,7 @@ case class CarbonMergeDataSetCommand(
         StructField(status_on_mergeds, IntegerType)))
     val factory =
       new SparkCarbonFileFormat().prepareWrite(sparkSession, job,
-        carbonTable.getTableInfo.getFactTable.getTableProperties.asScala.toMap, schema)
+        Map(), schema)
     val config = SparkSQLUtil.broadCastHadoopConf(sparkSession.sparkContext, job.getConfiguration)
     (frame.rdd.coalesce(DistributionUtil.getConfiguredExecutors(sparkSession.sparkContext)).
       mapPartitionsWithIndex { case (index, iter) =>

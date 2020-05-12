@@ -141,6 +141,8 @@ object CDCExample {
         .write
         .format("carbondata")
         .option("tableName", "target")
+        .option("sort_scope", "global_sort")
+        .option("sort_column", "id")
         .mode(SaveMode.Overwrite)
         .save()
     }
