@@ -41,13 +41,10 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.util.CarbonProperties
-
 class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
 
   val tableName = "test_flink_partition"
-  val rootPath = System.getProperty("user.dir") + "/target/test-classes"
-  val dataTempPath = rootPath + "/data/temp/"
+  val dataTempPath = targetTestClass + "/data/temp/"
 
   test("Writing flink data to local partition carbon table") {
     createPartitionTable
@@ -153,8 +150,8 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
       checkAnswer(sql("select count(*) from si_1"), Seq(Row(10))  )
       checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(10)))
       // check if query hits si
-      val df = sql(s"select count(intField) from $tableName where stringField1 = 'si1'")
-      checkAnswer(df, Seq(Row(1)))
+      val df = sql(s"select stringField, intField from $tableName where stringField1 = 'si1'")
+      checkAnswer(df, Seq(Row("test1", 1)))
       var isFilterHitSecondaryIndex = false
       df.queryExecution.sparkPlan.transform {
         case broadCastSIFilterPushDown: BroadCastSIFilterPushJoin =>
@@ -208,7 +205,6 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
         data(2) = 12345.asInstanceOf[AnyRef]
         data(3) = "si" + index
         data(4) = Integer.toString(TestSource.randomCache.get().nextInt(24))
-        data(5) = "20191218"
         data
       }
 
@@ -225,8 +221,8 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
       s"""
          | CREATE TABLE $tableName (stringField string, intField int, shortField short, stringField1 string)
          | STORED AS carbondata
-         | PARTITIONED BY (hour_ string, date_ string)
-         | TBLPROPERTIES ('SORT_COLUMNS'='hour_,date_,stringField', 'SORT_SCOPE'='GLOBAL_SORT')
+         | PARTITIONED BY (hour_ string)
+         | TBLPROPERTIES ('SORT_COLUMNS'='hour_,stringField', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
   }
 

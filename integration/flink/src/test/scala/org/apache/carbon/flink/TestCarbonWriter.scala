@@ -42,8 +42,7 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
 
   val tableName = "test_flink"
   val bucketTableName = "insert_bucket_table"
-  val rootPath: String = System.getProperty("user.dir") + "/target/test-classes"
-  val dataTempPath: String = rootPath + "/data/temp/"
+  val dataTempPath: String = targetTestClass + "/data/temp/"
 
   test("Writing flink data to local carbon table") {
     createTable
@@ -184,8 +183,8 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
       checkAnswer(sql("select count(*) from si_1"), Seq(Row(1000)))
       checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(1000)))
       // check if query hits si
-      val df = sql(s"select count(intField) from $tableName where stringField1 = 'si12'")
-      checkAnswer(df, Seq(Row(1)))
+      val df = sql(s"select stringField, intField from $tableName where stringField1 = 'si12'")
+      checkAnswer(df, Seq(Row("test12", 12)))
       var isFilterHitSecondaryIndex = false
       df.queryExecution.sparkPlan.transform {
         case broadCastSIFilterPushDown: BroadCastSIFilterPushJoin =>
