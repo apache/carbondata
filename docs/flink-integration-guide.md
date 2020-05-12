@@ -21,15 +21,10 @@ limitations under the License.
 # Carbon Flink Integration Guide
 
 ## Usage scenarios
-  
-  A typical scenario is that the data is cleaned and preprocessed by Flink, and then written to Carbon, 
-  for subsequent analysis and queries. 
 
-  The CarbonData flink integration module is used to connect Flink and Carbon in the above scenario.
-
-  The CarbonData flink integration module provides a set of Flink BulkWriter implementations 
-  (CarbonLocalWriter and CarbonS3Writer). The data is processed by the Flink, and finally written into 
-  the stage directory of the target table by the CarbonXXXWriter. 
+  The CarbonData flink integration module is used to connect Flink and Carbon. The module provides 
+  a set of Flink BulkWriter implementations (CarbonLocalWriter and CarbonS3Writer). The data is processed 
+  by the Flink, and finally written into the stage directory of the target table by the CarbonXXXWriter. 
 
   By default, those data in table stage directory, can not be immediately queried, those data can be queried 
   after the `INSERT INTO $tableName STAGE` command is executed.
@@ -41,6 +36,9 @@ limitations under the License.
   The execution interval of the insert form stage command should take the data visibility requirements 
   of the actual business and the flink data traffic. When the data visibility requirements are high 
   or the data traffic is large, the execution interval should be appropriately shortened.
+  
+  A typical scenario is that the data is cleaned and preprocessed by Flink, and then written to Carbon, 
+  for subsequent analysis and queries. 
 
 ## Usage description
 
