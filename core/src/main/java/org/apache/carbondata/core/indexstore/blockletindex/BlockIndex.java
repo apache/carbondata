@@ -796,14 +796,12 @@ public class BlockIndex extends CoarseGrainIndex
       String uniqueBlockPath;
       CarbonTable carbonTable = segmentPropertiesWrapper.getCarbonTable();
       if (carbonTable.isHivePartitionTable()) {
-        boolean isStandardTable = CarbonUtil.isStandardCarbonTable(carbonTable);
         // While data loading to SI created on Partition table, on partition directory, '/' will be
         // replaced with '#', to support multi level partitioning. For example, BlockId will be
         // look like `part1=1#part2=2/xxxxxxxxx`. During query also, blockId should be
         // replaced by '#' in place of '/', to match and prune data on SI table.
-        uniqueBlockPath = CarbonUtil.getBlockId(carbonTable.getAbsoluteTableIdentifier(), filePath,
-                "", carbonTable.isTransactionalTable(),
-                isStandardTable, carbonTable.isHivePartitionTable());
+        uniqueBlockPath = CarbonUtil
+            .getBlockId(carbonTable.getAbsoluteTableIdentifier(), filePath, "", true, false, true);
       } else {
         uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1);
       }
