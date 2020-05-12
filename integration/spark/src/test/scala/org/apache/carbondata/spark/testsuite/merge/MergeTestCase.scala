@@ -83,6 +83,57 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     (dwSelframe, odsframe)
   }
 
+  private def initializeGloabalSort = {
+    val initframe = generateData(10)
+    initframe.write
+      .format("carbondata")
+      .option("tableName", "order")
+      .option("sort_scope", "global_sort")
+      .option("sort_columns", "id")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    val dwframe = sqlContext.read.format("carbondata").option("tableName", "order").load()
+    val dwSelframe = dwframe.as("A")
+
+    val odsframe = generateFullCDC(10, 2, 2, 1, 2).as("B")
+    (dwSelframe, odsframe)
+  }
+
+  private def initializeLocalSort = {
+    val initframe = generateData(10)
+    initframe.write
+      .format("carbondata")
+      .option("tableName", "order")
+      .option("sort_scope", "local_sort")
+      .option("sort_columns", "id")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    val dwframe = sqlContext.read.format("carbondata").option("tableName", "order").load()
+    val dwSelframe = dwframe.as("A")
+
+    val odsframe = generateFullCDC(10, 2, 2, 1, 2).as("B")
+    (dwSelframe, odsframe)
+  }
+
+  private def initializeNoSortWithSortColumns = {
+    val initframe = generateData(10)
+    initframe.write
+      .format("carbondata")
+      .option("tableName", "order")
+      .option("sort_scope", "no_sort")
+      .option("sort_columns", "id")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    val dwframe = sqlContext.read.format("carbondata").option("tableName", "order").load()
+    val dwSelframe = dwframe.as("A")
+
+    val odsframe = generateFullCDC(10, 2, 2, 1, 2).as("B")
+    (dwSelframe, odsframe)
+  }
+
   private def initializePartition = {
     val initframe = generateData(10)
     initframe.write
@@ -139,6 +190,54 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       col("A.state") =!= col("B.state")).updateExpr(updateMap).execute()
 
     checkAnswer(sql("select price from order where where state = 2"), Seq(Row(22500), Row(30000)))
+    checkAnswer(sql("select count(*) from order where state = 2"), Seq(Row(2)))
+  }
+
+  test("test basic merge into the globalsort table") {
+    sql("drop table if exists order")
+    val (dwSelframe, odsframe) = initializeGloabalSort
+
+    val updateMap = Map("id" -> "A.id",
+      "name" -> "B.name",
+      "c_name" -> "B.c_name",
+      "quantity" -> "B.quantity",
+      "price" -> "B.price",
+      "state" -> "B.state").asInstanceOf[Map[Any, Any]]
+
+    dwSelframe.merge(odsframe, col("A.id").equalTo(col("B.id"))).whenMatched(
+      col("A.state") =!= col("B.state")).updateExpr(updateMap).execute()
+    checkAnswer(sql("select count(*) from order where state = 2"), Seq(Row(2)))
+  }
+
+  test("test basic merge into the localsort table") {
+    sql("drop table if exists order")
+    val (dwSelframe, odsframe) = initializeLocalSort
+
+    val updateMap = Map("id" -> "A.id",
+      "name" -> "B.name",
+      "c_name" -> "B.c_name",
+      "quantity" -> "B.quantity",
+      "price" -> "B.price",
+      "state" -> "B.state").asInstanceOf[Map[Any, Any]]
+
+    dwSelframe.merge(odsframe, col("A.id").equalTo(col("B.id"))).whenMatched(
+      col("A.state") =!= col("B.state")).updateExpr(updateMap).execute()
+    checkAnswer(sql("select count(*) from order where state = 2"), Seq(Row(2)))
+  }
+
+  test("test basic merge into the nosort table with sortcolumns") {
+    sql("drop table if exists order")
+    val (dwSelframe, odsframe) = initializeNoSortWithSortColumns
+
+    val updateMap = Map("id" -> "A.id",
+      "name" -> "B.name",
+      "c_name" -> "B.c_name",
+      "quantity" -> "B.quantity",
+      "price" -> "B.price",
+      "state" -> "B.state").asInstanceOf[Map[Any, Any]]
+
+    dwSelframe.merge(odsframe, col("A.id").equalTo(col("B.id"))).whenMatched(
+      col("A.state") =!= col("B.state")).updateExpr(updateMap).execute()
     checkAnswer(sql("select count(*) from order where state = 2"), Seq(Row(2)))
   }
 
@@ -459,12 +558,12 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists customers")
 
     val initframe =
-    sqlContext.sparkSession.createDataFrame(Seq(
-      Row(1, "old address for 1", false, null, Date.valueOf("2018-02-01")),
-      Row(1, "current address for 1", true, Date.valueOf("2018-02-01"), null),
-      Row(2, "current address for 2", true, Date.valueOf("2018-02-01"), null),
-      Row(3, "current address for 3", true, Date.valueOf("2018-02-01"), null)
-    ).asJava, StructType(Seq(StructField("customerId", IntegerType), StructField("address", StringType), StructField("current", BooleanType), StructField("effectiveDate", DateType), StructField("endDate", DateType))))
+      sqlContext.sparkSession.createDataFrame(Seq(
+        Row(1, "old address for 1", false, null, Date.valueOf("2018-02-01")),
+        Row(1, "current address for 1", true, Date.valueOf("2018-02-01"), null),
+        Row(2, "current address for 2", true, Date.valueOf("2018-02-01"), null),
+        Row(3, "current address for 3", true, Date.valueOf("2018-02-01"), null)
+      ).asJava, StructType(Seq(StructField("customerId", IntegerType), StructField("address", StringType), StructField("current", BooleanType), StructField("effectiveDate", DateType), StructField("endDate", DateType))))
     initframe.printSchema()
     initframe.write
       .format("carbondata")
