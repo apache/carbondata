@@ -162,8 +162,11 @@ case class CarbonCreateMVCommand(
     val logicalPlan = MVHelper.dropDummyFunction(
       MVQueryParser.getQueryPlan(queryString, session))
       // check if mv with same query already exists
-    if (viewCatalog.isMVWithSameQueryPresent(logicalPlan)) {
-      throw new MalformedMVCommandException("MV with same query already exists")
+    val mvSchemaWrapper = viewCatalog.getMVWithSameQueryPresent(logicalPlan)
+    if (mvSchemaWrapper.nonEmpty) {
+      val mvWithSameQuery = mvSchemaWrapper.get.viewSchema.getIdentifier.getTableName
+      throw new MalformedMVCommandException(
+        s"MV with the name `$mvWithSameQuery` has been already created with the same query")
     }
     val modularPlan = checkQuery(logicalPlan)
     val viewSchema = getOutputSchema(logicalPlan)

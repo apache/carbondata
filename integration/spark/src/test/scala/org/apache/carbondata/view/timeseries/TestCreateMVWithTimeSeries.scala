@@ -213,7 +213,7 @@ class TestCreateMVWithTimeSeries extends QueryTest with BeforeAndAfterAll {
     sql("drop materialized view if exists mv2")
     intercept[MalformedMVCommandException] {
       sql("create materialized view mv2 as select timeseries(projectjoindate,'Second'), sum(projectcode) from maintable group by timeseries(projectjoindate,'Second')")
-    }.getMessage.contains("MV with same query already exists")
+    }.getMessage.contains("MV with the name `mv1` has been already created with the same query")
     sql("drop materialized view if exists mv1")
   }
 
