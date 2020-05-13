@@ -187,6 +187,16 @@ class ShowSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     dropTable(tableName)
   }
 
+  test("test for load time and format name") {
+    sql("drop table if exists a")
+    sql("create table a(a string) stored as carbondata")
+    sql("insert into a select 'k'")
+    val rows = sql("show segments for table a").collect()
+    assert(rows(0).getString(3).replace("S", "").toDouble > 0)
+    assert(rows(0).getString(7).equalsIgnoreCase("columnar_v3"))
+    sql("drop table if exists a")
+  }
+
   private def insertTestDataIntoTable(tableName: String) = {
     sql(s"insert into ${ tableName } select 'abc1',1")
     sql(s"insert into ${ tableName } select 'abc2',2")
