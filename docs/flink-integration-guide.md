@@ -137,6 +137,12 @@ limitations under the License.
 
 ## Usage Example Code
 
+  Create target table.
+  
+  ```sql
+    CREATE TABLE test (col1 string, col2 string, col3 string) STORED AS carbondata
+  ```
+
   Writing flink data to local carbon table.
 
   ```scala
