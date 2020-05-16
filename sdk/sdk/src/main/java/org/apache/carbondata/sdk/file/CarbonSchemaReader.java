@@ -259,7 +259,7 @@ public class CarbonSchemaReader {
     List<ColumnSchema> schemaList = reader.readSchema();
     for (int i = 0; i < schemaList.size(); i++) {
       ColumnSchema columnSchema = schemaList.get(i);
-      if (!(columnSchema.getColumnName().contains("."))) {
+      if (!(columnSchema.isComplexColumn())) {
         columnSchemaList.add(columnSchema);
       }
     }

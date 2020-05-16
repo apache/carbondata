@@ -2,12 +2,14 @@ package org.apache.carbondata.geo
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
-class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfter {
+class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
+  val table1 = "geoTable1"
+  val table2 = "geotable2"
   override def beforeAll(): Unit = {
     drop()
   }
@@ -70,7 +72,7 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfter {
     createTable()
     loadData()
     // Test if index handler column is added as a sort column
-    val descTable = sql("describe formatted geotable").collect
+    val descTable = sql(s"describe formatted $table1").collect
     descTable.find(_.get(0).toString.contains("Sort Scope")) match {
       case Some(row) => assert(row.get(1).toString.contains("LOCAL_SORT"))
       case None => assert(false)
@@ -85,7 +87,7 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfter {
     createTable()
     loadData()
     checkAnswer(
-      sql(s"select longitude, latitude from geotable where IN_POLYGON('116.321011 40.123503, " +
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON('116.321011 40.123503, " +
           s"116.137676 39.947911, 116.560993 39.935276, 116.321011 40.123503')"),
       Seq(Row(116187332, 39979316),
         Row(116362699, 39942444),
@@ -95,23 +97,49 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfter {
         Row(116285807, 40084087)))
   }
 
-  after {
-    drop()
-  }
-  override def afterAll(): Unit = {
-    drop()
+  test("test insert into table select from another table") {
+    val sourceTable = table1;
+    val targetTable = table2;
+    createTable(sourceTable)
+    loadData(sourceTable)
+    createTable(targetTable)
+    sql(s"insert into  $targetTable select * from $sourceTable")
+    checkAnswer(
+      sql(s"select longitude, latitude from $targetTable where IN_POLYGON('116.321011 40.123503, " +
+          s"116.137676 39.947911, 116.560993 39.935276, 116.321011 40.123503')"),
+      Seq(Row(116187332, 39979316),
+        Row(116362699, 39942444),
+        Row(116288955, 39999101),
+        Row(116325378, 39963129),
+        Row(116337069, 39951887),
+        Row(116285807, 40084087)))
   }
 
-  def drop(): Unit = {
-    sql("drop table if exists geotable")
+  test("test insert into table select from another table with target table sort scope as global")
+  {
+    val sourceTable = table1;
+    val targetTable = table2;
+    createTable(sourceTable)
+    loadData(sourceTable)
+    createTable(targetTable, "'SORT_SCOPE'='GLOBAL_SORT',")
+    sql(s"insert into  $targetTable select * from $sourceTable")
+    checkAnswer(
+      sql(s"select longitude, latitude from $targetTable where IN_POLYGON('116.321011 40.123503, " +
+          s"116.137676 39.947911, 116.560993 39.935276, 116.321011 40.123503')"),
+      Seq(Row(116187332, 39979316),
+        Row(116362699, 39942444),
+        Row(116288955, 39999101),
+        Row(116325378, 39963129),
+        Row(116337069, 39951887),
+        Row(116285807, 40084087)))
   }
 
-  def createTable(): Unit = {
+  test("test polygon query on table partitioned by timevalue column")
+  {
     sql(s"""
-           | CREATE TABLE geotable(
-           | timevalue BIGINT,
+           | CREATE TABLE $table1(
            | longitude LONG,
-           | latitude LONG) COMMENT "This is a GeoTable"
+           | latitude LONG) COMMENT "This is a GeoTable" PARTITIONED BY (timevalue BIGINT)
            | STORED AS carbondata
            | TBLPROPERTIES ('INDEX_HANDLER'='mygeohash',
            | 'INDEX_HANDLER.mygeohash.type'='geohash',
@@ -124,10 +152,52 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfter {
            | 'INDEX_HANDLER.mygeohash.maxLatitude'='40.225281',
            | 'INDEX_HANDLER.mygeohash.conversionRatio'='1000000')
        """.stripMargin)
+    loadData()
+    checkAnswer(
+      sql(s"select longitude, latitude from $table1 where IN_POLYGON('116.321011 40.123503, " +
+          s"116.137676 39.947911, 116.560993 39.935276, 116.321011 40.123503')"),
+      Seq(Row(116187332, 39979316),
+        Row(116362699, 39942444),
+        Row(116288955, 39999101),
+        Row(116325378, 39963129),
+        Row(116337069, 39951887),
+        Row(116285807, 40084087)))
   }
 
-  def loadData(): Unit = {
-    sql(s"""LOAD DATA local inpath '$resourcesPath/geodata.csv' INTO TABLE geotable OPTIONS
+  override def afterEach(): Unit = {
+    drop()
+  }
+  override def afterAll(): Unit = {
+    drop()
+  }
+
+  def drop(): Unit = {
+    sql(s"drop table if exists $table1")
+    sql(s"drop table if exists $table2")
+  }
+
+  def createTable(tableName : String = table1, customProperties : String = ""): Unit = {
+    sql(s"""
+           | CREATE TABLE $tableName(
+           | timevalue BIGINT,
+           | longitude LONG,
+           | latitude LONG) COMMENT "This is a GeoTable"
+           | STORED AS carbondata
+           | TBLPROPERTIES ($customProperties 'INDEX_HANDLER'='mygeohash',
+           | 'INDEX_HANDLER.mygeohash.type'='geohash',
+           | 'INDEX_HANDLER.mygeohash.sourcecolumns'='longitude, latitude',
+           | 'INDEX_HANDLER.mygeohash.originLatitude'='39.832277',
+           | 'INDEX_HANDLER.mygeohash.gridSize'='50',
+           | 'INDEX_HANDLER.mygeohash.minLongitude'='115.811865',
+           | 'INDEX_HANDLER.mygeohash.maxLongitude'='116.782233',
+           | 'INDEX_HANDLER.mygeohash.minLatitude'='39.832277',
+           | 'INDEX_HANDLER.mygeohash.maxLatitude'='40.225281',
+           | 'INDEX_HANDLER.mygeohash.conversionRatio'='1000000')
+       """.stripMargin)
+  }
+
+  def loadData(tableName : String = table1): Unit = {
+    sql(s"""LOAD DATA local inpath '$resourcesPath/geodata.csv' INTO TABLE $tableName OPTIONS
            |('DELIMITER'= ',')""".stripMargin)
   }
 }

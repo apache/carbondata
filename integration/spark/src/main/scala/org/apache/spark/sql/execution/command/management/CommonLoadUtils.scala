@@ -558,7 +558,7 @@ object CommonLoadUtils {
       .getListOfColumns
       .asScala
     if (table.getPartitionInfo != null) {
-      colSchema = colSchema.filterNot(x => x.isInvisible || x.getColumnName.contains(".") ||
+      colSchema = colSchema.filterNot(x => x.isInvisible || x.isComplexColumn ||
                                            x.getSchemaOrdinal == -1 ||
                                            table.getPartitionInfo.getColumnSchemaList.contains(x))
       colSchema = colSchema ++ table
@@ -568,7 +568,7 @@ object CommonLoadUtils {
         .getColumnSchemaList.size()))
         .asInstanceOf[Array[ColumnSchema]]
     } else {
-      colSchema = colSchema.filterNot(x => x.isInvisible || x.getColumnName.contains(".") ||
+      colSchema = colSchema.filterNot(x => x.isInvisible || x.isComplexColumn ||
                                            x.getSchemaOrdinal == -1)
     }
     val updatedRdd: RDD[InternalRow] = CommonLoadUtils.getConvertedInternalRow(

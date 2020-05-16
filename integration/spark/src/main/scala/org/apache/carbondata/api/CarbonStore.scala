@@ -115,9 +115,9 @@ object CarbonStore {
       "NA"
     } else {
       Duration.between(
-        Instant.ofEpochMilli(load.getLoadEndTime),
-        Instant.ofEpochMilli(load.getLoadStartTime)
-      ).toString
+        Instant.ofEpochMilli(load.getLoadStartTime),
+        Instant.ofEpochMilli(load.getLoadEndTime)
+      ).toString.replace("PT", "")
     }
   }
 

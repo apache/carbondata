@@ -42,7 +42,8 @@ case class CarbonShowSegmentsCommand(
       AttributeReference("Load Time Taken", StringType, nullable = true)(),
       AttributeReference("Partition", StringType, nullable = true)(),
       AttributeReference("Data Size", StringType, nullable = false)(),
-      AttributeReference("Index Size", StringType, nullable = false)())
+      AttributeReference("Index Size", StringType, nullable = false)(),
+      AttributeReference("File Format", StringType, nullable = false)())
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
@@ -91,7 +92,8 @@ case class CarbonShowSegmentsCommand(
           timeTaken,
           partitionString,
           Strings.formatSize(dataSize.toFloat),
-          Strings.formatSize(indexSize.toFloat))
+          Strings.formatSize(indexSize.toFloat),
+          segment.getFileFormat.toString)
       }.toSeq
   }
 }

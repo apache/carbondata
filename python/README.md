@@ -6,7 +6,7 @@ PyCarbon provides python API for integrating CarbonData with AI framework like  
 
 $ git clone https://github.com/apache/carbondata.git
 
-$ cd python/pycarbon
+$ cd python
 
 $ pip install . --user
 
@@ -14,7 +14,7 @@ $ pip install . --user
 ## how to use
 
 if you have a CarbonData dataset, you can use PyCarbon to read data. For the generation of CarbonData dataset, you can see the examples:
-`generate_dataset_carbon.py` in tests/hello_world/dataset_with_unischema.
+`generate_dataset_carbon.py` in pycarbon/tests/hello_world/dataset_with_unischema.
 But user should do some config first:
 
  - config pyspark and add carbon assembly jar to pyspark/jars folder, which can be compiled from CarbonData project.
@@ -35,7 +35,7 @@ But user should do some config first:
         .write \
         .save(path=dset_output_url, format='carbon')
 ```
-some details are illustrated in `generate_pycarbon_mnist.py <https://github.com/apache/carbondata/blob/master/python/pycarbon/tests/mnist/dataset_with_unischema/generate_pycarbon_mnist.py>` in test/hello_world.
+some details are illustrated in [generate_pycarbon_mnist.py](<https://github.com/apache/carbondata/blob/master/python/pycarbon/tests/mnist/dataset_with_unischema/generate_pycarbon_mnist.py>) in pycarbon/test/hello_world.
 
 ### PyCarbon Reader API
 
@@ -107,7 +107,7 @@ def make_tensor(reader):
             print(sample.id)
 
 ```
-some details are illustrated in `tf_example_carbon_unified_api.py <https://github.com/apache/carbondata/blob/master/python/pycarbon/tests/mnist/dataset_with_unischema/tf_example_carbon_unified_api.py>` in tests/mnist. 
+some details are illustrated in [tf_example_carbon_unified_api.py](<https://github.com/apache/carbondata/blob/master/python/pycarbon/tests/mnist/dataset_with_unischema/tf_example_carbon_unified_api.py>) in pycarbon/tests/mnist. 
 
 ####  Part of result:
 
@@ -153,7 +153,7 @@ def make_data_loader(reader, batch_size=1):
       train(model, device, train_loader, args.log_interval, optimizer, epoch)
       
 ```
-some details are illustrated in `pytorch_example_carbon_unified_api.py <https://github.com/apache/carbondata/blob/master/python/pycarbon/tests/mnist/dataset_with_unischema/pytorch_example_carbon_unified_api.py>` in tests/mnist. 
+some details are illustrated in [pytorch_example_carbon_unified_api.py](<https://github.com/apache/carbondata/blob/master/python/pycarbon/tests/mnist/dataset_with_unischema/pytorch_example_carbon_unified_api.py>) in pycarbon/tests/mnist. 
 
 ####  Part of result:
 ```python
