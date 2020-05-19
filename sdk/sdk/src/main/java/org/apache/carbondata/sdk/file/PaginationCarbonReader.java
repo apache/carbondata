@@ -118,6 +118,23 @@ public class PaginationCarbonReader<T> extends CarbonReader<T> {
     return rowCountInSplits.get(rowCountInSplits.size() - 1);
   }
 
+  /**
+   * This interface is for python to call java.
+   * Because python cannot understand java Long object. so send string object.
+   *
+   * Get total rows in the folder.
+   * It is based on the snapshot of files taken while building the reader.
+   *
+   *
+   * @return total rows from all the files in the reader.
+   */
+  public String getTotalRowsAsString() {
+    if (isClosed) {
+      throw new RuntimeException("Pagination Reader is closed. please build again");
+    }
+    return (rowCountInSplits.get(rowCountInSplits.size() - 1)).toString();
+  }
+
   private static int findBlockletIndex(List<Long> summationArray2, Long key) {
     // summation array is in sorted order, so can use the binary search.
     int index = Collections.binarySearch(summationArray2, key);
@@ -191,10 +208,8 @@ public class PaginationCarbonReader<T> extends CarbonReader<T> {
           }
         } else {
           // both from and to doesn't lie in this blocklet. Read the whole blocklet.
-          for (Object row : rowsInBlocklet) {
-            // TODO: better to do array copy instead of assign ?
-            rows[rowCount++] = row;
-          }
+          System.arraycopy(rowsInBlocklet, 0, rows, rowCount, rowsInBlocklet.length);
+          rowCount += rowsInBlocklet.length;
         }
       } else {
         if (from >= fromRow) {

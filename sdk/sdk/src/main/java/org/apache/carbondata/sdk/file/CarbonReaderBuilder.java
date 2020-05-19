@@ -267,6 +267,21 @@ public class CarbonReaderBuilder {
     return this;
   }
 
+  /**
+   * This interface is for python to call java.
+   * Because python cannot use build() which returns superclass.
+   * Casting is not possible from python for java objects.
+   *
+   * If pagination reader is required then set builder for pagination support.
+   *
+   * @return CarbonReaderBuilder, current object with updated configuration.
+   */
+  public <T> PaginationCarbonReader<T> buildPaginationReader()
+      throws IOException, InterruptedException {
+    usePaginationReader = true;
+    return (PaginationCarbonReader<T>) this.build();
+  }
+
   private CarbonFileInputFormat prepareFileInputFormat(Job job, boolean enableBlockletDistribution,
       boolean disableLoadBlockIndex) throws IOException {
     if (inputSplit != null && inputSplit instanceof CarbonInputSplit) {
@@ -407,9 +422,8 @@ public class CarbonReaderBuilder {
         IndexStoreManager.getInstance().clearIndexCache(
             format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier(),
             false);
-        throw ex;
       }
-      return null;
+      throw ex;
     }
   }
 
