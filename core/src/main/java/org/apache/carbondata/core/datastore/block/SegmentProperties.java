@@ -466,6 +466,9 @@ public class SegmentProperties {
    * @return
    */
   public CarbonDimension getDimensionFromCurrentBlock(CarbonDimension queryDimension) {
+    if (queryDimension.isComplex()) {
+      return CarbonUtil.getDimensionFromCurrentBlock(this.complexDimensions, queryDimension);
+    }
     return CarbonUtil.getDimensionFromCurrentBlock(this.dimensions, queryDimension);
   }
 
