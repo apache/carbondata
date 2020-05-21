@@ -491,7 +491,7 @@ object SecondaryIndexUtil {
         for (i <- 0 until factTableDimensions.size) {
           val dim = factTableDimensions.get(i)
           if (dim.getColumnId == indexTableDimension.getColumnId) {
-            if (isDictColsAlone && dim.hasEncoding(Encoding.DICTIONARY)) {
+            if (isDictColsAlone && indexTableDimension.hasEncoding(Encoding.DICTIONARY)) {
               dims.add(i)
             } else if (!isDictColsAlone) {
               dims.add(i)

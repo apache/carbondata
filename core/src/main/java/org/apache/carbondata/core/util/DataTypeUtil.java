@@ -568,6 +568,12 @@ public final class DataTypeUtil {
         && !DataTypes.isDecimal(dataType);
   }
 
+  public static Object getDataBasedOnDataTypeForNoDictionaryColumn(byte[] dataInBytes,
+      DataType actualDataType, boolean isTimeStampConversion) {
+    return getDataBasedOnDataTypeForNoDictionaryColumn(dataInBytes, actualDataType,
+        isTimeStampConversion, false);
+  }
+
   /**
    * Wrapper for actual getDataBasedOnDataTypeForNoDictionaryColumn.
    *
@@ -577,7 +583,7 @@ public final class DataTypeUtil {
    */
   public static Object getDataBasedOnDataTypeForNoDictionaryColumn(byte[] dataInBytes,
       DataType actualDataType) {
-    return getDataBasedOnDataTypeForNoDictionaryColumn(dataInBytes, actualDataType, true);
+    return getDataBasedOnDataTypeForNoDictionaryColumn(dataInBytes, actualDataType, true, false);
   }
 
   /**
@@ -590,7 +596,7 @@ public final class DataTypeUtil {
    * @return actual data after conversion
    */
   public static Object getDataBasedOnDataTypeForNoDictionaryColumn(byte[] dataInBytes,
-      DataType actualDataType, boolean isTimeStampConversion) {
+      DataType actualDataType, boolean isTimeStampConversion, boolean getBytesData) {
     if (null == dataInBytes || Arrays
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, dataInBytes)) {
       return null;
@@ -647,6 +653,9 @@ public final class DataTypeUtil {
         }
         return dataInBytes;
       } else {
+        if (getBytesData) {
+          return dataInBytes;
+        }
         // Default action for String/Varchar
         return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
       }

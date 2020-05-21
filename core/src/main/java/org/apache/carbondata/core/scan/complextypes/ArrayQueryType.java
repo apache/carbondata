@@ -97,21 +97,39 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
 
   @Override
   public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
-    Object[] data = fillData(dataBuffer);
+    Object[] data = fillData(dataBuffer, false);
     if (data == null) {
       return null;
     }
     return DataTypeUtil.getDataTypeConverter().wrapWithGenericArrayData(data);
   }
 
-  protected Object[] fillData(ByteBuffer dataBuffer) {
+  @Override
+  public Object[] getObjectArrayDataBasedOnDataType(ByteBuffer dataBuffer) {
+    return fillData(dataBuffer, true);
+  }
+
+  @Override
+  public Object getObjectDataBasedOnDataType(ByteBuffer dataBuffer) {
+    Object[] data = fillData(dataBuffer, true);
+    if (data == null) {
+      return null;
+    }
+    return DataTypeUtil.getDataTypeConverter().wrapWithGenericArrayData(data);
+  }
+
+  protected Object[] fillData(ByteBuffer dataBuffer, boolean getBytesData) {
     int dataLength = dataBuffer.getInt();
     if (dataLength == -1) {
       return null;
     }
     Object[] data = new Object[dataLength];
     for (int i = 0; i < dataLength; i++) {
-      data[i] = children.getDataBasedOnDataType(dataBuffer);
+      if (getBytesData) {
+        data[i] = children.getObjectDataBasedOnDataType(dataBuffer);
+      } else {
+        data[i] = children.getDataBasedOnDataType(dataBuffer);
+      }
     }
     return data;
   }

@@ -41,7 +41,7 @@ public class MapQueryType extends ArrayQueryType {
    */
   @Override
   public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
-    Object[] data = fillData(dataBuffer);
+    Object[] data = fillData(dataBuffer, false);
     if (data == null) {
       return null;
     }
@@ -53,6 +53,11 @@ public class MapQueryType extends ArrayQueryType {
       valueArray[i] = keyValue[1];
     }
     return DataTypeUtil.getDataTypeConverter().wrapWithArrayBasedMapData(keyArray, valueArray);
+  }
+
+  @Override
+  public Object[] getObjectArrayDataBasedOnDataType(ByteBuffer dataBuffer) {
+    return fillData(dataBuffer, true);
   }
 
 }

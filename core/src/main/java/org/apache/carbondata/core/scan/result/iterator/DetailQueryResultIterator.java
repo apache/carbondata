@@ -33,9 +33,16 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
 
   private final Object lock = new Object();
 
+  private final BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
+
   public DetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
       ExecutorService execService) {
     super(infos, queryModel, execService);
+    if (infos.size() > 0) {
+      blockExecutionInfo
+          .setComplexColumnParentBlockIndexes(infos.get(0).getComplexColumnParentBlockIndexes());
+      blockExecutionInfo.setComplexDimensionInfoMap(infos.get(0).getComplexDimensionInfoMap());
+    }
   }
 
   @Override
@@ -52,5 +59,9 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
       }
     }
     return rowBatch;
+  }
+
+  public BlockExecutionInfo getBlockExecutionInfo() {
+    return blockExecutionInfo;
   }
 }

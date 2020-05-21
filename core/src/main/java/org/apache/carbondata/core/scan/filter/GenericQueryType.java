@@ -54,4 +54,8 @@ public interface GenericQueryType {
   Object getDataBasedOnColumnList(Map<CarbonDimension, ByteBuffer> childBuffer,
       CarbonDimension presentColumn);
 
+  Object[] getObjectArrayDataBasedOnDataType(ByteBuffer dataBuffer);
+
+  Object getObjectDataBasedOnDataType(ByteBuffer dataBuffer);
+
 }

@@ -17,8 +17,11 @@
 
 package org.apache.spark.sql.secondaryindex.query;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -26,13 +29,17 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
+import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.result.RowBatch;
+import org.apache.carbondata.core.scan.result.iterator.DetailQueryResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -222,10 +229,18 @@ public class SecondaryIndexQueryResultProcessor {
   private void processResult(List<CarbonIterator<RowBatch>> detailQueryResultIteratorList)
       throws SecondaryIndexException {
     for (CarbonIterator<RowBatch> detailQueryIterator : detailQueryResultIteratorList) {
+      DetailQueryResultIterator queryIterator = (DetailQueryResultIterator) detailQueryIterator;
+      BlockExecutionInfo blockExecutionInfo = queryIterator.getBlockExecutionInfo();
+      // get complex dimension info map from block execution info
+      Map<Integer, GenericQueryType> complexDimensionInfoMap =
+          blockExecutionInfo.getComplexDimensionInfoMap();
+      int[] complexColumnParentBlockIndexes =
+          blockExecutionInfo.getComplexColumnParentBlockIndexes();
       while (detailQueryIterator.hasNext()) {
         RowBatch batchResult = detailQueryIterator.next();
         while (batchResult.hasNext()) {
-          addRowForSorting(prepareRowObjectForSorting(batchResult.next()));
+          addRowForSorting(prepareRowObjectForSorting(batchResult.next(), complexDimensionInfoMap,
+              complexColumnParentBlockIndexes));
           isRecordFound = true;
         }
       }
@@ -243,44 +258,120 @@ public class SecondaryIndexQueryResultProcessor {
   /**
    * This method will prepare the data from raw object that will take part in sorting
    */
-  private Object[] prepareRowObjectForSorting(Object[] row) {
+  private Object[] prepareRowObjectForSorting(Object[] row,
+      Map<Integer, GenericQueryType> complexDimensionInfoMap, int[] complexColumnParentBlockIndexes)
+      throws SecondaryIndexException {
     ByteArrayWrapper wrapper = (ByteArrayWrapper) row[0];
-    // ByteBuffer[] noDictionaryBuffer = new ByteBuffer[noDictionaryCount];
+    byte[] implicitColumnByteArray = wrapper.getImplicitColumnByteArray();
 
     List<CarbonDimension> dimensions = segmentProperties.getDimensions();
     Object[] preparedRow = new Object[dimensions.size() + measureCount];
+    Map<Integer, Object[]> complexDataMap = new HashMap<>();
 
     int noDictionaryIndex = 0;
     int dictionaryIndex = 0;
+    int complexIndex = 0;
     int i = 0;
     // loop excluding last dimension as last one is implicit column.
     for (; i < dimensions.size() - 1; i++) {
       CarbonDimension dims = dimensions.get(i);
-      if (dims.hasEncoding(Encoding.DICTIONARY)) {
+      boolean isComplexColumn = false;
+      // As complex column of MainTable is stored as its primitive type in SI,
+      // we need to check if dimension is complex dimension or not based on dimension
+      // name. Check if name exists in complexDimensionInfoMap of main table result
+      if (!complexDimensionInfoMap.isEmpty() && complexColumnParentBlockIndexes.length > 0) {
+        for (GenericQueryType queryType : complexDimensionInfoMap.values()) {
+          if (queryType.getName().equalsIgnoreCase(dims.getColName())) {
+            isComplexColumn = true;
+            break;
+          }
+        }
+      }
+      // fill all the no dictionary and dictionary data to the prepared row first, fill the complex
+      // flatten data to prepared row at last
+      if (dims.hasEncoding(Encoding.DICTIONARY) && !isComplexColumn) {
         // dictionary
         preparedRow[i] = wrapper.getDictionaryKeyByIndex(dictionaryIndex++);
       } else {
-        // no dictionary dims
-        byte[] noDictionaryKeyByIndex = wrapper.getNoDictionaryKeyByIndex(noDictionaryIndex++);
-        // no dictionary primitive columns are expected to be in original data while loading,
-        // so convert it to original data
-        if (DataTypeUtil.isPrimitiveColumn(dims.getDataType())) {
-          Object dataFromBytes = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(
-              noDictionaryKeyByIndex, dims.getDataType());
-          if (null != dataFromBytes && dims.getDataType() == DataTypes.TIMESTAMP) {
-            dataFromBytes = (long) dataFromBytes / 1000L;
+        if (isComplexColumn) {
+          // get the flattened data of complex column
+          byte[] complexKeyByIndex = wrapper.getComplexKeyByIndex(complexIndex);
+          ByteBuffer byteArrayInput = ByteBuffer.wrap(complexKeyByIndex);
+          GenericQueryType genericQueryType =
+              complexDimensionInfoMap.get(complexColumnParentBlockIndexes[complexIndex++]);
+          int complexDataLength = byteArrayInput.getShort(2);
+          // In case, if array is empty
+          if (complexDataLength == 0) {
+            complexDataLength = complexDataLength + 1;
           }
-          preparedRow[i] = dataFromBytes;
+          // get flattened array data
+          Object[] complexFlattenedData = new Object[complexDataLength];
+          Object[] data = genericQueryType.getObjectArrayDataBasedOnDataType(byteArrayInput);
+          for (int index = 0; index < complexDataLength; index++) {
+            complexFlattenedData[index] =
+                getData(data, index, dims.getColumnSchema().getDataType());
+          }
+          // store the dimesnion column index and the complex column flattened data to a map
+          complexDataMap.put(i, complexFlattenedData);
         } else {
-          preparedRow[i] = noDictionaryKeyByIndex;
+          // no dictionary dims
+          byte[] noDictionaryKeyByIndex = wrapper.getNoDictionaryKeyByIndex(noDictionaryIndex++);
+          // no dictionary primitive columns are expected to be in original data while loading,
+          // so convert it to original data
+          if (DataTypeUtil.isPrimitiveColumn(dims.getDataType())) {
+            Object dataFromBytes = DataTypeUtil
+                .getDataBasedOnDataTypeForNoDictionaryColumn(noDictionaryKeyByIndex,
+                    dims.getDataType());
+            if (null != dataFromBytes && dims.getDataType() == DataTypes.TIMESTAMP) {
+              dataFromBytes = (long) dataFromBytes / 1000L;
+            }
+            preparedRow[i] = dataFromBytes;
+          } else {
+            preparedRow[i] = noDictionaryKeyByIndex;
+          }
         }
       }
     }
 
     // at last add implicit column position reference(PID)
+    preparedRow[i] = implicitColumnByteArray;
 
-    preparedRow[i] = wrapper.getImplicitColumnByteArray();
+    // In case of complex array type, get the flattened data based on dimension index and add
+    // it to the prepared row one by one and add for sorting.
+    // TODO Handle for nested array and other complex types
+    if (!complexDataMap.isEmpty()) {
+      Object[] firstRow = preparedRow;
+      for (Map.Entry<Integer, Object[]> dataEntry : complexDataMap.entrySet()) {
+        Object[] complexArrayData = dataEntry.getValue();
+        preparedRow[dataEntry.getKey()] = complexArrayData[0];
+        firstRow = preparedRow.clone();
+        if (complexArrayData.length != 1) {
+          for (int index = 1; index < complexArrayData.length; index++) {
+            preparedRow[dataEntry.getKey()] = complexArrayData[index];
+            addRowForSorting(preparedRow.clone());
+          }
+        }
+      }
+      preparedRow = firstRow;
+    }
     return preparedRow;
+  }
+
+  /**
+   * This method will return complex array primitive data
+   */
+  private Object getData(Object[] data, int index, DataType dataType) {
+    if (data.length == 0) {
+      return new byte[0];
+    } else if (data[0] == null) {
+      return CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+    }
+    if (dataType == DataTypes.TIMESTAMP && null != data[index]) {
+      return (long) data[index] / 1000L;
+    } else if (dataType == DataTypes.DATE) {
+      return (int) data[index] + DateDirectDictionaryGenerator.cutOffDate;
+    }
+    return data[index];
   }
 
   /**

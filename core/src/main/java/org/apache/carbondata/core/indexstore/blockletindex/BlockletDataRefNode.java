@@ -218,7 +218,8 @@ public class BlockletDataRefNode implements DataRefNode {
     return blockInfos.size();
   }
 
-  public List<TableBlockInfo> getBlockInfos() {
-    return blockInfos;
+  @Override
+  public TableBlockInfo getTableBlockInfo() {
+    return blockInfos.get(index);
   }
 }

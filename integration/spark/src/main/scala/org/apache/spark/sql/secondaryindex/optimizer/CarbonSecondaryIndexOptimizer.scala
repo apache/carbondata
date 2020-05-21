@@ -263,14 +263,24 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case SIUnaryFilterPushDownOperation(tableName, filterCondition) =>
         val attributeMap = indexTableAttributeMap.get(tableName).get
         var filterAttributes = indexJoinedFilterAttributes
-        val indexTableFilter = filterCondition transformDown {
+        val newFilterCondition = filterCondition transform {
+          case ArrayContains(left, right) =>
+            EqualTo(left, right)
+        }
+        val indexTableFilter = newFilterCondition transformDown {
+          case array: GetArrayItem =>
+            val attr = array.child.asInstanceOf[AttributeReference]
+            val attrNew = attributeMap.get(attr.name.toLowerCase()).get
+            filterAttributes += attr.name.toLowerCase
+            attrNew
           case attr: AttributeReference =>
             val attrNew = attributeMap.get(attr.name.toLowerCase()).get
             filterAttributes += attr.name.toLowerCase
             attrNew
         }
-        val positionReference =
-          Seq(attributeMap(CarbonCommonConstants.POSITION_REFERENCE.toLowerCase()))
+        val positionRef = attributeMap(CarbonCommonConstants.POSITION_REFERENCE.toLowerCase())
+        var positionReference = Seq(positionRef)
+
         // Add Filter on logicalRelation
         var planTransform: LogicalPlan = Filter(indexTableFilter,
           indexTableToLogicalRelationMapping(tableName))
@@ -548,6 +558,8 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
           case _ =>
             (filterTree, condition, None)
         }
+      case And(ArrayContains(_, _), ArrayContains(_, _)) =>
+        (filterTree, condition, None)
       case and@And(left, right) =>
         val (newSIFilterTreeLeft, newLeft, tableNameLeft) =
           createIndexTableFilterCondition(
