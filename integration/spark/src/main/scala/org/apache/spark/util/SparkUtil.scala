@@ -20,6 +20,7 @@ package org.apache.spark.util
 import org.apache.spark.{SPARK_VERSION, TaskContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
+import org.apache.spark.sql.types.{BinaryType, BooleanType, ByteType, DataType, DateType, DecimalType, DoubleType, FloatType, IntegerType, LongType, ShortType, StringType, TimestampType}
 
 /*
  * this object use to handle file splits
@@ -67,4 +68,21 @@ object SparkUtil {
     }
   }
 
+  def isPrimitiveType(datatype : DataType): Boolean = {
+    datatype match {
+      case StringType => true
+      case ByteType => true
+      case ShortType => true
+      case IntegerType => true
+      case LongType => true
+      case FloatType => true
+      case DoubleType => true
+      case BinaryType => true
+      case BooleanType => true
+      case DateType => true
+      case TimestampType => true
+      case DecimalType() => true
+      case _ => false
+    }
+  }
 }

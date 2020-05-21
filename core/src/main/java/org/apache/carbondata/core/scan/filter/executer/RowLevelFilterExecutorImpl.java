@@ -36,14 +36,19 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityTypeValue;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.scan.complextypes.ArrayQueryType;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.MatchExpression;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
@@ -54,6 +59,7 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnRes
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.BitSetGroup;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.log4j.Logger;
@@ -222,49 +228,103 @@ public class RowLevelFilterExecutorImpl implements FilterExecutor {
       }
     }
     BitSetGroup bitSetGroup = new BitSetGroup(pageNumbers);
-    for (int i = 0; i < pageNumbers; i++) {
-      BitSet set = new BitSet(numberOfRows[i]);
-      RowIntf row = new RowImpl();
-      BitSet prvBitset = null;
-      // if bitset pipe line is enabled then use row id from previous bitset
-      // otherwise use older flow
-      if (!useBitsetPipeLine ||
-          null == rawBlockletColumnChunks.getBitSetGroup() ||
-          null == bitSetGroup.getBitSet(i) ||
-          rawBlockletColumnChunks.getBitSetGroup().getBitSet(i).isEmpty()) {
-        for (int index = 0; index < numberOfRows[i]; index++) {
-          createRow(rawBlockletColumnChunks, row, i, index);
-          Boolean result = false;
-          try {
-            result = exp.evaluate(row).getBoolean();
-          }
-          // Any invalid member while evaluation shall be ignored, system will log the
-          // error only once since all rows the evaluation happens so inorder to avoid
-          // too much log inforation only once the log will be printed.
-          catch (FilterIllegalMemberException e) {
-            FilterUtil.logError(e, false);
-          }
-          if (null != result && result) {
-            set.set(index);
-          }
+    if (isDimensionPresentInCurrentBlock.length == 1 && isDimensionPresentInCurrentBlock[0]
+        && dimColEvaluatorInfoList.get(0).getDimension().getDataType().isComplexType()
+        && exp instanceof EqualToExpression) {
+      LiteralExpression literalExp = (LiteralExpression) (((EqualToExpression) exp).getRight());
+      // convert filter value to byte[] to compare with byte[] data from columnPage
+      Object literalExpValue = literalExp.getLiteralExpValue();
+      DataType literalExpDataType = literalExp.getLiteralExpDataType();
+      if (literalExpDataType == DataTypes.TIMESTAMP) {
+        if ((long) literalExpValue == 0) {
+          literalExpValue = null;
+        } else {
+          literalExpValue =
+              (long) literalExpValue / TimeStampGranularityTypeValue.MILLIS_SECONDS.getValue();
         }
-      } else {
-        prvBitset = rawBlockletColumnChunks.getBitSetGroup().getBitSet(i);
-        for (int index = prvBitset.nextSetBit(0);
-             index >= 0; index = prvBitset.nextSetBit(index + 1)) {
-          createRow(rawBlockletColumnChunks, row, i, index);
-          Boolean result = false;
-          try {
-            result = exp.evaluate(row).getBoolean();
-          } catch (FilterIllegalMemberException e) {
-            FilterUtil.logError(e, false);
-          }
-          if (null != result && result) {
-            set.set(index);
-          }
+      } else if (literalExpDataType == DataTypes.DATE) {
+        // change data type to int to get the byte[] filter value as it is direct dictionary
+        literalExpDataType = DataTypes.INT;
+        if (literalExpValue == null) {
+          literalExpValue = CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
+        } else {
+          literalExpValue =
+              (int) literalExpValue + DateDirectDictionaryGenerator.cutOffDate;
         }
       }
-      bitSetGroup.setBitSet(set, i);
+      byte[] filterValueInBytes = DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(
+          literalExpValue,
+          literalExpDataType);
+      ArrayQueryType complexType =
+          (ArrayQueryType) complexDimensionInfoMap.get(dimensionChunkIndex[0]);
+      // check all the pages
+      for (int i = 0; i < pageNumbers; i++) {
+        BitSet set = new BitSet(numberOfRows[i]);
+        int[][] numberOfChild = complexType
+            .getNumberOfChild(rawBlockletColumnChunks.getDimensionRawColumnChunks(), null,
+                numberOfRows[i], i);
+        DimensionColumnPage page = complexType
+            .parseBlockAndReturnChildData(rawBlockletColumnChunks.getDimensionRawColumnChunks(),
+                null, i);
+        // check every row
+        for (int index = 0; index < numberOfRows[i]; index++) {
+          int dataOffset = numberOfChild[index][1];
+          // loop the children
+          for (int j = 0; j < numberOfChild[index][0]; j++) {
+            byte[] obj = page.getChunkData(dataOffset++);
+            if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(obj, filterValueInBytes) == 0) {
+              set.set(index);
+              break;
+            }
+          }
+        }
+        bitSetGroup.setBitSet(set, i);
+      }
+    } else {
+      for (int i = 0; i < pageNumbers; i++) {
+        BitSet set = new BitSet(numberOfRows[i]);
+        RowIntf row = new RowImpl();
+        BitSet prvBitset = null;
+        // if bitset pipe line is enabled then use row id from previous bitset
+        // otherwise use older flow
+        if (!useBitsetPipeLine ||
+            null == rawBlockletColumnChunks.getBitSetGroup() ||
+            null == bitSetGroup.getBitSet(i) ||
+            rawBlockletColumnChunks.getBitSetGroup().getBitSet(i).isEmpty()) {
+          for (int index = 0; index < numberOfRows[i]; index++) {
+            createRow(rawBlockletColumnChunks, row, i, index);
+            Boolean result = false;
+            try {
+              result = exp.evaluate(row).getBoolean();
+            }
+            // Any invalid member while evaluation shall be ignored, system will log the
+            // error only once since all rows the evaluation happens so inorder to avoid
+            // too much log inforation only once the log will be printed.
+            catch (FilterIllegalMemberException e) {
+              FilterUtil.logError(e, false);
+            }
+            if (null != result && result) {
+              set.set(index);
+            }
+          }
+        } else {
+          prvBitset = rawBlockletColumnChunks.getBitSetGroup().getBitSet(i);
+          for (int index = prvBitset.nextSetBit(0);
+               index >= 0; index = prvBitset.nextSetBit(index + 1)) {
+            createRow(rawBlockletColumnChunks, row, i, index);
+            Boolean rslt = false;
+            try {
+              rslt = exp.evaluate(row).getBoolean();
+            } catch (FilterIllegalMemberException e) {
+              FilterUtil.logError(e, false);
+            }
+            if (null != rslt && rslt) {
+              set.set(index);
+            }
+          }
+        }
+        bitSetGroup.setBitSet(set, i);
+      }
     }
     return bitSetGroup;
   }

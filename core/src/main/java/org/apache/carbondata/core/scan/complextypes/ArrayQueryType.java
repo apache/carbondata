@@ -128,4 +128,31 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     throw new UnsupportedOperationException("Operation Unsupported for ArrayType");
   }
 
+  public int[][] getNumberOfChild(DimensionRawColumnChunk[] rawColumnChunks,
+      DimensionColumnPage[][] dimensionColumnPages, int numberOfRows, int pageNumber) {
+    DimensionColumnPage page =
+        getDecodedDimensionPage(dimensionColumnPages, rawColumnChunks[columnIndex], pageNumber);
+    int[][] numberOfChild = new int[numberOfRows][2];
+    for (int i = 0; i < numberOfRows; i++) {
+      byte[] input = page.getChunkData(i);
+      ByteBuffer wrap = ByteBuffer.wrap(input);
+      int[] metadata = new int[2];
+      metadata[0] = wrap.getInt();
+      if (metadata[0] > 0) {
+        metadata[1] = wrap.getInt();
+      }
+      numberOfChild[i] = metadata;
+    }
+    return numberOfChild;
+  }
+
+  public DimensionColumnPage parseBlockAndReturnChildData(DimensionRawColumnChunk[] rawColumnChunks,
+      DimensionColumnPage[][] dimensionColumnPages, int pageNumber) {
+    PrimitiveQueryType queryType = (PrimitiveQueryType) children;
+    return queryType.getDecodedDimensionPage(
+        dimensionColumnPages,
+        rawColumnChunks[queryType.columnIndex],
+        pageNumber);
+  }
+
 }

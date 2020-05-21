@@ -152,13 +152,25 @@ object CarbonFilters {
     }
 
     def getCarbonExpression(name: String) = {
+      var sparkDatatype = dataTypeOf(name)
+      sparkDatatype match {
+        case arrayType: ArrayType =>
+          sparkDatatype = arrayType.elementType
+        case _ =>
+      }
       new CarbonColumnExpression(name,
-        CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(dataTypeOf(name)))
+        CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(sparkDatatype))
     }
 
     def getCarbonLiteralExpression(name: String, value: Any): CarbonExpression = {
+      var sparkDatatype = dataTypeOf(name)
+      sparkDatatype match {
+        case arrayType: ArrayType =>
+          sparkDatatype = arrayType.elementType
+        case _ =>
+      }
       val dataTypeOfAttribute =
-        CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(dataTypeOf(name))
+        CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(sparkDatatype)
       val dataType = if (Option(value).isDefined
                          && dataTypeOfAttribute == CarbonDataTypes.STRING
                          && value.isInstanceOf[Double]) {

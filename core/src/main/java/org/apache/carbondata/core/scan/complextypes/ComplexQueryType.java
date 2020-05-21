@@ -60,11 +60,12 @@ public class ComplexQueryType {
     }
   }
 
-  private DimensionColumnPage getDecodedDimensionPage(DimensionColumnPage[][] dimensionColumnPages,
+  public DimensionColumnPage getDecodedDimensionPage(DimensionColumnPage[][] dimensionColumnPages,
       DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber) {
     if (dimensionColumnPages == null || null == dimensionColumnPages[columnIndex]) {
       return dimensionRawColumnChunk.decodeColumnPage(pageNumber);
     }
     return dimensionColumnPages[columnIndex][pageNumber];
   }
+
 }

@@ -42,7 +42,7 @@ import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types._
-import org.apache.spark.util.CarbonReflectionUtils
+import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -517,7 +517,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       val supportBatch =
         supportBatchedDataSource(relation.relation.sqlContext,
           updateRequestedColumns) && extraRdd.getOrElse((null, true))._2
-      if (!vectorPushRowFilters && !supportBatch && !implicitExisted) {
+      if (!vectorPushRowFilters && !supportBatch && !implicitExisted && filterSet.nonEmpty &&
+          !filterSet.baseSet.exists(_.a.dataType.isInstanceOf[ArrayType])) {
         // revert for row scan
         updateRequestedColumns = requestedColumns
       }
@@ -679,10 +680,13 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     // In case of ComplexType dataTypes no filters should be pushed down. IsNotNull is being
     // explicitly added by spark and pushed. That also has to be handled and pushed back to
     // Spark for handling.
-    val predicatesWithoutComplex = predicates.filter(predicate =>
+    // allow array_contains() push down
+    val filteredPredicates = predicates.filter { predicate =>
+      predicate.isInstanceOf[ArrayContains] ||
       predicate.collect {
-      case a: Attribute if isComplexAttribute(a) => a
-    }.size == 0 )
+        case a: Attribute if isComplexAttribute(a) => a
+      }.isEmpty
+    }
 
     // For conciseness, all Catalyst filter expressions of type `expressions.Expression` below are
     // called `predicate`s, while all data source filters of type `sources.Filter` are simply called
@@ -690,7 +694,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     // Todo: handle when lucene and normal query filter is supported
 
     var count = 0
-    val translated: Seq[(Expression, Filter)] = predicatesWithoutComplex.flatMap {
+    val translated: Seq[(Expression, Filter)] = filteredPredicates.flatMap {
       predicate =>
         if (predicate.isInstanceOf[ScalaUDF]) {
           predicate match {
@@ -865,7 +869,23 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         Some(CarbonContainsWith(c))
       case c@Literal(v, t) if (v == null) =>
         Some(FalseExpr())
-      case others => None
+      case c@ArrayContains(a: Attribute, Literal(v, t)) =>
+        a.dataType match {
+          case arrayType: ArrayType =>
+            if (SparkUtil.isPrimitiveType(arrayType.elementType)) {
+              Some(sources.EqualTo(a.name, v))
+            } else {
+              None
+            }
+          case _ =>
+            None
+        }
+      case c@ArrayContains(Cast(a: Attribute, _), Literal(v, t)) =>
+        CastExpressionOptimization.checkIfCastCanBeRemove(
+          EqualTo(
+            predicate.asInstanceOf[ArrayContains].left,
+            predicate.asInstanceOf[ArrayContains].right))
+      case _ => None
     }
   }
 

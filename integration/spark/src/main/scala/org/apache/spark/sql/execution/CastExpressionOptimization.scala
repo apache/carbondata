@@ -162,6 +162,16 @@ object CastExpressionOptimization {
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
             updateFilterForShort(v, c)
+          case arr: ArrayType =>
+            arr.elementType match {
+              case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
+                updateFilterForTimeStamp(v, c, ts)
+              case i: IntegerType if t.sameType(DoubleType) =>
+                updateFilterForInt(v, c)
+              case s: ShortType if t.sameType(IntegerType) =>
+                updateFilterForShort(v, c)
+              case _ => Some(CastExpr(c))
+            }
           case _ => Some(CastExpr(c))
         }
       case c@EqualTo(Literal(v, t), Cast(a: Attribute, _)) =>
