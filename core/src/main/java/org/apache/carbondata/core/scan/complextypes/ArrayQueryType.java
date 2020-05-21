@@ -37,9 +37,13 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     super(name, parentName, columnIndex);
   }
 
+  public ArrayQueryType() {
+
+  }
+
   @Override
   public void addChildren(GenericQueryType children) {
-    if (this.getName().equals(children.getParentName())) {
+    if (null == this.getName() || this.getName().equals(children.getParentName())) {
       this.children = children;
     } else {
       this.children.addChildren(children);
@@ -97,11 +101,16 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
 
   @Override
   public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
+    Object[] data = getObjectArrayDataBasedOnDataType(dataBuffer);
+    return DataTypeUtil.getDataTypeConverter().wrapWithGenericArrayData(data);
+  }
+
+  public Object[] getObjectArrayDataBasedOnDataType(ByteBuffer dataBuffer) {
     Object[] data = fillData(dataBuffer);
     if (data == null) {
       return null;
     }
-    return DataTypeUtil.getDataTypeConverter().wrapWithGenericArrayData(data);
+    return data;
   }
 
   protected Object[] fillData(ByteBuffer dataBuffer) {

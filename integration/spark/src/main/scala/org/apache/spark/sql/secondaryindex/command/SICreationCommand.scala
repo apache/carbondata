@@ -197,12 +197,12 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       }
       val dims = carbonTable.getVisibleDimensions.asScala
       val msrs = carbonTable.getVisibleMeasures.asScala
-        .map(x => if (!x.isComplex) {
+        .map(x =>
           x.getColName
-        })
-      val dimNames = dims.map(x => if (!x.isComplex) {
+        )
+      val dimNames = dims.map(x =>
         x.getColName.toLowerCase()
-      })
+      )
       val isMeasureColPresent = indexModel.columnNames.find(x => msrs.contains(x))
       if (isMeasureColPresent.isDefined) {
         throw new ErrorMessage(s"Secondary Index is not supported for measure column : ${
@@ -621,7 +621,11 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
 
   def cloneColumnSchema(parentColumnSchema: ColumnSchema, schemaOrdinal: Int): ColumnSchema = {
     val columnSchema = new ColumnSchema()
-    columnSchema.setDataType(parentColumnSchema.getDataType)
+    if(DataTypes.isArrayType(parentColumnSchema.getDataType)) {
+      columnSchema.setDataType(DataTypes.STRING)
+    } else {
+      columnSchema.setDataType(parentColumnSchema.getDataType)
+    }
     columnSchema.setColumnName(parentColumnSchema.getColumnName)
     columnSchema.setColumnProperties(parentColumnSchema.getColumnProperties)
     columnSchema.setEncodingList(parentColumnSchema.getEncodingList)

@@ -17,7 +17,9 @@
 
 package org.apache.spark.sql.secondaryindex.query;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
@@ -32,8 +34,11 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.scan.complextypes.ArrayQueryType;
+import org.apache.carbondata.core.scan.complextypes.PrimitiveQueryType;
 import org.apache.carbondata.core.scan.result.RowBatch;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -54,6 +59,7 @@ import org.apache.log4j.Logger;
 import org.apache.spark.sql.secondaryindex.exception.SecondaryIndexException;
 import org.apache.spark.sql.secondaryindex.load.RowComparator;
 import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil;
+import org.apache.spark.unsafe.types.UTF8String;
 
 /**
  * This class will process the query result and convert the data
@@ -245,7 +251,7 @@ public class SecondaryIndexQueryResultProcessor {
    */
   private Object[] prepareRowObjectForSorting(Object[] row) {
     ByteArrayWrapper wrapper = (ByteArrayWrapper) row[0];
-    // ByteBuffer[] noDictionaryBuffer = new ByteBuffer[noDictionaryCount];
+    byte[] implicitColumnByteArray = wrapper.getImplicitColumnByteArray();
 
     List<CarbonDimension> dimensions = segmentProperties.getDimensions();
     Object[] preparedRow = new Object[dimensions.size() + measureCount];
@@ -254,7 +260,7 @@ public class SecondaryIndexQueryResultProcessor {
     int dictionaryIndex = 0;
     int i = 0;
     // loop excluding last dimension as last one is implicit column.
-    for (; i < dimensions.size() - 1; i++) {
+    for (; i < dimensions.size() - 1 - wrapper.getComplexTypesKeys().length; i++) {
       CarbonDimension dims = dimensions.get(i);
       if (dims.hasEncoding(Encoding.DICTIONARY)) {
         // dictionary
@@ -277,9 +283,32 @@ public class SecondaryIndexQueryResultProcessor {
       }
     }
 
-    // at last add implicit column position reference(PID)
+      for (int k =0; k < wrapper.getComplexTypesKeys().length; k++) {
+        byte[] complexKeyByIndex = wrapper.getComplexKeyByIndex(k);
+        ByteBuffer byteArrayInput = ByteBuffer.wrap(complexKeyByIndex);
+        short length = byteArrayInput.getShort(2);
 
-    preparedRow[i] = wrapper.getImplicitColumnByteArray();
+        ArrayQueryType arrayQueryType = new ArrayQueryType();
+        arrayQueryType.addChildren(new PrimitiveQueryType("", "", 0, DataTypes.STRING, false));
+        Object[] data = arrayQueryType.getObjectArrayDataBasedOnDataType(byteArrayInput);
+        if (length != 1) {
+          for (int j = 1; j < length; j++) {
+            preparedRow[i] = ByteUtil.toBytes(data[j].toString());
+            preparedRow[i + 1] = implicitColumnByteArray;
+            try {
+              addRowForSorting(preparedRow.clone());
+            } catch (SecondaryIndexException e) {
+              e.printStackTrace();
+            }
+          }
+          preparedRow[i] = ByteUtil.toBytes(data[0].toString());
+        } else {
+          preparedRow[i] = ByteUtil.toBytes(data[0].toString());
+        }
+        i++;
+      }
+    // at last add implicit column position reference(PID)
+    preparedRow[i] = implicitColumnByteArray;
     return preparedRow;
   }
 

@@ -105,7 +105,7 @@ object PushDownHelper {
     }
   }
 
-  private def getParentName(
+  def getParentName(
       expr: org.apache.spark.sql.catalyst.expressions.Expression
   ): String = {
     expr match {
