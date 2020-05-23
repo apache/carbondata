@@ -108,7 +108,17 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
 
   @Override
   public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
-    return getDataObject(dataBuffer, -1);
+    return getDataBasedOnDataType(dataBuffer, false);
+  }
+
+  @Override
+  public Object getDataBasedOnDataType(ByteBuffer dataBuffer, boolean getBytesData) {
+    return getDataObject(dataBuffer, -1, getBytesData);
+  }
+
+  @Override
+  public Object[] getObjectArrayDataBasedOnDataType(ByteBuffer dataBuffer) {
+    return new Object[0];
   }
 
   @Override
@@ -128,12 +138,12 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     } else {
       size = child.getDataType().getSizeInBytes();
     }
-    actualData = getDataObject(dataBuffer, size);
+    actualData = getDataObject(dataBuffer, size, false);
 
     return actualData;
   }
 
-  private Object getDataObject(ByteBuffer dataBuffer, int size) {
+  private Object getDataObject(ByteBuffer dataBuffer, int size, boolean getBytesData) {
     Object actualData;
     if (isDirectDictionary) {
       // Direct Dictionary Column, only for DATE type
@@ -160,7 +170,8 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
               ByteUtil.toXorInt(value, 0, CarbonCommonConstants.INT_SIZE_IN_BYTE));
         }
       } else {
-        actualData = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(value, this.dataType);
+        actualData = DataTypeUtil
+            .getDataBasedOnDataTypeForNoDictionaryColumn(value, this.dataType, getBytesData);
       }
     }
     return actualData;

@@ -47,11 +47,15 @@ public interface GenericQueryType {
 
   void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder) throws IOException;
 
+  Object getDataBasedOnDataType(ByteBuffer dataBuffer, boolean getBytesData);
+
   Object getDataBasedOnDataType(ByteBuffer dataBuffer);
 
   Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent, CarbonDimension child);
 
   Object getDataBasedOnColumnList(Map<CarbonDimension, ByteBuffer> childBuffer,
       CarbonDimension presentColumn);
+
+  Object[] getObjectArrayDataBasedOnDataType(ByteBuffer dataBuffer);
 
 }

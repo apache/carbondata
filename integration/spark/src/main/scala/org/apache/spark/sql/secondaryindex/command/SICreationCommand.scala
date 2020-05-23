@@ -197,12 +197,12 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       }
       val dims = carbonTable.getVisibleDimensions.asScala
       val msrs = carbonTable.getVisibleMeasures.asScala
-        .map(x =>
+        .map(x => if (!x.isComplex) {
           x.getColName
-        )
-      val dimNames = dims.map(x =>
+        })
+      val dimNames = dims.map(x => if (DataTypes.isArrayType(x.getDataType) || !x.isComplex) {
         x.getColName.toLowerCase()
-      )
+      })
       val isMeasureColPresent = indexModel.columnNames.find(x => msrs.contains(x))
       if (isMeasureColPresent.isDefined) {
         throw new ErrorMessage(s"Secondary Index is not supported for measure column : ${
@@ -443,10 +443,30 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       databaseName: String, tableName: String, indexTableName: String,
       absoluteTableIdentifier: AbsoluteTableIdentifier): TableInfo = {
     var schemaOrdinal = -1
-    var allColumns = indexModel.columnNames.map { indexCol =>
-      val colSchema = carbonTable.getDimensionByName(indexCol).getColumnSchema
+    val complexDimensions = carbonTable.getAllDimensions.asScala
+      .filter(dim => dim.getDataType.isComplexType &&
+                     indexModel.columnNames.asJava.contains(dim.getColName))
+    if (complexDimensions.size > 1) {
+      throw new ErrorMessage("SI creation with more than one complex type is not supported yet");
+    }
+    var allColumns = List[ColumnSchema]()
+    indexModel.columnNames.foreach { indexCol =>
+      val dimension = carbonTable.getDimensionByName(indexCol)
+      if (!dimension.isComplex) {
+        val colSchema = dimension.getColumnSchema
+        schemaOrdinal += 1
+        allColumns = allColumns :+ cloneColumnSchema(colSchema, schemaOrdinal)
+      }
+    }
+    complexDimensions.foreach { complexDim =>
       schemaOrdinal += 1
-      cloneColumnSchema(colSchema, schemaOrdinal)
+      if (complexDim.getNumberOfChild > 0) {
+        if (complexDim.getListOfChildDimensions.asScala
+          .exists(col => DataTypes.isArrayType(col.getDataType))) {
+          throw new ErrorMessage("SI creation with nested array complex type is not supported yet");
+        }
+      }
+      allColumns = allColumns :+ cloneColumnSchema(complexDim.getColumnSchema, schemaOrdinal)
     }
     // Setting TRUE on all sort columns
     allColumns.foreach(f => f.setSortColumn(true))

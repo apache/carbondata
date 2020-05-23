@@ -29,7 +29,6 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.execution.datasources.{FindDataSourceTable, LogicalRelation}
-import org.apache.spark.sql.execution.strategy.PushDownHelper
 import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonRelation}
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.optimizer
@@ -264,7 +263,11 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case SIUnaryFilterPushDownOperation(tableName, filterCondition) =>
         val attributeMap = indexTableAttributeMap.get(tableName).get
         var filterAttributes = indexJoinedFilterAttributes
-        val indexTableFilter = filterCondition transformDown {
+        val newFilterCondition = filterCondition transform {
+          case ArrayContains(left, right) =>
+            EqualTo(left, right)
+        }
+        val indexTableFilter = newFilterCondition transformDown {
           case array: GetArrayItem =>
             val attr = array.child.asInstanceOf[AttributeReference]
             val attrNew = attributeMap.get(attr.name.toLowerCase()).get
@@ -472,6 +475,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case EndsWith(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
       case Contains(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
       case plan if (CarbonHiveIndexMetadataUtil.checkNIUDF(plan)) => true
+//      case plan if CarbonHiveIndexMetadataUtil.checkArrayFilter(plan) => true
       case _ => false
     }
     if (!doNotPushToSI) {
@@ -554,6 +558,8 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
           case _ =>
             (filterTree, condition, None)
         }
+      case And(ArrayContains(_, _), ArrayContains(_, _)) =>
+        (filterTree, condition, None)
       case and@And(left, right) =>
         val (newSIFilterTreeLeft, newLeft, tableNameLeft) =
           createIndexTableFilterCondition(

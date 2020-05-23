@@ -30,6 +30,11 @@ public class MapQueryType extends ArrayQueryType {
     super(name, parentName, columnIndex);
   }
 
+  @Override
+  public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
+    return getDataBasedOnDataType(dataBuffer, false);
+  }
+
   /**
    * Map data is internally stored as Array<Struct<key,Value>>. So first the data is filled in the
    * stored format and then each record is separated out to fill key and value separately. This is
@@ -37,11 +42,12 @@ public class MapQueryType extends ArrayQueryType {
    * and for SDK it will be an object array in the same format as returned to spark
    *
    * @param dataBuffer
+   * @param getBytesData
    * @return
    */
   @Override
-  public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
-    Object[] data = fillData(dataBuffer);
+  public Object getDataBasedOnDataType(ByteBuffer dataBuffer, boolean getBytesData) {
+    Object[] data = fillData(dataBuffer, false);
     if (data == null) {
       return null;
     }
@@ -53,6 +59,11 @@ public class MapQueryType extends ArrayQueryType {
       valueArray[i] = keyValue[1];
     }
     return DataTypeUtil.getDataTypeConverter().wrapWithArrayBasedMapData(keyArray, valueArray);
+  }
+
+  @Override
+  public Object[] getObjectArrayDataBasedOnDataType(ByteBuffer dataBuffer) {
+    return fillData(dataBuffer, true);
   }
 
 }

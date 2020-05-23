@@ -33,9 +33,12 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
 
   private final Object lock = new Object();
 
+  private List<BlockExecutionInfo> infos;
+
   public DetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
       ExecutorService execService) {
     super(infos, queryModel, execService);
+    this.infos = infos;
   }
 
   @Override
@@ -52,5 +55,9 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
       }
     }
     return rowBatch;
+  }
+
+  public List<BlockExecutionInfo> getInfos() {
+    return infos;
   }
 }

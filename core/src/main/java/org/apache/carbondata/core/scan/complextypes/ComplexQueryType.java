@@ -36,10 +36,6 @@ public class ComplexQueryType {
     this.columnIndex = columnIndex;
   }
 
-  public ComplexQueryType() {
-
-  }
-
   /**
    * Method will copy the block chunk holder data and return the cloned value.
    * This method is also used by child.
