@@ -102,7 +102,7 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
   }
 
   /**
-   * It is called to load the data map to memory or to initialize it.
+   * It is called to load the index to memory or to initialize it.
    */
   public void init(IndexModel indexModel) throws IOException {
     long startTime = System.currentTimeMillis();

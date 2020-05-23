@@ -392,6 +392,18 @@ class TestAdaptiveEncodingForPrimitiveTypes extends QueryTest with BeforeAndAfte
     sql("drop table if exists negativeTable")
   }
 
+  test("test inverted index issue ") {
+    sql("DROP TABLE IF EXISTS source")
+    sql("CREATE TABLE source(intField int) stored as carbondata TBLPROPERTIES('sort_columns'='intField','inverted_index'='intField')")
+    // this is stored as short data after adaptive encoding
+    sql("insert into source select 32000 union all select 0");
+    checkAnswer(sql("SELECT * from source"), Seq(Row(0), Row(32000)))
+    // this is stored as BYTE data after adaptive encoding
+    sql("insert into source select 32000 ");
+    checkAnswer(sql("SELECT * from source"), Seq(Row(0), Row(32000), Row(32000)))
+    sql("DROP TABLE IF EXISTS source")
+  }
+
   override def afterAll: Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)

@@ -21,7 +21,6 @@ import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.index.CarbonIndexUtil
-import org.apache.spark.sql.secondaryindex.util.FileInternalUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -106,9 +105,6 @@ object CarbonHiveIndexMetadataUtil {
     sparkSession.sql(
       s"""ALTER TABLE $dbName.$parentTableName SET SERDEPROPERTIES ('indexInfo'='$newIndexInfo')
         """.stripMargin).collect()
-    FileInternalUtil.touchSchemaFileTimestamp(dbName, parentTableName,
-      parentCarbonTable.getTablePath, System.currentTimeMillis())
-    FileInternalUtil.touchStoreTimeStamp()
     refreshTable(dbName, parentTableName, sparkSession)
   }
 

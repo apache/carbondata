@@ -39,7 +39,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     CarbonCommonConstants.USE_DISTRIBUTED_INDEX,
     CarbonCommonConstants.USE_DISTRIBUTED_INDEX_DEFAULT
   )
-  val file2 = resourcesPath + "/datamap_input.csv"
+  val file2 = resourcesPath + "/index_input.csv"
 
   override protected def beforeAll(): Unit = {
     sql("drop database if exists lucene cascade")
@@ -102,7 +102,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     assertResult("Only String column is supported, column 'id' is INT type. ")(exception.getMessage)
   }
 
-  test("test lucene fine grain data map") {
+  test("test lucene fine grain index") {
     sql("drop index if exists dm on table index_test")
     sql(
       s"""
@@ -143,7 +143,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     assert(exception.getMessage.contains("Non-lazy index index1 does not support manual refresh"))
   }
 
-  ignore("test lucene rebuild data map") {
+  ignore("test lucene rebuild index") {
     sql("DROP TABLE IF EXISTS index_test4")
     sql(
       """
@@ -169,7 +169,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop table index_test4")
   }
 
-  test("test lucene fine grain data map drop") {
+  test("test lucene fine grain index drop") {
     sql("DROP TABLE IF EXISTS index_test1")
     sql(
       """
@@ -199,7 +199,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS index_test1")
   }
 
-  test("test lucene fine grain data map show") {
+  test("test lucene fine grain index show") {
     sql("DROP TABLE IF EXISTS index_test2")
     sql("DROP TABLE IF EXISTS index_test3")
     sql(
@@ -237,7 +237,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS index_test3")
   }
 
-  test("test lucene fine grain data map with wildcard matching ") {
+  test("test lucene fine grain index with wildcard matching ") {
     sql("DROP TABLE IF EXISTS index_test_table")
     sql(
       """
@@ -259,7 +259,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop index if exists dm on table index_test_table")
   }
 
-  test("test lucene fine grain data map with TEXT_MATCH 'AND' Filter ") {
+  test("test lucene fine grain index with TEXT_MATCH 'AND' Filter ") {
     sql("DROP TABLE IF EXISTS index_test_table")
     sql(
       """
@@ -280,7 +280,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop index if exists dm on table index_test_table")
   }
 
-  test("test lucene fine grain data map with TEXT_MATCH 'OR' Filter ") {
+  test("test lucene fine grain index with TEXT_MATCH 'OR' Filter ") {
     sql("DROP TABLE IF EXISTS index_test_table")
     sql(
       """
@@ -301,7 +301,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop index if exists dm on table index_test_table")
   }
 
-  test("test lucene fine grain data map with TEXT_MATCH 'AND' and 'OR' Filter ") {
+  test("test lucene fine grain index with TEXT_MATCH 'AND' and 'OR' Filter ") {
     sql("DROP TABLE IF EXISTS index_test_table")
     sql(
       """
@@ -324,7 +324,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop index if exists dm on table index_test_table")
   }
 
-  test("test lucene fine grain data map with compaction-Major ") {
+  test("test lucene fine grain index with compaction-Major ") {
     sql("DROP TABLE IF EXISTS index_test_table")
     sql(
       """
@@ -349,7 +349,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop index if exists dm on table index_test_table")
   }
 
-  test("test lucene fine grain data map with compaction-Minor ") {
+  test("test lucene fine grain index with compaction-Minor ") {
     sql("DROP TABLE IF EXISTS index_test_table")
     sql(
       """
@@ -375,7 +375,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop index if exists dm on table index_test_table")
   }
 
-  test("test lucene fine grain data map with GLOBAL_SORT_SCOPE ") {
+  test("test lucene fine grain index with GLOBAL_SORT_SCOPE ") {
     sql("DROP TABLE IF EXISTS index_test_table")
     sql(
       """
@@ -423,7 +423,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop index if exists dm2 on table index_test_table")
   }
 
-  test("test lucene fine grain data map with TEXT_MATCH 'NOT' Filter ") {
+  test("test lucene fine grain index with TEXT_MATCH 'NOT' Filter ") {
     sql("DROP TABLE IF EXISTS index_test_table")
     sql(
       """
@@ -452,7 +452,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop index if exists dm on table index_test_table")
   }
 
-  test("test lucene fine grain data map with CTAS") {
+  test("test lucene fine grain index with CTAS") {
     sql("DROP TABLE IF EXISTS source_table")
     sql("DROP TABLE IF EXISTS target_table")
     sql(
@@ -481,7 +481,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS target_table")
   }
 
-  test("test lucene fine grain data map with text-match limit") {
+  test("test lucene fine grain index with text-match limit") {
     sql("DROP TABLE IF EXISTS index_test_limit")
     sql(
       """
@@ -502,7 +502,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop index dm on table index_test_limit")
   }
 
-  test("test lucene fine grain data map with InsertOverwrite") {
+  test("test lucene fine grain index with InsertOverwrite") {
     sql("DROP TABLE IF EXISTS index_test_overwrite")
     sql(
       """
@@ -628,7 +628,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     assert(ex7.getMessage.contains("alter table column rename is not supported"))
   }
 
-  ignore("test lucene fine grain multiple data map on table") {
+  ignore("test lucene fine grain multiple index on table") {
     sql("DROP TABLE IF EXISTS index_test5")
     sql(
       """
@@ -784,9 +784,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       sql("select * from table_stop where text_match('suggestion:*is*')").collect().length == 1)
   }
 
-  test("test lucene data map on null values") {
+  test("test lucene index on null values") {
     sql("DROP TABLE IF EXISTS index_test4")
-    sql("DROP TABLE IF EXISTS datamap_copy")
+    sql("DROP TABLE IF EXISTS index_copy")
     sql(
       """
         | CREATE TABLE index_test4(id INT, name STRING, city STRING, age INT)
@@ -796,7 +796,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       """
-        | CREATE TABLE datamap_copy(id INT, name STRING, city STRING, age INT)
+        | CREATE TABLE index_copy(id INT, name STRING, city STRING, age INT)
         | STORED AS carbondata
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT',
         | 'CACHE_LEVEL'='BLOCKLET')
@@ -804,7 +804,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("insert into index_test4 select 1,'name','city',20")
     sql("insert into index_test4 select 2,'name1','city1',20")
     sql("insert into index_test4 select 25,cast(null as string),'city2',NULL")
-    sql("insert into datamap_copy select * from index_test4")
+    sql("insert into index_copy select * from index_test4")
     sql(
       s"""
          | CREATE INDEX dm4
@@ -812,9 +812,9 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
          | AS 'lucene'
       """.stripMargin)
     checkAnswer(sql("SELECT * FROM index_test4 WHERE TEXT_MATCH('name:n*')"),
-      sql(s"select * from datamap_copy where name like '%n%'"))
+      sql(s"select * from index_copy where name like '%n%'"))
     sql("drop table index_test4")
-    sql("drop table datamap_copy")
+    sql("drop table index_copy")
   }
 
   test("test create index: unable to create same index for one column") {
@@ -881,7 +881,7 @@ class LuceneFineGrainIndexSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS index_test4")
     sql("DROP TABLE IF EXISTS index_test5")
     sql("DROP TABLE IF EXISTS index_test7")
-    sql("DROP TABLE IF EXISTS datamap_main")
+    sql("DROP TABLE IF EXISTS index_main")
     sql("DROP TABLE IF EXISTS table_stop")
     sql("use default")
     sql("drop database if exists lucene cascade")

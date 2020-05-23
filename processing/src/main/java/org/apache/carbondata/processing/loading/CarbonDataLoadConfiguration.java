@@ -101,11 +101,11 @@ public class CarbonDataLoadConfiguration {
   private DataLoadMetrics metrics;
 
   /**
-   * Whether index columns are present. This flag should be set only when all the schema
-   * columns are already converted. Now, just need to generate and convert index columns present in
-   * data fields.
+   * Whether non-schema columns are present. This flag should be set only when all the schema
+   * columns are already converted. Now, just need to generate and convert non-schema columns
+   * present in data fields.
    */
-  private boolean isIndexColumnsPresent;
+  private boolean nonSchemaColumnsPresent;
 
   private boolean skipParsers = false;
 
@@ -386,19 +386,19 @@ public class CarbonDataLoadConfiguration {
     this.metrics = metrics;
   }
 
-  public boolean isIndexColumnsPresent() {
-    return isIndexColumnsPresent;
-  }
-
-  public void setIndexColumnsPresent(boolean indexColumnsPresent) {
-    isIndexColumnsPresent = indexColumnsPresent;
-  }
-
   public String getBucketHashMethod() {
     return bucketHashMethod;
   }
 
   public void setBucketHashMethod(String bucketHashMethod) {
     this.bucketHashMethod = bucketHashMethod;
+  }
+
+  public boolean isNonSchemaColumnsPresent() {
+    return nonSchemaColumnsPresent;
+  }
+
+  public void setNonSchemaColumnsPresent(boolean nonSchemaColumnsPresent) {
+    this.nonSchemaColumnsPresent = nonSchemaColumnsPresent;
   }
 }

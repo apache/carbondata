@@ -460,14 +460,15 @@ public final class CarbonCommonConstants {
   public static final String INDEX_COLUMNS = "INDEX_COLUMNS";
 
   /**
-   * Index handler table property. It allows user to create a new sort column from the set of
-   * existing schema columns. And can generate value for the new column after parsing each row
-   * through custom handler.
+   * Spatial index table property. It allows user to create a new index column implicitly from the
+   * set of existing table schema columns(specified with the sourcecolumns sub-property). Newly
+   * created column is implicitly treated as a sort column. Row value for the new column is
+   * generated from the corresponding row values of its sourcecolumns during the data load process.
+   * CarbonCore provides an abstract class {@link org.apache.carbondata.core.util.CustomIndex} such
+   * that different types of index implementations adhere to the contracts and still have their
+   * customized behavior.
    */
-  public static final String INDEX_HANDLER = "index_handler";
-
-  // GeoHash index handler type
-  public static final String GEOHASH = "geohash";
+  public static final String SPATIAL_INDEX = "spatial_index";
 
   public static final String SORT_COLUMNS = "sort_columns";
   public static final String SORT_SCOPE = "sort_scope";
@@ -1303,7 +1304,7 @@ public final class CarbonCommonConstants {
    * if process crashed when overwriting the table status file.
    * To protect from file corruption, user can enable this property.
    */
-  @CarbonProperty(dynamicConfigurable = true)
+  @CarbonProperty
   public static final String ENABLE_TABLE_STATUS_BACKUP = "carbon.enable.tablestatus.backup";
 
   public static final String ENABLE_TABLE_STATUS_BACKUP_DEFAULT = "false";
@@ -2427,4 +2428,9 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String DISABLE_SQL_REWRITE = "disable_sql_rewrite";
+
+  /**
+   * property which defines the insert stage flow
+   */
+  public static final String IS_INSERT_STAGE = "is_insert_stage";
 }

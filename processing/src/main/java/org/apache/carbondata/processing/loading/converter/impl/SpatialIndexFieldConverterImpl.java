@@ -34,16 +34,16 @@ import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingExcep
 import org.apache.log4j.Logger;
 
 /**
- * Converter for Index handler columns
+ * Converter for spatial index columns
  */
-public class IndexFieldConverterImpl extends MeasureFieldConverterImpl {
+public class SpatialIndexFieldConverterImpl extends MeasureFieldConverterImpl {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(MeasureFieldConverterImpl.class.getName());
   private int index;
   private int[] sourceIndexes;
   CustomIndex instance;
 
-  public IndexFieldConverterImpl(DataField dataField, String nullFormat, int index,
+  public SpatialIndexFieldConverterImpl(DataField dataField, String nullFormat, int index,
       boolean isEmptyBadRecord, CarbonDataLoadConfiguration configuration) {
     super(dataField, nullFormat, index, isEmptyBadRecord);
     this.index = index;
@@ -52,14 +52,14 @@ public class IndexFieldConverterImpl extends MeasureFieldConverterImpl {
             .getTableProperties();
     try {
       instance = CustomIndex.getCustomInstance(properties.get(
-          CarbonCommonConstants.INDEX_HANDLER + "." + dataField.getColumn().getColName()
+          CarbonCommonConstants.SPATIAL_INDEX + "." + dataField.getColumn().getColName()
               + ".instance"));
     } catch (IOException e) {
       LOGGER.error("Failed to get the custom instance", e);
       throw new RuntimeException(e);
     }
     String sourceColumns = properties.get(
-        CarbonCommonConstants.INDEX_HANDLER + "." + dataField.getColumn().getColName()
+        CarbonCommonConstants.SPATIAL_INDEX + "." + dataField.getColumn().getColName()
             + ".sourcecolumns");
     String[] sources = sourceColumns.split(",");
     sourceIndexes = new int[sources.length];

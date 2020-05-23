@@ -23,14 +23,10 @@ import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.index.CarbonIndexUtil
 
-import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 
@@ -38,30 +34,6 @@ import org.apache.carbondata.processing.util.CarbonLoaderUtil
  * Utility Class for the Secondary Index creation flow
  */
 object FileInternalUtil {
-
-  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
-  /**
-   * This method will check and create an empty schema timestamp file
-   *
-   * @return
-   */
-  def touchStoreTimeStamp(): Long = {
-    val timestampFile = getTimestampFileAndType()
-    val systemTime = System.currentTimeMillis()
-    FileFactory.getCarbonFile(timestampFile)
-      .setLastModifiedTime(systemTime)
-    systemTime
-  }
-
-  private def getTimestampFileAndType() = {
-    // if mdt file path is configured then take configured path else take default path
-    val configuredMdtPath = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
-        CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER_DEFAULT).trim
-    val timestampFile = configuredMdtPath + "/" + CarbonCommonConstants.SCHEMAS_MODIFIED_TIME_FILE
-    CarbonUtil.checkAndAppendFileSystemURIScheme(timestampFile)
-  }
 
   def updateTableStatus(
     validSegments: List[String],
@@ -113,18 +85,5 @@ object FileInternalUtil {
       tableName
     )
     status
-  }
-
-
-
-  def touchSchemaFileTimestamp(dbName: String,
-      tableName: String,
-      tablePath: String,
-      schemaTimeStamp: Long): Unit = {
-    val tableMetadataFile = CarbonTablePath.getSchemaFilePath(tablePath)
-    if (FileFactory.isFileExist(tableMetadataFile)) {
-      FileFactory.getCarbonFile(tableMetadataFile)
-        .setLastModifiedTime(schemaTimeStamp)
-    }
   }
 }

@@ -90,7 +90,7 @@ public class RowConverterImpl implements RowConverter {
               (String) configuration.getDataLoadProperty(
                   CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER),
               configuration);
-      if (fields[i].getColumn().isIndexColumn()) {
+      if (fields[i].getColumn().isSpatialColumn()) {
         nonSchemaFieldConverterList.add(fieldConverter);
       } else {
         fieldConverterList.add(fieldConverter);
@@ -108,9 +108,9 @@ public class RowConverterImpl implements RowConverter {
     logHolder.setLogged(false);
     logHolder.clear();
     for (int i = 0; i < fieldConverters.length; i++) {
-      if (configuration.isIndexColumnsPresent() && !fieldConverters[i].getDataField().getColumn()
-          .isIndexColumn()) {
-        // Skip the conversion for schema columns if the conversion is required only for index
+      if (configuration.isNonSchemaColumnsPresent() && !fieldConverters[i].getDataField()
+          .getColumn().isSpatialColumn()) {
+        // Skip the conversion for schema columns if the conversion is required only for non-schema
         // columns
         continue;
       }
@@ -162,7 +162,7 @@ public class RowConverterImpl implements RowConverter {
               (String) configuration.getDataLoadProperty(
                   CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER),
               configuration);
-      if (fields[i].getColumn().isIndexColumn()) {
+      if (fields[i].getColumn().isSpatialColumn()) {
         nonSchemaFieldConverterList.add(fieldConverter);
       } else {
         fieldConverterList.add(fieldConverter);

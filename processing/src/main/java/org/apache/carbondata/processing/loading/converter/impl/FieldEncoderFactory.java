@@ -72,8 +72,8 @@ public class FieldEncoderFactory {
       boolean isConvertToBinary, String binaryDecoder, CarbonDataLoadConfiguration configuration) {
     // Converters are only needed for dimensions and measures it return null.
     if (dataField.getColumn().isDimension()) {
-      if (dataField.getColumn().isIndexColumn()) {
-        return new IndexFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord,
+      if (dataField.getColumn().isSpatialColumn()) {
+        return new SpatialIndexFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord,
             configuration);
       } else if (dataField.getColumn().getDataType() == DataTypes.DATE &&
           !dataField.getColumn().isComplex()) {

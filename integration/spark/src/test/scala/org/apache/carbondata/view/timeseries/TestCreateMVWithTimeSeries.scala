@@ -19,14 +19,14 @@ package org.apache.carbondata.view.timeseries
 
 import java.util.concurrent.{Callable, Executors, TimeUnit}
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedMVCommandException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.view.rewrite.TestUtil
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-class TestMVTimeSeriesCarbonCreateIndexCommand extends QueryTest with BeforeAndAfterAll {
+class TestCreateMVWithTimeSeries extends QueryTest with BeforeAndAfterAll {
 
   private val timestampFormat = CarbonProperties.getInstance()
     .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
@@ -204,6 +204,16 @@ class TestMVTimeSeriesCarbonCreateIndexCommand extends QueryTest with BeforeAndA
     val df2 = sql("select timeseries(projectjoinDATE,'SECOnd'), sum(projectcode) from maintable where projectcode=8 group by timeseries(projectjoinDATE,'SECOnd')")
     TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "mv1")
     TestUtil.verifyMVHit(df2.queryExecution.optimizedPlan, "mv1")
+    sql("drop materialized view if exists mv1")
+  }
+
+  test("check if mv with same query exists") {
+    sql("drop materialized view if exists mv1")
+    sql("create materialized view mv1 as select timeseries(projectjoindate,'Second'), sum(projectcode) from maintable group by timeseries(projectjoindate,'Second')")
+    sql("drop materialized view if exists mv2")
+    intercept[MalformedMVCommandException] {
+      sql("create materialized view mv2 as select timeseries(projectjoindate,'Second'), sum(projectcode) from maintable group by timeseries(projectjoindate,'Second')")
+    }.getMessage.contains("MV with the name `mv1` has been already created with the same query")
     sql("drop materialized view if exists mv1")
   }
 

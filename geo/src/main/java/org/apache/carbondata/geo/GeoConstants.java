@@ -15,28 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.index;
-
-import java.util.List;
-
-import org.apache.carbondata.core.indexstore.BlockletIndexWrapper;
-import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+package org.apache.carbondata.geo;
 
 /**
- * abstract class for index job
+ * Geo Constants
  */
-public abstract class AbstractIndexJob implements IndexJob {
-
-  @Override
-  public void execute(CarbonTable carbonTable,
-      FileInputFormat<Void, BlockletIndexWrapper> format) {
+public class GeoConstants {
+  private GeoConstants() {
   }
 
-  @Override
-  public List<ExtendedBlocklet> execute(IndexInputFormat indexInputFormat) {
-    return null;
-  }
+  // GeoHash type Spatial Index
+  public static final String GEOHASH = "geohash";
 }

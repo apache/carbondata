@@ -42,8 +42,10 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager, StageInput}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.processing.loading.FailureCauses
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
@@ -310,11 +312,53 @@ case class CarbonInsertFromStageCommand(
       // 4) write segment file and update the segment entry to SUCCESS
       val segmentFileName = SegmentFileStore.writeSegmentFile(
         table, loadModel.getSegmentId, loadModel.getFactTimeStamp.toString)
-      SegmentFileStore.updateTableStatusFile(
+      // create operationContext to fire load events
+      val operationContext: OperationContext = new OperationContext
+      val (tableIndexes, indexOperationContext) = CommonLoadUtils.firePreLoadEvents(
+        sparkSession = spark,
+        carbonLoadModel = loadModel,
+        uuid = "",
+        factPath = "",
+        optionsFinal = options.asJava,
+        options = options.asJava,
+        isOverwriteTable = false,
+        isDataFrame = true,
+        updateModel = None,
+        operationContext = operationContext)
+      // in case of insert stage files, added the below property to avoid merge index and
+      // fire event to load data to secondary index
+      operationContext.setProperty(CarbonCommonConstants.IS_INSERT_STAGE, "true")
+      val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
+        new LoadTablePreStatusUpdateEvent(
+          table.getCarbonTableIdentifier,
+          loadModel)
+      OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
+
+      val status = SegmentFileStore.updateTableStatusFile(
         table, loadModel.getSegmentId, segmentFileName,
         table.getCarbonTableIdentifier.getTableId,
         new SegmentFileStore(table.getTablePath, segmentFileName),
         SegmentStatus.SUCCESS)
+
+      // trigger load post events
+      if (status) {
+        val loadTablePostStatusUpdateEvent: LoadTablePostStatusUpdateEvent =
+          new LoadTablePostStatusUpdateEvent(loadModel)
+        try {
+          OperationListenerBus.getInstance()
+            .fireEvent(loadTablePostStatusUpdateEvent, operationContext)
+        } catch {
+          case ex: Exception =>
+            LOGGER.error("Problem while committing indexes", ex)
+        }
+      }
+      // fire event to load data to materialized views and merge bloom index files
+      CommonLoadUtils.firePostLoadEvents(spark,
+        loadModel,
+        tableIndexes,
+        indexOperationContext,
+        table,
+        operationContext)
     } catch {
       case ex: Throwable =>
         LOGGER.error(s"failed to insert ${table.getDatabaseName}.${table.getTableName}", ex)

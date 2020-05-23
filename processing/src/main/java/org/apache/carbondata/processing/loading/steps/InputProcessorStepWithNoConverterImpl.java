@@ -332,7 +332,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
         while (internalHasNext() && count < batchSize) {
           CarbonRow carbonRow =
               new CarbonRow(convertToNoDictionaryToBytes(currentIterator.next(), dataFields));
-          if (configuration.isIndexColumnsPresent()) {
+          if (configuration.isNonSchemaColumnsPresent()) {
             carbonRow = converter.convert(carbonRow);
           }
           if (isBucketColumnEnabled) {
@@ -346,7 +346,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
         while (internalHasNext() && count < batchSize) {
           CarbonRow carbonRow = new CarbonRow(
               convertToNoDictionaryToBytesWithoutReArrange(currentIterator.next(), dataFields));
-          if (configuration.isIndexColumnsPresent()) {
+          if (configuration.isNonSchemaColumnsPresent()) {
             carbonRow = converter.convert(carbonRow);
           }
           if (isBucketColumnEnabled) {
@@ -367,7 +367,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     private Object[] convertToNoDictionaryToBytes(Object[] data, DataField[] dataFields) {
       Object[] newData = new Object[dataFields.length];
       for (int i = 0; i < dataFields.length; i++) {
-        if (dataFields[i].getColumn().isIndexColumn()) {
+        if (dataFields[i].getColumn().isSpatialColumn()) {
           continue;
         }
         if (i < noDictionaryMapping.length && noDictionaryMapping[i]) {
@@ -409,27 +409,28 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     private Object[] convertToNoDictionaryToBytesWithoutReArrange(Object[] data,
         DataField[] dataFields) {
-      Object[] newData = new Object[data.length];
+      Object[] newData = new Object[dataFields.length];
       // now dictionary is removed, no need of no dictionary mapping
-      for (int i = 0; i < data.length; i++) {
-        if (dataFields[i].getColumn().isIndexColumn()) {
+      for (int i = 0, index = 0; i < dataFields.length; i++) {
+        if (dataFields[i].getColumn().isSpatialColumn()) {
           continue;
         }
         if (DataTypeUtil.isPrimitiveColumn(dataTypes[i])) {
           // keep the no dictionary measure column as original data
-          newData[i] = data[i];
+          newData[i] = data[index];
         } else if (dataTypes[i].isComplexType()) {
-          getComplexTypeByteArray(newData, i, data, dataFields[i], i, true);
-        } else if (dataTypes[i] == DataTypes.DATE && data[i] instanceof Long) {
+          getComplexTypeByteArray(newData, i, data, dataFields[i], index, true);
+        } else if (dataTypes[i] == DataTypes.DATE && data[index] instanceof Long) {
           if (dateDictionaryGenerator == null) {
             dateDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
                 .getDirectDictionaryGenerator(dataTypes[i], dataFields[i].getDateFormat());
           }
-          newData[i] = dateDictionaryGenerator.generateKey((long) data[i]);
+          newData[i] = dateDictionaryGenerator.generateKey((long) data[index]);
         } else {
           newData[i] =
-              DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(data[i], dataTypes[i]);
+              DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(data[index], dataTypes[i]);
         }
+        index++;
       }
       return newData;
     }

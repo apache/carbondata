@@ -175,7 +175,7 @@ class CGIndex extends CoarseGrainIndex {
   var shardName: String = _
 
   /**
-   * It is called to load the data map to memory or to initialize it.
+   * It is called to load the index to memory or to initialize it.
    */
   override def init(indexModel: IndexModel): Unit = {
     val indexPath = FileFactory.getPath(indexModel.getFilePath)

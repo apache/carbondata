@@ -37,7 +37,7 @@ import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.util.BitSetGroup;
 
 /**
- * wrapper for blocklet data map data
+ * wrapper for blocklet index data
  */
 public class BlockletDataRefNode implements DataRefNode {
 

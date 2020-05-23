@@ -161,9 +161,9 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
         null
       }
     val convertedStaticPartition = getConvertedStaticPartitionMap(partitionColumnSchema)
-    val (reArrangedIndex, selectedColumnSchema) = getReArrangedIndexAndSelectedSchema(
-      tableInfo,
-      partitionColumnSchema)
+    val (reArrangedIndex, selectedColumnSchema) = getReArrangedIndexAndSelectedSchema(tableInfo,
+      partitionColumnSchema,
+      carbonLoadModel)
     val newLogicalPlan = getReArrangedLogicalPlan(
       reArrangedIndex,
       selectedColumnSchema,
@@ -468,7 +468,8 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
 
   def getReArrangedIndexAndSelectedSchema(
       tableInfo: TableInfo,
-      partitionColumnSchema: mutable.Buffer[ColumnSchema]): (Seq[Int], Seq[ColumnSchema]) = {
+      partitionColumnSchema: mutable.Buffer[ColumnSchema],
+      carbonLoadModel: CarbonLoadModel): (Seq[Int], Seq[ColumnSchema]) = {
     var reArrangedIndex: Seq[Int] = Seq()
     var selectedColumnSchema: Seq[ColumnSchema] = Seq()
     var partitionIndex: Seq[Int] = Seq()
@@ -495,16 +496,20 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
     }
     columnSchema.foreach {
       col =>
-        var skipPartitionColumn = false
-        if (partitionColumnNames != null &&
-            partitionColumnNames.contains(col.getColumnName)) {
-          partitionIndex = partitionIndex :+ createOrderMap(col.getColumnName)
-          skipPartitionColumn = true
+        if (col.isSpatialColumn) {
+          carbonLoadModel.setNonSchemaColumnsPresent(true)
         } else {
-          reArrangedIndex = reArrangedIndex :+ createOrderMap(col.getColumnName)
-        }
-        if (!skipPartitionColumn) {
-          selectedColumnSchema = selectedColumnSchema :+ col
+          var skipPartitionColumn = false
+          if (partitionColumnNames != null &&
+              partitionColumnNames.contains(col.getColumnName)) {
+            partitionIndex = partitionIndex :+ createOrderMap(col.getColumnName)
+            skipPartitionColumn = true
+          } else {
+            reArrangedIndex = reArrangedIndex :+ createOrderMap(col.getColumnName)
+          }
+          if (!skipPartitionColumn) {
+            selectedColumnSchema = selectedColumnSchema :+ col
+          }
         }
     }
     if (partitionColumnSchema != null) {

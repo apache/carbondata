@@ -33,26 +33,26 @@ import org.apache.carbondata.view.{MVManagerInSpark, MVRefresher, RefreshMVPostE
  */
 case class CarbonRefreshMVCommand(
     databaseNameOption: Option[String],
-    name: String) extends DataCommand {
+    mvName: String) extends DataCommand {
 
   override def processData(session: SparkSession): Seq[Row] = {
     val databaseName =
       databaseNameOption.getOrElse(session.sessionState.catalog.getCurrentDatabase)
     val viewManager = MVManagerInSpark.get(session)
     val schema = try {
-      viewManager.getSchema(databaseName, name)
+      viewManager.getSchema(databaseName, mvName)
     } catch {
       case _: NoSuchMVException =>
         throw new MalformedMVCommandException(
-          s"Materialized view ${ databaseName }.${ name } does not exist")
+          s"Materialized view ${ databaseName }.${ mvName } does not exist")
     }
-    val table = CarbonEnv.getCarbonTable(Option(databaseName), name)(session)
+    val table = CarbonEnv.getCarbonTable(Option(databaseName), mvName)(session)
     setAuditTable(table)
 
     MVRefresher.refresh(schema, session)
 
     // After rebuild successfully enable the MV table.
-    val identifier = TableIdentifier(name, Option(databaseName))
+    val identifier = TableIdentifier(mvName, Option(databaseName))
     val operationContext = new OperationContext()
     OperationListenerBus.getInstance().fireEvent(
       RefreshMVPreExecutionEvent(session, identifier),

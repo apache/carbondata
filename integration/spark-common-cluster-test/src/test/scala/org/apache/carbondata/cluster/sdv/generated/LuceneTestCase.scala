@@ -31,11 +31,11 @@ class LuceneTestCase extends QueryTest with BeforeAndAfterAll {
   val csvPath = s"$resourcesPath/source.csv"
 
   override protected def beforeAll(): Unit = {
-    sql("DROP TABLE IF EXISTS datamap_main")
+    sql("DROP TABLE IF EXISTS index_main")
   }
 
   //Create Lucene Index With DMProperties(String DataType) on MainTable
-  test("LuceneDataMap_TC001", Include) {
+  test("Luceneindex_TC001", Include) {
     sql("DROP TABLE IF EXISTS index_main")
     sql(
       "CREATE TABLE index_main (id Int, date date, country string,name String, phonetype " +

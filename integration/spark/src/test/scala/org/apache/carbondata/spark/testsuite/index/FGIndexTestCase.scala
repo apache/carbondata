@@ -171,7 +171,7 @@ class FGIndex extends FineGrainIndex {
   var taskName:String = _
 
   /**
-   * It is called to load the data map to memory or to initialize it.
+   * It is called to load the index to memory or to initialize it.
    */
   override def init(indexModel: IndexModel): Unit = {
     this.filePath = indexModel.getFilePath

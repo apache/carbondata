@@ -23,23 +23,25 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Abstract class for custom index handler. When index_handler property is configured on table, a
+ * Abstract class for Custom Index implementation. When index property is configured on table, a
  * new column is created within carbon layer from the set of schema columns in the table.
- * A custom implementation need to be provided to extract the sub-properties of index handler such
- * as type, source columns etc, generate the value for the new column from the source column values,
- * query processor to handle the custom UDF filter queries based on source columns.
- * This class is an abstract for the custom implementation.
+ * An Index implementation class must extend this class and provide the concrete implementation
+ * for following abstract methods:
+ * 1. Init method to extract and store the sub-properties of index property. Such as index type,
+ *    sourcecolumns etc.
+ * 2. Generate method to generate the row value for the index column from corresponding row values
+ *    of its source columns.
+ * 3. Query method to process the custom UDF filter queries based on source columns.
  * @param <ReturnType>
  */
 public abstract class CustomIndex<ReturnType> implements Serializable {
-  public static final String CUSTOM_INDEX_DEFAULT_IMPL = "org.apache.carbondata.geo.GeoHashImpl";
   /**
-   * Initialize the custom index handler instance.
-   * @param handlerName
+   * Initialize the custom index instance.
+   * @param indexName
    * @param properties
    * @throws Exception
    */
-  public abstract void init(String handlerName, Map<String, String> properties) throws Exception;
+  public abstract void init(String indexName, Map<String, String> properties) throws Exception;
 
   /**
    * Generates the custom index column value from the given source columns.
@@ -50,7 +52,7 @@ public abstract class CustomIndex<ReturnType> implements Serializable {
   public abstract String generate(List<?> columns) throws Exception;
 
   /**
-   * Query processor for custom index handler.
+   * Query processor for custom index.
    * @param query
    * @return Returns list of ranges to be fetched
    * @throws Exception
@@ -58,7 +60,7 @@ public abstract class CustomIndex<ReturnType> implements Serializable {
   public abstract ReturnType query(String query) throws Exception;
 
   /**
-   * Deserializes and returns the custom handler instance
+   * Deserializes and returns the custom index instance
    * @param serializedInstance
    * @return
    * @throws IOException
@@ -69,7 +71,7 @@ public abstract class CustomIndex<ReturnType> implements Serializable {
   }
 
   /**
-   * Serializes the custom handler instance
+   * Serializes the custom index instance
    * @param instance
    * @return
    * @throws IOException

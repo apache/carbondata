@@ -163,7 +163,7 @@ public class JsonRowParser implements RowParser {
 
   private static String extractChildColumnName(CarbonColumn column) {
     String columnName = column.getColName();
-    if (columnName.contains(".")) {
+    if (column.getColumnSchema().isComplexColumn()) {
       // complex type child column names can be like following
       // a) struct type --> parent.child
       // b) array type --> parent.val.val...child [If create table flow]

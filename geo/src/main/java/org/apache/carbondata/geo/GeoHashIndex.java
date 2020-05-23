@@ -31,18 +31,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 /**
- * GeoHash custom implementation.
+ * GeoHash Type Spatial Index Custom Implementation.
  * This class extends {@link CustomIndex}. It provides methods to
- * 1. Extracts the sub-properties of geohash type index handler such as type, source columns,
+ * 1. Extracts the sub-properties of geohash type spatial index such as type, source columns,
  * grid size, origin, min and max longitude and latitude of data. Validates and stores them in
  * instance.
  * 2. Generates column value from the longitude and latitude column values.
  * 3. Query processor to handle the custom UDF filter queries based on longitude and latitude
  * columns.
  */
-public class GeoHashImpl extends CustomIndex<List<Long[]>> {
+public class GeoHashIndex extends CustomIndex<List<Long[]>> {
   private static final Logger LOGGER =
-      LogServiceFactory.getLogService(GeoHashImpl.class.getName());
+      LogServiceFactory.getLogService(GeoHashIndex.class.getName());
 
   // conversion factor of angle to radian
   private static final double CONVERT_FACTOR = 180.0;
@@ -86,54 +86,54 @@ public class GeoHashImpl extends CustomIndex<List<Long[]>> {
 
 
   /**
-   * Initialize the geohash index handler instance.
+   * Initialize the geohash spatial index instance.
    * the properties is like that:
-   * TBLPROPERTIES ('INDEX_HANDLER'='mygeohash',
-   * 'INDEX_HANDLER.mygeohash.type'='geohash',
-   * 'INDEX_HANDLER.mygeohash.sourcecolumns'='longitude, latitude',
-   * 'INDEX_HANDLER.mygeohash.gridSize'=''
-   * 'INDEX_HANDLER.mygeohash.minLongitude'=''
-   * 'INDEX_HANDLER.mygeohash.maxLongitude'=''
-   * 'INDEX_HANDLER.mygeohash.minLatitude'=''
-   * 'INDEX_HANDLER.mygeohash.maxLatitude'=''
-   * 'INDEX_HANDLER.mygeohash.orilatitude''')
-   * @param handlerName the class name of generating algorithm
+   * TBLPROPERTIES ('SPATIAL_INDEX'='mygeohash',
+   * 'SPATIAL_INDEX.mygeohash.type'='geohash',
+   * 'SPATIAL_INDEX.mygeohash.sourcecolumns'='longitude, latitude',
+   * 'SPATIAL_INDEX.mygeohash.gridSize'=''
+   * 'SPATIAL_INDEX.mygeohash.minLongitude'=''
+   * 'SPATIAL_INDEX.mygeohash.maxLongitude'=''
+   * 'SPATIAL_INDEX.mygeohash.minLatitude'=''
+   * 'SPATIAL_INDEX.mygeohash.maxLatitude'=''
+   * 'SPATIAL_INDEX.mygeohash.orilatitude''')
+   * @param indexName index name. Implicitly a column is created with index name.
    * @param properties input properties,please check the describe
    * @throws Exception
    */
   @Override
-  public void init(String handlerName, Map<String, String> properties) throws Exception {
-    String options = properties.get(CarbonCommonConstants.INDEX_HANDLER);
+  public void init(String indexName, Map<String, String> properties) throws Exception {
+    String options = properties.get(CarbonCommonConstants.SPATIAL_INDEX);
     if (StringUtils.isEmpty(options)) {
       throw new MalformedCarbonCommandException(
-              String.format("%s property is invalid.", CarbonCommonConstants.INDEX_HANDLER));
+              String.format("%s property is invalid.", CarbonCommonConstants.SPATIAL_INDEX));
     }
     options = options.toLowerCase();
-    if (!options.contains(handlerName.toLowerCase())) {
+    if (!options.contains(indexName.toLowerCase())) {
       throw new MalformedCarbonCommandException(
               String.format("%s property is invalid. %s is not present.",
-                      CarbonCommonConstants.INDEX_HANDLER, handlerName));
+                      CarbonCommonConstants.SPATIAL_INDEX, indexName));
     }
-    String commonKey = CarbonCommonConstants.INDEX_HANDLER + CarbonCommonConstants.POINT +
-            handlerName + CarbonCommonConstants.POINT;
+    String commonKey = CarbonCommonConstants.SPATIAL_INDEX + CarbonCommonConstants.POINT + indexName
+        + CarbonCommonConstants.POINT;
     String TYPE = commonKey + "type";
     String type = properties.get(TYPE);
-    if (!CarbonCommonConstants.GEOHASH.equalsIgnoreCase(type)) {
+    if (!GeoConstants.GEOHASH.equalsIgnoreCase(type)) {
       throw new MalformedCarbonCommandException(
               String.format("%s property is invalid. %s property must be %s for this class.",
-                      CarbonCommonConstants.INDEX_HANDLER, TYPE, CarbonCommonConstants.GEOHASH));
+                      CarbonCommonConstants.SPATIAL_INDEX, TYPE, GeoConstants.GEOHASH));
     }
     String SOURCE_COLUMNS = commonKey + "sourcecolumns";
     String sourceColumnsOption = properties.get(SOURCE_COLUMNS);
     if (StringUtils.isEmpty(sourceColumnsOption)) {
       throw new MalformedCarbonCommandException(
               String.format("%s property is invalid. Must specify %s property.",
-                      CarbonCommonConstants.INDEX_HANDLER, SOURCE_COLUMNS));
+                      CarbonCommonConstants.SPATIAL_INDEX, SOURCE_COLUMNS));
     }
     if (sourceColumnsOption.split(",").length != 2) {
       throw new MalformedCarbonCommandException(
               String.format("%s property is invalid. %s property must have 2 columns.",
-                      CarbonCommonConstants.INDEX_HANDLER, SOURCE_COLUMNS));
+                      CarbonCommonConstants.SPATIAL_INDEX, SOURCE_COLUMNS));
     }
     String SOURCE_COLUMN_TYPES = commonKey + "sourcecolumntypes";
     String sourceDataTypes = properties.get(SOURCE_COLUMN_TYPES);
@@ -142,7 +142,7 @@ public class GeoHashImpl extends CustomIndex<List<Long[]>> {
       if (!"bigint".equalsIgnoreCase(srcdataType)) {
         throw new MalformedCarbonCommandException(
                 String.format("%s property is invalid. %s datatypes must be long.",
-                        CarbonCommonConstants.INDEX_HANDLER, SOURCE_COLUMNS));
+                        CarbonCommonConstants.SPATIAL_INDEX, SOURCE_COLUMNS));
       }
     }
     // Set the generated column data type as long
@@ -153,7 +153,7 @@ public class GeoHashImpl extends CustomIndex<List<Long[]>> {
     if (StringUtils.isEmpty(originLatitude)) {
       throw new MalformedCarbonCommandException(
               String.format("%s property is invalid. Must specify %s property.",
-                      CarbonCommonConstants.INDEX_HANDLER, ORIGIN_LATITUDE));
+                      CarbonCommonConstants.SPATIAL_INDEX, ORIGIN_LATITUDE));
     }
     String MIN_LONGITUDE = commonKey + "minlongitude";
     String MAX_LONGITUDE = commonKey + "maxlongitude";
@@ -166,36 +166,36 @@ public class GeoHashImpl extends CustomIndex<List<Long[]>> {
     if (StringUtils.isEmpty(minLongitude)) {
       throw new MalformedCarbonCommandException(
           String.format("%s property is invalid. Must specify %s property.",
-              CarbonCommonConstants.INDEX_HANDLER, MIN_LONGITUDE));
+              CarbonCommonConstants.SPATIAL_INDEX, MIN_LONGITUDE));
     }
     if (StringUtils.isEmpty(minLatitude)) {
       throw new MalformedCarbonCommandException(
           String.format("%s property is invalid. Must specify %s property.",
-              CarbonCommonConstants.INDEX_HANDLER, MIN_LATITUDE));
+              CarbonCommonConstants.SPATIAL_INDEX, MIN_LATITUDE));
     }
     if (StringUtils.isEmpty(maxLongitude)) {
       throw new MalformedCarbonCommandException(
           String.format("%s property is invalid. Must specify %s property.",
-              CarbonCommonConstants.INDEX_HANDLER, MAX_LONGITUDE));
+              CarbonCommonConstants.SPATIAL_INDEX, MAX_LONGITUDE));
     }
     if (StringUtils.isEmpty(maxLatitude)) {
       throw new MalformedCarbonCommandException(
           String.format("%s property is invalid. Must specify %s property.",
-              CarbonCommonConstants.INDEX_HANDLER, MAX_LATITUDE));
+              CarbonCommonConstants.SPATIAL_INDEX, MAX_LATITUDE));
     }
     String GRID_SIZE = commonKey + "gridsize";
     String gridSize = properties.get(GRID_SIZE);
     if (StringUtils.isEmpty(gridSize)) {
       throw new MalformedCarbonCommandException(
               String.format("%s property is invalid. %s property must be specified.",
-                      CarbonCommonConstants.INDEX_HANDLER, GRID_SIZE));
+                      CarbonCommonConstants.SPATIAL_INDEX, GRID_SIZE));
     }
     String CONVERSION_RATIO = commonKey + "conversionratio";
     String conversionRatio = properties.get(CONVERSION_RATIO);
     if (StringUtils.isEmpty(conversionRatio)) {
       throw new MalformedCarbonCommandException(
               String.format("%s property is invalid. %s property must be specified.",
-                      CarbonCommonConstants.INDEX_HANDLER, CONVERSION_RATIO));
+                      CarbonCommonConstants.SPATIAL_INDEX, CONVERSION_RATIO));
     }
 
     // Fill the values to the instance fields

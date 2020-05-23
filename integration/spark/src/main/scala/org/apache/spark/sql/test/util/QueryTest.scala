@@ -121,6 +121,7 @@ class QueryTest extends PlanTest {
   val integrationPath = TestQueryExecutor.integrationPath
   val dblocation = TestQueryExecutor.location
   val defaultParallelism = sqlContext.sparkContext.defaultParallelism
+  val targetTestClass = System.getProperty("user.dir") + "/target/test-classes"
 
   def defaultConfig(): Unit = {
     CarbonEnv.getInstance(sqlContext.sparkSession).carbonSessionInfo.getSessionParams.clear()

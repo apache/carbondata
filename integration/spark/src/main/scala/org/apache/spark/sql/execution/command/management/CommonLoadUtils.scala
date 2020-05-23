@@ -558,7 +558,7 @@ object CommonLoadUtils {
       .getListOfColumns
       .asScala
     if (table.getPartitionInfo != null) {
-      colSchema = colSchema.filterNot(x => x.isInvisible || x.getColumnName.contains(".") ||
+      colSchema = colSchema.filterNot(x => x.isInvisible || x.isComplexColumn ||
                                            x.getSchemaOrdinal == -1 ||
                                            table.getPartitionInfo.getColumnSchemaList.contains(x))
       colSchema = colSchema ++ table
@@ -568,7 +568,7 @@ object CommonLoadUtils {
         .getColumnSchemaList.size()))
         .asInstanceOf[Array[ColumnSchema]]
     } else {
-      colSchema = colSchema.filterNot(x => x.isInvisible || x.getColumnName.contains(".") ||
+      colSchema = colSchema.filterNot(x => x.isInvisible || x.isComplexColumn ||
                                            x.getSchemaOrdinal == -1)
     }
     val updatedRdd: RDD[InternalRow] = CommonLoadUtils.getConvertedInternalRow(
@@ -848,7 +848,7 @@ object CommonLoadUtils {
       // input data from csv files. Convert to logical plan
       val allCols = new ArrayBuffer[String]()
       // get only the visible dimensions from table
-      allCols ++= table.getVisibleDimensions.asScala.filterNot(_.isIndexColumn).map(_.getColName)
+      allCols ++= table.getVisibleDimensions.asScala.filterNot(_.isSpatialColumn).map(_.getColName)
       allCols ++= table.getVisibleMeasures.asScala.map(_.getColName)
       StructType(
         allCols.filterNot(_.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)).map(

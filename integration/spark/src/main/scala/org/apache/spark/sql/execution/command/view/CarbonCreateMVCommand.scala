@@ -44,6 +44,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.view._
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.mv.plans.modular.{GroupBy, ModularPlan, SimpleModularizer}
@@ -84,9 +85,14 @@ case class CarbonCreateMVCommand(
     }
 
     val identifier = TableIdentifier(name, Option(databaseName))
+    val databaseLocation = viewManager.getDatabaseLocation(databaseName)
+    val systemDirectoryPath = CarbonProperties.getInstance()
+      .getSystemFolderLocationPerDatabase(FileFactory
+        .getCarbonFile(databaseLocation)
+        .getCanonicalPath)
     val operationContext: OperationContext = new OperationContext()
     OperationListenerBus.getInstance().fireEvent(
-      CreateMVPreExecutionEvent(session, identifier),
+      CreateMVPreExecutionEvent(session, systemDirectoryPath, identifier),
       operationContext)
 
     val catalogFactory = new MVCatalogFactory[MVSchemaWrapper] {
@@ -95,15 +101,16 @@ case class CarbonCreateMVCommand(
       }
     }
 
-    val schema = doCreate(session, identifier, viewManager)
+    // get mv catalog
+    var viewCatalog = viewManager.getCatalog(catalogFactory, false)
+      .asInstanceOf[MVCatalogInSpark]
+    if (!viewCatalog.session.equals(session)) {
+      viewCatalog = viewManager.getCatalog(catalogFactory, true)
+        .asInstanceOf[MVCatalogInSpark]
+    }
+    val schema = doCreate(session, identifier, viewManager, viewCatalog)
 
     try {
-      var viewCatalog = viewManager.getCatalog(catalogFactory, false)
-        .asInstanceOf[MVCatalogInSpark]
-      if (!viewCatalog.session.equals(session)) {
-        viewCatalog = viewManager.getCatalog(catalogFactory, true)
-          .asInstanceOf[MVCatalogInSpark]
-      }
       viewCatalog.registerSchema(schema)
       if (schema.isRefreshOnManual) {
         viewManager.setStatus(schema.getIdentifier, MVStatus.DISABLED)
@@ -121,7 +128,7 @@ case class CarbonCreateMVCommand(
     }
 
     OperationListenerBus.getInstance().fireEvent(
-      CreateMVPostExecutionEvent(session, identifier),
+      CreateMVPostExecutionEvent(session, systemDirectoryPath, identifier),
       operationContext)
 
     this.viewSchema = schema
@@ -150,10 +157,18 @@ case class CarbonCreateMVCommand(
 
   private def doCreate(session: SparkSession,
       tableIdentifier: TableIdentifier,
-      viewManager: MVManagerInSpark): MVSchema = {
+      viewManager: MVManagerInSpark,
+      viewCatalog: MVCatalogInSpark): MVSchema = {
     val logicalPlan = MVHelper.dropDummyFunction(
       MVQueryParser.getQueryPlan(queryString, session))
-    val modularPlan = checkQuery(session, logicalPlan)
+      // check if mv with same query already exists
+    val mvSchemaWrapper = viewCatalog.getMVWithSameQueryPresent(logicalPlan)
+    if (mvSchemaWrapper.nonEmpty) {
+      val mvWithSameQuery = mvSchemaWrapper.get.viewSchema.getIdentifier.getTableName
+      throw new MalformedMVCommandException(
+        s"MV with the name `$mvWithSameQuery` has been already created with the same query")
+    }
+    val modularPlan = checkQuery(logicalPlan)
     val viewSchema = getOutputSchema(logicalPlan)
     val relatedTables = getRelatedTables(logicalPlan)
     val relatedTableList = toCarbonTables(session, relatedTables)
@@ -456,7 +471,7 @@ case class CarbonCreateMVCommand(
     generatePartitionerField(relatedTablePartitionColumns.toList, Seq.empty)
   }
 
-  private def checkQuery(sparkSession: SparkSession, logicalPlan: LogicalPlan): ModularPlan = {
+  private def checkQuery(logicalPlan: LogicalPlan): ModularPlan = {
     // if there is limit in query string, throw exception, as its not a valid usecase
     logicalPlan match {
       case Limit(_, _) =>

@@ -97,7 +97,7 @@ public class MinMaxIndexIndexFactory extends CoarseGrainIndexFactory {
   }
 
   /**
-   * getSecondaryIndexes Factory method Initializes the Min Max Data Map and returns.
+   * getSecondaryIndexes Factory method Initializes the Min Max Index and returns.
    *
    * @param segment
    * @return
@@ -140,7 +140,7 @@ public class MinMaxIndexIndexFactory extends CoarseGrainIndexFactory {
   }
 
   /**
-   * Clearing the data map.
+   * Clearing the index.
    */
   @Override
   public void clear() {

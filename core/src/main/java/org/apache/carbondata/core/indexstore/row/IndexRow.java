@@ -79,7 +79,7 @@ public abstract class IndexRow implements Serializable {
     for (int i = 0; i < schemas.length; i++) {
       len += getSizeInBytes(i);
     }
-    // for last offset in unsafe data map row
+    // for last offset in unsafe index row
     len += 4;
     return len;
   }

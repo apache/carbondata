@@ -402,7 +402,7 @@ class GridData {
  */
 class QuadNode {
   private static final Logger LOGGER =
-      LogServiceFactory.getLogService(GeoHashImpl.class.getName());
+      LogServiceFactory.getLogService(QuadNode.class.getName());
   // The range Z order of region hashid represented by quadtree is a continuous range
   private QuadRect rect;
   // Grid data, actually representing hashid

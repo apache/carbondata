@@ -211,10 +211,10 @@ object DataLoadProcessorStepOnSpark {
         row = rowConverter.convert(row)
         if (row != null) {
           // In case of partition, after Input processor and converter steps, all the rows are given
-          // to hive to create partition folders. As hive is unaware of non-schema index columns,
+          // to hive to create partition folders. As hive is unaware of non-schema columns,
           // should discard those columns from rows and return.
           val schemaColumnValues = row.getData.zipWithIndex.collect {
-            case (data, index) if !conf.getDataFields()(index).getColumn.isIndexColumn =>
+            case (data, index) if !conf.getDataFields()(index).getColumn.isSpatialColumn =>
               data
           }
           row.setData(schemaColumnValues)

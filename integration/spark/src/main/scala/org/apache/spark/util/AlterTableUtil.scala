@@ -623,7 +623,7 @@ object AlterTableUtil {
     if (propertiesMap.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
       val schemaList: util.List[ColumnSchema] = CarbonUtil
         .getColumnSchemaList(carbonTable.getVisibleDimensions.asScala
-          .filterNot(_.getColumnSchema.isIndexColumn).asJava, carbonTable.getVisibleMeasures)
+          .filterNot(_.getColumnSchema.isSpatialColumn).asJava, carbonTable.getVisibleMeasures)
       val tableColumns: Seq[String] = schemaList.asScala
         .map(columnSchema => columnSchema.getColumnName)
       CommonUtil
@@ -689,13 +689,13 @@ object AlterTableUtil {
                                                ): Unit = {
     CommonUtil.validateSortScope(propertiesMap)
     CommonUtil.validateSortColumns(carbonTable, propertiesMap)
-    val indexProp = tblPropertiesMap.get(CarbonCommonConstants.INDEX_HANDLER)
+    val indexProp = tblPropertiesMap.get(CarbonCommonConstants.SPATIAL_INDEX)
     if (indexProp.isDefined) {
-      indexProp.get.split(",").map(_.trim).foreach { handler =>
-        val SOURCE_COLUMNS = s"${ CarbonCommonConstants.INDEX_HANDLER }.$handler.sourcecolumns"
+      indexProp.get.split(",").map(_.trim).foreach { indexName =>
+        val SOURCE_COLUMNS = s"${ CarbonCommonConstants.SPATIAL_INDEX }.$indexName.sourcecolumns"
         val sourceColumns = tblPropertiesMap(SOURCE_COLUMNS).split(",").map(_.trim)
-        // Add index handler as a sort column if it is not already present in it.
-        CarbonScalaUtil.addIndexHandlerToSortColumns(handler, sourceColumns, propertiesMap)
+        // Add spatial index column as a sort column if it is not already present in it.
+        CarbonScalaUtil.insertColumnToSortColumns(indexName, sourceColumns, propertiesMap)
       }
     }
     // match SORT_SCOPE and SORT_COLUMNS
@@ -800,7 +800,7 @@ object AlterTableUtil {
   }
 
   private def clearCache(carbonTable: CarbonTable): Unit = {
-    // clear dataMap cache
+    // clear indexes cache
     IndexStoreManager.getInstance().clearIndex(carbonTable.getAbsoluteTableIdentifier)
     // clear segmentProperties Cache
     SegmentPropertiesAndSchemaHolder.getInstance()
@@ -1058,31 +1058,31 @@ object AlterTableUtil {
     }
   }
 
-  def validateForIndexHandlerName(carbonTable: CarbonTable, alterColumns: Seq[String]): Unit = {
-    // Do not allow columns to be added with index handler name
+  def validateSpatialIndexColumn(carbonTable: CarbonTable, alterColumns: Seq[String]): Unit = {
+    // Do not allow columns to be added with spatial index column name
     val properties = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
-    val indexProperty = properties.get(CarbonCommonConstants.INDEX_HANDLER)
+    val indexProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX)
     if (indexProperty.isDefined) {
       indexProperty.get.split(",").map(_.trim).foreach(element =>
         if (alterColumns.contains(element)) {
           throw new MalformedCarbonCommandException(s"Column: $element is not allowed. " +
-            s"This column is present in ${CarbonCommonConstants.INDEX_HANDLER} table property.")
+            s"This column is present in ${CarbonCommonConstants.SPATIAL_INDEX} table property.")
         })
       }
   }
 
-  def validateForIndexHandlerSources(carbonTable: CarbonTable, alterColumns: Seq[String]): Unit = {
-    // Do not allow index handler source columns to be altered
+  def validateSpatialIndexSources(carbonTable: CarbonTable, alterColumns: Seq[String]): Unit = {
+    // Do not allow spatial index source columns to be altered
     val properties = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
-    val indexProperty = properties.get(CarbonCommonConstants.INDEX_HANDLER)
+    val indexProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX)
     if (indexProperty.isDefined) {
       indexProperty.get.split(",").map(_.trim).foreach { element =>
         val srcColumns
-        = properties.get(CarbonCommonConstants.INDEX_HANDLER + s".$element.sourcecolumns")
+        = properties.get(CarbonCommonConstants.SPATIAL_INDEX + s".$element.sourcecolumns")
         val common = alterColumns.intersect(srcColumns.get.split(",").map(_.trim))
         if (common.nonEmpty) {
           throw new MalformedCarbonCommandException(s"Columns present in " +
-            s"${CarbonCommonConstants.INDEX_HANDLER} table property cannot be altered.")
+            s"${CarbonCommonConstants.SPATIAL_INDEX} table property cannot be altered.")
         }
       }
     }

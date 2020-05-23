@@ -24,6 +24,8 @@ import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.view.{MVCatalogInSpark, MVManagerInSpark, UpdateMVPostExecutionEvent, UpdateMVPreExecutionEvent}
 
@@ -52,14 +54,19 @@ case class CarbonDropMVCommand(
       val schema = viewManager.getSchema(databaseName, name)
       if (schema != null) {
         // Drop mv status.
+        val databaseLocation = viewManager.getDatabaseLocation(databaseName)
+        val systemDirectoryPath = CarbonProperties.getInstance()
+          .getSystemFolderLocationPerDatabase(FileFactory
+            .getCarbonFile(databaseLocation)
+            .getCanonicalPath)
         val identifier = TableIdentifier(name, Option(databaseName))
         val operationContext = new OperationContext()
         OperationListenerBus.getInstance().fireEvent(
-          UpdateMVPreExecutionEvent(session, identifier),
+          UpdateMVPreExecutionEvent(session, systemDirectoryPath, identifier),
           operationContext)
         viewManager.onDrop(databaseName, name)
         OperationListenerBus.getInstance().fireEvent(
-          UpdateMVPostExecutionEvent(session, identifier),
+          UpdateMVPostExecutionEvent(session, systemDirectoryPath, identifier),
           operationContext)
 
         // Drop mv table.

@@ -39,6 +39,12 @@ AS carbondata/bloomfilter/lucene
 [PROPERTIES ('key'='value')]
 ```
 
+Index can be refreshed using following DDL
+
+```
+REFRESH INDEX index_name ON [TABLE] [db_name.]table_name
+```
+
 Currently, there are 3 Index implementations in CarbonData.
 
 | Index Provider   | Description                                                                      | Management |

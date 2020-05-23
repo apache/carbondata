@@ -37,30 +37,20 @@ import org.apache.spark.sql.test.util.QueryTest
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
+import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
+import org.scalatest.BeforeAndAfterAll
 
-class TestCarbonPartitionWriter extends QueryTest {
+class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
 
   val tableName = "test_flink_partition"
+  val dataTempPath = targetTestClass + "/data/temp/"
 
   test("Writing flink data to local partition carbon table") {
-    sql(s"DROP TABLE IF EXISTS $tableName").collect()
-    sql(
-      s"""
-         | CREATE TABLE $tableName (stringField string, intField int, shortField short)
-         | STORED AS carbondata
-         | PARTITIONED BY (hour_ string, date_ string)
-         | TBLPROPERTIES ('SORT_COLUMNS'='hour_,date_,stringField', 'SORT_SCOPE'='GLOBAL_SORT')
-      """.stripMargin
-    ).collect()
-
-    val rootPath = System.getProperty("user.dir") + "/target/test-classes"
-
-    val dataTempPath = rootPath + "/data/temp/"
-
+    createPartitionTable
     try {
       val tablePath = storeLocation + "/" + tableName + "/"
-
-      val writerProperties = newWriterProperties(dataTempPath, storeLocation)
+      val writerProperties = newWriterProperties(dataTempPath)
       val carbonProperties = newCarbonProperties(storeLocation)
 
       val environment = StreamExecutionEnvironment.getExecutionEnvironment
@@ -69,53 +59,13 @@ class TestCarbonPartitionWriter extends QueryTest {
       environment.setRestartStrategy(RestartStrategies.noRestart)
 
       val dataCount = 1000
-      val source = new TestSource(dataCount) {
-        @throws[InterruptedException]
-        override def get(index: Int): Array[AnyRef] = {
-          val data = new Array[AnyRef](7)
-          data(0) = "test" + index
-          data(1) = index.asInstanceOf[AnyRef]
-          data(2) = 12345.asInstanceOf[AnyRef]
-          data(3) = Integer.toString(TestSource.randomCache.get().nextInt(24))
-          data(4) = "20191218"
-          data
-        }
-
-        @throws[InterruptedException]
-        override def onFinish(): Unit = {
-          Thread.sleep(5000L)
-        }
-      }
-      val stream = environment.addSource(source)
-      val factory = CarbonWriterFactory.builder("Local").build(
-        "default",
-        tableName,
-        tablePath,
-        new Properties,
-        writerProperties,
-        carbonProperties
-      )
-      val streamSink = StreamingFileSink.forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory).build
-
-      stream.keyBy(new KeySelector[Array[AnyRef], AnyRef] {
-        override def getKey(value: Array[AnyRef]): AnyRef = value(3) // return hour_
-      }).addSink(streamSink)
-
-      try environment.execute
-      catch {
-        case exception: Exception =>
-          // TODO
-          throw new UnsupportedOperationException(exception)
-      }
-      assertResult(false)(FileFactory
-        .getCarbonFile(CarbonTablePath.getStageDir(tablePath)).listFiles().isEmpty)
+      val source = getTestSource(dataCount)
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment, source)
 
       sql(s"INSERT INTO $tableName STAGE")
 
       checkAnswer(sql(s"SELECT count(1) FROM $tableName"), Seq(Row(1000)))
 
-    } finally {
-      sql(s"DROP TABLE IF EXISTS $tableName").collect()
     }
   }
 
@@ -130,15 +80,9 @@ class TestCarbonPartitionWriter extends QueryTest {
          | TBLPROPERTIES ('SORT_COLUMNS'='hour_,date_,stringField', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin
     ).collect()
-
-    val rootPath = System.getProperty("user.dir") + "/target/test-classes"
-
-    val dataTempPath = rootPath + "/data/temp/"
-
     try {
       val tablePath = storeLocation + "/" + tableName + "/"
-
-      val writerProperties = newWriterProperties(dataTempPath, storeLocation)
+      val writerProperties = newWriterProperties(dataTempPath)
       val carbonProperties = newCarbonProperties(storeLocation)
 
       val environment = StreamExecutionEnvironment.getExecutionEnvironment
@@ -166,29 +110,7 @@ class TestCarbonPartitionWriter extends QueryTest {
           Thread.sleep(5000L)
         }
       }
-      val stream = environment.addSource(source)
-      val factory = CarbonWriterFactory.builder("Local").build(
-        "default",
-        tableName,
-        tablePath,
-        new Properties,
-        writerProperties,
-        carbonProperties
-      )
-      val streamSink = StreamingFileSink.forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory).build
-
-      stream.keyBy(new KeySelector[Array[AnyRef], AnyRef] {
-        override def getKey(value: Array[AnyRef]): AnyRef = value(3) // return hour_
-      }).addSink(streamSink)
-
-      try environment.execute
-      catch {
-        case exception: Exception =>
-          // TODO
-          throw new UnsupportedOperationException(exception)
-      }
-      assertResult(false)(FileFactory
-        .getCarbonFile(CarbonTablePath.getStageDir(tablePath)).listFiles().isEmpty)
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment, source)
 
       sql(s"INSERT INTO $tableName STAGE")
 
@@ -201,14 +123,144 @@ class TestCarbonPartitionWriter extends QueryTest {
       assertResult(1)(rows.length)
       assertResult(Array[Byte](2, 3, 4))(rows(0).get(rows(0).fieldIndex("binaryfield")).asInstanceOf[GenericRowWithSchema](0))
 
-    } finally {
-      sql(s"DROP TABLE IF EXISTS $tableName").collect()
     }
   }
 
+  test("test insert stage into partition carbon table with secondary index") {
+    createPartitionTable
+    // create si index
+    sql(s"drop index if exists si_1 on $tableName")
+    sql(s"create index si_1 on $tableName(stringField1) as 'carbondata'")
+    try {
+      val tablePath = storeLocation + "/" + tableName + "/"
+      val writerProperties = newWriterProperties(dataTempPath)
+      val carbonProperties = newCarbonProperties(storeLocation)
+
+      val environment = StreamExecutionEnvironment.getExecutionEnvironment
+      environment.setParallelism(6)
+      environment.enableCheckpointing(2000L)
+      environment.setRestartStrategy(RestartStrategies.noRestart)
+
+      val dataCount = 10
+      val source = getTestSource(dataCount)
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment, source)
+
+      sql(s"INSERT INTO $tableName STAGE")
+
+      checkAnswer(sql("select count(*) from si_1"), Seq(Row(10))  )
+      checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(10)))
+      // check if query hits si
+      val df = sql(s"select stringField, intField from $tableName where stringField1 = 'si1'")
+      checkAnswer(df, Seq(Row("test1", 1)))
+      var isFilterHitSecondaryIndex = false
+      df.queryExecution.sparkPlan.transform {
+        case broadCastSIFilterPushDown: BroadCastSIFilterPushJoin =>
+          isFilterHitSecondaryIndex = true
+          broadCastSIFilterPushDown
+      }
+      assert(isFilterHitSecondaryIndex)
+    }
+  }
+
+  test("test insert stage into partition carbon table with materialized view") {
+    createPartitionTable
+    // create materialized view
+    sql(s"drop materialized view if exists mv_1")
+    sql(s"create materialized view mv_1 as select stringField, shortField from $tableName where intField=9")
+
+    try {
+      val tablePath = storeLocation + "/" + tableName + "/"
+      val writerProperties = newWriterProperties(dataTempPath)
+      val carbonProperties = newCarbonProperties(storeLocation)
+
+      val environment = StreamExecutionEnvironment.getExecutionEnvironment
+      environment.setParallelism(6)
+      environment.enableCheckpointing(2000L)
+      environment.setRestartStrategy(RestartStrategies.noRestart)
+
+      val dataCount = 10
+      val source = getTestSource(dataCount)
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment, source)
+
+      sql(s"INSERT INTO $tableName STAGE")
+
+      checkAnswer(sql(s"SELECT count(*) FROM mv_1"), Seq(Row(1)))
+      val df = sql(s"select stringField, shortField from $tableName where intField=9")
+      val tables = df.queryExecution.optimizedPlan collect {
+        case l: LogicalRelation => l.catalogTable.get
+      }
+      assert(tables.exists(_.identifier.table.equalsIgnoreCase("mv_1")))
+      checkAnswer(df, Seq(Row("test9",12345)))
+
+    }
+  }
+
+  private def getTestSource(dataCount: Int): TestSource = {
+    new TestSource(dataCount) {
+      @throws[InterruptedException]
+      override def get(index: Int): Array[AnyRef] = {
+        val data = new Array[AnyRef](7)
+        data(0) = "test" + index
+        data(1) = index.asInstanceOf[AnyRef]
+        data(2) = 12345.asInstanceOf[AnyRef]
+        data(3) = "si" + index
+        data(4) = Integer.toString(TestSource.randomCache.get().nextInt(24))
+        data
+      }
+
+      @throws[InterruptedException]
+      override def onFinish(): Unit = {
+        Thread.sleep(5000L)
+      }
+    }
+  }
+
+  private def createPartitionTable = {
+    sql(s"DROP TABLE IF EXISTS $tableName")
+    sql(
+      s"""
+         | CREATE TABLE $tableName (stringField string, intField int, shortField short, stringField1 string)
+         | STORED AS carbondata
+         | PARTITIONED BY (hour_ string)
+         | TBLPROPERTIES ('SORT_COLUMNS'='hour_,stringField', 'SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
+  }
+
+  override def afterAll(): Unit = {
+    sql(s"DROP TABLE IF EXISTS $tableName")
+  }
+
+  private def executeStreamingEnvironment(tablePath: String,
+      writerProperties: Properties,
+      carbonProperties: Properties,
+      environment: StreamExecutionEnvironment,
+      source: TestSource): Unit = {
+    val stream = environment.addSource(source)
+    val factory = CarbonWriterFactory.builder("Local").build(
+      "default",
+      tableName,
+      tablePath,
+      new Properties,
+      writerProperties,
+      carbonProperties)
+    val streamSink = StreamingFileSink.forBulkFormat(new Path(ProxyFileSystem.DEFAULT_URI), factory).build
+
+    stream.keyBy(new KeySelector[Array[AnyRef], AnyRef] {
+      override def getKey(value: Array[AnyRef]): AnyRef = value(3) // return hour_
+    }).addSink(streamSink)
+
+    try environment.execute
+    catch {
+      case exception: Exception =>
+        // TODO
+        throw new UnsupportedOperationException(exception)
+    }
+    assertResult(false)(FileFactory
+      .getCarbonFile(CarbonTablePath.getStageDir(tablePath)).listFiles().isEmpty)
+  }
+
   private def newWriterProperties(
-     dataTempPath: String,
-     storeLocation: String) = {
+     dataTempPath: String) = {
     val properties = new Properties
     properties.setProperty(CarbonLocalProperty.DATA_TEMP_PATH, dataTempPath)
     properties

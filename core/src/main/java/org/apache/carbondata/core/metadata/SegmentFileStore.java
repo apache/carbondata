@@ -833,7 +833,13 @@ public class SegmentFileStore {
       for (Map.Entry<String, FolderDetails> entry : getLocationMap().entrySet()) {
         String location = entry.getKey();
         if (entry.getValue().isRelative) {
-          location = tablePath + location;
+          if (location.equals("/")) {
+            // incase of flat folder, the relative segment location is '/',
+            // so don't append it as we again add file separator for file names.
+            location = tablePath;
+          } else {
+            location = tablePath + location;
+          }
         }
         if (entry.getValue().status.equals(SegmentStatus.SUCCESS.getMessage())) {
           String mergeFileName = entry.getValue().getMergeFileName();

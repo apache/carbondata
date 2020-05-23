@@ -72,7 +72,7 @@ public class Segment implements Serializable, Writable {
   private long indexSize = 0;
 
   /**
-   * Whether to cache the segment data maps in executors or not.
+   * Whether to cache the segment indexes in executors or not.
    */
   private boolean isCacheable = true;
 

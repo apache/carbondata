@@ -167,11 +167,11 @@ public class CarbonLoadModel implements Serializable {
   private boolean isLoadWithoutConverterStep;
 
   /**
-   * Whether index columns are present. This flag should be set only when all the schema
-   * columns are already converted. Now, just need to generate and convert index columns present in
-   * data fields.
+   * Whether non-schema columns are present. This flag should be set only when all the schema
+   * columns are already converted. Now, just need to generate and convert non-schema columns
+   * present in data fields.
    */
-  private boolean isIndexColumnsPresent;
+  private boolean nonSchemaColumnsPresent;
 
   /**
    * for insert into flow, schema is already re-arranged. No need to re-arrange the data
@@ -889,14 +889,6 @@ public class CarbonLoadModel implements Serializable {
     this.metrics = metrics;
   }
 
-  public boolean isIndexColumnsPresent() {
-    return isIndexColumnsPresent;
-  }
-
-  public void setIndexColumnsPresent(boolean indexColumnsPresent) {
-    isIndexColumnsPresent = indexColumnsPresent;
-  }
-
   public boolean isLoadWithoutConverterWithoutReArrangeStep() {
     return isLoadWithoutConverterWithoutReArrangeStep;
   }
@@ -904,5 +896,13 @@ public class CarbonLoadModel implements Serializable {
   public void setLoadWithoutConverterWithoutReArrangeStep(
       boolean loadWithoutConverterWithoutReArrangeStep) {
     isLoadWithoutConverterWithoutReArrangeStep = loadWithoutConverterWithoutReArrangeStep;
+  }
+
+  public boolean isNonSchemaColumnsPresent() {
+    return nonSchemaColumnsPresent;
+  }
+
+  public void setNonSchemaColumnsPresent(boolean nonSchemaColumnsPresent) {
+    this.nonSchemaColumnsPresent = nonSchemaColumnsPresent;
   }
 }

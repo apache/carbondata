@@ -57,13 +57,13 @@ public interface Index<T extends Blocklet> {
       CarbonTable carbonTable, FilterExecuter filterExecuter);
 
   /**
-   * Prune the data maps for finding the row count. It returns a Map of
+   * Prune the indexes for finding the row count. It returns a Map of
    * blockletpath and the row count
    */
   long getRowCount(Segment segment, List<PartitionSpec> partitions);
 
   /**
-   * Prune the data maps for finding the row count for each block. It returns a Map of
+   * Prune the indexes for finding the row count for each block. It returns a Map of
    * blockletpath and the row count
    */
   Map<String, Long> getRowCountForEachBlock(Segment segment, List<PartitionSpec> partitions,
