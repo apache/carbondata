@@ -18,6 +18,7 @@
 package org.apache.carbondata.presto;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
@@ -46,6 +47,26 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
       dictionaryVectorWrapper = new CarbonColumnVectorWrapper(
               (CarbonColumnVectorImpl)columnVector.getDictionaryVector(), filteredRows);
     }
+  }
+
+  public CarbonColumnVector getColumnVector() {
+    throw new UnsupportedOperationException("Operation not allowed");
+  }
+
+  public List<CarbonColumnVectorImpl> getChildrenVector() {
+    throw new UnsupportedOperationException("Operation not allowed");
+  }
+
+  public void putArrayObject() {
+    throw new UnsupportedOperationException("Operation not allowed");
+  }
+
+  public int getIndex() {
+    throw new UnsupportedOperationException("Operation not allowed");
+  }
+
+  public void setIndex(int index) {
+    throw new UnsupportedOperationException("Operation not allowed");
   }
 
   @Override

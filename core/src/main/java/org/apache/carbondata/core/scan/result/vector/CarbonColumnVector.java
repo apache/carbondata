@@ -18,8 +18,10 @@
 package org.apache.carbondata.core.scan.result.vector;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 
 public interface CarbonColumnVector {
@@ -113,5 +115,18 @@ public interface CarbonColumnVector {
   CarbonColumnVector getDictionaryVector();
 
   void setLazyPage(LazyPageLoader lazyPage);
+
+  // to get the original vector from wrapper
+  CarbonColumnVector getColumnVector();
+
+  List<CarbonColumnVectorImpl> getChildrenVector();
+
+  void putArrayObject();
+
+  // returns the start index in order to read the pageData
+  int getIndex();
+
+  // updates the last read index after reading the pageData
+  void setIndex(int index);
 
 }

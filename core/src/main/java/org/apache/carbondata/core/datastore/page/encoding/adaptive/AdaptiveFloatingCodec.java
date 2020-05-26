@@ -19,10 +19,7 @@ package org.apache.carbondata.core.datastore.page.encoding.adaptive;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.compression.Compressor;
@@ -33,14 +30,15 @@ import org.apache.carbondata.core.datastore.page.LazyColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
+import org.apache.carbondata.core.datastore.page.encoding.FillVector;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.SequentialFill;
-import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.Encoding;
 
@@ -247,60 +245,14 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
       DataType vectorDataType = vector.getType();
       vector = ColumnarVectorWrapperDirectFactory
           .getDirectVectorWrapperFactory(vector, null, nullBits, deletedRows, true, false);
-      int rowId = 0;
-      if (vectorDataType == DataTypes.FLOAT) {
-        if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
-          for (int i = 0; i < pageSize; i++) {
-            vector.putFloat(i, (pageData[i] / floatFactor));
-          }
-        } else if (pageDataType == DataTypes.SHORT) {
-          int size = pageSize * DataTypes.SHORT.getSizeInBytes();
-          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
-            vector.putFloat(rowId++, (ByteUtil.toShortLittleEndian(pageData, i) / floatFactor));
-          }
 
-        } else if (pageDataType == DataTypes.SHORT_INT) {
-          int size = pageSize * DataTypes.SHORT_INT.getSizeInBytes();
-          for (int i = 0; i < size; i += DataTypes.SHORT_INT.getSizeInBytes()) {
-            vector.putFloat(rowId++, (ByteUtil.valueOf3Bytes(pageData, i) / floatFactor));
-          }
-        } else if (pageDataType == DataTypes.INT) {
-          int size = pageSize * DataTypes.INT.getSizeInBytes();
-          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-            vector.putFloat(rowId++, (ByteUtil.toIntLittleEndian(pageData, i) / floatFactor));
-          }
-        } else {
-          throw new RuntimeException("internal error: " + this.toString());
-        }
-      } else {
-        if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
-          for (int i = 0; i < pageSize; i++) {
-            vector.putDouble(i, (pageData[i] / factor));
-          }
-        } else if (pageDataType == DataTypes.SHORT) {
-          int size = pageSize * DataTypes.SHORT.getSizeInBytes();
-          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
-            vector.putDouble(rowId++, (ByteUtil.toShortLittleEndian(pageData, i) / factor));
-          }
-        } else if (pageDataType == DataTypes.SHORT_INT) {
-          int size = pageSize * DataTypes.SHORT_INT.getSizeInBytes();
-          for (int i = 0; i < size; i += DataTypes.SHORT_INT.getSizeInBytes()) {
-            vector.putDouble(rowId++, (ByteUtil.valueOf3Bytes(pageData, i) / factor));
-          }
-
-        } else if (pageDataType == DataTypes.INT) {
-          int size = pageSize * DataTypes.INT.getSizeInBytes();
-          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-            vector.putDouble(rowId++, (ByteUtil.toIntLittleEndian(pageData, i) / factor));
-          }
-        } else if (pageDataType == DataTypes.LONG) {
-          int size = pageSize * DataTypes.LONG.getSizeInBytes();
-          for (int i = 0; i < size; i += DataTypes.LONG.getSizeInBytes()) {
-            vector.putDouble(rowId++, (ByteUtil.toLongLittleEndian(pageData, i) / factor));
-          }
-        } else {
-          throw new RuntimeException("Unsupported datatype : " + pageDataType);
-        }
+      Stack<CarbonColumnVectorImpl> vectorStack = vectorInfo.getVectorStack();
+      FillVector fill = new FillVector(pageData, vectorInfo, nullBits);
+      fill.setFloatFactor(floatFactor);
+      fill.setFactor(factor);
+      fill.basedOnType(vector, vectorDataType, pageSize, pageDataType);
+      if (vectorStack != null && vectorStack.size() > 0) {
+        vectorStack.pop();
       }
 
       if ((deletedRows == null || deletedRows.isEmpty())

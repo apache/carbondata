@@ -26,6 +26,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.StructField;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
@@ -163,6 +164,19 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     return 0;
   }
 
+  public StructField fillChildFields(CarbonDimension dimension) {
+    List<CarbonDimension> listOfChildDimensions =
+            dimension.getListOfChildDimensions();
+    ArrayList<StructField> childFields = null;
+    if (listOfChildDimensions != null) {
+      childFields = new ArrayList<StructField>();
+      for (int i = 0; i < listOfChildDimensions.size(); i++) {
+        childFields.add(fillChildFields(listOfChildDimensions.get(i)));
+      }
+    }
+    return new StructField(dimension.getColName(), dimension.getDataType(), childFields);
+  }
+
   /**
    * Returns the ColumnarBatch object that will be used for all rows returned by this reader.
    * This object is reused. Calling this enables the vectorized reader. This should be called
@@ -176,8 +190,15 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     for (int i = 0; i < queryDimension.size(); i++) {
       ProjectionDimension dim = queryDimension.get(i);
       if (dim.getDimension().isComplex()) {
+        List<CarbonDimension> childDimensions =
+                dim.getDimension().getListOfChildDimensions();
+        ArrayList<StructField> childFields = new ArrayList<StructField>();
+        for (int index = 0; index < childDimensions.size(); index++) {
+          childFields.add(fillChildFields(childDimensions.get(index)));
+        }
         fields[dim.getOrdinal()] =
-            new StructField(dim.getColumnName(), dim.getDimension().getDataType());
+                new StructField(dim.getColumnName(), dim.getDimension().getDataType(),
+                        childFields);
       } else if (dim.getDimension().getDataType() == DataTypes.DATE) {
         DirectDictionaryGenerator generator = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(dim.getDimension().getDataType());

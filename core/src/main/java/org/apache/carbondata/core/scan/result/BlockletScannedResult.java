@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
@@ -152,6 +153,9 @@ public abstract class BlockletScannedResult {
   private ReusableDataBuffer[] dimensionReusableBuffer;
 
   private ReusableDataBuffer[] measureReusableBuffer;
+
+  // index used by dimensionReusableBuffer
+  int startIndex = 0;
 
   public BlockletScannedResult(BlockExecutionInfo blockExecutionInfo,
       QueryStatisticsModel queryStatisticsModel) {
@@ -394,11 +398,27 @@ public abstract class BlockletScannedResult {
         pageUncompressTime.getCount() + (System.currentTimeMillis() - startTime));
   }
 
+  void fillChildDataChunks(CarbonColumnVector columnVector, List<CarbonDimension> dimensions,
+                           ColumnVectorInfo complexInfo) {
+    if (columnVector == null) return;
+    for (int i = 0; i < dimensions.size(); i++) {
+      columnVector.setLazyPage(
+              new LazyPageLoader(lazyBlockletLoader, dimensions.get(i).getOrdinal(),
+                      false, pageIdFiltered[pageCounter], complexInfo,
+                      dimensionReusableBuffer[startIndex++]));
+      if (columnVector.getChildrenVector() != null) {
+        fillChildDataChunks(columnVector.getChildrenVector().get(0),
+            dimensions.get(i).getListOfChildDimensions(), complexInfo);
+      }
+
+    }
+  }
+
   /**
    * Fill all the vectors with data by decompressing/decoding the column page
    */
   public void fillDataChunks(ColumnVectorInfo[] dictionaryInfo, ColumnVectorInfo[] noDictionaryInfo,
-      ColumnVectorInfo[] msrVectorInfo, int[] measuresOrdinal) {
+      ColumnVectorInfo[] msrVectorInfo, int[] measuresOrdinal, ColumnVectorInfo[] complexInfo) {
     freeDataChunkMemory();
     if (pageCounter >= pageFilteredRowCount.length) {
       return;
@@ -409,12 +429,22 @@ public abstract class BlockletScannedResult {
           new LazyPageLoader(lazyBlockletLoader, dictionaryColumnChunkIndexes[i], false,
               pageIdFiltered[pageCounter], dictionaryInfo[i], dimensionReusableBuffer[i]));
     }
-    int startIndex = dictionaryColumnChunkIndexes.length;
+    startIndex = dictionaryColumnChunkIndexes.length;
     for (int i = 0; i < this.noDictionaryColumnChunkIndexes.length; i++) {
       noDictionaryInfo[i].vector.setLazyPage(
           new LazyPageLoader(lazyBlockletLoader, noDictionaryColumnChunkIndexes[i], false,
               pageIdFiltered[pageCounter], noDictionaryInfo[i],
               dimensionReusableBuffer[startIndex++]));
+    }
+    startIndex = noDictionaryColumnChunkIndexes.length + dictionaryColumnChunkIndexes.length;
+
+    for (int i = 0; i < this.complexParentBlockIndexes.length; i++) {
+      complexInfo[i].vector.getColumnVector().setLazyPage(
+          new LazyPageLoader(lazyBlockletLoader, complexParentBlockIndexes[i], false,
+              pageIdFiltered[pageCounter], complexInfo[i], dimensionReusableBuffer[startIndex++]));
+      // set child pages
+      fillChildDataChunks(complexInfo[i].vector.getColumnVector().getChildrenVector().get(0),
+              complexInfo[i].dimension.getDimension().getListOfChildDimensions(), complexInfo[i]);
     }
 
     for (int i = 0; i < measuresOrdinal.length; i++) {

@@ -18,10 +18,12 @@
 package org.apache.carbondata.spark.vectorreader;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 
 import org.apache.spark.sql.CarbonVectorProxy;
@@ -54,6 +56,26 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     this.filteredRows = filteredRows;
     this.carbonVectorProxy = writableColumnVector;
     this.ordinal = ordinal;
+  }
+
+  public CarbonColumnVector getColumnVector() {
+    throw new UnsupportedOperationException("Operation not allowed");
+  }
+
+  public List<CarbonColumnVectorImpl> getChildrenVector() {
+    throw new UnsupportedOperationException("Operation not allowed");
+  }
+
+  public void putArrayObject() {
+    throw new UnsupportedOperationException("Operation not allowed");
+  }
+
+  public int getIndex() {
+    throw new UnsupportedOperationException("Operation not allowed");
+  }
+
+  public void setIndex(int index) {
+    throw new UnsupportedOperationException("Operation not allowed");
   }
 
   @Override

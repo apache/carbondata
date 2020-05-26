@@ -18,9 +18,11 @@
 package org.apache.carbondata.core.scan.result.vector.impl.directread;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 
 /**
  * Column vector for column pages which has inverted index, so it uses inverted index
@@ -38,6 +40,31 @@ public class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbon
     super(columnVector);
     this.invertedIndex = invertedIndex;
     this.isnullBitsExists = isnullBitsExists;
+  }
+
+  @Override
+  public CarbonColumnVector getColumnVector() {
+    throw new UnsupportedOperationException("Operation not allowed");
+  }
+
+  @Override
+  public List<CarbonColumnVectorImpl> getChildrenVector() {
+    throw new UnsupportedOperationException("Operation not allowed");
+  }
+
+  @Override
+  public void putArrayObject() {
+    throw new UnsupportedOperationException("Operation not allowed");
+  }
+
+  @Override
+  public int getIndex() {
+    return 0;
+  }
+
+  @Override
+  public void setIndex(int index) {
+
   }
 
   @Override

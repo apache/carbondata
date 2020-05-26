@@ -19,8 +19,10 @@ package org.apache.carbondata.core.scan.result.vector.impl.directread;
 
 import java.math.BigDecimal;
 import java.util.BitSet;
+import java.util.List;
 
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 
 /**
  * Column vector for column pages which has delete delta, so it uses delta bitset to filter out
@@ -39,6 +41,31 @@ class ColumnarVectorWrapperDirectWithDeleteDelta extends AbstractCarbonColumnarV
     super(vectorWrapper);
     this.deletedRows = deletedRows;
     this.nullBits = nullBits;
+  }
+
+  @Override
+  public CarbonColumnVector getColumnVector() {
+    throw new UnsupportedOperationException("Operation not allowed");
+  }
+
+  @Override
+  public List<CarbonColumnVectorImpl> getChildrenVector() {
+    throw new UnsupportedOperationException("Operation not allowed");
+  }
+
+  @Override
+  public void putArrayObject() {
+    throw new UnsupportedOperationException("Operation not allowed");
+  }
+
+  @Override
+  public int getIndex() {
+    return 0;
+  }
+
+  @Override
+  public void setIndex(int index) {
+
   }
 
   @Override

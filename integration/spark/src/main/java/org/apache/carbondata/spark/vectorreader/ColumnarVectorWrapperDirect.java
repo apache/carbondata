@@ -18,10 +18,12 @@
 package org.apache.carbondata.spark.vectorreader;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 
 import org.apache.spark.sql.CarbonVectorProxy;
@@ -51,10 +53,34 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector {
 
   private CarbonColumnVector dictionaryVector;
 
+  private int index;
+
   ColumnarVectorWrapperDirect(CarbonVectorProxy writableColumnVector, int ordinal) {
     this.sparkColumnVectorProxy = writableColumnVector.getColumnVector(ordinal);
     this.carbonVectorProxy = writableColumnVector;
     this.ordinal = ordinal;
+  }
+
+  @Override
+  public CarbonColumnVector getColumnVector() {
+    return null;
+  }
+
+  public List<CarbonColumnVectorImpl> getChildrenVector() {
+    return null;
+  }
+
+  public void putArrayObject() {
+    return;
+  }
+
+  public int getIndex() {
+    return index;
+  }
+
+  @Override
+  public void setIndex(int index) {
+    this.index = index;
   }
 
   @Override

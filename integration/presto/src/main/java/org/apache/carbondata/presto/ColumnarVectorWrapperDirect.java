@@ -19,6 +19,7 @@ package org.apache.carbondata.presto;
 
 import java.math.BigDecimal;
 import java.util.BitSet;
+import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
@@ -203,8 +204,29 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putObject(int rowId, Object obj) {
-    throw new UnsupportedOperationException(
-        "Not supported this opeartion from " + this.getClass().getName());
+    columnVector.putObject(rowId, obj);
+  }
+
+  public CarbonColumnVectorImpl getColumnVector() {
+    return this.columnVector;
+  }
+
+  public List<CarbonColumnVectorImpl> getChildrenVector() {
+    return null;
+  }
+
+  public void putArrayObject() {
+    columnVector.putArrayObject();
+  }
+
+  @Override
+  public int getIndex() {
+    return 0;
+  }
+
+  @Override
+  public void setIndex(int index) {
+
   }
 
   @Override

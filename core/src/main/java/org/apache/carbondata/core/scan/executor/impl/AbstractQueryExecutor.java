@@ -98,6 +98,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   protected CarbonIterator queryIterator;
 
+  // denotes the size of the ReusableDataBuffer based on the number of projection columns
+  protected int dataBufferSize = 0;
+
   public AbstractQueryExecutor(Configuration configuration) {
     ThreadLocalSessionInfo.setConfigurationToCurrentThread(configuration);
     queryProperties = new QueryExecutorProperties();
@@ -154,6 +157,26 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_DICTIONARY, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
+
+    for (int i = 0; i < queryModel.getProjectionColumns().length; i++) {
+      dataBufferSize++;
+      if (queryModel.getProjectionColumns()[i] instanceof CarbonDimension) {
+        findDataBufferSize((CarbonDimension) queryModel.getProjectionColumns()[i]);
+      }
+
+    }
+  }
+
+  // Recursively determine the size needed for ReusableDataBuffer[]
+  public void findDataBufferSize(CarbonDimension carbonDimension) {
+    if (carbonDimension == null || carbonDimension.getListOfChildDimensions() == null) {
+      return;
+    }
+    List<CarbonDimension> childDimension = carbonDimension.getListOfChildDimensions();
+    dataBufferSize += childDimension.size();
+    for (int i = 0; i < childDimension.size(); i++) {
+      findDataBufferSize(childDimension.get(i));
+    }
   }
 
   /**
@@ -508,7 +531,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     int[] dimensionChunkIndexes = QueryUtil.getDimensionChunkIndexes(projectDimensions,
         segmentProperties.getDimensionOrdinalToChunkMapping(),
         currentBlockFilterDimensions, allProjectionListDimensionIndexes);
-    ReusableDataBuffer[] dimensionBuffer = new ReusableDataBuffer[projectDimensions.size()];
+    ReusableDataBuffer[] dimensionBuffer = new ReusableDataBuffer[dataBufferSize];
     for (int i = 0; i < dimensionBuffer.length; i++) {
       dimensionBuffer[i] = new ReusableDataBuffer();
     }
