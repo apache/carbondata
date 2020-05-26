@@ -366,8 +366,13 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     private Object[] convertToNoDictionaryToBytes(Object[] data, DataField[] dataFields) {
       Object[] newData = new Object[dataFields.length];
+      Map<String, String> properties =
+          configuration.getTableSpec().getCarbonTable().getTableInfo().getFactTable()
+              .getTableProperties();
+      String spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX);
       for (int i = 0; i < dataFields.length; i++) {
-        if (dataFields[i].getColumn().isSpatialColumn()) {
+        if (spatialProperty != null && dataFields[i].getColumn().getColName()
+            .equalsIgnoreCase(spatialProperty.trim())) {
           continue;
         }
         if (i < noDictionaryMapping.length && noDictionaryMapping[i]) {
@@ -410,27 +415,31 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     private Object[] convertToNoDictionaryToBytesWithoutReArrange(Object[] data,
         DataField[] dataFields) {
       Object[] newData = new Object[dataFields.length];
+      Map<String, String> properties =
+          configuration.getTableSpec().getCarbonTable().getTableInfo().getFactTable()
+              .getTableProperties();
+      String spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX);
       // now dictionary is removed, no need of no dictionary mapping
-      for (int i = 0, index = 0; i < dataFields.length; i++) {
-        if (dataFields[i].getColumn().isSpatialColumn()) {
+      for (int i = 0; i < dataFields.length; i++) {
+        if (spatialProperty != null && dataFields[i].getColumn().getColName()
+            .equalsIgnoreCase(spatialProperty.trim())) {
           continue;
         }
         if (DataTypeUtil.isPrimitiveColumn(dataTypes[i])) {
           // keep the no dictionary measure column as original data
-          newData[i] = data[index];
+          newData[i] = data[i];
         } else if (dataTypes[i].isComplexType()) {
-          getComplexTypeByteArray(newData, i, data, dataFields[i], index, true);
-        } else if (dataTypes[i] == DataTypes.DATE && data[index] instanceof Long) {
+          getComplexTypeByteArray(newData, i, data, dataFields[i], i, true);
+        } else if (dataTypes[i] == DataTypes.DATE && data[i] instanceof Long) {
           if (dateDictionaryGenerator == null) {
             dateDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
                 .getDirectDictionaryGenerator(dataTypes[i], dataFields[i].getDateFormat());
           }
-          newData[i] = dateDictionaryGenerator.generateKey((long) data[index]);
+          newData[i] = dateDictionaryGenerator.generateKey((long) data[i]);
         } else {
           newData[i] =
-              DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(data[index], dataTypes[i]);
+              DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(data[i], dataTypes[i]);
         }
-        index++;
       }
       return newData;
     }

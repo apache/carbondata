@@ -210,6 +210,14 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
             .get
         }")
       }
+      val properties = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
+      val spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX)
+      if (spatialProperty.isDefined) {
+        if (indexModel.columnNames.exists(x => x.equalsIgnoreCase(spatialProperty.get.trim))) {
+          throw new ErrorMessage(s"Secondary Index is not supported for Spatial index column:" +
+                                 s" ${ spatialProperty.get.trim }")
+        }
+      }
       if (indexModel.columnNames.exists(x => !dimNames.contains(x))) {
         throw new ErrorMessage(
           s"one or more specified index cols either does not exist or not a key column or complex" +

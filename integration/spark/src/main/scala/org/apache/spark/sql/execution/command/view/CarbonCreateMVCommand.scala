@@ -172,10 +172,25 @@ case class CarbonCreateMVCommand(
     val viewSchema = getOutputSchema(logicalPlan)
     val relatedTables = getRelatedTables(logicalPlan)
     val relatedTableList = toCarbonTables(session, relatedTables)
+    val inputCols = logicalPlan.output.map(x =>
+      x.name
+    ).toList
     val relatedTableNames = new util.ArrayList[String](relatedTableList.size())
     // Check if load is in progress in any of the parent table mapped to the indexSchema
     relatedTableList.asScala.foreach {
       table =>
+        val tableProperties = table.getTableInfo.getFactTable.getTableProperties.asScala
+        // validate for spatial index column
+        val spatialProperty = tableProperties.get(CarbonCommonConstants.SPATIAL_INDEX)
+        if (spatialProperty.isDefined) {
+          val spatialColumn = spatialProperty.get.trim
+          if (inputCols.contains(spatialColumn)) {
+            val errorMessage =
+              s"$spatialColumn is a spatial index column and is not allowed for " +
+              s"the option(s): MATERIALIZED VIEW"
+            throw new MalformedCarbonCommandException(errorMessage)
+          }
+        }
         if (!table.getTableInfo.isTransactionalTable) {
           throw new MalformedCarbonCommandException(
             "Cannot create mv on non-transactional table")

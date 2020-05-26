@@ -71,10 +71,10 @@ object CarbonSparkUtil {
     val fields = new Array[String](
       carbonRelation.dimensionsAttr.size + carbonRelation.measureAttr.size)
     val carbonTable = carbonRelation.carbonTable
-    val columnSchemas: mutable.Buffer[ColumnSchema] = carbonTable.getTableInfo.getFactTable.
-      getListOfColumns.asScala
-      .filter(cSchema => !cSchema.isInvisible && cSchema.getSchemaOrdinal != -1 &&
-                         !cSchema.isSpatialColumn).sortWith(_.getSchemaOrdinal < _.getSchemaOrdinal)
+    val columnSchemas: mutable.Buffer[ColumnSchema] = carbonTable.getTableInfo
+      .getFactTable.getListOfColumns.asScala
+      .filter(cSchema => !cSchema.isInvisible && cSchema.getSchemaOrdinal != -1)
+      .sortWith(_.getSchemaOrdinal < _.getSchemaOrdinal)
     val columnList = columnSchemas.toList.asJava
     carbonRelation.dimensionsAttr.foreach(attr => {
       val carbonColumn = carbonTable.getColumnByName(attr.name)

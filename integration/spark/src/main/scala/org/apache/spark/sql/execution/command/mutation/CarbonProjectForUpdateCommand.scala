@@ -27,6 +27,8 @@ import org.apache.spark.sql.execution.strategy.MixedFormatHandler
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{ArrayType, LongType}
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.util.AlterTableUtil
+import scala.collection.JavaConverters._
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -70,6 +72,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     setAuditTable(carbonTable)
     setAuditInfo(Map("plan" -> plan.simpleString))
+    // Do not allow spatial index and its source columns to be updated.
+    AlterTableUtil.validateColumnsWithSpatialIndexProperties(carbonTable, columns)
     columns.foreach { col =>
       val dataType = carbonTable.getColumnByName(col).getColumnSchema.getDataType
       if (dataType.isComplexType) {

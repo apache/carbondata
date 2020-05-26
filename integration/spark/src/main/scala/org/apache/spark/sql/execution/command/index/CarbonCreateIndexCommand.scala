@@ -285,7 +285,15 @@ case class CarbonCreateIndexCommand(
       indexProvider: String): java.util.List[CarbonColumn] = {
     val indexCarbonColumns = parentTable.getIndexedColumns(indexColumns)
     val unique: util.Set[String] = new util.HashSet[String]
+    val properties = parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+    val spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX)
     for (indexColumn <- indexCarbonColumns.asScala) {
+      if (spatialProperty.isDefined &&
+          indexColumn.getColName.equalsIgnoreCase(spatialProperty.get.trim)) {
+        throw new MalformedIndexCommandException(String.format(
+          "Spatial Index column is not supported, column '%s' is spatial column",
+          indexColumn.getColName))
+      }
       if (indexProvider.equalsIgnoreCase(IndexType.LUCENE.getIndexProviderName)) {
         // validate whether it is string column.
         if (indexColumn.getDataType != DataTypes.STRING) {

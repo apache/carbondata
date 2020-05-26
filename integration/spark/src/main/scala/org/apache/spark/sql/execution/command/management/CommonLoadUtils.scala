@@ -864,7 +864,7 @@ object CommonLoadUtils {
       // input data from csv files. Convert to logical plan
       val allCols = new ArrayBuffer[String]()
       // get only the visible dimensions from table
-      allCols ++= table.getVisibleDimensions.asScala.filterNot(_.isSpatialColumn).map(_.getColName)
+      allCols ++= table.getVisibleDimensions.asScala.map(_.getColName)
       allCols ++= table.getVisibleMeasures.asScala.map(_.getColName)
       StructType(
         allCols.filterNot(_.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)).map(

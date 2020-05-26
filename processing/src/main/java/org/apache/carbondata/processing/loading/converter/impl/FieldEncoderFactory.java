@@ -18,7 +18,9 @@
 package org.apache.carbondata.processing.loading.converter.impl;
 
 import java.util.List;
+import java.util.Map;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -70,9 +72,17 @@ public class FieldEncoderFactory {
   public FieldConverter createFieldEncoder(
       DataField dataField, int index, String nullFormat, boolean isEmptyBadRecord,
       boolean isConvertToBinary, String binaryDecoder, CarbonDataLoadConfiguration configuration) {
+    String spatialProperty = null;
+    if (configuration != null) {
+      Map<String, String> properties =
+          configuration.getTableSpec().getCarbonTable().getTableInfo().getFactTable()
+              .getTableProperties();
+      spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX);
+    }
     // Converters are only needed for dimensions and measures it return null.
     if (dataField.getColumn().isDimension()) {
-      if (dataField.getColumn().isSpatialColumn()) {
+      if (spatialProperty != null && dataField.getColumn().getColName()
+          .equalsIgnoreCase(spatialProperty.trim())) {
         return new SpatialIndexFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord,
             configuration);
       } else if (dataField.getColumn().getDataType() == DataTypes.DATE &&

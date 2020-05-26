@@ -167,14 +167,6 @@ public class CarbonColumn implements Serializable {
   }
 
   /**
-   * Checks if it is spatial index column
-   * @return Returns True if the column is an spatial index column. Otherwise returns False.
-   */
-  public boolean isSpatialColumn() {
-    return columnSchema.isSpatialColumn();
-  }
-
-  /**
    * @return column property map
    */
   public Map<String, String> getColumnProperties() {

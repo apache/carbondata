@@ -217,6 +217,7 @@ object CarbonParserUtil {
 
     // do not allow below key words as column name
     validateColumnNames(allFields)
+    CommonUtil.validateForSpatialTypeColumn(tableProperties)
 
     fields.zipWithIndex.foreach { case (field, index) =>
       field.schemaOrdinal = index
