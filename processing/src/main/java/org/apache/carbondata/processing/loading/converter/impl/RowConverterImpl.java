@@ -19,8 +19,10 @@ package org.apache.carbondata.processing.loading.converter.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
@@ -83,14 +85,18 @@ public class RowConverterImpl implements RowConverter {
     List<FieldConverter> fieldConverterList = new ArrayList<>();
     List<FieldConverter> nonSchemaFieldConverterList = new ArrayList<>();
     long lruCacheStartTime = System.currentTimeMillis();
-
+    Map<String, String> properties =
+        configuration.getTableSpec().getCarbonTable().getTableInfo().getFactTable()
+            .getTableProperties();
+    String spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX);
     for (int i = 0; i < fields.length; i++) {
       FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
           .createFieldEncoder(fields[i], i, nullFormat, isEmptyBadRecord, isConvertToBinary,
               (String) configuration.getDataLoadProperty(
                   CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER),
               configuration);
-      if (fields[i].getColumn().isSpatialColumn()) {
+      if (spatialProperty != null && fields[i].getColumn().getColName()
+          .equalsIgnoreCase(spatialProperty.trim())) {
         nonSchemaFieldConverterList.add(fieldConverter);
       } else {
         fieldConverterList.add(fieldConverter);
@@ -107,9 +113,17 @@ public class RowConverterImpl implements RowConverter {
   public CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException {
     logHolder.setLogged(false);
     logHolder.clear();
+    Map<String, String> properties =
+        configuration.getTableSpec().getCarbonTable().getTableInfo().getFactTable()
+            .getTableProperties();
+    String spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX);
+    boolean isSpatialColumn = false;
     for (int i = 0; i < fieldConverters.length; i++) {
-      if (configuration.isNonSchemaColumnsPresent() && !fieldConverters[i].getDataField()
-          .getColumn().isSpatialColumn()) {
+      if (spatialProperty != null) {
+        isSpatialColumn = fieldConverters[i].getDataField().getColumn().getColName()
+            .equalsIgnoreCase(spatialProperty.trim());
+      }
+      if (configuration.isNonSchemaColumnsPresent() && !isSpatialColumn) {
         // Skip the conversion for schema columns if the conversion is required only for non-schema
         // columns
         continue;
@@ -156,13 +170,18 @@ public class RowConverterImpl implements RowConverter {
     boolean isEmptyBadRecord = Boolean.parseBoolean(
         configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
             .toString());
+    Map<String, String> properties =
+        configuration.getTableSpec().getCarbonTable().getTableInfo().getFactTable()
+            .getTableProperties();
+    String spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX);
     for (int i = 0; i < fields.length; i++) {
       FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
           .createFieldEncoder(fields[i], i, nullFormat, isEmptyBadRecord, isConvertToBinary,
               (String) configuration.getDataLoadProperty(
                   CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER),
               configuration);
-      if (fields[i].getColumn().isSpatialColumn()) {
+      if (spatialProperty != null && fields[i].getColumn().getColName()
+          .equalsIgnoreCase(spatialProperty.trim())) {
         nonSchemaFieldConverterList.add(fieldConverter);
       } else {
         fieldConverterList.add(fieldConverter);

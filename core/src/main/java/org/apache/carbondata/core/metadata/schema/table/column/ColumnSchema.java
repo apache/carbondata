@@ -122,11 +122,6 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
   private boolean isSortColumn = false;
 
   /**
-   *  Whether it is a spatial index column
-   */
-  private boolean spatialColumn = false;
-
-  /**
    * aggregate function used in pre aggregate table
    */
   private String aggFunction = "";
@@ -538,7 +533,6 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
       }
     }
     out.writeBoolean(isLocalDictColumn);
-    out.writeBoolean(spatialColumn);
   }
 
   @Override
@@ -588,7 +582,6 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
       }
     }
     this.isLocalDictColumn = in.readBoolean();
-    this.spatialColumn = in.readBoolean();
   }
 
   /**
@@ -611,22 +604,5 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
     } catch (IOException | CloneNotSupportedException e) {
       throw new RuntimeException("Error occur while cloning ColumnSchema", e);
     }
-  }
-
-  /**
-   * Checks whether it is a spatial index column.
-   * @return Returns True if the column is a spatial index column. Otherwise returns False.
-   */
-  public boolean isSpatialColumn() {
-    return spatialColumn;
-  }
-
-  /**
-   * Set the column spatial index property. True or False to indicate column is a spatial index
-   * column or not respectively.
-   * @param spatialColumn True or False
-   */
-  public void setSpatialColumn(boolean spatialColumn) {
-    this.spatialColumn = spatialColumn;
   }
 }

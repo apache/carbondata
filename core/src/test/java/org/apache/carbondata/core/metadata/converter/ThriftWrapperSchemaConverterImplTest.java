@@ -158,11 +158,6 @@ public class ThriftWrapperSchemaConverterImplTest {
         return thriftColumnSchema;
       }
 
-      @Mock public org.apache.carbondata.format.ColumnSchema setSpatialColumn(
-          boolean spatialColumn) {
-        return thriftColumnSchema;
-      }
-
       @Mock public String getColumn_id() {
         return "1";
       }

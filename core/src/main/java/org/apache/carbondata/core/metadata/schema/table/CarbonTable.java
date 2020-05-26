@@ -300,9 +300,7 @@ public class CarbonTable implements Serializable, Writable {
   private void fillCreateOrderColumn() {
     List<CarbonColumn> columns = new ArrayList<CarbonColumn>();
     for (CarbonDimension dimension : visibleDimensions) {
-      if (!dimension.getColumnSchema().isSpatialColumn()) {
-        columns.add(dimension);
-      }
+      columns.add(dimension);
     }
     columns.addAll(visibleMeasures);
     columns.sort(new Comparator<CarbonColumn>() {

@@ -35,6 +35,7 @@ import org.apache.spark.util.CausedBy
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
@@ -471,6 +472,8 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
     var reArrangedIndex: Seq[Int] = Seq()
     var selectedColumnSchema: Seq[ColumnSchema] = Seq()
     var partitionIndex: Seq[Int] = Seq()
+    val properties = tableInfo.getFactTable.getTableProperties.asScala
+    val spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX)
     // internal order ColumnSchema (non-flat structure)
     val columnSchema = (table.getVisibleDimensions.asScala ++
                         table.getVisibleMeasures.asScala).map(_.getColumnSchema)
@@ -494,20 +497,20 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
     }
     columnSchema.foreach {
       col =>
-        if (col.isSpatialColumn) {
+        if (spatialProperty.isDefined &&
+            col.getColumnName.equalsIgnoreCase(spatialProperty.get.trim)) {
           carbonLoadModel.setNonSchemaColumnsPresent(true)
+        }
+        var skipPartitionColumn = false
+        if (partitionColumnNames != null &&
+            partitionColumnNames.contains(col.getColumnName)) {
+          partitionIndex = partitionIndex :+ createOrderMap(col.getColumnName)
+          skipPartitionColumn = true
         } else {
-          var skipPartitionColumn = false
-          if (partitionColumnNames != null &&
-              partitionColumnNames.contains(col.getColumnName)) {
-            partitionIndex = partitionIndex :+ createOrderMap(col.getColumnName)
-            skipPartitionColumn = true
-          } else {
-            reArrangedIndex = reArrangedIndex :+ createOrderMap(col.getColumnName)
-          }
-          if (!skipPartitionColumn) {
-            selectedColumnSchema = selectedColumnSchema :+ col
-          }
+          reArrangedIndex = reArrangedIndex :+ createOrderMap(col.getColumnName)
+        }
+        if (!skipPartitionColumn) {
+          selectedColumnSchema = selectedColumnSchema :+ col
         }
     }
     if (partitionColumnSchema != null) {

@@ -422,8 +422,6 @@ object AlterTableUtil {
       properties.foreach { entry =>
         lowerCasePropertiesMap.put(entry._1.toLowerCase, entry._2)
       }
-      // validate the required cache level properties
-      validateColumnMetaCacheAndCacheLevel(carbonTable, lowerCasePropertiesMap)
       // get the latest carbon table
       // read the latest schema file
       val thriftTableInfo: TableInfo = metastore.getThriftTableInfo(carbonTable)
@@ -437,6 +435,12 @@ object AlterTableUtil {
         wrapperTableInfo, dbName, tableName)
       val tblPropertiesMap: mutable.Map[String, String] =
         thriftTable.fact_table.getTableProperties.asScala
+
+      // validate for spatial index column
+      CommonUtil.validateForSpatialTypeColumn(tblPropertiesMap ++ lowerCasePropertiesMap)
+
+      // validate the required cache level properties
+      validateColumnMetaCacheAndCacheLevel(carbonTable, lowerCasePropertiesMap)
 
       // validate the local dictionary properties
       validateLocalDictionaryProperties(lowerCasePropertiesMap, tblPropertiesMap, carbonTable)
@@ -625,7 +629,7 @@ object AlterTableUtil {
     if (propertiesMap.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
       val schemaList: util.List[ColumnSchema] = CarbonUtil
         .getColumnSchemaList(carbonTable.getVisibleDimensions.asScala
-          .filterNot(_.getColumnSchema.isSpatialColumn).asJava, carbonTable.getVisibleMeasures)
+          .asJava, carbonTable.getVisibleMeasures)
       val tableColumns: Seq[String] = schemaList.asScala
         .map(columnSchema => columnSchema.getColumnName)
       CommonUtil
@@ -1060,21 +1064,9 @@ object AlterTableUtil {
     }
   }
 
-  def validateSpatialIndexColumn(carbonTable: CarbonTable, alterColumns: Seq[String]): Unit = {
-    // Do not allow columns to be added with spatial index column name
-    val properties = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
-    val indexProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX)
-    if (indexProperty.isDefined) {
-      indexProperty.get.split(",").map(_.trim).foreach(element =>
-        if (alterColumns.contains(element)) {
-          throw new MalformedCarbonCommandException(s"Column: $element is not allowed. " +
-            s"This column is present in ${CarbonCommonConstants.SPATIAL_INDEX} table property.")
-        })
-      }
-  }
-
-  def validateSpatialIndexSources(carbonTable: CarbonTable, alterColumns: Seq[String]): Unit = {
-    // Do not allow spatial index source columns to be altered
+  def validateColumnsWithSpatialIndexProperties(carbonTable: CarbonTable, alterColumns: Seq[String])
+  : Unit = {
+    // Do not allow spatial index column and its source columns to be altered
     val properties = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
     val indexProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX)
     if (indexProperty.isDefined) {
@@ -1082,9 +1074,9 @@ object AlterTableUtil {
         val srcColumns
         = properties.get(CarbonCommonConstants.SPATIAL_INDEX + s".$element.sourcecolumns")
         val common = alterColumns.intersect(srcColumns.get.split(",").map(_.trim))
-        if (common.nonEmpty) {
+        if (common.nonEmpty || alterColumns.contains(element)) {
           throw new MalformedCarbonCommandException(s"Columns present in " +
-            s"${CarbonCommonConstants.SPATIAL_INDEX} table property cannot be altered.")
+            s"${CarbonCommonConstants.SPATIAL_INDEX} table property cannot be altered/updated")
         }
       }
     }

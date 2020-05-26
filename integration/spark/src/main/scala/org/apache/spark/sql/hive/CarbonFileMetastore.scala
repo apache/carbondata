@@ -31,9 +31,11 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.sql.sources.BaseRelation
+import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.fileoperations.FileWriteOperation
@@ -228,8 +230,17 @@ class CarbonFileMetastore extends CarbonMetaStore {
             c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
             c.getClass.getName.equals(
               "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")) =>
-        val catalogTable =
+        var catalogTable =
           CarbonReflectionUtils.getFieldOfCatalogTable("tableMeta", c).asInstanceOf[CatalogTable]
+        // Here, catalogTable will have spatial column in schema which is used to build carbon
+        // table. As spatial column is not supposed to be present in user-defined columns,
+        // removing it here. Later from tableproperties the column will be added in carbonTable.
+        val spatialProperty = catalogTable.properties.get(CarbonCommonConstants.SPATIAL_INDEX)
+        if (spatialProperty.isDefined) {
+          val originalSchema = StructType(catalogTable.schema.
+            filterNot(_.name.equalsIgnoreCase(spatialProperty.get.trim)))
+          catalogTable = catalogTable.copy(schema = originalSchema)
+        }
         val tableInfo = CarbonSparkSqlParserUtil.buildTableInfoFromCatalogTable(
           catalogTable, false, sparkSession)
         val carbonTable = CarbonTable.buildFromTableInfo(tableInfo)

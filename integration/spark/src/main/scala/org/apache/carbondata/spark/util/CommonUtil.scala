@@ -654,6 +654,30 @@ object CommonUtil {
   }
 
   /**
+   * This method will validate for spatial column
+   *
+   * @param properties
+   */
+  def validateForSpatialTypeColumn(properties: Map[String, String]): Unit = {
+    // Do not allow to set table properties on spatial column.
+    // Spatial column is only allowed in sort columns and spatial index property
+    val spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX)
+    if (spatialProperty.isDefined) {
+      val spatialColumn = spatialProperty.get.trim
+      properties.foreach { case (key, value) =>
+        if (!key.startsWith(CarbonCommonConstants.SPATIAL_INDEX) &&
+            !key.equalsIgnoreCase(CarbonCommonConstants.SORT_COLUMNS) &&
+            value.contains(spatialColumn)) {
+          val errorMessage =
+            s"$spatialColumn is a spatial index column and is not allowed for " +
+            s"the option(s): $key"
+          throw new MalformedCarbonCommandException(errorMessage)
+        }
+      }
+    }
+  }
+
+  /**
    * This method will validate the cache level
    *
    * @param cacheLevel

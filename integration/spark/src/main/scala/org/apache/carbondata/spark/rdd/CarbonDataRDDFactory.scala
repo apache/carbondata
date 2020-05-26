@@ -375,7 +375,7 @@ object CarbonDataRDDFactory {
               .getFactTable
               .getListOfColumns
               .asScala
-              .filterNot(col => col.isInvisible || col.isSpatialColumn || col.isComplexColumn)
+              .filterNot(col => col.isInvisible || col.isComplexColumn)
             val convertedRdd = CommonLoadUtils.getConvertedInternalRow(
               colSchema,
               scanResultRdd.get,

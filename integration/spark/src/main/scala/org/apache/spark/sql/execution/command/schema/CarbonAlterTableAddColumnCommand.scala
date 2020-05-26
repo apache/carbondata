@@ -62,9 +62,6 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
         throw new MalformedCarbonCommandException(
           "alter table add column is not supported for index indexSchema")
       }
-      val alterColumns =
-        (alterTableAddColumnsModel.dimCols ++ alterTableAddColumnsModel.msrCols).map(_.column)
-      AlterTableUtil.validateSpatialIndexColumn(carbonTable, alterColumns)
       val operationContext = new OperationContext
       val alterTableAddColumnListener = AlterTableAddColumnPreEvent(sparkSession, carbonTable,
         alterTableAddColumnsModel)

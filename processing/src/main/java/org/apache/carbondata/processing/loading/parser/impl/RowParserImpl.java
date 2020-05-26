@@ -18,7 +18,9 @@
 package org.apache.carbondata.processing.loading.parser.impl;
 
 import java.util.ArrayList;
+import java.util.Map;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
@@ -72,10 +74,15 @@ public class RowParserImpl implements RowParser {
     numberOfColumns = header.length;
     DataField[] input = new DataField[fields.length];
     inputMapping = new int[input.length];
+    Map<String, String> properties =
+        configuration.getTableSpec().getCarbonTable().getTableInfo().getFactTable()
+            .getTableProperties();
+    String spatialProperty = properties.get(CarbonCommonConstants.SPATIAL_INDEX);
     int k = 0;
     for (int i = 0; i < fields.length; i++) {
-      if (fields[i].getColumn().isSpatialColumn()) {
-        // Index columns are non-schema fields. They are not present in the header. So set
+      if (spatialProperty != null && fields[i].getColumn().getColName()
+          .equalsIgnoreCase(spatialProperty.trim())) {
+        // Spatial index columns are not present in the header. So set
         // the input mapping as -1 for the field and continue
         input[k] = fields[i];
         inputMapping[k] = -1;
