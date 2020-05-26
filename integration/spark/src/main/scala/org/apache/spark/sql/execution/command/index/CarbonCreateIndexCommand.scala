@@ -238,8 +238,18 @@ case class CarbonCreateIndexCommand(
               false)
             val enabledIndexInfo = IndexTableInfo.enableIndex(indexInfo, indexModel.indexName)
 
-            // set index information in parent table
-            val parentIndexMetadata = parentTable.getIndexMetadata
+            // set index information in parent table. Create it if it is null.
+            val parentIndexMetadata = if (
+              parentTable.getTableInfo.getFactTable.getTableProperties
+                .get(parentTable.getCarbonTableIdentifier.getTableId) != null) {
+              parentTable.getIndexMetadata
+            } else {
+              val tempIndexMetaData = new IndexMetadata(false)
+              tempIndexMetaData.addIndexTableInfo(indexProviderName,
+                indexModel.indexName,
+                indexSchema.getProperties)
+              tempIndexMetaData
+            }
             parentIndexMetadata.updateIndexStatus(indexProviderName,
               indexModel.indexName,
               IndexStatus.ENABLED.name())
