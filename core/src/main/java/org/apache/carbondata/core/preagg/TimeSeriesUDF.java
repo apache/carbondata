@@ -176,9 +176,9 @@ public class TimeSeriesUDF {
     } catch (IllegalArgumentException ex) {
       LOGGER.warn("Invalid value set for first of the week. Considering the default value as: "
           + CarbonCommonConstants.CARBON_TIMESERIES_FIRST_DAY_OF_WEEK_DEFAULT);
-      firstDayOfWeek = DaysOfWeekEnum.valueOf(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESERIES_FIRST_DAY_OF_WEEK_DEFAULT)
-          .toUpperCase()).getOrdinal();
+      firstDayOfWeek =
+          DaysOfWeekEnum.valueOf(CarbonCommonConstants.CARBON_TIMESERIES_FIRST_DAY_OF_WEEK_DEFAULT)
+              .getOrdinal();
     }
     calanderThreadLocal.get().setFirstDayOfWeek(firstDayOfWeek);
   }

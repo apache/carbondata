@@ -566,6 +566,25 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     assert(ex.getMessage().equalsIgnoreCase("Cannot use all columns for partition columns;"))
   }
 
+  test("test partition without merge index files for segment") {
+    try {
+      sql("DROP TABLE IF EXISTS new_par")
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "false")
+      sql(
+        s"""CREATE TABLE new_par (a INT, b INT) PARTITIONED BY (country STRING) STORED AS
+           |carbondata""".stripMargin)
+      sql("INSERT INTO new_par PARTITION(country='India') SELECT 1,2")
+      sql("INSERT INTO new_par PARTITION(country='India') SELECT 3,4")
+      sql("INSERT INTO new_par PARTITION(country='China') SELECT 5,6")
+      sql("INSERT INTO new_par PARTITION(country='China') SELECT 7,8")
+      checkAnswer(sql("SELECT COUNT(*) FROM new_par"), Seq(Row(4)))
+    } finally {
+      CarbonProperties.getInstance()
+        .removeProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT)
+    }
+  }
+
   def verifyInsertForPartitionTable(tableName: String, sort_scope: String): Unit = {
     sql(s"drop table if exists $tableName")
     sql(
