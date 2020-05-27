@@ -193,7 +193,7 @@ public class SnappyCompressor extends AbstractCompressor {
   }
 
   @Override
-  public int unCompressedLength(byte[] data, int offset, int length) {
+  public int unCompressedLength(byte[] data, int offset, int length, byte[] reused) {
     try {
       return Snappy.uncompressedLength(data, offset, length);
     } catch (IOException e) {

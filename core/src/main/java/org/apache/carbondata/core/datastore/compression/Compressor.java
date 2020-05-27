@@ -69,7 +69,7 @@ public interface Compressor {
    */
   boolean supportUnsafe();
 
-  int unCompressedLength(byte[] data, int offset, int length);
+  int unCompressedLength(byte[] data, int offset, int length, byte[] reused);
 
   int rawUncompress(byte[] data, int offset, int length, byte[] output);
 

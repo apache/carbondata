@@ -253,10 +253,9 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
     ColumnPageDecoder decoder = encodingFactory.createDecoder(encodings, encoderMetas,
         compressorName, vectorInfo != null);
     if (vectorInfo != null) {
-      decoder
-          .decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo,
-              nullBitSet, isLocalDictEncodedPage, pageMetadata.numberOfRowsInpage,
-              reusableDataBuffer);
+      decoder.decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length,
+          pageMetadata.uncompressedSize, vectorInfo, nullBitSet, isLocalDictEncodedPage,
+          pageMetadata.numberOfRowsInpage, reusableDataBuffer);
       return null;
     } else {
       return decoder
@@ -331,8 +330,13 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
     int[] invertedIndexesReverse = new int[0];
     int uncompressedSize = 0;
     if (null != reusableDataBuffer && compressor.supportReusableBuffer()) {
-      uncompressedSize =
-          compressor.unCompressedLength(pageData.array(), offset, pageMetadata.data_page_length);
+      if (pageMetadata.isSetUncompressedSize()) {
+        uncompressedSize = pageMetadata.uncompressedSize;
+      } else {
+        dataPage = reusableDataBuffer.getDataBuffer(pageMetadata.data_page_length);
+        uncompressedSize = compressor.unCompressedLength(
+            pageData.array(), offset, pageMetadata.data_page_length, dataPage);
+      }
       dataPage = reusableDataBuffer.getDataBuffer(uncompressedSize);
       compressor.rawUncompress(pageData.array(), offset, pageMetadata.data_page_length, dataPage);
     } else {

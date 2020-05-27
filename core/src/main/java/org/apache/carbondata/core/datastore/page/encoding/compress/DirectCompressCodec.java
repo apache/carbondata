@@ -114,20 +114,23 @@ public class DirectCompressCodec implements ColumnPageCodec {
       }
 
       @Override
-      public void decodeAndFillVector(byte[] input, int offset, int length,
+      public void decodeAndFillVector(byte[] input, int offset, int length, int uncompressedSize,
           ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
           ReusableDataBuffer reusableDataBuffer) {
         Compressor compressor =
             CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
-        int uncompressedLength;
         byte[] unCompressData;
         if (null != reusableDataBuffer && compressor.supportReusableBuffer()) {
-          uncompressedLength = compressor.unCompressedLength(input, offset, length);
-          unCompressData = reusableDataBuffer.getDataBuffer(uncompressedLength);
+          if (uncompressedSize <= 0) {
+            unCompressData = reusableDataBuffer.getDataBuffer(length);
+            uncompressedSize =
+                compressor.unCompressedLength(input, offset, length, unCompressData);
+          }
+          unCompressData = reusableDataBuffer.getDataBuffer(uncompressedSize);
           compressor.rawUncompress(input, offset, length, unCompressData);
         } else {
           unCompressData = compressor.unCompressByte(input, offset, length);
-          uncompressedLength = unCompressData.length;
+          uncompressedSize = unCompressData.length;
         }
         if (DataTypes.isDecimal(dataType)) {
           TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
@@ -137,7 +140,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
           vectorInfo.decimalConverter = decimalConverter;
           if (DataTypes.isDecimal(meta.getStoreDataType())) {
             ColumnPage decimalColumnPage = VarLengthColumnPageBase
-                .newDecimalColumnPage(meta, unCompressData, uncompressedLength);
+                .newDecimalColumnPage(meta, unCompressData, uncompressedSize);
             decimalConverter.fillVector(decimalColumnPage.getByteArrayPage(), pageSize, vectorInfo,
                 nullBits, meta.getStoreDataType());
           } else {

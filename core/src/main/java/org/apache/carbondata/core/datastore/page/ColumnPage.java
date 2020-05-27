@@ -35,6 +35,7 @@ import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE;
@@ -49,6 +50,9 @@ public abstract class ColumnPage {
 
   // number of row in this page
   protected int pageSize;
+
+  // only store the size of byte buffer before compression
+  protected int uncompressedSize;
 
   protected ColumnPageEncoderMeta columnPageEncoderMeta;
 
@@ -743,39 +747,67 @@ public abstract class ColumnPage {
   public ByteBuffer compress(Compressor compressor) throws IOException {
     DataType dataType = columnPageEncoderMeta.getStoreDataType();
     if (dataType == DataTypes.STRING) {
-      return compressor.compressByte(getByteBuffer());
+      ByteBuffer byteBuffer = getByteBuffer();
+      uncompressedSize = byteBuffer.position();
+      return compressor.compressByte(byteBuffer);
     } else if (dataType == DataTypes.BOOLEAN) {
-      return compressor.compressByte(getBooleanPage());
+      byte[] bytes = getBooleanPage();
+      uncompressedSize = bytes.length;
+      return compressor.compressByte(bytes);
     } else if (dataType == BYTE) {
-      return compressor.compressByte(getBytePage());
+      byte[] bytes = getBytePage();
+      uncompressedSize = bytes.length;
+      return compressor.compressByte(bytes);
     } else if (dataType == SHORT) {
-      return compressor.compressShort(getShortPage());
+      short[] shorts = getShortPage();
+      uncompressedSize = shorts.length * ByteUtil.SIZEOF_SHORT;
+      return compressor.compressShort(shorts);
     } else if (dataType == DataTypes.SHORT_INT) {
-      return compressor.compressByte(getShortIntPage());
+      byte[] bytes = getShortIntPage();
+      uncompressedSize = bytes.length;
+      return compressor.compressByte(bytes);
     } else if (dataType == INT) {
+      int[] ints = getIntPage();
+      uncompressedSize = ints.length * ByteUtil.SIZEOF_INT;
       return compressor.compressInt(getIntPage());
     } else if (dataType == LONG) {
-      return compressor.compressLong(getLongPage());
+      long[] longs = getLongPage();
+      uncompressedSize = longs.length * ByteUtil.SIZEOF_LONG;
+      return compressor.compressLong(longs);
     } else if (dataType == DataTypes.FLOAT) {
-      return compressor.compressFloat(getFloatPage());
+      float[] floats = getFloatPage();
+      uncompressedSize = floats.length * ByteUtil.SIZEOF_FLOAT;
+      return compressor.compressFloat(floats);
     } else if (dataType == DataTypes.DOUBLE) {
+      double[] doubles = getDoublePage();
+      uncompressedSize = doubles.length * ByteUtil.SIZEOF_DOUBLE;
       return compressor.compressDouble(getDoublePage());
     } else if (DataTypes.isDecimal(dataType)) {
-      return compressor.compressByte(getDecimalPage());
+      byte[] bytes = getDecimalPage();
+      uncompressedSize = bytes.length;
+      return compressor.compressByte(bytes);
     } else if (dataType == BYTE_ARRAY
         && columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.COMPLEX_PRIMITIVE) {
-      return compressor.compressByte(getComplexChildrenLVFlattenedBytePage(
-          columnPageEncoderMeta.getColumnSpec().getSchemaDataType()));
+      byte[] bytes = getComplexChildrenLVFlattenedBytePage(
+          columnPageEncoderMeta.getColumnSpec().getSchemaDataType());
+      uncompressedSize = bytes.length;
+      return compressor.compressByte(bytes);
     } else if (dataType == BYTE_ARRAY
         && (columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.COMPLEX_STRUCT
         || columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.COMPLEX_ARRAY
         || columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.PLAIN_LONG_VALUE
         || columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.PLAIN_VALUE)) {
-      return compressor.compressByte(getComplexParentFlattenedBytePage());
+      byte[] bytes = getComplexParentFlattenedBytePage();
+      uncompressedSize = bytes.length;
+      return compressor.compressByte(bytes);
     } else if (dataType == DataTypes.BINARY) {
-      return ByteBuffer.wrap(getLVFlattenedBytePage());
+      byte[] bytes = getLVFlattenedBytePage();
+      uncompressedSize = bytes.length;
+      return ByteBuffer.wrap(bytes);
     } else if (dataType == BYTE_ARRAY) {
-      return compressor.compressByte(getLVFlattenedBytePage());
+      byte[] bytes = getLVFlattenedBytePage();
+      uncompressedSize = bytes.length;
+      return compressor.compressByte(bytes);
     } else {
       throw new UnsupportedOperationException("unsupported compress column page: " + dataType);
     }
@@ -939,5 +971,13 @@ public abstract class ColumnPage {
 
   public ByteBuffer getByteBuffer() {
     throw new UnsupportedOperationException("Operation not supported");
+  }
+
+  public void setUncompressedSize(int uncompressedSize) {
+    this.uncompressedSize = uncompressedSize;
+  }
+
+  public int getUncompressedSize() {
+    return uncompressedSize;
   }
 }

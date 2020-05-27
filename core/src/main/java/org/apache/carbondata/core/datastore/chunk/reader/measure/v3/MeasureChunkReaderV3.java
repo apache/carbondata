@@ -245,8 +245,9 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
     ColumnPageDecoder codec =
         encodingFactory.createDecoder(encodings, encoderMetas, compressorName, vectorInfo != null);
     if (vectorInfo != null) {
-      codec.decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo,
-          nullBitSet, false, pageMetadata.numberOfRowsInpage, reusableDataBuffer);
+      codec.decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length,
+          pageMetadata.uncompressedSize, vectorInfo, nullBitSet, false,
+          pageMetadata.numberOfRowsInpage, reusableDataBuffer);
       return null;
     } else {
       return codec

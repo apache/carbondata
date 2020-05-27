@@ -132,15 +132,19 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       }
 
       @Override
-      public void decodeAndFillVector(byte[] input, int offset, int length,
+      public void decodeAndFillVector(byte[] input, int offset, int length, int uncompressedSize,
           ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
           ReusableDataBuffer reusableDataBuffer) {
         Compressor compressor =
             CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
         byte[] unCompressData;
         if (null != reusableDataBuffer && compressor.supportReusableBuffer()) {
-          int uncompressedLength = compressor.unCompressedLength(input, offset, length);
-          unCompressData = reusableDataBuffer.getDataBuffer(uncompressedLength);
+          if (uncompressedSize <= 0) {
+            unCompressData = reusableDataBuffer.getDataBuffer(length);
+            uncompressedSize =
+                compressor.unCompressedLength(input, offset, length, unCompressData);
+          }
+          unCompressData = reusableDataBuffer.getDataBuffer(uncompressedSize);
           compressor.rawUncompress(input, offset, length, unCompressData);
         } else {
           unCompressData = compressor.unCompressByte(input, offset, length);

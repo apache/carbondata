@@ -247,7 +247,9 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
     }
     ColumnPage columnPage = getSortedColumnPageIfRequired(input);
     columnPage.convertValue(converter);
-    return encodedPage.compress(compressor);
+    ByteBuffer byteBuffer = encodedPage.compress(compressor);
+    input.setUncompressedSize(encodedPage.getUncompressedSize());
+    return byteBuffer;
   }
 
   @Override

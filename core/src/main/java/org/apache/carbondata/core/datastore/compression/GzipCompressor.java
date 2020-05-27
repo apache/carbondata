@@ -157,7 +157,7 @@ public class GzipCompressor extends AbstractCompressor {
   }
 
   @Override
-  public int unCompressedLength(byte[] data, int offset, int length) {
+  public int unCompressedLength(byte[] data, int offset, int length, byte[] reused) {
     //gzip api doesnt have UncompressedLength
     throw new RuntimeException("Unsupported operation Exception");
   }

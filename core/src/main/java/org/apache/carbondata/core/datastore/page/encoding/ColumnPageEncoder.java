@@ -105,6 +105,9 @@ public abstract class ColumnPageEncoder {
     fillEncoding(inputPage, dataChunk);
     fillMinMaxIndex(inputPage, dataChunk);
     fillLegacyFields(dataChunk);
+    if (inputPage.getUncompressedSize() > 0) {
+      dataChunk.setUncompressedSize(inputPage.getUncompressedSize());
+    }
     return dataChunk;
   }
 
