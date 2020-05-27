@@ -254,6 +254,8 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
       taskCommits: Seq[TaskCommitMessage]): Unit = {
     if (isCarbonDataFlow(jobContext.getConfiguration)) {
       var dataSize = 0L
+      var indexLen = 0L
+      val indexFileNameMap = new util.HashMap[String, util.Set[String]]()
       val partitions =
         taskCommits
           .flatMap { taskCommit =>
@@ -263,6 +265,24 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
                 val size = map.get("carbon.datasize")
                 if (size.isDefined) {
                   dataSize = dataSize + java.lang.Long.parseLong(size.get)
+                }
+                val indexSize = map.get("carbon.indexsize")
+                if (indexSize.isDefined) {
+                  indexLen = indexLen + java.lang.Long.parseLong(indexSize.get)
+                }
+                val indexFiles = map.get("carbon.index.files.name")
+                if (indexFiles.isDefined) {
+                  val indexMap = ObjectSerializationUtil
+                    .convertStringToObject(indexFiles.get)
+                    .asInstanceOf[util.HashMap[String, Set[String]]]
+                  indexMap.asScala.foreach { e =>
+                    var values: util.Set[String] = indexFileNameMap.get(e._1)
+                    if (values == null) {
+                      values = new util.HashSet[String]()
+                      indexFileNameMap.put(e._1, values)
+                    }
+                    values.addAll(e._2.asInstanceOf[util.Set[String]])
+                  }
                 }
                 if (partition.isDefined) {
                   ObjectSerializationUtil
@@ -283,13 +303,18 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
         "carbon.output.partitions.name",
         ObjectSerializationUtil.convertObjectToString(partitions))
       jobContext.getConfiguration.set("carbon.datasize", dataSize.toString)
-
+      jobContext.getConfiguration.set("carbon.indexsize", indexLen.toString)
+      jobContext.getConfiguration
+        .set("carbon.index.files.name",
+          ObjectSerializationUtil.convertObjectToString(indexFileNameMap))
       val newTaskCommits = taskCommits.map { taskCommit =>
         taskCommit.obj match {
           case (map: Map[String, String], set) =>
             new TaskCommitMessage(
-              map
-                .filterNot(e => "carbon.partitions".equals(e._1) || "carbon.datasize".equals(e._1)),
+              map.filterNot(e => "carbon.partitions".equals(e._1) ||
+                                 "carbon.datasize".equals(e._1) ||
+                                 "carbon.indexsize".equals(e._1) ||
+                                 "carbon.index.files.name".equals(e._1)),
               set)
           case _ => taskCommit
         }
@@ -313,27 +338,46 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
       ThreadLocalSessionInfo.unsetAll()
       val partitions: String = taskContext.getConfiguration.get("carbon.output.partitions.name", "")
       val files = taskContext.getConfiguration.get("carbon.output.files.name", "")
+      val indexFileNameMap = new util.HashMap[String, util.Set[String]]()
       var sum = 0L
       var indexSize = 0L
-      if (!StringUtils.isEmpty(files)) {
-        val filesList = ObjectSerializationUtil
-          .convertStringToObject(files)
+      if (!StringUtils.isEmpty(partitions)) {
+        val partitionList = ObjectSerializationUtil
+          .convertStringToObject(partitions)
           .asInstanceOf[util.ArrayList[String]]
           .asScala
-        for (file <- filesList) {
-          if (file.contains(".carbondata")) {
-            sum += java.lang.Long.parseLong(file.substring(file.lastIndexOf(":") + 1))
-          } else if (file.contains(".carbonindex")) {
-            indexSize += java.lang.Long.parseLong(file.substring(file.lastIndexOf(":") + 1))
+        if (!StringUtils.isEmpty(files)) {
+          val filesList = ObjectSerializationUtil
+            .convertStringToObject(files)
+            .asInstanceOf[util.ArrayList[String]]
+            .asScala
+          for (file <- filesList) {
+            if (file.contains(".carbondata")) {
+              sum += java.lang.Long.parseLong(file.substring(file.lastIndexOf(":") + 1))
+            } else if (file.contains(".carbonindex")) {
+              val fileOffset = file.lastIndexOf(":")
+              indexSize += java.lang.Long.parseLong(file.substring(fileOffset + 1))
+              val absoluteFileName = file.substring(0, fileOffset)
+              val indexFileNameOffset = absoluteFileName.lastIndexOf("/")
+              val indexFileName = absoluteFileName.substring(indexFileNameOffset + 1)
+              val matchedPartition = partitionList.find(absoluteFileName.startsWith)
+              var values: util.Set[String] = indexFileNameMap.get(matchedPartition.get)
+              if (values == null) {
+                values = new util.HashSet[String]()
+                indexFileNameMap.put(matchedPartition.get, values)
+              }
+              values.add(indexFileName)
+            }
           }
         }
-      }
-      if (!StringUtils.isEmpty(partitions)) {
+        val indexFileNames = ObjectSerializationUtil.convertObjectToString(indexFileNameMap)
         taskMsg = taskMsg.obj match {
           case (map: Map[String, String], set) =>
             new TaskCommitMessage(
-              map ++ Map("carbon.partitions" -> partitions, "carbon.datasize" -> sum.toString),
-              set)
+              map ++ Map("carbon.partitions" -> partitions,
+                "carbon.datasize" -> sum.toString,
+                "carbon.indexsize" -> indexSize.toString,
+                "carbon.index.files.name" -> indexFileNames), set)
           case _ => taskMsg
         }
       }

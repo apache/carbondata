@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -40,6 +41,7 @@ import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonSessionInfo;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.OperationContext;
@@ -254,7 +256,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
   private void commitJobForPartition(JobContext context, boolean overwriteSet,
       CarbonLoadModel loadModel, String partitionPath) throws IOException {
     String size = context.getConfiguration().get("carbon.datasize", "");
-    if (size.equalsIgnoreCase("0")) {
+    String indexSize = context.getConfiguration().get("carbon.indexsize", "");
+    if (size.equalsIgnoreCase("0") || indexSize.equalsIgnoreCase("0")) {
       CarbonLoaderUtil.updateTableStatusForFailure(loadModel);
       return;
     }
@@ -270,6 +273,18 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       uuid = operationContext.getProperty("uuid").toString();
     }
     String tempFolderPath = loadModel.getSegmentId() + "_" + loadModel.getFactTimeStamp() + ".tmp";
+    boolean isMergeIndex = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+            CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT));
+    if (!isMergeIndex) {
+      Map<String, Set<String>> indexFileNameMap = (Map<String, Set<String>>) ObjectSerializationUtil
+          .convertStringToObject(context.getConfiguration().get("carbon.index.files.name"));
+      List<String> partitionList =
+          (List<String>) ObjectSerializationUtil.convertStringToObject(partitionPath);
+      SegmentFileStore.writeSegmentFile(loadModel.getTablePath(), loadModel.getSegmentId(),
+          String.valueOf(loadModel.getFactTimeStamp()), partitionList, indexFileNameMap);
+      tempFolderPath = null;
+    }
     if (operationContext != null) {
       operationContext.setProperty("partitionPath", partitionPath);
       operationContext.setProperty("tempPath", tempFolderPath);
@@ -288,7 +303,11 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     String segmentFileName = SegmentFileStore.genSegmentFileName(
         loadModel.getSegmentId(), String.valueOf(loadModel.getFactTimeStamp()));
     newMetaEntry.setSegmentFile(segmentFileName + CarbonTablePath.SEGMENT_EXT);
-    newMetaEntry.setIndexSize("" + loadModel.getMetrics().getMergeIndexSize());
+    if (isMergeIndex) {
+      newMetaEntry.setIndexSize("" + loadModel.getMetrics().getMergeIndexSize());
+    } else if (!StringUtils.isEmpty(indexSize)) {
+      newMetaEntry.setIndexSize(indexSize);
+    }
     if (!StringUtils.isEmpty(size)) {
       newMetaEntry.setDataSize(size);
     }

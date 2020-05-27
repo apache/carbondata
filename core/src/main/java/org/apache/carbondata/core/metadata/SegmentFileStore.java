@@ -28,11 +28,13 @@ import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -102,6 +104,56 @@ public class SegmentFileStore {
   public static void writeSegmentFile(String tablePath, final String taskNo, String location,
       String timeStamp, List<String> partionNames) throws IOException {
     writeSegmentFile(tablePath, taskNo, location, timeStamp, partionNames, false);
+  }
+
+  /**
+   * Method to create and write the segment file, removes the temporary directories from all the
+   * respective partition directories. This method is invoked only when {@link
+   * CarbonCommonConstants#CARBON_MERGE_INDEX_IN_SEGMENT} is disabled.
+   * @param tablePath Table path
+   * @param segmentId Segment id
+   * @param timeStamp FactTimeStamp
+   * @param partitionNames Partition names list
+   * @param indexFileNames Index files map with partition as key and index file names set as value
+   * @throws IOException
+   */
+  public static void writeSegmentFile(String tablePath, String segmentId, String timeStamp,
+      List<String> partitionNames, Map<String, Set<String>> indexFileNames) throws IOException {
+    SegmentFileStore.SegmentFile finalSegmentFile = null;
+    boolean isRelativePath;
+    String partitionLoc;
+    for (String partition : partitionNames) {
+      isRelativePath = false;
+      partitionLoc = partition;
+      if (partitionLoc.startsWith(tablePath)) {
+        partitionLoc = partitionLoc.substring(tablePath.length());
+        isRelativePath = true;
+      }
+      SegmentFileStore.SegmentFile segmentFile = new SegmentFileStore.SegmentFile();
+      SegmentFileStore.FolderDetails folderDetails = new SegmentFileStore.FolderDetails();
+      folderDetails.setFiles(indexFileNames.get(partition));
+      folderDetails.setPartitions(
+          Collections.singletonList(partitionLoc.substring(partitionLoc.indexOf("/") + 1)));
+      folderDetails.setRelative(isRelativePath);
+      folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
+      segmentFile.getLocationMap().put(partitionLoc, folderDetails);
+      if (finalSegmentFile != null) {
+        finalSegmentFile = finalSegmentFile.merge(segmentFile);
+      } else {
+        finalSegmentFile = segmentFile;
+      }
+    }
+    Objects.requireNonNull(finalSegmentFile);
+    String segmentFilesLocation = CarbonTablePath.getSegmentFilesLocation(tablePath);
+    CarbonFile locationFile = FileFactory.getCarbonFile(segmentFilesLocation);
+    if (!locationFile.exists()) {
+      locationFile.mkdirs();
+    }
+    String segmentFileName = SegmentFileStore.genSegmentFileName(segmentId, timeStamp);
+    SegmentFileStore.writeSegmentFile(finalSegmentFile,
+        segmentFilesLocation + "/" + segmentFileName + CarbonTablePath.SEGMENT_EXT);
+    SegmentFileStore
+        .moveFromTempFolder(finalSegmentFile, segmentId + "_" + timeStamp + ".tmp", tablePath);
   }
 
   /**

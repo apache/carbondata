@@ -147,6 +147,30 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("test delete for partition table without merge index files for segment") {
+    try {
+      sql("DROP TABLE IF EXISTS iud_db.partition_nomerge_index")
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "false")
+      sql(
+        s"""CREATE TABLE iud_db.partition_nomerge_index (a INT, b INT) PARTITIONED BY (country
+           |STRING) STORED AS carbondata"""
+          .stripMargin)
+      sql("INSERT INTO iud_db.partition_nomerge_index  PARTITION(country='India') SELECT 1,2")
+      sql("INSERT INTO iud_db.partition_nomerge_index  PARTITION(country='India') SELECT 3,4")
+      sql("INSERT INTO iud_db.partition_nomerge_index  PARTITION(country='China') SELECT 5,6")
+      sql("INSERT INTO iud_db.partition_nomerge_index  PARTITION(country='China') SELECT 7,8")
+      checkAnswer(sql("select * from iud_db.partition_nomerge_index"),
+        Seq(Row(1, 2, "India"), Row(3, 4, "India"), Row(5, 6, "China"), Row(7, 8, "China")))
+      sql("DELETE FROM iud_db.partition_nomerge_index WHERE b = 4")
+      checkAnswer(sql("select * from iud_db.partition_nomerge_index"),
+        Seq(Row(1, 2, "India"), Row(5, 6, "China"), Row(7, 8, "China")))
+    } finally {
+      CarbonProperties.getInstance()
+        .removeProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT)
+    }
+  }
+
   test("Records more than one pagesize after delete operation ") {
     sql("DROP TABLE IF EXISTS carbon2")
     import sqlContext.implicits._
