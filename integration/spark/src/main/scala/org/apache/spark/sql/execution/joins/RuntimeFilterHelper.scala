@@ -54,7 +54,7 @@ object RuntimeFilterHelper {
   /**
    * disable LeftSemi join push down by default
    */
-  lazy val enabledLeftSemiExistPushDown: Boolean = {
+  def enabledLeftSemiExistPushDown: Boolean = {
     CarbonProperties.getInstance.getProperty(
       CarbonCommonConstants.CARBON_PUSH_LEFTSEMIEXIST_JOIN_AS_IN_FILTER,
       CarbonCommonConstants.CARBON_PUSH_LEFTSEMIEXIST_JOIN_AS_IN_FILTER_DEFAULT).toBoolean
