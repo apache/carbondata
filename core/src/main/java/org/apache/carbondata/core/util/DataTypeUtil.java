@@ -569,9 +569,9 @@ public final class DataTypeUtil {
   }
 
   public static Object getDataBasedOnDataTypeForNoDictionaryColumn(byte[] dataInBytes,
-      DataType actualDataType, boolean getBytesData) {
-    return getDataBasedOnDataTypeForNoDictionaryColumn(dataInBytes, actualDataType, true,
-        getBytesData);
+      DataType actualDataType, boolean isTimeStampConversion) {
+    return getDataBasedOnDataTypeForNoDictionaryColumn(dataInBytes, actualDataType,
+        isTimeStampConversion, false);
   }
 
   /**

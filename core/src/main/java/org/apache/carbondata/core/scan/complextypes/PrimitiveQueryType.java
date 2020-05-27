@@ -171,7 +171,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
         }
       } else {
         actualData = DataTypeUtil
-            .getDataBasedOnDataTypeForNoDictionaryColumn(value, this.dataType, getBytesData);
+            .getDataBasedOnDataTypeForNoDictionaryColumn(value, this.dataType, true, getBytesData);
       }
     }
     return actualData;

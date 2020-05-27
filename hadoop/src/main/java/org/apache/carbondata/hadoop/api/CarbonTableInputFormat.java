@@ -211,6 +211,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     if (!splitsOfStreaming.isEmpty()) {
       splits.addAll(splitsOfStreaming);
     }
+    LOG.info("Input splits from " + carbonTable.getTableName() + ":" + splits.toString());
     return splits;
   }
 
