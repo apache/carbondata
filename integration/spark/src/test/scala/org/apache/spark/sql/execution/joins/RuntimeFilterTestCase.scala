@@ -33,7 +33,9 @@ import org.apache.carbondata.spark.rdd.CarbonScanRDD
 class RuntimeFilterTestCase extends QueryTest with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
+    defaultConfig()
     dropTable()
+    sqlContext.setConf("spark.carbon.pushdown.join.as.filter", "true")
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_PUSH_LEFTSEMIEXIST_JOIN_AS_IN_FILTER, "true")
   }
