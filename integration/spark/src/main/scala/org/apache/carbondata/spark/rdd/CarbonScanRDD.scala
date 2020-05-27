@@ -787,6 +787,9 @@ class CarbonScanRDD[T: ClassTag](
   def setFilterExpression(expressionVal: Expression): Unit = {
     if (null != indexFilter) {
       indexFilter.setExpression(new AndExpression(indexFilter.getExpression, expressionVal))
+    } else {
+      indexFilter =
+        new IndexFilter(CarbonTable.buildFromTableInfo(tableInfo), expressionVal, true)
     }
   }
 

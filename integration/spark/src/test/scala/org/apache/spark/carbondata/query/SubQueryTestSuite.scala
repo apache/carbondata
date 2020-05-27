@@ -18,7 +18,7 @@
 package org.apache.spark.carbondata.query
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.execution.joins.BroadcastHashJoinExec
+import org.apache.spark.sql.execution.joins.{BroadCastFilterPushJoin, BroadcastHashJoinExec}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -49,7 +49,8 @@ class SubQueryTestSuite extends QueryTest with BeforeAndAfterAll {
         queryExecution.executedPlan
     var broadCastExists = false
     executedPlan.collect {
-      case s: BroadcastHashJoinExec => broadCastExists = true
+      case _: BroadcastHashJoinExec => broadCastExists = true
+      case _: BroadCastFilterPushJoin => broadCastExists = true
     }
     assert(broadCastExists, "Broad cast join does not exist on small table")
     sql("drop table if exists anothertable")
