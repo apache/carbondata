@@ -91,6 +91,11 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     (dwSelframe, odsframe)
   }
 
+  private def initializeWithBucketing = {
+    sql("create table order(id string, name string, c_name string, quantity int, price int, state int) stored as carbondata tblproperties('BUCKET_NUMBER'='10', 'BUCKET_COLUMNS'='id')")
+    initialize
+  }
+
   private def initializeGloabalSort = {
     val initframe = generateData(10)
     initframe.write
@@ -821,17 +826,50 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     dwSelframe.merge(odsframe, col("A.id").equalTo(col("B.id"))).whenMatched().
       insertExpr(insertMap).execute()
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    // in case of cdc, the insert into flow goes to no converter step to save time as incoming data
+    // from source will be correct, we wont use the table level timestamp format or load level for
+    // the insert into of cdc data.
     checkAnswer(
       sql("select date,time from order where id = 'id1'"),
       Seq(
         Row(new Date(sdf.parse("2015-07-23").getTime), Timestamp.valueOf("2015-03-03 12:25:00")),
-        Row(new Date(sdf.parse("2015-07-23").getTime), Timestamp.valueOf("2015-05-23 10:30:00"))
+        Row(new Date(sdf.parse("2015-07-23").getTime), Timestamp.valueOf("2015-05-23 10:30:30"))
       ))
     checkAnswer(
       sql("select date,time from order where id = 'id11'"),
       Seq(
         Row(new Date(sdf.parse("2020-07-01").getTime), Timestamp.valueOf("2020-04-04 09:40:05.205"))
       ))
+  }
+
+  test("test merge update and insert with condition and expression and delete action with target table as bucketing") {
+    sql("drop table if exists order")
+    val (dwSelframe, odsframe) = initializeWithBucketing
+
+    var matches = Seq.empty[MergeMatch]
+    val updateMap = Map(col("id") -> col("A.id"),
+      col("price") -> expr("B.price + 1"),
+      col("state") -> col("B.state"))
+
+    val insertMap = Map(col("id") -> col("B.id"),
+      col("name") -> col("B.name"),
+      col("c_name") -> col("B.c_name"),
+      col("quantity") -> col("B.quantity"),
+      col("price") -> expr("B.price * 100"),
+      col("state") -> col("B.state"))
+
+    matches ++= Seq(WhenMatched(Some(col("A.state") =!= col("B.state"))).addAction(UpdateAction(updateMap)))
+    matches ++= Seq(WhenNotMatched().addAction(InsertAction(insertMap)))
+    matches ++= Seq(WhenNotMatchedAndExistsOnlyOnTarget().addAction(DeleteAction()))
+
+    CarbonMergeDataSetCommand(dwSelframe,
+      odsframe,
+      MergeDataSetMatches(col("A.id").equalTo(col("B.id")), matches.toList)).run(sqlContext.sparkSession)
+    assert(getDeleteDeltaFileCount("order", "0") == 2)
+    checkAnswer(sql("select count(*) from order where id like 'newid%'"), Seq(Row(2)))
+    checkAnswer(sql("select count(*) from order"), Seq(Row(10)))
+    checkAnswer(sql("select count(*) from order where state = 2"), Seq(Row(2)))
+    checkAnswer(sql("select price from order where id = 'newid1'"), Seq(Row(7500)))
   }
 
   case class Target (id: Int, value: String, remark: String, mdt: String)
