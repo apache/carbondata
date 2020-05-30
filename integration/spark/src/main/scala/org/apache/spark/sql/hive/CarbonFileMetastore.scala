@@ -402,8 +402,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
   private def createSchemaThriftFile(
       identifier: AbsoluteTableIdentifier,
       thriftTableInfo: TableInfo): String = {
-    val schemaFilePath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
-    val schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath)
+    val schemaMetadataPath = CarbonTablePath.getMetadataPath(identifier.getTablePath)
     if (!FileFactory.isFileExist(schemaMetadataPath)) {
       val isDirCreated = FileFactory
         .mkdirs(schemaMetadataPath, SparkSession.getActiveSession.get.sessionState.newHadoopConf())
@@ -411,6 +410,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
         throw new IOException(s"Failed to create the metadata directory $schemaMetadataPath")
       }
     }
+    val schemaFilePath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
     val thriftWriter = new ThriftWriter(schemaFilePath, false)
     thriftWriter.open(FileWriteOperation.OVERWRITE)
     thriftWriter.write(thriftTableInfo)
