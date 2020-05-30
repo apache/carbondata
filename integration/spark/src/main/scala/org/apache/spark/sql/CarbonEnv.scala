@@ -328,7 +328,7 @@ object CarbonEnv {
     if ((!EnvHelper.isLegacy(sparkSession)) &&
         (dbName.equals("default") || databaseLocation.endsWith(".db"))) {
       val carbonStorePath = CarbonProperties.getStorePath()
-      val hiveStorePath = sparkSession.conf.get("spark.sql.warehouse.dir", carbonStorePath)
+      val hiveStorePath = sparkSession.conf.get("spark.sql.warehouse.dir")
       // if carbon.store does not point to spark.sql.warehouse.dir then follow the old table path
       // format
       if (carbonStorePath != null && !hiveStorePath.equals(carbonStorePath)) {
