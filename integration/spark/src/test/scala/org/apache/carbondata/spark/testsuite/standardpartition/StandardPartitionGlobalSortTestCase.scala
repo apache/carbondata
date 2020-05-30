@@ -48,6 +48,66 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE originTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
   }
 
+  test("test global sort column as partition column") {
+    sql("drop table if exists table1")
+    sql(s"""
+         | create table table1(
+         | timestampField TIMESTAMP
+         | )
+         | stored as carbondata
+         | tblproperties('sort_scope'='global_sort', 'sort_columns'='charField')
+         | partitioned by (charField String)
+       """.stripMargin)
+    sql(
+      s"""
+         | INSERT INTO TABLE table1
+         | SELECT
+         | '2015-07-01 00:00:00', 'aaa'
+       """.stripMargin)
+    checkAnswer(sql(s"SELECT charField FROM table1"), Seq(Row("aaa")))
+    sql("drop table if exists table1")
+  }
+
+  test("test global sort order") {
+    sql("DROP TABLE IF EXISTS gs_test")
+    sql("create table gs_test (id string) " +
+        "using carbondata options('sort_scope'='global_sort', 'local_dictionary_enable'='false', 'sort_columns'='id','global_sort_partitions'='1')")
+    sql("insert into gs_test select 'abc1' union all select 'abc5' union all select 'abc10' union all select 'abc20' ")
+    checkAnswerWithoutSort(sql("select * from gs_test"), Seq(Row("abc1"), Row("abc10"), Row("abc20"), Row("abc5")))
+    sql("DROP TABLE IF EXISTS gs_test")
+  }
+
+  test("test global sort order in old insert flow") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true");
+    sql("DROP TABLE IF EXISTS gs_test")
+    sql("create table gs_test (id string) " +
+        "using carbondata options('sort_scope'='global_sort', 'local_dictionary_enable'='false', 'sort_columns'='id','global_sort_partitions'='1')")
+    sql("insert into gs_test select 'abc1' union all select 'abc5' union all select 'abc10' union all select 'abc20' ")
+    checkAnswerWithoutSort(sql("select id from gs_test"), Seq(Row("abc1"), Row("abc10"), Row("abc20"), Row("abc5")))
+    sql("DROP TABLE IF EXISTS gs_test")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false");
+  }
+
+  test("test global sort partition order") {
+    sql("DROP TABLE IF EXISTS gs_test")
+    sql("create table gs_test (id string) partitioned by (val int)" +
+        "stored as carbondata tblproperties('sort_scope'='global_sort', 'local_dictionary_enable'='false', 'sort_columns'='id','global_sort_partitions'='1')")
+    sql("insert into gs_test select 'abc1', 1 union all select 'abc5', 1 union all select 'abc10', 1 union all select 'abc20', 1 ")
+    checkAnswerWithoutSort(sql("select id from gs_test"), Seq(Row("abc1"), Row("abc10"), Row("abc20"), Row("abc5")))
+    sql("DROP TABLE IF EXISTS gs_test")
+  }
+
+  test("test global sort order in old insert partition flow") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "true");
+    sql("DROP TABLE IF EXISTS gs_test")
+    sql("create table gs_test (id string) " +
+        "using carbondata options('sort_scope'='global_sort', 'local_dictionary_enable'='false', 'sort_columns'='id','global_sort_partitions'='1')")
+    sql("insert into gs_test select 'abc1' union all select 'abc5' union all select 'abc10' union all select 'abc20' ")
+    checkAnswerWithoutSort(sql("select id from gs_test"), Seq(Row("abc1"), Row("abc10"), Row("abc20"), Row("abc5")))
+    sql("DROP TABLE IF EXISTS gs_test")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT, "false");
+  }
+
   test("data loading for global sort partition table for one partition column") {
     sql(
       """

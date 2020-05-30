@@ -518,7 +518,12 @@ object CommonLoadUtils {
         } else {
           attributes.take(table.getSortColumns.size())
         }
-      val dataTypes = sortColumns.map(_.dataType)
+      val attributesWithIndex = attributes.zipWithIndex
+      val dataTypes = sortColumns.map { column =>
+        val attributeWithIndex =
+          attributesWithIndex.find(x => x._1.name.equalsIgnoreCase(column.name))
+        (column.dataType, attributeWithIndex.get._2)
+      }
       val sortedRDD: RDD[InternalRow] =
         GlobalSortHelper.sortBy(updatedRdd, numPartitions, dataTypes)
       val outputOrdering = sortColumns.map(SortOrder(_, Ascending))
