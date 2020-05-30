@@ -32,6 +32,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.ExecutionErrors
+import org.apache.spark.sql.types.{ByteType, DateType, LongType, StringType, TimestampType}
 import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.unsafe.types.UTF8String
@@ -237,10 +238,15 @@ object DataLoadProcessBuilderOnSpark {
         CarbonProperties.getInstance().getGlobalSortRddStorageLevel()))
     }
     val sortColumnsLength = model.getCarbonDataLoadSchema.getCarbonTable.getSortColumns.size()
-    val sortColumnDataTypes = dataTypes.take(sortColumnsLength)
-    val rowComparator = GlobalSortHelper.generateRowComparator(sortColumnDataTypes)
+    var sortColumnDataTypes = dataTypes.take(sortColumnsLength)
+    sortColumnDataTypes = sortColumnDataTypes.map {
+      case StringType => ByteType
+      case TimestampType | DateType => LongType
+      case datatype => datatype
+    }
+    val rowComparator = GlobalSortHelper.generateRowComparator(sortColumnDataTypes.zipWithIndex)
     val sortRDD = rdd.sortBy(row =>
-      getKey(row, sortColumnsLength, sortColumnDataTypes),
+      getKey(row, sortColumnsLength),
       true,
       numPartitions)(
       rowComparator, classTag[Array[AnyRef]])
@@ -273,8 +279,7 @@ object DataLoadProcessBuilderOnSpark {
   }
 
   def getKey(row: Array[AnyRef],
-      sortColumnsLength: Int,
-      dataTypes: Seq[org.apache.spark.sql.types.DataType]): Array[AnyRef] = {
+      sortColumnsLength: Int): Array[AnyRef] = {
     val key: Array[AnyRef] = new Array[AnyRef](sortColumnsLength)
     System.arraycopy(row, 0, key, 0, sortColumnsLength)
     key
