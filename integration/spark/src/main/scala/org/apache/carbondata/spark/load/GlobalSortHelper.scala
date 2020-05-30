@@ -50,7 +50,7 @@ object GlobalSortHelper {
 
   def sortBy(updatedRdd: RDD[InternalRow],
       numPartitions: Int,
-      dataTypes: Seq[DataType]
+      dataTypes: Seq[(DataType, Int)]
   ): RDD[InternalRow] = {
     val keyExtractors = generateKeyExtractor(dataTypes)
     val rowComparator = generateRowComparator(dataTypes)
@@ -68,9 +68,8 @@ object GlobalSortHelper {
     key
   }
 
-  def generateKeyExtractor(dataTypes: Seq[DataType]): Array[KeyExtractor] = {
+  def generateKeyExtractor(dataTypes: Seq[(DataType, Int)]): Array[KeyExtractor] = {
     dataTypes
-      .zipWithIndex
       .map { attr =>
         attr._1 match {
           case StringType => UTF8StringKeyExtractor(attr._2)
@@ -91,9 +90,8 @@ object GlobalSortHelper {
       .toArray
   }
 
-  def generateRowComparator(dataTypes: Seq[DataType]): InternalRowComparator = {
+  def generateRowComparator(dataTypes: Seq[(DataType, Int)]): InternalRowComparator = {
     val comparators = dataTypes
-      .zipWithIndex
       .map { attr =>
         val comparator = attr._1 match {
           case StringType => new StringSerializableComparator()
