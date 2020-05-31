@@ -149,14 +149,28 @@ public class MVProvider {
 
   private String getStatusFileName(MVManager viewManager, String databaseName) {
     String databaseLocation = viewManager.getDatabaseLocation(databaseName);
-    return FileFactory.getCarbonFile(databaseLocation).getCanonicalPath() +
-            CarbonCommonConstants.FILE_SEPARATOR + "_system" +
-            CarbonCommonConstants.FILE_SEPARATOR + STATUS_FILE_NAME;
+    try {
+      if (FileFactory.isFileExist(databaseLocation)) {
+        return FileFactory.getCarbonFile(databaseLocation).getCanonicalPath()
+            + CarbonCommonConstants.FILE_SEPARATOR + "_system"
+            + CarbonCommonConstants.FILE_SEPARATOR + STATUS_FILE_NAME;
+      } else {
+        // this database folder is not exists
+        return null;
+      }
+    } catch (IOException e) {
+      // avoid to impact other query on all databases because of mv failure on this database
+      LOG.warn("Failed to get mv status file for database " + databaseName, e);
+      return null;
+    }
   }
 
   public List<MVStatusDetail> getStatusDetails(MVManager viewManager, String databaseName)
       throws IOException {
     String statusPath = this.getStatusFileName(viewManager, databaseName);
+    if (statusPath == null) {
+      return Collections.emptyList();
+    }
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
