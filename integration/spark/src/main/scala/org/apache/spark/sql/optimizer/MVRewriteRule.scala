@@ -22,7 +22,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, ScalaUDF}
-import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Command, DeserializeToObject, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Command, DeserializeToObject, LocalRelation, LogicalPlan}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 
@@ -39,8 +39,6 @@ import org.apache.carbondata.view.MVFunctions.DUMMY_FUNCTION
  */
 class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
 
-  private val logger = MVRewriteRule.LOGGER
-
   private val catalogFactory = new MVCatalogFactory[MVSchemaWrapper] {
     override def newCatalog(): MVCatalog[MVSchemaWrapper] = {
       new MVCatalogInSpark(session)
@@ -48,6 +46,23 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
   }
 
   override def apply(logicalPlan: LogicalPlan): LogicalPlan = {
+    // only query need to check this rule
+    logicalPlan match {
+      case _: Command => return logicalPlan
+      case _: LocalRelation => return logicalPlan
+      case _ =>
+    }
+    try {
+      tryRewritePlan(logicalPlan)
+    } catch {
+      case e =>
+        // if exception is thrown while rewriting the query, will fallback to original query plan.
+        MVRewriteRule.LOGGER.warn("Failed to rewrite plan with mv: " + e.getMessage)
+        logicalPlan
+    }
+  }
+
+  private def tryRewritePlan(logicalPlan: LogicalPlan): LogicalPlan = {
     var canApply = true
     logicalPlan.transformAllExpressions {
       // first check if any mv UDF is applied it is present is in plan

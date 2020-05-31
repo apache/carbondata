@@ -90,18 +90,19 @@ case class MVCatalogInSpark(session: SparkSession)
   def registerSchema(mvSchema: MVSchema): Unit = {
     withWriteLock {
       val currentDatabase = session.catalog.currentDatabase
-
-      // This is required because mv schemas are across databases, so while loading the
-      // catalog, if the mv is in database other than sparkSession.currentDataBase(), then it
-      // fails to register, so set the database present in the mvSchema Object
-      session.catalog.setCurrentDatabase(mvSchema.getIdentifier.getDatabaseName)
-      val logicalPlan = MVHelper.dropDummyFunction(
-        MVQueryParser.getQueryPlan(mvSchema.getQuery, session))
-      // here setting back to current database of current session, because if the actual query
-      // contains db name in query like, select db1.column1 from table and current database is
-      // default and if we drop the db1, still the session has current db as db1.
-      // So setting back to current database.
-      session.catalog.setCurrentDatabase(currentDatabase)
+      val logicalPlan = try {
+        // This is required because mv schemas are across databases, so while loading the
+        // catalog, if the mv is in database other than sparkSession.currentDataBase(), then it
+        // fails to register, so set the database present in the mvSchema Object
+        session.catalog.setCurrentDatabase(mvSchema.getIdentifier.getDatabaseName)
+        MVHelper.dropDummyFunction(MVQueryParser.getQueryPlan(mvSchema.getQuery, session))
+      } finally {
+        // here setting back to current database of current session, because if the actual query
+        // contains db name in query like, select db1.column1 from table and current database is
+        // default and if we drop the db1, still the session has current db as db1.
+        // So setting back to current database.
+        session.catalog.setCurrentDatabase(currentDatabase)
+      }
       val mvSignature = SimpleModularizer.modularize(
         BirdcageOptimizer.execute(logicalPlan)).next().semiHarmonized.signature
       val mvIdentifier = mvSchema.getIdentifier
