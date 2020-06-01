@@ -23,6 +23,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -111,7 +112,7 @@ public class BloomIndexFileStore {
           dataInputStream = FileFactory.getDataInputStream(bloomIndexFile);
           byte[] fileData = new byte[(int) FileFactory.getCarbonFile(bloomIndexFile).getSize()];
           dataInputStream.readFully(fileData);
-          byte[] shardName = shardPath.getName().getBytes(Charset.forName("UTF-8"));
+          byte[] shardName = shardPath.getName().getBytes(StandardCharsets.UTF_8);
           dataOutputStream.writeInt(shardName.length);
           dataOutputStream.write(shardName);
           dataOutputStream.writeInt(fileData.length);
@@ -197,7 +198,7 @@ public class BloomIndexFileStore {
         int shardNameByteLength = mergeIndexInStream.readInt();
         byte[] shardNameBytes = new byte[shardNameByteLength];
         mergeIndexInStream.readFully(shardNameBytes);
-        String shardName = new String(shardNameBytes, Charset.forName("UTF-8"));
+        String shardName = new String(shardNameBytes, StandardCharsets.UTF_8);
         // read bloom index file data
         int indexFileByteLength = mergeIndexInStream.readInt();
         byte[] indexFileBytes = new byte[indexFileByteLength];

@@ -226,14 +226,13 @@ public class SegmentFileStore {
    */
   public static CarbonFile[] getListOfCarbonIndexFiles(String segmentPath) {
     CarbonFile segmentFolder = FileFactory.getCarbonFile(segmentPath);
-    CarbonFile[] indexFiles = segmentFolder.listFiles(new CarbonFileFilter() {
+    return segmentFolder.listFiles(new CarbonFileFilter() {
       @Override
       public boolean accept(CarbonFile file) {
         return (file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) ||
             file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
       }
     });
-    return indexFiles;
   }
 
   /**

@@ -151,10 +151,7 @@ public final class CarbonLRUCache {
    * @return
    */
   private boolean canBeRemoved(Cacheable cacheInfo) {
-    if (cacheInfo.getAccessCount() > 0) {
-      return false;
-    }
-    return true;
+    return cacheInfo.getAccessCount() <= 0;
   }
 
   /**

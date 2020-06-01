@@ -112,7 +112,7 @@ public class ArrowWriter {
       DecimalVector decimalVector = (DecimalVector) valueVector;
       final Field field = decimalVector.getField();
       ArrowType.Decimal c = (ArrowType.Decimal) field.getType();
-      return new DecimalWriter((DecimalVector) valueVector, c.getPrecision(), c.getScale());
+      return new DecimalWriter((DecimalVector) valueVector);
     } else if (valueVector instanceof VarCharVector) {
       return new StringWriter((VarCharVector) valueVector);
     } else if (valueVector instanceof Float4Vector) {

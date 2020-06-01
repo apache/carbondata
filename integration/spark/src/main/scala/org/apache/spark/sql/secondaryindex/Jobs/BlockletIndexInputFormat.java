@@ -163,9 +163,8 @@ public class BlockletIndexInputFormat
       }
 
       @Override public BlockletIndexDetailsWithSchema getCurrentValue() {
-        BlockletIndexDetailsWithSchema blockletIndexDetailsWithSchema =
+        return
             new BlockletIndexDetailsWithSchema(wrapper, table.getTableInfo().isSchemaModified());
-        return blockletIndexDetailsWithSchema;
       }
 
       @Override public float getProgress() {

@@ -165,9 +165,7 @@ public final class TableIndex extends OperationEventListener {
       return pruneWithFilter(segments, filter, partitionLocations, blocklets, indexes);
     }
     // handle by multi-thread
-    List<ExtendedBlocklet> extendedBlocklets = pruneMultiThread(
-        segments, filter, blocklets, indexes, totalFiles);
-    return extendedBlocklets;
+    return pruneMultiThread(segments, filter, blocklets, indexes, totalFiles);
   }
 
   private List<Segment> getCarbonSegments(List<Segment> allsegments) {
@@ -313,13 +311,9 @@ public final class TableIndex extends OperationEventListener {
             prev = i + 1;
             indexListForEachThread.add(segmentIndexGroupList);
             segmentIndexGroupList = new ArrayList<>();
-            processedFileCount += filesCount;
-            filesCount = 0;
-          } else {
-            // add remaining in the end
-            processedFileCount += filesCount;
-            filesCount = 0;
           }
+          processedFileCount += filesCount;
+          filesCount = 0;
         }
       }
       if (prev == 0 || prev != eachSegmentIndexList.size()) {

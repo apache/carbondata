@@ -173,14 +173,14 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
         if (scanRequired) {
           if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(String.format("BloomCoarseGrainIndex: Need to scan -> blocklet#%s",
-                String.valueOf(bloomFilter.getBlockletNo())));
+                bloomFilter.getBlockletNo()));
           }
           Blocklet blocklet = new Blocklet(bloomFilter.getShardName(),
               String.valueOf(bloomFilter.getBlockletNo()));
           tempHitBlockletsResult.add(blocklet);
         } else if (LOGGER.isDebugEnabled()) {
           LOGGER.debug(String.format("BloomCoarseGrainIndex: Skip scan -> blocklet#%s",
-              String.valueOf(bloomFilter.getBlockletNo())));
+              bloomFilter.getBlockletNo()));
         }
         // get intersect result between query models
         // pre-condition: only And/In/EqualTo expression exists in single bloom index

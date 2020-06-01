@@ -705,7 +705,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         .dataConverter(getDataTypeConverter(configuration))
         .build();
     String readDeltaOnly = configuration.get(READ_ONLY_DELTA);
-    if (readDeltaOnly != null && Boolean.parseBoolean(readDeltaOnly)) {
+    if (Boolean.parseBoolean(readDeltaOnly)) {
       queryModel.setReadOnlyDelta(true);
     }
     return queryModel;

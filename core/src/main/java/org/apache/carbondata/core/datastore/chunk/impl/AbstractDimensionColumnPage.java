@@ -36,7 +36,7 @@ public abstract class AbstractDimensionColumnPage implements DimensionColumnPage
    * @return whether data is explicitly sorted or not
    */
   protected boolean isExplicitSorted(int[] invertedIndex) {
-    return (null == invertedIndex || 0 == invertedIndex.length) ? false : true;
+    return null != invertedIndex && 0 != invertedIndex.length;
   }
 
   /**

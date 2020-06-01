@@ -140,11 +140,7 @@ public class JsonInputFormat extends FileInputFormat<LongWritable, Text> {
 
     private JsonStreamReader rdr = null;
 
-    private long start = 0, end = 0;
-
     private float toRead = 0;
-
-    private String identifier = null;
 
     private Logger log = Logger.getLogger(JsonRecordReader.class);
 
@@ -156,9 +152,9 @@ public class JsonInputFormat extends FileInputFormat<LongWritable, Text> {
     public void initialize(InputSplit split, TaskAttemptContext context)
         throws IOException, InterruptedException {
 
-      this.identifier = JsonInputFormat.getRecordIdentifier(context.getConfiguration());
+      String identifier = JsonInputFormat.getRecordIdentifier(context.getConfiguration());
 
-      if (this.identifier == null || identifier.isEmpty()) {
+      if (identifier == null || identifier.isEmpty()) {
         throw new InvalidParameterException(JsonInputFormat.RECORD_IDENTIFIER + " is not set.");
       } else {
         LOG.info("Initializing JsonRecordReader with identifier " + identifier);
@@ -171,8 +167,8 @@ public class JsonInputFormat extends FileInputFormat<LongWritable, Text> {
 
       log.info("File is " + file);
 
-      start = fSplit.getStart();
-      end = start + split.getLength();
+      long start = fSplit.getStart();
+      long end = start + split.getLength();
       toRead = end - start;
 
       FSDataInputStream strm = FileSystem.get(context.getConfiguration()).open(file);

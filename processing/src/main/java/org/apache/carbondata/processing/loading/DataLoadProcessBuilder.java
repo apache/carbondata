@@ -459,7 +459,7 @@ public final class DataLoadProcessBuilder {
         String msg = new StringBuilder(
             "The number of field in bounds should be equal to that in sort columns.")
             .append(" Expected ").append(sortCols.size())
-            .append(", actual ").append(String.valueOf(fieldInBounds.length)).append(".")
+            .append(", actual ").append(fieldInBounds.length).append(".")
             .append(" The illegal bound is '").append(bound).append("'.").toString();
         throw new CarbonDataLoadingException(msg);
       }

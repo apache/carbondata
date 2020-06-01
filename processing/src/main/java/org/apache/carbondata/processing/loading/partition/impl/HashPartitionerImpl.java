@@ -18,6 +18,7 @@
 package org.apache.carbondata.processing.loading.partition.impl;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -103,12 +104,8 @@ public class HashPartitionerImpl implements Partitioner<CarbonRow> {
 
     @Override
     public int getHash(Object[] value) {
-      try {
-        String valueStr = new String((byte[]) value[index], "utf-8");
-        return value[index] != null ? valueStr.hashCode() : 0;
-      } catch (UnsupportedEncodingException e) {
-        return 0;
-      }
+      String valueStr = new String((byte[]) value[index], StandardCharsets.UTF_8);
+      return value[index] != null ? valueStr.hashCode() : 0;
     }
   }
 }

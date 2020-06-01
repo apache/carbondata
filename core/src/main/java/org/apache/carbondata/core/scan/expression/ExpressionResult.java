@@ -190,10 +190,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           long date = ((int) value) * DateDirectDictionaryGenerator.MILLIS_PER_DAY;
           return parser.format(new java.sql.Date(date));
         }
-        return value.toString();
-      } else {
-        return value.toString();
       }
+      return value.toString();
     } catch (Exception e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().getName() + " to String type value");

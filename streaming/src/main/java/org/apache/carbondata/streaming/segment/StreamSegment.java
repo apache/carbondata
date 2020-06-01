@@ -268,9 +268,7 @@ public class StreamSegment {
    */
   private static StreamFileIndex createStreamBlockIndex(String fileName,
       BlockletMinMaxIndex minMaxIndex, int blockletRowCount) {
-    StreamFileIndex streamFileIndex =
-        new StreamFileIndex(fileName, minMaxIndex, blockletRowCount);
-    return streamFileIndex;
+    return new StreamFileIndex(fileName, minMaxIndex, blockletRowCount);
   }
 
   /**

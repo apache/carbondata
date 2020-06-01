@@ -37,7 +37,7 @@ public final class ObjectSizeCalculator {
   /**
    * Class of spark to invoke
    */
-  private static String className = "org.apache.spark.util.SizeEstimator";
+  private static final String className = "org.apache.spark.util.SizeEstimator";
 
   private static Method estimateMethod = null;
 

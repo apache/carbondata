@@ -262,10 +262,7 @@ public class CarbonHiveInputSplit extends FileSplit
     } else {
       compareResult = filePath1.compareTo(filePath2);
     }
-    if (compareResult != 0) {
-      return compareResult;
-    }
-    return 0;
+    return compareResult;
   }
 
   @Override

@@ -37,15 +37,14 @@ public class ArrowConverter {
   private final BufferAllocator allocator;
   private VectorSchemaRoot root;
   private ArrowWriter arrowWriter;
-  private org.apache.arrow.vector.types.pojo.Schema arrowSchema;
   private ExtendedByteArrayOutputStream out;
   private ArrowFileWriter writer;
 
   public ArrowConverter(Schema schema, int initialSize) {
-    this.arrowSchema = ArrowUtils.toArrowSchema(schema, TimeZone.getDefault().getID());
-    this.allocator =
-        ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", initialSize, Long.MAX_VALUE);
-    this.root = VectorSchemaRoot.create(arrowSchema, allocator);
+    this.allocator = ArrowUtils.rootAllocator.newChildAllocator(
+        "toArrowBuffer", initialSize, Long.MAX_VALUE);
+    this.root = VectorSchemaRoot.create(
+        ArrowUtils.toArrowSchema(schema, TimeZone.getDefault().getID()), allocator);
     this.arrowWriter = ArrowWriter.create(root);
     // currently blocklet level read and set initial value to 32 MB.
     this.out = new ExtendedByteArrayOutputStream(32 * 1024 * 1024);

@@ -538,14 +538,10 @@ public final class DataTypeUtil {
    * @return
    */
   public static boolean isFixedSizeDataType(DataType dataType) {
-    if (dataType == DataTypes.STRING ||
-        dataType == DataTypes.VARCHAR ||
-        dataType == DataTypes.BINARY ||
-        DataTypes.isDecimal(dataType)) {
-      return false;
-    } else {
-      return true;
-    }
+    return dataType != DataTypes.STRING &&
+        dataType != DataTypes.VARCHAR &&
+        dataType != DataTypes.BINARY &&
+        !DataTypes.isDecimal(dataType);
   }
 
   /**
@@ -1087,13 +1083,15 @@ public final class DataTypeUtil {
    * @return
    */
   public static boolean isPrimitiveColumn(DataType dataType) {
-    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE || dataType == DataTypes.SHORT
-        || dataType == DataTypes.INT || dataType == DataTypes.LONG
-        || dataType == DataTypes.TIMESTAMP || DataTypes.isDecimal(dataType)
-        || dataType == DataTypes.FLOAT || dataType == DataTypes.DOUBLE) {
-      return true;
-    }
-    return false;
+    return dataType == DataTypes.BOOLEAN ||
+        dataType == DataTypes.BYTE ||
+        dataType == DataTypes.SHORT ||
+        dataType == DataTypes.INT ||
+        dataType == DataTypes.LONG ||
+        dataType == DataTypes.TIMESTAMP ||
+        DataTypes.isDecimal(dataType) ||
+        dataType == DataTypes.FLOAT ||
+        dataType == DataTypes.DOUBLE;
   }
 
   /**

@@ -118,7 +118,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
       String external = tbl.getProperty("EXTERNAL");
       String location = CarbonUtil.checkAndAppendFileSystemURIScheme(
           tbl.getProperty(hive_metastoreConstants.META_TABLE_LOCATION));
-      if (external != null && "TRUE".equals(external) && location != null) {
+      if ("TRUE".equals(external) && location != null) {
         String[] names =
             tbl.getProperty(hive_metastoreConstants.META_TABLE_NAME).split("\\.");
         if (names.length == 2) {

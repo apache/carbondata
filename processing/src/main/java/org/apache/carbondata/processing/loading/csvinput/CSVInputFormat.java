@@ -251,7 +251,6 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     private Reader reader;
     private CsvParser csvParser;
     private StringArrayWritable value;
-    private String[] columns;
     private Seekable filePosition;
     private boolean isCompressedInput;
     private Decompressor decompressor;
@@ -318,7 +317,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
       if (csvParser == null) {
         return false;
       }
-      columns = csvParser.parseNext();
+      String[] columns = csvParser.parseNext();
       if (columns == null) {
         value = null;
         return false;

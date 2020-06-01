@@ -122,7 +122,6 @@ public class SegmentUpdateDetails implements Serializable {
   public boolean equals(Object obj) {
     if (obj == null) {
       return false;
-
     }
     if (!(obj instanceof SegmentUpdateDetails)) {
       return false;

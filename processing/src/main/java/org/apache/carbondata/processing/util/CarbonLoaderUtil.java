@@ -124,10 +124,7 @@ public final class CarbonLoaderUtil {
     if (files.length > 0) {
       return true;
     }
-    if (fileCount == 0) {
-      return false;
-    }
-    return true;
+    return fileCount != 0;
   }
 
   public static void deleteStorePath(String path) {

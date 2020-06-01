@@ -801,10 +801,13 @@ public class CarbonWriterBuilder {
     tableName = "_tempTable-" + UUID.randomUUID().toString() + "_" + timestamp;
     TableSchema schema = tableSchemaBuilder.build();
     schema.setTableName(tableName);
-    CarbonTable table =
-        CarbonTable.builder().tableName(schema.getTableName()).databaseName(dbName).tablePath(path)
-            .tableSchema(schema).isTransactionalTable(false).build();
-    return table;
+    return CarbonTable.builder()
+        .tableName(schema.getTableName())
+        .databaseName(dbName)
+        .tablePath(path)
+        .tableSchema(schema)
+        .isTransactionalTable(false)
+        .build();
   }
 
   private void buildTableSchema(Field[] fields, TableSchemaBuilder tableSchemaBuilder,

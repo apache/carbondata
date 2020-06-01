@@ -826,9 +826,6 @@ public final class FilterUtil {
         return Double.compare((Double.parseDouble(dictionaryVal)), (Double.parseDouble(memberVal)));
       } else if (dataType == DataTypes.LONG) {
         return Long.compare((Long.parseLong(dictionaryVal)), (Long.parseLong(memberVal)));
-      } else if (dataType == DataTypes.BOOLEAN) {
-        return Boolean.compare(
-            (Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
       } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
         String format = CarbonUtil.getFormatFromProperty(dataType);
         SimpleDateFormat parser = new SimpleDateFormat(format);

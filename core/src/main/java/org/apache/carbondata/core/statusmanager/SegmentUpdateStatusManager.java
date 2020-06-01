@@ -389,11 +389,7 @@ public class SegmentUpdateStatusManager {
       CarbonFile[] files = FileFactory.getCarbonFile(blockDir).listFiles(new CarbonFileFilter() {
         @Override
         public boolean accept(CarbonFile pathName) {
-          String fileName = pathName.getName();
-          if (fileName.endsWith(extension) && pathName.getSize() > 0) {
-            return true;
-          }
-          return false;
+          return pathName.getName().endsWith(extension) && pathName.getSize() > 0;
         }
       });
       deltaList = new ArrayList<>(files.length);

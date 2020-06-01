@@ -196,27 +196,19 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
 
   private void fillDataForPrefetch() {
     if (bufferRowCounter >= bufferSize) {
-      if (isBackupFilled) {
-        bufferRowCounter = 0;
-        currentBuffer = backupBuffer;
-        totalRecordFetch += currentBuffer.length;
-        isBackupFilled = false;
-        if (totalRecordFetch < this.entryCount) {
-          submit = executorService.submit(new DataFetcher(true));
-        }
-      } else {
+      if (!isBackupFilled) {
         try {
           submit.get();
         } catch (Exception e) {
           LOGGER.error(e.getMessage(), e);
         }
-        bufferRowCounter = 0;
-        currentBuffer = backupBuffer;
-        isBackupFilled = false;
-        totalRecordFetch += currentBuffer.length;
-        if (totalRecordFetch < this.entryCount) {
-          submit = executorService.submit(new DataFetcher(true));
-        }
+      }
+      bufferRowCounter = 0;
+      currentBuffer = backupBuffer;
+      isBackupFilled = false;
+      totalRecordFetch += currentBuffer.length;
+      if (totalRecordFetch < this.entryCount) {
+        submit = executorService.submit(new DataFetcher(true));
       }
     }
     prefetchRecordsProceesed++;

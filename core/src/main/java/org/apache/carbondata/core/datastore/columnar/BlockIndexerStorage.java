@@ -95,20 +95,16 @@ public abstract class BlockIndexerStorage<T> {
         if (k > 0) {
           map.add(((short) list.size()));
           list.add(rowIds[i - k - 1]);
-          list.add(rowIds[i - 1]);
-        } else {
-          list.add(rowIds[i - 1]);
         }
+        list.add(rowIds[i - 1]);
         k = 0;
       }
     }
     if (k > 0) {
       map.add(((short) list.size()));
       list.add(rowIds[i - k - 1]);
-      list.add(rowIds[i - 1]);
-    } else {
-      list.add(rowIds[i - 1]);
     }
+    list.add(rowIds[i - 1]);
     if ((((list.size() + map.size()) * 100) / rowIds.length) > 70) {
       this.rowIdPage = rowIds;
       this.rowIdRlePage = new short[0];

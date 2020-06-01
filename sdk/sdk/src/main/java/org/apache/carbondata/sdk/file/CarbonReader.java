@@ -49,11 +49,6 @@ public class CarbonReader<T> {
   private boolean initialise;
 
   /**
-   * save batch rows data
-   */
-  private Object[] batchRows;
-
-  /**
    * Call {@link #builder(String)} to construct an instance
    */
   CarbonReader(List<RecordReader<Void, T>> readers) {
@@ -92,12 +87,9 @@ public class CarbonReader<T> {
         index++;
         currentReader = readers.get(index);
         boolean hasNext = currentReader.nextKeyValue();
-        if (hasNext) {
-          return true;
-        }
+        return hasNext;
       }
     }
-    return false;
   }
 
   /**
@@ -124,7 +116,7 @@ public class CarbonReader<T> {
       int batch = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE,
               String.valueOf(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT)));
-      batchRows = new Object[batch];
+      Object[] batchRows = new Object[batch];
       int sum = 0;
       for (int i = 0; i < batch; i++) {
         batchRows[i] = currentReader.getCurrentValue();

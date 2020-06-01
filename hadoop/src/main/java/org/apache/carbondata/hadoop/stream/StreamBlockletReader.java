@@ -175,7 +175,7 @@ public class StreamBlockletReader {
     int ch4 = in.read();
     if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
     pos += 4;
-    return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
+    return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + ch4);
   }
 
   /**

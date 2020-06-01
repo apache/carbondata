@@ -38,7 +38,6 @@ public class Field {
   private DataType type;
   private List<StructField> children;
   private String parent;
-  private String storeType = "columnar";
   private int schemaOrdinal = -1;
   private int precision = 0;
   private int scale = 0;
@@ -193,7 +192,7 @@ public class Field {
   }
 
   public String getStoreType() {
-    return storeType;
+    return "columnar";
   }
 
   public int getSchemaOrdinal() {

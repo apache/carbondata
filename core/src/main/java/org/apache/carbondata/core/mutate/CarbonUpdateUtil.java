@@ -435,11 +435,7 @@ public class CarbonUpdateUtil {
       CarbonFile[] carbonDataFiles = segmentDir.listFiles(new CarbonFileFilter() {
         @Override
         public boolean accept(CarbonFile file) {
-
-          if (file.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
-            return true;
-          }
-          return false;
+          return file.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
         }
       });
       for (CarbonFile carbonDataFile : carbonDataFiles) {

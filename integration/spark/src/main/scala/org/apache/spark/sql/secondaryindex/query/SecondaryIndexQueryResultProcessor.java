@@ -25,7 +25,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -78,10 +77,6 @@ public class SecondaryIndexQueryResultProcessor {
    */
   private SegmentProperties segmentProperties;
   /**
-   * segment information of parent table
-   */
-  private SegmentProperties srcSegmentProperties;
-  /**
    * final merger for merge sort
    */
   private SingleThreadFinalSortFilesMerger finalMerger;
@@ -107,11 +102,6 @@ public class SecondaryIndexQueryResultProcessor {
   private boolean[] noDictionaryColMapping;
 
   private boolean[] sortColumnMapping;
-
-  /**
-   * agg type defined for measures
-   */
-  private DataType[] aggType;
   /**
    * segment id
    */
@@ -129,10 +119,6 @@ public class SecondaryIndexQueryResultProcessor {
    */
   private int noDictionaryCount;
   /**
-   * implicit column count in schema
-   */
-  private int implicitColumnCount;
-  /**
    * total count of measures in schema
    */
   private int measureCount;
@@ -140,10 +126,6 @@ public class SecondaryIndexQueryResultProcessor {
    * dimension count excluding complex dimension and no dictionary column count
    */
   private int dimensionColumnCount;
-  /**
-   * complex dimension count in schema
-   */
-  private int complexDimensionCount;
   /**
    * index table instance
    */
@@ -184,7 +166,6 @@ public class SecondaryIndexQueryResultProcessor {
     try {
       initTempStoreLocation();
       initSortDataRows();
-      initAggType();
       processResult(detailQueryResultIteratorList);
       // After delete command, if no records are fetched from one split,
       // below steps are not required to be initialized.
@@ -354,7 +335,6 @@ public class SecondaryIndexQueryResultProcessor {
         .getColumnSchemaList(indexTable.getVisibleDimensions(),
             indexTable.getVisibleMeasures());
     segmentProperties = new SegmentProperties(columnSchemaList);
-    srcSegmentProperties = new SegmentProperties(getParentColumnOrder(columnSchemaList));
   }
 
   /**
@@ -394,8 +374,6 @@ public class SecondaryIndexQueryResultProcessor {
    */
   private void initSortDataRows() throws SecondaryIndexException {
     measureCount = indexTable.getVisibleMeasures().size();
-    implicitColumnCount =
-        indexTable.getImplicitDimensions().size();
     List<CarbonDimension> dimensions =
         indexTable.getVisibleDimensions();
     noDictionaryColMapping = new boolean[dimensions.size()];
@@ -434,7 +412,7 @@ public class SecondaryIndexQueryResultProcessor {
     int numberOfCompactingCores = CarbonProperties.getInstance().getNumberOfCompactingCores();
     return SortParameters
         .createSortParameters(indexTable, databaseName, indexTable.getTableName(),
-            dimensionColumnCount, complexDimensionCount, measureCount, noDictionaryCount, segmentId,
+            dimensionColumnCount, 0, measureCount, noDictionaryCount, segmentId,
             carbonLoadModel.getTaskNo(), noDictionaryColMapping, sortColumnMapping,
             isVarcharDimMapping, false, numberOfCompactingCores / 2);
   }
@@ -486,13 +464,5 @@ public class SecondaryIndexQueryResultProcessor {
     tempStoreLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(indexTable, carbonLoadModel.getTaskNo(), segmentId, false,
             false);
-  }
-
-  /**
-   * initialise aggregation type for measures for their storage format
-   */
-  private void initAggType() {
-    aggType =
-        CarbonDataProcessorUtil.initDataType(indexTable, indexTable.getTableName(), measureCount);
   }
 }

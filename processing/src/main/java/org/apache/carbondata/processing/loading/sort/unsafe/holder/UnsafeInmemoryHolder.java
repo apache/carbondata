@@ -39,8 +39,6 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
 
   private IntermediateSortTempRow currentRow;
 
-  private long address;
-
   private Comparator<IntermediateSortTempRow> comparator;
 
   public UnsafeInmemoryHolder(UnsafeCarbonRowPage rowPage) {
@@ -55,14 +53,11 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
   }
 
   public boolean hasNext() {
-    if (counter < actualSize) {
-      return true;
-    }
-    return false;
+    return counter < actualSize;
   }
 
   public void readRow() {
-    address = rowPage.getBuffer().get(counter);
+    long address = rowPage.getBuffer().get(counter);
     currentRow = rowPage.getRow(address + rowPage.getDataBlock().getBaseOffset());
     counter++;
   }

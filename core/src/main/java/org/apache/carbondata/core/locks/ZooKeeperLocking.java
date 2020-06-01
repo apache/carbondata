@@ -52,11 +52,6 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   private static final String zooKeeperLocation = CarbonCommonConstants.ZOOKEEPER_LOCATION;
 
   /**
-   * Unique folder for each table with DatabaseName_TableName
-   */
-  private final String tableIdFolder;
-
-  /**
    * lockName is the name of the lock to use. This name should be same for every process that want
    * to share the same lock
    */
@@ -89,7 +84,8 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
    */
   public ZooKeeperLocking(String lockLocation, String lockFile) {
     this.lockName = lockFile;
-    this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR
+    // Unique folder for each table with DatabaseName_TableName
+    String tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonTablePath.getLockFilesDirPath(lockLocation);
 
     initialize();
@@ -98,8 +94,8 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     try {
       createBaseNode();
       // if exists returns null then path doesnt exist. so creating.
-      if (null == zk.exists(this.tableIdFolder, true)) {
-        createRecursivly(this.tableIdFolder);
+      if (null == zk.exists(tableIdFolder, true)) {
+        createRecursivly(tableIdFolder);
       }
       // if exists returns null then path doesnt exist. so creating.
       if (null == zk.exists(this.lockTypeFolder, true)) {

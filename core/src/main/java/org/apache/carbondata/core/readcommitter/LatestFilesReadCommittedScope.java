@@ -159,8 +159,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
     } else {
       segName = segment.getSegmentFileName();
     }
-    SegmentRefreshInfo segmentRefreshInfo = snapShot.get(segName);
-    return segmentRefreshInfo;
+    return snapShot.get(segName);
   }
 
   private String getSegmentID(String carbonIndexFileName, String indexFilePath) {
@@ -168,13 +167,10 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
       // This is CarbonFile case where the Index files are present inside the Segment Folder
       // So the Segment has to be extracted from the path not from the CarbonIndex file.
       String segString = indexFilePath.substring(0, indexFilePath.lastIndexOf("/") + 1);
-      String segName =
-          segString.substring(segString.lastIndexOf("_") + 1, segString.lastIndexOf("/"));
-      return segName;
+      return segString.substring(segString.lastIndexOf("_") + 1, segString.lastIndexOf("/"));
     } else {
-      String fileName = carbonIndexFileName;
-      String segId = fileName.substring(fileName.lastIndexOf("-") + 1, fileName.lastIndexOf("."));
-      return segId;
+      return carbonIndexFileName.substring(
+          carbonIndexFileName.lastIndexOf("-") + 1, carbonIndexFileName.lastIndexOf("."));
     }
   }
 
@@ -237,9 +233,8 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
         segmentRefreshInfo.setCountOfFileInSegment(indexList.size());
       }
     }
-    ReadCommittedIndexFileSnapShot readCommittedIndexFileSnapShot =
+    this.readCommittedIndexFileSnapShot =
         new ReadCommittedIndexFileSnapShot(indexFileStore, segmentTimestampUpdaterMap);
-    this.readCommittedIndexFileSnapShot = readCommittedIndexFileSnapShot;
     prepareLoadMetadata();
   }
 

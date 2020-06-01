@@ -403,13 +403,9 @@ public final class CarbonDataProcessorUtil {
   public static boolean[] getNoDictSortColMapping(CarbonTable carbonTable) {
     List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
     List<Boolean> noDicSortColMap = new ArrayList<>();
-    for (int i = 0; i < dimensions.size(); i++) {
-      if (dimensions.get(i).isSortColumn()) {
-        if (dimensions.get(i).getDataType() != DataTypes.DATE) {
-          noDicSortColMap.add(true);
-        } else {
-          noDicSortColMap.add(false);
-        }
+    for (CarbonDimension dimension : dimensions) {
+      if (dimension.isSortColumn()) {
+        noDicSortColMap.add(dimension.getDataType() != DataTypes.DATE);
       }
     }
     Boolean[] mapping = noDicSortColMap.toArray(new Boolean[0]);
@@ -431,11 +427,8 @@ public final class CarbonDataProcessorUtil {
     for (DataField dataField : dataFields) {
       if (!dataField.getColumn().isInvisible() && dataField.getColumn().isDimension()) {
         if (dataField.getColumn().getColumnSchema().isSortColumn()) {
-          if (dataField.getColumn().getColumnSchema().getDataType() != DataTypes.DATE) {
-            noDicSortColMap.add(true);
-          } else {
-            noDicSortColMap.add(false);
-          }
+          noDicSortColMap.add(
+              dataField.getColumn().getColumnSchema().getDataType() != DataTypes.DATE);
         }
       }
     }

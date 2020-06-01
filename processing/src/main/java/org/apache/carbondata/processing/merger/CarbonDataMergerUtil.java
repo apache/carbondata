@@ -119,10 +119,7 @@ public final class CarbonDataMergerUtil {
     if (tblProps.containsKey(CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE)) {
       isLoadMergeEnabled = tblProps.get(CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE);
     }
-    if (isLoadMergeEnabled.equalsIgnoreCase("false")) {
-      return false;
-    }
-    return true;
+    return !isLoadMergeEnabled.equalsIgnoreCase("false");
   }
 
   /**
@@ -639,10 +636,7 @@ public final class CarbonDataMergerUtil {
 
     long diff = cal2.getTimeInMillis() - cal1.getTimeInMillis();
 
-    if ((diff / (24 * 60 * 60 * 1000)) < numberOfDaysAllowedToMerge) {
-      return true;
-    }
-    return false;
+    return (diff / (24 * 60 * 60 * 1000)) < numberOfDaysAllowedToMerge;
   }
 
   /**
@@ -830,10 +824,7 @@ public final class CarbonDataMergerUtil {
    * @return the status whether the segment has been Merged
    */
   private static boolean isMergedSegment(String segName) {
-    if (segName.contains(".")) {
-      return true;
-    }
-    return false;
+    return segName.contains(".");
   }
 
   /**
@@ -905,19 +896,17 @@ public final class CarbonDataMergerUtil {
   public static long getCompactionSize(CompactionType compactionType,
                                        CarbonLoadModel carbonLoadModel) {
     long compactionSize = 0;
-    switch (compactionType) {
-      case MAJOR:
-        // default value is system level option
-        compactionSize = CarbonProperties.getInstance().getMajorCompactionSize();
-        // if table level option is identified, use it to overwrite system level option
-        Map<String, String> tblProps = carbonLoadModel.getCarbonDataLoadSchema()
-                .getCarbonTable().getTableInfo().getFactTable().getTableProperties();
-        if (tblProps.containsKey(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE)) {
-          compactionSize = Long.parseLong(
-                  tblProps.get(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE));
-        }
-        break;
-      default: // this case can not come.
+    if (compactionType == CompactionType.MAJOR) {
+      // default value is system level option
+      compactionSize = CarbonProperties.getInstance().getMajorCompactionSize();
+      // if table level option is identified, use it to overwrite system level option
+      Map<String, String> tblProps =
+          carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getTableInfo().getFactTable()
+              .getTableProperties();
+      if (tblProps.containsKey(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE)) {
+        compactionSize =
+            Long.parseLong(tblProps.get(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE));
+      }
     }
     return compactionSize;
   }
@@ -1117,11 +1106,7 @@ public final class CarbonDataMergerUtil {
       String taskAndTimeStamp = task + "-" + timestamp;
       uniqueBlocks.add(taskAndTimeStamp);
     }
-    if (uniqueBlocks.size() > numberDeltaFilesThreshold) {
-      return true;
-    } else {
-      return false;
-    }
+    return uniqueBlocks.size() > numberDeltaFilesThreshold;
   }
 
   /**
@@ -1202,14 +1187,10 @@ public final class CarbonDataMergerUtil {
    * @return
    */
   public static boolean isHorizontalCompactionEnabled() {
-    if ((CarbonProperties.getInstance()
+    return CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE,
-            CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE_DEFAULT))
-        .equalsIgnoreCase("true")) {
-      return true;
-    } else {
-      return false;
-    }
+            CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE_DEFAULT)
+        .equalsIgnoreCase("true");
   }
 
   /**

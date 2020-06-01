@@ -136,10 +136,8 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         }
         if (DataTypes.isDecimal(meta.getSchemaDataType())) {
           TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
-          DecimalConverterFactory.DecimalConverter decimalConverter =
-              DecimalConverterFactory.INSTANCE
-                  .getDecimalConverter(columnSpec.getPrecision(), columnSpec.getScale());
-          vectorInfo.decimalConverter = decimalConverter;
+          vectorInfo.decimalConverter = DecimalConverterFactory.INSTANCE
+              .getDecimalConverter(columnSpec.getPrecision(), columnSpec.getScale());
         }
         converter.decodeAndFillVector(unCompressData, vectorInfo, nullBits, meta.getStoreDataType(),
             pageSize);

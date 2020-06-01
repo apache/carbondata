@@ -637,7 +637,7 @@ public final class ByteUtil {
         val >>>= 8;
       }
       bytes[offset] = (byte) val;
-      return offset + SIZEOF_INT;
+      return offset + ByteUtil.SIZEOF_INT;
     }
   }
 

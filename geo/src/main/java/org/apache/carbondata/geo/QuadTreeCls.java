@@ -96,8 +96,7 @@ class GeometryOperation {
    */
   public static boolean disjoint(Geometry polygonA, List<Point2D.Double> polygonB) {
     Polygon polyB = getPolygonByPointList(polygonB);
-    boolean result  = polygonA.disjoint(polyB);
-    return result;
+    return polygonA.disjoint(polyB);
   }
 
   /**
@@ -108,8 +107,7 @@ class GeometryOperation {
    */
   public static boolean disjoint(Geometry polygonA, Point2D.Double pointB) {
     Point pointGeo = getPointByPoint2D(pointB);
-    boolean result = polygonA.disjoint(pointGeo);
-    return result;
+    return polygonA.disjoint(pointGeo);
   }
 
   /**
@@ -133,8 +131,7 @@ class GeometryOperation {
    */
   public static boolean contains(Geometry polygonA, Point2D.Double pointB) {
     Point pointGeo = getPointByPoint2D(pointB);
-    boolean result = polygonA.contains(pointGeo);
-    return result;
+    return polygonA.contains(pointGeo);
   }
 
   /**
@@ -145,8 +142,7 @@ class GeometryOperation {
    */
   public static boolean intersects(Geometry polygonA, List<Point2D.Double> polygonB) {
     Polygon polyB = getPolygonByPointList(polygonB);
-    boolean result = polygonA.intersects(polyB);
-    return result;
+    return polygonA.intersects(polyB);
   }
 
   /**
@@ -157,8 +153,7 @@ class GeometryOperation {
    */
   public static boolean intersects(Geometry polygonA, Point2D.Double pointB) {
     Point pointGeo = getPointByPoint2D(pointB);
-    boolean result = polygonA.intersects(pointGeo);
-    return result;
+    return polygonA.intersects(pointGeo);
   }
 }
 

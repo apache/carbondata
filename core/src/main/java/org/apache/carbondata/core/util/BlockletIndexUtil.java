@@ -265,10 +265,7 @@ public class BlockletIndexUtil {
   public static boolean isCacheLevelBlock(CarbonTable carbonTable) {
     String cacheLevel = carbonTable.getTableInfo().getFactTable().getTableProperties()
         .get(CarbonCommonConstants.CACHE_LEVEL);
-    if (BlockletIndexFactory.CACHE_LEVEL_BLOCKLET.equals(cacheLevel)) {
-      return false;
-    }
-    return true;
+    return !BlockletIndexFactory.CACHE_LEVEL_BLOCKLET.equals(cacheLevel);
   }
 
   /**

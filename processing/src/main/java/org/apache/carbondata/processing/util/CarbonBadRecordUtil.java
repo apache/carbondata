@@ -89,10 +89,7 @@ public class CarbonBadRecordUtil {
     CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
       @Override
       public boolean accept(CarbonFile pathname) {
-        if (pathname.getName().indexOf(CarbonCommonConstants.FILE_INPROGRESS_STATUS) > -1) {
-          return true;
-        }
-        return false;
+        return pathname.getName().indexOf(CarbonCommonConstants.FILE_INPROGRESS_STATUS) > -1;
       }
     });
 

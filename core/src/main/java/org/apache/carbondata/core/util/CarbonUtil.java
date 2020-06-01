@@ -1013,11 +1013,7 @@ public final class CarbonUtil {
       if (null != childs && childs.size() > 0) {
         break;
       }
-      if (carbonDimension.getDataType() == DataTypes.DATE) {
-        isDictionaryDimensions.add(true);
-      } else {
-        isDictionaryDimensions.add(false);
-      }
+      isDictionaryDimensions.add(carbonDimension.getDataType() == DataTypes.DATE);
     }
     return ArrayUtils
         .toPrimitive(isDictionaryDimensions.toArray(new Boolean[isDictionaryDimensions.size()]));
@@ -1522,35 +1518,26 @@ public final class CarbonUtil {
       if (indexes[index] - indexes[index - 1] == 1 && k < numberOfElementInGroup - 1) {
         k++;
       } else {
+        List<Integer> range = new ArrayList<>();
+        rangeList.add(range);
         if (k > 0) {
-          List<Integer> range = new ArrayList<>();
-          rangeList.add(range);
           range.add(indexes[index - k - 1]);
-          range.add(indexes[index - 1]);
-        } else {
-          List<Integer> range = new ArrayList<>();
-          rangeList.add(range);
-          range.add(indexes[index - 1]);
         }
+        range.add(indexes[index - 1]);
         k = 0;
       }
       index++;
     }
+    List<Integer> range = new ArrayList<>();
+    rangeList.add(range);
     if (k > 0) {
-      List<Integer> range = new ArrayList<>();
-      rangeList.add(range);
       range.add(indexes[index - k - 1]);
-      range.add(indexes[index - 1]);
-    } else {
-      List<Integer> range = new ArrayList<>();
-      rangeList.add(range);
-      range.add(indexes[index - 1]);
-
     }
+    range.add(indexes[index - 1]);
     if (length != indexes.length) {
-      List<Integer> range = new ArrayList<>();
-      rangeList.add(range);
-      range.add(indexes[indexes.length - 1]);
+      List<Integer> tempRange = new ArrayList<>();
+      rangeList.add(tempRange);
+      tempRange.add(indexes[indexes.length - 1]);
     }
 
     // as diving in range so array size will be always 2
@@ -1700,10 +1687,9 @@ public final class CarbonUtil {
   public static boolean validateBoolean(String value) {
     if (null == value) {
       return false;
-    } else if (!("false".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value))) {
-      return false;
+    } else {
+      return "false".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value);
     }
-    return true;
   }
 
   /**
@@ -2148,10 +2134,7 @@ public final class CarbonUtil {
         new ThriftWrapperSchemaConverterImpl();
     org.apache.carbondata.format.TableSchema thriftFactTable =
         thriftWrapperSchemaConverter.fromWrapperToExternalTableSchema(tableSchema);
-    org.apache.carbondata.format.TableInfo tableInfo =
-        new org.apache.carbondata.format.TableInfo(thriftFactTable,
-            new ArrayList<org.apache.carbondata.format.TableSchema>());
-    return tableInfo;
+    return new org.apache.carbondata.format.TableInfo(thriftFactTable, new ArrayList<>());
   }
 
   /**
@@ -2208,11 +2191,7 @@ public final class CarbonUtil {
           new ThriftWrapperSchemaConverterImpl();
       org.apache.carbondata.format.TableSchema thriftFactTable =
           thriftWrapperSchemaConverter.fromWrapperToExternalTableSchema(tableSchema);
-      org.apache.carbondata.format.TableInfo tableInfo =
-          new org.apache.carbondata.format.TableInfo(thriftFactTable,
-              new ArrayList<org.apache.carbondata.format.TableSchema>());
-
-      return tableInfo;
+      return new org.apache.carbondata.format.TableInfo(thriftFactTable, new ArrayList<>());
     } finally {
       indexFileReader.closeThriftReader();
     }
@@ -2428,12 +2407,9 @@ public final class CarbonUtil {
           if (!FileFactory.isFileExist(metadataPath)) {
             dataSize = FileFactory.getDirectorySize(carbonTable.getTablePath());
           }
-          dataIndexSizeMap
-              .put(String.valueOf(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE), dataSize);
-          dataIndexSizeMap
-              .put(String.valueOf(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE), indexSize);
-          dataIndexSizeMap
-              .put(String.valueOf(CarbonCommonConstants.LAST_UPDATE_TIME), lastUpdateTime);
+          dataIndexSizeMap.put(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE, dataSize);
+          dataIndexSizeMap.put(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE, indexSize);
+          dataIndexSizeMap.put(CarbonCommonConstants.LAST_UPDATE_TIME, lastUpdateTime);
         } else {
           LOGGER.error("Not able to acquire the lock for Table status updation for table");
         }
@@ -2872,8 +2848,7 @@ public final class CarbonUtil {
     if (null != localDictExcludeColumns) {
       listOfDictionaryExcludeColumns = localDictExcludeColumns.trim().split("\\s*,\\s*");
     }
-    if (null != isLocalDictEnabledForMainTable && Boolean
-        .parseBoolean(isLocalDictEnabledForMainTable)) {
+    if (Boolean.parseBoolean(isLocalDictEnabledForMainTable)) {
       int ordinal = 0;
       for (int i = 0; i < columns.size(); i++) {
         ColumnSchema column = columns.get(i);
@@ -3219,9 +3194,7 @@ public final class CarbonUtil {
             DefaultEncodingFactory.getInstance().createEncoder(columnSpec, columnPage);
         newEncodedColumnPage = columnPageEncoder.encode(columnPage);
     }
-    FallbackEncodedColumnPage fallbackEncodedColumnPage =
-        new FallbackEncodedColumnPage(newEncodedColumnPage, pageIndex);
-    return fallbackEncodedColumnPage;
+    return new FallbackEncodedColumnPage(newEncodedColumnPage, pageIndex);
   }
 
   /**

@@ -287,15 +287,11 @@ class BinaryWriter extends ArrowFieldWriter {
 }
 
 class DecimalWriter extends ArrowFieldWriter {
-  private final int precision;
-  private final int scale;
   private DecimalVector decimalVector;
 
-  public DecimalWriter(DecimalVector decimalVector, int precision, int scale) {
+  public DecimalWriter(DecimalVector decimalVector) {
     super(decimalVector);
     this.decimalVector = decimalVector;
-    this.precision = precision;
-    this.scale = scale;
   }
 
   @Override

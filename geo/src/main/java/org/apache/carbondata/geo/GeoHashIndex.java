@@ -64,8 +64,6 @@ public class GeoHashIndex extends CustomIndex<List<Long[]>> {
   private double CalculateMaxLatitude;
   // Grid length is in meters
   private int gridSize;
-  // cos value of latitude of origin of coordinate
-  private double mCos;
   // The degree of Y axis corresponding to each grid size length
   private double deltaY;
   // Each grid size length should be the degree of X axis
@@ -265,8 +263,7 @@ public class GeoHashIndex extends CustomIndex<List<Long[]>> {
       if (!checkPointsSame(pointList[0], pointList[pointList.length - 1])) {
         throw new RuntimeException("the first point and last point in polygon should be same");
       } else {
-        List<Long[]> rangeList = getPolygonRangeList(queryList);
-        return rangeList;
+        return getPolygonRangeList(queryList);
       }
     }
   }
@@ -309,9 +306,9 @@ public class GeoHashIndex extends CustomIndex<List<Long[]>> {
   private void calculateData() throws Exception {
     // Angular to radian, radians = (Math.PI / 180) * degrees
     // Cosine value of latitude angle of origin
-    this.mCos = Math.cos(this.oriLatitude / this.conversionRatio * Math.PI / CONVERT_FACTOR);
+    double mCos = Math.cos(this.oriLatitude / this.conversionRatio * Math.PI / CONVERT_FACTOR);
     // get δx=L∗360/(2πR∗cos(lat))
-    this.deltaX = (this.gridSize * 360) / (2 * Math.PI * EARTH_RADIUS * this.mCos);
+    this.deltaX = (this.gridSize * 360) / (2 * Math.PI * EARTH_RADIUS * mCos);
     this.deltaXByRatio = this.deltaX * this.conversionRatio;
     // get δy=L∗360/2πR
     this.deltaY = (this.gridSize * 360) / (2 * Math.PI * EARTH_RADIUS);

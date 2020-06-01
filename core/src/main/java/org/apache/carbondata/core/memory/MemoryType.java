@@ -19,5 +19,5 @@ package org.apache.carbondata.core.memory;
 
 public enum MemoryType {
 
-  OFFHEAP, ONHEAP;
+  OFFHEAP, ONHEAP
 }

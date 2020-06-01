@@ -85,11 +85,10 @@ public class DeleteDeltaBlockDetails implements Serializable {
         blockletDetailsMap.get(blocklet.getBlockletKey());
     if (null == deleteDeltaBlockletDetails) {
       blockletDetailsMap.put(blocklet.getBlockletKey(), blocklet);
-      return true;
     } else {
       deleteDeltaBlockletDetails.addDeletedRows(blocklet.getDeletedRows());
-      return true;
     }
+    return true;
   }
 
   public boolean addBlocklet(String blockletId, String offset, Integer pageId) throws Exception {

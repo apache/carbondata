@@ -687,19 +687,14 @@ public class CarbonTablePath {
   public static String getShardName(String actualBlockName) {
     String segmentNoStr = DataFileUtil.getSegmentNo(actualBlockName);
     StringBuilder shardName = new StringBuilder();
+    shardName.append(DataFileUtil.getTaskNo(actualBlockName)).append(DASH);
+    shardName.append(DataFileUtil.getBucketNo(actualBlockName)).append(DASH);
+    // data before version 1.4 does not have SegmentNo in carbondata filename
     if (null != segmentNoStr) {
-      shardName.append(DataFileUtil.getTaskNo(actualBlockName)).append(DASH);
-      shardName.append(DataFileUtil.getBucketNo(actualBlockName)).append(DASH);
       shardName.append(segmentNoStr).append(DASH);
-      shardName.append(DataFileUtil.getTimeStampFromFileName(actualBlockName));
-      return shardName.toString();
-    } else {
-      // data before version 1.4 does not have SegmentNo in carbondata filename
-      shardName.append(DataFileUtil.getTaskNo(actualBlockName)).append(DASH);
-      shardName.append(DataFileUtil.getBucketNo(actualBlockName)).append(DASH);
-      shardName.append(DataFileUtil.getTimeStampFromFileName(actualBlockName));
-      return shardName.toString();
     }
+    shardName.append(DataFileUtil.getTimeStampFromFileName(actualBlockName));
+    return shardName.toString();
   }
 
   /**

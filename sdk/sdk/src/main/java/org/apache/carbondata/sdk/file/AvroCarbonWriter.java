@@ -165,8 +165,7 @@ import org.apache.log4j.Logger;
             structChildObjects[i] = childObject;
           }
         }
-        StructObject structObject = new StructObject(structChildObjects);
-        out = structObject;
+        out = new StructObject(structChildObjects);
         break;
       case ARRAY:
         Object[] arrayChildObjects;

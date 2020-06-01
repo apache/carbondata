@@ -66,11 +66,8 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
       File[] files = file.listFiles(new FileFilter() {
 
         public boolean accept(File file) {
-          if (!file.isDirectory() && file.getName().toLowerCase(Locale.US)
-              .startsWith(fileStartName)) {
-            return true;
-          }
-          return false;
+          return !file.isDirectory() &&
+              file.getName().toLowerCase(Locale.US).startsWith(fileStartName);
         }
       });
 

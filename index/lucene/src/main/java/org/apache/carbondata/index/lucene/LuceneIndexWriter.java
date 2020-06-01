@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -334,11 +335,7 @@ public class LuceneIndexWriter extends IndexWriter {
       value = page.getDouble(rowId);
     } else if (type == DataTypes.STRING) {
       byte[] bytes = page.getBytes(rowId);
-      try {
-        value = new String(bytes, 2, bytes.length - 2, "UTF-8");
-      } catch (UnsupportedEncodingException e) {
-        throw new RuntimeException(e);
-      }
+      value = new String(bytes, 2, bytes.length - 2, StandardCharsets.UTF_8);
     } else if (type == DataTypes.DATE) {
       throw new RuntimeException("unsupported data type " + type);
     } else if (type == DataTypes.TIMESTAMP) {

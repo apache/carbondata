@@ -346,11 +346,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
         BitSet bitSet = filter
             .isScanRequired(minMaxIndex.getMaxValues(), minMaxIndex.getMinValues(),
                 minMaxIndex.getIsMinMaxSet());
-        if (bitSet.isEmpty()) {
-          return false;
-        } else {
-          return true;
-        }
+        return !bitSet.isEmpty();
       }
     }
     return true;

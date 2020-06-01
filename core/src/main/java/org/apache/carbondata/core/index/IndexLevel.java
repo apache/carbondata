@@ -34,5 +34,5 @@ public enum IndexLevel {
   /**
    * Fine Grain Index, index is of row level
    */
-  FG;
+  FG
 }

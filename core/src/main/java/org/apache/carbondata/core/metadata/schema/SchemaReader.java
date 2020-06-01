@@ -86,12 +86,8 @@ public class SchemaReader {
 
       org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil.readSchemaFile(schemaFilePath);
       SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
-      TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
-          tableInfo,
-          "dummy",
-          tableName,
-          "dummy");
-      return wrapperTableInfo;
+      return schemaConverter.fromExternalToWrapperTableInfo(
+          tableInfo, "dummy", tableName, "dummy");
     } else {
       throw new IOException("File does not exist: " + schemaFilePath);
     }

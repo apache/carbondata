@@ -126,7 +126,7 @@ public class TaskStatistics implements Serializable {
     valueStrings[0] = queryId;
     for (int i = 1; i < numOfColumns; i++) {
       if (columns[i].isDuration) {
-        valueStrings[i] = String.valueOf(values[i]) + "ms";
+        valueStrings[i] = values[i] + "ms";
       } else {
         valueStrings[i] = String.valueOf(values[i]);
       }

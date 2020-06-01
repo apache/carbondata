@@ -32,13 +32,12 @@ public class SDKUtil {
 
   public static ArrayList listFiles(String sourceImageFolder,
                                     final String suf, Configuration conf) {
-    final String sufImageFinal = suf;
     ArrayList result = new ArrayList();
     CarbonFile[] fileList = FileFactory.getCarbonFile(sourceImageFolder, conf).listFiles();
     for (int i = 0; i < fileList.length; i++) {
       if (fileList[i].isDirectory()) {
-        result.addAll(listFiles(fileList[i].getCanonicalPath(), sufImageFinal, conf));
-      } else if (fileList[i].getCanonicalPath().endsWith(sufImageFinal)) {
+        result.addAll(listFiles(fileList[i].getCanonicalPath(), suf, conf));
+      } else if (fileList[i].getCanonicalPath().endsWith(suf)) {
         result.add(fileList[i].getCanonicalPath());
       }
     }

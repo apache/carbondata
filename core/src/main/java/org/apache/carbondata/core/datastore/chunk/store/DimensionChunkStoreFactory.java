@@ -109,6 +109,6 @@ public class DimensionChunkStoreFactory {
    * dimension store type enum
    */
   public enum DimensionStoreType {
-    FIXED_LENGTH, VARIABLE_SHORT_LENGTH, VARIABLE_INT_LENGTH, LOCAL_DICT;
+    FIXED_LENGTH, VARIABLE_SHORT_LENGTH, VARIABLE_INT_LENGTH, LOCAL_DICT
   }
 }

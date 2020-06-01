@@ -164,14 +164,11 @@ public abstract class CarbonWriter extends ProxyFileWriter<Object[]> {
       } else {
         partitionColumns = table.getPartitionInfo().getColumnSchemaList();
       }
-      this.table = table;
       this.partitionColumns = partitionColumns;
       this.writePath = writePath;
       this.root = new Node();
       this.writers = new ArrayList<>();
     }
-
-    private final CarbonTable table;
 
     private final List<ColumnSchema> partitionColumns;
 

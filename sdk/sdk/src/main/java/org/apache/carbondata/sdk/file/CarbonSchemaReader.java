@@ -87,17 +87,13 @@ public class CarbonSchemaReader {
    */
   private static CarbonFile[] getCarbonFile(String path, final String extension, Configuration conf)
       throws IOException {
-    String dataFilePath = path;
-    if (!(dataFilePath.endsWith(extension))) {
+    if (!(path.endsWith(extension))) {
       CarbonFile[] carbonFiles = FileFactory
           .getCarbonFile(path, conf)
           .listFiles(new CarbonFileFilter() {
             @Override
             public boolean accept(CarbonFile file) {
-              if (file == null) {
-                return false;
-              }
-              return file.getName().endsWith(extension);
+              return file != null && file.getName().endsWith(extension);
             }
           });
       if (carbonFiles == null || carbonFiles.length < 1) {
@@ -135,8 +131,7 @@ public class CarbonSchemaReader {
   public static byte[] getArrowSchemaAsBytes(String path) throws IOException {
     Schema schema = CarbonSchemaReader.readSchema(path).asOriginOrder();
     ArrowConverter arrowConverter = new ArrowConverter(schema, 0);
-    final byte[] bytes = arrowConverter.toSerializeArray();
-    return bytes;
+    return arrowConverter.toSerializeArray();
   }
 
   /**

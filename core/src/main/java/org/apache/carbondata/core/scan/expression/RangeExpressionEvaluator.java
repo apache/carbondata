@@ -413,10 +413,12 @@ public class RangeExpressionEvaluator {
       ExpressionType srcExpType = getExpressionType(this.getSrcNode());
       ExpressionType tarExpType = getExpressionType(currentNode);
 
-      if ((null != srcColumnName) && (null != tarColumnName) && (srcColumnName
-          .equals(tarColumnName)) && (srcExpType != ExpressionType.FALSE) && (tarExpType
-          != ExpressionType.FALSE) && ((matchExpType(srcExpType, tarExpType)) && checkLiteralValue(
-          this.getSrcNode(), currentNode))) {
+      if (null != srcColumnName &&
+          srcColumnName.equals(tarColumnName) &&
+          srcExpType != ExpressionType.FALSE &&
+          tarExpType != ExpressionType.FALSE &&
+          matchExpType(srcExpType, tarExpType) &&
+          checkLiteralValue(this.getSrcNode(), currentNode)) {
         this.setTarNode(currentNode);
         this.setTarParentNode(parentNode);
         return parentNode;

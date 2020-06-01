@@ -40,7 +40,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
 
   private transient MemoryBlock memoryBlock;
 
-  private static int capacity = 8 * 1024;
+  private static final int capacity = 8 * 1024;
 
   private int allocatedSize;
 

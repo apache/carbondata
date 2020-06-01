@@ -234,8 +234,7 @@ class CarbondataPageSource implements ConnectorPageSource {
       for (int column = 0; column < blocks.length; column++) {
         blocks[column] = new LazyBlock(batchSize, new CarbondataBlockLoader(column));
       }
-      Page page = new Page(batchSize, blocks);
-      return page;
+      return new Page(batchSize, blocks);
     } catch (PrestoException e) {
       closeWithSuppression(e);
       throw e;

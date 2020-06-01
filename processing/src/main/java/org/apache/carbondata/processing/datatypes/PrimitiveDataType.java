@@ -170,11 +170,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   }
 
   private boolean isDictionaryDimension(CarbonDimension carbonDimension) {
-    if (carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
-      return true;
-    } else {
-      return false;
-    }
+    return carbonDimension.hasEncoding(Encoding.DICTIONARY);
   }
 
   /*

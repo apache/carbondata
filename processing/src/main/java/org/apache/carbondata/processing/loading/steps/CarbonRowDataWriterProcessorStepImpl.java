@@ -78,8 +78,6 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
   private long[] writeCounter;
 
-  private CarbonTableIdentifier tableIdentifier;
-
   private String tableName;
 
   private Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap;
@@ -122,8 +120,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   @Override
   public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
     final Iterator<CarbonRowBatch>[] iterators = child.execute();
-    tableIdentifier = configuration.getTableIdentifier().getCarbonTableIdentifier();
-    tableName = tableIdentifier.getTableName();
+    tableName = configuration.getTableIdentifier().getCarbonTableIdentifier().getTableName();
     try {
       readCounter = new long[iterators.length];
       writeCounter = new long[iterators.length];

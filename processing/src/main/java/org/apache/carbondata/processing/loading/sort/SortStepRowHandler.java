@@ -309,9 +309,8 @@ public class SortStepRowHandler implements Serializable {
     } else if (dataType == DataTypes.FLOAT) {
       data = inputStream.readFloat();
     } else if (dataType == DataTypes.BYTE_ARRAY || DataTypes.isDecimal(dataType)) {
-      byte[] bytes =
+      data =
           inputStream.readUTF().getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-      data = bytes;
     }
     return data;
   }
@@ -377,11 +376,7 @@ public class SortStepRowHandler implements Serializable {
     }
 
     if (DataTypes.BOOLEAN == tmpDataType) {
-      if ((byte) 1 == rowBuffer.get()) {
-        tmpContent = true;
-      } else {
-        tmpContent = false;
-      }
+      tmpContent = (byte) 1 == rowBuffer.get();
     } else if (DataTypes.SHORT == tmpDataType) {
       tmpContent = rowBuffer.getShort();
     } else if (DataTypes.INT == tmpDataType) {
