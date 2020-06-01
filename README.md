@@ -69,6 +69,14 @@ CarbonData is built using Apache Maven, to [build CarbonData](https://github.com
 * [Carbon as Spark's Datasource](https://github.com/apache/carbondata/blob/master/docs/carbon-as-spark-datasource-guide.md) 
 * [FAQs](https://github.com/apache/carbondata/blob/master/docs/faq.md) 
 
+## Experimental Features
+
+Some features are marked as experimental because the syntax/implementation might change in the future.
+1. Hybrid format table using Add Segment.
+2. Accelerating performance using MV on parquet/orc.
+3. Merge API for Spark DataFrame.
+4. Hive write for non-transactional table.
+
 ##  Integration
 * [Hive](https://github.com/apache/carbondata/blob/master/docs/hive-guide.md)
 * [Presto](https://github.com/apache/carbondata/blob/master/docs/prestodb-guide.md)
