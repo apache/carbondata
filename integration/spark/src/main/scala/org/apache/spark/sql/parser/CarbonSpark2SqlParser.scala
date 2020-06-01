@@ -60,15 +60,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       phrase(start)(new lexical.Scanner(input)) match {
         case Success(plan, _) =>
           CarbonScalaUtil.cleanParserThreadLocals()
-          plan match {
-            case x: CarbonLoadDataCommand =>
-              x.inputSqlString = input
-              x
-            case x: CarbonAlterTableCompactionCommand =>
-              x.alterTableModel.alterSql = input
-              x
-            case logicalPlan => logicalPlan
-        }
+          plan
         case failureOrError =>
           CarbonScalaUtil.cleanParserThreadLocals()
           CarbonException.analysisException(failureOrError.toString)
@@ -113,7 +105,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       opt(";") ^^ {
       case dbName ~ table ~ (compact ~ compactType) ~ segs =>
         val alterTableModel = AlterTableModel(CarbonParserUtil.convertDbNameToLowerCase(dbName),
-          table, None, compactType, Some(System.currentTimeMillis()), null, segs)
+          table, None, compactType, Some(System.currentTimeMillis()), segs)
         CarbonAlterTableCompactionCommand(alterTableModel)
     }
 

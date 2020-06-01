@@ -52,7 +52,6 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
     dimFilesPath: Seq[DataLoadTableFileMapping],
     options: Map[String, String],
     isOverwriteTable: Boolean,
-    var inputSqlString: String = null,
     partition: Map[String, Option[String]] = Map.empty,
     var operationContext: OperationContext = new OperationContext)
   extends AtomicRunnableCommand {

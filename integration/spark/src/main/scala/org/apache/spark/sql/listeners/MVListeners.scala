@@ -71,8 +71,7 @@ object MVCompactionPostEventListener extends OperationEventListener {
             viewIdentifier.getTableName,
             None,
             compactionType.toString,
-            Some(System.currentTimeMillis()),
-            "")
+            Some(System.currentTimeMillis()))
           operationContext.setProperty(
             viewIdentifier.getDatabaseName + "_" +
             viewIdentifier.getTableName + "_Segment",

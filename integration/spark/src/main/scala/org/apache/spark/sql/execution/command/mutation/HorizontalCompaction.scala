@@ -143,8 +143,7 @@ object HorizontalCompaction {
         carbonTable.getTableName,
         Some(segmentUpdateStatusManager),
         CompactionType.IUD_UPDDEL_DELTA.toString,
-        Some(factTimeStamp),
-        "")
+        Some(factTimeStamp))
 
       CarbonAlterTableCompactionCommand(alterTableModel).run(sparkSession)
     }

@@ -113,7 +113,6 @@ case class AlterTableModel(
     segmentUpdateStatusManager: Option[SegmentUpdateStatusManager],
     compactionType: String,
     factTimeStamp: Option[Long],
-    var alterSql: String,
     customSegmentIds: Option[List[String]] = None)
 
 case class UpdateTableModel(
