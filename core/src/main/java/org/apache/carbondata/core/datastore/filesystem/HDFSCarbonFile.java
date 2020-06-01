@@ -23,6 +23,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FilterFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.log4j.Logger;
@@ -76,6 +77,11 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
       if (fileSystem instanceof DistributedFileSystem) {
         ((DistributedFileSystem) fileSystem).rename(path, new Path(changetoName),
             org.apache.hadoop.fs.Options.Rename.OVERWRITE);
+        return true;
+      } else if ((fileSystem instanceof FilterFileSystem) && (((FilterFileSystem) fileSystem)
+          .getRawFileSystem() instanceof DistributedFileSystem)) {
+        ((DistributedFileSystem) ((FilterFileSystem) fileSystem).getRawFileSystem())
+            .rename(path, new Path(changetoName), org.apache.hadoop.fs.Options.Rename.OVERWRITE);
         return true;
       } else {
         return fileSystem.rename(path, new Path(changetoName));
