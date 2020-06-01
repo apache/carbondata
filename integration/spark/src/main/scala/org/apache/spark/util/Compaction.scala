@@ -39,8 +39,7 @@ object Compaction {
         tableName,
         None,
         compactionType,
-        Some(System.currentTimeMillis()),
-        "")).run(spark)
+        Some(System.currentTimeMillis()))).run(spark)
     }
     else {
       CarbonException.analysisException("Compaction type is wrong. Please select minor or major.")

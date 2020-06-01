@@ -173,7 +173,6 @@ case class CarbonAlterTableAddHivePartitionCommand(
           segmentUpdateStatusManager = None,
           compactionType = "", // to trigger index merge, this is not required
           factTimeStamp = Some(System.currentTimeMillis()),
-          alterSql = null,
           customSegmentIds = customSegmentIds)
         val mergeIndexEvent = AlterTableMergeIndexEvent(sparkSession, table, alterTableModel)
         OperationListenerBus.getInstance.fireEvent(mergeIndexEvent, new OperationContext)

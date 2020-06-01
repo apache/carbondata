@@ -762,7 +762,6 @@ object CarbonSparkSqlParserUtil {
       dimFilesPath = Seq(),
       options = optionsMap,
       isOverwriteTable = isOverwrite.isDefined,
-      inputSqlString = null,
       partition = partitionSpec)
   }
 }
