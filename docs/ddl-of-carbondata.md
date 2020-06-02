@@ -751,8 +751,9 @@ Users can specify which columns to include and exclude for local dictionary gene
      ```
 
      **NOTE:**
+     * Merge index is supported on streaming table from carbondata 2.0.1 version.
+     But streaming segments (ROW_V1) cannot create merge index.
 
-     * Merge index is not supported on streaming table.
 
    - #### SET and UNSET
    

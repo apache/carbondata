@@ -131,11 +131,6 @@ case class CarbonAlterTableCompactionCommand(
       }
       Seq.empty
     } else if (compactionType == CompactionType.SEGMENT_INDEX) {
-      if (table.isStreamingSink) {
-        throw new MalformedCarbonCommandException(
-          "Unsupported alter operation on carbon table: Merge index is not supported on streaming" +
-          " table")
-      }
       val version = CarbonUtil.getFormatVersion(table)
       val isOlderVersion = version == ColumnarFormatVersion.V1 ||
                            version == ColumnarFormatVersion.V2
