@@ -426,12 +426,56 @@ class CarbonIndexFileMergeTestCase
         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'streaming'='true')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE streamingTable OPTIONS('header'='false')")
-    assert(getIndexFileCount("default_streamingTable", "0") >= 1)
-    val exceptionMessage = intercept[Exception] {
-      sql("alter table streamingTable compact 'segment_index'")
-    }.getMessage
-    assert(exceptionMessage.contains("Unsupported alter operation on carbon table: Merge index is not supported on streaming table"))
+    // check for one merge index file
+    assert(getIndexFileCount("default_streamingTable", "0", CarbonTablePath.MERGE_INDEX_FILE_EXT) == 1)
     sql("DROP TABLE IF EXISTS streamingTable")
+  }
+
+  test("Verify alter table index merge for streaming table") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "false")
+    sql("DROP TABLE IF EXISTS streamingTable")
+    sql(
+      """
+        | CREATE TABLE streamingTable(id INT, name STRING, city STRING, age INT)
+        | STORED AS carbondata
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'streaming'='true')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE streamingTable OPTIONS('header'='false')")
+    // check for zero merge index file
+    assert(getIndexFileCount("default_streamingTable", "0", CarbonTablePath.MERGE_INDEX_FILE_EXT) == 0)
+    // check for one index file
+    assert(getIndexFileCount("default_streamingTable", "0", CarbonTablePath.INDEX_FILE_EXT) == 1)
+    sql("alter table streamingTable compact 'segment_index'")
+    sql("alter table streamingTable compact 'segment_index' where segment.id in (0)")
+    // check for one merge index file
+    assert(getIndexFileCount("default_streamingTable", "0", CarbonTablePath.MERGE_INDEX_FILE_EXT) == 1)
+    sql("DROP TABLE IF EXISTS streamingTable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
+  }
+
+  test("Verify alter table index merge for streaming table with custom segment") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "false")
+    sql("DROP TABLE IF EXISTS streamingTable")
+    sql(
+      """
+        | CREATE TABLE streamingTable(id INT, name STRING, city STRING, age INT)
+        | STORED AS carbondata
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'streaming'='true')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE streamingTable OPTIONS('header'='false')")
+    // check for zero merge index file
+    assert(getIndexFileCount("default_streamingTable", "0", CarbonTablePath.MERGE_INDEX_FILE_EXT) == 0)
+    // check for one index file
+    assert(getIndexFileCount("default_streamingTable", "0", CarbonTablePath.INDEX_FILE_EXT) == 1)
+    sql("alter table streamingTable compact 'segment_index' where segment.id in (0)")
+    // check for one merge index file
+    assert(getIndexFileCount("default_streamingTable", "0", CarbonTablePath.MERGE_INDEX_FILE_EXT) == 1)
+    sql("DROP TABLE IF EXISTS streamingTable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
   }
 
   test("verify driver cache gets updated after creating merge Index file") {
@@ -471,7 +515,9 @@ class CarbonIndexFileMergeTestCase
     identifiers.forall(identifier => identifier.getMergeIndexFileName == null)
   }
 
-  private def getIndexFileCount(tableName: String, segment: String): Int = {
+  private def getIndexFileCount(tableName: String,
+      segment: String,
+      extension: String = CarbonTablePath.INDEX_FILE_EXT): Int = {
     val table = CarbonMetadata.getInstance().getCarbonTable(tableName)
     val path = CarbonTablePath
       .getSegmentPath(table.getAbsoluteTableIdentifier.getTablePath, segment)
@@ -479,15 +525,13 @@ class CarbonIndexFileMergeTestCase
       FileFactory.getCarbonFile(table.getAbsoluteTableIdentifier.getTablePath)
         .listFiles(true, new CarbonFileFilter {
           override def accept(file: CarbonFile): Boolean = {
-            file.getName.endsWith(CarbonTablePath
-              .INDEX_FILE_EXT)
+            file.getName.endsWith(extension)
           }
         })
     } else {
       FileFactory.getCarbonFile(path).listFiles(true, new CarbonFileFilter {
         override def accept(file: CarbonFile): Boolean = {
-          file.getName.endsWith(CarbonTablePath
-            .INDEX_FILE_EXT)
+          file.getName.endsWith(extension)
         }
       })
     }
