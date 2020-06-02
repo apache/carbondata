@@ -27,7 +27,6 @@ import os
 import jnius_config
 
 jnius_config.set_classpath("../../../../sdk/sdk/target/carbondata-sdk.jar")
-# jnius_config.add_options('-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=6666')
 IMAGE_DATA_PATH = "./resources"
 
 def test_run_write_carbon():

@@ -776,17 +776,19 @@ public static ArrowRecordBatch byteArrayToArrowBatch(byte[] batchBytes, BufferAl
 /**
 * Pagination query with from and to range.
 *
-* @param from must be greater than 0 and <= to
-* @param to must be >= from and not outside the total rows
-* @return array of rows between from and to (inclusive)
+* @param fromRowNumber must be greater than 0 (as row id starts from 1)
+*                      and less than or equals to toRowNumber
+* @param toRowNumber must be greater than 0 (as row id starts from 1)
+*                and greater than or equals to fromRowNumber and should not cross the total rows count
+* @return array of rows between fromRowNumber and toRowNumber (inclusive)
 * @throws Exception
 */
-public Object[] read(long from, long to) throws IOException, InterruptedException;
+public Object[] read(long fromRowNumber, long toRowNumber) throws IOException, InterruptedException;
 ```
 
 ```
 /**
-* Get total rows in the folder.
+* Get total rows in the folder or a list of CarbonData files.
 * It is based on the snapshot of files taken while building the reader.
 *
 * @return total rows from all the files in the reader.
@@ -798,7 +800,7 @@ public long getTotalRows();
 /**
 * Closes the pagination reader, drops the cache and snapshot.
 * Need to build reader again if the files need to be read again.
-* Suggest to call this when new files are added in the folder.
+* call this when the all pagination queries are finished and can the drop cache.
 *
 * @throws IOException
 */

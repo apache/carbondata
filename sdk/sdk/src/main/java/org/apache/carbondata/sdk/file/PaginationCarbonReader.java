@@ -68,13 +68,12 @@ public class PaginationCarbonReader<T> extends CarbonReader<T> {
     this.readerBuilder = readerBuilder;
     // prepare the mapping.
     rowCountInSplits = new ArrayList<>(splits.size());
-    long sum = ((CarbonInputSplit) splits.get(0)).getDetailInfo().getRowCount();
-    rowCountInSplits.add(sum);
-    for (int i = 1; i < splits.size(); i++) {
+    long sum = 0;
+    for (InputSplit split : splits) {
       // prepare a summation array of row counts in each blocklet,
       // this is used for pruning with pagination vales.
       // At current index, it contains sum of rows of all the blocklet from previous + current.
-      sum += ((CarbonInputSplit) splits.get(i)).getDetailInfo().getRowCount();
+      sum += ((CarbonInputSplit) split).getDetailInfo().getRowCount();
       rowCountInSplits.add(sum);
     }
   }
@@ -82,31 +81,35 @@ public class PaginationCarbonReader<T> extends CarbonReader<T> {
   /**
    * Pagination query with from and to range.
    *
-   * @param from must be greater than 0 and <= to
-   * @param to must be >= from and not outside the total rows
-   * @return array of rows between from and to (inclusive)
+   * @param fromRowNumber must be greater than 0 (as row id starts from 1)
+   *                      and less than or equals to toRowNumber
+   * @param toRowNumber must be greater than 0 (as row id starts from 1)
+   *                and greater than or equals to fromRowNumber
+   *                and should not cross the total rows count
+   * @return array of rows between fromRowNumber and toRowNumber (inclusive)
    * @throws Exception
    */
-  public Object[] read(long from, long to) throws IOException, InterruptedException {
+  public Object[] read(long fromRowNumber, long toRowNumber)
+      throws IOException, InterruptedException {
     if (isClosed) {
       throw new RuntimeException("Pagination Reader is closed. please build again");
     }
-    if (from < 1) {
-      throw new IllegalArgumentException("from row id:" + from + " is less than 1");
+    if (fromRowNumber < 1) {
+      throw new IllegalArgumentException("from row id:" + fromRowNumber + " is less than 1");
     }
-    if (from > to) {
+    if (fromRowNumber > toRowNumber) {
       throw new IllegalArgumentException(
-          "from row id:" + from + " is greater than to row id:" + to);
+          "from row id:" + fromRowNumber + " is greater than to row id:" + toRowNumber);
     }
-    if (to > getTotalRows()) {
+    if (toRowNumber > getTotalRows()) {
       throw new IllegalArgumentException(
-          "to row id:" + to + " is greater than total rows:" + getTotalRows());
+          "to row id:" + toRowNumber + " is greater than total rows:" + getTotalRows());
     }
-    return getRows(from, to);
+    return getRows(fromRowNumber, toRowNumber);
   }
 
   /**
-   * Get total rows in the folder.
+   * Get total rows in the folder or a list of CarbonData files.
    * It is based on the snapshot of files taken while building the reader.
    *
    * @return total rows from all the files in the reader.
@@ -122,7 +125,7 @@ public class PaginationCarbonReader<T> extends CarbonReader<T> {
    * This interface is for python to call java.
    * Because python cannot understand java Long object. so send string object.
    *
-   * Get total rows in the folder.
+   * Get total rows in the folder or a list of CarbonData files.
    * It is based on the snapshot of files taken while building the reader.
    *
    *
@@ -135,34 +138,34 @@ public class PaginationCarbonReader<T> extends CarbonReader<T> {
     return (rowCountInSplits.get(rowCountInSplits.size() - 1)).toString();
   }
 
-  private static int findBlockletIndex(List<Long> summationArray2, Long key) {
+  private static int findBlockletIndex(List<Long> summationArray, Long key) {
     // summation array is in sorted order, so can use the binary search.
-    int index = Collections.binarySearch(summationArray2, key);
+    int index = Collections.binarySearch(summationArray, key);
     if (index < 0) {
       // when key not found, binary search returns negative index [-1 to -N].
       // which is the possible place where key can be inserted.
       // with one shifted position. As 0 is also a valid index.
-      index = index + 1; // offset the one index shifted.
-      index = Math.abs(index);
+      // offset the one index shifted and get absolute value of it.
+      index = Math.abs(index + 1);
     }
     return index;
   }
 
-  private int[] getBlockletIndexRange(long from, long to) {
+  private Range getBlockletIndexRange(long fromRowNumber, long toRowNumber) {
     // find the matching blocklet index range by checking with from and to.
-    int upperBound = findBlockletIndex(rowCountInSplits, to);
+    int upperBound = findBlockletIndex(rowCountInSplits, toRowNumber);
     // lower bound cannot be more than upper bound, so work on sub list.
-    int lowerBound = findBlockletIndex(rowCountInSplits.subList(0, upperBound), from);
-    return new int[] {lowerBound, upperBound};
+    int lowerBound = findBlockletIndex(rowCountInSplits.subList(0, upperBound), fromRowNumber);
+    return new Range(lowerBound, upperBound);
   }
 
-  private Object[] getRows(long from, long to)
+  private Object[] getRows(long fromRowNumber, long toRowNumber)
       throws IOException, InterruptedException {
     int rowCount = 0;
-    Object[] rows = new Object[(int)(to - from + 1)];
+    Object[] rows = new Object[(int)(toRowNumber - fromRowNumber + 1)];
     // get the matching split index (blocklets) range for the input range.
-    int[] blockletIndexRange = getBlockletIndexRange(from, to);
-    for (int i = blockletIndexRange[0]; i <= blockletIndexRange[1]; i++) {
+    Range blockletIndexRange = getBlockletIndexRange(fromRowNumber, toRowNumber);
+    for (int i = blockletIndexRange.getFrom(); i <= blockletIndexRange.getTo(); i++) {
       String blockletUniqueId = String.valueOf(i);
       BlockletRows blockletRows;
       if (cache.get(blockletUniqueId) != null) {
@@ -194,35 +197,38 @@ public class PaginationCarbonReader<T> extends CarbonReader<T> {
         // value: BlockletRows
         cache.put(String.valueOf(i), blockletRows, blockletRows.getMemorySize(), Integer.MAX_VALUE);
       }
-      long fromRow = blockletRows.getRowIdStartIndex();
-      long toRow = fromRow + blockletRows.getRowsCount();
+      long fromBlockletRow = blockletRows.getRowIdStartIndex();
+      long toBlockletRow = fromBlockletRow + blockletRows.getRowsCount();
       Object[] rowsInBlocklet = blockletRows.getRows();
-      if (to > toRow) {
-        if (from >= fromRow) {
-          // only from index lies in this blocklet, read from from-index to end of the blocklet.
+      if (toRowNumber > toBlockletRow) {
+        if (fromRowNumber >= fromBlockletRow) {
+          // only fromRowNumber lies in this blocklet,
+          // read from fromRowNumber to end of the blocklet.
           // -1 because row id starts form 0
-          int start = (int) (from - blockletRows.getRowIdStartIndex());
+          int start = (int) (fromRowNumber - blockletRows.getRowIdStartIndex());
           int end = blockletRows.getRowsCount();
           while (start < end) {
             rows[rowCount++] = rowsInBlocklet[start++];
           }
         } else {
-          // both from and to doesn't lie in this blocklet. Read the whole blocklet.
+          // both fromRowNumber and toRowNumber doesn't lie in this blocklet.
+          // Read the whole blocklet.
           System.arraycopy(rowsInBlocklet, 0, rows, rowCount, rowsInBlocklet.length);
           rowCount += rowsInBlocklet.length;
         }
       } else {
-        if (from >= fromRow) {
-          // both from and to index exist in this blocklet itself. prune it and fill the results.
-          int start = (int) (from - blockletRows.getRowIdStartIndex());
-          int end = (int) (start + (to + 1 - from));
+        if (fromRowNumber >= fromBlockletRow) {
+          // both fromRowNumber and toRowNumber exist in this blocklet itself.
+          // prune it and fill the results.
+          int start = (int) (fromRowNumber - blockletRows.getRowIdStartIndex());
+          int end = (int) (start + (toRowNumber + 1 - fromRowNumber));
           while (start < end) {
             rows[rowCount++] = rowsInBlocklet[start++];
           }
         } else {
-          // to index lies in this blocklet. Read from Starting of blocklet to to-index.
+          // toRowNumber lies in this blocklet. Read from Starting of blocklet to toRowNumber.
           int start = 0;
-          int end = (int) (to + 1 - blockletRows.getRowIdStartIndex());
+          int end = (int) (toRowNumber + 1 - blockletRows.getRowIdStartIndex());
           while (start < end) {
             rows[rowCount++] = rowsInBlocklet[start++];
           }
@@ -259,7 +265,7 @@ public class PaginationCarbonReader<T> extends CarbonReader<T> {
   /**
    * Closes the pagination reader, drops the cache and snapshot.
    * Need to build reader again if the files need to be read again.
-   * Suggest to call this when new files are added in the folder.
+   * call this when the all pagination queries are finished and can the drop cache.
    *
    * @throws IOException
    */
@@ -273,4 +279,24 @@ public class PaginationCarbonReader<T> extends CarbonReader<T> {
     allBlockletSplits = null;
     isClosed = true;
   }
+
+  private class Range {
+    private int from;
+    private int to;
+
+    Range(int from, int to) {
+      this.from = from;
+      this.to = to;
+    }
+
+    public int getFrom() {
+      return from;
+    }
+
+    public int getTo() {
+      return to;
+    }
+  }
+
 }
+
