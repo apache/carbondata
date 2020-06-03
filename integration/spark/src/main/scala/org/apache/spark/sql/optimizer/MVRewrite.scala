@@ -701,6 +701,9 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
       case select: Select if select.modularPlan.isDefined =>
         val planWrapper = select.modularPlan.get.asInstanceOf[MVPlanWrapper]
         val plan = planWrapper.modularPlan.asInstanceOf[Select]
+        val aliasMap = getAliasMap(plan.outputList, select.outputList)
+        // Update the flagSpec as per the mv table attributes.
+        val updatedFlagSpec = updateFlagSpec(select, plan, aliasMap, keepAlias = false)
         // when the output list contains multiple projection of same column, but relation
         // contains distinct columns, mapping may go wrong with columns, so select distinct
         val updatedPlanOutputList = getUpdatedOutputList(plan.outputList, select.modularPlan)
@@ -712,7 +715,8 @@ class MVRewrite(catalog: MVCatalogInSpark, logicalPlan: LogicalPlan,
             output2
           }
         }
-        plan.copy(outputList = outputList).setRewritten()
+        plan.copy(outputList = outputList, flags = select.flags, flagSpec = updatedFlagSpec)
+          .setRewritten()
       case select: Select => select.children match {
         case Seq(groupBy: GroupBy) if groupBy.modularPlan.isDefined =>
           val planWrapper = groupBy.modularPlan.get.asInstanceOf[MVPlanWrapper]
