@@ -610,10 +610,10 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop materialized view if exists mv1")
     sql("create materialized view mv1  as select a.name,a.price from maintable a")
     var dataFrame = sql("select a.name,a.price from maintable a limit 1")
-    assert(dataFrame.count() == 1)
+    assert(dataFrame.collect().length == 1)
     TestUtil.verifyMVHit(dataFrame.queryExecution.optimizedPlan, "mv1")
     dataFrame = sql("select a.name,a.price from maintable a order by a.name limit 1")
-    assert(dataFrame.count() == 1)
+    assert(dataFrame.collect().length == 1)
     TestUtil.verifyMVHit(dataFrame.queryExecution.optimizedPlan, "mv1")
     sql("drop table if exists maintable")
   }
