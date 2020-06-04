@@ -86,6 +86,64 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
       .contains("Alter table drop column operation failed:"))
   }
 
+  test("test create secondary index global sort after insert") {
+    sql("drop table if exists table1")
+    sql("create table table1 (name string, id string, country string) stored as carbondata")
+    sql("insert into table1 select 'xx', '2', 'china' union all select 'xx', '1', 'india'")
+    sql("create index table1_index on table table1(id, country) as 'carbondata' properties" +
+        "('sort_scope'='global_sort', 'Global_sort_partitions'='3')")
+    checkAnswerWithoutSort(sql("select id, country from table1_index"),
+      Seq(Row("1", "india"), Row("2", "china")))
+    // check for valid sort_scope
+    checkExistence(sql("describe formatted table1_index"), true, "Sort Scope global_sort")
+    // check the invalid sort scope
+    assert(intercept[MalformedCarbonCommandException](sql(
+      "create index index_2 on table table1(id, country) as 'carbondata' properties" +
+      "('sort_scope'='tim_sort', 'Global_sort_partitions'='3')"))
+      .getMessage
+      .contains("Invalid SORT_SCOPE tim_sort"))
+    // check for invalid global_sort_partitions
+    assert(intercept[MalformedCarbonCommandException](sql(
+      "create index index_2 on table table1(id, country) as 'carbondata' properties" +
+      "('sort_scope'='global_sort', 'Global_sort_partitions'='-1')"))
+      .getMessage
+      .contains("Table property global_sort_partitions : -1 is invalid"))
+    sql("drop index table1_index on table1")
+    sql("drop table table1")
+  }
+
+  test("test create secondary index global sort before insert") {
+    sql("drop table if exists table1")
+    sql("create table table1 (name string, id string, country string) stored as carbondata")
+    sql("create index table1_index on table table1(id, country) as 'carbondata' properties" +
+        "('sort_scope'='global_sort', 'Global_sort_partitions'='3')")
+    sql("insert into table1 select 'xx', '2', 'china' union all select 'xx', '1', 'india'")
+    checkAnswerWithoutSort(sql("select id, country from table1_index"),
+      Seq(Row("1", "india"), Row("2", "china")))
+    // check for valid sort_scope
+    checkExistence(sql("describe formatted table1_index"), true, "Sort Scope global_sort")
+    sql("drop index table1_index on table1")
+    sql("drop table table1")
+  }
+
+  test("test array<string> and string as index columns on secondary index with global sort") {
+    sql("drop table if exists complextable")
+    sql(
+      "create table complextable (id string, country array<string>, name string) stored as " +
+      "carbondata")
+    sql("insert into complextable select 1, array('china', 'us'), 'b' union all select 2, array" +
+        "('pak', 'india', 'china'), 'v' ")
+    sql("drop index if exists complextable_index_1 on complextable")
+    sql("create index complextable_index_1 on table complextable(country, name) as 'carbondata' properties" +
+        "('sort_scope'='global_sort', 'Global_sort_partitions'='3')")
+    checkAnswerWithoutSort(sql("select country,name from complextable_index_1"),
+      Seq(Row("china", "b"), Row("china", "v"), Row("india", "v"), Row("pak", "v"), Row("us", "b")))
+    // check for valid sort_scope
+    checkExistence(sql("describe formatted complextable_index_1"), true, "Sort Scope global_sort")
+    sql("drop index complextable_index_1 on complextable")
+    sql("drop table complextable")
+  }
+
   test("Test secondry index data count") {
     checkAnswer(sql("select count(*) from si_altercolumn")
       ,Seq(Row(1)))

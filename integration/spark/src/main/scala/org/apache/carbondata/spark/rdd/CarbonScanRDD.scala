@@ -95,6 +95,11 @@ class CarbonScanRDD[T: ClassTag](
 
   private var readCommittedScope: ReadCommittedScope = _
 
+  // by default, always validate the segment to access.
+  // when set to false,
+  // doesn't validate the segment and allows query on the segments without validation.
+  private var validateSegmentToAccess: Boolean = true
+
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def internalGetPartitions: Array[Partition] = {
@@ -123,6 +128,14 @@ class CarbonScanRDD[T: ClassTag](
       if (null != segmentsToAccess) {
         CarbonInputFormat
           .setSegmentsToAccess(job.getConfiguration, segmentsToAccess.toList.asJava)
+        // As we have already set input segments that we got from main table no need to validate.
+        CarbonInputFormat.setValidateSegmentsToAccess(job.getConfiguration, false)
+      } else {
+        if (!validateSegmentToAccess) {
+          // set to false, for SI global sort flow
+          CarbonInputFormat
+            .setValidateSegmentsToAccess(job.getConfiguration, validateSegmentToAccess)
+        }
       }
       // get splits
       getSplitsStartTime = System.currentTimeMillis()
@@ -783,5 +796,9 @@ class CarbonScanRDD[T: ClassTag](
 
   def setReadCommittedScope(readCommittedScope: ReadCommittedScope): Unit = {
     this.readCommittedScope = readCommittedScope
+  }
+
+  def setValidateSegmentToAccess(needValidate: Boolean): Unit = {
+    validateSegmentToAccess = needValidate
   }
 }

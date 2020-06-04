@@ -22,7 +22,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.rdd.CarbonMergeFilesRDD
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{CarbonEnv, SQLContext}
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.command.{IndexModel, SecondaryIndexModel}
 import org.apache.spark.sql.secondaryindex.events.LoadTableSIPostExecutionEvent
@@ -74,6 +74,11 @@ object Compactor {
         carbonLoadModel.getTableName,
         indexColumns,
         index.getKey)
+      val indexCarbonTable = CarbonEnv.getCarbonTable(Some(carbonLoadModel.getDatabaseName),
+        index.getKey)(sqlContext.sparkSession)
+      val header = indexCarbonTable.getCreateOrderColumn.asScala
+        .map(_.getColName).toArray
+      CarbonIndexUtil.initializeSILoadModel(carbonLoadModel, header)
       val secondaryIndexModel = SecondaryIndexModel(sqlContext,
         carbonLoadModel,
         carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,

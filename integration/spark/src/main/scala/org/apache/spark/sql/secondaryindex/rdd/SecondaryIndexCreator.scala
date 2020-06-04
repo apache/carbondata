@@ -23,9 +23,12 @@ import java.util.concurrent.Callable
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import org.apache.spark.rdd.CarbonMergeFilesRDD
-import org.apache.spark.sql.{CarbonEnv, SQLContext}
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.rdd.{CarbonMergeFilesRDD, RDD}
+import org.apache.spark.sql.{functions, CarbonEnv, CarbonUtils, DataFrame, SparkSession, SQLContext}
+import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedFunction}
+import org.apache.spark.sql.catalyst.expressions.Alias
+import org.apache.spark.sql.catalyst.plans.logical.Project
+import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.command.SecondaryIndexModel
 import org.apache.spark.sql.secondaryindex.events.{LoadTableSIPostExecutionEvent, LoadTableSIPreExecutionEvent}
@@ -38,14 +41,17 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
+import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.indexserver.DistributedRDDUtils
-import org.apache.carbondata.processing.loading.TableProcessingOperations
-import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
+import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
+import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 /**
  * This class is aimed at creating secondary index for specified segments
@@ -152,67 +158,180 @@ object SecondaryIndexCreator {
           LOGGER.info("spark.dynamicAllocation.maxExecutors property is set to =" + execInstance)
         }
       }
-      var futureObjectList = List[java.util.concurrent.Future[Array[(String, Boolean)]]]()
-      for (eachSegment <- validSegmentList) {
-        val segId = eachSegment
-        futureObjectList :+= executorService.submit(new Callable[Array[(String, Boolean)]] {
-          @throws(classOf[Exception])
-          override def call(): Array[(String, Boolean)] = {
-            ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo
-              .put("carbonConf", SparkSQLUtil.sessionState(sc.sparkSession).newHadoopConf())
-            var eachSegmentSecondaryIndexCreationStatus: Array[(String, Boolean)] = Array.empty
-            CarbonLoaderUtil.checkAndCreateCarbonDataLocation(segId, indexCarbonTable)
-            val carbonLoadModel = getCopyObject(secondaryIndexModel)
-            carbonLoadModel
-              .setFactTimeStamp(secondaryIndexModel.segmentIdToLoadStartTimeMapping(eachSegment))
-            carbonLoadModel.setTablePath(secondaryIndexModel.carbonTable.getTablePath)
-            val secondaryIndexCreationStatus = new CarbonSecondaryIndexRDD(sc.sparkSession,
-              new SecondaryIndexCreationResultImpl,
-              carbonLoadModel,
-              secondaryIndexModel.secondaryIndex,
-              segId, execInstance, indexCarbonTable, forceAccessSegment, isCompactionCall).collect()
+      var successSISegments: List[String] = List()
+      var failedSISegments: List[String] = List()
+      val sort_scope = indexCarbonTable.getTableInfo.getFactTable.getTableProperties
+        .get("sort_scope")
+      if (sort_scope != null && sort_scope.equalsIgnoreCase("global_sort")) {
+        val mainTable = secondaryIndexModel.carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+        var futureObjectList = List[java.util.concurrent.Future[Array[(String,
+          (LoadMetadataDetails, ExecutionErrors))]]]()
+        for (eachSegment <- validSegmentList) {
+          futureObjectList :+= executorService
+            .submit(new Callable[Array[(String, (LoadMetadataDetails, ExecutionErrors))]] {
+              @throws(classOf[Exception])
+              override def call(): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+                val carbonLoadModel = getCopyObject(secondaryIndexModel)
+                // to load as a global sort SI segment,
+                // we need to query main table along with position reference projection
+                val projections = indexCarbonTable.getCreateOrderColumn
+                  .asScala
+                  .map(_.getColName)
+                  .filterNot(_.equalsIgnoreCase(CarbonCommonConstants.POSITION_REFERENCE)).toSet
+                val explodeColumn = mainTable.getCreateOrderColumn.asScala
+                  .filter(x => x.getDataType.isComplexType &&
+                               projections.contains(x.getColName))
+                var dataFrame = dataFrameOfSegments(sc.sparkSession,
+                  mainTable,
+                  projections.mkString(","),
+                  Array(eachSegment))
+                // flatten the complex SI
+                if (explodeColumn.nonEmpty) {
+                  val columns = dataFrame.schema.map { x =>
+                    if (x.name.equals(explodeColumn.head.getColName)) {
+                      functions.explode_outer(functions.col(x.name))
+                    } else {
+                      functions.col(x.name)
+                    }
+                  }
+                  dataFrame = dataFrame.select(columns: _*)
+                }
+                val dataLoadSchema = new CarbonDataLoadSchema(indexCarbonTable)
+                carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
+                carbonLoadModel.setTableName(indexCarbonTable.getTableName)
+                carbonLoadModel.setDatabaseName(indexCarbonTable.getDatabaseName)
+                carbonLoadModel.setTablePath(indexCarbonTable.getTablePath)
+                carbonLoadModel.setFactTimeStamp(secondaryIndexModel
+                  .segmentIdToLoadStartTimeMapping(eachSegment))
+                carbonLoadModel.setSegmentId(eachSegment)
+                var result: Array[(String, (LoadMetadataDetails, ExecutionErrors))] = null
+                try {
+                  val configuration = FileFactory.getConfiguration
+                  configuration.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, eachSegment)
+                  def findCarbonScanRDD(rdd: RDD[_]): Unit = {
+                    rdd match {
+                      case carbonScanRDD: CarbonScanRDD[_] =>
+                        carbonScanRDD.setValidateSegmentToAccess(false)
+                      case others =>
+                        others.dependencies.foreach {x => findCarbonScanRDD(x.rdd)}
+                    }
+                  }
+                  findCarbonScanRDD(dataFrame.rdd)
+                  // accumulator to collect segment metadata
+                  val segmentMetaDataAccumulator = sc.sparkSession.sqlContext
+                    .sparkContext
+                    .collectionAccumulator[Map[String, SegmentMetaDataInfo]]
+                  // TODO: use new insert into flow, instead of DataFrame prepare RDD[InternalRow]
+                  result = DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
+                    sc.sparkSession,
+                    Some(dataFrame),
+                    carbonLoadModel,
+                    hadoopConf = configuration, segmentMetaDataAccumulator)
+                }
+                SegmentFileStore
+                  .writeSegmentFile(indexCarbonTable,
+                    eachSegment,
+                    String.valueOf(carbonLoadModel.getFactTimeStamp))
+                segmentToLoadStartTimeMap
+                  .put(eachSegment, String.valueOf(carbonLoadModel.getFactTimeStamp))
+                result
+              }
+            })
+        }
+        val segmentSecondaryIndexCreationStatus = futureObjectList.filter(_.get().length > 0)
+          .groupBy(a => a.get().head._2._1.getSegmentStatus)
+        val hasSuccessSegments =
+          segmentSecondaryIndexCreationStatus.contains(SegmentStatus.LOAD_PARTIAL_SUCCESS) ||
+          segmentSecondaryIndexCreationStatus.contains(SegmentStatus.SUCCESS)
+        val hasFailedSegments = segmentSecondaryIndexCreationStatus
+          .contains(SegmentStatus.MARKED_FOR_DELETE)
+        if (hasSuccessSegments) {
+          successSISegments =
+            segmentSecondaryIndexCreationStatus(SegmentStatus.SUCCESS).collect {
+              case segments: java.util.concurrent.Future[Array[(String, (LoadMetadataDetails,
+                ExecutionErrors))]] =>
+                segments.get().head._2._1.getLoadName
+            }
+        }
+        if (hasFailedSegments) {
+          // if the call is from compaction, we need to fail the main table compaction also, and if
+          // the load is called from SIloadEventListener, which is for corresponding main table
+          // segment, then if SI load fails, we need to fail main table load also, so throw
+          // exception,
+          // if load is called from SI creation or SILoadEventListenerForFailedSegments, no need to
+          // fail, just make the segement as marked for delete, so that next load to main table will
+          // take care
+          if (isCompactionCall || !isLoadToFailedSISegments) {
+            throw new Exception("Secondary index creation failed")
+          } else {
+            failedSISegments =
+              segmentSecondaryIndexCreationStatus(SegmentStatus.MARKED_FOR_DELETE).collect {
+                case segments: java.util.concurrent.Future[Array[(String, (LoadMetadataDetails,
+                  ExecutionErrors))]] =>
+                  segments.get().head._1
+              }
+          }
+        }
+      } else {
+        var futureObjectList = List[java.util.concurrent.Future[Array[(String, Boolean)]]]()
+        for (eachSegment <- validSegmentList) {
+          val segId = eachSegment
+          futureObjectList :+= executorService.submit(new Callable[Array[(String, Boolean)]] {
+            @throws(classOf[Exception])
+            override def call(): Array[(String, Boolean)] = {
+              ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo
+                .put("carbonConf", SparkSQLUtil.sessionState(sc.sparkSession).newHadoopConf())
+              var eachSegmentSecondaryIndexCreationStatus: Array[(String, Boolean)] = Array.empty
+              CarbonLoaderUtil.checkAndCreateCarbonDataLocation(segId, indexCarbonTable)
+              val carbonLoadModel = getCopyObject(secondaryIndexModel)
+              carbonLoadModel
+                .setFactTimeStamp(secondaryIndexModel.segmentIdToLoadStartTimeMapping(eachSegment))
+              carbonLoadModel.setTablePath(secondaryIndexModel.carbonTable.getTablePath)
+              val secondaryIndexCreationStatus = new CarbonSecondaryIndexRDD(sc.sparkSession,
+                new SecondaryIndexCreationResultImpl,
+                carbonLoadModel,
+                secondaryIndexModel.secondaryIndex,
+                segId, execInstance, indexCarbonTable, forceAccessSegment).collect()
               SegmentFileStore
                 .writeSegmentFile(indexCarbonTable,
                   segId,
                   String.valueOf(carbonLoadModel.getFactTimeStamp))
-            segmentToLoadStartTimeMap.put(segId, carbonLoadModel.getFactTimeStamp.toString)
-            if (secondaryIndexCreationStatus.length > 0) {
-              eachSegmentSecondaryIndexCreationStatus = secondaryIndexCreationStatus
+              segmentToLoadStartTimeMap.put(segId, carbonLoadModel.getFactTimeStamp.toString)
+              if (secondaryIndexCreationStatus.length > 0) {
+                eachSegmentSecondaryIndexCreationStatus = secondaryIndexCreationStatus
+              }
+              eachSegmentSecondaryIndexCreationStatus
             }
-            eachSegmentSecondaryIndexCreationStatus
-          }
-        })
-      }
-
-      val segmentSecondaryIndexCreationStatus = futureObjectList.filter(_.get().length > 0)
-        .groupBy(a => a.get().head._2)
-      val hasSuccessSegments = segmentSecondaryIndexCreationStatus.contains("true".toBoolean)
-      val hasFailedSegments = segmentSecondaryIndexCreationStatus.contains("false".toBoolean)
-      var successSISegments: List[String] = List()
-      var failedSISegments: List[String] = List()
-      if (hasSuccessSegments) {
-        successSISegments =
-          segmentSecondaryIndexCreationStatus("true".toBoolean).collect {
-            case segments: java.util.concurrent.Future[Array[(String, Boolean)]] =>
-              segments.get().head._1
-          }
-      }
-
-      if (hasFailedSegments) {
-        // if the call is from compaction, we need to fail the main table compaction also, and if
-        // the load is called from SILoadEventListener, which is for corresponding main table
-        // segment, then if SI load fails, we need to fail main table load also, so throw exception,
-        // if load is called from SI creation or SILoadEventListenerForFailedSegments, no need to
-        // fail, just make the segment as marked for delete, so that next load to main table will
-        // take care
-        if (isCompactionCall || !isLoadToFailedSISegments) {
-          throw new Exception("Secondary index creation failed")
-        } else {
-          failedSISegments =
-            segmentSecondaryIndexCreationStatus("false".toBoolean).collect {
+          })
+        }
+        val segmentSecondaryIndexCreationStatus = futureObjectList.filter(_.get().length > 0)
+          .groupBy(a => a.get().head._2)
+        val hasSuccessSegments = segmentSecondaryIndexCreationStatus.contains("true".toBoolean)
+        val hasFailedSegments = segmentSecondaryIndexCreationStatus.contains("false".toBoolean)
+        if (hasSuccessSegments) {
+          successSISegments =
+            segmentSecondaryIndexCreationStatus("true".toBoolean).collect {
               case segments: java.util.concurrent.Future[Array[(String, Boolean)]] =>
                 segments.get().head._1
             }
+        }
+        if (hasFailedSegments) {
+          // if the call is from compaction, we need to fail the main table compaction also, and if
+          // the load is called from SIloadEventListener, which is for corresponding main table
+          // segment, then if SI load fails, we need to fail main table load also, so throw
+          // exception,
+          // if load is called from SI creation or SILoadEventListenerForFailedSegments, no need to
+          // fail, just make the segement as marked for delete, so that next load to main table will
+          // take care
+          if (isCompactionCall || !isLoadToFailedSISegments) {
+            throw new Exception("Secondary index creation failed")
+          } else {
+            failedSISegments =
+              segmentSecondaryIndexCreationStatus("false".toBoolean).collect {
+                case segments: java.util.concurrent.Future[Array[(String, Boolean)]] =>
+                  segments.get().head._1
+              }
+          }
         }
       }
       // what and all segments the load failed, only for those need make status as marked
@@ -379,15 +498,20 @@ object SecondaryIndexCreator {
     copyObj.setDatabaseName(carbonLoadModel.getDatabaseName)
     copyObj.setLoadMetadataDetails(carbonLoadModel.getLoadMetadataDetails)
     copyObj.setCarbonDataLoadSchema(carbonLoadModel.getCarbonDataLoadSchema)
-
+    copyObj.setSerializationNullFormat(carbonLoadModel.getSerializationNullFormat)
+    copyObj.setBadRecordsLoggerEnable(carbonLoadModel.getBadRecordsLoggerEnable)
+    copyObj.setBadRecordsAction(carbonLoadModel.getBadRecordsAction)
+    copyObj.setIsEmptyDataBadRecord(carbonLoadModel.getIsEmptyDataBadRecord)
     val indexTable = CarbonEnv.getCarbonTable(
       Some(carbonLoadModel.getDatabaseName),
       secondaryIndexModel.secondaryIndex.indexName)(secondaryIndexModel.sqlContext.sparkSession)
-
+    copyObj.setCsvHeaderColumns(carbonLoadModel.getCsvHeaderColumns)
     copyObj.setColumnCompressor(
       CarbonIndexUtil.getCompressorForIndexTable(
         indexTable, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable))
     copyObj.setFactTimeStamp(carbonLoadModel.getFactTimeStamp)
+    copyObj.setTimestampFormat(carbonLoadModel.getTimestampFormat)
+    copyObj.setDateFormat(carbonLoadModel.getDateFormat)
     copyObj
   }
 
@@ -427,5 +551,35 @@ object SecondaryIndexCreator {
                 s" Therefore default value will be considered: $threadPoolSize")
     }
     threadPoolSize
+  }
+
+  def dataFrameOfSegments(
+      sparkSession: SparkSession,
+      carbonTable: CarbonTable,
+      projections: String,
+      segments: Array[String]): DataFrame = {
+    try {
+      CarbonUtils.threadSet(
+        CarbonCommonConstants.CARBON_INPUT_SEGMENTS + carbonTable.getDatabaseName +
+        CarbonCommonConstants.POINT + carbonTable.getTableName, segments.mkString(","))
+      val logicalPlan = sparkSession.sql(
+        s"select $projections from ${ carbonTable.getDatabaseName }.${
+          carbonTable.getTableName}").queryExecution.logical
+      val positionId = UnresolvedAlias(Alias(UnresolvedFunction("getPositionId",
+        Seq.empty, isDistinct = false), CarbonCommonConstants.POSITION_ID)())
+      val newLogicalPlan = logicalPlan.transform {
+        case p: Project =>
+          Project(p.projectList :+ positionId, p.child)
+      }
+      carbonTable.getTableInfo
+        .getFactTable
+        .getTableProperties.put("isPositionIDRequested", "true")
+      SparkSQLUtil.execute(newLogicalPlan, sparkSession)
+    } finally {
+      CarbonUtils
+        .threadUnset(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+                     carbonTable.getDatabaseName + CarbonCommonConstants.POINT +
+                     carbonTable.getTableName)
+    }
   }
 }

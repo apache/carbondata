@@ -84,7 +84,8 @@ EXPLAIN SELECT a from maintable where c = 'cd';
   'carbondata'
   PROPERTIES('table_blocksize'='1')
   ```
- 
+  **NOTE**:
+  * supported properties are table_blocksize, column_meta_cache, cache_level, carbon.column.compressor, sort_scope and global_sort_partitions.
  
 #### How SI tables are selected
 

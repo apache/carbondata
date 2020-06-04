@@ -22,6 +22,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
 import org.apache.spark.sql.secondaryindex.rdd.SecondaryIndexCreator
 
@@ -71,6 +72,18 @@ private[sql] case class LoadDataForSecondaryIndex(indexModel: IndexModel) extend
       carbonLoadModel.setTableName(relation.carbonTable.getTableName)
       carbonLoadModel.setDatabaseName(relation.carbonTable.getDatabaseName)
       carbonLoadModel.setTablePath(relation.carbonTable.getTablePath)
+      val sortScope = relation.carbonTable.getTableInfo.getFactTable
+        .getTableProperties
+        .get(CarbonCommonConstants.SORT_SCOPE)
+      if (sortScope != null) {
+        carbonLoadModel.setSortScope(sortScope)
+      }
+      val globalSortPartitions = relation.carbonTable.getTableInfo.getFactTable
+        .getTableProperties
+        .get("global_sort_partitions")
+      if (globalSortPartitions != null) {
+        carbonLoadModel.setGlobalSortPartitions(globalSortPartitions)
+      }
       var columnCompressor: String = relation.carbonTable.getTableInfo.getFactTable
         .getTableProperties
         .get(CarbonCommonConstants.COMPRESSOR)
@@ -78,6 +91,11 @@ private[sql] case class LoadDataForSecondaryIndex(indexModel: IndexModel) extend
         columnCompressor = CompressorFactory.getInstance.getCompressor.getName
       }
       carbonLoadModel.setColumnCompressor(columnCompressor)
+      val indexCarbonTable = CarbonEnv.getCarbonTable(Some(carbonLoadModel.getDatabaseName),
+        indexModel.indexName)(sparkSession)
+      val header = indexCarbonTable.getCreateOrderColumn.asScala
+        .map(_.getColName).toArray
+      CarbonIndexUtil.initializeSILoadModel(carbonLoadModel, header)
       createSecondaryIndex(sparkSession, indexModel, carbonLoadModel)
     } catch {
       case ex: Exception =>

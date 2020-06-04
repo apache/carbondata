@@ -81,6 +81,21 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     val transformedPlan = makeDeterministic(plan)
     transformedPlan match {
+      case GlobalLimit(IntegerLiteral(limit),
+      LocalLimit(IntegerLiteral(limitValue),
+      _@PhysicalOperation(projects, filters, l: LogicalRelation))) if l.relation
+        .isInstanceOf[CarbonDatasourceHadoopRelation] =>
+        val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+        GlobalLimitExec(limit, LocalLimitExec(limitValue, pruneFilterProject(
+          l,
+          projects.filterNot(_.name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID)),
+          filters,
+          (a, f, p) =>
+            setVectorReadSupport(
+              l,
+              a,
+              relation.buildScan(a.map(_.name).toArray, filters, projects, f, p))
+        ))) :: Nil
       case PhysicalOperation(projects, filters, l: LogicalRelation)
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
         val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
@@ -89,7 +104,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         try {
           pruneFilterProject(
             l,
-            projects.filterNot(_.name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID)),
+            projects,
             filters,
             (a, f, p) =>
               setVectorReadSupport(
@@ -597,8 +612,44 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       handledSet: AttributeSet,
       newProjectList: Seq[Attribute],
       updatedProjects: Seq[Expression]): (Seq[Attribute], Seq[Expression]) = {
-    ((projectsAttr.to[mutable.LinkedHashSet] ++ filterSet -- handledSet)
-       .map(relation.attributeMap).toSeq ++ newProjectList, updatedProjects)
+    val sparkSession = SparkSession.getActiveSession.get
+    val pushDownJoinEnabled = sparkSession.sparkContext.getConf
+      .getBoolean("spark.carbon.pushdown.join.as.filter", defaultValue = true)
+
+    // positionId column can be added in two cases
+    // case 1: SI pushdown case, SI rewritten plan adds positionId column
+    // case 2: if the user requested positionId column thru getPositionId() UDF
+    // positionId column should be removed only in case 1, as it is manually added
+    // Below code is added to handle case 2. But getPositionId() UDF is almost used only for testing
+    val isPositionIDRequested = relation.catalogTable match {
+      case Some(table) =>
+        val tblProperties = CarbonEnv.getCarbonTable(table.identifier)(sparkSession).getTableInfo
+          .getFactTable
+          .getTableProperties
+        val isPosIDRequested = if (tblProperties.containsKey("isPositionIDRequested")) {
+          val flag = java.lang.Boolean.parseBoolean(tblProperties.get("isPositionIDRequested"))
+          tblProperties.remove("isPositionIDRequested")
+          flag
+        } else {
+          false
+        }
+        isPosIDRequested
+      case _ => false
+    }
+    // remove positionId col only if pushdown is enabled and
+    // positionId col is not requested in the query
+    if (pushDownJoinEnabled && !isPositionIDRequested) {
+      ((projectsAttr.to[scala.collection.mutable.LinkedHashSet] ++ filterSet -- handledSet)
+         .map(relation.attributeMap).toSeq ++ newProjectList
+         .filterNot(attr => attr.name
+           .equalsIgnoreCase(CarbonCommonConstants.POSITION_ID)), updatedProjects
+        .filterNot(attr => attr.isInstanceOf[AttributeReference] &&
+                           attr.asInstanceOf[AttributeReference].name
+                             .equalsIgnoreCase(CarbonCommonConstants.POSITION_ID)))
+    } else {
+      ((projectsAttr.to[scala.collection.mutable.LinkedHashSet] ++ filterSet -- handledSet)
+         .map(relation.attributeMap).toSeq ++ newProjectList, updatedProjects)
+    }
   }
 
   private def getDataSourceScan(relation: LogicalRelation,

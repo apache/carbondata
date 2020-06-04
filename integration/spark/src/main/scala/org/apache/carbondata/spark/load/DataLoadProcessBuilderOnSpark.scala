@@ -288,19 +288,19 @@ object DataLoadProcessBuilderOnSpark {
   private def updateLoadStatus(model: CarbonLoadModel, partialSuccessAccum: LongAccumulator
   ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     // Update status
+    val loadMetadataDetails = new LoadMetadataDetails()
+    loadMetadataDetails.setLoadName(model.getSegmentId)
     if (partialSuccessAccum.value != 0) {
       val uniqueLoadStatusId = model.getTableName + CarbonCommonConstants.UNDERSCORE +
         "Partial_Success"
-      val loadMetadataDetails = new LoadMetadataDetails()
       loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
-      val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
+      val executionErrors = ExecutionErrors(FailureCauses.NONE, "")
       executionErrors.failureCauses = FailureCauses.BAD_RECORDS
       Array((uniqueLoadStatusId, (loadMetadataDetails, executionErrors)))
     } else {
       val uniqueLoadStatusId = model.getTableName + CarbonCommonConstants.UNDERSCORE + "Success"
-      val loadMetadataDetails = new LoadMetadataDetails()
       loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
-      val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
+      val executionErrors = ExecutionErrors(FailureCauses.NONE, "")
       Array((uniqueLoadStatusId, (loadMetadataDetails, executionErrors)))
     }
   }
