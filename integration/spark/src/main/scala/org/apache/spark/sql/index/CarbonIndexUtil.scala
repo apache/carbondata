@@ -38,16 +38,17 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata
 import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.format.TableInfo
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+import org.apache.carbondata.processing.util.TableOptionConstant
 
 /**
  * Carbon Index util
@@ -297,6 +298,8 @@ object CarbonIndexUtil {
       segmentIdToLoadStartTimeMapping = scala.collection.mutable
         .Map((carbonLoadModel.getSegmentId, carbonLoadModel.getFactTimeStamp))
     }
+    val header = indexTable.getCreateOrderColumn.asScala.map(_.getColName).toArray
+    initializeSILoadModel(carbonLoadModel, header)
     val secondaryIndexModel = if (isLoadToFailedSISegments) {
       SecondaryIndexModel(
         sparkSession.sqlContext,
@@ -587,4 +590,22 @@ object CarbonIndexUtil {
     })
   }
 
+  def initializeSILoadModel(carbonLoadModel: CarbonLoadModel,
+      header: Array[String]): Unit = {
+    carbonLoadModel.setSerializationNullFormat(
+      TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
+    carbonLoadModel.setBadRecordsLoggerEnable(
+      TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName + ",false")
+    carbonLoadModel.setBadRecordsAction(
+      TableOptionConstant.BAD_RECORDS_ACTION.getName + ",force")
+    carbonLoadModel.setIsEmptyDataBadRecord(
+      DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + ",false")
+    carbonLoadModel.setTimestampFormat(CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+    carbonLoadModel.setDateFormat(CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+    carbonLoadModel.setCsvHeaderColumns(header)
+  }
 }

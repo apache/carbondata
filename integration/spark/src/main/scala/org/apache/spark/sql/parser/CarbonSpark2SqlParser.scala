@@ -191,6 +191,10 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
             table.database, indexName.toLowerCase, tableColumns, properties)
           CarbonSparkSqlParserUtil.validateColumnCompressorProperty(
             properties.getOrElse(CarbonCommonConstants.COMPRESSOR, null))
+          // validate sort scope
+          CommonUtil.validateSortScope(properties)
+          // validate global_sort_partitions
+          CommonUtil.validateGlobalSortPartitions(properties)
           CarbonCreateSecondaryIndexCommand(
             indexModel,
             properties,
@@ -640,7 +644,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     val supportedPropertiesForIndexTable = Seq("TABLE_BLOCKSIZE",
       "COLUMN_META_CACHE",
       "CACHE_LEVEL",
-      CarbonCommonConstants.COMPRESSOR.toUpperCase)
+      CarbonCommonConstants.COMPRESSOR.toUpperCase,
+      "SORT_SCOPE",
+      "GLOBAL_SORT_PARTITIONS")
     tableProperties.foreach { property =>
       if (!supportedPropertiesForIndexTable.contains(property._1.toUpperCase)) {
         val errorMessage = "Unsupported Table property in index creation: " + property._1.toString

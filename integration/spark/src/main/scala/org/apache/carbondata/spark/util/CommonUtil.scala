@@ -25,6 +25,7 @@ import java.util.UUID
 import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.collection.mutable.Map
 import scala.math.BigDecimal.RoundingMode
 
@@ -797,6 +798,26 @@ object CommonUtil {
         throw new MalformedCarbonCommandException(
           s"Invalid SORT_SCOPE ${ sortScopeOption.get }, " +
           s"valid SORT_SCOPE are 'NO_SORT', 'LOCAL_SORT' and 'GLOBAL_SORT'")
+      }
+    }
+  }
+
+  def validateGlobalSortPartitions(propertiesMap: mutable.Map[String, String]): Unit = {
+    if (propertiesMap.contains("global_sort_partitions")) {
+      val globalSortPartitionsProp = propertiesMap("global_sort_partitions")
+      var pass = false
+      try {
+        val globalSortPartitions = Integer.parseInt(globalSortPartitionsProp)
+        if (globalSortPartitions > 0) {
+          pass = true
+        }
+      } catch {
+        case _ =>
+      }
+      if (!pass) {
+        throw new MalformedCarbonCommandException(
+          s"Table property global_sort_partitions : ${ globalSortPartitionsProp }" +
+          s" is invalid")
       }
     }
   }
