@@ -234,6 +234,23 @@ public abstract class MVManager {
     }
     return statusDetails;
   }
+  /**
+   * Get databases list mv status details
+   */
+  public List<MVStatusDetail> getEnabledStatusDetails(List<String> databases)
+          throws IOException {
+    List<MVStatusDetail> enabledStatusDetails = new ArrayList<>();
+    for (String databaseName :databases) {
+      List<MVStatusDetail> statusDetails =
+              schemaProvider.getStatusDetails(this, databaseName);
+      for (MVStatusDetail statusDetail : statusDetails) {
+        if (statusDetail.getStatus() == MVStatus.ENABLED) {
+          enabledStatusDetails.add(statusDetail);
+        }
+      }
+    }
+    return enabledStatusDetails;
+  }
 
   /**
    * Get enabled mv status details
