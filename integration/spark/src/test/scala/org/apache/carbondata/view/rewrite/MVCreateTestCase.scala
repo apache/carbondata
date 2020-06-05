@@ -835,8 +835,8 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
         |  utilization int,salary int)
         | STORED AS carbondata
       """.stripMargin)
-    sql("drop materialized view if exists MV_exp")
-    sql("create materialized view MV_exp as select doj,sum(salary) from xy.fact_tablexy group by doj")
+    sql("drop materialized view if exists xy.MV_exp")
+    sql("create materialized view xy.MV_exp as select doj,sum(salary) from xy.fact_tablexy group by doj")
     val frame = sql(
       "select doj,sum(salary) from xy.fact_tablexy group by doj")
     assert(TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "MV_exp"))
