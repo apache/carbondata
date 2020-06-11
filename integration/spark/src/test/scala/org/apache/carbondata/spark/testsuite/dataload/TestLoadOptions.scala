@@ -35,14 +35,6 @@ class TestLoadOptions extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists TestLoadTableOptions")
   }
 
-  test("test load data with more than one char in quotechar option") {
-    val errorMessage = intercept[MalformedCarbonCommandException] {
-      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE " +
-          s"TestLoadTableOptions OPTIONS('QUOTECHAR'='\\\\')")
-    }.getMessage
-    assert(errorMessage.equals("QUOTECHAR cannot be more than one character."))
-  }
-
   test("test load data with more than one char in commentchar option") {
     val errorMessage = intercept[MalformedCarbonCommandException] {
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE " +
