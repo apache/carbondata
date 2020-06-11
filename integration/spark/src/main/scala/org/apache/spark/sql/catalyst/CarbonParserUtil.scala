@@ -946,14 +946,6 @@ object CarbonParserUtil {
       throw new MalformedCarbonCommandException(errorMessage)
     }
 
-    // Validate QUOTECHAR length
-    if (options.exists(_._1.equalsIgnoreCase("QUOTECHAR"))) {
-      val quoteChar: String = options.get("quotechar").get.head._2
-      if (quoteChar.length > 1 ) {
-        throw new MalformedCarbonCommandException("QUOTECHAR cannot be more than one character.")
-      }
-    }
-
     // Validate COMMENTCHAR length
     if (options.exists(_._1.equalsIgnoreCase("COMMENTCHAR"))) {
       val commentChar: String = options.get("commentchar").get.head._2

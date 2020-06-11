@@ -181,7 +181,8 @@ public class CarbonLoadModelBuilder {
 
     validateGlobalSortPartitions(global_sort_partitions);
     carbonLoadModel.setEscapeChar(checkDefaultValue(optionsFinal.get("escapechar"), "\\"));
-    carbonLoadModel.setQuoteChar(checkDefaultValue(optionsFinal.get("quotechar"), "\""));
+    carbonLoadModel.setQuoteChar(
+        CarbonUtil.unescapeChar(checkDefaultValue(optionsFinal.get("quotechar"), "\"")));
     carbonLoadModel.setCommentChar(checkDefaultValue(optionsFinal.get("commentchar"), "#"));
     String lineSeparator = CarbonUtil.unescapeChar(options.get("line_separator"));
     if (lineSeparator != null) {
