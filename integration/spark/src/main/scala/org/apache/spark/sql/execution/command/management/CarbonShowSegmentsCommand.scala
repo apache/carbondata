@@ -30,6 +30,7 @@ import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 case class CarbonShowSegmentsCommand(
     databaseNameOp: Option[String],
     tableName: String,
+    limit: Option[String],
     showHistory: Boolean = false)
   extends DataCommand {
 
@@ -54,7 +55,7 @@ case class CarbonShowSegmentsCommand(
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
     val tablePath = carbonTable.getTablePath
-    val segments = readSegments(tablePath, showHistory)
+    val segments = readSegments(tablePath, showHistory, limit)
     if (segments.nonEmpty) {
       showBasic(segments, tablePath)
     } else {
@@ -65,13 +66,8 @@ case class CarbonShowSegmentsCommand(
   override protected def opName: String = "SHOW SEGMENTS"
 
   private def showBasic(
-      allSegments: Array[LoadMetadataDetails],
+      segments: Array[LoadMetadataDetails],
       tablePath: String): Seq[Row] = {
-    val segments = allSegments.sortWith { (l1, l2) =>
-      java.lang.Double.parseDouble(l1.getLoadName) >
-      java.lang.Double.parseDouble(l2.getLoadName)
-    }
-
     segments
       .map { segment =>
         val startTime = getLoadStartTime(segment)

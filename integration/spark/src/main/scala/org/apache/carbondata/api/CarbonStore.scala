@@ -42,16 +42,29 @@ import org.apache.carbondata.streaming.segment.StreamSegment
 object CarbonStore {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  def readSegments(tablePath: String, showHistory: Boolean): Array[LoadMetadataDetails] = {
+  def readSegments(
+      tablePath: String,
+      showHistory: Boolean,
+      limit: Option[String]): Array[LoadMetadataDetails] = {
     val metaFolder = CarbonTablePath.getMetadataPath(tablePath)
-    val segmentsMetadataDetails = if (showHistory) {
+    var segmentsMetadataDetails = if (showHistory) {
       SegmentStatusManager.readLoadMetadata(metaFolder) ++
       SegmentStatusManager.readLoadHistoryMetadata(metaFolder)
     } else {
       SegmentStatusManager.readLoadMetadata(metaFolder)
     }
     if (!showHistory) {
-      segmentsMetadataDetails.filter(_.getVisibility.equalsIgnoreCase("true"))
+      segmentsMetadataDetails = segmentsMetadataDetails
+        .filter(_.getVisibility.equalsIgnoreCase("true"))
+      segmentsMetadataDetails = segmentsMetadataDetails.sortWith { (l1, l2) =>
+        java.lang.Double.parseDouble(l1.getLoadName) >
+        java.lang.Double.parseDouble(l2.getLoadName)
+      }
+    }
+
+    if (limit.isDefined) {
+      val lim = Integer.parseInt(limit.get)
+      segmentsMetadataDetails.slice(0, lim)
     } else {
       segmentsMetadataDetails
     }

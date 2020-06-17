@@ -35,6 +35,7 @@ case class CarbonShowSegmentsAsSelectCommand(
     databaseNameOp: Option[String],
     tableName: String,
     query: String,
+    limit: Option[String],
     showHistory: Boolean = false)
   extends DataCommand {
 
@@ -71,7 +72,7 @@ case class CarbonShowSegmentsAsSelectCommand(
 
   private def createDataFrame: DataFrame = {
     val tablePath = carbonTable.getTablePath
-    val segments = CarbonStore.readSegments(tablePath, showHistory)
+    val segments = CarbonStore.readSegments(tablePath, showHistory, limit)
     val tempViewName = makeTempViewName(carbonTable)
     registerSegmentRowView(sparkSession, tempViewName, carbonTable, segments)
     try {
