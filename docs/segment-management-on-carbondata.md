@@ -32,7 +32,7 @@ concept which helps to maintain consistency of data and easy transaction managem
 
   ```
   SHOW [HISTORY] SEGMENTS
-  [FOR TABLE | ON] [db_name.]table_name
+  [FOR TABLE | ON] [db_name.]table_name [LIMIT number_of_segments]
   [AS (select query from table_name_segments)]
   ```
 
@@ -52,6 +52,12 @@ concept which helps to maintain consistency of data and easy transaction managem
 
   ```
   SHOW SEGMENTS ON CarbonDatabase.CarbonTable
+  ```
+
+  Show lastest 10 visible segments
+
+  ```
+  SHOW SEGMENTS ON CarbonDatabase.CarbonTable LIMIT 10
   ```
 
   Show all segments, include invisible segments
@@ -81,6 +87,9 @@ concept which helps to maintain consistency of data and easy transaction managem
 
   ```
   SHOW SEGMENTS ON CarbonTable AS 
+  SELECT * FROM CarbonTable_segments
+  
+  SHOW SEGMENTS ON CarbonTable LIMIT 10 AS 
   SELECT * FROM CarbonTable_segments
   
   SHOW SEGMENTS ON CarbonTable AS
