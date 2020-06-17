@@ -254,10 +254,12 @@ class TestSegmentReading extends QueryTest with BeforeAndAfterAll {
       val col = df.collect().map{
         row => Row(row.getString(0),row.getString(1),row.getString(7))
       }.toSeq
-      assert(col.equals(Seq(Row("0","Compacted","0.1"),
+      assert(col.equals(Seq(
+        Row("2","Success","NA"),
         Row("1","Compacted","0.1"),
         Row("0.1","Success","NA"),
-        Row("2","Success","NA"))))
+        Row("0","Compacted","0.1")
+       )))
     }
     finally {
       sql("SET carbon.input.segments.default.carbon_table=*")
