@@ -61,6 +61,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.DEFAULT_CHARSET;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
@@ -76,7 +77,13 @@ public class SegmentStatusManager {
 
   private Configuration configuration;
 
-  private static final int READ_TABLE_STATUS_RETRY_COUNT = 3;
+  private static final int READ_TABLE_STATUS_RETRY_COUNT = CarbonLockUtil
+          .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK,
+                  CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK_DEFAULT);
+
+  private static final int READ_TABLE_STATUS_RETRY_TIMEOUT = CarbonLockUtil
+          .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CARBON_LOCK,
+                  CarbonCommonConstants.MAX_TIMEOUT_FOR_CARBON_LOCK_DEFAULT);
 
   public SegmentStatusManager(AbsoluteTableIdentifier identifier) {
     this.identifier = identifier;
@@ -294,37 +301,19 @@ public class SegmentStatusManager {
       return null;
     }
 
-    // When storing table status file in object store, reading of table status file may
-    // fail (receive EOFException) when table status file is being modifying
-    // so here we retry multiple times before throwing EOFException
-    int retry = READ_TABLE_STATUS_RETRY_COUNT;
-    while (retry > 0) {
-      try {
-        dataInputStream = fileOperation.openForRead();
-        inStream = new InputStreamReader(dataInputStream, Charset.forName(DEFAULT_CHARSET));
-        buffReader = new BufferedReader(inStream);
-        return buffReader.readLine();
-      } catch (EOFException ex) {
-        retry--;
-        if (retry == 0) {
-          // we have retried several times, throw this exception to make the execution failed
-          LOG.error("Failed to read table status file after retry", ex);
-          throw ex;
-        }
-        try {
-          // sleep for some time before retry
-          TimeUnit.MILLISECONDS.sleep(10);
-        } catch (InterruptedException e) {
-          // ignored
-        }
-      } catch (IOException e) {
-        LOG.error("Failed to read table status file", e);
-        throw e;
-      } finally {
-        closeStreams(buffReader, inStream, dataInputStream);
-      }
+    try {
+      dataInputStream = fileOperation.openForRead();
+      inStream = new InputStreamReader(dataInputStream, Charset.forName(DEFAULT_CHARSET));
+      buffReader = new BufferedReader(inStream);
+      return buffReader.readLine();
+    } catch (EOFException ex) {
+      throw ex;
+    } catch (IOException e) {
+      LOG.error("Failed to read table status file", e);
+      throw e;
+    } finally {
+      closeStreams(buffReader, inStream, dataInputStream);
     }
-    return null;
   }
 
   /**
@@ -336,11 +325,37 @@ public class SegmentStatusManager {
    */
   public static LoadMetadataDetails[] readTableStatusFile(String tableStatusPath)
       throws IOException {
-    String content = readFileAsString(tableStatusPath);
-    if (content == null) {
-      return new LoadMetadataDetails[0];
+    int retry = READ_TABLE_STATUS_RETRY_COUNT;
+
+    // When storing table status file in object store, reading of table status file may
+    // fail (receive IOException or JsonSyntaxException)
+    // when table status file is being modifying
+    // so here we retry multiple times before
+    // throwing IOException or JsonSyntaxException
+    while (retry > 0) {
+      try {
+        String content = readFileAsString(tableStatusPath);
+        if (content == null) {
+          return new LoadMetadataDetails[0];
+        }
+        return new Gson().fromJson(content, LoadMetadataDetails[].class);
+      } catch (JsonSyntaxException | IOException ex) {
+        retry--;
+        if (retry == 0) {
+          // we have retried several times, throw this exception to make the execution failed
+          LOG.error("Failed to read table status file:" + tableStatusPath);
+          throw ex;
+        }
+        try {
+          LOG.warn("Failed to read table status file, retrycount:" + retry);
+          // sleep for some time before retry
+          TimeUnit.SECONDS.sleep(READ_TABLE_STATUS_RETRY_TIMEOUT);
+        } catch (InterruptedException e) {
+          // ignored
+        }
+      }
     }
-    return new Gson().fromJson(content, LoadMetadataDetails[].class);
+    return null;
   }
 
   /**
