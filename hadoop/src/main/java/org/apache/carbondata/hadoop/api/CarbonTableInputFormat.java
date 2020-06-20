@@ -355,16 +355,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       List<Segment> validSegments, SegmentUpdateStatusManager updateStatusManager,
       List<Segment> invalidSegments) throws IOException {
     List<String> segmentsToBeRefreshed = new ArrayList<>();
-    if (!CarbonProperties.getInstance()
-        .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName())) {
-      // Clean the updated segments from memory if the update happens on segments
-      IndexStoreManager.getInstance().refreshSegmentCacheIfRequired(carbonTable,
-          updateStatusManager,
-          validSegments);
-    } else {
-      segmentsToBeRefreshed = IndexStoreManager.getInstance()
-          .getSegmentsToBeRefreshed(carbonTable, validSegments);
-    }
 
     numSegments = validSegments.size();
     List<InputSplit> result = new LinkedList<InputSplit>();
@@ -458,15 +448,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     SDK is written one set of files with UUID, with same UUID it can write again.
     So, latest files content should reflect the new count by refreshing the segment */
     List<String> toBeCleanedSegments = new ArrayList<>();
-    for (Segment segment : filteredSegment) {
-      boolean refreshNeeded = IndexStoreManager.getInstance()
-          .getTableSegmentRefresher(getOrCreateCarbonTable(job.getConfiguration()))
-          .isRefreshNeeded(segment, SegmentUpdateStatusManager
-              .getInvalidTimestampRange(segment.getLoadMetadataDetails()));
-      if (refreshNeeded) {
-        toBeCleanedSegments.add(segment.getSegmentNo());
-      }
-    }
     for (Segment segment : allSegments.getInvalidSegments()) {
       // remove entry in the segment index if there are invalid segments
       toBeCleanedSegments.add(segment.getSegmentNo());
