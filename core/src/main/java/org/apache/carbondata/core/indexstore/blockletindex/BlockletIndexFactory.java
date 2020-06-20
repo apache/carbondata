@@ -72,6 +72,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.Path;
 
 /**
@@ -352,9 +353,13 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
       throws IOException {
     SegmentBlockIndexInfo segmentBlockIndexInfo = segmentMap.get(segment.getSegmentNo());
     Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = null;
-    if (null != segmentBlockIndexInfo && null != segmentBlockIndexInfo.getSegmentMetaDataInfo()) {
-      segment.setSegmentMetaDataInfo(
-          segmentMap.get(segment.getSegmentNo()).getSegmentMetaDataInfo());
+    if (null != segmentBlockIndexInfo &&
+            CollectionUtils.isNotEmpty(
+                    segmentBlockIndexInfo.getTableBlockIndexUniqueIdentifiers())) {
+      if (null != segmentBlockIndexInfo.getSegmentMetaDataInfo()) {
+        segment.setSegmentMetaDataInfo(
+                segmentMap.get(segment.getSegmentNo()).getSegmentMetaDataInfo());
+      }
       return segmentBlockIndexInfo.getTableBlockIndexUniqueIdentifiers();
     } else {
       tableBlockIndexUniqueIdentifiers =
