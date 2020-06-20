@@ -317,7 +317,7 @@ public class RLECodec implements ColumnPageCodec {
     }
 
     @Override
-    public void decodeAndFillVector(byte[] input, int offset, int length,
+    public void decodeAndFillVector(byte[] input, int offset, int length, int uncompressedSize,
         ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
         ReusableDataBuffer reusableDataBuffer) {
       throw new UnsupportedOperationException("Not supposed to be called here");

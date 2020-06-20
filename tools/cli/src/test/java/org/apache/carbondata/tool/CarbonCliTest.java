@@ -180,12 +180,12 @@ public class CarbonCliTest {
 
     expectedOutput = buildLines(
         "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%  Max%  Min     Max     " ,
-        "0    0      1.90KB     2.15KB     true       2            18.0B     9.0B         NA    NA    robot0  robot1  " ,
-        "0    1      1.90KB     2.16KB     true       3            22.0B     9.0B         NA    NA    robot1  robot3  " ,
-        "1    0      1.90KB     2.16KB     true       3            22.0B     9.0B         NA    NA    robot3  robot5  " ,
-        "1    1      1.90KB     2.16KB     true       3            22.0B     9.0B         NA    NA    robot5  robot7  " ,
-        "2    0      1.90KB     2.14KB     true       2            18.0B     9.0B         NA    NA    robot7  robot8  " ,
-        "2    1      1.18KB     1.33KB     true       2            18.0B     9.0B         NA    NA    robot8  robot9  ");
+        "0    0      1.95KB     2.21KB     true       2            18.0B     9.0B         NA    NA    robot0  robot1  " ,
+        "0    1      1.96KB     2.22KB     true       3            22.0B     9.0B         NA    NA    robot1  robot3  " ,
+        "1    0      1.96KB     2.22KB     true       3            22.0B     9.0B         NA    NA    robot3  robot5  " ,
+        "1    1      1.96KB     2.22KB     true       3            22.0B     9.0B         NA    NA    robot5  robot7  " ,
+        "2    0      1.95KB     2.20KB     true       2            18.0B     9.0B         NA    NA    robot7  robot8  " ,
+        "2    1      1.21KB     1.37KB     true       2            18.0B     9.0B         NA    NA    robot8  robot9  ");
     Assert.assertTrue(output.contains(expectedOutput));
   }
 
@@ -239,12 +239,12 @@ public class CarbonCliTest {
 
     expectedOutput = buildLines(
         "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%  Max%   Min  Max      " ,
-        "0    0      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  0    2999990  " ,
-        "0    1      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  1    2999992  " ,
-        "1    0      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  3    2999994  " ,
-        "1    1      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  5    2999996  " ,
-        "2    0      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  7    2999998  " ,
-        "2    1      2.04KB     1.49MB     false      0            0.0B      89.62KB      0.0   100.0  9    2999999  ");
+        "0    0      3.47KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  0    2999990  " ,
+        "0    1      3.47KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  1    2999992  " ,
+        "1    0      3.47KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  3    2999994  " ,
+        "1    1      3.47KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  5    2999996  " ,
+        "2    0      3.47KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  7    2999998  " ,
+        "2    1      2.10KB     1.49MB     false      0            0.0B      89.62KB      0.0   100.0  9    2999999  ");
     Assert.assertTrue(output.contains(expectedOutput));
     Assert.assertTrue(output.contains("## version Details"));
     Assert.assertTrue(output.contains("written_by  Version"));
@@ -260,7 +260,7 @@ public class CarbonCliTest {
     String output = new String(out.toByteArray());
     String expectedOutput = buildLines(
         "Blocklet 0:",
-        "Page 0 (offset 0, length 9): DataChunk2(chunk_meta:ChunkCompressionMeta(compression_codec:DEPRECATED, total_uncompressed_size:96000, total_compressed_size:9, compressor_name:snappy), rowMajor:false, data_page_length:5, rle_page_length:4, presence:PresenceMeta(represents_presence:false, present_bit_stream:00), sort_state:SORT_NATIVE, encoders:[RLE], encoder_meta:[], min_max:BlockletMinMaxIndex(min_values:[72 6F 62 6F 74 30], max_values:[72 6F 62 6F 74 30], min_max_presence:[true]), numberOfRowsInpage:32000)");
+        "Page 0 (offset 0, length 9): DataChunk2(chunk_meta:ChunkCompressionMeta(compression_codec:DEPRECATED, total_uncompressed_size:96000, total_compressed_size:9, compressor_name:snappy), rowMajor:false, data_page_length:5, rle_page_length:4, presence:PresenceMeta(represents_presence:false, present_bit_stream:00), sort_state:SORT_NATIVE, encoders:[RLE], encoder_meta:[], min_max:BlockletMinMaxIndex(min_values:[72 6F 62 6F 74 30], max_values:[72 6F 62 6F 74 30], min_max_presence:[true]), numberOfRowsInpage:32000, uncompressedSize:3)");
     Assert.assertTrue(output.contains(expectedOutput));
   }
 

@@ -66,10 +66,12 @@ public class PlainDimensionIndexCodec extends IndexStorageCodec {
             new ByteArrayBlockIndexerStorage(byteArray, isDictionary, !isDictionary, isSort) :
             new ByteArrayBlockIndexerStorageWithoutRowId(byteArray, true);
           byte[] compressInput = ByteUtil.flatten(indexStorage.getDataPage());
+          input.setUncompressedSize(compressInput.length);
           super.compressedDataPage = compressor.compressByte(compressInput);
         } else {
           ByteBuffer data = input.getByteBuffer();
           indexStorage = new DummyBlockIndexerStorage();
+          input.setUncompressedSize(data.position());
           super.compressedDataPage = compressor.compressByte(data);
         }
         super.indexStorage = indexStorage;

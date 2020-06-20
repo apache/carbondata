@@ -20,7 +20,7 @@ package org.apache.carbondata.integration.spark.testsuite.dataload
 import java.io.File
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
-import java.util.concurrent.{ExecutorService, Executors, Future}
+import java.util.concurrent.{Executors, ExecutorService, Future}
 import java.util.Calendar
 
 import scala.util.Random
@@ -34,6 +34,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.Compressor
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.datastore.ReusableDataBuffer
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
@@ -150,16 +151,13 @@ class CustomizeCompressor extends Compressor {
     false
   }
 
-  override def unCompressedLength(data: Array[Byte],
-      offset: Int,
-      length: Int): Int = {
+  override def unCompressedLength(
+      data: Array[Byte], offset: Int, length: Int, reused: Array[Byte]): Int = {
     throw new RuntimeException("Unsupported operation Exception")
   }
 
-  override def rawUncompress(data: Array[Byte],
-      offset: Int,
-      length: Int,
-      output: Array[Byte]): Int = {
+  override def rawUncompress(
+      data: Array[Byte], offset: Int, length: Int, output: Array[Byte]): Int = {
     throw new RuntimeException("Unsupported operation Exception")
   }
 

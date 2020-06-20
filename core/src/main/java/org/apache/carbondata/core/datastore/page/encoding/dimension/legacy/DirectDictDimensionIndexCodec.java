@@ -57,6 +57,7 @@ public class DirectDictDimensionIndexCodec extends IndexStorageCodec {
         byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
         Compressor compressor = CompressorFactory.getInstance().getCompressor(
             inputPage.getColumnCompressorName());
+        inputPage.setUncompressedSize(flattened.length);
         super.compressedDataPage = compressor.compressByte(flattened);
         super.indexStorage = indexStorage;
       }

@@ -52,6 +52,7 @@ public class ComplexDimensionIndexCodec extends IndexStorageCodec {
         byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
         Compressor compressor = CompressorFactory.getInstance().getCompressor(
             inputPage.getColumnCompressorName());
+        inputPage.setUncompressedSize(flattened.length);
         ByteBuffer compressed = compressor.compressByte(flattened);
         super.indexStorage = indexStorage;
         super.compressedDataPage = compressed;
