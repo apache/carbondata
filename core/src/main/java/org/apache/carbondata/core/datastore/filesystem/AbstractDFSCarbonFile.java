@@ -63,6 +63,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   protected FileSystem fileSystem;
   protected Configuration hadoopConf;
   protected Path path;
+  protected FileStatus fileStatus;
 
   AbstractDFSCarbonFile(String filePath) {
     this(filePath, FileFactory.getConfiguration());
@@ -89,6 +90,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
 
   AbstractDFSCarbonFile(FileStatus fileStatus) {
     this(fileStatus.getPath());
+    this.fileStatus = fileStatus;
   }
 
   @Override
@@ -177,6 +179,9 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   @Override
   public long getLastModifiedTime() {
     try {
+      if (this.fileStatus != null) {
+        return this.fileStatus.getModificationTime();
+      }
       return fileSystem.getFileStatus(path).getModificationTime();
     } catch (IOException e) {
       throw new CarbonFileException("Unable to get file status: ", e);

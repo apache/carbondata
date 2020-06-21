@@ -19,6 +19,7 @@ package org.apache.carbon.flink
 
 import java.io.{File, InputStreamReader}
 import java.util
+import java.util.concurrent.{Callable, Executors}
 import java.util.{Base64, Collections, Properties}
 
 import com.google.gson.Gson
@@ -65,7 +66,34 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
       sql(s"INSERT INTO $tableName STAGE")
 
       checkAnswer(sql(s"SELECT count(1) FROM $tableName"), Seq(Row(1000)))
+    }
+  }
 
+  test("test concurrent insertstage") {
+    createPartitionTable
+    try {
+      val tablePath = storeLocation + "/" + tableName + "/"
+      val writerProperties = newWriterProperties(dataTempPath)
+      val carbonProperties = newCarbonProperties(storeLocation)
+
+      val environment = StreamExecutionEnvironment.getExecutionEnvironment
+      environment.setParallelism(6)
+      environment.enableCheckpointing(2000L)
+      environment.setRestartStrategy(RestartStrategies.noRestart)
+
+      val dataCount = 1000
+      val source = getTestSource(dataCount)
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment, source)
+
+      val executorService = Executors.newFixedThreadPool(10)
+      for(i <- 1 to 10) {
+        executorService.submit(new Runnable {
+          override def run(): Unit = {
+            sql(s"INSERT INTO $tableName STAGE OPTIONS('batch_file_count'='1')")
+          }
+        }).get()
+      }
+      checkAnswer(sql(s"SELECT count(1) FROM $tableName"), Seq(Row(1000)))
     }
   }
 

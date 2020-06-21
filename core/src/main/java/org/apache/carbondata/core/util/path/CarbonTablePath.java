@@ -60,6 +60,7 @@ public class CarbonTablePath {
   private static final String STAGE_DIR = "stage";
   private static final String STAGE_DATA_DIR = "stage_data";
   public static final String  SUCCESS_FILE_SUBFIX = ".success";
+  public static final String  LOADING_FILE_SUBFIX = ".loading";
   private static final String SNAPSHOT_FILE_NAME = "snapshot";
 
   public static final String SYSTEM_FOLDER_DIR = "_system";
