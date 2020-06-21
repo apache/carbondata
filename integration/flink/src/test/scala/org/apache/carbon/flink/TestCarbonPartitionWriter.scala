@@ -17,17 +17,10 @@
 
 package org.apache.carbon.flink
 
-import java.io.{File, InputStreamReader}
-import java.util
-import java.util.concurrent.{Callable, Executors}
-import java.util.{Base64, Collections, Properties}
+import java.text.SimpleDateFormat
+import java.util.concurrent.Executors
+import java.util.{Base64, Properties}
 
-import com.google.gson.Gson
-
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.statusmanager.StageInput
-import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.core.fs.Path
@@ -35,11 +28,15 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
-import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
+
+import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.path.CarbonTablePath
+
 import org.scalatest.BeforeAndAfterAll
 
 class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
@@ -69,6 +66,113 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
     }
   }
 
+  test("Show segments with stage") {
+    createPartitionTable
+    try {
+      val tablePath = storeLocation + "/" + tableName + "/"
+      val tableStagePath = CarbonTablePath.getStageDir(tablePath)
+      val writerProperties = newWriterProperties(dataTempPath)
+      val carbonProperties = newCarbonProperties(storeLocation)
+
+      val environment = StreamExecutionEnvironment.getExecutionEnvironment
+      environment.enableCheckpointing(2000L)
+      val dataCount = 1000
+      val source = getTestSource(dataCount)
+      executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment, source)
+
+      // 1. Test "SHOW SEGMENT ON $tableanme WITH STAGE"
+      var rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE").collect()
+      var unloadedStageCount = CarbonStore.listStageFiles(tableStagePath)._1.length
+      assert(rows.length == unloadedStageCount)
+      for (index <- 0 until unloadedStageCount) {
+        assert(rows(index).getString(0) == null)
+        assert(rows(index).getString(1).equals("Unload"))
+        assert(rows(index).getString(2) != null)
+        assert(rows(index).getString(3) == null)
+        assert(!rows(index).getString(4).equals("NA"))
+        assert(rows(index).getString(5) != null)
+        assert(rows(index).getString(6) != null)
+        assert(rows(index).getString(7) == null)
+        assertShowStagesCreateTimeDesc(rows, index)
+      }
+
+      // 2. Test "SHOW SEGMENT FOR TABLE $tableanme"
+      val rowsfortable = sql(s"SHOW SEGMENTS FOR TABLE $tableName WITH STAGE").collect()
+      assert(rowsfortable.length == rows.length)
+      for (index <- 0 until unloadedStageCount) {
+        assert(rows(index).toString() == rowsfortable(index).toString())
+      }
+
+      // 3. Test "SHOW SEGMENT ON $tableanme WITH STAGE AS (QUERY)"
+      rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE AS " +
+        s"(SELECT * FROM $tableName" + "_segments)").collect()
+      for (index <- 0 until unloadedStageCount) {
+        val row = rows(index)
+        assert(rows(index).getString(0) == null)
+        assert(rows(index).getString(1).equals("Unload"))
+        assert(rows(index).getString(2) != null)
+        assert(rows(index).getLong(3) == -1)
+        assert(!rows(index).get(4).toString.equals("WrappedArray(NA)"))
+        assert(rows(index).getLong(5) > 0)
+        assert(rows(index).getLong(6) > 0)
+        assert(rows(index).getString(7) == null)
+        assert(rows(index).getString(8) == null)
+        assert(rows(index).getString(9) == null)
+        assert(rows(index).getString(10) == null)
+        assert(rows(index).getString(11) == null)
+        assertShowStagesCreateTimeDesc(rows, index)
+      }
+
+      // 4. Test "SHOW SEGMENT ON $tableanme WITH STAGE LIMIT 1 AS (QUERY)"
+      //    Test "SHOW SEGMENT ON $tableanme LIMIT 1 AS (QUERY)"
+      if (unloadedStageCount > 1) {
+        sql(s"INSERT INTO $tableName STAGE OPTIONS ('batch_file_count' = '1')")
+
+        unloadedStageCount = CarbonStore.listStageFiles(tableStagePath)._1.length
+        rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE LIMIT 1").collect()
+        assert(rows.length == unloadedStageCount + 1)
+        assert(rows(0).getString(1).equals("Unload"))
+
+        rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE LIMIT 0").collect()
+        assert(rows.length == unloadedStageCount)
+        assert(rows(0).getString(1).equals("Unload"))
+
+        rows = sql(s"SHOW SEGMENTS FOR TABLE $tableName WITH STAGE LIMIT 1").collect()
+        assert(rows.length == unloadedStageCount + 1)
+        assert(rows(0).getString(1).equals("Unload"))
+
+        rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE LIMIT 1 AS " +
+          s"(SELECT * FROM $tableName" + "_segments)").collect()
+        assert(rows.length == unloadedStageCount + 1)
+        assert(rows(0).getString(1).equals("Unload"))
+
+        unloadedStageCount = CarbonStore.listStageFiles(tableStagePath)._1.length
+        rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE AS " +
+          s"(SELECT * FROM $tableName" + "_segments where status = 'Unload')").collect()
+        assert(rows.length == unloadedStageCount)
+        assert(rows(0).getString(1).equals("Unload"))
+
+        rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE AS " +
+          s"(SELECT * FROM $tableName" + "_segments where status = 'Success')").collect()
+        assert(rows.length >= 1)
+        assert(rows(0).getString(1).equals("Success"))
+
+        // createFakeLoadingStage
+        createFakeLoadingStage(CarbonTablePath.getStageDir(tablePath))
+        rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE AS " +
+          s"(SELECT * FROM $tableName" + "_segments where status = 'Loading')").collect()
+        assert(rows.length == 1)
+        assert(rows(0).getString(1).equals("Loading"))
+
+        var (unloadedFiles, loadingFiles) = CarbonStore.listStageFiles(tableStagePath)
+        rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE AS " +
+          s"(SELECT * FROM $tableName" + "_segments " +
+          "where status = 'Unload' or status = 'Loading')").collect()
+        assert(rows.length == unloadedFiles.length + loadingFiles.length)
+      }
+    }
+  }
+
   test("test concurrent insertstage") {
     createPartitionTable
     try {
@@ -85,11 +189,12 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
       val source = getTestSource(dataCount)
       executeStreamingEnvironment(tablePath, writerProperties, carbonProperties, environment, source)
 
+      Thread.sleep(5000)
       val executorService = Executors.newFixedThreadPool(10)
       for(i <- 1 to 10) {
         executorService.submit(new Runnable {
           override def run(): Unit = {
-            sql(s"INSERT INTO $tableName STAGE OPTIONS('batch_file_count'='1')")
+            sql(s"INSERT INTO $tableName STAGE OPTIONS('batch_file_count'='5')")
           }
         }).get()
       }
@@ -306,56 +411,24 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
     properties
   }
 
-  private def collectStageInputs(loadDetailsDir: String): Seq[StageInput] = {
-    val dir = FileFactory.getCarbonFile(loadDetailsDir)
-    val stageFiles = if (dir.exists()) {
-      val allFiles = dir.listFiles()
-      val successFiles = allFiles.filter { file =>
-        file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUBFIX)
-      }.map { file =>
-        (file.getName.substring(0, file.getName.indexOf(".")), file)
-      }.toMap
-      allFiles.filter { file =>
-        !file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUBFIX)
-      }.filter { file =>
-        successFiles.contains(file.getName)
-      }.map { file =>
-        (file, successFiles(file.getName))
-      }
-    } else {
-      Array.empty
+  private def assertShowStagesCreateTimeDesc(rows: Array[Row], index: Int): Unit = {
+    if (index > 0) {
+      val nowtime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").
+        parse(rows(index).getString(2)).getTime
+      val lasttime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").
+        parse(rows(index - 1).getString(2)).getTime
+      assert(nowtime <= lasttime)
     }
-
-    val output = Collections.synchronizedList(new util.ArrayList[StageInput]())
-    val gson = new Gson()
-    stageFiles.map { stage =>
-      val filePath = stage._1.getAbsolutePath
-      val stream = FileFactory.getDataInputStream(filePath)
-      try {
-        val stageInput = gson.fromJson(new InputStreamReader(stream), classOf[StageInput])
-        output.add(stageInput)
-      } finally {
-        stream.close()
-      }
-    }
-    output.asScala
   }
 
-  private def delDir(dir: File): Boolean = {
-    if (dir.isDirectory) {
-      val children = dir.list
-      if (children != null) {
-        val length = children.length
-        var i = 0
-        while (i < length) {
-          if (!delDir(new File(dir, children(i)))) {
-              return false
-          }
-          i += 1
-        }
-      }
-    }
-    dir.delete()
+  private def createFakeLoadingStage(stagePath: String): Unit = {
+    var (unloadedFiles, loadingFiles) = CarbonStore.listStageFiles(stagePath)
+    assert(unloadedFiles.length > 0)
+    val loadingFilesCountBefore = loadingFiles.length
+    FileFactory.getCarbonFile(unloadedFiles(0).getAbsolutePath +
+      CarbonTablePath.LOADING_FILE_SUBFIX).createNewFile()
+    loadingFiles = CarbonStore.listStageFiles(stagePath)._2
+    val loadingFilesCountAfter = loadingFiles.length
+    assert(loadingFilesCountAfter == loadingFilesCountBefore + 1)
   }
-
 }

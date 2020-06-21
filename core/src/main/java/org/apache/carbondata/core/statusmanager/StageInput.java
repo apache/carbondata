@@ -45,6 +45,16 @@ public class StageInput {
    */
   private List<PartitionLocation> locations;
 
+  /**
+   * current stage create at this time.
+   */
+  private transient long createTime;
+
+  /**
+   * status of stage, unloaded or loading.
+   */
+  private StageStatus status;
+
   public StageInput() {
 
   }
@@ -83,6 +93,14 @@ public class StageInput {
     this.locations = locations;
   }
 
+  public StageStatus getStatus() {
+    return status;
+  }
+
+  public void setStatus(StageStatus status) {
+    this.status = status;
+  }
+
   public List<InputSplit> createSplits() {
     return
         files.entrySet().stream().filter(
@@ -92,6 +110,14 @@ public class StageInput {
                 base + CarbonCommonConstants.FILE_SEPARATOR + entry.getKey(),
                 0, entry.getValue(), ColumnarFormatVersion.V3, null)
         ).collect(Collectors.toList());
+  }
+
+  public long getCreateTime() {
+    return createTime;
+  }
+
+  public void setCreateTime(long createTime) {
+    this.createTime = createTime;
   }
 
   public static final class PartitionLocation {
@@ -131,6 +157,10 @@ public class StageInput {
       this.files = files;
     }
 
+  }
+
+  public enum StageStatus {
+    Unload, Loading
   }
 
 }

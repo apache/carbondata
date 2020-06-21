@@ -17,25 +17,27 @@
 
 package org.apache.carbon.flink
 
+import java.text.SimpleDateFormat
 import java.util.Properties
 
 import org.apache.flink.api.common.JobExecutionResult
-
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.core.fs.Path
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
-import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.execution.exchange.Exchange
+import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
 
+import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.spark.sql.execution.exchange.Exchange
-import org.apache.spark.sql.secondaryindex.joins.BroadCastSIFilterPushJoin
+
 import org.scalatest.BeforeAndAfterAll
 
 class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
@@ -241,6 +243,99 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
     }
   }
 
+  test("Show segments with stage") {
+    createTable
+    try {
+      val tablePath = storeLocation + "/" + tableName + "/"
+      val stagePath = CarbonTablePath.getStageDir(tablePath)
+      val writerProperties = newWriterProperties(dataTempPath)
+      val carbonProperties = newCarbonProperties(storeLocation)
+
+      val environment = StreamExecutionEnvironment.getExecutionEnvironment
+      environment.enableCheckpointing(2000L)
+      executeFlinkStreamingEnvironment(environment, writerProperties, carbonProperties)
+
+      // 1. Test "SHOW SEGMENT ON $tableanme WITH STAGE"
+      var rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE").collect()
+      var unloadedStageCount = CarbonStore.listStageFiles(stagePath)._1.length
+      assert(rows.length == unloadedStageCount)
+      for (index <- 0 until unloadedStageCount) {
+        assert(rows(index).getString(0) == null)
+        assert(rows(index).getString(1).equals("Unload"))
+        assert(rows(index).getString(2) != null)
+        assert(rows(index).getString(3) == null)
+        assert(rows(index).getString(4).equals("NA"))
+        assert(rows(index).getString(5) != null)
+        assert(rows(index).getString(6) != null)
+        assert(rows(index).getString(7) == null)
+        assertShowStagesCreateTimeDesc(rows, index)
+      }
+
+      // 2. Test "SHOW SEGMENT FOR TABLE $tableanme"
+      val rowsfortable = sql(s"SHOW SEGMENTS FOR TABLE $tableName WITH STAGE").collect()
+      assert(rowsfortable.length == rows.length)
+      for (index <- 0 until unloadedStageCount) {
+        assert(rows(index).toString() == rowsfortable(index).toString())
+      }
+
+      // 3. Test "SHOW SEGMENT ON $tableanme WITH STAGE AS (QUERY)"
+      rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE AS " +
+        s"(SELECT * FROM $tableName" + "_segments)").collect()
+      for (index <- 0 until unloadedStageCount) {
+        val row = rows(index)
+        assert(rows(index).getString(0) == null)
+        assert(rows(index).getString(1).equals("Unload"))
+        assert(rows(index).getString(2) != null)
+        assert(rows(index).getLong(3) == -1)
+        assert(rows(index).get(4).toString.equals("WrappedArray(NA)"))
+        assert(rows(index).getLong(5) > 0)
+        assert(rows(index).getLong(6) > 0)
+        assert(rows(index).getString(7) == null)
+        assert(rows(index).getString(8) == null)
+        assert(rows(index).getString(9) == null)
+        assert(rows(index).getString(10) == null)
+        assert(rows(index).getString(11) == null)
+        assertShowStagesCreateTimeDesc(rows, index)
+      }
+
+      // 4. Test "SHOW SEGMENT ON $tableanme WITH STAGE LIMIT 1 AS (QUERY)"
+      //    Test "SHOW SEGMENT ON $tableanme LIMIT 1 AS (QUERY)"
+
+      if (unloadedStageCount > 1) {
+        sql(s"INSERT INTO $tableName STAGE OPTIONS ('batch_file_count' = '1')")
+
+        unloadedStageCount = CarbonStore.listStageFiles(stagePath)._1.length
+        rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE LIMIT 1").collect()
+        assert(rows.length == unloadedStageCount + 1)
+        assert(rows(0).getString(1).equals("Unload"))
+
+        rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE LIMIT 0").collect()
+        assert(rows.length == unloadedStageCount)
+        assert(rows(0).getString(1).equals("Unload"))
+
+        rows = sql(s"SHOW SEGMENTS FOR TABLE $tableName WITH STAGE LIMIT 1").collect()
+        assert(rows.length == unloadedStageCount + 1)
+        assert(rows(0).getString(1).equals("Unload"))
+
+        rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE LIMIT 1 AS " +
+          s"(SELECT * FROM $tableName" + "_segments)").collect()
+        assert(rows.length == unloadedStageCount + 1)
+        assert(rows(0).getString(1).equals("Unload"))
+
+        rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE AS " +
+          s"(SELECT * FROM $tableName" + "_segments where status = 'Unload')").collect()
+        unloadedStageCount = CarbonStore.listStageFiles(stagePath)._1.length
+        assert(rows.length == unloadedStageCount)
+        assert(rows(0).getString(1).equals("Unload"))
+
+        rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE AS " +
+          s"(SELECT * FROM $tableName" + "_segments where status = 'Success')").collect()
+        assert(rows.length == 1)
+        assert(rows(0).getString(1).equals("Success"))
+      }
+    }
+  }
+
   private def executeFlinkStreamingEnvironment(environment: StreamExecutionEnvironment,
       writerProperties: Properties,
       carbonProperties: Properties): JobExecutionResult = {
@@ -321,4 +416,13 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
     properties
   }
 
+  private def assertShowStagesCreateTimeDesc(rows: Array[Row], index: Int): Unit = {
+    if (index > 0) {
+      val nowtime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").
+        parse(rows(index).getString(2)).getTime
+      val lasttime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").
+        parse(rows(index - 1).getString(2)).getTime
+      assert(nowtime <= lasttime)
+    }
+  }
 }

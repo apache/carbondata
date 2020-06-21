@@ -17,11 +17,16 @@
 
 package org.apache.carbondata.api
 
+import java.io.InputStreamReader
 import java.time.{Duration, Instant}
+import java.util
+import java.util.{Collections, Comparator}
 
 import scala.collection.JavaConverters._
 
+import com.google.gson.Gson
 import org.apache.commons.lang3.StringUtils
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -35,7 +40,7 @@ import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager, StageInput}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.streaming.segment.StreamSegment
 
@@ -45,7 +50,7 @@ object CarbonStore {
   def readSegments(
       tablePath: String,
       showHistory: Boolean,
-      limit: Option[String]): Array[LoadMetadataDetails] = {
+      limit: Option[Int]): Array[LoadMetadataDetails] = {
     val metaFolder = CarbonTablePath.getMetadataPath(tablePath)
     var segmentsMetadataDetails = if (showHistory) {
       SegmentStatusManager.readLoadMetadata(metaFolder) ++
@@ -63,10 +68,88 @@ object CarbonStore {
     }
 
     if (limit.isDefined) {
-      val lim = Integer.parseInt(limit.get)
-      segmentsMetadataDetails.slice(0, lim)
+      segmentsMetadataDetails.slice(0, limit.get)
     } else {
       segmentsMetadataDetails
+    }
+  }
+
+  /**
+   * Read stage files and return input files
+   */
+  def readStages(tablePath: String): Seq[StageInput] = {
+    val stageFiles = listStageFiles(CarbonTablePath.getStageDir(tablePath))
+    var output = Collections.synchronizedList(new util.ArrayList[StageInput]())
+    output.addAll(readStageInput(stageFiles._1,
+      StageInput.StageStatus.Unload).asJavaCollection)
+    output.addAll(readStageInput(stageFiles._2,
+      StageInput.StageStatus.Loading).asJavaCollection)
+    Collections.sort(output, new Comparator[StageInput]() {
+      def compare(stageInput1: StageInput, stageInput2: StageInput): Int = {
+        (stageInput2.getCreateTime - stageInput1.getCreateTime).intValue()
+      }
+    })
+    output.asScala
+  }
+
+  /**
+   * Read stage files and return input files
+   */
+  def readStageInput(
+      stageFiles: Seq[CarbonFile],
+      status: StageInput.StageStatus): Seq[StageInput] = {
+    val gson = new Gson()
+    val output = Collections.synchronizedList(new util.ArrayList[StageInput]())
+    stageFiles.map { stage =>
+      val filePath = stage.getAbsolutePath
+      val stream = FileFactory.getDataInputStream(filePath)
+      try {
+        val stageInput = gson.fromJson(new InputStreamReader(stream), classOf[StageInput])
+        stageInput.setCreateTime(stage.getLastModifiedTime)
+        stageInput.setStatus(status)
+        output.add(stageInput)
+      } finally {
+        stream.close()
+      }
+    }
+    output.asScala
+  }
+
+  /*
+   * Collect all stage files and matched success files and loading files.
+   * return unloaded stagefiles and loading stagefiles in the end.
+   */
+  def listStageFiles(
+        loadDetailsDir: String): (Array[CarbonFile], Array[CarbonFile]) = {
+    val dir = FileFactory.getCarbonFile(loadDetailsDir)
+    if (dir.exists()) {
+      // 1. List all files in the stage dictionary.
+      val allFiles = dir.listFiles()
+
+      // 2. Get StageFile list.
+      // Firstly, get the stage files in the stage dictionary.
+      //        which exclude the success files and loading files
+      // Second,  only collect the stage files having success tag.
+      val stageFiles = allFiles.filterNot { file =>
+        file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUBFIX)
+      }.filterNot { file =>
+        file.getName.endsWith(CarbonTablePath.LOADING_FILE_SUBFIX)
+      }.filter { file =>
+        allFiles.contains(file.getName + CarbonTablePath.SUCCESS_FILE_SUBFIX)
+      }.sortWith {
+        (file1, file2) => file1.getLastModifiedTime > file2.getLastModifiedTime
+      }
+      // 3. Get the unloaded stage files, which haven't loading tag.
+      val unloadedFiles = stageFiles.filterNot { file =>
+        allFiles.contains(file.getName + CarbonTablePath.LOADING_FILE_SUBFIX)
+      }
+      // 4. Get the loading stage files, which have loading tag.
+      val loadingFiles = stageFiles.filter { file =>
+        allFiles.contains(file.getName + CarbonTablePath.LOADING_FILE_SUBFIX)
+      }
+      (unloadedFiles, loadingFiles)
+    } else {
+      (Array.empty, Array.empty)
     }
   }
 
