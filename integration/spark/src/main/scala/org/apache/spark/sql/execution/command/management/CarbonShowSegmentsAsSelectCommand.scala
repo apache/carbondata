@@ -22,6 +22,7 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 
 import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.api.CarbonStore.readSegments
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
@@ -35,8 +36,9 @@ case class CarbonShowSegmentsAsSelectCommand(
     databaseNameOp: Option[String],
     tableName: String,
     query: String,
-    limit: Option[String],
-    showHistory: Boolean = false)
+    limit: Option[Int],
+    showHistory: Boolean = false,
+    withStage: Boolean = false)
   extends DataCommand {
 
   private lazy val sparkSession = SparkSession.getActiveSession.get
@@ -48,7 +50,7 @@ case class CarbonShowSegmentsAsSelectCommand(
 
   override def output: Seq[Attribute] = {
     df.queryExecution.analyzed.output.map { attr =>
-      AttributeReference(attr.name, attr.dataType, nullable = false)()
+      AttributeReference(attr.name, attr.dataType, nullable = true)()
     }
   }
 
@@ -72,9 +74,34 @@ case class CarbonShowSegmentsAsSelectCommand(
 
   private def createDataFrame: DataFrame = {
     val tablePath = carbonTable.getTablePath
-    val segments = CarbonStore.readSegments(tablePath, showHistory, limit)
+    var rows: Seq[SegmentRow] = Seq()
+    if (withStage) {
+      val stageRows = CarbonShowSegmentsCommand.showStages(tablePath)
+      if (stageRows.nonEmpty) {
+        rows = stageRows.map(
+          stageRow =>
+            SegmentRow (
+              stageRow.getString(0),
+              stageRow.getString(1),
+              stageRow.getString(2),
+              -1,
+              Seq(stageRow.getString(4)),
+              stageRow.getString(5).toLong,
+              stageRow.getString(6).toLong,
+              null,
+              stageRow.getString(7),
+              null,
+              null,
+              null
+            )
+        )
+      }
+    }
+
+    val segments = readSegments(tablePath, showHistory, limit)
     val tempViewName = makeTempViewName(carbonTable)
-    registerSegmentRowView(sparkSession, tempViewName, carbonTable, segments)
+    registerSegmentRowView(sparkSession, tempViewName,
+      carbonTable, segments, rows)
     try {
       sparkSession.sql(query)
     } catch {
@@ -95,11 +122,12 @@ case class CarbonShowSegmentsAsSelectCommand(
       sparkSession: SparkSession,
       tempViewName: String,
       carbonTable: CarbonTable,
-      segments: Array[LoadMetadataDetails]): Unit = {
+      segments: Array[LoadMetadataDetails],
+      rows: Seq[SegmentRow]): Unit = {
 
     // populate a dataframe containing all segment information
     val tablePath = carbonTable.getTablePath
-    val segmentRows = segments.toSeq.map { segment =>
+    val segmentRowView = rows ++ segments.toSeq.map { segment =>
       val mergedToId = CarbonStore.getMergeTo(segment)
       val path = CarbonStore.getExternalSegmentPath(segment)
       val startTime = CarbonStore.getLoadStartTime(segment)
@@ -123,7 +151,7 @@ case class CarbonShowSegmentsAsSelectCommand(
     }
 
     // create a temp view using the populated dataframe and execute the query on it
-    val df = sparkSession.createDataFrame(segmentRows)
+    val df = sparkSession.createDataFrame(segmentRowView)
     checkIfTableExist(sparkSession, tempViewName)
     df.createOrReplaceTempView(tempViewName)
   }

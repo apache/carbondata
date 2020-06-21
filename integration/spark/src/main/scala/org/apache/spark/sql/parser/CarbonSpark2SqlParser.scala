@@ -541,21 +541,23 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
    */
   protected lazy val showSegments: Parser[LogicalPlan] =
     (SHOW ~> opt(HISTORY) <~ SEGMENTS <~ ((FOR <~ TABLE) | ON)) ~ (ident <~ ".").? ~ ident ~
-    (LIMIT ~> numericLit).? ~ (AS  ~> restInput).? <~ opt(";") ^^ {
-      case showHistory ~ databaseName ~ tableName ~ limit ~ queryOp =>
+      opt(WITH <~ STAGE) ~ (LIMIT ~> numericLit).? ~ (AS  ~> restInput).? <~ opt(";") ^^ {
+      case showHistory ~ databaseName ~ tableName ~ withStage ~ limit ~ queryOp =>
         if (queryOp.isEmpty) {
           CarbonShowSegmentsCommand(
             CarbonParserUtil.convertDbNameToLowerCase(databaseName),
             tableName.toLowerCase(),
-            limit,
-            showHistory.isDefined)
+            if (limit.isDefined) Some(Integer.valueOf(limit.get)) else None,
+            showHistory.isDefined,
+            withStage.isDefined)
         } else {
           CarbonShowSegmentsAsSelectCommand(
             CarbonParserUtil.convertDbNameToLowerCase(databaseName),
             tableName.toLowerCase(),
             queryOp.get,
-            limit,
-            showHistory.isDefined)
+            if (limit.isDefined) Some(Integer.valueOf(limit.get)) else None,
+            showHistory.isDefined,
+            withStage.isDefined)
         }
     }
 
