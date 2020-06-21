@@ -41,6 +41,7 @@ import org.apache.carbondata.core.metadata.{ColumnarFormatVersion, SegmentFileSt
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager, StageInput}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.CarbonInputSplit
@@ -82,6 +83,8 @@ case class CarbonInsertFromStageCommand(
     val tablePath = table.getTablePath
     val stagePath = CarbonTablePath.getStageDir(tablePath)
     val snapshotFilePath = CarbonTablePath.getStageSnapshotFile(tablePath)
+    var stageFiles: Array[(CarbonFile, CarbonFile)] = Array.empty
+    var executorService: ExecutorService = null
     val lock = acquireIngestLock(table)
 
     try {
@@ -140,7 +143,7 @@ case class CarbonInsertFromStageCommand(
       }
       LOGGER.info("Option [" + CarbonInsertFromStageCommand.BATCH_FILE_ORDER_KEY +
                   "] value is " + orderType)
-      val stageFiles = listStageFiles(stagePath, hadoopConf, batchSize,
+      stageFiles = listStageFiles(stagePath, hadoopConf, batchSize,
         orderType.equalsIgnoreCase(CarbonInsertFromStageCommand.BATCH_FILE_ORDER_ASC))
       if (stageFiles.isEmpty) {
         // no stage files, so do nothing
@@ -148,10 +151,26 @@ case class CarbonInsertFromStageCommand(
         return Seq.empty
       }
 
+      // We add a tag 'loading' to the stages in process.
+      // different insertstage processes can load different data separately
+      // by choose the stages without 'loading' tag or stages loaded timeout.
+      // which avoid loading the same data between concurrent insertstage processes.
+      // The 'loading' tag is actually an empty file with
+      // '.loading' suffix filename
+      val numThreads = Math.min(Math.max(stageFiles.length, 1), 10)
+      executorService = Executors.newFixedThreadPool(numThreads)
+      createStageLoadingFilesWithRetry(executorService, stageFiles)
+    } catch {
+      case ex: Throwable =>
+        LOGGER.error(s"failed to insert ${table.getDatabaseName}.${table.getTableName}", ex)
+        throw ex
+    } finally {
+      lock.unlock()
+    }
+
+    try{
       // 2) read all stage files to collect input files for data loading
       // create a thread pool to read them
-      val numThreads = Math.min(Math.max(stageFiles.length, 1), 10)
-      val executorService = Executors.newFixedThreadPool(numThreads)
       val stageInputs = collectStageInputs(executorService, stageFiles)
 
       // 3) perform data loading
@@ -170,8 +189,6 @@ case class CarbonInsertFromStageCommand(
       case ex: Throwable =>
         LOGGER.error(s"failed to insert ${table.getDatabaseName}.${table.getTableName}", ex)
         throw ex
-    } finally {
-      lock.unlock()
     }
     Seq.empty
   }
@@ -478,32 +495,97 @@ case class CarbonInsertFromStageCommand(
   }
 
   /**
-   * Delete stage file and success file
-   * Return false means the stage files were cleaned successfully
-   * While return true means the stage files were failed to clean
+   * create '.loading' file to tag the stage in process
+   * return the loading files failed to create
+   */
+  private def createStageLoadingFiles(
+      executorService: ExecutorService,
+      stageFiles: Array[(CarbonFile, CarbonFile)]): Array[(CarbonFile, CarbonFile)] = {
+    stageFiles.map { files =>
+      executorService.submit(new Callable[(CarbonFile, CarbonFile, Boolean)] {
+        override def call(): (CarbonFile, CarbonFile, Boolean) = {
+          // Get the loading files path
+          val stageLoadingFile =
+            FileFactory.getCarbonFile(files._1.getAbsolutePath +
+              CarbonTablePath.LOADING_FILE_SUBFIX);
+          // Try to create loading files
+          // make isFailed to be true if createNewFile return false.
+          // the reason can be file exists or exceptions.
+          var isFailed = !stageLoadingFile.createNewFile()
+          // if file exists, modify the lastmodifiedtime of the file.
+          if (isFailed) {
+            // make isFailed to be true if setLastModifiedTime return false.
+            isFailed = !stageLoadingFile.setLastModifiedTime(System.currentTimeMillis());
+          }
+          (files._1, files._2, isFailed)
+        }
+      })
+    }.map { future =>
+      future.get()
+    }.filter { files =>
+      // keep the files when isFailed is ture. so we can retry on these files.
+      files._3
+    }.map { files =>
+      (files._1, files._2)
+    }
+  }
+
+  /**
+   * create '.loading' file with retry
+   */
+  private def createStageLoadingFilesWithRetry(
+      executorService: ExecutorService,
+      stageFiles: Array[(CarbonFile, CarbonFile)]): Unit = {
+    val startTime = System.currentTimeMillis()
+    var retry = CarbonInsertFromStageCommand.DELETE_FILES_RETRY_TIMES
+    var needToCreateStageLoadingFiles = stageFiles
+    while (retry > 0 && needToCreateStageLoadingFiles.nonEmpty) {
+      needToCreateStageLoadingFiles =
+        createStageLoadingFiles(executorService, needToCreateStageLoadingFiles)
+      retry -= 1
+    }
+    LOGGER.info(s"finished to create stage loading files, time taken: " +
+      s"${System.currentTimeMillis() - startTime}ms")
+    if (needToCreateStageLoadingFiles.nonEmpty) {
+      LOGGER.warn(s"failed to create loading files:" +
+        needToCreateStageLoadingFiles.map(_._1.getName).mkString(","))
+    }
+  }
+
+  /**
+   * Delete stage files and success files and loading files
+   * Return the files failed to delete
    */
   private def deleteStageFiles(
       executorService: ExecutorService,
       stageFiles: Array[(CarbonFile, CarbonFile)]): Array[(CarbonFile, CarbonFile)] = {
     stageFiles.map { files =>
-      executorService.submit(new Callable[Boolean] {
-        override def call(): Boolean = {
+      executorService.submit(new Callable[(CarbonFile, CarbonFile, Boolean)] {
+        override def call(): (CarbonFile, CarbonFile, Boolean) = {
+          // Delete three types of file: stage|.success|.loading
+          val stageLoadingFile =
+            FileFactory.getCarbonFile(files._1.getAbsolutePath
+              + CarbonTablePath.LOADING_FILE_SUBFIX);
+          var isFailed = false
           // If delete() return false, maybe the reason is FileNotFount or FileFailedClean.
           // Considering FileNotFound means FileCleanSucessfully.
           // We need double check the file exists or not when delete() return false.
-          if (!(files._1.delete() && files._2.delete())) {
-            // If the file still exists, return ture, let the file filtered in.
+          if (!(files._1.delete() && files._2.delete() && stageLoadingFile.delete())) {
+            // If the file still exists,  make isFailed to be true
             // So we can retry to delete this file.
-            return files._1.exists() || files._1.exists()
+            isFailed = files._1.exists() || files._1.exists() || stageLoadingFile.exists()
           }
-          // When delete successfully, return false, let the file filtered away.
-          false
+          (files._1, files._2, isFailed)
         }
       })
-    }.filter { future =>
+    }.map { future =>
       future.get()
+    }.filter { files =>
+      // keep the files when isFailed is ture. so we can retry on these files.
+      files._3
+    }.map { files =>
+      (files._1, files._2)
     }
-    stageFiles
   }
 
   /**
@@ -514,14 +596,18 @@ case class CarbonInsertFromStageCommand(
       stageFiles: Array[(CarbonFile, CarbonFile)]): Unit = {
     val startTime = System.currentTimeMillis()
     var retry = CarbonInsertFromStageCommand.DELETE_FILES_RETRY_TIMES
-    while (deleteStageFiles(executorService, stageFiles).length > 0 && retry > 0) {
+    var needToDeleteStageFiles = stageFiles
+    while (retry > 0 && needToDeleteStageFiles.nonEmpty) {
+      needToDeleteStageFiles =
+        deleteStageFiles(executorService, needToDeleteStageFiles)
       retry -= 1
     }
     LOGGER.info(s"finished to delete stage files, time taken: " +
       s"${System.currentTimeMillis() - startTime}ms")
     // if there are still stage files failed to clean, print log.
-    if (stageFiles.length > 0) {
-      LOGGER.warn(s"failed to clean up stage files:" + stageFiles.map(_._1.getName).mkString(","))
+    if (needToDeleteStageFiles.nonEmpty) {
+      LOGGER.warn(s"failed to clean up stage files:" +
+        needToDeleteStageFiles.map(_._1.getName).mkString(","))
     }
   }
 
@@ -569,22 +655,34 @@ case class CarbonInsertFromStageCommand(
   ): Array[(CarbonFile, CarbonFile)] = {
     val dir = FileFactory.getCarbonFile(loadDetailsDir, hadoopConf)
     if (dir.exists()) {
-      // Only HDFS/OBS/S3 server side can guarantee the files got from iterator are sorted
-      // based on file name so that we can use iterator to get the A and A.success together
-      // without loop all files which can improve performance compared with list all files.
-      // One file and another with '.success', so we need *2 as total and this value is just
-      // an approximate value. For local files, as can it can we not guarantee the order, we
-      // just list all.
-      val allFiles = dir.listFiles(false, batchSize * 2)
+      val allFiles = dir.listFiles()
       val successFiles = allFiles.filter { file =>
         file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUBFIX)
       }.map { file =>
         (file.getName.substring(0, file.getName.indexOf(".")), file)
       }.toMap
+
+      // different insertstage processes can load different data separately
+      // by choose the stages without 'loading' tag or stages loaded timeout.
+      // which avoid loading the same data between concurrent insertstage processes.
+      // Overall, There are two conditions to choose stages to process:
+      // 1) stages never loaded, choose the stages without '.loading' tag.
+      // 2) stages loaded timeout, the timeout threshold depends on INSERT_STAGE_TIMEOUT
+      val loadingFiles = allFiles.filter { file =>
+        file.getName.endsWith(CarbonTablePath.LOADING_FILE_SUBFIX)
+      }.filter { file =>
+        (System.currentTimeMillis() - file.getLastModifiedTime) <
+          CarbonInsertFromStageCommand.INSERT_STAGE_TIMEOUT
+      }.map { file =>
+        (file.getName.substring(0, file.getName.indexOf(".")), file)
+      }.toMap
+
       val stageFiles = allFiles.filter { file =>
         !file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUBFIX)
       }.filter { file =>
         successFiles.contains(file.getName)
+      }.filterNot { file =>
+        loadingFiles.contains(file.getName)
       }.sortWith {
         (file1, file2) =>
           if (ascendingSort) {
@@ -655,4 +753,5 @@ object CarbonInsertFromStageCommand {
   */
   val BATCH_FILE_ORDER_DEFAULT: String = BATCH_FILE_ORDER_ASC
 
+  val INSERT_STAGE_TIMEOUT = CarbonProperties.getInsertStageTimeout
 }

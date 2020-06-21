@@ -1904,6 +1904,38 @@ public final class CarbonProperties {
   }
 
   /**
+   * Validate and get the input metrics interval
+   *
+   * @return input metrics interval
+   */
+  public static Long getInsertStageTimeout() {
+    String timeout = CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_INSERT_STAGE_TIMEOUT);
+    if (timeout == null) {
+      return CarbonCommonConstants.CARBON_INSERT_STAGE_TIMEOUT_DEFAULT;
+    } else {
+      try {
+        long configuredValue = Long.parseLong(timeout);
+        if (configuredValue < 0) {
+          LOGGER.warn(String.format("The value \"%s\" configured for key \"%s\" " +
+                  "is invalid. Ignoring it. use default value:\"%s\"", timeout,
+                  CarbonCommonConstants.CARBON_INSERT_STAGE_TIMEOUT,
+                  CarbonCommonConstants.CARBON_INSERT_STAGE_TIMEOUT_DEFAULT));
+          return CarbonCommonConstants.CARBON_INSERT_STAGE_TIMEOUT_DEFAULT;
+        } else {
+          return configuredValue;
+        }
+      } catch (NumberFormatException e) {
+        LOGGER.warn(String.format("The value \"%s\" configured for key \"%s\" " +
+                "is invalid. Ignoring it. use default value:\"%s\"", timeout,
+                CarbonCommonConstants.CARBON_INSERT_STAGE_TIMEOUT,
+                CarbonCommonConstants.CARBON_INSERT_STAGE_TIMEOUT_DEFAULT));
+        return CarbonCommonConstants.CARBON_INSERT_STAGE_TIMEOUT_DEFAULT;
+      }
+    }
+  }
+
+  /**
    * Validate and get query prefetch enable
    *
    * @return boolean prefetch value
