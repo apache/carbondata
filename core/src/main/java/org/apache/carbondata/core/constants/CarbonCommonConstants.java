@@ -1521,6 +1521,16 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_QUERY_STAGE_INPUT_DEFAULT = "false";
 
+  /**
+   * MAX_TIMEOUT_FOR_INSERTSTAGE_JOB
+   */
+  public static final String CARBON_INSERT_STAGE_TIMEOUT = "carbon.insert.stage.timeout";
+
+  /**
+   * DFAULT_MAX_TIMEOUT_FOR_INSERTSTAGE_JOB: 8 hour
+   */
+  public static final long CARBON_INSERT_STAGE_TIMEOUT_DEFAULT = 28800000;
+
   //////////////////////////////////////////////////////////////////////////////////////////
   // Index parameter start here
   //////////////////////////////////////////////////////////////////////////////////////////
