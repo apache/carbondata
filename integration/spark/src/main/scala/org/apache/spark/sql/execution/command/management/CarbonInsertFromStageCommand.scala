@@ -680,6 +680,8 @@ case class CarbonInsertFromStageCommand(
       val stageFiles = allFiles.filter { file =>
         !file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUBFIX)
       }.filter { file =>
+        !file.getName.endsWith(CarbonTablePath.LOADING_FILE_SUBFIX)
+      }.filter { file =>
         successFiles.contains(file.getName)
       }.filterNot { file =>
         loadingFiles.contains(file.getName)
