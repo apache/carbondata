@@ -45,6 +45,11 @@ public class StageInput {
    */
   private List<PartitionLocation> locations;
 
+  /**
+   * current stage create at this time.
+   */
+  private transient long createTime;
+
   public StageInput() {
 
   }
@@ -92,6 +97,14 @@ public class StageInput {
                 base + CarbonCommonConstants.FILE_SEPARATOR + entry.getKey(),
                 0, entry.getValue(), ColumnarFormatVersion.V3, null)
         ).collect(Collectors.toList());
+  }
+
+  public long getCreateTime() {
+    return createTime;
+  }
+
+  public void setCreateTime(long createTime) {
+    this.createTime = createTime;
   }
 
   public static final class PartitionLocation {

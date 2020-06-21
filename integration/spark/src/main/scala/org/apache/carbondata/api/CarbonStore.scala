@@ -17,14 +17,17 @@
 
 package org.apache.carbondata.api
 
+import java.io.InputStreamReader
 import java.time.{Duration, Instant}
+import java.util
+import java.util.Collections
+
+import com.google.gson.Gson
 
 import scala.collection.JavaConverters._
-
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.unsafe.types.UTF8String
-
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -35,9 +38,10 @@ import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager, StageInput}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.streaming.segment.StreamSegment
+import org.apache.hadoop.conf.Configuration
 
 object CarbonStore {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -45,7 +49,7 @@ object CarbonStore {
   def readSegments(
       tablePath: String,
       showHistory: Boolean,
-      limit: Option[String]): Array[LoadMetadataDetails] = {
+      limit: Option[Int]): Array[LoadMetadataDetails] = {
     val metaFolder = CarbonTablePath.getMetadataPath(tablePath)
     var segmentsMetadataDetails = if (showHistory) {
       SegmentStatusManager.readLoadMetadata(metaFolder) ++
@@ -63,10 +67,76 @@ object CarbonStore {
     }
 
     if (limit.isDefined) {
-      val lim = Integer.parseInt(limit.get)
-      segmentsMetadataDetails.slice(0, lim)
+      segmentsMetadataDetails.slice(0, limit.get)
     } else {
       segmentsMetadataDetails
+    }
+  }
+
+  /**
+   * Read stage files and return input files
+   */
+  def readStages(
+      tablePath: String,
+      configuration: Configuration,
+      limit: Option[Int]): Seq[StageInput] = {
+    val stageFiles = listStageFiles(
+      CarbonTablePath.getStageDir(tablePath), configuration, limit)
+    val output = Collections.synchronizedList(new util.ArrayList[StageInput]())
+    val gson = new Gson()
+    stageFiles.map { stage =>
+      val filePath = stage._1.getAbsolutePath
+      val stream = FileFactory.getDataInputStream(filePath)
+      try {
+        val stageInput = gson.fromJson(new InputStreamReader(stream), classOf[StageInput])
+        stageInput.setCreateTime(stage._1.getLastModifiedTime)
+        output.add(stageInput)
+      } finally {
+        stream.close()
+      }
+    }
+    output.asScala
+  }
+
+  /*
+   * Collect all stage files and matched success files.
+   * A stage file without success file will not be collected
+   */
+  private def listStageFiles(
+        loadDetailsDir: String,
+        hadoopConf: Configuration,
+        limit: Option[Int]
+      ): Array[(CarbonFile, CarbonFile)] = {
+    val dir = FileFactory.getCarbonFile(loadDetailsDir, hadoopConf)
+    if (dir.exists()) {
+      // Only HDFS/OBS/S3 server side can guarantee the files got from iterator are sorted
+      // based on file name so that we can use iterator to get the A and A.success together
+      // without loop all files which can improve performance compared with list all files.
+      // One file and another with '.success', so we need *2 as total and this value is just
+      // an approximate value. For local files, as can it can we not guarantee the order, we
+      // just list all.
+      val allFiles = if (limit.isDefined) {
+        dir.listFiles(false, limit.get * 2)
+      } else {
+        dir.listFiles(false).toArray(Array[CarbonFile]())
+      }
+      val successFiles = allFiles.filter { file =>
+        file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUBFIX)
+      }.map { file =>
+        (file.getName.substring(0, file.getName.indexOf(".")), file)
+      }.toMap
+      val stageFiles = allFiles.filter { file =>
+        !file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUBFIX)
+      }.filter { file =>
+        successFiles.contains(file.getName)
+      }.sortWith {
+        (file1, file2) => file1.getLastModifiedTime > file2.getLastModifiedTime
+      }.map { file =>
+        (file, successFiles(file.getName))
+      }
+      stageFiles
+    } else {
+      Array.empty
     }
   }
 

@@ -35,7 +35,8 @@ case class CarbonShowSegmentsAsSelectCommand(
     databaseNameOp: Option[String],
     tableName: String,
     query: String,
-    limit: Option[String],
+    limit: Option[Int],
+    includeStage: Boolean = false,
     showHistory: Boolean = false)
   extends DataCommand {
 
@@ -48,7 +49,7 @@ case class CarbonShowSegmentsAsSelectCommand(
 
   override def output: Seq[Attribute] = {
     df.queryExecution.analyzed.output.map { attr =>
-      AttributeReference(attr.name, attr.dataType, nullable = false)()
+      AttributeReference(attr.name, attr.dataType, nullable = true)()
     }
   }
 
@@ -99,7 +100,7 @@ case class CarbonShowSegmentsAsSelectCommand(
 
     // populate a dataframe containing all segment information
     val tablePath = carbonTable.getTablePath
-    val segmentRows = segments.toSeq.map { segment =>
+    var rows = segments.toSeq.map { segment =>
       val mergedToId = CarbonStore.getMergeTo(segment)
       val path = CarbonStore.getExternalSegmentPath(segment)
       val startTime = CarbonStore.getLoadStartTime(segment)
@@ -122,8 +123,32 @@ case class CarbonShowSegmentsAsSelectCommand(
         if (segment.getSegmentFile == null) "NA" else segment.getSegmentFile)
     }
 
+    if (includeStage) {
+      val stageRows = CarbonShowSegmentsCommand.showStages(rows.length, tablePath,
+        sparkSession.sessionState.newHadoopConf(), limit)
+      if (stageRows.nonEmpty) {
+        rows = rows ++ stageRows.map(
+          stageRow =>
+            SegmentRow (
+              stageRow.getString(0),
+              stageRow.getString(1),
+              stageRow.getString(2),
+              null,
+              stageRow.getString(4),
+              stageRow.getString(5),
+              stageRow.getString(6),
+              null,
+              stageRow.getString(7),
+              null,
+              null,
+              null
+            )
+        )
+      }
+    }
+
     // create a temp view using the populated dataframe and execute the query on it
-    val df = sparkSession.createDataFrame(segmentRows)
+    val df = sparkSession.createDataFrame(rows)
     checkIfTableExist(sparkSession, tempViewName)
     df.createOrReplaceTempView(tempViewName)
   }

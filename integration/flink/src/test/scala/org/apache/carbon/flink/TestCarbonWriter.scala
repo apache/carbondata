@@ -241,6 +241,31 @@ class TestCarbonWriter extends QueryTest with BeforeAndAfterAll{
     }
   }
 
+  test("Show segments include stage") {
+    createTable
+    try {
+      val writerProperties = newWriterProperties(dataTempPath)
+      val carbonProperties = newCarbonProperties(storeLocation)
+
+      val environment = StreamExecutionEnvironment.getExecutionEnvironment
+      environment.enableCheckpointing(2000L)
+      executeFlinkStreamingEnvironment(environment, writerProperties, carbonProperties)
+
+      val rows = sql(s"SHOW SEGMENTS ON $tableName INCLUDE STAGE").collect()
+      assert(rows.length == 2)
+      for (index <- 0 until 2) {
+        assert(rows(index).getString(0) == null)
+        assert(rows(index).getString(1).equals("Unload"))
+        assert(rows(index).getString(2) != null)
+        assert(rows(index).getString(3) == null)
+        assert(rows(index).getString(4).equals("NA"))
+        assert(rows(index).getString(5) != null)
+        assert(rows(index).getString(6) != null)
+        assert(rows(index).getString(7) == null)
+      }
+    }
+  }
+
   private def executeFlinkStreamingEnvironment(environment: StreamExecutionEnvironment,
       writerProperties: Properties,
       carbonProperties: Properties): JobExecutionResult = {
