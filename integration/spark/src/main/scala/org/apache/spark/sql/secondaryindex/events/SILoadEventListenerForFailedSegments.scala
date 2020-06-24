@@ -190,14 +190,21 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
 
   def checkIfMainTableLoadIsValid(mainTableDetails: Array[LoadMetadataDetails],
     loadName: String): Boolean = {
+    // in concurrent scenarios there can be cases when loadName is not present in the
+    // mainTableDetails array. Added a check to see if the loadName is even present in the
+    // mainTableDetails.
     val mainTableLoadDetail = mainTableDetails
-      .filter(mainTableDetail => mainTableDetail.getLoadName.equals(loadName)).head
-    if (mainTableLoadDetail.getSegmentStatus ==
-        SegmentStatus.MARKED_FOR_DELETE ||
-        mainTableLoadDetail.getSegmentStatus == SegmentStatus.COMPACTED) {
+      .filter(mainTableDetail => mainTableDetail.getLoadName.equals(loadName))
+    if (mainTableLoadDetail.length == 0) {
       false
     } else {
-      true
+      if (mainTableLoadDetail.head.getSegmentStatus ==
+        SegmentStatus.MARKED_FOR_DELETE ||
+        mainTableLoadDetail.head.getSegmentStatus == SegmentStatus.COMPACTED) {
+        false
+      } else {
+        true
+      }
     }
   }
 }
