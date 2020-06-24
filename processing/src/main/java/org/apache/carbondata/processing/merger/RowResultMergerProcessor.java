@@ -18,11 +18,9 @@
 package org.apache.carbondata.processing.merger;
 
 import java.io.IOException;
-import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.PriorityQueue;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -38,6 +36,7 @@ import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.processing.exception.SliceMergerException;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
+import org.apache.carbondata.processing.loading.sort.CarbonPriorityQueue;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
@@ -59,7 +58,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
   /**
    * record holder heap
    */
-  private AbstractQueue<RawResultIterator> recordHolderHeap;
+  private CarbonPriorityQueue<RawResultIterator> recordHolderHeap;
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(RowResultMergerProcessor.class.getName());
@@ -97,7 +96,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
 
   private void initRecordHolderHeap(List<RawResultIterator> rawResultIteratorList) {
     // create the List of RawResultIterator.
-    recordHolderHeap = new PriorityQueue<RawResultIterator>(rawResultIteratorList.size(),
+    recordHolderHeap = new CarbonPriorityQueue<>(rawResultIteratorList.size(),
         new RowResultMergerProcessor.CarbonMdkeyComparator());
   }
 
@@ -126,11 +125,12 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
       RawResultIterator iterator = null;
       while (index > 1) {
         // iterator the top record
-        iterator = this.recordHolderHeap.poll();
+        iterator = this.recordHolderHeap.peek();
         Object[] convertedRow = iterator.next();
         if (null == convertedRow) {
           index--;
           iterator.close();
+          this.recordHolderHeap.poll();
           continue;
         }
         if (!isDataPresent) {
@@ -144,10 +144,11 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         if (!iterator.hasNext()) {
           index--;
           iterator.close();
+          this.recordHolderHeap.poll();
           continue;
         }
-        // add record to heap
-        this.recordHolderHeap.add(iterator);
+        // maintain heap
+        this.recordHolderHeap.siftTopDown();
       }
       // if record holder is not empty then iterator the slice holder from
       // heap

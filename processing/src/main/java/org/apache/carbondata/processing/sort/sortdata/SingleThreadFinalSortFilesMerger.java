@@ -19,12 +19,10 @@ package org.apache.carbondata.processing.sort.sortdata;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -42,6 +40,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
+import org.apache.carbondata.processing.loading.sort.CarbonPriorityQueue;
 import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 
@@ -62,7 +61,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   /**
    * recordHolderHeap
    */
-  private AbstractQueue<SortTempFileChunkHolder> recordHolderHeapLocal;
+  private CarbonPriorityQueue<SortTempFileChunkHolder> recordHolderHeapLocal;
 
   /**
    * tableName
@@ -233,7 +232,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    */
   private void createRecordHolderQueue(int size) {
     // creating record holder heap
-    this.recordHolderHeapLocal = new PriorityQueue<SortTempFileChunkHolder>(size);
+    this.recordHolderHeapLocal = new CarbonPriorityQueue<>(size);
   }
 
   private synchronized void notifyFailure(Throwable throwable) {
@@ -270,7 +269,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
     // be based on comparator we are passing the heap
     // when will call poll it will always delete root of the tree and then
     // it does trickel down operation complexity is log(n)
-    SortTempFileChunkHolder poll = this.recordHolderHeapLocal.poll();
+    SortTempFileChunkHolder poll = this.recordHolderHeapLocal.peek();
 
     // get the row from chunk
     row = poll.getRow();
@@ -279,8 +278,9 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
     if (!poll.hasNext()) {
       // if chunk is empty then close the stream
       poll.closeStream();
+      this.recordHolderHeapLocal.poll();
 
-      // reaturn row
+      // return row
       return row;
     }
 
@@ -292,8 +292,8 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
       throw new CarbonDataWriterException(e);
     }
 
-    // add to heap
-    this.recordHolderHeapLocal.add(poll);
+    // maintain heap
+    this.recordHolderHeapLocal.siftTopDown();
 
     // return row
     return row;
