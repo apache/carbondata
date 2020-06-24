@@ -32,13 +32,15 @@ import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.index.IndexType
-import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{Event, OperationContext, OperationEventListener}
 import org.apache.carbondata.processing.loading.events.LoadEvents.LoadTablePostStatusUpdateEvent
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
 /**
  * This Listener is to load the data to failed segments of Secondary index table(s)
@@ -141,15 +143,35 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
                     .foreach(metadataDetail => {
                       val detail = details
                         .filter(metadata => metadata.getLoadName.equals(metadataDetail))
+                      val mainTableDetail = mainTableDetails
+                        .filter(metadata => metadata.getLoadName.equals(metadataDetail))
                       if (null == detail || detail.length == 0) {
                         val newDetails = new LoadMetadataDetails
                         newDetails.setLoadName(metadataDetail)
                         LOGGER.error("Added in SILoadFailedSegment " + newDetails.getLoadName)
                         failedLoadMetadataDetails.add(newDetails)
+                      } else if (detail != null && detail.length !=0 && metadataDetail != null
+                                 && metadataDetail.length != 0) {
+                        // If SI table has compacted segments and main table does not have
+                        // compacted segments due to some failure while compaction, need to
+                        // reload the original segments in this case.
+                        if (detail(0).getSegmentStatus == SegmentStatus.COMPACTED &&
+                            mainTableDetail(0).getSegmentStatus == SegmentStatus.SUCCESS) {
+                          detail(0).setSegmentStatus(SegmentStatus.SUCCESS)
+                          LOGGER.error("Added in SILoadFailedSegment " + detail(0).getLoadName)
+                          failedLoadMetadataDetails.add(detail(0))
+                        }
                       }
                     })
                   try {
                     if (!failedLoadMetadataDetails.isEmpty) {
+                      // in the case when in SI table a segment is deleted and it's entry is
+                      // deleted from the tablestatus file, the corresponding .segment file from
+                      // the metadata folder should also be deleted as it contains the
+                      // mergefilename which does not exist anymore as the segment is deleted.
+                      deleteStaleSegmentFileIfPresent(carbonLoadModel,
+                        indexTable,
+                        failedLoadMetadataDetails)
                       CarbonIndexUtil
                         .LoadToSITable(sparkSession,
                           carbonLoadModel,
@@ -190,14 +212,37 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
 
   def checkIfMainTableLoadIsValid(mainTableDetails: Array[LoadMetadataDetails],
     loadName: String): Boolean = {
+    // in concurrent scenarios there can be cases when loadName is not present in the
+    // mainTableDetails array. Added a check to see if the loadName is even present in the
+    // mainTableDetails.
     val mainTableLoadDetail = mainTableDetails
-      .filter(mainTableDetail => mainTableDetail.getLoadName.equals(loadName)).head
-    if (mainTableLoadDetail.getSegmentStatus ==
-        SegmentStatus.MARKED_FOR_DELETE ||
-        mainTableLoadDetail.getSegmentStatus == SegmentStatus.COMPACTED) {
+      .filter(mainTableDetail => mainTableDetail.getLoadName.equals(loadName))
+    if (mainTableLoadDetail.length == 0) {
       false
     } else {
-      true
+      if (mainTableLoadDetail.head.getSegmentStatus ==
+        SegmentStatus.MARKED_FOR_DELETE ||
+        mainTableLoadDetail.head.getSegmentStatus == SegmentStatus.COMPACTED) {
+        false
+      } else {
+        true
+      }
     }
+  }
+
+  def deleteStaleSegmentFileIfPresent(carbonLoadModel: CarbonLoadModel, indexTable: CarbonTable,
+    failedLoadMetaDataDetails: java.util.List[LoadMetadataDetails]): Unit = {
+    failedLoadMetaDataDetails.asScala.map(failedLoadMetaData => {
+      carbonLoadModel.getLoadMetadataDetails.asScala.map(loadMetaData => {
+        if (failedLoadMetaData.getLoadName == loadMetaData.getLoadName) {
+          val segmentFilePath = CarbonTablePath.getSegmentFilesLocation(indexTable.getTablePath) +
+            CarbonCommonConstants.FILE_SEPARATOR + loadMetaData.getSegmentFile
+          if (FileFactory.isFileExist(segmentFilePath)) {
+            // delete the file if it exists
+            FileFactory.deleteFile(segmentFilePath)
+          }
+        }
+      })
+    })
   }
 }

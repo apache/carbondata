@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -117,6 +118,24 @@ public class CarbonInternalLoaderUtil {
             }
           }
           updatedLoadMetadataDetails.add(currentLoadMetadataDetails[i]);
+        }
+
+        // check if newLoadMetadataDetail has segments which are not in  currentLoadMetaDetails
+        // and add them to the updatedLoadMetadataDetails
+        boolean foundNext = false;
+        for (int i = 0; i < newLoadMetadataDetails.size(); i++) {
+          foundNext = false;
+          for (int j = 0; j < currentLoadMetadataDetails.length; j++) {
+            if (newLoadMetadataDetails.get(i).getLoadName().equals(currentLoadMetadataDetails[j].getLoadName())) {
+              foundNext = true;
+              break;
+            }
+            if (j == currentLoadMetadataDetails.length - 1 && !foundNext) {
+              // if not found in the list then add it
+              updatedLoadMetadataDetails.add(newLoadMetadataDetails.get(i));
+              found = true;
+            }
+          }
         }
 
         // when data load is done for first time, add all the details
@@ -314,11 +333,21 @@ public class CarbonInternalLoaderUtil {
         getListOfValidSlices(SegmentStatusManager.readLoadMetadata(indexTablePath));
     Collections.sort(mainTableSegmentsList);
     Collections.sort(indexList);
-    if (indexList.size() != mainTableSegmentsList.size()) {
+    // In the case when number of SI segments are more than the maintable segments do nothing
+    // and proceed to process the segments. Return False in case if maintable segments are more
+    // than SI Segments
+    if (indexList.size() < mainTableSegmentsList.size()) {
       return false;
     }
+    // There can be cases when the number of segments in the main table are less than the index
+    // table. In this case mapping all the segments in main table to SI table.
+    // Return False if a segment in maintable is not in indextable
+    HashSet<String> indexTableSet = new HashSet<String>();
     for (int i = 0; i < indexList.size(); i++) {
-      if (!indexList.get(i).equalsIgnoreCase(mainTableSegmentsList.get(i))) {
+      indexTableSet.add(indexList.get(i));
+    }
+    for (int i = 0; i < mainTableSegmentsList.size(); i++) {
+      if (!indexTableSet.contains(mainTableSegmentsList.get(i))) {
         return false;
       }
     }
