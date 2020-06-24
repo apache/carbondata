@@ -20,9 +20,7 @@ package org.apache.carbondata.processing.loading.sort.unsafe.merger;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.AbstractQueue;
 import java.util.NoSuchElementException;
-import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.concurrent.Callable;
 
@@ -31,6 +29,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
+import org.apache.carbondata.processing.loading.sort.CarbonPriorityQueue;
 import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeCarbonRowForMerge;
@@ -49,7 +48,7 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
   /**
    * recordHolderHeap
    */
-  private AbstractQueue<UnsafeInmemoryMergeHolder> recordHolderHeap;
+  private CarbonPriorityQueue<UnsafeInmemoryMergeHolder> recordHolderHeap;
 
   /**
    * fileCounter
@@ -141,25 +140,26 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
     // be based on comparator we are passing the heap
     // when will call poll it will always delete root of the tree and then
     // it does trickel down operation complexity is log(n)
-    UnsafeInmemoryMergeHolder poll = this.recordHolderHeap.poll();
+    UnsafeInmemoryMergeHolder poll = this.recordHolderHeap.peek();
 
     // get the row from chunk
     row = poll.getRow();
 
     // check if there no entry present
     if (!poll.hasNext()) {
+      this.recordHolderHeap.poll();
       // change the file counter
       --this.holderCounter;
 
-      // reaturn row
+      // return row
       return row;
     }
 
     // read new row
     poll.readRow();
 
-    // add to heap
-    this.recordHolderHeap.add(poll);
+    // maintain heap
+    this.recordHolderHeap.siftTopDown();
 
     // return row
     return row;
@@ -203,7 +203,7 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
    */
   private void createRecordHolderQueue(UnsafeCarbonRowPage[] pages) {
     // creating record holder heap
-    this.recordHolderHeap = new PriorityQueue<UnsafeInmemoryMergeHolder>(pages.length);
+    this.recordHolderHeap = new CarbonPriorityQueue<>(pages.length);
   }
 
   /**

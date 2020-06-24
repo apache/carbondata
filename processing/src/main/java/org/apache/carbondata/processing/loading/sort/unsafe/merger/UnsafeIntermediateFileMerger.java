@@ -21,15 +21,14 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.AbstractQueue;
 import java.util.NoSuchElementException;
-import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
+import org.apache.carbondata.processing.loading.sort.CarbonPriorityQueue;
 import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.SortTempChunkHolder;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeSortTempFileChunkHolder;
@@ -49,7 +48,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
   /**
    * recordHolderHeap
    */
-  private AbstractQueue<SortTempChunkHolder> recordHolderHeap;
+  private CarbonPriorityQueue<SortTempChunkHolder> recordHolderHeap;
 
   /**
    * fileCounter
@@ -163,7 +162,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     // be based on comparator we are passing the heap
     // when will call poll it will always delete root of the tree and then
     // it does trickel down operation complexity is log(n)
-    SortTempChunkHolder poll = this.recordHolderHeap.poll();
+    SortTempChunkHolder poll = this.recordHolderHeap.peek();
 
     // get the row from chunk
     row = poll.getRow();
@@ -172,19 +171,20 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     if (!poll.hasNext()) {
       // if chunk is empty then close the stream
       poll.close();
+      this.recordHolderHeap.poll();
 
       // change the file counter
       --this.fileCounter;
 
-      // reaturn row
+      // return row
       return row;
     }
 
     // read new row
     poll.readRow();
 
-    // add to heap
-    this.recordHolderHeap.add(poll);
+    // maintain heap
+    this.recordHolderHeap.siftTopDown();
 
     // return row
     return row;
@@ -232,7 +232,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
    */
   private void createRecordHolderQueue(File[] listFiles) {
     // creating record holder heap
-    this.recordHolderHeap = new PriorityQueue<SortTempChunkHolder>(listFiles.length);
+    this.recordHolderHeap = new CarbonPriorityQueue<>(listFiles.length);
   }
 
   /**

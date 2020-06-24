@@ -21,15 +21,14 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.AbstractQueue;
 import java.util.NoSuchElementException;
-import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
+import org.apache.carbondata.processing.loading.sort.CarbonPriorityQueue;
 import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 
@@ -45,7 +44,7 @@ public class IntermediateFileMerger implements Callable<Void> {
   /**
    * recordHolderHeap
    */
-  private AbstractQueue<SortTempFileChunkHolder> recordHolderHeap;
+  private CarbonPriorityQueue<SortTempFileChunkHolder> recordHolderHeap;
 
   /**
    * fileCounter
@@ -159,7 +158,7 @@ public class IntermediateFileMerger implements Callable<Void> {
     // be based on comparator we are passing the heap
     // when will call poll it will always delete root of the tree and then
     // it does trickel down operation complexity is log(n)
-    SortTempFileChunkHolder poll = this.recordHolderHeap.poll();
+    SortTempFileChunkHolder poll = this.recordHolderHeap.peek();
 
     // get the row from chunk
     row = poll.getRow();
@@ -168,7 +167,7 @@ public class IntermediateFileMerger implements Callable<Void> {
     if (!poll.hasNext()) {
       // if chunk is empty then close the stream
       poll.closeStream();
-
+      this.recordHolderHeap.poll();
       // change the file counter
       --this.fileCounter;
 
@@ -179,8 +178,8 @@ public class IntermediateFileMerger implements Callable<Void> {
     // read new row
     poll.readRow();
 
-    // add to heap
-    this.recordHolderHeap.add(poll);
+    // maintain heap
+    this.recordHolderHeap.siftTopDown();
 
     // return row
     return row;
@@ -231,7 +230,7 @@ public class IntermediateFileMerger implements Callable<Void> {
    */
   private void createRecordHolderQueue(File[] listFiles) {
     // creating record holder heap
-    this.recordHolderHeap = new PriorityQueue<>(listFiles.length);
+    this.recordHolderHeap = new CarbonPriorityQueue<>(listFiles.length);
   }
 
   /**
