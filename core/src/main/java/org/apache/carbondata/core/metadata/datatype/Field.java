@@ -74,8 +74,10 @@ public class Field {
       this.type = DataTypes.FLOAT;
     } else if (type.equalsIgnoreCase("double")) {
       this.type = DataTypes.DOUBLE;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     } else if (type.equalsIgnoreCase("binary")) {
       this.type = DataTypes.BINARY;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3356
     } else if (type.toLowerCase().startsWith("decimal")) {
       if ("decimal".equalsIgnoreCase(type.toLowerCase())) {
         this.type = DataTypes.createDefaultDecimalType();
@@ -94,10 +96,12 @@ public class Field {
               "precision can be 10 and scale can be 2", e);
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
     } else if (type.equalsIgnoreCase("array")) {
       this.type = DataTypes.createDefaultArrayType();
     } else if (type.equalsIgnoreCase("struct")) {
       this.type = DataTypes.createDefaultStructType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
     } else if (type.equalsIgnoreCase("map")) {
       this.type = DataTypes.createDefaultMapType();
     } else {
@@ -106,10 +110,14 @@ public class Field {
   }
 
   public Field(String name, String type, List<StructField> fields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3174
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3174
     this.name = name.toLowerCase().trim();
     this.children = fields;
     if (type.equalsIgnoreCase("string")) {
       this.type = DataTypes.STRING;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2512
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2512
     } else if (type.equalsIgnoreCase("varchar")) {
       this.type = DataTypes.VARCHAR;
     } else if (type.equalsIgnoreCase("date")) {
@@ -130,19 +138,23 @@ public class Field {
       this.type = DataTypes.FLOAT;
     } else if (type.equalsIgnoreCase("double")) {
       this.type = DataTypes.DOUBLE;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     } else if (type.equalsIgnoreCase("binary")) {
       this.type = DataTypes.BINARY;
     } else if (type.equalsIgnoreCase("array")) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3446
       this.type = DataTypes.createArrayType(fields.get(0).getDataType(),
         fields.get(0).getFieldName());
     } else if (type.equalsIgnoreCase("struct")) {
       this.type = DataTypes.createStructType(fields);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
     } else {
       throw new IllegalArgumentException("unsupported data type: " + type);
     }
   }
 
   public Field(String name, DataType type, List<StructField> fields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3174
     this.name = name.toLowerCase().trim();
     this.type = type;
     this.children = fields;
@@ -151,6 +163,7 @@ public class Field {
   public Field(String name, DataType type) {
     this.name = name.toLowerCase().trim();
     this.type = type;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2894
     initComplexTypeChildren();
   }
 
@@ -160,7 +173,9 @@ public class Field {
    * @param columnSchema ColumnSchema, Store the information about the column meta data
    */
   public Field(ColumnSchema columnSchema) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3174
     this.name = columnSchema.getColumnName().toLowerCase().trim();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2558
     this.type = columnSchema.getDataType();
     children = new LinkedList<>();
     schemaOrdinal = columnSchema.getSchemaOrdinal();
@@ -177,6 +192,7 @@ public class Field {
   }
 
   public List<StructField> getChildren() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
     return children;
   }
 
@@ -238,10 +254,12 @@ public class Field {
 
   /* for SDK, change string type to varchar by default for parent columns */
   public void updateDataTypeToVarchar() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2922
     this.type = DataTypes.VARCHAR;
   }
 
   private void initComplexTypeChildren() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2894
     if (getDataType().isComplexType()) {
       StructField subFields = prepareSubFields(getFieldName(), getDataType());
       if (DataTypes.isArrayType(getDataType()) || DataTypes.isMapType(getDataType())) {
@@ -254,6 +272,7 @@ public class Field {
 
   @Override
   public String toString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2981
     return "Field{" +
         "name='" + name + '\'' +
         ", type=" + type +
@@ -294,6 +313,7 @@ public class Field {
       mapFields.add(keyField);
       mapFields.add(valueField);
       StructField field =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
           new StructField(fieldName + ".val", DataTypes.createStructType(mapFields), mapFields);
       MapType mapDataType = DataTypes.createMapType(keyField.getDataType(), field.getDataType());
       List<StructField> mapStructField = new ArrayList<>();
@@ -306,6 +326,7 @@ public class Field {
 
   @Override
   public int hashCode() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2996
     return super.hashCode();
   }
 

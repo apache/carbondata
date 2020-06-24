@@ -31,6 +31,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
  */
 public class ActualDataBasedFallbackEncoder
     implements Callable<FallbackEncodedColumnPage> {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
 
   /**
    * actual local dictionary generated column page
@@ -58,12 +59,14 @@ public class ActualDataBasedFallbackEncoder
 
     // get column spec for existing column page
     TableSpec.ColumnSpec columnSpec = encodedColumnPage.getActualPage().getColumnSpec();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
     FallbackEncodedColumnPage fallbackEncodedColumnPage = CarbonUtil
         .getFallBackEncodedColumnPage(encodedColumnPage.getActualPage(), pageIndex, columnSpec);
     // here freeing the memory of raw column page as fallback is done and column page will not
     // be used.
     // This is required to free the memory once it is of no use
     encodedColumnPage.freeMemory();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3787
     encodedColumnPage.cleanBuffer();
     return fallbackEncodedColumnPage;
   }

@@ -49,6 +49,7 @@ import org.apache.log4j.Logger;
  * blocks
  */
 public class BlockletIndexStore
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     implements Cache<TableBlockIndexUniqueIdentifierWrapper, BlockletIndexWrapper> {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(BlockletIndexStore.class.getName());
@@ -85,16 +86,21 @@ public class BlockletIndexStore
     TableBlockIndexUniqueIdentifier identifier =
         identifierWrapper.getTableBlockIndexUniqueIdentifier();
     String lruCacheKey = identifier.getUniqueTableSegmentIdentifier();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     BlockletIndexWrapper blockletIndexWrapper =
         (BlockletIndexWrapper) lruCache.get(lruCacheKey);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     List<BlockIndex> indexes = new ArrayList<>();
     if (blockletIndexWrapper == null) {
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
         SegmentIndexFileStore indexFileStore =
             new SegmentIndexFileStore(identifierWrapper.getConfiguration());
         Set<String> filesRead = new HashSet<>();
         String segmentFilePath = identifier.getIndexFilePath();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2625
         if (segInfoCache == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
           segInfoCache = new HashMap<>();
         }
         Map<String, BlockMetaInfo> carbonDataFileBlockMetaInfoMapping =
@@ -109,8 +115,12 @@ public class BlockletIndexStore
         if (identifier.getMergeIndexFileName() == null) {
           List<DataFileFooter> indexInfos = new ArrayList<>();
           Map<String, BlockMetaInfo> blockMetaInfoMap = BlockletIndexUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2472
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2570
               .getBlockMetaInfoMap(identifierWrapper, indexFileStore, filesRead,
                   carbonDataFileBlockMetaInfoMapping, indexInfos);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           BlockIndex blockIndex =
               loadAndGetIndex(identifier, indexFileStore, blockMetaInfoMap,
                   identifierWrapper.getCarbonTable(),
@@ -133,9 +143,12 @@ public class BlockletIndexStore
                     identifierWrapper.getCarbonTable()), indexFileStore, filesRead,
                 carbonDataFileBlockMetaInfoMapping, indexInfos);
             if (!blockMetaInfoMap.isEmpty()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
               BlockIndex blockIndex =
                   loadAndGetIndex(blockIndexUniqueIdentifier, indexFileStore, blockMetaInfoMap,
                       identifierWrapper.getCarbonTable(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
                       identifierWrapper.isAddToUnsafe(),
                       identifierWrapper.getConfiguration(),
                       identifierWrapper.isSerializeDmStore(),
@@ -153,6 +166,7 @@ public class BlockletIndexStore
         }
       } catch (Throwable e) {
         // clear all the memory used by indexes loaded
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         for (Index index : indexes) {
           index.clear();
         }
@@ -167,6 +181,7 @@ public class BlockletIndexStore
   public List<BlockletIndexWrapper> getAll(
       List<TableBlockIndexUniqueIdentifierWrapper> tableSegmentUniqueIdentifiers)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     Map<String, Map<String, BlockMetaInfo>> segInfoCache =
         new HashMap<String, Map<String, BlockMetaInfo>>();
 
@@ -178,6 +193,7 @@ public class BlockletIndexStore
     try {
       for (TableBlockIndexUniqueIdentifierWrapper
                identifierWrapper : tableSegmentUniqueIdentifiers) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         BlockletIndexWrapper indexWrapper = getIfPresent(identifierWrapper);
         if (indexWrapper != null) {
           blockletIndexWrappers.add(indexWrapper);
@@ -193,11 +209,13 @@ public class BlockletIndexStore
       }
     } catch (Throwable e) {
       if (null != blockletIndexWrapper) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         List<BlockIndex> indexes = blockletIndexWrapper.getIndexes();
         for (Index index : indexes) {
           index.clear();
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3061
       throw new IOException("Problem in loading segment blocks: " + e.getMessage(), e);
     }
 
@@ -213,6 +231,7 @@ public class BlockletIndexStore
   @Override
   public BlockletIndexWrapper getIfPresent(
       TableBlockIndexUniqueIdentifierWrapper tableSegmentUniqueIdentifierWrapper) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     return (BlockletIndexWrapper) lruCache.get(
         tableSegmentUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()
             .getUniqueTableSegmentIdentifier());
@@ -230,6 +249,7 @@ public class BlockletIndexStore
         getIfPresent(tableSegmentUniqueIdentifierWrapper);
     if (null != blockletIndexWrapper) {
       // clear the segmentProperties cache
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       List<BlockIndex> indexes = blockletIndexWrapper.getIndexes();
       if (null != indexes && !indexes.isEmpty()) {
         String segmentId =
@@ -238,6 +258,7 @@ public class BlockletIndexStore
         // maintained at segment level so it need to be called only once for clearing
         SegmentPropertiesAndSchemaHolder.getInstance()
             .invalidate(segmentId, indexes.get(0).getSegmentPropertiesWrapper(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2924
                 tableSegmentUniqueIdentifierWrapper.isAddTableBlockToUnsafeAndLRUCache());
       }
     }
@@ -253,6 +274,7 @@ public class BlockletIndexStore
     // in the cache need to be overwritten then use the invalidate interface
     // and then use the put interface
     if (null == getIfPresent(tableBlockIndexUniqueIdentifierWrapper)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       List<BlockIndex> indexes = wrapper.getIndexes();
       try {
         for (BlockIndex blockIndex : indexes) {
@@ -294,12 +316,14 @@ public class BlockletIndexStore
     if (lock == null) {
       lock = addAndGetSegmentLock(uniqueTableSegmentIdentifier);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     BlockIndex blockIndex;
     synchronized (lock) {
       blockIndex = (BlockIndex) BlockletIndexFactory.createIndex(carbonTable);
       final BlockletIndexModel blockletIndexModel = new BlockletIndexModel(carbonTable,
           identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
               .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
           blockMetaInfoMap, identifier.getSegmentId(), addTableBlockToUnsafe, configuration,
           serializeDmStore);
       blockletIndexModel.setIndexInfos(indexInfos);
@@ -335,6 +359,7 @@ public class BlockletIndexStore
       List<TableBlockIndexUniqueIdentifierWrapper> tableSegmentUniqueIdentifiersWrapper) {
     for (TableBlockIndexUniqueIdentifierWrapper
              identifierWrapper : tableSegmentUniqueIdentifiersWrapper) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       BlockIndex cacheable = (BlockIndex) lruCache.get(
           identifierWrapper.getTableBlockIndexUniqueIdentifier().getUniqueTableSegmentIdentifier());
       cacheable.clear();

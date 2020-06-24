@@ -33,19 +33,27 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
   // for string and decimal data
   private List<byte[]> byteArrayData;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
   SafeVarLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     super(columnPageEncoderMeta, pageSize);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     byteArrayData = new ArrayList<>();
   }
 
   @Override
   public void freeMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2168
     byteArrayData = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     super.freeMemory();
   }
 
   @Override
   public void putBytesAtRow(int rowId, byte[] bytes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     byteArrayData.add(bytes);
   }
 
@@ -56,6 +64,8 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   @Override
   public void putDecimal(int rowId, BigDecimal decimal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
@@ -68,6 +78,8 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   @Override
   public byte[] getBytes(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     return byteArrayData.get(rowId);
   }
 
@@ -91,9 +103,12 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   @Override
   public byte[] getComplexChildrenLVFlattenedBytePage(DataType dataType) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream out = new DataOutputStream(stream);
     for (byte[] byteArrayDatum : byteArrayData) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
       if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
         out.writeInt(byteArrayDatum.length);
       } else {
@@ -116,6 +131,8 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   @Override
   public byte[][] getByteArrayPage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     return byteArrayData.toArray(new byte[byteArrayData.size()][]);
   }
 

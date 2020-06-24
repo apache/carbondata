@@ -36,6 +36,7 @@ public class TrueFilterExecutor implements FilterExecuter {
     BitSetGroup group = new BitSetGroup(numberOfPages);
     for (int i = 0; i < numberOfPages; i++) {
       BitSet set = new BitSet();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       set.flip(0, rawBlockletColumnChunks.getDataBlock().getPageRowCount(i));
       group.setBitSet(set, i);
     }

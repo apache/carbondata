@@ -47,6 +47,7 @@ public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
 
   @Override
   public boolean equals(Object obj) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     if (this == obj) {
       return true;
     }

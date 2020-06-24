@@ -24,5 +24,6 @@ package org.apache.carbondata.core.constants;
 public interface CarbonCommonConstantsInternal {
 
   String ROW_COUNT = "rowCount";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3293
 
 }

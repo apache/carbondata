@@ -23,9 +23,11 @@ public class AtomicFileOperationFactory {
 
   public static AtomicFileOperations getAtomicFileOperations(String filePath) {
     FileFactory.FileType fileType = FileFactory.getFileType(filePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2218
     if (fileType == FileFactory.FileType.S3 || fileType == FileFactory.FileType.ALLUXIO) {
       return new AtomicFileOperationS3Impl(filePath);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       return new AtomicFileOperationsImpl(filePath);
     }
   }

@@ -57,12 +57,14 @@ public class HiveEmbeddedServer2 {
     log.info("Starting Hive Local/Embedded Server...");
     SCRATCH_DIR = storePath;
     if (hiveServer == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
       System.setProperty("datanucleus.schema.autoCreateAll", "true");
       System.setProperty("hive.metastore.schema.verification", "false");
       config = configure();
       hiveServer = new HiveServer2();
       port = findFreePort();
       config.setIntVar(ConfVars.HIVE_SERVER2_THRIFT_PORT, port);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3719
       config.set(FileInputFormat.INPUT_DIR_RECURSIVE, "true");
       hiveServer.init(config);
       hiveServer.start();
@@ -91,6 +93,7 @@ public class HiveEmbeddedServer2 {
     for (int interval = 0; interval < timeout / unitOfWait; interval++) {
       Thread.sleep(unitOfWait);
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
         Map<String, String> sessionConf = new HashMap<>();
         sessionHandle = hs2Client.openSession("foo", "bar", sessionConf);
         return;
@@ -122,6 +125,7 @@ public class HiveEmbeddedServer2 {
     conf.set("hive.scratch.dir.permission", "777");
     conf.setVar(ConfVars.SCRATCHDIRPERMISSION, "777");
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3364
     conf.set("hive.metastore.warehouse.dir", scratchDir + "/warehouse");
     conf.set("hive.metastore.metadb.dir", scratchDir + "/metastore_db");
     conf.set("hive.exec.scratchdir", scratchDir);
@@ -134,6 +138,7 @@ public class HiveEmbeddedServer2 {
     conf.set("hive.added.files.path", "");
     conf.set("hive.added.archives.path", "");
     conf.set("fs.default.name", "file:///");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1271
     conf.set(HiveConf.ConfVars.SUBMITLOCALTASKVIACHILD.varname, "false");
     conf.set("hive.mapred.supports.subdirectories", "true");
 
@@ -149,6 +154,7 @@ public class HiveEmbeddedServer2 {
     // intercept SessionState to clean the threadlocal
     Field tss = SessionState.class.getDeclaredField("tss");
     tss.setAccessible(true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     return conf;
   }
 

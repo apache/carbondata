@@ -37,11 +37,14 @@ public interface SegmentPropertiesFetcher {
    * @return
    * @throws IOException
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
   SegmentProperties getSegmentProperties(Segment segment)
       throws IOException;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
   SegmentProperties getSegmentProperties(Segment segment, Set<Path> partitionLocations)
       throws IOException;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
   SegmentProperties getSegmentPropertiesFromIndex(Index coarseGrainIndex);
 }

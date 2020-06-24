@@ -27,6 +27,7 @@ public class ObjectColumnWithRowId implements Comparable<ObjectColumnWithRowId> 
 
   private DataType dataType;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3730
   ObjectColumnWithRowId(Object column, short rowId, DataType dataType) {
     this.column = column;
     this.rowId = rowId;
@@ -54,6 +55,7 @@ public class ObjectColumnWithRowId implements Comparable<ObjectColumnWithRowId> 
     if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3730
     ObjectColumnWithRowId o = (ObjectColumnWithRowId)obj;
     return column.equals(o.column) && rowId == o.rowId;
   }

@@ -112,6 +112,7 @@ public final class CarbonDataMergerUtil {
     // check whether carbons segment merging operation is enabled or not.
     // default will be false.
     Map<String, String> tblProps = carbonTable.getTableInfo().getFactTable().getTableProperties();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1698
 
     String isLoadMergeEnabled = CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
@@ -158,12 +159,14 @@ public final class CarbonDataMergerUtil {
   public static boolean updateLoadMetadataIUDUpdateDeltaMergeStatus(
       List<LoadMetadataDetails> loadsToMerge, String metaDataFilepath,
       CarbonLoadModel carbonLoadModel, List<Segment> segmentFilesToBeUpdated) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
 
     boolean status = false;
     boolean updateLockStatus = false;
     boolean tableLockStatus = false;
 
     String timestamp = "" + carbonLoadModel.getFactTimeStamp();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-842
 
     List<String> updatedDeltaFilesList = null;
 
@@ -188,6 +191,7 @@ public final class CarbonDataMergerUtil {
 
     SegmentUpdateStatusManager segmentUpdateStatusManager =
         new SegmentUpdateStatusManager(carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
 
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
 
@@ -197,6 +201,7 @@ public final class CarbonDataMergerUtil {
     // Update the Compacted Blocks with Compacted Status.
     try {
       updatedDeltaFilesList = segmentUpdateStatusManager
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
           .getUpdateDeltaFiles(loadsToMerge.get(0).getLoadName());
     } catch (Exception e) {
       LOGGER.error("Error while getting the Update Delta Blocks.");
@@ -214,6 +219,7 @@ public final class CarbonDataMergerUtil {
         for (String compactedBlocks : updatedDeltaFilesList) {
           // Try to BlockName
           int endIndex = compactedBlocks.lastIndexOf(File.separator);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
           String blkNoExt =
               compactedBlocks.substring(endIndex + 1, compactedBlocks.lastIndexOf("-"));
           blockNames.add(blkNoExt);
@@ -228,6 +234,7 @@ public final class CarbonDataMergerUtil {
             // Check is the compactedBlocks name matches with oldDetails
             for (int i = 0; i < updateLists.length; i++) {
               if (updateLists[i].getBlockName().equalsIgnoreCase(compactedBlocks)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
                   && updateLists[i].getSegmentStatus() != SegmentStatus.COMPACTED
                   && updateLists[i].getSegmentStatus() != SegmentStatus.MARKED_FOR_DELETE) {
                 updateLists[i].setSegmentStatus(SegmentStatus.COMPACTED);
@@ -237,6 +244,7 @@ public final class CarbonDataMergerUtil {
 
           LoadMetadataDetails[] loadDetails =
               SegmentStatusManager.readLoadMetadata(metaDataFilepath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
 
           for (LoadMetadataDetails loadDetail : loadDetails) {
             if (loadsToMerge.contains(loadDetail)) {
@@ -248,6 +256,7 @@ public final class CarbonDataMergerUtil {
               }
               // Update segement file name to status file
               int segmentFileIndex = segmentFilesToBeUpdated
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
                   .indexOf(Segment.toSegment(loadDetail.getLoadName(), null));
               if (segmentFileIndex > -1) {
                 loadDetail.setSegmentFile(
@@ -256,6 +265,7 @@ public final class CarbonDataMergerUtil {
             }
           }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
           segmentUpdateStatusManager.writeLoadDetailsIntoFile(
               Arrays.asList(updateLists), timestamp);
           SegmentStatusManager.writeLoadDetailsIntoFile(
@@ -300,10 +310,13 @@ public final class CarbonDataMergerUtil {
    * @return
    */
   public static boolean updateLoadMetadataWithMergeStatus(List<LoadMetadataDetails> loadsToMerge,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1617
       String metaDataFilepath, String mergedLoadNumber, CarbonLoadModel carbonLoadModel,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       CompactionType compactionType, String segmentFile, MVManager viewManager)
       throws IOException, NoSuchMVException {
     boolean tableStatusUpdationStatus = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     AbsoluteTableIdentifier identifier =
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
@@ -316,6 +329,7 @@ public final class CarbonDataMergerUtil {
             + carbonLoadModel.getTableName() + " for table status updation ");
 
         String statusFilePath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
 
         LoadMetadataDetails[] loadDetails = SegmentStatusManager.readLoadMetadata(metaDataFilepath);
 
@@ -325,6 +339,7 @@ public final class CarbonDataMergerUtil {
           if (loadsToMerge.contains(loadDetail)) {
             // if the compacted load is deleted after the start of the compaction process,
             // then need to discard the compaction process and treat it as failed compaction.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
             if (loadDetail.getSegmentStatus() == SegmentStatus.MARKED_FOR_DELETE) {
               LOGGER.error("Compaction is aborted as the segment " + loadDetail.getLoadName()
                   + " is deleted after the compaction is started.");
@@ -338,20 +353,26 @@ public final class CarbonDataMergerUtil {
 
         // create entry for merged one.
         LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
         loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS);
         long loadEnddate = CarbonUpdateUtil.readCurrentTime();
         loadMetadataDetails.setLoadEndTime(loadEnddate);
         CarbonTable carbonTable = carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable();
         loadMetadataDetails.setLoadName(mergedLoadNumber);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
         loadMetadataDetails.setSegmentFile(segmentFile);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1855
         CarbonLoaderUtil
             .addDataIndexSizeIntoMetaEntry(loadMetadataDetails, mergedLoadNumber, carbonTable);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1947
         loadMetadataDetails.setLoadStartTime(carbonLoadModel.getFactTimeStamp());
         // if this is a major compaction then set the segment as major compaction.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1586
         if (CompactionType.MAJOR == compactionType) {
           loadMetadataDetails.setMajorCompacted("true");
         }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         if (carbonTable.isMV()) {
           // If table is mv table, then get segment mapping and set to extraInfo
           MVSchema viewSchema = viewManager.getSchema(
@@ -379,6 +400,7 @@ public final class CarbonDataMergerUtil {
           tableStatusUpdationStatus = true;
         } catch (IOException e) {
           LOGGER.error("Error while writing metadata");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-881
           tableStatusUpdationStatus = false;
         }
       } else {
@@ -405,6 +427,7 @@ public final class CarbonDataMergerUtil {
    * @return
    */
   public static String getLoadNumberFromLoadName(String loadName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1617
     return loadName.substring(
         loadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER) + CarbonCommonConstants.LOAD_FOLDER
             .length(), loadName.length());
@@ -419,6 +442,7 @@ public final class CarbonDataMergerUtil {
    */
   public static List<LoadMetadataDetails> identifySegmentsToBeMerged(
           CarbonLoadModel carbonLoadModel, long compactionSize,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2033
           List<LoadMetadataDetails> segments, CompactionType compactionType,
           List<String> customSegmentIds) throws IOException, MalformedCarbonCommandException {
     Map<String, String> tableLevelProperties = carbonLoadModel.getCarbonDataLoadSchema()
@@ -427,14 +451,18 @@ public final class CarbonDataMergerUtil {
 
     sortSegments(sortedSegments);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2033
     if (CompactionType.CUSTOM == compactionType) {
       return identitySegmentsToBeMergedBasedOnSpecifiedSegments(sortedSegments,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2805
               new LinkedHashSet<>(customSegmentIds));
     }
 
     // Check for segments which are qualified for IUD compaction.
     if (CompactionType.IUD_UPDDEL_DELTA == compactionType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1586
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
       return identifySegmentsToBeMergedBasedOnIUD(sortedSegments, carbonLoadModel);
     }
 
@@ -442,6 +470,7 @@ public final class CarbonDataMergerUtil {
 
     List<LoadMetadataDetails> listOfSegmentsAfterPreserve =
             checkPreserveSegmentsPropertyReturnRemaining(sortedSegments, tableLevelProperties);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1698
 
     // filter the segments if the compaction based on days is configured.
 
@@ -451,8 +480,10 @@ public final class CarbonDataMergerUtil {
     List<LoadMetadataDetails> listOfSegmentsToBeMerged;
     // identify the segments to merge based on the Size of the segments across partition.
     if (CompactionType.MAJOR == compactionType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1586
 
       listOfSegmentsToBeMerged = identifySegmentsToBeMergedBasedOnSize(compactionSize,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2805
               listOfSegmentsLoadedInSameDateInterval, carbonLoadModel);
     } else {
 
@@ -488,9 +519,11 @@ public final class CarbonDataMergerUtil {
    * @return
    */
   private static List<LoadMetadataDetails> identitySegmentsToBeMergedBasedOnSpecifiedSegments(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2033
           List<LoadMetadataDetails> listOfSegments,
           Set<String> segmentIds) throws MalformedCarbonCommandException {
     Map<String, LoadMetadataDetails> specifiedSegments =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2805
             new LinkedHashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (LoadMetadataDetails detail : listOfSegments) {
       if (segmentIds.contains(detail.getLoadName())) {
@@ -519,6 +552,7 @@ public final class CarbonDataMergerUtil {
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnLoadedDate(
       List<LoadMetadataDetails> listOfSegmentsBelowThresholdSize, Map<String, String> tblProps) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1698
 
     List<LoadMetadataDetails> loadsOfSameDate =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -571,6 +605,7 @@ public final class CarbonDataMergerUtil {
         try {
           segDate2 = sdf.parse(sdf.format(segmentDate));
         } catch (ParseException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
           LOGGER.error("Error while parsing segment start time" + e.getMessage(), e);
         }
 
@@ -590,6 +625,7 @@ public final class CarbonDataMergerUtil {
     } else {
       for (LoadMetadataDetails segment : listOfSegmentsBelowThresholdSize) {
         // compaction should skip streaming segments
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
         if (segment.getSegmentStatus() == SegmentStatus.STREAMING ||
             segment.getSegmentStatus() == SegmentStatus.STREAMING_FINISH) {
           continue;
@@ -613,6 +649,7 @@ public final class CarbonDataMergerUtil {
     try {
       segDate1 = sdf.parse(sdf.format(baselineLoadStartTime));
     } catch (ParseException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Error while parsing segment start time" + e.getMessage(), e);
     }
     loadsOfSameDate.add(segment);
@@ -658,6 +695,7 @@ public final class CarbonDataMergerUtil {
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSize(
       long compactionSize, List<LoadMetadataDetails> listOfSegmentsAfterPreserve,
       CarbonLoadModel carbonLoadModel) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2805
 
     List<LoadMetadataDetails> segmentsToBeMerged =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -681,6 +719,7 @@ public final class CarbonDataMergerUtil {
       if (segment.getSegmentFile() != null) {
         // If LoadMetaDataDetail already has data size no need to calculate the data size from
         // index files. If not there then read the index file and calculate size.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2813
         if (!StringUtils.isEmpty(segment.getDataSize())) {
           sizeOfOneSegmentAcrossPartition = Long.parseLong(segment.getDataSize());
         } else {
@@ -732,8 +771,10 @@ public final class CarbonDataMergerUtil {
    * @return the data size of the segment
    */
   private static long getSizeOfSegment(String tablePath, String segId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     String loadPath = CarbonTablePath.getSegmentPath(tablePath, segId);
     CarbonFile segmentFolder =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         FileFactory.getCarbonFile(loadPath);
     return getSizeOfFactFileInLoad(segmentFolder);
   }
@@ -748,6 +789,7 @@ public final class CarbonDataMergerUtil {
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSegCount(
           List<LoadMetadataDetails> listOfSegmentsAfterPreserve, Map<String, String> tblProps) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1698
 
     List<LoadMetadataDetails> mergedSegments =
             new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -773,6 +815,7 @@ public final class CarbonDataMergerUtil {
       level1Size = noOfSegmentLevelsCount[0];
       level2Size = noOfSegmentLevelsCount[1];
       /*
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2985
       Ex. if segs => 0.1,2,3 and threshold =2,1
       during 2nd time compaction,mergeCounter becomes 1 and we checks if mergeCounter==level2Size
       then return mergedSegments which will return 0.1 and since only 1 segment(0.1) is identified ,
@@ -789,6 +832,9 @@ public final class CarbonDataMergerUtil {
     // check size of each segment , sum it up across partitions
     for (LoadMetadataDetails segment : listOfSegmentsAfterPreserve) {
       // compaction should skip streaming segments
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
       if (segment.getSegmentStatus() == SegmentStatus.STREAMING ||
           segment.getSegmentStatus() == SegmentStatus.STREAMING_FINISH) {
         continue;
@@ -844,6 +890,7 @@ public final class CarbonDataMergerUtil {
    * @return
    */
   private static List<LoadMetadataDetails> checkPreserveSegmentsPropertyReturnRemaining(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1698
       List<LoadMetadataDetails> segments, Map<String, String> tblProps) {
     // check whether the preserving of the segments from merging is enabled or not.
     // get the number of loads to be preserved. default value is system level option
@@ -903,9 +950,11 @@ public final class CarbonDataMergerUtil {
    * @return
    */
   public static long getCompactionSize(CompactionType compactionType,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1698
                                        CarbonLoadModel carbonLoadModel) {
     long compactionSize = 0;
     switch (compactionType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1586
       case MAJOR:
         // default value is system level option
         compactionSize = CarbonProperties.getInstance().getMajorCompactionSize();
@@ -934,6 +983,7 @@ public final class CarbonDataMergerUtil {
       //check if this load is an already merged load.
       if (null != segment.getMergedLoadName()) {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
         segments.add(Segment.toSegment(segment.getMergedLoadName(), null));
       } else {
         segments.add(Segment.toSegment(segment.getLoadName(), null));
@@ -951,6 +1001,7 @@ public final class CarbonDataMergerUtil {
     SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegments = null;
     try {
       validAndInvalidSegments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           .getValidAndInvalidSegments(carbonTable.isMV());
     } catch (IOException e) {
       LOGGER.error("Error while getting valid segment list for a table identifier");
@@ -994,6 +1045,7 @@ public final class CarbonDataMergerUtil {
     int numberUpdateDeltaFilesThreshold =
         CarbonProperties.getInstance().getNoUpdateDeltaFilesThresholdForIUDCompaction();
     for (LoadMetadataDetails seg : segments) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
       if ((isSegmentValid(seg)) && checkUpdateDeltaFilesInSeg(
           new Segment(seg.getLoadName(), seg.getSegmentFile()),
           absoluteTableIdentifier, carbonLoadModel.getSegmentUpdateStatusManager(),
@@ -1005,6 +1057,7 @@ public final class CarbonDataMergerUtil {
   }
 
   private static boolean isSegmentValid(LoadMetadataDetails seg) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
     return seg.getSegmentStatus() == SegmentStatus.SUCCESS ||
         seg.getSegmentStatus() == SegmentStatus.LOAD_PARTIAL_SUCCESS ||
         seg.getSegmentStatus() == SegmentStatus.MARKED_FOR_UPDATE;
@@ -1023,9 +1076,11 @@ public final class CarbonDataMergerUtil {
 
     List<String> validSegments = new ArrayList<>();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1586
     if (CompactionType.IUD_DELETE_DELTA == compactionTypeIUD) {
       int numberDeleteDeltaFilesThreshold =
           CarbonProperties.getInstance().getNoDeleteDeltaFilesThresholdForIUDCompaction();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
       List<Segment> deleteSegments = new ArrayList<>();
       for (Segment seg : segments) {
         if (checkDeleteDeltaFilesInSeg(seg, segmentUpdateStatusManager,
@@ -1037,15 +1092,19 @@ public final class CarbonDataMergerUtil {
         // This Code Block Append the Segname along with the Blocks selected for Merge instead of
         // only taking the segment name. This will help to parallelize better for each block
         // in case of Delete Horizontal Compaction.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
         for (Segment segName : deleteSegments) {
           List<String> tempSegments = getDeleteDeltaFilesInSeg(segName, segmentUpdateStatusManager,
               numberDeleteDeltaFilesThreshold);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1903
           validSegments.addAll(tempSegments);
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1586
     } else if (CompactionType.IUD_UPDDEL_DELTA == compactionTypeIUD) {
       int numberUpdateDeltaFilesThreshold =
           CarbonProperties.getInstance().getNoUpdateDeltaFilesThresholdForIUDCompaction();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
       for (Segment seg : segments) {
         if (checkUpdateDeltaFilesInSeg(seg, absoluteTableIdentifier, segmentUpdateStatusManager,
             numberUpdateDeltaFilesThreshold)) {
@@ -1068,6 +1127,7 @@ public final class CarbonDataMergerUtil {
 
     List<String> list = segmentUpdateStatusManager.getUpdateDeltaFiles(seg);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
     String[] FileParts = blkName.split(CarbonCommonConstants.FILE_SEPARATOR);
     String blockName = FileParts[FileParts.length - 1];
 
@@ -1090,9 +1150,11 @@ public final class CarbonDataMergerUtil {
     CarbonFile[] updateDeltaFiles = null;
     Set<String> uniqueBlocks = new HashSet<String>();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
     String segmentPath = CarbonTablePath.getSegmentPath(
         identifier.getTablePath(), seg.getSegmentNo());
     CarbonFile segDir =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         FileFactory.getCarbonFile(segmentPath);
     CarbonFile[] allSegmentFiles = segDir.listFiles();
 
@@ -1145,6 +1207,7 @@ public final class CarbonDataMergerUtil {
 
       CarbonFile[] deleteDeltaFiles =
           segmentUpdateStatusManager.getDeleteDeltaFilesList(seg, blockName);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       if (null != deleteDeltaFiles) {
         // The Delete Delta files may have Spill over blocks. Will consider multiple spill over
         // blocks as one. Currently DeleteDeltaFiles array contains Delete Delta Block name which
@@ -1182,6 +1245,8 @@ public final class CarbonDataMergerUtil {
       SegmentUpdateStatusManager segmentUpdateStatusManager, int numberDeltaFilesThreshold) {
 
     List<String> blockLists = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     List<String> blockNameList =
         segmentUpdateStatusManager.getBlockNameFromSegment(seg.getSegmentNo());
 
@@ -1190,7 +1255,9 @@ public final class CarbonDataMergerUtil {
       CarbonFile[] deleteDeltaFiles =
           segmentUpdateStatusManager.getDeleteDeltaFilesList(seg, blockName);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       if (null != deleteDeltaFiles && (deleteDeltaFiles.length > numberDeltaFilesThreshold)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
         blockLists.add(seg.getSegmentNo() + "/" + blockName);
       }
     }
@@ -1203,6 +1270,7 @@ public final class CarbonDataMergerUtil {
    */
   public static boolean isHorizontalCompactionEnabled() {
     if ((CarbonProperties.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3038
         .getProperty(CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE,
             CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE_DEFAULT))
         .equalsIgnoreCase("true")) {
@@ -1223,6 +1291,7 @@ public final class CarbonDataMergerUtil {
    * @throws IOException
    */
   public static List<CarbonDataMergerUtilResult> compactBlockDeleteDeltaFiles(String seg,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       String blockName, CarbonTable table, SegmentUpdateDetails[] segmentUpdateDetails,
       Long timestamp) throws IOException {
 
@@ -1235,9 +1304,11 @@ public final class CarbonDataMergerUtil {
 
     CarbonFile[] deleteDeltaFiles =
         segmentUpdateStatusManager.getDeleteDeltaFilesList(new Segment(seg), blockName);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
 
     String destFileName =
         blockName + "-" + timestamp.toString() + CarbonCommonConstants.DELETE_DELTA_FILE_EXT;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     List<String> deleteFilePathList = new ArrayList<>();
     if (null != deleteDeltaFiles && deleteDeltaFiles.length > 0 && null != deleteDeltaFiles[0]
         .getParentFile()) {
@@ -1255,6 +1326,7 @@ public final class CarbonDataMergerUtil {
       blockDetails.setDeleteDeltaEndTimestamp(timestamp.toString());
 
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
         startCompactionDeleteDeltaFiles(deleteFilePathList, blockName, fullBlockFilePath);
         blockDetails.setCompactionStatus(true);
         resultList.add(blockDetails);
@@ -1279,6 +1351,7 @@ public final class CarbonDataMergerUtil {
 
     DeleteDeltaBlockDetails deleteDeltaBlockDetails = null;
     int numberOfcores = CarbonProperties.getInstance().getNumberOfCompactingCores();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3031
     CarbonDeleteFilesDataReader dataReader = new CarbonDeleteFilesDataReader(numberOfcores);
     try {
       deleteDeltaBlockDetails =
@@ -1290,6 +1363,7 @@ public final class CarbonDataMergerUtil {
       throw new IOException();
     }
     CarbonDeleteDeltaWriterImpl carbonDeleteWriter =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
             new CarbonDeleteDeltaWriterImpl(fullBlockFilePath);
     try {
       carbonDeleteWriter.write(deleteDeltaBlockDetails);
@@ -1321,6 +1395,7 @@ public final class CarbonDataMergerUtil {
                   .equalsIgnoreCase(carbonDataMergerUtilResult.getSegmentName())) {
 
             tempSegmentUpdateDetails.setDeletedRowsInBlock(origDetails.getDeletedRowsInBlock());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
             tempSegmentUpdateDetails.setSegmentStatus(origDetails.getSegmentStatus());
             break;
           }
@@ -1338,6 +1413,7 @@ public final class CarbonDataMergerUtil {
     CarbonUpdateUtil.updateSegmentStatus(segmentUpdateDetails, table, timestamp, true);
 
     // Update the Table Status.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     String metaDataFilepath = table.getMetadataPath();
     AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
 
@@ -1353,11 +1429,13 @@ public final class CarbonDataMergerUtil {
       lockStatus = carbonLock.lockWithRetries();
       if (lockStatus) {
         LOGGER.info(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1739
                 "Acquired lock for table" + table.getDatabaseName() + "." + table.getTableName()
                         + " for table status updation");
 
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
                 SegmentStatusManager.readLoadMetadata(metaDataFilepath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
 
         for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
           if (loadMetadata.getLoadName().equalsIgnoreCase("0")) {
@@ -1366,6 +1444,7 @@ public final class CarbonDataMergerUtil {
           }
         }
         try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
           SegmentStatusManager
                   .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
         } catch (IOException e) {
@@ -1373,6 +1452,7 @@ public final class CarbonDataMergerUtil {
         }
       } else {
         LOGGER.error("Not able to acquire the lock for Table status updation for table " + table
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1739
                 .getDatabaseName() + "." + table.getTableName());
       }
     } finally {

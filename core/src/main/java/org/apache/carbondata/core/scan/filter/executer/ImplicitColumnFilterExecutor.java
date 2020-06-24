@@ -36,6 +36,7 @@ public interface ImplicitColumnFilterExecutor {
    */
   BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
       String uniqueBlockPath, boolean[] isMinMaxSet);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
 
   /**
    * This method will validate the abstract index
@@ -44,6 +45,7 @@ public interface ImplicitColumnFilterExecutor {
    *
    * @return
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
   Boolean isFilterValuesPresentInAbstractIndex(byte[][] maxValue, byte[][] minValue,
       boolean[] isMinMaxSet);
 }

@@ -67,6 +67,7 @@ public final class CarbonUnsafe {
   }
 
   public static Unsafe getUnsafe() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     return unsafe;
   }
 }

@@ -105,6 +105,7 @@ public interface FileReader {
    * @param isReadPageByPage
    */
   void setReadPageByPage(boolean isReadPageByPage);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
 
   /**
    * Whether read the data page by page from carbondata file instead of reading whole

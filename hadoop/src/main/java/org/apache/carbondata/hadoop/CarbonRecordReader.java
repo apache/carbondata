@@ -59,6 +59,8 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
   private boolean skipClearIndexAtClose = false;
 
   public CarbonRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
       InputMetricsStats inputMetricsStats, Configuration configuration) {
     this(queryModel, readSupport, configuration);
     this.inputMetricsStats = inputMetricsStats;
@@ -79,6 +81,7 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     List<CarbonInputSplit> splitList;
     if (inputSplit instanceof CarbonInputSplit) {
       splitList = new ArrayList<>(1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
       CarbonInputSplit carbonInputSplit = ((CarbonInputSplit) inputSplit);
       String splitPath = carbonInputSplit.getFilePath();
       // BlockFooterOffSet will be null in case of CarbonVectorizedReader as this has to be set
@@ -109,11 +112,15 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     }
     // It should use the exists tableBlockInfos if tableBlockInfos of queryModel is not empty
     // otherwise the prune is no use before this method
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2614
     if (!queryModel.isFG()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2389
       List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
       queryModel.setTableBlockInfos(tableBlockInfoList);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1870
     readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getTable());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
   }
 
@@ -130,6 +137,7 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
   @Override
   public T getCurrentValue() {
     rowCount += 1;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1169
     if (null != inputMetricsStats) {
       inputMetricsStats.incrementRecordRead(1L);
     }
@@ -142,6 +150,7 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
    * @return rows
    */
   public List<Object[]> getBatchValue() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-300
     if (null != inputMetricsStats) {
       inputMetricsStats.incrementRecordRead(1L);
     }
@@ -159,13 +168,16 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
   @Override
   public void close() throws IOException {
     logStatistics(rowCount, queryModel.getStatisticsRecorder());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     if (!skipClearIndexAtClose) {
       // Clear the Index cache
       IndexStoreManager.getInstance().clearIndexCache(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
           queryModel.getTable().getAbsoluteTableIdentifier(), false);
     }
     // close read support
     readSupport.close();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3122
     carbonIterator.close();
     try {
       queryExecutor.finish();
@@ -175,6 +187,7 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
   }
 
   public void setSkipClearIndexAtClose(boolean skipClearIndexAtClose) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.skipClearIndexAtClose = skipClearIndexAtClose;
   }
 }

@@ -62,6 +62,8 @@ public class ListExpressionUnitTest {
   }
 
   @Test public void testGetString() throws FilterUnsupportedException, FilterIllegalMemberException  {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     ColumnExpression left = new ColumnExpression("left_name", DataTypes.STRING);
     left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("right_name", DataTypes.STRING);

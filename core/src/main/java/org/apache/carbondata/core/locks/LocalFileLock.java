@@ -62,6 +62,7 @@ public class LocalFileLock extends AbstractCarbonLock {
    * @param lockFile
    */
   public LocalFileLock(String lockFileLocation, String lockFile) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2230
     this.lockFileDir = CarbonTablePath.getLockFilesDirPath(lockFileLocation);
     this.lockFilePath = CarbonTablePath.getLockFilePath(lockFileLocation, lockFile);
     initRetry();
@@ -76,12 +77,14 @@ public class LocalFileLock extends AbstractCarbonLock {
   public boolean lock() {
     try {
       if (!FileFactory.isFileExist(lockFileDir)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         FileFactory.mkdirs(lockFileDir);
       }
       if (!FileFactory.isFileExist(lockFilePath)) {
         FileFactory.createNewLockFile(lockFilePath);
       }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
       channel = FileChannel.open(Paths.get(lockFilePath), StandardOpenOption.WRITE,
           StandardOpenOption.APPEND);
       try {
@@ -95,6 +98,7 @@ public class LocalFileLock extends AbstractCarbonLock {
         return false;
       }
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2137
       LOGGER.info(e.getMessage());
       return false;
     }
@@ -111,6 +115,7 @@ public class LocalFileLock extends AbstractCarbonLock {
     try {
       if (null != fileLock) {
         fileLock.release();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
         status = true;
       }
     } catch (IOException e) {

@@ -29,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 /*
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1900
   Prior to Carbon 1.3 the the loadMetaData @timestamp and @loadStartTime was stored as
   as date string format "dd-MM-yyyy HH:mm:ss:SSS". The date string value is specific
   to the timezone. SO the timestamp in long by the date string will not result into
@@ -61,6 +62,7 @@ public class LoadMetadataDetails implements Serializable {
   // don't remove static as the write will fail.
   private static final SimpleDateFormat parser =
       new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1412
 
   private String timestamp;
 
@@ -124,6 +126,7 @@ public class LoadMetadataDetails implements Serializable {
   private String extraInfo;
 
   public String getDataSize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1626
     return dataSize;
   }
 
@@ -140,6 +143,7 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public long getLoadEndTime() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     if (timestamp == null) {
       return CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT;
     }
@@ -147,6 +151,7 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public void setLoadEndTime(long timestamp) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1900
     this.timestamp = Long.toString(timestamp);
   }
 
@@ -155,6 +160,7 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public void setSegmentStatus(SegmentStatus segmentStatus) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
     this.loadStatus = segmentStatus;
   }
 
@@ -181,6 +187,7 @@ public class LoadMetadataDetails implements Serializable {
    */
   public void setModificationOrdeletionTimesStamp(long modificationOrdeletionTimesStamp) {
     this.modificationOrdeletionTimesStamp =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1900
         Long.toString(modificationOrdeletionTimesStamp);
   }
 
@@ -222,6 +229,7 @@ public class LoadMetadataDetails implements Serializable {
    * @return the startLoadTime
    */
   public long getLoadStartTime() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     if (loadStartTime == null) {
       return CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT;
     }
@@ -234,6 +242,7 @@ public class LoadMetadataDetails implements Serializable {
    * @return
    */
   public long getLoadStartTimeAsLong() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     if (!loadStartTime.isEmpty()) {
       Long time = getTimeStamp(loadStartTime);
       if (null != time) {
@@ -251,6 +260,7 @@ public class LoadMetadataDetails implements Serializable {
    */
   private long convertTimeStampToLong(String factTimeStamp) {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1900
       return Long.parseLong(factTimeStamp);
     } catch (NumberFormatException nf) {
       SimpleDateFormat parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
@@ -260,11 +270,13 @@ public class LoadMetadataDetails implements Serializable {
         dateToStr = parser.parse(factTimeStamp);
         return dateToStr.getTime();
       } catch (ParseException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
         LOGGER.error("Cannot convert" + factTimeStamp + " to Time/Long type value"
             + e.getMessage(), e);
         parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
         try {
           // if the load is in progress, factTimeStamp will be null, so use current time
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1733
           if (null == factTimeStamp) {
             return System.currentTimeMillis();
           }
@@ -287,6 +299,7 @@ public class LoadMetadataDetails implements Serializable {
    */
   public Long getTimeStamp(String loadStartTime) {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1900
       return Long.parseLong(loadStartTime) * 1000L;
     } catch (NumberFormatException nf) {
       // it is the processing for existing table before carbon 1.3
@@ -296,6 +309,7 @@ public class LoadMetadataDetails implements Serializable {
         return dateToStr.getTime() * 1000;
       } catch (ParseException e) {
         LOGGER.error("Cannot convert" + loadStartTime +
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
             " to Time/Long type value" + e.getMessage(), e);
         return null;
       }
@@ -327,6 +341,7 @@ public class LoadMetadataDetails implements Serializable {
    * @return the visibility
    */
   public String getVisibility() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3578
     if (visibility == null) {
       return "true";
     }
@@ -363,6 +378,7 @@ public class LoadMetadataDetails implements Serializable {
    * @return updateDeltaEndTimestamp
    */
   public String getUpdateDeltaEndTimestamp() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3578
     if (updateDeltaEndTimestamp == null) {
       return "";
     }
@@ -384,6 +400,7 @@ public class LoadMetadataDetails implements Serializable {
    * @return updateDeltaStartTimestamp
    */
   public String getUpdateDeltaStartTimestamp() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3578
     if (updateDeltaStartTimestamp == null) {
       return "";
     }
@@ -405,6 +422,7 @@ public class LoadMetadataDetails implements Serializable {
    * @return updateStatusFileName
    */
   public String getUpdateStatusFileName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3578
     if (updateStatusFileName == null) {
       return "";
     }
@@ -421,9 +439,11 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public FileFormat getFileFormat() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3578
     if (fileFormat == null) {
       return FileFormat.COLUMNAR_V3;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
     return new FileFormat(fileFormat);
   }
 
@@ -432,6 +452,7 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public String getSegmentFile() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     return segmentFile;
   }
 
@@ -446,6 +467,8 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public String getExtraInfo() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3338
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3296
     return extraInfo;
   }
 
@@ -454,6 +477,7 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public String getPath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
     return path;
   }
 
@@ -462,6 +486,7 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public boolean isCarbonFormat() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3516
     return getFileFormat().equals(FileFormat.COLUMNAR_V3)
         || getFileFormat().equals(FileFormat.ROW_V1);
   }
@@ -470,6 +495,7 @@ public class LoadMetadataDetails implements Serializable {
    * Before writing table status file, call this to make the metadata smaller.
    * It checks if fields are default value, then make it null so GSON does not write it
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3578
   void removeUnnecessaryField() {
     if (StringUtils.isEmpty(updateDeltaEndTimestamp)) {
       updateDeltaEndTimestamp = null;

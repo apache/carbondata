@@ -37,6 +37,7 @@ public class TimestampStreamReader extends CarbonColumnVectorImpl
   public TimestampStreamReader(int batchSize, DataType dataType) {
     super(batchSize, dataType);
     this.batchSize = batchSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2818
     this.builder = type.createBlockBuilder(null, batchSize);
   }
 
@@ -57,6 +58,7 @@ public class TimestampStreamReader extends CarbonColumnVectorImpl
 
   @Override
   public void putLongs(int rowId, int count, long value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     for (int i = 0; i < count; i++) {
       type.writeLong(builder, value / 1000);
     }
@@ -76,6 +78,7 @@ public class TimestampStreamReader extends CarbonColumnVectorImpl
 
   @Override
   public void reset() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2818
     builder = type.createBlockBuilder(null, batchSize);
   }
 
@@ -84,6 +87,7 @@ public class TimestampStreamReader extends CarbonColumnVectorImpl
     if (value == null) {
       putNull(rowId);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
       putLong(rowId, (Long) value);
     }
   }

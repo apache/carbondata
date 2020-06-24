@@ -21,8 +21,10 @@ package org.apache.carbondata.core.preagg;
  * enum for timeseries function
  */
 public enum TimeSeriesFunctionEnum {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1519
   SECOND("second", 0),
   MINUTE("minute", 1),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3531
   FIVE_MINUTE("five_minute", 2),
   TEN_MINUTE("ten_minute", 3),
   FIFTEEN_MINUTE("fifteen_minute", 4),

@@ -74,8 +74,10 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     rowParser = new RowParserImpl(getOutput(), configuration);
     executorService = Executors.newCachedThreadPool(new CarbonThreadFactory(
         "InputProcessorPool:" + configuration.getTableIdentifier().getCarbonTableIdentifier()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3304
             .getTableName(), true));
     // if logger is enabled then raw data will be required.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1249
     this.isRawDataRequired = CarbonDataProcessorUtil.isRawDataRequired(configuration);
   }
 
@@ -88,6 +90,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     for (int i = 0; i < outIterators.length; i++) {
       outIterators[i] =
           new InputProcessorIterator(readerIterators[i], rowParser, batchSize,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1249
               configuration.isPreFetch(), executorService, rowCounter, isRawDataRequired);
     }
     return outIterators;
@@ -97,6 +100,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
   public void close() {
     if (!closed) {
       super.close();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2751
       if (null != executorService) {
         executorService.shutdownNow();
       }
@@ -143,6 +147,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
     public InputProcessorIterator(List<CarbonIterator<Object[]>> inputIterators,
         RowParser rowParser, int batchSize, boolean preFetch, ExecutorService executorService,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1249
         AtomicLong rowCounter, boolean isRawDataRequired) {
       this.inputIterators = inputIterators;
       this.batchSize = batchSize;
@@ -155,6 +160,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
       this.preFetch = preFetch;
       this.nextBatch = false;
       this.firstTime = true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1249
       this.isRawDataRequired = isRawDataRequired;
     }
 
@@ -228,6 +234,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
       // Create batch and fill it.
       CarbonRowBatch carbonRowBatch = new CarbonRowBatch(batchSize);
       int count = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1249
       if (isRawDataRequired) {
         while (internalHasNext() && count < batchSize) {
           Object[] rawRow = currentIterator.next();

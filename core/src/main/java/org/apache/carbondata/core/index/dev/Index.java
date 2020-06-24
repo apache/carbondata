@@ -48,6 +48,7 @@ public interface Index<T extends Blocklet> {
    */
   List<T> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
       FilterExecuter filterExecuter, CarbonTable table) throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
 
   /**
    * Prune the table with filter expression. It returns the list of
@@ -89,6 +90,7 @@ public interface Index<T extends Blocklet> {
    * clears all the resources
    */
   void finish();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2433
 
   /**
    * Returns number of records information that are stored in Index.

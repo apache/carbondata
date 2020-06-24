@@ -54,6 +54,7 @@ public class StreamBlockletWriter {
   private DataType[] measureDataTypes;
 
   // blocklet level stats
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2853
   ColumnPageStatsCollector[] dimStatsCollectors;
   ColumnPageStatsCollector[] msrStatsCollectors;
   // blocklet level Min/Max
@@ -68,6 +69,8 @@ public class StreamBlockletWriter {
     this.dimCountWithoutComplex = dimCountWithoutComplex;
     this.measureCount = measureCount;
     this.measureDataTypes = measureDataTypes;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
     initializeStatsCollector();
   }
@@ -104,6 +107,7 @@ public class StreamBlockletWriter {
   void reset() {
     count = 0;
     rowIndex = -1;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2853
     initializeStatsCollector();
     blockletMinMaxIndex = null;
   }
@@ -183,6 +187,7 @@ public class StreamBlockletWriter {
   }
 
   private SimpleStatsResult[] getDimStats() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2853
     if (dimStatsCollectors == null) {
       return new SimpleStatsResult[0];
     }
@@ -222,6 +227,7 @@ public class StreamBlockletWriter {
     blockletHeader.setMutation(MutationType.INSERT);
     blockletHeader.setBlocklet_info(blockletInfo);
     // add blocklet level min/max
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2853
     blockletMinMaxIndex = generateBlockletMinMax();
     if (blockletInfo.getNum_rows() > 1) {
       BlockletIndex blockletIndex = new BlockletIndex();

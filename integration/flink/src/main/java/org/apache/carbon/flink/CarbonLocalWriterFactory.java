@@ -41,6 +41,8 @@ public final class CarbonLocalWriterFactory extends CarbonWriterFactory {
               "Writer property [" + CarbonLocalProperty.DATA_TEMP_PATH + "] is not set."
       );
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     final String writerIdentifier = UUID.randomUUID().toString();
     final String writePath = writeTempPath + writerIdentifier.replace("-", "") + "/";
     final CarbonTable table = this.getTable();

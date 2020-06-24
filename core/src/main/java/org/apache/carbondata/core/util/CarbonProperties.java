@@ -125,6 +125,7 @@ public final class CarbonProperties {
    * @param key
    */
   private void validateAndLoadDefaultProperties(String key) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
     switch (key) {
       case BLOCKLET_SIZE:
         validateBlockletSize();
@@ -135,6 +136,7 @@ public final class CarbonProperties {
       case CARBON_DATA_FILE_VERSION:
         validateCarbonDataFileVersion();
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2043
       case CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT:
         validateDynamicSchedulerTimeOut();
         break;
@@ -150,6 +152,7 @@ public final class CarbonProperties {
       case ENABLE_UNSAFE_SORT:
         validateEnableUnsafeSort();
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2507
       case ENABLE_OFFHEAP_SORT:
         validateEnableOffHeapSort();
         break;
@@ -165,6 +168,7 @@ public final class CarbonProperties {
       case HANDOFF_SIZE:
         validateHandoffSize();
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2036
       case CARBON_TASK_DISTRIBUTION:
         validateCarbonTaskDistribution();
         break;
@@ -188,24 +192,32 @@ public final class CarbonProperties {
       case ENABLE_AUTO_HANDOFF:
         validateHandoffSize();
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2043
       case CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO:
         validateSchedulerMinRegisteredRatio();
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2644
       case CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE:
         validateSortMemorySpillPercentage();
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
       case CARBON_MINMAX_ALLOWED_BYTE_COUNT:
         validateStringCharacterLimit();
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3246
       case DETAIL_QUERY_BATCH_SIZE:
         validateDetailQueryBatchSize();
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
       case CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD:
         validateIndexServerSerializationThreshold();
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3515
       case CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB:
         validateAndGetLocalDictionarySizeThresholdInMB();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2377
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       case CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE:
         validateDMSchemaStorageProvider();
         break;
@@ -244,20 +256,25 @@ public final class CarbonProperties {
     validateBlockletSize();
     validateSortSize();
     validateCarbonDataFileVersion();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2043
     validateDynamicSchedulerTimeOut();
     validatePrefetchBufferSize();
     validateBlockletGroupSizeInMB();
     validateNumberOfColumnPerIORead();
     validateEnableUnsafeSort();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2507
     validateEnableOffHeapSort();
     validateCustomBlockDistribution();
     validateEnableVectorReader();
     validateLockType();
     validateCarbonCSVReadBufferSizeByte();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1818
     validateHandoffSize();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2036
     validateCarbonTaskDistribution();
     // The method validate the validity of configured carbon.timestamp.format value
     // and reset to default value if validation fail
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
     validateTimeFormatKey(CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
     // The method validate the validity of configured carbon.date.format value
@@ -266,15 +283,24 @@ public final class CarbonProperties {
         CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
     validateSortFileWriteBufferSize();
     validateSortIntermediateFilesLimit();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1904
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1905
     validateEnableAutoHandoff();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2043
     validateSchedulerMinRegisteredRatio();
     validateWorkingMemory();
     validateSortStorageMemory();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     validateEnableQueryStatistics();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2644
     validateSortMemorySpillPercentage();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     validateStringCharacterLimit();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3246
     validateDetailQueryBatchSize();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     validateIndexServerSerializationThreshold();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3515
     validateAndGetLocalDictionarySizeThresholdInMB();
   }
 
@@ -339,6 +365,7 @@ public final class CarbonProperties {
    * minimum required registered resource for starting block distribution
    */
   private void validateSchedulerMinRegisteredRatio() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2043
     String value = carbonProperties
         .getProperty(CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO,
             CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT);
@@ -393,8 +420,10 @@ public final class CarbonProperties {
   }
 
   private void validateLockType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     String lockTypeConfigured = carbonProperties
         .getProperty(LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     if (lockTypeConfigured != null) {
       switch (lockTypeConfigured.toUpperCase()) {
         // if user is setting the lock type as CARBON_LOCK_TYPE_ZOOKEEPER then no need to validate
@@ -402,6 +431,7 @@ public final class CarbonProperties {
         // CARBON_LOCK_TYPE_LOCAL and for the distributed one CARBON_LOCK_TYPE_HDFS
         case CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER:
           break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
         case  CarbonCommonConstants.CARBON_LOCK_TYPE_CUSTOM:
           break;
         case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
@@ -420,7 +450,10 @@ public final class CarbonProperties {
    * @param lockTypeConfigured
    */
   private void validateAndConfigureLockType(String lockTypeConfigured) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     String lockTypeByFS = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
     Configuration configuration = FileFactory.getConfiguration();
     String defaultFs = configuration.get("fs.defaultFS");
     if (null != defaultFs && (defaultFs.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)
@@ -466,6 +499,7 @@ public final class CarbonProperties {
   private void validateCustomBlockDistribution() {
     String customBlockDistributionStr =
         carbonProperties.getProperty(CARBON_CUSTOM_BLOCK_DISTRIBUTION);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     if (customBlockDistributionStr == null) {
       carbonProperties.setProperty(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION,
           CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT);
@@ -503,6 +537,7 @@ public final class CarbonProperties {
 
   private void validateEnableUnsafeSort() {
     String unSafeSortStr = carbonProperties.getProperty(ENABLE_UNSAFE_SORT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     if (unSafeSortStr == null) {
       carbonProperties.setProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
           CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT);
@@ -562,6 +597,7 @@ public final class CarbonProperties {
   private void validatePrefetchBufferSize() {
     String prefetchBufferSizeStr =
         carbonProperties.getProperty(CARBON_PREFETCH_BUFFERSIZE);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
 
     if (null == prefetchBufferSizeStr || prefetchBufferSizeStr.length() == 0) {
       carbonProperties.setProperty(CARBON_PREFETCH_BUFFERSIZE,
@@ -573,6 +609,7 @@ public final class CarbonProperties {
         LOGGER.info("The prefetch buffer size value \"" + prefetchBufferSizeStr
             + "\" is invalid. Using the default value \""
             + CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT + "\"");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
         carbonProperties.setProperty(CARBON_PREFETCH_BUFFERSIZE,
             CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT);
       }
@@ -581,6 +618,7 @@ public final class CarbonProperties {
 
   private void validateHandoffSize() {
     String handoffSizeStr = carbonProperties.getProperty(HANDOFF_SIZE);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1818
     if (null == handoffSizeStr || handoffSizeStr.length() == 0) {
       carbonProperties.setProperty(HANDOFF_SIZE,
           "" + CarbonCommonConstants.HANDOFF_SIZE_DEFAULT);
@@ -591,6 +629,7 @@ public final class CarbonProperties {
           LOGGER.info("The streaming segment max size configured value " + handoffSizeStr +
               " is invalid. Using the default value "
               + CarbonCommonConstants.HANDOFF_SIZE_DEFAULT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
           carbonProperties.setProperty(HANDOFF_SIZE,
               "" + CarbonCommonConstants.HANDOFF_SIZE_DEFAULT);
         }
@@ -605,6 +644,7 @@ public final class CarbonProperties {
   }
 
   private void validateEnableAutoHandoff() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     String offHeapSortStr = carbonProperties.getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT);
     if (offHeapSortStr == null) {
       carbonProperties.setProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
@@ -625,6 +665,7 @@ public final class CarbonProperties {
   public boolean isIndexParallelLoadingEnabled(String databaseName, String tableName) {
     // Check for propertyKey.dbname.table name for session based set for a specific table.
     String loadIndexParallel = getSessionPropertyValue(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3779
         CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL + databaseName + "." + tableName);
     // If table table property is not specified then check for session for all the tables
     // otherwise check in carbon.properties
@@ -645,6 +686,7 @@ public final class CarbonProperties {
    */
   private void validateBlockletGroupSizeInMB() {
     String numberOfPagePerBlockletColumnString = carbonProperties
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
         .getProperty(BLOCKLET_SIZE_IN_MB,
             CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE);
     try {
@@ -654,6 +696,7 @@ public final class CarbonProperties {
                         "Using the default value \"%s\"",
                 numberOfPagePerBlockletColumnString,
                 CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
         carbonProperties.setProperty(BLOCKLET_SIZE_IN_MB,
             CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE);
       }
@@ -675,15 +718,18 @@ public final class CarbonProperties {
    */
   private void validateNumberOfColumnPerIORead() {
     String numberOfColumnPerIOString = carbonProperties
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
         .getProperty(NUMBER_OF_COLUMN_TO_READ_IN_IO,
             CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
       short numberOfColumnPerIO = Short.parseShort(numberOfColumnPerIOString);
       if (numberOfColumnPerIO < CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_MIN
           || numberOfColumnPerIO > CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_MAX) {
         LOGGER.info("The Number Of pages per blocklet column value \"" + numberOfColumnPerIOString
             + "\" is invalid. Using the default value \""
             + CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
         carbonProperties.setProperty(NUMBER_OF_COLUMN_TO_READ_IN_IO,
             CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
       }
@@ -700,6 +746,7 @@ public final class CarbonProperties {
    * This method validates the blocklet size
    */
   private void validateBlockletSize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
     String blockletSizeStr = carbonProperties.getProperty(BLOCKLET_SIZE,
         CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
     try {
@@ -710,6 +757,7 @@ public final class CarbonProperties {
         LOGGER.info("The blocklet size value \"" + blockletSizeStr
             + "\" is invalid. Using the default value \""
             + CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
         carbonProperties.setProperty(BLOCKLET_SIZE,
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
       }
@@ -726,6 +774,7 @@ public final class CarbonProperties {
    * This method validates the index server serialization size
    */
   private void validateIndexServerSerializationThreshold() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     String serializationSizeString = carbonProperties
         .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD,
             CarbonCommonConstants.CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD_DEFAULT);
@@ -759,6 +808,7 @@ public final class CarbonProperties {
    */
   private void validateSortSize() {
     String sortSizeStr = carbonProperties
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
         .getProperty(SORT_SIZE, CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL);
     try {
       int sortSize = Integer.parseInt(sortSizeStr);
@@ -769,6 +819,7 @@ public final class CarbonProperties {
                             "Using the default value \"%s\"",
                     sortSizeStr,
                     CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
         carbonProperties.setProperty(SORT_SIZE,
             CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL);
       }
@@ -789,6 +840,7 @@ public final class CarbonProperties {
    */
   private void validateCarbonDataFileVersion() {
     String carbondataFileVersionString =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
         carbonProperties.getProperty(CARBON_DATA_FILE_VERSION);
     if (carbondataFileVersionString == null) {
       // use default property if user does not specify version property
@@ -796,6 +848,7 @@ public final class CarbonProperties {
           CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION);
     } else {
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3061
         carbonProperties.setProperty(CARBON_DATA_FILE_VERSION,
             ColumnarFormatVersion.valueOf(carbondataFileVersionString).name());
       } catch (IllegalArgumentException e) {
@@ -807,6 +860,7 @@ public final class CarbonProperties {
             CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3061
     LOGGER.info(
         "Considered file format is: " + carbonProperties.getProperty(CARBON_DATA_FILE_VERSION));
   }
@@ -816,6 +870,7 @@ public final class CarbonProperties {
    * memory
    */
   private void loadProperties() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3521
     String propertyPath = System.getProperty(CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH,
             CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH_DEFAULT);
 
@@ -845,9 +900,11 @@ public final class CarbonProperties {
     }
 
     print();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
     try {
       initPropertySet();
     } catch (IllegalAccessException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Illegal access to declared field" + e.getMessage(), e);
     }
   }
@@ -856,6 +913,7 @@ public final class CarbonProperties {
    * Return the store path
    */
   public static String getStorePath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
     String storePath = getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION);
     if (storePath == null) {
       // Internally spark sets the value of spark.warehouse.dir to hive.metastore.warehouse.dir.
@@ -925,9 +983,11 @@ public final class CarbonProperties {
    */
   public CarbonProperties addProperty(String key, String value) {
     carbonProperties.setProperty(key, value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1346
     addedProperty.put(key, value);
     // the method will validate the added property
     // if the added property is not valid then will reset to default value.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
     validateAndLoadDefaultProperties(key.toLowerCase());
     return this;
   }
@@ -938,6 +998,7 @@ public final class CarbonProperties {
    * @param key
    */
   public void addNonSerializableProperty(String key, String value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2585
     carbonProperties.setProperty(key, value);
   }
 
@@ -945,6 +1006,7 @@ public final class CarbonProperties {
    * Remove the specified key in property
    */
   public CarbonProperties removeProperty(String key) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2377
     carbonProperties.remove(key);
     addedProperty.remove(key);
     return this;
@@ -955,11 +1017,13 @@ public final class CarbonProperties {
   }
 
   public ColumnarFormatVersion getFormatVersion() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
     String versionStr = getInstance().getProperty(CARBON_DATA_FILE_VERSION);
     if (versionStr == null) {
       return getDefaultFormatVersion();
     } else {
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3061
         return ColumnarFormatVersion.valueOf(versionStr);
       } catch (IllegalArgumentException e) {
         return getDefaultFormatVersion();
@@ -975,6 +1039,7 @@ public final class CarbonProperties {
   public long getMajorCompactionSize() {
     long compactionSize;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1698
       compactionSize = Long.parseLong(getProperty(
               CarbonCommonConstants.CARBON_MAJOR_COMPACTION_SIZE,
               CarbonCommonConstants.DEFAULT_CARBON_MAJOR_COMPACTION_SIZE));
@@ -998,6 +1063,7 @@ public final class CarbonProperties {
               CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER));
       // checking min and max . 0  , 100 is min & max.
       if (numberOfSegmentsToBePreserved < 0 || numberOfSegmentsToBePreserved > 100) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
         LOGGER.warn("The specified value for property "
             + CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER + " is incorrect."
             + " Correct value should be in range of 0 -100. Taking the default value.");
@@ -1028,6 +1094,7 @@ public final class CarbonProperties {
         CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD);
     int[] compactionSize = getIntArray(commaSeparatedLevels);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
     if (0 == compactionSize.length) {
       compactionSize = getIntArray(CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD);
     }
@@ -1048,6 +1115,7 @@ public final class CarbonProperties {
     for (String levelSize : levels) {
       try {
         int size = Integer.parseInt(levelSize.trim());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3648
         if (validate(size,
             CarbonCommonConstants.NUMBER_OF_SEGMENT_COMPACTED_PERTIME_UPPER_LIMIT,
             CarbonCommonConstants.NUMBER_OF_SEGMENT_COMPACTED_PERTIME_LOWER_LIMIT,
@@ -1057,14 +1125,17 @@ public final class CarbonProperties {
               "Given value for property" + size
                   + " is not proper. Taking the default value "
                   + CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
           return new int[0];
         }
         compactionSize[i++] = size;
       } catch (NumberFormatException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
         LOGGER.warn(
             "Given value for property" + CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD
                 + " is not proper. Taking the default value "
                 + CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
         return new int[0];
       }
     }
@@ -1076,6 +1147,7 @@ public final class CarbonProperties {
     try {
       numberOfCores = Integer.parseInt(
           CarbonProperties.getInstance().getProperty(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3031
               key,
               CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
     } catch (NumberFormatException exc) {
@@ -1092,6 +1164,7 @@ public final class CarbonProperties {
    * @return the number of cores to be used while loading data
    */
   public int getNumberOfLoadingCores() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3031
     return getNumberOfCores(CarbonCommonConstants.NUM_CORES_LOADING);
   }
 
@@ -1124,6 +1197,7 @@ public final class CarbonProperties {
     } catch (Exception e) {
       inMemoryChunkSizeInMB =
           Integer.parseInt(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
       LOGGER.warn("Problem in parsing the sort memory chunk size, setting with default value"
           + inMemoryChunkSizeInMB);
     }
@@ -1162,6 +1236,7 @@ public final class CarbonProperties {
 
   public static int getQueryBatchSize() {
     int batchSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3396
     String batchSizeString =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE);
     if (null != batchSizeString) {
@@ -1178,10 +1253,12 @@ public final class CarbonProperties {
   }
 
   public long getHandoffSize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1818
     Long handoffSize;
     try {
       handoffSize = Long.parseLong(
           CarbonProperties.getInstance().getProperty(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
               HANDOFF_SIZE,
               "" + CarbonCommonConstants.HANDOFF_SIZE_DEFAULT
           )
@@ -1193,18 +1270,23 @@ public final class CarbonProperties {
   }
 
   public boolean isEnableAutoHandoff() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1904
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1905
     String enableAutoHandoffStr = CarbonProperties.getInstance().getProperty(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
         ENABLE_AUTO_HANDOFF,
         CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT);
     return enableAutoHandoffStr.equalsIgnoreCase("true");
   }
 
   public boolean isEnableVectorReader() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2323
     return getInstance().getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
         CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT).equalsIgnoreCase("true");
   }
 
   public static boolean isEnableTableStatusBackup() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3582
     return getInstance().getProperty(CarbonCommonConstants.ENABLE_TABLE_STATUS_BACKUP,
         CarbonCommonConstants.ENABLE_TABLE_STATUS_BACKUP_DEFAULT).equalsIgnoreCase("true");
   }
@@ -1229,6 +1311,7 @@ public final class CarbonProperties {
    * This method will validate and set the value for executor start up waiting time out
    */
   private void validateDynamicSchedulerTimeOut() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2043
     validateRange(CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT,
         CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT_DEFAULT,
         CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT_MIN,
@@ -1248,6 +1331,7 @@ public final class CarbonProperties {
               CarbonCommonConstants.DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION));
 
       if (numberOfDeltaFilesThreshold < 0 || numberOfDeltaFilesThreshold > 10000) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
         LOGGER.warn("The specified value for property "
             + CarbonCommonConstants.UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION
             + "is incorrect."
@@ -1256,6 +1340,7 @@ public final class CarbonProperties {
             CarbonCommonConstants.DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);
       }
     } catch (NumberFormatException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
       LOGGER.warn("The specified value for property "
           + CarbonCommonConstants.UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION + "is incorrect."
           + " Correct value should be in range of 0 -10000. Taking the default value.");
@@ -1278,6 +1363,7 @@ public final class CarbonProperties {
               CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION));
 
       if (numberOfDeltaFilesThreshold < 0 || numberOfDeltaFilesThreshold > 10000) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
         LOGGER.warn("The specified value for property "
             + CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION
             + "is incorrect."
@@ -1286,6 +1372,7 @@ public final class CarbonProperties {
             CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);
       }
     } catch (NumberFormatException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
       LOGGER.warn("The specified value for property "
           + CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION + "is incorrect."
           + " Correct value should be in range of 0 -10000. Taking the default value.");
@@ -1300,10 +1387,12 @@ public final class CarbonProperties {
    * @return String
    */
   public String getGlobalSortRddStorageLevel() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1366
     String storageLevel = getProperty(CarbonCommonConstants.CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL,
         CarbonCommonConstants.CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL_DEFAULT);
     boolean validateStorageLevel = CarbonUtil.isValidStorageLevel(storageLevel);
     if (!validateStorageLevel) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
       LOGGER.warn("The " + CarbonCommonConstants.CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL
           + " configuration value is invalid. It will use default storage level("
           + CarbonCommonConstants.CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL_DEFAULT
@@ -1319,6 +1408,7 @@ public final class CarbonProperties {
    */
   public int getParallelismForSegmentUpdate() {
     int parallelism = Integer.parseInt(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1373
         CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM_DEFAULT);
     boolean isInvalidValue = false;
     try {
@@ -1333,6 +1423,9 @@ public final class CarbonProperties {
     }
 
     if (isInvalidValue) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
       LOGGER.warn("The specified value for property "
           + CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM
           + " is incorrect. Correct value should be in range of 0 - 1000."
@@ -1350,9 +1443,11 @@ public final class CarbonProperties {
    * @return boolean
    */
   public boolean isPersistUpdateDataset() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3038
     String isPersistEnabled = getProperty(CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE,
             CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE_DEFAULT);
     boolean validatePersistEnabled = CarbonUtil.validateBoolean(isPersistEnabled);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1462
     if (!validatePersistEnabled) {
       LOGGER.warn("The " + CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE
           + " configuration value is invalid. It will use default value("
@@ -1372,6 +1467,7 @@ public final class CarbonProperties {
         CarbonCommonConstants.CARBON_UPDATE_STORAGE_LEVEL_DEFAULT);
     boolean validateStorageLevel = CarbonUtil.isValidStorageLevel(storageLevel);
     if (!validateStorageLevel) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
       LOGGER.warn("The " + CarbonCommonConstants.CARBON_UPDATE_STORAGE_LEVEL
           + " configuration value is invalid. It will use default storage level("
           + CarbonCommonConstants.CARBON_UPDATE_STORAGE_LEVEL_DEFAULT
@@ -1386,12 +1482,15 @@ public final class CarbonProperties {
    * @return compressor name
    */
   public String getSortTempCompressor() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1839
     String compressor = getProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
         CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR_DEFAULT).toUpperCase();
     if (compressor.isEmpty() || "SNAPPY".equals(compressor) || "GZIP".equals(compressor)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2553
         || "BZIP2".equals(compressor) || "LZ4".equals(compressor) || "ZSTD".equals(compressor)) {
       return compressor;
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
       LOGGER.warn("The ".concat(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR)
           .concat(" configuration value is invalid. Only snappy, gzip, bip2, lz4, zstd and")
           .concat(" empty are allowed. It will not compress the sort temp files by default"));
@@ -1404,6 +1503,7 @@ public final class CarbonProperties {
    * @return true, if enabled; false for not enabled.
    */
   public boolean isLoadSkewedDataOptimizationEnabled() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2023
     String skewedEnabled = getProperty(
         CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION,
         CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION_DEFAULT);
@@ -1420,6 +1520,7 @@ public final class CarbonProperties {
   }
 
   public Map<String, String> getAddedProperty() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1346
     return addedProperty;
   }
 
@@ -1429,11 +1530,13 @@ public final class CarbonProperties {
    * @param externalPropertySet
    */
   public void addPropertyToPropertySet(Set<String> externalPropertySet) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1851
     propertySet.addAll(externalPropertySet);
   }
 
   private void validateWorkingMemory() {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
       String unsafeWorkingMemoryStr =
           carbonProperties.getProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB);
       if (unsafeWorkingMemoryStr == null) {
@@ -1479,6 +1582,7 @@ public final class CarbonProperties {
   }
 
   private void validateEnableQueryStatistics() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     String enableQueryStatistics = carbonProperties.getProperty(
         CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
         CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
@@ -1505,13 +1609,16 @@ public final class CarbonProperties {
    */
   public int getHeapMemoryPoolingThresholdBytes() {
     int thresholdSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2184
     try {
       thresholdSize = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES,
               CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT));
     } catch (NumberFormatException exc) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
       LOGGER.warn(
           "The heap memory pooling threshold bytes is invalid. Using the default value "
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2258
           + CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT);
       thresholdSize = Integer.parseInt(
           CarbonCommonConstants.CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT);
@@ -1522,6 +1629,7 @@ public final class CarbonProperties {
   public int getRangeColumnScaleFactor() {
     boolean isValid = true;
     int scaleFactor = 1;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3242
     try {
       scaleFactor = Integer.parseInt(CarbonProperties.getInstance().getProperty(
           CarbonCommonConstants.CARBON_RANGE_COLUMN_SCALE_FACTOR,
@@ -1548,6 +1656,7 @@ public final class CarbonProperties {
    * It will be converted to microseconds to return.
    */
   public long getSegmentLockFilesPreserveHours() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2230
     long preserveSeconds;
     try {
       int preserveHours = Integer.parseInt(CarbonProperties.getInstance()
@@ -1555,7 +1664,10 @@ public final class CarbonProperties {
               CarbonCommonConstants.CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS_DEFAULT));
       preserveSeconds = preserveHours * 3600 * 1000L;
     } catch (NumberFormatException exc) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
       LOGGER.warn(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2258
           "The value of '" + CarbonCommonConstants.CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS
           + "' is invalid. Using the default value "
           + CarbonCommonConstants.CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS_DEFAULT);
@@ -1575,6 +1687,7 @@ public final class CarbonProperties {
           .getProperty(CarbonCommonConstants.CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT,
               CarbonCommonConstants.CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT_DEFAULT));
     } catch (NumberFormatException exc) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
       LOGGER.warn(
           "The value of '" + CarbonCommonConstants.CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT
           + "' is invalid. Using the default value "
@@ -1589,6 +1702,7 @@ public final class CarbonProperties {
    * Get the system folder location based on database location.
    */
   public String getSystemFolderLocationPerDatabase(String databaseLocation) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3792
     return databaseLocation + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonTablePath.SYSTEM_FOLDER_DIR;
   }
@@ -1599,6 +1713,7 @@ public final class CarbonProperties {
    */
   public int getSortMemorySpillPercentage() {
     int spillPercentage = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2644
     try {
       String spillPercentageStr = getProperty(
           CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
@@ -1612,12 +1727,15 @@ public final class CarbonProperties {
   }
 
   public boolean isPushRowFiltersForVector() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3011
     String pushFilters = getProperty(CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR,
             CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT);
     return Boolean.parseBoolean(pushFilters);
   }
 
   public boolean isRangeCompactionAllowed() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3377
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3432
     String isRangeCompact = getProperty(CarbonCommonConstants.CARBON_ENABLE_RANGE_COMPACTION,
         CarbonCommonConstants.CARBON_ENABLE_RANGE_COMPACTION_DEFAULT);
     return Boolean.parseBoolean(isRangeCompact);
@@ -1657,6 +1775,7 @@ public final class CarbonProperties {
    */
   private void validateStringCharacterLimit() {
     int allowedCharactersLimit = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     try {
       allowedCharactersLimit = Integer.parseInt(carbonProperties
           .getProperty(CARBON_MINMAX_ALLOWED_BYTE_COUNT,
@@ -1692,6 +1811,7 @@ public final class CarbonProperties {
    * default value for this property
    */
   private void validateDetailQueryBatchSize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3246
     String batchSizeString =
         carbonProperties.getProperty(DETAIL_QUERY_BATCH_SIZE);
     if (batchSizeString == null) {
@@ -1704,6 +1824,7 @@ public final class CarbonProperties {
       try {
         batchSize = Integer.parseInt(batchSizeString);
         if (batchSize < DETAIL_QUERY_BATCH_SIZE_MIN || batchSize > DETAIL_QUERY_BATCH_SIZE_MAX) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
           LOGGER.warn("Invalid carbon.detail.batch.size.Using default value "
               + DETAIL_QUERY_BATCH_SIZE_DEFAULT);
           carbonProperties.setProperty(DETAIL_QUERY_BATCH_SIZE,
@@ -1720,6 +1841,7 @@ public final class CarbonProperties {
 
   private void validateDMSchemaStorageProvider() {
     String provider =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         carbonProperties.getProperty(CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE);
     if (provider == null) {
       carbonProperties.setProperty(
@@ -1749,6 +1871,8 @@ public final class CarbonProperties {
   public boolean isDistributedPruningEnabled(String dbName, String tableName) {
     // Check if user has enabled/disabled the use of index server for the current session using
     // the set command
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     String configuredValue = getSessionPropertyValue(
         CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER + "." + dbName + "." + tableName);
     if (configuredValue == null) {
@@ -1766,6 +1890,7 @@ public final class CarbonProperties {
    * Check if user has enabled/disabled the use of pre-priming for index server
    */
   public boolean isIndexServerPrePrimingEnabled() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3492
     String configuredValue = carbonProperties.getProperty(
             CarbonCommonConstants.CARBON_INDEXSEVER_ENABLE_PREPRIMING);
     return Boolean.parseBoolean(configuredValue);
@@ -1830,6 +1955,7 @@ public final class CarbonProperties {
    */
   public static int getNumOfThreadsForPruning() {
     int numOfThreadsForPruning;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3782
     String maxDriverThreadsForBockPruning =
         CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING;
     int defaultNumberOfThreads =
@@ -1856,6 +1982,7 @@ public final class CarbonProperties {
    */
   public static int getDriverPruningMultiThreadEnableFilesCount() {
     int driverPruningMultiThreadEnableFilesCount = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3700
     try {
       driverPruningMultiThreadEnableFilesCount = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(
@@ -1885,6 +2012,7 @@ public final class CarbonProperties {
    * @return input metrics interval
    */
   public static Long getInputMetricsInterval() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3487
     String metrics = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.INPUT_METRICS_UPDATE_INTERVAL);
     if (metrics == null) {
@@ -1909,6 +2037,7 @@ public final class CarbonProperties {
    * @return boolean prefetch value
    */
   public static Boolean getQueryPrefetchEnable() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3509
     String prefetchEnable = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_QUERY_PREFETCH_ENABLE);
     if (prefetchEnable == null) {
@@ -1925,6 +2054,7 @@ public final class CarbonProperties {
    * @return boolean
    */
   public static Boolean isUniqueValueCheckEnabled() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3618
     String needValidate = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_UPDATE_CHECK_UNIQUE_VALUE);
     if (needValidate == null) {
@@ -1940,6 +2070,7 @@ public final class CarbonProperties {
    * get local dictionary size threshold in mb.
    */
   private void validateAndGetLocalDictionarySizeThresholdInMB() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3515
     String sizeStr = carbonProperties
         .getProperty(CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB);
     String defaultValue = Integer
@@ -1976,6 +2107,7 @@ public final class CarbonProperties {
 
   public static String getIndexStorageProvider() {
     String provider = CarbonProperties.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         .getProperty(CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE);
     if (provider == null) {
       return CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DEFAULT;
@@ -1989,6 +2121,7 @@ public final class CarbonProperties {
    * @return boolean
    */
   public static Boolean isBadRecordHandlingEnabledForInsert() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
     String badRecordHandling = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT);
     if (badRecordHandling == null) {
@@ -2004,12 +2137,14 @@ public final class CarbonProperties {
   }
 
   public static boolean isQueryStageInputEnabled() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3710
     return Boolean.parseBoolean(getInstance().getProperty(
         CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT,
         CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT_DEFAULT));
   }
 
   public static boolean isAuditEnabled() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3726
     return Boolean.parseBoolean(getInstance().getProperty(
         CarbonCommonConstants.CARBON_ENABLE_AUDIT,
         CarbonCommonConstants.CARBON_ENABLE_AUDIT_DEFAULT

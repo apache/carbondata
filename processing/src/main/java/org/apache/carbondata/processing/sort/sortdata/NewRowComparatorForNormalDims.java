@@ -38,6 +38,7 @@ public class NewRowComparatorForNormalDims implements Comparator<Object[]>, Seri
    * @param numberOfSortColumns
    */
   public NewRowComparatorForNormalDims(int numberOfSortColumns) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
     this.numberOfSortColumns = numberOfSortColumns;
   }
 
@@ -49,6 +50,7 @@ public class NewRowComparatorForNormalDims implements Comparator<Object[]>, Seri
   public int compare(Object[] rowA, Object[] rowB) {
     int diff = 0;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
     for (int i = 0; i < numberOfSortColumns; i++) {
       int dimFieldA = (int)rowA[i];
       int dimFieldB = (int)rowB[i];

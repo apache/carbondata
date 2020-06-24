@@ -51,6 +51,7 @@ public class TaskMetricsMap {
   }
 
   public static InheritableThreadLocal<Long> getThreadLocal() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3487
     return threadLocal;
   }
 

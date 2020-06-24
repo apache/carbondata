@@ -81,6 +81,7 @@ public class CSVCarbonWriterTest {
     fields[1] = new Field("age", DataTypes.INT);
 
     TestUtil.writeFilesAndVerify(new Schema(fields), path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2276
 
     File[] dataFiles = new File(path).listFiles(new FileFilter() {
       @Override
@@ -109,12 +110,14 @@ public class CSVCarbonWriterTest {
         .toString();
 
     TestUtil.writeFilesAndVerify(Schema.parseJson(schema), path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2276
 
     FileUtils.deleteDirectory(new File(path));
   }
 
   @Test
   public void testWriteJsonSchemaWithDefaultDecimal() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3356
     String jsonSchema = new StringBuilder()
         .append("[ \n")
         .append("   {\"name\":\"string\"},\n")
@@ -180,6 +183,7 @@ public class CSVCarbonWriterTest {
 
   @Test
   public void testWriteFilesBuildWithJsonSchema() throws IOException, InvalidLoadOptionException, InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3000
     String path = "./testWriteFilesJsonSchema";
     FileUtils.deleteDirectory(new File(path));
 
@@ -228,8 +232,10 @@ public class CSVCarbonWriterTest {
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
       CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
 
       for (int i = 0; i < 100; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
         Object[] row = new Object[]{
             "robot" + (i % 10),
             i,
@@ -271,6 +277,7 @@ public class CSVCarbonWriterTest {
     fields[1] = new Field("age", DataTypes.INT);
 
     TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, 1, 100);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
 
     // TODO: implement reader to verify the number of blocklet in the file
 
@@ -286,6 +293,7 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
     TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, 2, 2);
     File[] dataFiles = new File(path).listFiles(new FileFilter() {
       @Override
@@ -309,6 +317,7 @@ public class CSVCarbonWriterTest {
     fields[1] = new Field("age", DataTypes.INT);
 
     TestUtil.writeFilesAndVerify(new Schema(fields), path, new String[]{"name"});
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2276
 
     // TODO: implement reader and verify the data is sorted
 
@@ -322,6 +331,7 @@ public class CSVCarbonWriterTest {
 
   @Test(expected = IOException.class)
   public void testWhenWriterthrowsError() throws IOException{
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2411
     CarbonWriter carbonWriter = null;
     String path = "./testWriteFiles";
 
@@ -351,6 +361,8 @@ public class CSVCarbonWriterTest {
     fields[1] = new Field("age", DataTypes.INT);
     try {
       carbonWriter = CarbonWriter.builder().
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
           outputPath(path).withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
@@ -378,6 +390,7 @@ public class CSVCarbonWriterTest {
           .outputPath(path);
 
       CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
 
       for (int i = 0; i < 2; i++) {
         String[] row = new String[]{
@@ -388,6 +401,8 @@ public class CSVCarbonWriterTest {
       }
       writer.close();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
       File[] dataFiles = new File(path).listFiles(new FileFilter() {
         @Override
         public boolean accept(File pathname) {
@@ -399,9 +414,11 @@ public class CSVCarbonWriterTest {
       String taskNo = CarbonTablePath.DataFileUtil.getTaskNo(dataFiles[0].getName());
       String taskID = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskNo);
       Assert.assertEquals("Task Id is not matched", taskID, "5");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2159
     } catch (Exception e) {
       e.printStackTrace();
       Assert.fail(e.getMessage());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2907
     } finally {
       FileUtils.deleteDirectory(new File(path));
     }
@@ -418,6 +435,7 @@ public class CSVCarbonWriterTest {
     fields[1] = new Field("age", DataTypes.INT);
 
     TestUtil.writeFilesAndVerify(1000000, new Schema(fields), path, new String[]{"name"}, 3, 8);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
 
     // read footer and verify number of blocklets
     CarbonFile folder = FileFactory.getCarbonFile(path);
@@ -432,6 +450,7 @@ public class CSVCarbonWriterTest {
       FileReader fileReader = FileFactory.getFileHolder(FileFactory.getFileType(dataFile.getPath()));
       ByteBuffer buffer = fileReader.readByteBuffer(FileFactory.getUpdatedFilePath(
           dataFile.getPath()), dataFile.getSize() - 8, 8);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3051
       fileReader.finish();
       CarbonFooterReaderV3 footerReader =
           new CarbonFooterReaderV3(dataFile.getAbsolutePath(), buffer.getLong());
@@ -444,6 +463,7 @@ public class CSVCarbonWriterTest {
 
   @Test
   public void testFloatDataType() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
 
@@ -454,6 +474,7 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
       CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "robot" + (i % 10), String.valueOf(i + "." + i),
@@ -489,6 +510,7 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
       CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "robot" + (i % 10),  "" + i };
@@ -496,6 +518,7 @@ public class CSVCarbonWriterTest {
       }
       writer.close();
       TableInfo tableInfo = SchemaReader.inferSchema(AbsoluteTableIdentifier.from(path, "",
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
           ""), false);
       List<String> dataTypes = new ArrayList<>();
       for(ColumnSchema columnSchema: tableInfo.getFactTable().getListOfColumns()) {
@@ -523,6 +546,7 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
       CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "robot" + (i % 10), "" + i, i + "." + i };
@@ -532,14 +556,17 @@ public class CSVCarbonWriterTest {
       CarbonReader carbonReader =
           new CarbonReaderBuilder(path, "table1").build();
       int i = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3057
       while(carbonReader.hasNext()) {
         Object[] actualRow = (Object[]) carbonReader.readNextRow();
         String[] expectedRow = new String[] { "robot" + (i % 10), "" + i, i + "." + i };
         for (int j = 0; j < 3; j++) {
           actualRow[j].toString().equalsIgnoreCase(expectedRow[j]);
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2964
         assert(actualRow[1] instanceof Byte);
         assert(actualRow[2] instanceof Float);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3057
         i++;
       }
       carbonReader.close();
@@ -565,8 +592,10 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
       CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType})).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3153
         String[] row = new String[] { "robot" + (i % 10)+"\001" + i+ "\001" + i + "." + i };
         writer.write(row);
       }
@@ -604,8 +633,10 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
       CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType1, structType2})).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3153
         String[] row = new String[] { "1.0\0012.0\0013.0", "1\0012\0013" };
         writer.write(row);
       }
@@ -620,6 +651,7 @@ public class CSVCarbonWriterTest {
 
   @Test
   public void testWithTableProperties() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3073
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
 
@@ -658,6 +690,7 @@ public class CSVCarbonWriterTest {
 
   @Test
   public void testWritingAndReadingArrayString() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3446
     String path = "./testWriteFilesArrayString";
     FileUtils.deleteDirectory(new File(path));
 

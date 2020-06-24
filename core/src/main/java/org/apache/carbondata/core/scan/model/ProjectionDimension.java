@@ -31,6 +31,7 @@ public class ProjectionDimension extends ProjectionColumn {
   private CarbonDimension dimension;
 
   public ProjectionDimension(CarbonDimension dimension) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     super(dimension.getColName());
     this.dimension = dimension;
   }
@@ -43,6 +44,7 @@ public class ProjectionDimension extends ProjectionColumn {
   }
 
   public CarbonDimension getParentDimension() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
     if (null != dimension.getComplexParentDimension()) {
       return dimension.getComplexParentDimension();
     } else {

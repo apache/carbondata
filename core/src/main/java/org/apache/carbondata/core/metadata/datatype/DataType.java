@@ -31,6 +31,7 @@ public class DataType implements Serializable {
   // size of the value of this data type, negative value means variable length
   private int sizeInBytes;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
   DataType(int id, int precedenceOrder, String name, int sizeInBytes) {
     this.id = id;
     this.precedenceOrder = precedenceOrder;
@@ -55,6 +56,7 @@ public class DataType implements Serializable {
   }
 
   public int getId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     return id;
   }
 
@@ -79,24 +81,30 @@ public class DataType implements Serializable {
 
   public static char convertType(DataType dataType) {
     if (dataType == DataTypes.BYTE ||
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
         dataType == DataTypes.BOOLEAN ||
         dataType == DataTypes.SHORT ||
         dataType == DataTypes.SHORT_INT ||
         dataType == DataTypes.INT ||
         dataType == DataTypes.LONG) {
       return BIG_INT_MEASURE_CHAR;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType == DataTypes.DOUBLE || dataType == DataTypes.FLOAT) {
       return DOUBLE_MEASURE_CHAR;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       return BIG_DECIMAL_MEASURE_CHAR;
     } else if (dataType == DataTypes.STRING) {
       return STRING_CHAR;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     } else if (dataType == DataTypes.VARCHAR) {
       return VARCHAR_CHAR;
     } else if (dataType == DataTypes.TIMESTAMP) {
       return TIMESTAMP_CHAR;
     } else if (dataType == DataTypes.DATE) {
       return DATE_CHAR;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     } else if (dataType == DataTypes.BYTE_ARRAY || dataType == DataTypes.BINARY) {
       return BYTE_ARRAY_CHAR;
     } else {
@@ -111,6 +119,7 @@ public class DataType implements Serializable {
       case DOUBLE_MEASURE_CHAR:
         return DataTypes.DOUBLE;
       case BIG_DECIMAL_MEASURE_CHAR:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         return DataTypes.createDefaultDecimalType();
       default:
         throw new RuntimeException("Unexpected type: " + type);
@@ -119,6 +128,7 @@ public class DataType implements Serializable {
 
   @Override
   public int hashCode() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2493
     final int prime = 31;
     int result = 1;
     result = prime * result + getName().hashCode();

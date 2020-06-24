@@ -92,6 +92,7 @@ public class Hive2CarbonExpressionTest {
         SerializationUtilities.serializeExpression(node));
     CarbonInputFormat.setFilterPredicates(configuration,
         new IndexFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node)));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
     final Job job = new Job(new JobConf(configuration));
     final CarbonTableInputFormat format = new CarbonTableInputFormat();
@@ -115,6 +116,7 @@ public class Hive2CarbonExpressionTest {
         new GenericUDFOPNotEqual(), children);
     Configuration configuration=new Configuration();
     CarbonInputFormat.setFilterPredicates(configuration,new IndexFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node)));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
     final Job job = new Job(new JobConf(configuration));
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
@@ -183,6 +185,8 @@ public class Hive2CarbonExpressionTest {
     ExprNodeGenericFuncDesc node3=new ExprNodeGenericFuncDesc(TypeInfoFactory.intTypeInfo,
         new GenericUDFOPAnd(),children3);
     Configuration configuration=new Configuration();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     CarbonInputFormat.setFilterPredicates(configuration,new IndexFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node3)));
     final Job job = new Job(new JobConf(configuration));
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
@@ -304,6 +308,10 @@ public class Hive2CarbonExpressionTest {
 
     List<InputSplit> list= format.getSplits(job);
     Assert.assertEquals(1, list.size());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
 
   }
 
@@ -340,6 +348,13 @@ public class Hive2CarbonExpressionTest {
     ExprNodeGenericFuncDesc node1 = new ExprNodeGenericFuncDesc(TypeInfoFactory.intTypeInfo,
         new GenericUDFOPGreaterThan(), children1);
     Configuration configuration=new Configuration();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     CarbonInputFormat.setFilterPredicates(configuration,new IndexFilter(table, Hive2CarbonExpression.convertExprHive2Carbon(node1)));
     final Job job = new Job(new JobConf(configuration));
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
@@ -350,11 +365,16 @@ public class Hive2CarbonExpressionTest {
 
     List<InputSplit> list= format.getSplits(job);
     Assert.assertEquals(0, list.size());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
 
   }
 
   @Test
   public void testFilterOnDate() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
     ExprNodeDesc column =
         new ExprNodeColumnDesc(TypeInfoFactory.dateTypeInfo, "datee", null, false);
     ExprNodeDesc constant = new ExprNodeConstantDesc(TypeInfoFactory.dateTypeInfo, "2020-01-01");

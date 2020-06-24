@@ -28,14 +28,17 @@ public interface CarbonStreamParser {
 
   String CARBON_STREAM_PARSER = "carbon.stream.parser";
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2599
   String CARBON_STREAM_PARSER_CSV =
       "org.apache.carbondata.streaming.parser.CSVStreamParserImp";
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2055
   String CARBON_STREAM_PARSER_ROW_PARSER =
       "org.apache.carbondata.streaming.parser.RowStreamParserImp";
 
   String CARBON_STREAM_PARSER_DEFAULT = CARBON_STREAM_PARSER_ROW_PARSER;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3497
   void initialize(Configuration configuration,
       StructType structType, boolean[] isVarcharTypeMapping);
 

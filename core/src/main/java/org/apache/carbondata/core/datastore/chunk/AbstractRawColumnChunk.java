@@ -100,10 +100,12 @@ public abstract class AbstractRawColumnChunk {
   }
 
   public void freeMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2307
     rawData = null;
   }
 
   public int getColumnIndex() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
     return columnIndex;
   }
 
@@ -124,6 +126,7 @@ public abstract class AbstractRawColumnChunk {
   }
 
   public boolean[] getMinMaxFlagArray() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     return minMaxFlagArray;
   }
 

@@ -45,11 +45,13 @@ public class Blocklet implements Writable, Serializable {
   private boolean compareBlockletIdForObjectMatching = true;
 
   public Blocklet(String filePath, String blockletId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
     this.filePath = filePath;
     this.blockletId = blockletId;
   }
 
   public Blocklet(String filePath, String blockletId, boolean compareBlockletIdForObjectMatching) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2701
     this(filePath, blockletId);
     this.compareBlockletIdForObjectMatching = compareBlockletIdForObjectMatching;
   }
@@ -63,15 +65,19 @@ public class Blocklet implements Writable, Serializable {
   }
 
   public String getFilePath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
     return filePath;
   }
 
   public void setFilePath(String filePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     this.filePath = filePath;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     if (filePath == null) {
       out.writeBoolean(false);
     } else {
@@ -84,6 +90,7 @@ public class Blocklet implements Writable, Serializable {
       out.writeBoolean(true);
       out.writeUTF(blockletId);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     out.writeBoolean(compareBlockletIdForObjectMatching);
   }
 
@@ -95,6 +102,7 @@ public class Blocklet implements Writable, Serializable {
     if (in.readBoolean()) {
       blockletId = in.readUTF();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     this.compareBlockletIdForObjectMatching = in.readBoolean();
   }
 
@@ -105,9 +113,11 @@ public class Blocklet implements Writable, Serializable {
 
     Blocklet blocklet = (Blocklet) o;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
     if (filePath != null ? !filePath.equals(blocklet.filePath) : blocklet.filePath != null) {
       return false;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2701
     if (!compareBlockletIdForObjectMatching) {
       return true;
     }
@@ -118,6 +128,7 @@ public class Blocklet implements Writable, Serializable {
 
   @Override
   public String toString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2971
     final StringBuffer sb = new StringBuffer("Blocklet{");
     sb.append("filePath='").append(filePath).append('\'');
     sb.append(", blockletId='").append(blockletId).append('\'');
@@ -128,6 +139,7 @@ public class Blocklet implements Writable, Serializable {
   @Override
   public int hashCode() {
     int result = filePath != null ? filePath.hashCode() : 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2701
     result = 31 * result;
     if (compareBlockletIdForObjectMatching) {
       result += blockletId != null ? blockletId.hashCode() : 0;

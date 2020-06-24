@@ -40,9 +40,12 @@ public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
 
   @Override
   public Object convertFromBigDecimalToDecimal(Object data) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     if (null == data) {
       return null;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
     if (data instanceof BigDecimal) {
       return data;
     }
@@ -72,6 +75,7 @@ public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
     if (null == data) {
       return null;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     return data.toString().getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
   }
 
@@ -85,11 +89,14 @@ public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
 
   @Override
   public Object wrapWithGenericArrayData(Object data) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
     return data;
   }
 
   @Override
   public Object[] unwrapGenericRowToObject(Object data) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
     Object[] splitData = (Object[]) data;
     return splitData;
   }
@@ -106,6 +113,7 @@ public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
 
   @Override
   public Object[] convertCarbonSchemaToSparkSchema(CarbonColumn[] carbonColumns) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2165
     throw new UnsupportedOperationException();
   }
 }

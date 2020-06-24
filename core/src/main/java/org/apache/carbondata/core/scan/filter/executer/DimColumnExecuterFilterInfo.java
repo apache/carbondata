@@ -22,6 +22,7 @@ public class DimColumnExecuterFilterInfo {
   byte[][] filterKeys;
 
   public byte[][] getExcludeFilterKeys() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1704
     return filterKeysForExclude;
   }
 

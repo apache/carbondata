@@ -29,7 +29,9 @@ public class MeasureDataVectorProcessor {
   public interface MeasureVectorFiller {
 
     void fillMeasureVector(ColumnPage dataChunk, ColumnVectorInfo info);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     void fillMeasureVector(int[] filteredRowId, ColumnPage dataChunk,
         ColumnVectorInfo info);
   }
@@ -53,6 +55,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(i)) {
             vector.putNull(vectorOffset);
           } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
             vector.putInt(vectorOffset, (int)dataChunk.getLong(i));
           }
           vectorOffset++;
@@ -80,6 +83,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
             vector.putInt(vectorOffset, (int)dataChunk.getLong(currentRow));
           }
           vectorOffset++;
@@ -98,6 +102,7 @@ public class MeasureDataVectorProcessor {
       int offset = info.offset;
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
       CarbonColumnVector vector = info.vector;
       BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
@@ -153,6 +158,7 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
       BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
@@ -164,6 +170,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(i)) {
             vector.putNull(vectorOffset);
           } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
             vector.putShort(vectorOffset, (short) dataChunk.getLong(i));
           }
           vectorOffset++;
@@ -191,6 +198,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
             vector.putShort(vectorOffset, (short) dataChunk.getLong(currentRow));
           }
           vectorOffset++;
@@ -207,6 +215,7 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
       BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
@@ -218,6 +227,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(i)) {
             vector.putNull(vectorOffset);
           } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
             vector.putLong(vectorOffset, dataChunk.getLong(i));
           }
           vectorOffset++;
@@ -245,6 +255,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
             vector.putLong(vectorOffset, dataChunk.getLong(currentRow));
           }
           vectorOffset++;
@@ -263,6 +274,7 @@ public class MeasureDataVectorProcessor {
       CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
       int newMeasureScale = info.measure.getMeasure().getScale();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
       BitSet nullBitSet = dataChunk.getNullBits();
       for (int i = offset; i < len; i++) {
         if (nullBitSet.get(i)) {
@@ -297,6 +309,8 @@ public class MeasureDataVectorProcessor {
           if (info.measure.getMeasure().getScale() > decimal.scale()) {
             decimal = decimal.setScale(info.measure.getMeasure().getScale());
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1779
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1779
           vector.putDecimal(vectorOffset, decimal, precision);
         }
         vectorOffset++;
@@ -311,6 +325,7 @@ public class MeasureDataVectorProcessor {
       int offset = info.offset;
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
       CarbonColumnVector vector = info.vector;
       BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
@@ -420,6 +435,7 @@ public class MeasureDataVectorProcessor {
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
       BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
@@ -431,6 +447,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(i)) {
             vector.putNull(vectorOffset);
           } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
             vector.putDouble(vectorOffset, dataChunk.getDouble(i));
           }
           vectorOffset++;
@@ -458,6 +475,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
             vector.putDouble(vectorOffset, dataChunk.getDouble(currentRow));
           }
           vectorOffset++;
@@ -469,16 +487,20 @@ public class MeasureDataVectorProcessor {
   public static class MeasureVectorFillerFactory {
 
     public static MeasureVectorFiller getMeasureVectorFiller(DataType dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
       if (dataType == DataTypes.BOOLEAN) {
         return new BooleanMeasureVectorFiller();
       } else if (dataType == DataTypes.SHORT) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         return new ShortMeasureVectorFiller();
       } else if (dataType == DataTypes.INT) {
         return new IntegralMeasureVectorFiller();
       } else if (dataType == DataTypes.LONG) {
         return new LongMeasureVectorFiller();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       } else if (DataTypes.isDecimal(dataType)) {
         return new DecimalMeasureVectorFiller();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
       } else if (dataType == DataTypes.FLOAT) {
         return new FloatMeasureVectorFiller();
       } else if (dataType == DataTypes.BYTE) {

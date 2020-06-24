@@ -55,7 +55,9 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
   public UnsafeMemoryDMStore() {
     this.allocatedSize = capacity;
     this.memoryBlock =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2990
         UnsafeMemoryManager.allocateMemoryWithRetry(MemoryType.ONHEAP, taskId, allocatedSize);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     this.pointers = new int[100];
   }
 
@@ -66,6 +68,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
    * @param rowSize
    */
   private void ensureSize(int rowSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
     if (runningLength + rowSize >= allocatedSize) {
       increaseMemory(runningLength + rowSize);
     }
@@ -78,6 +81,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
 
   private void increaseMemory(int requiredMemory) {
     MemoryBlock newMemoryBlock = UnsafeMemoryManager
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2990
         .allocateMemoryWithRetry(MemoryType.ONHEAP, taskId, allocatedSize + requiredMemory);
     getUnsafe().copyMemory(this.memoryBlock.getBaseObject(), this.memoryBlock.getBaseOffset(),
         newMemoryBlock.getBaseObject(), newMemoryBlock.getBaseOffset(), runningLength);
@@ -124,6 +128,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
     int pointer = runningLength;
     int bytePosition = 0;
     for (int i = 0; i < schema.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
       switch (schema[i].getSchemaType()) {
         case STRUCT:
           CarbonRowSchema[] childSchemas =
@@ -151,6 +156,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
         case STRUCT:
           CarbonRowSchema[] childSchemas =
               ((CarbonRowSchema.StructCarbonRowSchema) schema[i]).getChildSchemas();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           IndexRow row = indexRow.getRow(i);
           for (int j = 0; j < childSchemas.length; j++) {
             currentPosition = addToUnsafe(childSchemas[j], row, j, pointer, varColPosition);
@@ -227,12 +233,14 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
               "unsupported data type for unsafe storage: " + schema.getDataType());
         }
         return 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
       case VARIABLE_SHORT:
       case VARIABLE_INT:
         byte[] data = row.getByteArray(index);
         getUnsafe().putInt(memoryBlock.getBaseObject(),
             memoryBlock.getBaseOffset() + startOffset + schema.getBytePosition(), varPosition);
         runningLength += 4;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
         if (data != null) {
           getUnsafe().copyMemory(data, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
                   memoryBlock.getBaseOffset() + startOffset + varPosition, data.length);
@@ -240,6 +248,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
           varPosition += data.length;
         }
         return varPosition;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
       default:
         throw new UnsupportedOperationException(
             "unsupported data type for unsafe storage: " + schema.getDataType());
@@ -254,7 +263,10 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
   public void finishWriting() {
     if (runningLength < allocatedSize) {
       MemoryBlock allocate =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2990
           UnsafeMemoryManager.allocateMemoryWithRetry(MemoryType.ONHEAP, taskId, runningLength);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
       getUnsafe().copyMemory(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset(),
           allocate.getBaseObject(), allocate.getBaseOffset(), runningLength);
       UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
@@ -270,6 +282,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
 
   public void freeMemory() {
     if (!isMemoryFreed) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2990
       UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
       isMemoryFreed = true;
     }
@@ -284,6 +297,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
   }
 
   public void serializeMemoryBlock() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     this.data = new byte[runningLength];
     CarbonUnsafe.getUnsafe().copyMemory(memoryBlock.getBaseObject(),
         memoryBlock.getBaseOffset(), data,

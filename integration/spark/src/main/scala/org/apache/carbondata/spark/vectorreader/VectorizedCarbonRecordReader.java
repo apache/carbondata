@@ -98,6 +98,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
   private InputMetricsStats inputMetricsStats;
 
   public VectorizedCarbonRecordReader(QueryModel queryModel, InputMetricsStats inputMetricsStats,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2224
       String enableBatch) {
     this.queryModel = queryModel;
     this.inputMetricsStats = inputMetricsStats;
@@ -136,6 +137,8 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
     queryModel.setTableBlockInfos(tableBlockInfoList);
     queryModel.setVectorReader(true);
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
       queryExecutor =
           QueryExecutorFactory.getQueryExecutor(queryModel, taskAttemptContext.getConfiguration());
       iterator = (AbstractDetailQueryResultIterator) queryExecutor.execute(queryModel);
@@ -152,6 +155,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
   @Override
   public void close() throws IOException {
     if (vectorProxy != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3096
       logStatistics(rowCount, queryModel.getStatisticsRecorder());
       vectorProxy.close();
       vectorProxy = null;
@@ -167,6 +171,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
   public boolean nextKeyValue() {
     resultBatch();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     if (returnColumnarBatch) {
       return nextBatch();
     }
@@ -183,6 +188,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
     if (returnColumnarBatch) {
       int value = carbonColumnarBatch.getActualSize();
       rowCount += value;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1847
       if (inputMetricsStats != null) {
         inputMetricsStats.incrementRecordRead((long) value);
       }
@@ -210,13 +216,19 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
    */
 
   public void initBatch(MemoryMode memMode, StructType partitionColumns,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2872
       InternalRow partitionValues) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     List<ProjectionDimension> queryDimension = queryModel.getProjectionDimensions();
     List<ProjectionMeasure> queryMeasures = queryModel.getProjectionMeasures();
     StructField[] fields = new StructField[queryDimension.size() + queryMeasures.size()];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
     this.isNoDictStringField = new boolean[queryDimension.size() + queryMeasures.size()];
     for (int i = 0; i < queryDimension.size(); i++) {
       ProjectionDimension dim = queryDimension.get(i);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (dim.getDimension().getDataType() == DataTypes.DATE) {
         DirectDictionaryGenerator generator = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(dim.getDimension().getDataType());
@@ -224,6 +236,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
             CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(generator.getReturnType()), true, null);
       } else {
         if (dim.getDimension().getDataType() == DataTypes.STRING
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
             || dim.getDimension().getDataType() == DataTypes.VARCHAR || dim.getDimension()
             .getColumnSchema().isLocalDictColumn()) {
           this.isNoDictStringField[dim.getOrdinal()] = true;
@@ -239,16 +252,20 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       DataType dataType = msr.getMeasure().getDataType();
       if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.SHORT || dataType == DataTypes.INT
           || dataType == DataTypes.LONG || dataType == DataTypes.FLOAT
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
           || dataType == DataTypes.BYTE || dataType == DataTypes.BINARY) {
         fields[msr.getOrdinal()] = new StructField(msr.getColumnName(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2872
             CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(msr.getMeasure().getDataType()), true,
             null);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       } else if (DataTypes.isDecimal(dataType)) {
         fields[msr.getOrdinal()] = new StructField(msr.getColumnName(),
             new DecimalType(msr.getMeasure().getPrecision(), msr.getMeasure().getScale()), true,
             null);
       } else {
         fields[msr.getOrdinal()] = new StructField(msr.getColumnName(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2872
             CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(DataTypes.DOUBLE), true, null);
       }
     }
@@ -259,9 +276,11 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       }
     }
     boolean useLazyLoad = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     short batchSize = DEFAULT_BATCH_SIZE;
     if (queryModel.isDirectVectorFill()) {
       batchSize = CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
       useLazyLoad = isUseLazyLoad();
     }
     vectorProxy = new CarbonVectorProxy(DEFAULT_MEMORY_MODE, schema, batchSize, useLazyLoad);
@@ -269,12 +288,14 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
     if (partitionColumns != null) {
       int partitionIdx = fields.length;
       for (int i = 0; i < partitionColumns.fields().length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2532
         ColumnVectorUtils.populate(vectorProxy.column(i + partitionIdx), partitionValues, i);
         vectorProxy.column(i + partitionIdx).setIsConstant();
       }
     }
     CarbonColumnVector[] vectors = new CarbonColumnVector[fields.length];
     boolean[] filteredRows = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     if (queryModel.isDirectVectorFill()) {
       for (int i = 0; i < fields.length; i++) {
         vectors[i] = new ColumnarVectorWrapperDirect(vectorProxy, i);
@@ -302,7 +323,9 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
    */
   private boolean isUseLazyLoad() {
     boolean useLazyLoad = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     if (queryModel.getIndexFilter() != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
       Expression expression =
           queryModel.getIndexFilter().getExpression();
       useLazyLoad = true;
@@ -322,10 +345,12 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
   }
 
   private void initBatch() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2872
     initBatch(DEFAULT_MEMORY_MODE, new StructType(), InternalRow.empty());
   }
 
   private void resultBatch() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2532
     if (vectorProxy == null) initBatch();
   }
 
@@ -333,9 +358,13 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
    * Advances to the next batch of rows. Returns false if there are no more.
    */
   private boolean nextBatch() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
     if (null != isNoDictStringField) {
       for (int i = 0; i < isNoDictStringField.length; i++) {
         if (isNoDictStringField[i]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2532
           vectorProxy.resetDictionaryIds(i);
         }
       }

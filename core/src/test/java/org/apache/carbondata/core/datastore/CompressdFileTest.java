@@ -98,6 +98,7 @@ public class CompressdFileTest
 
       try {
         fileReader =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
             FileFactory.getDataInputStream(path);
         bufferedReader = new BufferedReader(new InputStreamReader(fileReader,
             Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));

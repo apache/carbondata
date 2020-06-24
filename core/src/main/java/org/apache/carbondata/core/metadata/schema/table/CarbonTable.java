@@ -157,6 +157,7 @@ public class CarbonTable implements Serializable, Writable {
               columnSchema.getScale()));
     }
     if (tableInfo.getFactTable().getBucketingInfo() != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3440
       for (ColumnSchema columnSchema : tableInfo.getFactTable().getBucketingInfo()
           .getListOfColumns()) {
         columnSchema.setDataType(DataTypeUtil
@@ -164,9 +165,11 @@ public class CarbonTable implements Serializable, Writable {
                 columnSchema.getScale()));
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2026
     if (tableInfo.getFactTable().getPartitionInfo() != null) {
       for (ColumnSchema columnSchema : tableInfo.getFactTable().getPartitionInfo()
           .getColumnSchemaList()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3440
         columnSchema.setDataType(DataTypeUtil
             .valueOf(columnSchema.getDataType(), columnSchema.getPrecision(),
                 columnSchema.getScale()));
@@ -176,11 +179,15 @@ public class CarbonTable implements Serializable, Writable {
 
   public static CarbonTable buildTable(String tablePath, String tableName,
       Configuration configuration) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3405
     TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, tableName, "null");
     // InferSchema from data file
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3367
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3368
     org.apache.carbondata.format.TableInfo tableInfo =
         CarbonUtil.inferSchema(tablePath, tableName, false, configuration);
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3440
     for (org.apache.carbondata.format.ColumnSchema thriftColumnSchema : tableInfo.getFact_table()
         .getTable_columns()) {
       ColumnSchema columnSchema = thriftColumnSchemaToWrapperColumnSchema(thriftColumnSchema);
@@ -194,6 +201,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   public static CarbonTable buildFromTablePath(String tableName, String dbName, String tablePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2642
       String tableId) throws IOException {
     return SchemaReader.readCarbonTableFromStore(
         AbsoluteTableIdentifier.from(tablePath, dbName, tableName, tableId));
@@ -204,6 +212,9 @@ public class CarbonTable implements Serializable, Writable {
    */
   public static CarbonTable buildFromTableInfo(TableInfo tableInfo) {
     CarbonTable table = new CarbonTable();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2472
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2570
     updateTableByTableInfo(table, tableInfo);
     return table;
   }
@@ -212,6 +223,7 @@ public class CarbonTable implements Serializable, Writable {
    * Return table unique name
    */
   public static String buildUniqueName(String databaseName, String tableName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     return (DatabaseLocationProvider.get().provide(databaseName) +
         CarbonCommonConstants.UNDERSCORE + tableName).toLowerCase(Locale.getDefault());
   }
@@ -235,6 +247,7 @@ public class CarbonTable implements Serializable, Writable {
    * Resolve the filter expression.
    */
   public static FilterResolverIntf resolveFilter(Expression filterExpression,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
       AbsoluteTableIdentifier identifier) {
     try {
       FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
@@ -248,6 +261,7 @@ public class CarbonTable implements Serializable, Writable {
    * Create a {@link CarbonTableBuilder} to create {@link CarbonTable}
    */
   public static CarbonTableBuilder builder() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1997
     return new CarbonTableBuilder();
   }
 
@@ -257,6 +271,7 @@ public class CarbonTable implements Serializable, Writable {
   public static void updateTableByTableInfo(CarbonTable table, TableInfo tableInfo) {
     updateTableInfo(tableInfo);
     table.tableInfo = tableInfo;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     table.setTransactionalTable(tableInfo.isTransactionalTable());
     table.fillDimensionsAndMeasuresForTables(tableInfo.getFactTable());
     table.fillCreateOrderColumn();
@@ -274,6 +289,7 @@ public class CarbonTable implements Serializable, Writable {
    * threshold, if not defined default value are considered.
    */
   private static void setLocalDictInfo(CarbonTable table, TableInfo tableInfo) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2803
     Map<String, String> tableProperties = tableInfo.getFactTable().getTableProperties();
     String isLocalDictionaryEnabled =
         tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE);
@@ -291,6 +307,7 @@ public class CarbonTable implements Serializable, Writable {
       // in case of old tables, local dictionary enable property will not be present in
       // tableProperties, so disable the local dictionary generation
       table.setLocalDictionaryEnabled(Boolean.parseBoolean("false"));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2803
       tableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE, "false");
     }
   }
@@ -300,7 +317,9 @@ public class CarbonTable implements Serializable, Writable {
    */
   private void fillCreateOrderColumn() {
     List<CarbonColumn> columns = new ArrayList<CarbonColumn>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     for (CarbonDimension dimension : visibleDimensions) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
       if (!dimension.getColumnSchema().isSpatialColumn()) {
         columns.add(dimension);
       }
@@ -334,6 +353,7 @@ public class CarbonTable implements Serializable, Writable {
       ColumnSchema columnSchema = listOfColumns.get(i);
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
           ++complexTypeOrdinal;
           CarbonDimension complexDimension =
               new CarbonDimension(columnSchema, dimensionOrdinal++, -1,
@@ -346,10 +366,13 @@ public class CarbonTable implements Serializable, Writable {
           i = dimensionOrdinal - 1;
           complexTypeOrdinal = assignComplexOrdinal(complexDimension, complexTypeOrdinal);
         } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
           if (!columnSchema.isInvisible() && columnSchema.isSortColumn()) {
             this.numberOfSortColumns++;
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
           if (columnSchema.getDataType() != DataTypes.DATE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
             CarbonDimension dimension = new CarbonDimension(columnSchema, dimensionOrdinal++, -1,
                 columnSchema.getSchemaOrdinal());
             if (!columnSchema.isInvisible() && columnSchema.isSortColumn()) {
@@ -371,6 +394,7 @@ public class CarbonTable implements Serializable, Writable {
     fillVisibleMeasures();
     addImplicitDimension(dimensionOrdinal, implicitDimensions);
     CarbonUtil.setLocalDictColumnsToWrapperSchema(tableSchema.getListOfColumns(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3440
         tableSchema.getTableProperties(),
         tableSchema.getTableProperties().get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE));
     dimensionOrdinalMax = dimensionOrdinal;
@@ -404,6 +428,7 @@ public class CarbonTable implements Serializable, Writable {
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
               new CarbonDimension(columnSchema, dimensionOrdinal++, -1,
                   columnSchema.getSchemaOrdinal());
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
@@ -413,6 +438,7 @@ public class CarbonTable implements Serializable, Writable {
                   listOfColumns, complexDimension);
         } else {
           CarbonDimension carbonDimension =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
               new CarbonDimension(columnSchema, dimensionOrdinal++, -1,
                   columnSchema.getSchemaOrdinal());
           parentDimension.getListOfChildDimensions().add(carbonDimension);
@@ -444,6 +470,7 @@ public class CarbonTable implements Serializable, Writable {
    * @return the databaseName
    */
   public String getDatabaseName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
     return tableInfo.getDatabaseName();
   }
 
@@ -458,6 +485,7 @@ public class CarbonTable implements Serializable, Writable {
    * @return the tabelId
    */
   public String getTableId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2693
     return tableInfo.getFactTable().getTableId();
   }
 
@@ -472,6 +500,9 @@ public class CarbonTable implements Serializable, Writable {
    * Return true if local dictionary enabled for the table
    */
   public boolean isLocalDictionaryEnabled() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
     return isLocalDictionaryEnabled;
   }
 
@@ -500,6 +531,7 @@ public class CarbonTable implements Serializable, Writable {
    * Return the metadata path of the table
    */
   public String getMetadataPath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
     return CarbonTablePath.getMetadataPath(getTablePath());
   }
 
@@ -507,6 +539,7 @@ public class CarbonTable implements Serializable, Writable {
    * Return the stage input path
    */
   public String getStagePath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3710
     return CarbonTablePath.getStageDir(getTablePath());
   }
 
@@ -514,6 +547,7 @@ public class CarbonTable implements Serializable, Writable {
    * Return the segment path of the specified segmentId
    */
   public String getSegmentPath(String segmentId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     return CarbonTablePath.getSegmentPath(getTablePath(), segmentId);
   }
 
@@ -559,6 +593,7 @@ public class CarbonTable implements Serializable, Writable {
     List<CarbonDimension> dimensions = visibleDimensions;
     List<CarbonMeasure> measures = visibleMeasures;
     List<CarbonColumn> columnList = new ArrayList<>(dimensions.size() + measures.size());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
     List<CarbonColumn> complexDimensionList = new ArrayList<>(dimensions.size());
     for (CarbonColumn column : dimensions) {
       if (column.isComplex()) {
@@ -625,6 +660,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   private CarbonDimension getDimensionBasedOnOrdinal(List<CarbonDimension> dimList, int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
     for (CarbonDimension dimension : dimList) {
       if (dimension.getOrdinal() == ordinal) {
         return dimension;
@@ -689,6 +725,7 @@ public class CarbonTable implements Serializable, Writable {
 
   public boolean isHivePartitionTable() {
     PartitionInfo partitionInfo = partition;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1856
     return null != partitionInfo && partitionInfo.getPartitionType() == PartitionType.NATIVE_HIVE;
   }
 
@@ -696,6 +733,7 @@ public class CarbonTable implements Serializable, Writable {
    * @return absolute table identifier
    */
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
     return tableInfo.getOrCreateAbsoluteTableIdentifier();
   }
 
@@ -712,6 +750,7 @@ public class CarbonTable implements Serializable, Writable {
 
   public int getBlockletSizeInMB() {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3440
       return Integer.parseInt(tableInfo.getFactTable().getTableProperties()
           .get(CarbonCommonConstants.TABLE_BLOCKLET_SIZE));
     } catch (NumberFormatException e) {
@@ -720,6 +759,8 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   public String getBucketHashMethod() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
     String configuredMethod = tableInfo.getFactTable().getTableProperties()
         .get(CarbonCommonConstants.BUCKET_HASH_METHOD);
     if (configuredMethod == null) {
@@ -762,6 +803,7 @@ public class CarbonTable implements Serializable, Writable {
     for (CarbonDimension dimension : allDimensions) {
       if (!dimension.isInvisible()) {
         visibleDimensions.add(dimension);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
         Map<String, String> columnProperties = dimension.getColumnProperties();
         if (columnProperties != null) {
           if (columnProperties.get(CarbonCommonConstants.COLUMN_DRIFT) != null) {
@@ -781,6 +823,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   public List<CarbonDimension> getColumnDrift() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
     return columnDrift;
   }
 
@@ -815,6 +858,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   public int getNumberOfSortColumns() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
     return numberOfSortColumns;
   }
 
@@ -827,6 +871,7 @@ public class CarbonTable implements Serializable, Writable {
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dimension = dimensions.get(i);
       if (dimension.isSortColumn() &&
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
           dimension.getDataType() != DataTypes.DATE) {
         noDictSortColumns.add(dimension);
       }
@@ -835,6 +880,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   public CarbonColumn getRangeColumn() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3242
     String rangeColumn =
         tableInfo.getFactTable().getTableProperties().get(CarbonCommonConstants.RANGE_COLUMN);
     if (rangeColumn == null) {
@@ -845,6 +891,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   public TableInfo getTableInfo() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1286
     return tableInfo;
   }
 
@@ -853,6 +900,7 @@ public class CarbonTable implements Serializable, Writable {
    */
   public boolean isStreamingSink() {
     String streaming = getTableInfo().getFactTable().getTableProperties().get("streaming");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3440
     return streaming != null && (streaming.equalsIgnoreCase("true") || streaming
         .equalsIgnoreCase("sink"));
   }
@@ -861,6 +909,7 @@ public class CarbonTable implements Serializable, Writable {
    * Return true if this is a streaming source (table with property "streaming"="source")
    */
   public boolean isStreamingSource() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2504
     String streaming = getTableInfo().getFactTable().getTableProperties().get("streaming");
     return streaming != null && streaming.equalsIgnoreCase("source");
   }
@@ -873,6 +922,7 @@ public class CarbonTable implements Serializable, Writable {
    * Return true if this table is a MV table (child table of other table)
    */
   public boolean isMV() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     return tableInfo.getFactTable().getTableProperties()
         .get(CarbonCommonConstants.MV_RELATED_TABLES) != null &&
         !tableInfo.getFactTable().getTableProperties()
@@ -884,17 +934,21 @@ public class CarbonTable implements Serializable, Writable {
    * an internal table property set during table creation)
    */
   public boolean isExternalTable() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1968
     String external = tableInfo.getFactTable().getTableProperties().get("_external");
     return external != null && external.equalsIgnoreCase("true");
   }
 
   public boolean isFileLevelFormat() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2224
     String external = tableInfo.getFactTable().getTableProperties().get("_filelevelformat");
     return external != null && external.equalsIgnoreCase("true");
   }
 
   public long size() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2538
     Map<String, Long> dataIndexSize = CarbonUtil.calculateDataIndexSize(this, true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1812
     Long dataSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE);
     if (dataSize == null) {
       dataSize = 0L;
@@ -934,6 +988,7 @@ public class CarbonTable implements Serializable, Writable {
    */
   public boolean canAllow(CarbonTable carbonTable, TableOperation operation, Object... targets) {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       List<TableIndex> indexes = IndexStoreManager.getInstance().getAllCGAndFGIndexes(carbonTable);
       if (!indexes.isEmpty()) {
         for (TableIndex index : indexes) {
@@ -944,6 +999,8 @@ public class CarbonTable implements Serializable, Writable {
           }
           // check whether the operation is blocked for index
           if (factoryClass.isOperationBlocked(operation, targets)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
             return false;
           }
         }
@@ -951,6 +1008,7 @@ public class CarbonTable implements Serializable, Writable {
     } catch (Exception e) {
       // since method returns true or false and based on that calling function throws exception, no
       // need to throw the catched exception
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error(e.getMessage(), e);
       return true;
     }
@@ -961,6 +1019,7 @@ public class CarbonTable implements Serializable, Writable {
    * Get all index columns specified by IndexSchema
    */
   public List<CarbonColumn> getIndexedColumns(String[] columns)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       throws MalformedIndexCommandException {
     List<CarbonColumn> indexColumn = new ArrayList<>(columns.length);
     for (String column : columns) {
@@ -985,6 +1044,7 @@ public class CarbonTable implements Serializable, Writable {
    */
   public boolean isSupportFlatFolder() {
     boolean supportFlatFolder = Boolean.parseBoolean(CarbonCommonConstants.DEFAULT_FLAT_FOLDER);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     Map<String, String> tblProps = getTableInfo().getFactTable().getTableProperties();
     if (tblProps.containsKey(CarbonCommonConstants.FLAT_FOLDER)) {
       supportFlatFolder = tblProps.get(CarbonCommonConstants.FLAT_FOLDER).equalsIgnoreCase("true");
@@ -998,6 +1058,7 @@ public class CarbonTable implements Serializable, Writable {
    * @return String as per table properties, null if not defined
    */
   public String getFormat() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2919
     return getTableInfo().getFactTable().getTableProperties().get("format");
   }
 
@@ -1010,6 +1071,7 @@ public class CarbonTable implements Serializable, Writable {
     List<String> cachedColsList = new ArrayList<>();
     String cacheColumns =
         tableInfo.getFactTable().getTableProperties().get(CarbonCommonConstants.COLUMN_META_CACHE);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3087
     if (null != cacheColumns) {
       if (!cacheColumns.isEmpty()) {
         String[] cachedCols = cacheColumns.split(",");
@@ -1050,6 +1112,7 @@ public class CarbonTable implements Serializable, Writable {
         CarbonDimension dimension = getDimensionByName(column);
         // if found in dimension then add to dimension else add to measures
         if (null != dimension) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
           CarbonDimension dimensionFromCurrentBlock =
               segmentProperties.getDimensionFromCurrentBlock(dimension);
           if (null != dimensionFromCurrentBlock) {
@@ -1070,6 +1133,7 @@ public class CarbonTable implements Serializable, Writable {
       for (String measureColumn : measureColumns) {
         CarbonMeasure measure = getMeasureByName(measureColumn);
         if (null != measure) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
           CarbonMeasure measureFromCurrentBlock =
               segmentProperties.getMeasureFromCurrentBlock(measure);
           if (null != measureFromCurrentBlock) {
@@ -1085,6 +1149,7 @@ public class CarbonTable implements Serializable, Writable {
    * Return all inverted index columns in this table
    */
   public List<ColumnSchema> getInvertedIndexColumns() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3087
     if (getSortScope() == SortScopeOptions.SortScope.NO_SORT) {
       return new LinkedList<>();
     }
@@ -1107,6 +1172,7 @@ public class CarbonTable implements Serializable, Writable {
         return SortScopeOptions.SortScope.NO_SORT;
       } else {
         // Check SORT_SCOPE in Session Properties first.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3243
         String sortScopeSessionProp = CarbonProperties.getInstance().getProperty(
             CarbonLoadOptionConstants.CARBON_TABLE_LOAD_SORT_SCOPE + getDatabaseName() + "."
                 + getTableName());
@@ -1127,11 +1193,14 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   public String getGlobalSortPartitions() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     return tableInfo.getFactTable().getTableProperties().get("global_sort_partitions");
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     tableInfo.write(out);
   }
 
@@ -1143,6 +1212,7 @@ public class CarbonTable implements Serializable, Writable {
   }
 
   private void deserializeIndexMetadata() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     if (indexMetadata == null) {
       String indexMeta = tableInfo.getFactTable().getTableProperties().get(getTableId());
       if (null != indexMeta) {
@@ -1168,6 +1238,7 @@ public class CarbonTable implements Serializable, Writable {
   public List<String> getIndexTableNames(String indexProvider) throws IOException {
     deserializeIndexMetadata();
     if (null != indexMetadata) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       return indexMetadata.getIndexTables(indexProvider);
     } else {
       return new ArrayList<>();
@@ -1245,6 +1316,7 @@ public class CarbonTable implements Serializable, Writable {
     } catch (IOException e) {
       LOGGER.error("Error deserializing index metadata");
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     if (null != indexMetadata && null != indexMetadata.getParentTableName()) {
       parentTableName = indexMetadata.getParentTableName();
     }

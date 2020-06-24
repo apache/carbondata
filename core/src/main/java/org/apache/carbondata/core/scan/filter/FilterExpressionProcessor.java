@@ -63,6 +63,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @return a filter resolver tree
    */
   public FilterResolverIntf getFilterResolver(Expression expressionTree,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException {
     if (null != expressionTree && null != tableIdentifier) {
       return getFilterResolvertree(expressionTree, tableIdentifier);
@@ -79,6 +80,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @return FilterResolverIntf type.
    */
   private FilterResolverIntf getFilterResolvertree(Expression expressionTree,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException {
     FilterResolverIntf filterEvaluatorTree =
         createFilterResolverTree(expressionTree, tableIdentifier);
@@ -97,11 +99,13 @@ public class FilterExpressionProcessor implements FilterProcessor {
    */
   private void traverseAndResolveTree(FilterResolverIntf filterResolverTree,
       AbsoluteTableIdentifier tableIdentifier)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws FilterUnsupportedException {
     if (null == filterResolverTree) {
       return;
     }
     traverseAndResolveTree(filterResolverTree.getLeft(), tableIdentifier);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     filterResolverTree.resolve();
     traverseAndResolveTree(filterResolverTree.getRight(), tableIdentifier);
   }
@@ -127,6 +131,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
             createFilterResolverTree(currentExpression.getLeft(), tableIdentifier),
             createFilterResolverTree(currentExpression.getRight(), tableIdentifier),
             currentExpression);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-792
       case RANGE:
         return getFilterResolverBasedOnExpressionType(ExpressionType.RANGE, true,
             expressionTree, tableIdentifier, expressionTree);
@@ -141,6 +146,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
       case LESSTHAN_EQUALTO:
         return getFilterResolverBasedOnExpressionType(ExpressionType.EQUALS, true, expressionTree,
             tableIdentifier, expressionTree);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1543
       case STARTSWITH:
         assert (expressionTree instanceof StartsWithExpression);
         currentExpression = (StartsWithExpression) expressionTree;
@@ -165,6 +171,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
       case FALSE:
         return getFilterResolverBasedOnExpressionType(ExpressionType.FALSE, false,
             expressionTree, tableIdentifier, expressionTree);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-792
       case TRUE:
         return getFilterResolverBasedOnExpressionType(ExpressionType.TRUE, false,
             expressionTree, tableIdentifier, expressionTree);
@@ -185,12 +192,15 @@ public class FilterExpressionProcessor implements FilterProcessor {
     ConditionalExpression condExpression = null;
     switch (filterExpressionType) {
       case FALSE:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
         return new FalseConditionalResolverImpl(expression, false, false);
       case TRUE:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         return new TrueConditionalResolverImpl(expression, false, false);
       case EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
         // check for implicit column in the expression
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1854
         if (currentCondExpression instanceof InExpression) {
           CarbonColumn carbonColumn =
               currentCondExpression.getColumnList().get(0).getCarbonColumn();
@@ -225,6 +235,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
           }
           // In case of Range Column Dictionary Include we do not need to resolve the range
           // expression as it is already resolved and has the surrogates in the filter value
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
           if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
               && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
               FilterUtil.checkIfRightExpressionRequireEvaluation(currentCondExpression.getRight())
@@ -248,10 +259,13 @@ public class FilterExpressionProcessor implements FilterProcessor {
         }
         break;
       case RANGE:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true, false);
       case NOT_EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
         column = currentCondExpression.getColumnList().get(0).getCarbonColumn();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3591
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3591
         if (currentCondExpression.isSingleColumn() && !column.getDataType().isComplexType()) {
           if (column.isMeasure()) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
@@ -271,9 +285,11 @@ public class FilterExpressionProcessor implements FilterProcessor {
               return new RowLevelRangeFilterResolverImpl(expression, isExpressionResolve, false,
                   tableIdentifier);
             }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
             return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false, true);
           }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
           if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
               && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
               FilterUtil.checkIfRightExpressionRequireEvaluation(currentCondExpression.getRight())
@@ -299,9 +315,12 @@ public class FilterExpressionProcessor implements FilterProcessor {
         if (expression instanceof ConditionalExpression) {
           condExpression = (ConditionalExpression) expression;
           column = condExpression.getColumnList().get(0).getCarbonColumn();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3591
           if (condExpression.isSingleColumn() && !column.isComplex()) {
             condExpression = (ConditionalExpression) expression;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
             if (condExpression.getColumnList().get(0).getCarbonColumn().isMeasure()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
               return new ConditionalFilterResolverImpl(expression, true, true,
                   condExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
             }
@@ -312,6 +331,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
   }
 
   public static boolean isScanRequired(FilterExecuter filterExecuter, byte[][] maxValue,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
       byte[][] minValue, boolean[] isMinMaxSet) {
     if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
       return ((ImplicitColumnFilterExecutor) filterExecuter)
@@ -330,6 +350,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @return expressionTree without UnknownExpression
    */
   public Expression removeUnknownExpression(Expression expressionTree) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3397
     ExpressionType filterExpressionType = expressionTree.getFilterExpressionType();
     BinaryExpression currentExpression = null;
     switch (filterExpressionType) {

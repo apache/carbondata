@@ -24,6 +24,7 @@ public enum PartitionType {
   RANGE,
   RANGE_INTERVAL,
   LIST,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1856
   HASH,
   NATIVE_HIVE
 }

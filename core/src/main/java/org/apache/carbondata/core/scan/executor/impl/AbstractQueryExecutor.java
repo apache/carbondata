@@ -99,12 +99,15 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   protected CarbonIterator queryIterator;
 
   public AbstractQueryExecutor(Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
     ThreadLocalSessionInfo.setConfigurationToCurrentThread(configuration);
     queryProperties = new QueryExecutorProperties();
   }
 
   public void setExecutorService(ExecutorService executorService) {
     // add executor service for query execution
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2297
     queryProperties.executorService = executorService;
   }
 
@@ -132,7 +135,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // so block will be loaded in sorted order this will be required for
     // query execution
     Collections.sort(queryModel.getTableBlockInfos());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2779
     queryProperties.dataBlocks = getDataBlocks(queryModel);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1472
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
@@ -145,6 +150,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // and measure column start index
     queryProperties.filterMeasures = new HashSet<>();
     queryProperties.complexFilterDimension = new HashSet<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     if (queryModel.getIndexFilter() != null) {
       QueryUtil.getAllFilterDimensionsAndMeasures(queryModel.getIndexFilter().getResolver(),
           queryProperties.complexFilterDimension, queryProperties.filterMeasures);
@@ -169,6 +175,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // like lucene, Bloom created on the table. In that case all the indexes will do blocklet
     // level pruning and blockInfo entries will be repeated with different blockletIds
     Map<String, DataFileFooter> filePathToFileFooterMapping = new HashMap<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2779
     Map<String, SegmentProperties> filePathToSegmentPropertiesMap = new HashMap<>();
     for (TableBlockInfo blockInfo : queryModel.getTableBlockInfos()) {
       List<TableBlockInfo> tableBlockInfos = listMap.get(blockInfo.getFilePath());
@@ -184,17 +191,20 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       // available so read the blocklet information from block file
       // 2. CACHE_LEVEL is set to block
       // 3. CACHE_LEVEL is BLOCKLET but filter column min/max is not cached in driver
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
       if (null == blockletDetailInfo || blockletDetailInfo.getBlockletInfo() == null
           || blockletDetailInfo.isUseMinMaxForPruning()) {
         if (null != blockletDetailInfo) {
           blockInfo.setBlockOffset(blockletDetailInfo.getBlockFooterOffset());
         }
         DataFileFooter fileFooter = filePathToFileFooterMapping.get(blockInfo.getFilePath());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
         if (null != blockInfo.getDataFileFooter()) {
           fileFooter = blockInfo.getDataFileFooter();
         }
         if (null == fileFooter) {
           blockInfo.setDetailInfo(null);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
           fileFooter = CarbonUtil.readMetadataFile(blockInfo);
           // In case of non transactional table just set columnUniqueId as columnName to support
           // backward compatibility. non transactional tables column uniqueId is always equal to
@@ -203,12 +213,14 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             QueryUtil.updateColumnUniqueIdForNonTransactionTable(fileFooter.getColumnInTable());
           }
           filePathToFileFooterMapping.put(blockInfo.getFilePath(), fileFooter);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
           if (null == blockletDetailInfo) {
             blockletDetailInfo = QueryUtil.getBlockletDetailInfo(fileFooter, blockInfo);
           }
           blockInfo.setDetailInfo(blockletDetailInfo);
         }
         if (null == segmentProperties) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
           segmentProperties = new SegmentProperties(fileFooter.getColumnInTable());
           createFilterExpression(queryModel, segmentProperties);
           updateColumns(queryModel, fileFooter.getColumnInTable(), blockInfo.getFilePath());
@@ -218,6 +230,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       } else {
         if (null == segmentProperties) {
           segmentProperties = new SegmentProperties(blockInfo.getDetailInfo().getColumnSchemas());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
           createFilterExpression(queryModel, segmentProperties);
           updateColumns(queryModel, blockInfo.getDetailInfo().getColumnSchemas(),
               blockInfo.getFilePath());
@@ -249,6 +262,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // First validate the schema of the carbondata file if the same column name have different
     // datatype
     boolean sameColumnSchemaList = BlockletIndexUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3287
         .isSameColumnAndDifferentDatatypeInSchema(columnsInTable,
             queryModel.getTable().getTableInfo().getFactTable().getListOfColumns());
     if (!sameColumnSchemaList) {
@@ -286,6 +300,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       if (index > -1) {
         if (columnsInTable.get(index).isDimensionColumn()) {
           ProjectionDimension dimension = new ProjectionDimension(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
               new CarbonDimension(columnsInTable.get(index), measure.getMeasure().getOrdinal(), -1,
                   measure.getMeasure().getSchemaOrdinal()));
           dimension.setOrdinal(measure.getOrdinal());
@@ -305,6 +320,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   }
 
   private void createFilterExpression(QueryModel queryModel, SegmentProperties properties) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     if (queryModel.getIndexFilter() != null) {
       if (!queryModel.getIndexFilter().isResolvedOnSegment(properties)) {
         IndexFilter expression = new IndexFilter(properties, queryModel.getTable(),
@@ -318,6 +334,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * Read the file footer of block file and get the blocklets to query
    */
   private void readAndFillBlockletInfo(List<TableBlockInfo> tableBlockInfos,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       TableBlockInfo blockInfo, BlockletDetailInfo blockletDetailInfo, DataFileFooter fileFooter) {
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
     // cases when blockletID will be -1
@@ -329,6 +346,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     if (blockletDetailInfo.getBlockletId() != -1) {
       // fill the info only for given blockletId in detailInfo
       BlockletInfo blockletInfo = blockletList.get(blockletDetailInfo.getBlockletId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       fillBlockletInfoToTableBlock(tableBlockInfos, blockInfo, fileFooter,
           blockletInfo, blockletDetailInfo.getBlockletId());
     } else {
@@ -347,6 +365,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     TableBlockInfo info = blockInfo.copy();
     BlockletDetailInfo detailInfo = info.getDetailInfo();
     // set column schema details
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2701
     detailInfo.setColumnSchemas(fileFooter.getColumnInTable());
     detailInfo.setRowCount(blockletInfo.getNumberOfRows());
     byte[][] maxValues = blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues();
@@ -360,6 +379,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   }
 
   protected List<BlockExecutionInfo> getBlockExecutionInfos(QueryModel queryModel)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
     initQuery(queryModel);
     List<BlockExecutionInfo> blockExecutionInfoList = new ArrayList<BlockExecutionInfo>();
@@ -371,9 +391,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
 
     for (int i = 0; i < queryProperties.dataBlocks.size(); i++) {
       AbstractIndex abstractIndex = queryProperties.dataBlocks.get(i);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       BlockletDataRefNode dataRefNode =
           (BlockletDataRefNode) abstractIndex.getDataRefNode();
       final BlockExecutionInfo blockExecutionInfoForBlock =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
           getBlockExecutionInfoForBlock(
               queryModel,
               abstractIndex,
@@ -382,6 +404,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
               dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath(),
               dataRefNode.getBlockInfos().get(0).getSegment());
       if (null == dimensionReusableDataBuffers || null == measureReusableDataBuffers) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3764
         dimensionReusableDataBuffers = blockExecutionInfoForBlock.getDimensionReusableDataBuffer();
         measureReusableDataBuffers = blockExecutionInfoForBlock.getMeasureReusableDataBuffer();
       } else {
@@ -414,11 +437,14 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @return block execution info
    */
   private BlockExecutionInfo getBlockExecutionInfoForBlock(QueryModel queryModel,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       AbstractIndex blockIndex, int numberOfBlockletToScan, String filePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       String[] deleteDeltaFiles, Segment segment) {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
     // set actual query dimensions and measures. It may differ in case of restructure scenarios
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
     RestructureUtil.actualProjectionOfSegment(blockExecutionInfo, queryModel, segmentProperties);
     // below is to get only those dimension in query which is present in the
     // table block
@@ -432,6 +458,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     String blockId = CarbonUtil
         .getBlockId(queryModel.getAbsoluteTableIdentifier(), filePath, segment.getSegmentNo(),
             queryModel.getTable().getTableInfo().isTransactionalTable(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
             isStandardTable, queryModel.getTable().isHivePartitionTable());
     if (!isStandardTable) {
       blockExecutionInfo.setBlockId(CarbonTablePath.getShortBlockIdForPartitionTable(blockId));
@@ -439,14 +466,17 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       blockExecutionInfo.setBlockId(CarbonTablePath.getShortBlockId(blockId));
     }
     blockExecutionInfo.setDeleteDeltaFilePath(deleteDeltaFiles);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     blockExecutionInfo.setStartBlockletIndex(0);
     blockExecutionInfo.setNumberOfBlockletToScan(numberOfBlockletToScan);
     blockExecutionInfo.setProjectionDimensions(projectDimensions
         .toArray(new ProjectionDimension[0]));
     // get measures present in the current block
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
     List<ProjectionMeasure> projectionMeasures = RestructureUtil
         .createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo,
             blockExecutionInfo.getActualQueryMeasures(), segmentProperties.getMeasures(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
             queryModel.getTable().getTableInfo().isTransactionalTable());
     blockExecutionInfo.setProjectionMeasures(
         projectionMeasures.toArray(new ProjectionMeasure[projectionMeasures.size()]));
@@ -457,9 +487,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo
         .setTotalNumberDimensionToRead(
             segmentProperties.getDimensionOrdinalToChunkMapping().size());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
     blockExecutionInfo.setReadOnlyDelta(queryModel.isReadOnlyDelta());
     if (queryModel.isReadPageByPage()) {
       blockExecutionInfo.setPrefetchBlocklet(false);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3509
       LOGGER.info("Query prefetch is: false, read page by page");
     } else {
       LOGGER.info("Query prefetch is: " + queryModel.isPreFetchData());
@@ -468,6 +500,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // In case of fg index it should not go to direct fill.
     boolean fgIndexPathPresent = false;
     for (TableBlockInfo blockInfo : queryModel.getTableBlockInfos()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       fgIndexPathPresent = blockInfo.getIndexWriterPath() != null;
       if (fgIndexPathPresent) {
         queryModel.setDirectVectorFill(false);
@@ -478,11 +511,14 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setDirectVectorFill(queryModel.isDirectVectorFill());
     blockExecutionInfo.setTotalNumberOfMeasureToRead(
         segmentProperties.getMeasuresOrdinalToChunkMapping().size());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     blockExecutionInfo.setComplexDimensionInfoMap(
         QueryUtil.getComplexDimensionsMap(
             projectDimensions,
             segmentProperties.getDimensionOrdinalToChunkMapping(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
             queryProperties.complexFilterDimension));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     if (null != queryModel.getIndexFilter()) {
       FilterResolverIntf filterResolverIntf;
       if (!filePath.startsWith(queryModel.getTable().getTablePath())) {
@@ -493,6 +529,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       }
       blockExecutionInfo.setFilterExecuterTree(
           FilterUtil.getFilterExecuterTree(filterResolverIntf, segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
               blockExecutionInfo.getComlexDimensionInfoMap(), false));
     }
     // expression measure
@@ -506,8 +543,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     Set<CarbonDimension> currentBlockFilterDimensions =
         getCurrentBlockFilterDimensions(queryProperties.complexFilterDimension, segmentProperties);
     int[] dimensionChunkIndexes = QueryUtil.getDimensionChunkIndexes(projectDimensions,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
         segmentProperties.getDimensionOrdinalToChunkMapping(),
         currentBlockFilterDimensions, allProjectionListDimensionIdexes);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3764
     ReusableDataBuffer[] dimensionBuffer = new ReusableDataBuffer[projectDimensions.size()];
     for (int i = 0; i < dimensionBuffer.length; i++) {
       dimensionBuffer[i] = new ReusableDataBuffer();
@@ -517,6 +556,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
             CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     if (dimensionChunkIndexes.length > 0) {
       numberOfElementToConsider = dimensionChunkIndexes[dimensionChunkIndexes.length - 1]
           == segmentProperties.getBlockTodimensionOrdinalMapping().size() - 1 ?
@@ -534,9 +574,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // list of measures to be projected
     List<Integer> allProjectionListMeasureIndexes = new ArrayList<>();
     int[] measureChunkIndexes = QueryUtil.getMeasureChunkIndexes(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
         projectionMeasures, expressionMeasures,
         segmentProperties.getMeasuresOrdinalToChunkMapping(), filterMeasures,
         allProjectionListMeasureIndexes);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3764
     ReusableDataBuffer[] measureBuffer =
         new ReusableDataBuffer[allProjectionListMeasureIndexes.size()];
     for (int i = 0; i < measureBuffer.length; i++) {
@@ -567,7 +609,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             .toArray(new Integer[allProjectionListMeasureIndexes.size()])));
     // setting the size of fixed key column (dictionary column)
     blockExecutionInfo
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         .setFixedLengthKeySize(getKeySize(projectDimensions, segmentProperties));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3371
     List<Integer> dictionaryColumnChunkIndex = new ArrayList<Integer>();
     List<Integer> noDictionaryColumnChunkIndex = new ArrayList<Integer>();
     // get the block index to be read from file for query dimension
@@ -579,6 +623,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         dictionaryColumnChunkIndex.toArray(new Integer[dictionaryColumnChunkIndex.size()]));
     // need to sort the dictionary column as for all dimension
     // column key will be filled based on key order
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3371
     if (!queryModel.isForcedDetailRawQuery()) {
       Arrays.sort(queryDictionaryColumnChunkIndexes);
     }
@@ -589,7 +634,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setComplexColumnParentBlockIndexes(
         getComplexDimensionParentBlockIndexes(projectDimensions));
     blockExecutionInfo.setVectorBatchCollector(queryModel.isVectorReader());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1238
     DataTypeUtil.setDataTypeConverter(queryModel.getConverter());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2390
     blockExecutionInfo.setRequiredRowId(queryModel.isRequiredRowId());
     return blockExecutionInfo;
   }
@@ -613,9 +660,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     while (counter < queryDimension.size()) {
       if (queryDimension.get(counter).getDimension().getNumberOfChild() > 0) {
         counter += queryDimension.get(counter).getDimension().getNumberOfChild();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       } else if (queryDimension.get(counter).getDimension().getDataType() != DataTypes.DATE) {
         counter++;
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         fixedLengthDimensionOrdinal.add(blockMetadataInfo.getDimensionOrdinalToChunkMapping()
             .get(queryDimension.get(counter).getDimension().getOrdinal()));
         counter++;
@@ -624,6 +673,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     int[] dictionaryColumnOrdinal = ArrayUtils.toPrimitive(
         fixedLengthDimensionOrdinal.toArray(new Integer[fixedLengthDimensionOrdinal.size()]));
     // calculate the size of existing query dictionary columns in this block
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     if (blockMetadataInfo.getNumberOfDictDimensions() > 0) {
       int[] eachColumnValueSize = blockMetadataInfo.createDimColumnValueLength();
       int keySize = 0;
@@ -638,7 +688,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   private int[] getComplexDimensionParentBlockIndexes(List<ProjectionDimension> queryDimensions) {
     List<Integer> parentBlockIndexList = new ArrayList<Integer>();
     for (ProjectionDimension queryDimension : queryDimensions) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
       if (queryDimension.getDimension().getDataType().isComplexType()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
         if (null != queryDimension.getDimension().getComplexParentDimension()) {
           if (queryDimension.getDimension().isComplex()) {
             parentBlockIndexList.add(queryDimension.getDimension().getOrdinal());
@@ -710,6 +762,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   @Override
   public void finish() throws QueryExecutionException {
     CarbonUtil.clearBlockCache(queryProperties.dataBlocks);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2143
     Throwable exceptionOccurred = null;
     if (null != queryIterator) {
       // catch if there is any exception so that it can be rethrown after clearing all the resources
@@ -724,18 +777,24 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     if (freeUnsafeMemory) {
       UnsafeMemoryManager.INSTANCE
           .freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3080
       ThreadLocalTaskInfo.clearCarbonTaskInfo();
     }
     if (null != queryProperties.executorService) {
       // In case of limit query when number of limit records is already found so executors
       // must stop all the running execution otherwise it will keep running and will hit
       // the query performance.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1907
       queryProperties.executorService.shutdownNow();
     }
     // if there is any exception re throw the exception
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2143
     if (null != exceptionOccurred) {
       throw new QueryExecutionException(exceptionOccurred);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3162
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3164
     DataTypeUtil.clearFormatter();
   }
 

@@ -168,6 +168,7 @@ public class DataFileFooter implements Serializable {
   }
 
   public void setSorted(Boolean isSorted) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
     this.isSorted = isSorted;
   }
 

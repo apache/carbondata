@@ -44,6 +44,7 @@ public class TablePageStatistics {
   private boolean[] writeMinMaxForDimensions;
 
   public TablePageStatistics(EncodedColumnPage[] dimensions,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
       EncodedColumnPage[] measures) {
     int numDimensionsExpanded = dimensions.length;
     int numMeasures = measures.length;
@@ -51,6 +52,7 @@ public class TablePageStatistics {
     this.dimensionMaxValue = new byte[numDimensionsExpanded][];
     this.measureMinValue = new byte[numMeasures][];
     this.measureMaxValue = new byte[numMeasures][];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     this.writeMinMaxForDimensions = new boolean[numDimensionsExpanded];
     updateDimensionMinMax(dimensions);
     updateMeasureMinMax(measures);
@@ -59,6 +61,7 @@ public class TablePageStatistics {
   private void updateDimensionMinMax(EncodedColumnPage[] dimensions) {
     for (int i = 0; i < dimensions.length; i++) {
       SimpleStatsResult stats = dimensions[i].getStats();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       Object min = stats.getMin();
       Object max = stats.getMax();
       if (CarbonUtil.isEncodedWithMeta(dimensions[i].getPageMetadata().getEncoders())) {
@@ -70,6 +73,7 @@ public class TablePageStatistics {
         dimensionMaxValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), max);
         dimensionMinValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), min);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
       writeMinMaxForDimensions[i] = stats.writeMinMax();
     }
   }
@@ -99,6 +103,7 @@ public class TablePageStatistics {
   }
 
   public boolean[] getWriteMinMaxForDimensions() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     return writeMinMaxForDimensions;
   }
 

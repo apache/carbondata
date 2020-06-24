@@ -57,6 +57,7 @@ public class AbsoluteTableIdentifier implements Serializable {
   }
 
   public static AbsoluteTableIdentifier from(String tablePath, String dbName, String tableName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
       String tableId) {
     CarbonTableIdentifier identifier = new CarbonTableIdentifier(dbName, tableName, tableId);
     return new AbsoluteTableIdentifier(tablePath, identifier);
@@ -67,6 +68,7 @@ public class AbsoluteTableIdentifier implements Serializable {
   }
 
   public static AbsoluteTableIdentifier from(String tablePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2872
     return from(tablePath, "", "", "");
   }
 
@@ -81,6 +83,7 @@ public class AbsoluteTableIdentifier implements Serializable {
   }
 
   public String appendWithLocalPrefix(String path) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     if (tablePath.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX)) {
       return CarbonCommonConstants.LOCAL_FILE_PREFIX + path;
     } else {
@@ -97,6 +100,7 @@ public class AbsoluteTableIdentifier implements Serializable {
     int result = 1;
     result =
         prime * result + ((carbonTableIdentifier == null) ? 0 : carbonTableIdentifier.hashCode());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
     result = prime * result + ((tablePath == null) ? 0 : tablePath.hashCode());
     return result;
   }
@@ -126,6 +130,7 @@ public class AbsoluteTableIdentifier implements Serializable {
     } else if (!carbonTableIdentifier.equals(other.carbonTableIdentifier)) {
       return false;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
     if (tablePath == null) {
       if (other.tablePath != null) {
         return false;
@@ -141,6 +146,7 @@ public class AbsoluteTableIdentifier implements Serializable {
   }
 
   public String getDatabaseName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
     return carbonTableIdentifier.getDatabaseName();
   }
 
@@ -149,6 +155,8 @@ public class AbsoluteTableIdentifier implements Serializable {
   }
 
   public String toString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2142
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1763
     return carbonTableIdentifier.toString();
   }
 

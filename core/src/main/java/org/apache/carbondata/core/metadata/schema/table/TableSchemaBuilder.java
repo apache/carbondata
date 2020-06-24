@@ -66,6 +66,7 @@ public class TableSchemaBuilder {
   private String localDictionaryThreshold;
 
   public TableSchemaBuilder blockSize(int blockSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2247
     if (blockSize <= 0) {
       throw new IllegalArgumentException("blockSize should be greater than 0");
     }
@@ -82,11 +83,13 @@ public class TableSchemaBuilder {
   }
 
   public TableSchemaBuilder pageSizeInMb(int pageSizeInMb) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     this.pageSizeInMb = pageSizeInMb;
     return this;
   }
 
   public TableSchemaBuilder localDictionaryThreshold(int localDictionaryThreshold) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2676
     this.localDictionaryThreshold = String.valueOf(localDictionaryThreshold);
     return this;
   }
@@ -97,6 +100,7 @@ public class TableSchemaBuilder {
   }
 
   public TableSchemaBuilder tableName(String tableName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1998
     Objects.requireNonNull(tableName);
     this.tableName = tableName;
     return this;
@@ -110,26 +114,33 @@ public class TableSchemaBuilder {
     schema.setBucketingInfo(null);
     SchemaEvolution schemaEvol = new SchemaEvolution();
     schemaEvol.setSchemaEvolutionEntryList(new ArrayList<SchemaEvolutionEntry>());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
     schema.setSchemaEvolution(schemaEvol);
     List<ColumnSchema> allColumns = new LinkedList<>(sortColumns);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2430
     allColumns.addAll(dimension);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2926
     allColumns.addAll(varCharColumns);
     allColumns.addAll(complex);
     allColumns.addAll(measures);
     schema.setListOfColumns(allColumns);
 
     Map<String, String> property = new HashMap<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2247
     if (blockSize > 0) {
       property.put(CarbonCommonConstants.TABLE_BLOCKSIZE, String.valueOf(blockSize));
     }
     if (blockletSize > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2907
       property.put(CarbonCommonConstants.TABLE_BLOCKLET_SIZE, String.valueOf(blockletSize));
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     if (pageSizeInMb > 0) {
       property.put(CarbonCommonConstants.TABLE_PAGE_SIZE_INMB, String.valueOf(pageSizeInMb));
     }
 
     // Adding local dictionary, applicable only for String(dictionary exclude)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2676
     if (isLocalDictionaryEnabled) {
       property.put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
           String.valueOf(isLocalDictionaryEnabled));
@@ -153,17 +164,23 @@ public class TableSchemaBuilder {
   }
 
   public void setSortColumns(List<ColumnSchema> sortColumns) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2419
     this.sortColumns = sortColumns;
   }
 
   public ColumnSchema addColumn(StructField field, AtomicInteger valIndex, boolean isSortColumn,
       boolean isInvertedIdxColumn) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3065
     return addColumn(field, null, valIndex, isSortColumn, false, isInvertedIdxColumn);
   }
 
   private ColumnSchema addColumn(StructField field, String parentName, AtomicInteger valIndex,
       boolean isSortColumn, boolean isComplexChild, boolean isInvertedIdxColumn) {
     Objects.requireNonNull(field);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2452
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2451
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2450
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2453
     if (isComplexChild) {
       // if field is complex then append parent name to the child field to check
       // if any other field with same name exists
@@ -172,6 +189,7 @@ public class TableSchemaBuilder {
       checkRepeatColumnName(field);
     }
     ColumnSchema newColumn = new ColumnSchema();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2430
     if (parentName != null) {
       newColumn.setColumnName(parentName + "." + field.getFieldName());
     } else {
@@ -180,9 +198,11 @@ public class TableSchemaBuilder {
     newColumn.setDataType(field.getDataType());
     if (isSortColumn ||
         field.getDataType() == DataTypes.STRING ||
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2512
         field.getDataType() == DataTypes.VARCHAR ||
         field.getDataType() == DataTypes.DATE ||
         field.getDataType() == DataTypes.TIMESTAMP ||
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
         field.getDataType() == DataTypes.BINARY ||
         field.getDataType().isComplexType() ||
         (isComplexChild))  {
@@ -203,12 +223,17 @@ public class TableSchemaBuilder {
     // keep column ID as same as column name.
     // Anyhow Alter table is not supported for NonTransactionalTable.
     // SO, this will not have any impact.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2359
     newColumn.setColumnUniqueId(field.getFieldName());
     newColumn.setColumnReferenceId(newColumn.getColumnUniqueId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3065
     newColumn
         .setEncodingList(createEncoding(field.getDataType(), isInvertedIdxColumn, isComplexChild));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
     if (field.getDataType().isComplexType()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
       if (DataTypes.isArrayType(field.getDataType()) || DataTypes.isMapType(field.getDataType())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2430
         newColumn.setNumberOfChild(1);
       } else {
         newColumn.setNumberOfChild(((StructType) field.getDataType()).getFields().size());
@@ -219,20 +244,24 @@ public class TableSchemaBuilder {
       newColumn.setPrecision(decimalType.getPrecision());
       newColumn.setScale(decimalType.getScale());
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2419
     if (!isSortColumn) {
       if (!newColumn.isDimensionColumn()) {
         measures.add(newColumn);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
       } else if (DataTypes.isStructType(field.getDataType()) || DataTypes
           .isArrayType(field.getDataType()) || DataTypes.isMapType(field.getDataType())
           || isComplexChild) {
         complex.add(newColumn);
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2926
         if (field.getDataType() == DataTypes.VARCHAR) {
           varCharColumns.add(newColumn);
         } else {
           dimension.add(newColumn);
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     } else {
       newColumn.setSortColumn(true);
       sortColumns.add(newColumn);
@@ -241,6 +270,7 @@ public class TableSchemaBuilder {
       String parentFieldName = newColumn.getColumnName();
       if (DataTypes.isArrayType(field.getDataType())) {
         for (StructField structField : field.getChildren()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3446
           String colName = getColNameForArray(valIndex);
           if (null != ((ArrayType) field.getDataType()).getElementName()) {
             colName = ((ArrayType) field.getDataType()).getElementName();
@@ -264,6 +294,7 @@ public class TableSchemaBuilder {
       }
     }
     // todo: need more information such as long_string_columns
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2419
     return newColumn;
   }
 
@@ -277,6 +308,10 @@ public class TableSchemaBuilder {
    * Throw exception if {@param field} name is repeated
    */
   private void checkRepeatColumnName(StructField field, String parentName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2452
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2451
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2450
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2453
     checkRepeatColumnName(
         new StructField(parentName + "." + field.getFieldName(), field.getDataType(),
             field.getChildren()));
@@ -288,6 +323,7 @@ public class TableSchemaBuilder {
         throw new IllegalArgumentException("column name already exists");
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2430
     for (ColumnSchema column : dimension) {
       if (column.getColumnName().equalsIgnoreCase(field.getFieldName())) {
         throw new IllegalArgumentException("column name already exists");
@@ -312,8 +348,10 @@ public class TableSchemaBuilder {
     List<Encoding> encodings = new LinkedList<>();
     if (dataType == DataTypes.DATE && !isComplexChild) {
       encodings.add(Encoding.DIRECT_DICTIONARY);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2247
       encodings.add(Encoding.DICTIONARY);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3065
     if (isInvertedIdxColumn) {
       encodings.add(Encoding.INVERTED_INDEX);
     }

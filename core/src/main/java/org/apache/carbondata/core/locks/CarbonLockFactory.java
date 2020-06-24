@@ -46,6 +46,7 @@ public class CarbonLockFactory {
   private static String lockTypeConfigured;
 
   private static String lockPath = CarbonProperties.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3038
       .getProperty(CarbonCommonConstants.LOCK_PATH, CarbonCommonConstants.LOCK_PATH_DEFAULT)
       .toLowerCase();
 
@@ -71,7 +72,9 @@ public class CarbonLockFactory {
       absoluteLockPath =
           getLockpath(absoluteTableIdentifier.getCarbonTableIdentifier().getTableId());
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
     FileFactory.FileType fileType = FileFactory.getFileType(absoluteLockPath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     if (lockTypeConfigured.equals(CarbonCommonConstants.CARBON_LOCK_TYPE_CUSTOM)) {
       return newCustomLock(absoluteLockPath, lockFile);
     } else if (lockTypeConfigured.equals(CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER)) {
@@ -105,7 +108,10 @@ public class CarbonLockFactory {
     } else {
       lockFileLocation = getLockpath("1");
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
     switch (lockTypeConfigured) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
       case CarbonCommonConstants.CARBON_LOCK_TYPE_CUSTOM:
         return newCustomLock(lockFileLocation, lockFile);
       case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
@@ -116,6 +122,7 @@ public class CarbonLockFactory {
         return new HdfsFileLock(lockFileLocation, lockFile);
       case CarbonCommonConstants.CARBON_LOCK_TYPE_S3:
         return new S3FileLock(lockFileLocation, lockFile);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2218
       case CarbonCommonConstants.CARBON_LOCK_TYPE_ALLUXIO:
         return new AlluxioFileLock(lockFileLocation, lockFile);
       default:
@@ -128,9 +135,11 @@ public class CarbonLockFactory {
    */
   private static void getLockTypeConfigured() {
     lockTypeConfigured = CarbonProperties.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
         .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT)
         .toUpperCase();
     LOGGER.info("Configured lock type is: " + lockTypeConfigured);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     String lockClassName =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.LOCK_CLASS);
     if (lockClassName == null) {
@@ -140,6 +149,7 @@ public class CarbonLockFactory {
   }
 
   public static String getLockpath(String tableId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2642
     return lockPath + CarbonCommonConstants.FILE_SEPARATOR + tableId;
   }
 

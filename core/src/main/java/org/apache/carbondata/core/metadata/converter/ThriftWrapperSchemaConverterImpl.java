@@ -50,6 +50,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     */
   @Override
   public org.apache.carbondata.format.SchemaEvolutionEntry
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1609
       fromWrapperToExternalSchemaEvolutionEntry(SchemaEvolutionEntry wrapperSchemaEvolutionEntry) {
     org.apache.carbondata.format.SchemaEvolutionEntry thriftSchemaEvolutionEntry =
         new org.apache.carbondata.format.SchemaEvolutionEntry(
@@ -113,12 +114,14 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return org.apache.carbondata.format.Encoding.RLE;
       case INVERTED_INDEX:
         return org.apache.carbondata.format.Encoding.INVERTED_INDEX;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
       case DIRECT_COMPRESS_VARCHAR:
         return org.apache.carbondata.format.Encoding.DIRECT_COMPRESS_VARCHAR;
       case BIT_PACKED:
         return org.apache.carbondata.format.Encoding.BIT_PACKED;
       case DIRECT_DICTIONARY:
         return org.apache.carbondata.format.Encoding.DIRECT_DICTIONARY;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
       case INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY:
         return org.apache.carbondata.format.Encoding.INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY;
       default:
@@ -137,9 +140,11 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       return null;
     }
     // data type object maybe created by GSON, use id to compare the type instead of object address
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType.getId() == DataTypes.BOOLEAN.getId()) {
       return org.apache.carbondata.format.DataType.BOOLEAN;
     } else if (dataType.getId() == DataTypes.STRING.getId()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       return org.apache.carbondata.format.DataType.STRING;
     } else if (dataType.getId() == DataTypes.INT.getId()) {
       return org.apache.carbondata.format.DataType.INT;
@@ -149,22 +154,28 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       return org.apache.carbondata.format.DataType.LONG;
     } else if (dataType.getId() == DataTypes.DOUBLE.getId()) {
       return org.apache.carbondata.format.DataType.DOUBLE;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       return org.apache.carbondata.format.DataType.DECIMAL;
     } else if (dataType.getId() == DataTypes.DATE.getId()) {
       return org.apache.carbondata.format.DataType.DATE;
     } else if (dataType.getId() == DataTypes.TIMESTAMP.getId()) {
       return org.apache.carbondata.format.DataType.TIMESTAMP;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     } else if (dataType.getId() == DataTypes.BINARY.getId()) {
       return org.apache.carbondata.format.DataType.BINARY;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     } else if (DataTypes.isArrayType(dataType)) {
       return org.apache.carbondata.format.DataType.ARRAY;
     } else if (DataTypes.isStructType(dataType)) {
       return org.apache.carbondata.format.DataType.STRUCT;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
     } else if (DataTypes.isMapType(dataType)) {
       return org.apache.carbondata.format.DataType.MAP;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     } else if (dataType.getId() == DataTypes.VARCHAR.getId()) {
       return org.apache.carbondata.format.DataType.VARCHAR;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType.getId() == DataTypes.FLOAT.getId()) {
       return org.apache.carbondata.format.DataType.FLOAT;
     } else if (dataType.getId() == DataTypes.BYTE.getId()) {
@@ -187,10 +198,12 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     }
     org.apache.carbondata.format.ColumnSchema thriftColumnSchema =
         new org.apache.carbondata.format.ColumnSchema(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
             fromWrapperToExternalDataType(
                 wrapperColumnSchema.getDataType()),
             wrapperColumnSchema.getColumnName(),
             wrapperColumnSchema.getColumnUniqueId(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
             true,
             encoders,
             wrapperColumnSchema.isDimensionColumn());
@@ -208,8 +221,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     thriftColumnSchema.setInvisible(wrapperColumnSchema.isInvisible());
     thriftColumnSchema.setColumnReferenceId(wrapperColumnSchema.getColumnReferenceId());
     thriftColumnSchema.setSchemaOrdinal(wrapperColumnSchema.getSchemaOrdinal());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     thriftColumnSchema.setSpatialColumn(wrapperColumnSchema.isSpatialColumn());
     if (wrapperColumnSchema.isSortColumn()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1822
       Map<String, String> properties = wrapperColumnSchema.getColumnProperties();
       if (null == properties) {
         properties = new HashMap<String, String>();
@@ -217,8 +232,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       }
       properties.put(CarbonCommonConstants.SORT_COLUMNS, "true");
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1888
     if (null != wrapperColumnSchema.getAggFunction() && !wrapperColumnSchema.getAggFunction()
         .isEmpty()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1609
       thriftColumnSchema.setAggregate_function(wrapperColumnSchema.getAggFunction());
     } else if (null != wrapperColumnSchema.getTimeSeriesFunction() && !wrapperColumnSchema
         .getTimeSeriesFunction().isEmpty()) {
@@ -245,6 +262,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       case LIST:
       case RANGE:
       case RANGE_INTERVAL:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
         DeprecatedFeatureException.customPartitionNotSupported();
         return null;
       default:
@@ -259,6 +277,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     for (ColumnSchema wrapperColumnSchema : wrapperPartitionInfo.getColumnSchemaList()) {
       thriftColumnSchema.add(fromWrapperToExternalColumnSchema(wrapperColumnSchema));
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3606
     return new org.apache.carbondata.format.PartitionInfo(thriftColumnSchema,
         fromWrapperToExternalPartitionType(wrapperPartitionInfo.getPartitionType()));
   }
@@ -276,6 +295,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       thriftColumnSchema.add(fromWrapperToExternalColumnSchema(wrapperColumnSchema));
     }
     org.apache.carbondata.format.SchemaEvolution schemaEvolution =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
         fromWrapperToExternalSchemaEvolution(wrapperTableSchema.getSchemaEvolution());
     org.apache.carbondata.format.TableSchema externalTableSchema =
         new org.apache.carbondata.format.TableSchema(
@@ -285,6 +305,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       externalTableSchema.setBucketingInfo(
           fromWrapperToExternalBucketingInfo(wrapperTableSchema.getBucketingInfo()));
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-936
     if (wrapperTableSchema.getPartitionInfo() != null) {
       externalTableSchema.setPartitionInfo(
           fromWrapperToExternalPartitionInfo(wrapperTableSchema.getPartitionInfo()));
@@ -300,6 +321,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       thriftColumnSchema.add(fromWrapperToExternalColumnSchema(wrapperColumnSchema));
     }
     return new org.apache.carbondata.format.BucketingInfo(thriftColumnSchema,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
         bucketingInfo.getNumOfRanges());
   }
 
@@ -334,6 +356,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     List<org.apache.carbondata.format.ParentColumnTableRelation> thriftColumnRelationList =
         new ArrayList<>();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2130
     for (ParentColumnTableRelation wrapperColumnRelation : wrapperColumnRelations) {
       org.apache.carbondata.format.ParentColumnTableRelation thriftColumnTableRelation =
           new org.apache.carbondata.format.ParentColumnTableRelation();
@@ -420,10 +443,12 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return Encoding.RLE;
       case INVERTED_INDEX:
         return Encoding.INVERTED_INDEX;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
       case DIRECT_COMPRESS_VARCHAR:
         return Encoding.DIRECT_COMPRESS_VARCHAR;
       case BIT_PACKED:
         return Encoding.BIT_PACKED;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
       case INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY:
         return Encoding.INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY;
       case DIRECT_DICTIONARY:
@@ -445,6 +470,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       return null;
     }
     switch (dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
       case BOOLEAN:
         return DataTypes.BOOLEAN;
       case STRING:
@@ -458,21 +484,27 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       case DOUBLE:
         return DataTypes.DOUBLE;
       case DECIMAL:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         return DataTypes.createDecimalType(precision, scale);
       case TIMESTAMP:
         return DataTypes.TIMESTAMP;
       case DATE:
         return DataTypes.DATE;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
       case BINARY:
         return DataTypes.BINARY;
       case ARRAY:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
         return DataTypes.createDefaultArrayType();
       case STRUCT:
         return DataTypes.createDefaultStructType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
       case MAP:
         return DataTypes.createDefaultMapType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
       case VARCHAR:
         return DataTypes.VARCHAR;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
       case FLOAT:
         return DataTypes.FLOAT;
       case BYTE:
@@ -491,6 +523,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
     wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
     wrapperColumnSchema.setColumnName(externalColumnSchema.getColumn_name());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     wrapperColumnSchema.setDataType(
         fromExternalToWrapperDataType(
             externalColumnSchema.data_type,
@@ -509,7 +542,9 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperColumnSchema.setInvisible(externalColumnSchema.isInvisible());
     wrapperColumnSchema.setColumnReferenceId(externalColumnSchema.getColumnReferenceId());
     wrapperColumnSchema.setSchemaOrdinal(externalColumnSchema.getSchemaOrdinal());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     wrapperColumnSchema.setSpatialColumn(externalColumnSchema.isSpatialColumn());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
     wrapperColumnSchema.setSortColumn(false);
     Map<String, String> properties = externalColumnSchema.getColumnProperties();
     if (properties != null) {
@@ -517,13 +552,16 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       if (sortColumns != null) {
         wrapperColumnSchema.setSortColumn(true);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3202
       wrapperColumnSchema.setColumnProperties(externalColumnSchema.getColumnProperties());
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1888
     wrapperColumnSchema.setFunction(externalColumnSchema.getAggregate_function());
     List<org.apache.carbondata.format.ParentColumnTableRelation> parentColumnTableRelation =
         externalColumnSchema.getParentColumnTableRelations();
     if (null != parentColumnTableRelation) {
       wrapperColumnSchema.setParentColumnTableRelations(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
           fromExternalToWrapperParentTableColumnRelations(parentColumnTableRelation));
     }
     return wrapperColumnSchema;
@@ -539,6 +577,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       case LIST:
       case RANGE:
       case RANGE_INTERVAL:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
         DeprecatedFeatureException.customPartitionNotSupported();
         return null;
       default:
@@ -553,6 +592,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         externalPartitionInfo.getPartition_columns()) {
       wrapperColumnSchema.add(fromExternalToWrapperColumnSchema(columnSchema));
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3606
     return new PartitionInfo(wrapperColumnSchema,
         fromExternalToWrapperPartitionType(externalPartitionInfo.getPartition_type()));
   }
@@ -574,17 +614,21 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     }
     if (null != externalTableSchema.tableProperties) {
       CarbonUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2585
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2586
           .setLocalDictColumnsToWrapperSchema(listOfColumns, externalTableSchema.tableProperties,
               externalTableSchema.tableProperties
                   .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE));
     }
     wrapperTableSchema.setListOfColumns(listOfColumns);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
     wrapperTableSchema.setSchemaEvolution(
         fromExternalToWrapperSchemaEvolution(externalTableSchema.getSchema_evolution()));
     if (externalTableSchema.isSetBucketingInfo()) {
       wrapperTableSchema.setBucketingInfo(
           fromExternalToWrapperBucketingInfo(externalTableSchema.bucketingInfo));
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-936
     if (externalTableSchema.getPartitionInfo() != null) {
       wrapperTableSchema.setPartitionInfo(
           fromExternalToWrapperPartitionInfo(externalTableSchema.getPartitionInfo()));
@@ -596,6 +640,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       org.apache.carbondata.format.BucketingInfo externalBucketInfo) {
     List<ColumnSchema> listOfColumns = new ArrayList<ColumnSchema>();
     for (org.apache.carbondata.format.ColumnSchema externalColumnSchema :
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1609
         externalBucketInfo.table_columns) {
       listOfColumns.add(fromExternalToWrapperColumnSchema(externalColumnSchema));
     }
@@ -607,9 +652,11 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
    */
   @Override
   public TableInfo fromExternalToWrapperTableInfo(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
       org.apache.carbondata.format.TableInfo externalTableInfo,
       String dbName,
       String tableName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
       String tablePath) {
     TableInfo wrapperTableInfo = new TableInfo();
     List<org.apache.carbondata.format.SchemaEvolutionEntry> schemaEvolutionList =
@@ -617,9 +664,11 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperTableInfo.setLastUpdatedTime(
         schemaEvolutionList.get(schemaEvolutionList.size() - 1).getTime_stamp());
     wrapperTableInfo.setDatabaseName(dbName);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1820
     wrapperTableInfo.setTableUniqueName(CarbonTable.buildUniqueName(dbName, tableName));
     wrapperTableInfo.setFactTable(
         fromExternalToWrapperTableSchema(externalTableInfo.getFact_table(), tableName));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1879
     wrapperTableInfo.setTablePath(tablePath);
     return wrapperTableInfo;
   }

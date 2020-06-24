@@ -35,6 +35,7 @@ public class CarbonProjection implements Serializable {
   }
 
   public CarbonProjection(String[] columnNames) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1998
     Objects.requireNonNull(columnNames);
     for (String columnName : columnNames) {
       columns.add(columnName);

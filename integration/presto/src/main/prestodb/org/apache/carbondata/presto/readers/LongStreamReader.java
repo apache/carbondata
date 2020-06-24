@@ -36,6 +36,7 @@ public class LongStreamReader extends CarbonColumnVectorImpl implements PrestoVe
   public LongStreamReader(int batchSize, DataType dataType) {
     super(batchSize, dataType);
     this.batchSize = batchSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2818
     this.builder = type.createBlockBuilder(null, batchSize);
   }
 
@@ -56,6 +57,7 @@ public class LongStreamReader extends CarbonColumnVectorImpl implements PrestoVe
 
   @Override
   public void putLongs(int rowId, int count, long value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     for (int i = 0; i < count; i++) {
       type.writeLong(builder, value);
     }
@@ -68,11 +70,13 @@ public class LongStreamReader extends CarbonColumnVectorImpl implements PrestoVe
 
   @Override
   public void reset() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2818
     builder = type.createBlockBuilder(null, batchSize);
   }
 
   @Override
   public void putNulls(int rowId, int count) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     for (int i = 0; i < count; i++) {
       builder.appendNull();
     }
@@ -83,6 +87,7 @@ public class LongStreamReader extends CarbonColumnVectorImpl implements PrestoVe
     if (value == null) {
       putNull(rowId);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
       putLong(rowId, (long) value);
     }
   }

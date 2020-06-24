@@ -58,6 +58,7 @@ public final class FileFactory {
    */
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(FileFactory.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1729
 
   private static Configuration configuration;
 
@@ -89,6 +90,7 @@ public final class FileFactory {
   }
 
   public static FileReader getFileHolder(FileType fileType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
     return getFileHolder(fileType, getConfiguration());
   }
 
@@ -101,6 +103,7 @@ public final class FileFactory {
       case ALLUXIO:
       case VIEWFS:
       case S3:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3777
       case HDFS_LOCAL:
         return new DFSFileReaderImpl(configuration);
       default:
@@ -109,6 +112,7 @@ public final class FileFactory {
   }
 
   public static FileType getFileType(String path) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     FileType fileType = getFileTypeWithActualPath(path);
     if (fileType != null) {
       return fileType;
@@ -119,6 +123,7 @@ public final class FileFactory {
     }
 
     // If custom file type is configured,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
     if (fileFileTypeInterface.isPathSupported(path)) {
       return FileType.CUSTOM;
     }
@@ -143,6 +148,7 @@ public final class FileFactory {
         .startsWith(CarbonCommonConstants.S3A_PREFIX) || lowerCase
         .startsWith(CarbonCommonConstants.S3_PREFIX)) {
       return FileType.S3;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3777
     } else if (lowerCase.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX) && !configuration
         .get(CarbonCommonConstants.FS_DEFAULT_FS)
         .equalsIgnoreCase(CarbonCommonConstants.LOCAL_FS_URI)) {
@@ -154,6 +160,7 @@ public final class FileFactory {
   private static FileType getFileTypeWithActualPath(String path) {
     if (path.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
       return FileType.HDFS;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     } else if (path.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
       return FileType.ALLUXIO;
     } else if (path.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
@@ -162,6 +169,7 @@ public final class FileFactory {
         .startsWith(CarbonCommonConstants.S3A_PREFIX) || path
         .startsWith(CarbonCommonConstants.S3_PREFIX)) {
       return FileType.S3;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3777
     } else if (path.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX) && !configuration
         .get(CarbonCommonConstants.FS_DEFAULT_FS)
         .equalsIgnoreCase(CarbonCommonConstants.LOCAL_FS_URI)) {
@@ -179,6 +187,7 @@ public final class FileFactory {
    * path will be formatted.
    */
   public static String getFormattedPath(String path) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3659
     if (getFileType(path) == FileType.ALLUXIO) {
       return AlluxioCarbonFile.getFormattedPath(path);
     }
@@ -192,6 +201,7 @@ public final class FileFactory {
 
   public static DataInputStream getDataInputStream(String path)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     return getDataInputStream(path, -1);
   }
 
@@ -288,6 +298,7 @@ public final class FileFactory {
    */
   public static boolean isFileExist(String filePath, boolean performFileCheck)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     return getCarbonFile(filePath).isFileExist(performFileCheck);
   }
 
@@ -297,6 +308,7 @@ public final class FileFactory {
    * @param filePath - Path
    */
   public static boolean isFileExist(String filePath) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     return getCarbonFile(filePath).isFileExist();
   }
 
@@ -322,6 +334,7 @@ public final class FileFactory {
       return path.delete();
     }
     File[] files = path.listFiles();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     if (null == files) {
       return true;
     }
@@ -332,6 +345,7 @@ public final class FileFactory {
   }
 
   public static boolean deleteAllCarbonFilesOfDir(CarbonFile path) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1322
     if (!path.exists()) {
       return true;
     }
@@ -346,6 +360,7 @@ public final class FileFactory {
   }
 
   public static boolean mkdirs(String filePath) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     return getCarbonFile(filePath).mkdirs();
   }
 
@@ -372,6 +387,7 @@ public final class FileFactory {
    * @throws IOException
    */
   public static void truncateFile(String path, long newSize) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     path = path.replace("\\", "/");
     FileChannel fileChannel = null;
     switch (getFileType(path)) {
@@ -389,12 +405,23 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
       case CUSTOM:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
       case S3:
         // if hadoop version >= 2.7, it can call method 'FileSystem.truncate' to truncate file,
         // this method was new in hadoop 2.7, otherwise use CarbonFile.truncate to do this.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1729
         try {
           Path pt = new Path(path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
           FileSystem fs = pt.getFileSystem(getConfiguration());
           Method truncateMethod = fs.getClass().getDeclaredMethod("truncate",
               new Class[]{Path.class, long.class});
@@ -402,9 +429,11 @@ public final class FileFactory {
         } catch (NoSuchMethodException e) {
           LOGGER.error("the version of hadoop is below 2.7, there is no 'truncate'"
               + " method in FileSystem, It needs to use 'CarbonFile.truncate'.");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
           CarbonFile carbonFile = FileFactory.getCarbonFile(path);
           carbonFile.truncate(path, newSize);
         } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
           LOGGER.error("Other exception occurred while truncating the file " + e.getMessage(), e);
         }
         return;
@@ -430,10 +459,12 @@ public final class FileFactory {
    * @throws IOException
    */
   public static boolean createNewLockFile(String filePath) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     return getCarbonFile(filePath).createNewLockFile();
   }
 
   public enum FileType {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3777
     LOCAL, HDFS, ALLUXIO, VIEWFS, S3, CUSTOM, HDFS_LOCAL
   }
 
@@ -443,6 +474,7 @@ public final class FileFactory {
    * @return Updated filepath
    */
   public static String addSchemeIfNotExists(String filePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3194
     FileType fileType = getFileType(filePath);
     switch (fileType) {
       case LOCAL:
@@ -471,13 +503,20 @@ public final class FileFactory {
    * @return updated file path without url for local
    */
   public static String getUpdatedFilePath(String filePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     switch (getFileType(filePath)) {
       case HDFS:
       case VIEWFS:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
       case S3:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
       case CUSTOM:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3777
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3777
       case HDFS_LOCAL:
         return filePath;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2218
       case ALLUXIO:
         return StringUtils.startsWith(filePath, "alluxio") ? filePath : "alluxio:///" + filePath;
       case LOCAL:
@@ -514,14 +553,26 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
       case S3:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
       case CUSTOM:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3777
       case HDFS_LOCAL:
         Path path = new Path(filePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
         FileSystem fs = path.getFileSystem(getConfiguration());
         return fs.getContentSummary(path).getLength();
       case LOCAL:
       default:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         filePath = getUpdatedFilePath(filePath);
         File file = new File(filePath);
         return FileUtils.sizeOfDirectory(file);
@@ -535,6 +586,7 @@ public final class FileFactory {
    * @return
    */
   public static Path getPath(String filePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1277
     return new Path(filePath);
   }
 
@@ -546,33 +598,46 @@ public final class FileFactory {
    * @throws IOException
    */
   public static FileSystem getFileSystem(Path path) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
     return path.getFileSystem(getConfiguration());
   }
 
   public static void createDirectoryAndSetPermission(String directoryPath, FsPermission permission)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1804
       throws IOException {
     FileFactory.FileType fileType = FileFactory.getFileType(directoryPath);
     switch (fileType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1732
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1827
       case S3:
       case HDFS:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2218
       case ALLUXIO:
       case VIEWFS:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
       case CUSTOM:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3777
       case HDFS_LOCAL:
         try {
           Path path = new Path(directoryPath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
           FileSystem fs = path.getFileSystem(getConfiguration());
           if (!fs.exists(path)) {
             fs.mkdirs(path);
             fs.setPermission(path, permission);
           }
         } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
           LOGGER.error("Exception occurred : " + e.getMessage(), e);
           throw e;
         }
         return;
       case LOCAL:
       default:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         directoryPath = FileFactory.getUpdatedFilePath(directoryPath);
         File file = new File(directoryPath);
         if (!file.mkdirs()) {
@@ -586,10 +651,12 @@ public final class FileFactory {
    * Check and append the hadoop's defaultFS to the path
    */
   public static String checkAndAppendDefaultFs(String path, Configuration conf) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
     if (FileFactory.getFileType(path) == FileType.CUSTOM) {
       // If its custom file type, already schema is present, no need to append schema.
       return path;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2898
     String defaultFs = conf.get(CarbonCommonConstants.FS_DEFAULT_FS);
     String lowerPath = path.toLowerCase();
     if (lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) || lowerPath
@@ -597,6 +664,7 @@ public final class FileFactory {
         .startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) || lowerPath
         .startsWith(CarbonCommonConstants.S3N_PREFIX) || lowerPath
         .startsWith(CarbonCommonConstants.S3A_PREFIX) || lowerPath
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3777
         .startsWith(CarbonCommonConstants.S3_PREFIX) || lowerPath
         .startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX)) {
       return path;
@@ -614,6 +682,7 @@ public final class FileFactory {
    * @return
    */
   public static boolean checkIfPrefixExists(String path) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
     if (FileFactory.getFileType(path) == FileType.CUSTOM) {
       // If its custom file type, already schema is present, no need to append schema.
       return true;
@@ -638,6 +707,7 @@ public final class FileFactory {
    * @throws IOException if error occurs
    */
   public static boolean setReplication(String path, short replication) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     return getCarbonFile(path).setReplication(replication);
   }
 
@@ -659,6 +729,7 @@ public final class FileFactory {
    * @throws IOException if IO errors
    */
   public static void writeFile(String content, String filePath) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3599
     AtomicFileOperations fileWrite = AtomicFileOperationFactory.getAtomicFileOperations(filePath);
     BufferedWriter brWriter = null;
     DataOutputStream dataOutputStream = null;
@@ -705,6 +776,7 @@ public final class FileFactory {
   }
 
   public static void touchFile(CarbonFile file) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     if (file.exists()) {
       return;
     }

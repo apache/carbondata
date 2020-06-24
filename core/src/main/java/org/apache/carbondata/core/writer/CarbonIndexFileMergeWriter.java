@@ -62,6 +62,7 @@ public class CarbonIndexFileMergeWriter {
   private Logger LOGGER = LogServiceFactory.getLogService(this.getClass().getCanonicalName());
 
   public CarbonIndexFileMergeWriter(CarbonTable table) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
     this.table = table;
   }
 
@@ -78,6 +79,7 @@ public class CarbonIndexFileMergeWriter {
   private String mergeCarbonIndexFilesOfSegment(String segmentId,
       String tablePath, List<String> indexFileNamesTobeAdded,
       boolean readFileFooterFromCarbonDataFile, String uuid, String partitionPath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3262
     try {
       Segment segment = Segment.getSegment(segmentId, tablePath);
       String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
@@ -86,10 +88,12 @@ public class CarbonIndexFileMergeWriter {
       if (segment != null && segment.getSegmentFileName() != null) {
         sfs = new SegmentFileStore(tablePath, segment.getSegmentFileName());
         List<CarbonFile> indexCarbonFiles = sfs.getIndexCarbonFiles();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3415
         if (table.isHivePartitionTable()) {
           // in case of partition table, merge index files of a partition
           List<CarbonFile> indexFilesInPartition = new ArrayList<>();
           for (CarbonFile indexCarbonFile : indexCarbonFiles) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
             if (FileFactory.getUpdatedFilePath(indexCarbonFile.getParentFile().getPath())
                 .equals(partitionPath)) {
               indexFilesInPartition.add(indexCarbonFile);
@@ -100,15 +104,18 @@ public class CarbonIndexFileMergeWriter {
           indexFiles = indexCarbonFiles.toArray(new CarbonFile[indexCarbonFiles.size()]);
         }
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
         indexFiles =
             SegmentIndexFileStore.getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
       }
       if (isCarbonIndexFilePresent(indexFiles) || indexFileNamesTobeAdded != null) {
         if (sfs == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2321
           return writeMergeIndexFileBasedOnSegmentFolder(indexFileNamesTobeAdded,
               readFileFooterFromCarbonDataFile, segmentPath, indexFiles, segmentId);
         } else {
           return writeMergeIndexFileBasedOnSegmentFile(segmentId, indexFileNamesTobeAdded, sfs,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3415
               indexFiles, uuid, partitionPath);
         }
       }
@@ -123,6 +130,7 @@ public class CarbonIndexFileMergeWriter {
    * merge index files and return the index details
    */
   public SegmentFileStore.FolderDetails mergeCarbonIndexFilesOfSegment(String segmentId,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
       String tablePath, String partitionPath, List<String> partitionInfo, String uuid,
       String tempFolderPath, String currPartitionSpec) throws IOException {
     SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
@@ -184,6 +192,7 @@ public class CarbonIndexFileMergeWriter {
 
   private String writeMergeIndexFileBasedOnSegmentFolder(List<String> indexFileNamesTobeAdded,
       boolean readFileFooterFromCarbonDataFile, String segmentPath, CarbonFile[] indexFiles,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2321
       String segmentId) throws IOException {
     SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
     if (readFileFooterFromCarbonDataFile) {
@@ -195,6 +204,7 @@ public class CarbonIndexFileMergeWriter {
       fileStore.readAllIIndexOfSegment(segmentPath);
     }
     Map<String, byte[]> indexMap = fileStore.getCarbonIndexMap();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2321
     writeMergeIndexFile(indexFileNamesTobeAdded, segmentPath, indexMap, segmentId);
     for (CarbonFile indexFile : indexFiles) {
       indexFile.delete();
@@ -204,6 +214,7 @@ public class CarbonIndexFileMergeWriter {
 
   public String writeMergeIndexFileBasedOnSegmentFile(String segmentId,
       List<String> indexFileNamesTobeAdded, SegmentFileStore segmentFileStore,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3415
       CarbonFile[] indexFiles, String uuid, String partitionPath) throws IOException {
     SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
     // in case of partition table, merge index file to be created for each partition
@@ -226,12 +237,15 @@ public class CarbonIndexFileMergeWriter {
       }
       map.put(path.getName(), entry.getValue());
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3415
     List<PartitionSpec> partitionSpecs = SegmentFileStore
         .getPartitionSpecs(segmentId, table.getTablePath(), SegmentStatusManager
             .readLoadMetadata(CarbonTablePath.getMetadataPath(table.getTablePath())));
     for (Map.Entry<String, Map<String, byte[]>> entry : indexLocationMap.entrySet()) {
       String mergeIndexFile =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2321
           writeMergeIndexFile(indexFileNamesTobeAdded, entry.getKey(), entry.getValue(), segmentId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2704
       for (Map.Entry<String, SegmentFileStore.FolderDetails> segentry : segmentFileStore
           .getLocationMap().entrySet()) {
         String location = segentry.getKey();
@@ -239,12 +253,14 @@ public class CarbonIndexFileMergeWriter {
           location =
               segmentFileStore.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + location;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3659
         if (FileFactory.getCarbonFile(entry.getKey()).equals(FileFactory.getCarbonFile(location))) {
           segentry.getValue().setMergeFileName(mergeIndexFile);
           segentry.getValue().setFiles(new HashSet<String>());
           break;
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3415
       if (table.isHivePartitionTable()) {
         for (PartitionSpec partitionSpec : partitionSpecs) {
           if (partitionSpec.getLocation().toString().equals(partitionPath)) {
@@ -254,22 +270,27 @@ public class CarbonIndexFileMergeWriter {
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2482
     String newSegmentFileName = SegmentFileStore.genSegmentFileName(segmentId, uuid)
         + CarbonTablePath.SEGMENT_EXT;
     String path = CarbonTablePath.getSegmentFilesLocation(table.getTablePath())
         + CarbonCommonConstants.FILE_SEPARATOR + newSegmentFileName;
     if (!table.isHivePartitionTable()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2704
       SegmentFileStore.writeSegmentFile(segmentFileStore.getSegmentFile(), path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3566
       SegmentFileStore.updateTableStatusFile(table, segmentId, newSegmentFileName,
           table.getCarbonTableIdentifier().getTableId(), segmentFileStore);
     }
     for (CarbonFile file : indexFiles) {
       file.delete();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2482
     return uuid;
   }
 
   private String writeMergeIndexFile(List<String> indexFileNamesTobeAdded, String segmentPath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2321
       Map<String, byte[]> indexMap, String segment_id) throws IOException {
     MergedBlockIndexHeader indexHeader = new MergedBlockIndexHeader();
     MergedBlockIndex mergedBlockIndex = new MergedBlockIndex();
@@ -283,6 +304,7 @@ public class CarbonIndexFileMergeWriter {
       }
     }
     if (fileNames.size() > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2321
       String mergeIndexName =
           segment_id + '_' + System.currentTimeMillis() + CarbonTablePath.MERGE_INDEX_FILE_EXT;
       openThriftWriter(segmentPath + "/" + mergeIndexName);
@@ -302,6 +324,7 @@ public class CarbonIndexFileMergeWriter {
    * @param segmentId
    */
   public String mergeCarbonIndexFilesOfSegment(String segmentId, String uuid, String tablePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       String partitionPath) {
     return mergeCarbonIndexFilesOfSegment(segmentId, tablePath, null, false, uuid, partitionPath);
   }
@@ -319,6 +342,7 @@ public class CarbonIndexFileMergeWriter {
   }
 
   private boolean isCarbonIndexFilePresent(CarbonFile[] indexFiles) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1617
     for (CarbonFile file : indexFiles) {
       if (file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
         return true;
@@ -355,6 +379,7 @@ public class CarbonIndexFileMergeWriter {
     // create thrift writer instance
     thriftWriter = new ThriftWriter(filePath, false);
     // open the file stream
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1617
     thriftWriter.open(FileWriteOperation.OVERWRITE);
   }
 
@@ -372,6 +397,7 @@ public class CarbonIndexFileMergeWriter {
     private List<String> filesTobeDeleted;
 
     public SegmentIndexFIleMergeStatus(SegmentFileStore.SegmentFile segmentFile,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2209
         List<String> filesTobeDeleted) {
       this.segmentFile = segmentFile;
       this.filesTobeDeleted = filesTobeDeleted;

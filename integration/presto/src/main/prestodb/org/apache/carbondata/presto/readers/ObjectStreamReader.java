@@ -39,6 +39,7 @@ public class ObjectStreamReader extends CarbonColumnVectorImpl implements Presto
   public ObjectStreamReader(int batchSize, DataType dataType) {
     super(batchSize, dataType);
     this.batchSize = batchSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2818
     this.builder = type.createBlockBuilder(null, batchSize);
   }
 
@@ -64,11 +65,13 @@ public class ObjectStreamReader extends CarbonColumnVectorImpl implements Presto
 
   @Override
   public void reset() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2818
     builder = type.createBlockBuilder(null, batchSize);
   }
 
   @Override
   public void putNulls(int rowId, int count) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     for (int i = 0; i < count; i++) {
       builder.appendNull();
     }

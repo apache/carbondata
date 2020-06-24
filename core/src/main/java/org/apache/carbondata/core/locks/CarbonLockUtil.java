@@ -53,7 +53,9 @@ public class CarbonLockUtil {
         LOGGER.info("Clean files lock has been successfully released");
       } else if (locktype.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
         LOGGER.info("Delete segments lock has been successfully released");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       } else if (locktype.equals(LockUsage.INDEX_STATUS_LOCK)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         LOGGER.info("Index status lock has been successfully released");
       }
     } else {
@@ -65,6 +67,7 @@ public class CarbonLockUtil {
         LOGGER.info("Not able to release the clean files lock");
       } else if (locktype.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
         LOGGER.info("Not able to release the delete segments lock");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       } else if (locktype.equals(LockUsage.INDEX_STATUS_LOCK)) {
         LOGGER.info("Not able to release the index status lock");
       }
@@ -80,8 +83,11 @@ public class CarbonLockUtil {
    * @return
    */
   public static ICarbonLock getLockObject(AbsoluteTableIdentifier absoluteTableIdentifier,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
       String lockType, String errorMsg) {
     ICarbonLock carbonLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier, lockType);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2142
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1763
     LOGGER.info("Trying to acquire lock: " + lockType + "for table: " +
         absoluteTableIdentifier.toString());
     if (carbonLock.lockWithRetries()) {
@@ -107,6 +113,7 @@ public class CarbonLockUtil {
    * Get the value for the property. If NumberFormatException is thrown then return default value.
    */
   public static int getLockProperty(String property, int defaultValue) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1928
     try {
       return Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(property));
@@ -121,10 +128,13 @@ public class CarbonLockUtil {
    */
   public static void deleteExpiredSegmentLockFiles(CarbonTable carbonTable) {
     final long currTime = System.currentTimeMillis();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
     final long segmentLockFilesPreserveTime =
         CarbonProperties.getInstance().getSegmentLockFilesPreserveHours();
     AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2717
     String lockFilesDir = CarbonProperties.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3038
         .getProperty(CarbonCommonConstants.LOCK_PATH, CarbonCommonConstants.LOCK_PATH_DEFAULT);
     if (StringUtils.isEmpty(lockFilesDir)) {
       lockFilesDir = CarbonTablePath.getLockFilesDirPath(absoluteTableIdentifier.getTablePath());
@@ -138,6 +148,7 @@ public class CarbonLockUtil {
             @Override
             public boolean accept(CarbonFile pathName) {
               if (CarbonTablePath.isSegmentLockFilePath(pathName.getName())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
                 return (currTime - pathName.getLastModifiedTime()) > segmentLockFilesPreserveTime;
               }
               return false;

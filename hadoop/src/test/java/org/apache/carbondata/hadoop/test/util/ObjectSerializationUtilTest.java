@@ -36,6 +36,7 @@ public class ObjectSerializationUtilTest extends TestCase {
   }
 
   @Test public void testConvertObjectToString() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     Expression expression = new EqualToExpression(new ColumnExpression("c1", DataTypes.STRING),
         new LiteralExpression("a", DataTypes.STRING));
     String string = ObjectSerializationUtil.convertObjectToString(expression);

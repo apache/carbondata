@@ -42,7 +42,9 @@ public class TablePruningInfo {
   private int numBlocksAfterFGPruning;
   private int numBlockletsAfterFGPruning;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3118
   synchronized void addTotalBlocks(int numBlocks) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2929
     this.totalBlocks += numBlocks;
   }
 
@@ -54,10 +56,12 @@ public class TablePruningInfo {
     this.filterStatement = filterStatement;
   }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2902
   void setShowPruningInfo(boolean showPruningInfo) {
     this.showPruningInfo = showPruningInfo;
   }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2929
   void setNumBlocksAfterDefaultPruning(int numBlocks) {
     this.numBlocksAfterDefaultPruning = numBlocks;
   }
@@ -67,12 +71,14 @@ public class TablePruningInfo {
    * we accumulate blocklet number in default index instead of setting it
    * in CarbonInputFormat
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3118
   synchronized void addNumBlockletsAfterDefaultPruning(int numBlocklets) {
     this.numBlockletsAfterDefaultPruning += numBlocklets;
   }
 
   void setNumBlockletsAfterCGPruning(IndexWrapperSimpleInfo indexWrapperSimpleInfo,
       int numBlocklets, int numBlocks) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.cgIndex = indexWrapperSimpleInfo;
     this.numBlocksAfterCGPruning = numBlocks;
     this.numBlockletsAfterCGPruning = numBlocklets;
@@ -90,15 +96,18 @@ public class TablePruningInfo {
     if (showPruningInfo) {
       StringBuilder builder = new StringBuilder();
       builder
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2929
           .append(" - total: ").append(totalBlocks).append(" blocks, ")
           .append(totalBlocklets).append(" blocklets").append("\n")
           .append(" - filter: ").append(filterStatement).append("\n");
       int skipBlocks = totalBlocks - numBlocksAfterDefaultPruning;
       int skipBlocklets = totalBlocklets - numBlockletsAfterDefaultPruning;
       builder
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           .append(" - pruned by Main Index").append("\n")
           .append("    - skipped: ").append(skipBlocks).append(" blocks, ")
           .append(skipBlocklets).append(" blocklets").append("\n");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       if (cgIndex != null) {
         skipBlocks = numBlocksAfterDefaultPruning - numBlocksAfterCGPruning;
         skipBlocklets = numBlockletsAfterDefaultPruning - numBlockletsAfterCGPruning;
@@ -107,6 +116,7 @@ public class TablePruningInfo {
             .append("    - name: ").append(cgIndex.getIndexWrapperName()).append("\n")
             .append("    - provider: ").append(cgIndex.getIndexWrapperProvider()).append("\n")
             .append("    - skipped: ").append(skipBlocks).append(" blocks, ")
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3564
             .append(skipBlocklets).append(" blocklets").append("\n");
       }
       if (fgIndex != null) {
@@ -118,10 +128,13 @@ public class TablePruningInfo {
           skipBlocklets = numBlockletsAfterDefaultPruning - numBlockletsAfterFGPruning;
         }
         builder
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
             .append(" - pruned by FG Index").append("\n")
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
             .append("    - name: ").append(fgIndex.getIndexWrapperName()).append("\n")
             .append("    - provider: ").append(fgIndex.getIndexWrapperProvider()).append("\n")
             .append("    - skipped: ").append(skipBlocks).append(" blocks, ")
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3564
             .append(skipBlocklets).append(" blocklets").append("\n");
       }
       return builder.toString();

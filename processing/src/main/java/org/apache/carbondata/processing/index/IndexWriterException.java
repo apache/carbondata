@@ -19,6 +19,7 @@ package org.apache.carbondata.processing.index;
 
 public class IndexWriterException extends RuntimeException {
   public IndexWriterException(Throwable cause) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
     super(cause);
   }
 }

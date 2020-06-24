@@ -73,6 +73,7 @@ public class NonFilterQueryScannedResult extends BlockletScannedResult {
   @Override
   public void fillValidRowIdsBatchFilling(int rowId, int batchSize) {
     // row id will be different for every batch so clear it before filling
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3343
     clearValidRowIdList();
     int startPosition = rowId;
     for (int i = 0; i < batchSize; i++) {

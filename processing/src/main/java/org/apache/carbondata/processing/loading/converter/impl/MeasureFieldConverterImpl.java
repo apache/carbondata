@@ -48,9 +48,12 @@ public class MeasureFieldConverterImpl implements FieldConverter {
 
   public MeasureFieldConverterImpl(DataField dataField, String nullFormat, int index,
       boolean isEmptyBadRecord) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     this.nullFormat = nullFormat;
     this.index = index;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-784
     this.isEmptyBadRecord = isEmptyBadRecord;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2168
     this.dataField = dataField;
   }
 
@@ -58,6 +61,7 @@ public class MeasureFieldConverterImpl implements FieldConverter {
   public void convert(CarbonRow row, BadRecordLogHolder logHolder)
       throws CarbonDataLoadingException {
     String value = row.getString(index);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
     row.update(convert(value, logHolder), index);
   }
 
@@ -68,12 +72,14 @@ public class MeasureFieldConverterImpl implements FieldConverter {
     Object output;
     boolean isNull = CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(literalValue);
     if (literalValue == null || isNull) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       String message = logHolder.getColumnMessageMap().get(dataField.getColumn().getColName());
       if (null == message) {
         message = CarbonDataProcessorUtil.prepareFailureReason(dataField.getColumn().getColName(),
             dataField.getColumn().getDataType());
         logHolder.getColumnMessageMap().put(dataField.getColumn().getColName(), message);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
       if (dataField.getColumn().isDimension()) {
         logHolder.setReason(message);
       }
@@ -89,11 +95,13 @@ public class MeasureFieldConverterImpl implements FieldConverter {
         logHolder.setReason(message);
       }
       return null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     } else if (literalValue.equals(nullFormat)) {
       return null;
     } else {
       try {
         // in case of no dictionary dimension
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
         if (dataField.getColumn().isDimension()) {
           String dateFormat = null;
           if (dataField.getColumn().getDataType() == DataTypes.DATE) {
@@ -114,6 +122,7 @@ public class MeasureFieldConverterImpl implements FieldConverter {
           }
         } else {
           if (dataField.isUseActualData()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
             output = DataTypeUtil
                 .getMeasureValueBasedOnDataType(literalValue, dataField.getColumn().getDataType(),
                     dataField.getColumn().getColumnSchema().getScale(),
@@ -140,6 +149,7 @@ public class MeasureFieldConverterImpl implements FieldConverter {
 
   @Override
   public DataField getDataField() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     return dataField;
   }
 

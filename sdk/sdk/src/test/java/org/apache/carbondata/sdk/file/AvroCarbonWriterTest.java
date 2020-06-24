@@ -125,6 +125,7 @@ public class AvroCarbonWriterTest {
 
     // conversion to GenericData.Record
     GenericData.Record record = TestUtil.jsonToAvro(json, avroSchema);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2627
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
@@ -272,6 +273,8 @@ public class AvroCarbonWriterTest {
     GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
 
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
       CarbonWriter writer = CarbonWriter.builder().outputPath(path).withAvroInput(nn).writtenBy("AvroCarbonWriterTest").build();
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -300,9 +303,13 @@ public class AvroCarbonWriterTest {
 
     // conversion to GenericData.Record
     Schema nn = new Schema.Parser().parse(mySchema);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2627
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2627
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2627
     GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
     try {
       CarbonWriter writer =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
           CarbonWriter.builder().outputPath(path).sortBy(sortColumns).withAvroInput(nn).writtenBy("AvroCarbonWriterTest").build();
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -316,6 +323,7 @@ public class AvroCarbonWriterTest {
 
   private void WriteAvroComplexDataAndRead(String mySchema)
       throws IOException, InvalidLoadOptionException, InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3461
 
     // conversion to GenericData.Record
     Schema nn = new Schema.Parser().parse(mySchema);
@@ -417,6 +425,11 @@ public class AvroCarbonWriterTest {
 
     WriteAvroComplexData(mySchema, json, null);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
     File[] dataFiles = new File(path).listFiles(new FileFilter() {
       @Override
       public boolean accept(File pathname) {
@@ -477,6 +490,7 @@ public class AvroCarbonWriterTest {
   @Test
   public void testWriteArrayArrayFloat() throws IOException {
     FileUtils.deleteDirectory(new File(path));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3461
 
     String mySchema =
         "{" +
@@ -530,6 +544,7 @@ public class AvroCarbonWriterTest {
 
   @Test
   public void testExceptionForDuplicateColumns() throws IOException, InvalidLoadOptionException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2514
     Field[] field = new Field[2];
     field[0] = new Field("name", DataTypes.STRING);
     field[1] = new Field("name", DataTypes.STRING);
@@ -537,6 +552,7 @@ public class AvroCarbonWriterTest {
         .uniqueIdentifier(System.currentTimeMillis()).outputPath(path);
 
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
       writer.withCsvInput(new org.apache.carbondata.sdk.file.Schema(field)).writtenBy("AvroCarbonWriterTest").build();
       Assert.fail();
     } catch (Exception e) {
@@ -557,6 +573,7 @@ public class AvroCarbonWriterTest {
       Map<String, String> loadOptions = new HashMap<String, String>();
       loadOptions.put("bad_records_action", "fail");
       CarbonWriter carbonWriter =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
           writer.withLoadOptions(loadOptions).withCsvInput(new org.apache.carbondata.sdk.file.Schema(field)).writtenBy("AvroCarbonWriterTest").build();
       carbonWriter.write(new String[] { "k", "20-02-2233" });
       carbonWriter.close();
@@ -570,6 +587,7 @@ public class AvroCarbonWriterTest {
   @Test
   public void testWriteBasicForFloat() throws IOException {
     FileUtils.deleteDirectory(new File(path));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
 
     // Avro schema
     String avroSchema =
@@ -585,6 +603,9 @@ public class AvroCarbonWriterTest {
     try {
       CarbonWriter writer = CarbonWriter.builder().outputPath(path)
           .withAvroInput(new Schema.Parser().parse(avroSchema)).writtenBy("AvroCarbonWriterTest").build();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);

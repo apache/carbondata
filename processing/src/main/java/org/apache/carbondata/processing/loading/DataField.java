@@ -40,6 +40,7 @@ public class DataField implements Serializable {
   private boolean useActualData;
 
   public boolean isDateDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     return column.getDataType() == DataTypes.DATE;
   }
 
@@ -56,6 +57,7 @@ public class DataField implements Serializable {
   }
 
   public String getTimestampFormat() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1762
     return timestampFormat;
   }
 
@@ -64,11 +66,13 @@ public class DataField implements Serializable {
   }
 
   public boolean isUseActualData() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2168
     return useActualData;
   }
 
   public void setUseActualData(boolean useActualData) {
     this.useActualData = useActualData;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
     this.column.setUseActualData(useActualData);
   }
 }

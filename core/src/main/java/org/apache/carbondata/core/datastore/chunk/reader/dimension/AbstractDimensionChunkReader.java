@@ -68,6 +68,7 @@ public abstract class AbstractDimensionChunkReader implements DimensionColumnChu
   @Override
   public void decodeColumnPageAndFillVector(DimensionRawColumnChunk dimensionRawColumnChunk,
       int pageNumber, ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
     throw new UnsupportedOperationException(
         "This operation is not supported in this reader " + this.getClass().getName());
@@ -87,6 +88,7 @@ public abstract class AbstractDimensionChunkReader implements DimensionColumnChu
    */
   @Override
   public DimensionRawColumnChunk[] readRawDimensionChunks(final FileReader fileReader,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       final int[][] columnIndexRange) throws IOException {
     // read the column chunk based on block index and add
     DimensionRawColumnChunk[] dataChunks =

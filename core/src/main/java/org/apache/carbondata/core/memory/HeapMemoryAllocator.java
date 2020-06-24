@@ -39,8 +39,10 @@ public class HeapMemoryAllocator implements MemoryAllocator {
   private boolean shouldPooling = true;
 
   public HeapMemoryAllocator() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2184
     poolingThresholdBytes = CarbonProperties.getInstance().getHeapMemoryPoolingThresholdBytes();
     boolean isDriver = Boolean.parseBoolean(CarbonProperties.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3038
         .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE,
             CarbonCommonConstants.IS_DRIVER_INSTANCE_DEFAULT));
     // if set 'poolingThresholdBytes' to -1 or the object creation call is in driver,
@@ -56,6 +58,7 @@ public class HeapMemoryAllocator implements MemoryAllocator {
    */
   private boolean shouldPool(long size) {
     // Very small allocations are less likely to benefit from pooling.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2184
     return shouldPooling && (size >= poolingThresholdBytes);
   }
 
@@ -73,9 +76,11 @@ public class HeapMemoryAllocator implements MemoryAllocator {
             final long[] array = arrayReference.get();
             if (array != null) {
               assert (array.length * 8L >= size);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2990
               MemoryBlock memory =
                   new MemoryBlock(array, CarbonUnsafe.LONG_ARRAY_OFFSET, size, MemoryType.ONHEAP);
               // reuse this MemoryBlock
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1393
               memory.setFreedStatus(false);
               return memory;
             }
@@ -85,6 +90,7 @@ public class HeapMemoryAllocator implements MemoryAllocator {
       }
     }
     long[] array = new long[numWords];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2990
     return new MemoryBlock(array, CarbonUnsafe.LONG_ARRAY_OFFSET, size, MemoryType.ONHEAP);
   }
 
@@ -107,6 +113,7 @@ public class HeapMemoryAllocator implements MemoryAllocator {
         pool.add(new WeakReference<>(array));
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1393
     memory.setFreedStatus(true);
   }
 }

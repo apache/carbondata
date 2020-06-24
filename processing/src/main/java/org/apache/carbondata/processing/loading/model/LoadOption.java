@@ -53,6 +53,7 @@ public class LoadOption {
    * Based on the input options, fill and return data loading options with default value
    */
   public static Map<String, String> fillOptionWithDefaultValue(Map<String, String> options)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
       throws InvalidLoadOptionException {
     Map<String, String> optionsFinal = new HashMap<>();
     optionsFinal.put("delimiter", Maps.getOrDefault(options, "delimiter", ","));
@@ -117,6 +118,7 @@ public class LoadOption {
 
     optionsFinal.put("complex_delimiter_level_1",
         Maps.getOrDefault(options, "complex_delimiter_level_1",
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3644
             CarbonProperties.getInstance().getProperty(
                 CarbonCommonConstants.COMPLEX_DELIMITERS_LEVEL_1,
                 ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_1.value())));
@@ -167,12 +169,18 @@ public class LoadOption {
                 null)));
 
     optionsFinal.put("maxcolumns", Maps.getOrDefault(options, "maxcolumns", null));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3162
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3164
     optionsFinal.put("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     optionsFinal.put("sort_column_bounds", Maps.getOrDefault(options, "sort_column_bounds", ""));
     optionsFinal.put(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3041
         Maps.getOrDefault(options, CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
             CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3219
     optionsFinal.put("range_column", Maps.getOrDefault(options, "range_column", null));
     optionsFinal.put("scale_factor", Maps.getOrDefault(options, "scale_factor", null));
     return optionsFinal;
@@ -184,6 +192,7 @@ public class LoadOption {
   public static String[] getCsvHeaderColumns(
       CarbonLoadModel carbonLoadModel,
       Configuration hadoopConf) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
     return getCsvHeaderColumns(carbonLoadModel, hadoopConf, new LinkedList<String>());
   }
 
@@ -225,8 +234,10 @@ public class LoadOption {
 
     // In SDK flow, hadoopConf will always be null,
     // hence FileHeader check is not required for nontransactional table
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2798
     if (hadoopConf != null && !CarbonDataProcessorUtil
         .isHeaderValid(carbonLoadModel.getTableName(), csvColumns,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
             carbonLoadModel.getCarbonDataLoadSchema(), staticPartitionCols)) {
       if (csvFile == null) {
         LOG.error("CSV header in DDL is not proper."
@@ -246,6 +257,7 @@ public class LoadOption {
 
     // In case of static partition columns just change the name of header if already exists as
     // we should not take the column from csv file and add them as new columns at the end.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2172
     if (staticPartitionCols.size() > 0) {
       List<String> updatedColumns = new ArrayList<>();
       for (int i = 0; i < csvColumns.length; i++) {

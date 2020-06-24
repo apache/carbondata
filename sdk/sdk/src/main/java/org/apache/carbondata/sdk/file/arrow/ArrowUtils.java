@@ -43,6 +43,7 @@ public class ArrowUtils {
   public static final RootAllocator rootAllocator = new RootAllocator(Long.MAX_VALUE);
 
   public static ArrowType toArrowType(DataType carbonDataType, String timeZoneId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3365
     if (carbonDataType == DataTypes.STRING || carbonDataType == DataTypes.VARCHAR) {
       return ArrowType.Utf8.INSTANCE;
     } else if (carbonDataType == DataTypes.BYTE) {
@@ -76,6 +77,7 @@ public class ArrowUtils {
 
   public static org.apache.arrow.vector.types.pojo.Field toArrowField(String name,
       DataType dataType, String timeZoneId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3365
     if (dataType instanceof ArrayType) {
       // instance of check is for findbugs, instead of datatypes check
       FieldType fieldType = new FieldType(true, ArrowType.List.INSTANCE, null);

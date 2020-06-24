@@ -38,6 +38,7 @@ public interface CarbonDictionaryReader extends Closeable {
    * @return list of byte array. Each byte array is unique dictionary value
    */
   List<byte[]> read();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
   /**
    * This method should be used when data has to be read from a given offset.
@@ -50,6 +51,7 @@ public interface CarbonDictionaryReader extends Closeable {
    * @return list of byte array. Each byte array is unique dictionary value
    */
   List<byte[]> read(long startOffset);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
   /**
    * This method will be used to read data between given start and end offset.
@@ -61,5 +63,6 @@ public interface CarbonDictionaryReader extends Closeable {
    * @param endOffset   end offset of dictionary file
    * @return iterator over byte array. Each byte array is unique dictionary value
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
   Iterator<byte[]> read(long startOffset, long endOffset);
 }

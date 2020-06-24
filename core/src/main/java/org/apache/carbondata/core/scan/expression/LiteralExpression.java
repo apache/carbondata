@@ -37,6 +37,7 @@ public class LiteralExpression extends LeafExpression {
 
   @Override
   public ExpressionResult evaluate(RowIntf value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
     return new ExpressionResult(dataType, this.value, true);
   }
 
@@ -58,6 +59,7 @@ public class LiteralExpression extends LeafExpression {
 
   @Override
   public String getStatement() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     return value == null ? null : value.toString();
   }
 
@@ -71,6 +73,7 @@ public class LiteralExpression extends LeafExpression {
   }
 
   public Object getLiteralExpValue() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-792
     return value;
   }
 

@@ -51,9 +51,11 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
 
   public UnsafeVariableLengthDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
       int numberOfRows, int dataLength) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     super(totalSize, isInvertedIdex, numberOfRows, dataLength);
     this.numberOfRows = numberOfRows;
     // initials size assigning to some random value
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2325
     this.value = new byte[20];
   }
 
@@ -72,6 +74,7 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
     // position from where offsets will start
     this.dataPointersOffsets = this.invertedIndexReverseOffset;
     if (isExplicitSorted) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
       this.dataPointersOffsets += (long) numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE;
     }
     // As data is of variable length and data format is
@@ -92,6 +95,7 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
     int [] dataOffsets = new int[numberOfRows];
     dataOffsets[0] = getLengthSize();
     // creating a byte buffer which will wrap the length of the row
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2325
     ByteBuffer buffer = ByteBuffer.wrap(data);
     for (int i = 1; i < numberOfRows; i++) {
       buffer.position(startOffset);
@@ -149,6 +153,7 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
   private int getRowId(int rowId) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplicitSorted) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
       rowId = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)rowId
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
@@ -184,6 +189,7 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
       int OffsetOfNextdata = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + ((rowId + 1)
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
       length = OffsetOfNextdata - (currentDataOffset + getLengthSize());
     } else {
       // for last record we need to subtract with data length
@@ -199,6 +205,8 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
    * @param currentDataOffset current data offset
    */
   private void fillRowInternal(int length, byte[] data, int currentDataOffset) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     CarbonUnsafe.getUnsafe().copyMemory(dataPageMemoryBlock.getBaseObject(),
         dataPageMemoryBlock.getBaseOffset() + currentDataOffset, data,
         CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
@@ -221,6 +229,7 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
    */
   @Override
   public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     vector.setDictionary(null);
     // get the row id from reverse inverted index based on row id
     rowId = getRowId(rowId);
@@ -235,6 +244,7 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
     }
     // get the row from unsafe
     fillRowInternal(length, value, currentDataOffset);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     QueryUtil.putDataToVector(vector, value, vectorRow, length);
   }
 
@@ -254,6 +264,7 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
     int compareResult;
     int compareLength = Math.min(length , compareValue.length);
     for (int i = 0; i < compareLength; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
       compareResult = (CarbonUnsafe.getUnsafe().getByte(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + currentDataOffset) & 0xff) - (compareValue[i]
           & 0xff);

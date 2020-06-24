@@ -53,6 +53,7 @@ public class BooleanConvert {
    * @return Boolean type data
    */
   public static Boolean parseBoolean(String input) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
     String value = input.toLowerCase(Locale.getDefault());
     if (("false").equals(value)) {
       return Boolean.FALSE;

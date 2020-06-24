@@ -48,6 +48,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
   ColumnarVectorWrapperDirect(CarbonColumnVectorImpl columnVector) {
     this.columnVector = columnVector;
     this.dictionaryVector = columnVector.getDictionaryVector();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
     this.nullBitSet = new BitSet();
   }
 
@@ -67,6 +68,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putFloat(int rowId, float value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
     if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -76,6 +78,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putShort(int rowId, short value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
     if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -91,6 +94,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putInt(int rowId, int value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
     if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -105,6 +109,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putLong(int rowId, long value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
     if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -129,6 +134,8 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
   @Override
   public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
     for (int i = 0; i < count; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
       if (nullBitSet.get(rowId)) {
         columnVector.putNull(rowId);
       } else {
@@ -140,6 +147,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putDouble(int rowId, double value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
     if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -154,6 +162,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putByteArray(int rowId, byte[] value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
     if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -170,6 +179,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putByteArray(int rowId, int offset, int length, byte[] value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
     if (nullBitSet.get(rowId)) {
       columnVector.putNull(rowId);
     } else {
@@ -263,6 +273,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
   @Override
   public void putFloats(int rowId, int count, float[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
       if (nullBitSet.get(rowId)) {
         columnVector.putNull(rowId);
       } else {
@@ -275,6 +286,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
   @Override
   public void putShorts(int rowId, int count, short[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
       if (nullBitSet.get(rowId)) {
         columnVector.putNull(rowId);
       } else {
@@ -287,6 +299,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
   @Override
   public void putInts(int rowId, int count, int[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
       if (nullBitSet.get(rowId)) {
         columnVector.putNull(rowId);
       } else {
@@ -299,6 +312,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
   @Override
   public void putLongs(int rowId, int count, long[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
       if (nullBitSet.get(rowId)) {
         columnVector.putNull(rowId);
       } else {
@@ -311,6 +325,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
   @Override
   public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
       if (nullBitSet.get(rowId)) {
         columnVector.putNull(rowId);
       } else {
@@ -323,6 +338,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
   @Override
   public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
       if (nullBitSet.get(rowId)) {
         columnVector.putNull(rowId);
       } else {

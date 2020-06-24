@@ -114,7 +114,9 @@ public class CarbonTableReader {
   private List<String> schemaNames = new ArrayList<>();
 
   @Inject public CarbonTableReader(CarbonTableConfig config) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
     this.config = Objects.requireNonNull(config, "CarbonTableConfig is null");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     this.carbonCache = new AtomicReference(new ConcurrentHashMap<>());
     populateCarbonProperties();
   }
@@ -127,6 +129,7 @@ public class CarbonTableReader {
    */
   public CarbonTableCacheModel getCarbonCache(SchemaTableName table, String location,
       Configuration config) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     updateSchemaTables(table, config);
     CarbonTableCacheModel carbonTableCacheModel = carbonCache.get().get(table);
     if (carbonTableCacheModel == null || !carbonTableCacheModel.isValid()) {
@@ -152,7 +155,9 @@ public class CarbonTableReader {
       carbonTableCacheModel.setCurrentSchemaTime(latestTime);
       if (!carbonTableCacheModel.isValid()) {
         // Invalidate indexes
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         IndexStoreManager.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
             .clearIndex(carbonTableCacheModel.getCarbonTable().getAbsoluteTableIdentifier());
       }
     }
@@ -210,6 +215,7 @@ public class CarbonTableReader {
         // wrapperTableInfo is the code level information of a table in carbondata core,
         // different from the Thrift TableInfo.
         TableInfo wrapperTableInfo = schemaConverter
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
             .fromExternalToWrapperTableInfo(tableInfo, table.getSchemaName(), table.getTableName(),
                 tablePath);
         wrapperTableInfo.setTransactionalTable(isTransactionalTable);
@@ -220,6 +226,7 @@ public class CarbonTableReader {
             .getCarbonTable(table.getSchemaName(), table.getTableName()), "carbontable is null");
         cache = new CarbonTableCacheModel(modifiedTime, carbonTable);
         // cache the table
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1779
         carbonCache.get().put(table, cache);
         cache.setCarbonTable(carbonTable);
       }
@@ -248,29 +255,36 @@ public class CarbonTableReader {
    * @throws IOException
    */
   public List<CarbonLocalMultiBlockSplit> getInputSplits(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
       CarbonTableCacheModel tableCacheModel,
       Expression filters,
       TupleDomain<HiveColumnHandle> constraints,
       Configuration config) throws IOException {
     List<CarbonLocalInputSplit> result = new ArrayList<>();
     List<CarbonLocalMultiBlockSplit> multiBlockSplitList = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     CarbonTable carbonTable = tableCacheModel.getCarbonTable();
     TableInfo tableInfo = tableCacheModel.getCarbonTable().getTableInfo();
     config.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, "");
     String carbonTablePath = carbonTable.getAbsoluteTableIdentifier().getTablePath();
     config.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
     config.set(CarbonTableInputFormat.DATABASE_NAME, carbonTable.getDatabaseName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1739
     config.set(CarbonTableInputFormat.TABLE_NAME, carbonTable.getTableName());
     config.set("query.id", queryId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3158
     CarbonInputFormat.setTransactionalTable(config, carbonTable.isTransactionalTable());
     CarbonInputFormat.setTableInfo(config, carbonTable.getTableInfo());
 
     JobConf jobConf = new JobConf(config);
     List<PartitionSpec> filteredPartitions = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
 
     PartitionInfo partitionInfo = carbonTable.getPartitionInfo();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3194
     LoadMetadataDetails[] loadMetadataDetails = null;
     if (partitionInfo != null && partitionInfo.getPartitionType() == PartitionType.NATIVE_HIVE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
       loadMetadataDetails = SegmentStatusManager.readTableStatusFile(
           CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath()));
       filteredPartitions = findRequiredPartitions(constraints, carbonTable, loadMetadataDetails);
@@ -279,6 +293,7 @@ public class CarbonTableReader {
       CarbonTableInputFormat.setTableInfo(config, tableInfo);
       CarbonTableInputFormat<Object> carbonTableInputFormat =
           createInputFormat(jobConf, carbonTable.getAbsoluteTableIdentifier(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
               new IndexFilter(carbonTable, filters, true), filteredPartitions);
       Job job = Job.getInstance(jobConf);
       List<InputSplit> splits = carbonTableInputFormat.getSplits(job);
@@ -291,12 +306,15 @@ public class CarbonTableReader {
               carbonInputSplit.getLength(), Arrays.asList(carbonInputSplit.getLocations()),
               carbonInputSplit.getNumberOfBlocklets(), carbonInputSplit.getVersion().number(),
               carbonInputSplit.getDeleteDeltaFiles(), carbonInputSplit.getBlockletId(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
               gson.toJson(carbonInputSplit.getDetailInfo()),
               carbonInputSplit.getFileFormat().ordinal()));
         }
         // Use block distribution
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
         List<List<CarbonLocalInputSplit>> inputSplits =
             new ArrayList<>(result.stream().collect(Collectors.groupingBy(carbonInput -> {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3345
               if (FileFormat.ROW_V1.equals(carbonInput.getFileFormat())) {
                 return carbonInput.getSegmentId().concat(carbonInput.getPath())
                     .concat(carbonInput.getStart() + "");
@@ -312,6 +330,7 @@ public class CarbonTableReader {
         LOGGER.error("Size fo MultiblockList   " + multiBlockSplitList.size());
       }
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3158
       throw new RuntimeException(e);
     }
     return multiBlockSplitList;
@@ -341,7 +360,9 @@ public class CarbonTableReader {
   }
 
   private CarbonTableInputFormat<Object> createInputFormat(Configuration conf,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       AbsoluteTableIdentifier identifier, IndexFilter indexFilter,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       List<PartitionSpec> filteredPartitions) {
     CarbonTableInputFormat<Object> format = new CarbonTableInputFormat<>();
     CarbonTableInputFormat
@@ -362,10 +383,12 @@ public class CarbonTableReader {
     addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, config.getEnableUnsafeSort());
     addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, config.getEnableQueryStatistics());
     // TODO: Support configurable
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
     addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "Presto_Server");
   }
 
   public Configuration updateS3Properties(Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3194
     configuration.set(ACCESS_KEY, Objects.toString(config.getS3A_AcesssKey(), ""));
     configuration.set(SECRET_KEY, Objects.toString(config.getS3A_SecretKey()));
     configuration
@@ -391,6 +414,7 @@ public class CarbonTableReader {
    * @return
    */
   private String[] getLocations(CarbonLocalInputSplit cis) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
     return cis.getLocations().toArray(new String[0]);
   }
 

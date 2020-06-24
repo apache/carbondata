@@ -81,12 +81,14 @@ public class BlockIndexInfo {
    * @param blockletInfo
    */
   public BlockIndexInfo(long numberOfRows, String fileName, long offset,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1232
       BlockletIndex blockletIndex, BlockletInfo blockletInfo) {
     this(numberOfRows, fileName, offset, blockletIndex);
     this.blockletInfo = blockletInfo;
   }
 
   public BlockIndexInfo(long numberOfRows, String fileName, long offset,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3523
       BlockletIndex blockletIndex, BlockletInfo blockletInfo, long fileSize) {
     this(numberOfRows, fileName, offset, blockletIndex, blockletInfo);
     this.fileSize = fileSize;
@@ -124,6 +126,7 @@ public class BlockIndexInfo {
    * @return BlockletInfo
    */
   public BlockletInfo getBlockletInfo() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1232
     return blockletInfo;
   }
 
@@ -131,6 +134,7 @@ public class BlockIndexInfo {
    * @return file size
    */
   public long getFileSize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3523
     return fileSize;
   }
 }

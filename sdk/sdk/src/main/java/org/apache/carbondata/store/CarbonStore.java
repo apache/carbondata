@@ -42,6 +42,7 @@ public interface CarbonStore extends Closeable {
    * @throws IOException if unable to read files in table path
    */
   Iterator<CarbonRow> scan(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2754
       AbsoluteTableIdentifier tableIdentifier,
       String[] projectColumns) throws IOException;
 
@@ -54,6 +55,7 @@ public interface CarbonStore extends Closeable {
    * @throws IOException if unable to read files in table path
    */
   Iterator<CarbonRow> scan(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2754
       AbsoluteTableIdentifier tableIdentifier,
       String[] projectColumns,
       Expression filter) throws IOException;
@@ -64,5 +66,6 @@ public interface CarbonStore extends Closeable {
    * @return rows
    */
   Iterator<CarbonRow> sql(String sqlString);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
 }

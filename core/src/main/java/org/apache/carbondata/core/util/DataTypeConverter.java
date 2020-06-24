@@ -22,6 +22,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 public interface DataTypeConverter {
 
   Object convertFromStringToDecimal(Object data);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
 
   Object convertFromBigDecimalToDecimal(Object data);
 
@@ -40,8 +42,10 @@ public interface DataTypeConverter {
   Object wrapWithGenericRow(Object[] fields);
 
   Object wrapWithArrayBasedMapData(Object[] keyArray, Object[] valueArray);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
 
   Object[] unwrapGenericRowToObject(Object data);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2165
   Object[] convertCarbonSchemaToSparkSchema(CarbonColumn[] carbonColumns);
 }

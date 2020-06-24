@@ -71,8 +71,11 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   private boolean isStopProcess;
 
   public UnsafeSingleThreadFinalSortFilesMerger(SortParameters parameters,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
       String[] tempFileLocation) {
     this.parameters = parameters;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
     this.sortStepRowHandler = new SortStepRowHandler(parameters);
     this.tempFileLocation = tempFileLocation;
     this.tableName = parameters.getTableName();
@@ -85,6 +88,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   public void startFinalMerge(UnsafeCarbonRowPage[] rowPages,
       List<UnsafeInMemoryIntermediateDataMerger> merges) throws CarbonDataWriterException {
     // remove the spilled pages
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2238
     for (Iterator<UnsafeInMemoryIntermediateDataMerger> iter = merges.iterator();
          iter.hasNext(); ) {
       UnsafeInMemoryIntermediateDataMerger merger = iter.next();
@@ -106,24 +110,30 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   private void startSorting(UnsafeCarbonRowPage[] rowPages,
       List<UnsafeInMemoryIntermediateDataMerger> merges) throws CarbonDataWriterException {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
       List<File> filesToMergeSort = getFilesToMergeSort();
       this.fileCounter = rowPages.length + filesToMergeSort.size() + merges.size();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-965
       if (fileCounter == 0) {
         LOGGER.info("No files to merge sort");
         return;
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2238
       LOGGER.info(String.format("Starting final merge of %d pages, including row pages: %d"
           + ", sort temp files: %d, intermediate merges: %d",
           this.fileCounter, rowPages.length, filesToMergeSort.size(), merges.size()));
 
       // create record holder heap
       createRecordHolderQueue();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
       TableFieldStat tableFieldStat = new TableFieldStat(parameters);
       // iterate over file list and create chunk holder and add to heap
       LOGGER.info("Started adding first record from each page");
       for (final UnsafeCarbonRowPage rowPage : rowPages) {
 
         SortTempChunkHolder sortTempFileChunkHolder = new UnsafeInmemoryHolder(rowPage);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
 
         // initialize
         sortTempFileChunkHolder.readRow();
@@ -135,6 +145,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
 
         SortTempChunkHolder sortTempFileChunkHolder =
             new UnsafeFinalMergePageHolder(merger, tableFieldStat);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
 
         // initialize
         sortTempFileChunkHolder.readRow();
@@ -146,6 +157,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
 
         SortTempChunkHolder sortTempFileChunkHolder =
             new UnsafeSortTempFileChunkHolder(file, parameters, true, tableFieldStat);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
 
         // initialize
         sortTempFileChunkHolder.readRow();
@@ -153,8 +165,11 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
         recordHolderHeapLocal.add(sortTempFileChunkHolder);
       }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
       LOGGER.info("Heap Size: " + this.recordHolderHeapLocal.size());
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error(e.getMessage(), e);
       throw new CarbonDataWriterException(e);
     }
@@ -163,6 +178,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   private List<File> getFilesToMergeSort() {
     // this can be partitionId, bucketId or rangeId, let's call it rangeId
     final int rangeId = parameters.getRangeId();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
 
     FileFilter fileFilter = new FileFilter() {
       public boolean accept(File pathname) {
@@ -199,6 +215,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    */
   public Object[] next() {
     if (hasNext()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2836
       return sortStepRowHandler.convertIntermediateSortTempRowTo3Parted(getSortedRecordFromFile());
     } else {
       throw new NoSuchElementException("No more elements to return");
@@ -212,6 +229,8 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    */
   private IntermediateSortTempRow getSortedRecordFromFile() throws CarbonDataWriterException {
     IntermediateSortTempRow row = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
 
     // poll the top object from heap
     // heap maintains binary tree which is based on heap condition that will
@@ -239,6 +258,8 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
     try {
       poll.readRow();
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1410
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       throw new CarbonDataWriterException(e);
     }
 
@@ -269,6 +290,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   }
 
   public boolean isStopProcess() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-903
     return isStopProcess;
   }
 

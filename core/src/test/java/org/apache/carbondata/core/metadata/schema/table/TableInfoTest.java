@@ -33,6 +33,7 @@ public class TableInfoTest extends TestCase {
   private TableInfo tableInfo;
 
   @BeforeClass public void setUp() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1820
     tableInfo = getTableInfo("tableInfoTestDatabase", "equalsTableInfoTestTable");
   }
 
@@ -41,6 +42,7 @@ public class TableInfoTest extends TestCase {
   }
 
   @Test public void testTableInfoEquals() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1820
     TableInfo cmpEqualsTableInfo =
         getTableInfo("tableInfoTestDatabase", "equalsTableInfoTestTable");
     TableInfo cmpNotEqualsTableInfo =
@@ -127,6 +129,7 @@ public class TableInfoTest extends TestCase {
         + "\"tableProperties\":{\"sort_columns\":\"c1\",\"comment\":\"\","
         + "\"local_dictionary_enable\":\"true\"}},\"lastUpdatedTime\":1530534235537,"
         + "\"tablePath\":\"/store/carbonversion_1_1/testinttype1\","
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3800
         + "\"isTransactionalTable\":true,"
         + "\"parentRelationIdentifiers\":[],\"isSchemaModified\":false}");
     TableInfo tableInfo = CarbonUtil.convertGsonToTableInfo(properties);
@@ -164,6 +167,7 @@ public class TableInfoTest extends TestCase {
         + "\":[{\"timeStamp\":1531389794988,\"added\":[],\"removed\":[]}]},"
         + "\"tableProperties\":{\"sort_columns\":\"c1\",\"comment\":\"\"}},"
         + "\"lastUpdatedTime\":1531389794988,\"tablePath\":"
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3800
         + "\"/opt/store/carbonversion_1_3/testinttype3\"}");
     TableInfo tableInfo = CarbonUtil.convertGsonToTableInfo(properties);
     // the schema evolution should not be null

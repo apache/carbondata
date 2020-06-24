@@ -28,6 +28,7 @@ public class TrueConditionalResolverImpl extends ConditionalFilterResolverImpl {
   public TrueConditionalResolverImpl(Expression exp, boolean isExpressionResolve,
       boolean isIncludeFilter) {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     super(exp, isExpressionResolve, isIncludeFilter, false);
   }
 

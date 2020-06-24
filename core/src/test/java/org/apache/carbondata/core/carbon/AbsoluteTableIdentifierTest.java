@@ -36,6 +36,7 @@ public class AbsoluteTableIdentifierTest {
   static AbsoluteTableIdentifier absoluteTableIdentifier4;
 
   @BeforeClass public static void setup() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
     absoluteTableIdentifier = AbsoluteTableIdentifier.from("storePath/databaseName/tableName",
         new CarbonTableIdentifier("databaseName", "tableName", "tableId"));
     absoluteTableIdentifier1 = AbsoluteTableIdentifier.from("dummy", null);
@@ -49,6 +50,7 @@ public class AbsoluteTableIdentifierTest {
 
   @Test public void equalsTestWithSameInstance() {
     Boolean res = absoluteTableIdentifier.equals("wrong data");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(!res);
   }
 
@@ -90,11 +92,13 @@ public class AbsoluteTableIdentifierTest {
 
   @Test public void gettablePathTest() {
     String res = absoluteTableIdentifier4.getTablePath();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(res.equals("storePath/databaseName/tableName"));
   }
 
   @Test public void fromTablePathTest() {
     AbsoluteTableIdentifier absoluteTableIdentifierTest =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2642
         AbsoluteTableIdentifier.from("storePath/databaseName/tableName", "databaseName", "tableName",
             UUID.randomUUID().toString());
     Assert.assertTrue(absoluteTableIdentifierTest.getTablePath()

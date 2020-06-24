@@ -34,6 +34,7 @@ public interface GenericQueryType {
   void setName(String name);
 
   String getParentName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
 
   void setParentName(String parentName);
 
@@ -42,14 +43,18 @@ public interface GenericQueryType {
   int getColsCount();
 
   void parseBlocksAndReturnComplexColumnByteArray(DimensionRawColumnChunk[] rawColumnChunks,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3145
       DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber,
       DataOutputStream dataOutputStream) throws IOException;
 
   void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder) throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
 
   Object getDataBasedOnDataType(ByteBuffer dataBuffer);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
 
   Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent, CarbonDimension child);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
 
   Object getDataBasedOnColumnList(Map<CarbonDimension, ByteBuffer> childBuffer,
       CarbonDimension presentColumn);

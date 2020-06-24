@@ -78,12 +78,14 @@ public class CarbonWriterBuilder {
   private String taskNo;
   private int localDictionaryThreshold;
   private boolean isLocalDictionaryEnabled = Boolean.parseBoolean(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3080
           CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT);
   private short numOfThreads;
   private Configuration hadoopConf;
   private String writtenByApp;
   private String[] invertedIndexColumns;
   private enum WRITER_TYPE {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
     CSV, AVRO, JSON
   }
 
@@ -114,8 +116,11 @@ public class CarbonWriterBuilder {
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder sortBy(String[] sortColumns) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2879
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2918
     if (sortColumns != null) {
       for (int i = 0; i < sortColumns.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3174
         sortColumns[i] = sortColumns[i].toLowerCase().trim();
       }
     }
@@ -132,8 +137,10 @@ public class CarbonWriterBuilder {
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder invertedIndexFor(String[] invertedIndexColumns) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3065
     if (invertedIndexColumns != null) {
       for (int i = 0; i < invertedIndexColumns.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3174
         invertedIndexColumns[i] = invertedIndexColumns[i].toLowerCase().trim();
       }
     }
@@ -150,6 +157,7 @@ public class CarbonWriterBuilder {
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder taskNo(long taskNo) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2463
     this.taskNo = String.valueOf(taskNo);
     return this;
   }
@@ -163,6 +171,8 @@ public class CarbonWriterBuilder {
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder taskNo(String taskNo) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3661
     this.taskNo = taskNo;
     return this;
   }
@@ -175,6 +185,7 @@ public class CarbonWriterBuilder {
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder uniqueIdentifier(long timestamp) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2916
     Objects.requireNonNull(timestamp, "Unique Identifier should not be null");
     this.timestamp = timestamp;
     return this;
@@ -213,6 +224,7 @@ public class CarbonWriterBuilder {
   public CarbonWriterBuilder withLoadOptions(Map<String, String> options) {
     Objects.requireNonNull(options, "Load options should not be null");
     //validate the options.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3224
     for (String option : options.keySet()) {
       if (!option.equalsIgnoreCase("bad_records_logger_enable") &&
           !option.equalsIgnoreCase("bad_records_action") &&
@@ -221,9 +233,11 @@ public class CarbonWriterBuilder {
           !option.equalsIgnoreCase("timestampformat") &&
           !option.equalsIgnoreCase("complex_delimiter_level_1") &&
           !option.equalsIgnoreCase("complex_delimiter_level_2") &&
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3017
           !option.equalsIgnoreCase("complex_delimiter_level_3") &&
           !option.equalsIgnoreCase("quotechar") &&
           !option.equalsIgnoreCase("escapechar") &&
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
           !option.equalsIgnoreCase("binary_decoder") &&
           !option.equalsIgnoreCase("fileheader")) {
         throw new IllegalArgumentException("Unsupported option:" + option
@@ -231,6 +245,7 @@ public class CarbonWriterBuilder {
       }
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3224
     for (Map.Entry<String, String> entry : options.entrySet()) {
       if (entry.getKey().equalsIgnoreCase("bad_records_action")) {
         try {
@@ -257,6 +272,7 @@ public class CarbonWriterBuilder {
         if (escapeChar.length() > 1 && !CarbonLoaderUtil.isValidEscapeSequence(escapeChar)) {
           throw new IllegalArgumentException("ESCAPECHAR cannot be more than one character.");
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
       } else if (entry.getKey().toLowerCase().equalsIgnoreCase("binary_decoder")) {
         String binaryDecoderChar = entry.getValue();
         if (binaryDecoderChar.length() > 1 &&
@@ -279,6 +295,7 @@ public class CarbonWriterBuilder {
    * @return updated CarbonWriterBuilder object
    */
   public CarbonWriterBuilder withLoadOption(String key, String value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3073
     Objects.requireNonNull(key, "key of load properties should not be null");
     Objects.requireNonNull(key, "value of load properties should not be null");
     Map map = new HashMap();
@@ -294,6 +311,7 @@ public class CarbonWriterBuilder {
    * @return CarbonWriterBuilder object
    */
   public CarbonWriterBuilder withTable(CarbonTable table) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     Objects.requireNonNull(table, "Table should not be null");
     this.carbonTable = table;
     return this;
@@ -325,6 +343,7 @@ public class CarbonWriterBuilder {
         .asList("table_blocksize", "table_blocklet_size", "local_dictionary_threshold",
             "local_dictionary_enable", "sort_columns", "sort_scope", "long_string_columns",
             "inverted_index", "table_page_size_inmb"));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
 
     for (String key : options.keySet()) {
       if (!supportedOptions.contains(key.toLowerCase())) {
@@ -334,6 +353,8 @@ public class CarbonWriterBuilder {
     }
 
     for (Map.Entry<String, String> entry : options.entrySet()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2879
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2918
       if (entry.getKey().equalsIgnoreCase("table_blocksize")) {
         this.withBlockSize(Integer.parseInt(entry.getValue()));
       } else if (entry.getKey().equalsIgnoreCase("table_blocklet_size")) {
@@ -344,6 +365,7 @@ public class CarbonWriterBuilder {
         this.enableLocalDictionary((entry.getValue().equalsIgnoreCase("true")));
       } else if (entry.getKey().equalsIgnoreCase("sort_columns")) {
         //sort columns
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
         String[] sortColumns;
         if (entry.getValue().trim().isEmpty()) {
           sortColumns = new String[0];
@@ -351,10 +373,12 @@ public class CarbonWriterBuilder {
           sortColumns = entry.getValue().split(",");
         }
         this.sortBy(sortColumns);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2922
       } else if (entry.getKey().equalsIgnoreCase("sort_scope")) {
         this.withSortScope(entry);
       } else if (entry.getKey().equalsIgnoreCase("long_string_columns")) {
         updateToLoadOptions(entry);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3065
       } else if (entry.getKey().equalsIgnoreCase("inverted_index")) {
         //inverted index columns
         String[] invertedIndexColumns;
@@ -364,6 +388,7 @@ public class CarbonWriterBuilder {
           invertedIndexColumns = entry.getValue().split(",");
         }
         this.invertedIndexFor(invertedIndexColumns);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
       } else if (entry.getKey().equalsIgnoreCase("table_page_size_inmb")) {
         this.withPageSizeInMb(Integer.parseInt(entry.getValue()));
       }
@@ -379,6 +404,7 @@ public class CarbonWriterBuilder {
    * @return CarbonWriterBuilder object
    */
   public CarbonWriterBuilder withTableProperty(String key, String value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3073
     Objects.requireNonNull(key, "key of table properties should not be null");
     Objects.requireNonNull(key, "value of table properties  should not be null");
     Map map = new HashMap();
@@ -396,6 +422,7 @@ public class CarbonWriterBuilder {
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withThreadSafe(short numOfThreads) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
     if (numOfThreads < 1) {
       throw new IllegalArgumentException("number of threads cannot be lesser than 1. "
           + "suggest to keep two times the number of cores available");
@@ -425,6 +452,7 @@ public class CarbonWriterBuilder {
    * @return this object
    */
   public CarbonWriterBuilder withHadoopConf(String key, String value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3000
     if (this.hadoopConf == null) {
       this.hadoopConf = new Configuration(true);
     }
@@ -443,6 +471,7 @@ public class CarbonWriterBuilder {
     if (blockSize <= 0 || blockSize > 2048) {
       throw new IllegalArgumentException("blockSize should be between 1 MB to 2048 MB");
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2247
     this.blockSize = blockSize;
     return this;
   }
@@ -452,6 +481,7 @@ public class CarbonWriterBuilder {
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder localDictionaryThreshold(int localDictionaryThreshold) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2676
     if (localDictionaryThreshold <= 0) {
       throw new IllegalArgumentException(
           "Local Dictionary Threshold should be greater than 0");
@@ -465,6 +495,7 @@ public class CarbonWriterBuilder {
    * @return
    */
   public CarbonWriterBuilder writtenBy(String appName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
     this.writtenByApp = appName;
     return this;
   }
@@ -501,6 +532,7 @@ public class CarbonWriterBuilder {
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withPageSizeInMb(int pageSizeInMb) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     if (pageSizeInMb < 1 || pageSizeInMb > 1755) {
       throw new IllegalArgumentException("pageSizeInMb must be 1 MB - 1755 MB");
     }
@@ -516,6 +548,7 @@ public class CarbonWriterBuilder {
    */
   public CarbonWriterBuilder withCsvInput(Schema schema) {
     Objects.requireNonNull(schema, "schema should not be null");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     if (this.schema != null) {
       throw new IllegalArgumentException("schema should be set only once");
     }
@@ -530,6 +563,7 @@ public class CarbonWriterBuilder {
    * @return CarbonWriterBuilder
    */
   public CarbonWriterBuilder withCsvInput() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     this.writerType = WRITER_TYPE.CSV;
     return this;
   }
@@ -541,11 +575,13 @@ public class CarbonWriterBuilder {
    * @return CarbonWriterBuilder
    */
   public CarbonWriterBuilder withCsvInput(String jsonSchema) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3000
     Objects.requireNonNull(jsonSchema, "schema should not be null");
     if (this.schema != null) {
       throw new IllegalArgumentException("schema should be set only once");
     }
     this.schema = Schema.parseJson(jsonSchema);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
     this.writerType = WRITER_TYPE.CSV;
     return this;
   }
@@ -558,6 +594,7 @@ public class CarbonWriterBuilder {
    */
   public CarbonWriterBuilder withAvroInput(org.apache.avro.Schema avroSchema) {
     Objects.requireNonNull(avroSchema, "Avro schema should not be null");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3461
     this.avroSchema = avroSchema;
     this.schema = AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema);
     this.writerType = WRITER_TYPE.AVRO;
@@ -586,6 +623,8 @@ public class CarbonWriterBuilder {
    */
   public CarbonWriterBuilder withJsonInput(Schema carbonSchema) {
     Objects.requireNonNull(carbonSchema, "schema should not be null");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     if (this.schema != null) {
       throw new IllegalArgumentException("schema should be set only once");
     }
@@ -632,6 +671,7 @@ public class CarbonWriterBuilder {
   public CarbonWriter build() throws IOException, InvalidLoadOptionException {
     Objects.requireNonNull(path, "path should not be null");
     if (this.writerType == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
       throw new RuntimeException(
           "'writerType' must be set, use withCsvInput() or withAvroInput() or withJsonInput()  "
               + "API based on input");
@@ -641,17 +681,22 @@ public class CarbonWriterBuilder {
           "'writtenBy' must be set when writing carbon files, use writtenBy() API to "
               + "set it, it can be the name of the application which is using the SDK");
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     if (this.schema == null) {
       throw new RuntimeException("schema should be set");
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3656
     if (taskNo == null) {
       taskNo = UUID.randomUUID().toString().replace("-", "");
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2872
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2872
     CarbonLoadModel loadModel = buildLoadModel(schema);
     loadModel.setSdkWriterCores(numOfThreads);
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, writtenByApp);
     if (hadoopConf == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3660
       hadoopConf = new Configuration(FileFactory.getConfiguration());
     }
     if (this.writerType == WRITER_TYPE.AVRO) {
@@ -659,7 +704,9 @@ public class CarbonWriterBuilder {
       // handle multi level complex type support. As there are no conversion converter step is
       // removed from the load. LoadWithoutConverter flag is going to point to the Loader Builder
       // which will skip Conversion Step.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2413
       loadModel.setLoadWithoutConverterStep(true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3461
       return new AvroCarbonWriter(loadModel, hadoopConf, this.avroSchema);
     } else if (this.writerType == WRITER_TYPE.JSON) {
       loadModel.setJsonFileLoad(true);
@@ -671,6 +718,7 @@ public class CarbonWriterBuilder {
   }
 
   private void setCsvHeader(CarbonLoadModel model) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2430
     Field[] fields = schema.getFields();
     StringBuilder builder = new StringBuilder();
     String[] columns = new String[fields.length];
@@ -689,8 +737,10 @@ public class CarbonWriterBuilder {
 
   public CarbonLoadModel buildLoadModel(Schema carbonSchema)
       throws IOException, InvalidLoadOptionException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     timestamp = System.currentTimeMillis();
     // validate long_string_column
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3028
     Set<String> longStringColumns = new HashSet<>();
     if (options != null && options.get(CarbonCommonConstants.LONG_STRING_COLUMNS) != null) {
       String[] specifiedLongStrings =
@@ -702,6 +752,9 @@ public class CarbonWriterBuilder {
     }
     // for the longstring field, change the datatype from string to varchar
     this.schema = updateSchemaFields(carbonSchema, longStringColumns);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3162
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3164
     if (sortColumns != null && sortColumns.length != 0) {
       if (options == null || options.get("sort_scope") == null) {
         // If sort_columns are specified and sort_scope is not specified,
@@ -715,6 +768,7 @@ public class CarbonWriterBuilder {
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     if (carbonTable == null) {
       // if carbonTable is not set by user, build it using schema
       carbonTable = buildCarbonTable();
@@ -725,7 +779,9 @@ public class CarbonWriterBuilder {
 
   private void validateLongStringColumns(Schema carbonSchema, Set<String> longStringColumns) {
     // long string columns must be string or varchar type
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     for (Field field : carbonSchema.getFields()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2922
       if (longStringColumns.contains(field.getFieldName().toLowerCase()) && (
           (field.getDataType() != DataTypes.STRING) && field.getDataType() != DataTypes.VARCHAR)) {
         throw new RuntimeException(
@@ -758,12 +814,15 @@ public class CarbonWriterBuilder {
       tableSchemaBuilder = tableSchemaBuilder.blockletSize(blockletSize);
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     if (pageSizeInMb > 0) {
       tableSchemaBuilder = tableSchemaBuilder.pageSizeInMb(pageSizeInMb);
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2676
     tableSchemaBuilder.enableLocalDictionary(isLocalDictionaryEnabled);
     tableSchemaBuilder.localDictionaryThreshold(localDictionaryThreshold);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2359
     List<String> sortColumnsList = new ArrayList<>();
     if (sortColumns == null) {
       // If sort columns are not specified, default set all dimensions to sort column.
@@ -772,8 +831,10 @@ public class CarbonWriterBuilder {
       //Null check for field to handle hole in field[] ex.
       //  user passed size 4 but supplied only 2 fileds
       for (Field field : schema.getFields()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2411
         if (null != field) {
           if (field.getDataType() == DataTypes.STRING ||
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
               field.getDataType() == DataTypes.DATE ||
               field.getDataType() == DataTypes.TIMESTAMP) {
             sortColumnsList.add(field.getFieldName());
@@ -785,7 +846,9 @@ public class CarbonWriterBuilder {
     } else {
       sortColumnsList = Arrays.asList(sortColumns);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2419
     ColumnSchema[] sortColumnsSchemaList = new ColumnSchema[sortColumnsList.size()];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3065
     List<String> invertedIdxColumnsList = new ArrayList<>();
     if (null != invertedIndexColumns) {
       invertedIdxColumnsList = Arrays.asList(invertedIndexColumns);
@@ -798,6 +861,7 @@ public class CarbonWriterBuilder {
     String tableName;
     String dbName;
     dbName = "";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     tableName = "_tempTable-" + UUID.randomUUID().toString() + "_" + timestamp;
     TableSchema schema = tableSchemaBuilder.build();
     schema.setTableName(tableName);
@@ -808,16 +872,24 @@ public class CarbonWriterBuilder {
   }
 
   private void buildTableSchema(Field[] fields, TableSchemaBuilder tableSchemaBuilder,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3065
       List<String> sortColumnsList, ColumnSchema[] sortColumnsSchemaList,
       List<String> invertedIdxColumnsList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2514
     Set<String> uniqueFields = new HashSet<>();
     // a counter which will be used in case of complex array type. This valIndex will be assigned
     // to child of complex array type in the order val1, val2 so that each array type child is
     // differentiated to any level
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2443
     AtomicInteger valIndex = new AtomicInteger(0);
     // Check if any of the columns specified in sort columns are missing from schema.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     for (String sortColumn : sortColumnsList) {
       boolean exists = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2452
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2451
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2450
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2453
       for (Field field : fields) {
         if (field.getFieldName().equalsIgnoreCase(sortColumn)) {
           exists = true;
@@ -830,6 +902,7 @@ public class CarbonWriterBuilder {
       }
     }
     // Check if any of the columns specified in inverted index are missing from schema.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     for (String invertedIdxColumn : invertedIdxColumnsList) {
       boolean exists = false;
       for (Field field : fields) {
@@ -839,6 +912,7 @@ public class CarbonWriterBuilder {
         }
       }
       if (!exists) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3065
         throw new RuntimeException("column: " + invertedIdxColumn
             + " specified in inverted index columns does not exist in schema");
       }
@@ -846,6 +920,7 @@ public class CarbonWriterBuilder {
     int i = 0;
     for (Field field : fields) {
       if (null != field) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2514
         if (!uniqueFields.add(field.getFieldName())) {
           throw new RuntimeException(
               "Duplicate column " + field.getFieldName() + " found in table schema");
@@ -856,6 +931,7 @@ public class CarbonWriterBuilder {
           // unsupported types for ("array", "struct", "double", "float", "decimal")
           if (field.getDataType() == DataTypes.DOUBLE || field.getDataType() == DataTypes.FLOAT
               || DataTypes.isDecimal(field.getDataType()) || field.getDataType().isComplexType()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
               || field.getDataType() == DataTypes.VARCHAR
               || field.getDataType() == DataTypes.BINARY) {
             String errorMsg =
@@ -867,10 +943,12 @@ public class CarbonWriterBuilder {
         if (field.getChildren() != null && field.getChildren().size() > 0) {
           if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
             // Loop through the inner columns and for a StructData
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3446
             DataType complexType = DataTypes
                 .createArrayType(field.getChildren().get(0).getDataType(),
                     field.getChildren().get(0).getFieldName());
             tableSchemaBuilder
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
                 .addColumn(new StructField(field.getFieldName(), complexType, field.getChildren()),
                     valIndex, false, isInvertedIdxColumn > -1);
           } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")) {
@@ -883,10 +961,12 @@ public class CarbonWriterBuilder {
             }
             DataType complexType = DataTypes.createStructType(structFieldsArray);
             tableSchemaBuilder
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
                 .addColumn(new StructField(field.getFieldName(), complexType, field.getChildren()),
                     valIndex, false, isInvertedIdxColumn > -1);
           } else if (field.getDataType().getName().equalsIgnoreCase("MAP")) {
             // Loop through the inner columns for MapType
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2894
             DataType mapType = DataTypes.createMapType(((MapType) field.getDataType()).getKeyType(),
                 field.getChildren().get(0).getDataType());
             tableSchemaBuilder
@@ -915,12 +995,14 @@ public class CarbonWriterBuilder {
       options = new HashMap<>();
     }
     CarbonLoadModelBuilder builder = new CarbonLoadModelBuilder(table);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     CarbonLoadModel model = builder.build(options, timestamp, taskNo);
     setCsvHeader(model);
     return model;
   }
 
   /* loop through all the parent column and
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2922
   a) change fields name to lower case.
   this is to match with sort column case.
   b) change string fields to varchar type */
@@ -928,9 +1010,12 @@ public class CarbonWriterBuilder {
     if (schema == null) {
       return null;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     Field[] fields = schema.getFields();
     for (int i = 0; i < fields.length; i++) {
       if (fields[i] != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2922
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3028
         if (longStringColumns != null) {
           /* Also update the string type to varchar */
           if (longStringColumns.contains(fields[i].getFieldName())) {

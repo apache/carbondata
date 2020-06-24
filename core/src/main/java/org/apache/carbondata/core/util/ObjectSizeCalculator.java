@@ -64,6 +64,7 @@ public final class ObjectSizeCalculator {
     } catch (Throwable ex) {
       // throwable is being caught as external interface is being invoked through reflection
       // and runtime exceptions might get thrown
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error("Could not access method SizeEstimator:estimate.Returning default value", ex);
       methodAccessible = false;
       return defValue;

@@ -43,6 +43,8 @@ import org.junit.Test;
 public class TestPageLevelDictionary {
   private String compressorName = CompressorFactory.getInstance().getCompressor(
       CarbonCommonConstants.DEFAULT_COMPRESSOR).getName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
 
   @Test public void testPageLevelDictionaryGenerateDataIsGenertingProperDictionaryValues() {
     LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
@@ -62,6 +64,8 @@ public class TestPageLevelDictionary {
   @Test public void testPageLevelDictionaryContainsOnlyUsedDictionaryValues() {
     LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
     String columnName = "column1";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     PageLevelDictionary pageLevelDictionary1 = new PageLevelDictionary(
         generator, columnName, DataTypes.STRING, false, compressorName);
     byte[][] validateData = new byte[500][];
@@ -78,6 +82,8 @@ public class TestPageLevelDictionary {
     } catch (DictionaryThresholdReachedException e) {
       Assert.assertTrue(false);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     PageLevelDictionary pageLevelDictionary2 = new PageLevelDictionary(
         generator, columnName, DataTypes.STRING, false, compressorName);
     try {
@@ -99,6 +105,8 @@ public class TestPageLevelDictionary {
       EncodingFactory encodingFactory = DefaultEncodingFactory.getInstance();
       List<ByteBuffer> encoderMetas =
           localDictionaryChunkForBlocklet.getDictionary_meta().getEncoder_meta();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       ColumnPageDecoder decoder = encodingFactory.createDecoder(
           encodings, encoderMetas, compressorName);
       ColumnPage decode = decoder.decode(localDictionaryChunkForBlocklet.getDictionary_data(), 0,
@@ -115,6 +123,8 @@ public class TestPageLevelDictionary {
   public void testPageLevelDictionaryContainsOnlyUsedDictionaryValuesWhenMultiplePagesUseSameDictionary() {
     LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
     String columnName = "column1";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     PageLevelDictionary pageLevelDictionary1 = new PageLevelDictionary(
         generator, columnName, DataTypes.STRING, false, compressorName);
     byte[][] validateData = new byte[10][];
@@ -133,6 +143,8 @@ public class TestPageLevelDictionary {
     } catch (DictionaryThresholdReachedException e) {
       Assert.assertTrue(false);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     PageLevelDictionary pageLevelDictionary2 = new PageLevelDictionary(
         generator, columnName, DataTypes.STRING, false, compressorName);
     try {
@@ -180,6 +192,8 @@ public class TestPageLevelDictionary {
       EncodingFactory encodingFactory = DefaultEncodingFactory.getInstance();
       List<ByteBuffer> encoderMetas =
           localDictionaryChunkForBlocklet.getDictionary_meta().getEncoder_meta();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       ColumnPageDecoder decoder = encodingFactory.createDecoder(
           encodings, encoderMetas, compressorName);
       ColumnPage decode = decoder.decode(localDictionaryChunkForBlocklet.getDictionary_data(), 0,

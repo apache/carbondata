@@ -47,15 +47,18 @@ public class UnsafeMemoryManager {
   private static Map<String, Set<MemoryBlock>> taskIdToOffheapMemoryBlockMap;
   static {
     long size = 0L;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3035
     String configuredWorkingMemorySize = null;
     try {
       // check if driver unsafe memory is configured and JVM process is in driver. In that case
       // initialize unsafe memory configured for driver
       boolean isDriver = Boolean.parseBoolean(CarbonProperties.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3038
           .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE,
               CarbonCommonConstants.IS_DRIVER_INSTANCE_DEFAULT));
       boolean initializedWithUnsafeDriverMemory = false;
       if (isDriver) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3035
         configuredWorkingMemorySize = CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.UNSAFE_DRIVER_WORKING_MEMORY_IN_MB);
         if (null != configuredWorkingMemorySize) {
@@ -71,9 +74,11 @@ public class UnsafeMemoryManager {
         }
       }
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3047
       LOGGER.info("Invalid offheap working memory size value: " + configuredWorkingMemorySize);
     }
     long takenSize = size;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2990
     MemoryType memoryType;
     if (offHeap) {
       memoryType = MemoryType.OFFHEAP;
@@ -81,6 +86,7 @@ public class UnsafeMemoryManager {
       if (takenSize < defaultSize) {
         takenSize = defaultSize;
         LOGGER.warn(String.format(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3047
             "It is not recommended to set offheap working memory size less than %sMB,"
                 + " so setting default value to %d",
             CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT, defaultSize));
@@ -89,6 +95,7 @@ public class UnsafeMemoryManager {
     } else {
       // For ON-HEAP case not considering any size as it will based on max memory(Xmx) given to
       // JVM and JVM will take care of freeing the memory
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2990
       memoryType = MemoryType.ONHEAP;
     }
     INSTANCE = new UnsafeMemoryManager(takenSize, memoryType);
@@ -106,7 +113,9 @@ public class UnsafeMemoryManager {
   private UnsafeMemoryManager(long totalMemory, MemoryType memoryType) {
     this.totalMemory = totalMemory;
     this.memoryType = memoryType;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3124
     LOGGER.info("Offheap Working Memory manager is created with size " + totalMemory + " with "
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3047
         + memoryType);
   }
 
@@ -132,6 +141,7 @@ public class UnsafeMemoryManager {
       memoryBlock = MemoryAllocator.HEAP.allocate(memoryRequested);
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug(String
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3140
             .format("Creating onheap working Memory block with size: (%d)", memoryBlock.size()));
       }
     }
@@ -143,9 +153,11 @@ public class UnsafeMemoryManager {
       taskIdToOffheapMemoryBlockMap.get(taskId).remove(memoryBlock);
     }
     if (!memoryBlock.isFreedStatus()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2990
       getMemoryAllocator(memoryBlock.getMemoryType()).free(memoryBlock);
       memoryUsed -= memoryBlock.size();
       memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3124
       if (LOGGER.isDebugEnabled() && memoryBlock.getMemoryType() == MemoryType.OFFHEAP) {
         LOGGER.debug(String.format("Freeing offheap working memory block (%s) with size: %d, "
                 + "current available memory is: %d", memoryBlock.toString(), memoryBlock.size(),
@@ -165,14 +177,17 @@ public class UnsafeMemoryManager {
         memoryBlock = iterator.next();
         if (!memoryBlock.isFreedStatus()) {
           occuppiedMemory += memoryBlock.size();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2990
           getMemoryAllocator(memoryBlock.getMemoryType()).free(memoryBlock);
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     memoryUsed -= occuppiedMemory;
     memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug(String.format(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3047
           "Freeing offheap working memory of size %d. Current available memory is %d",
           occuppiedMemory, totalMemory - memoryUsed));
     }
@@ -193,11 +208,13 @@ public class UnsafeMemoryManager {
   }
 
   public static MemoryBlock allocateMemoryWithRetry(MemoryType memoryType, String taskId,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3047
       long size) {
     return INSTANCE.allocateMemory(memoryType, taskId, size);
   }
 
   private MemoryAllocator getMemoryAllocator(MemoryType memoryType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2990
     switch (memoryType) {
       case ONHEAP:
         return MemoryAllocator.HEAP;
@@ -221,6 +238,7 @@ public class UnsafeMemoryManager {
    * @param toBeDestroyed The DirectByteBuffer that will be "cleaned". Utilizes reflection.
    */
   public static void destroyDirectByteBuffer(ByteBuffer toBeDestroyed) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3787
     if (!toBeDestroyed.isDirect()) {
       return;
     }

@@ -35,6 +35,7 @@ public class RowBatchTest {
   private static List<Object[]> rowsList = new ArrayList(2);
 
   @BeforeClass public static void setUp() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     rowBatch = new RowBatch();
     rowsList.add(0, new Integer[] { 1, 2 });
     rowsList.add(1, new Integer[] { 3 });
@@ -44,6 +45,7 @@ public class RowBatchTest {
     RowBatch rows = new RowBatch();
     rows.setRows(rowsList);
     Object[] result = rows.next();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(result.equals(rowsList.get(0)));
   }
 
@@ -69,8 +71,10 @@ public class RowBatchTest {
     List<Object[]> list = new ArrayList<>();
     list.add(0, new Integer[] { 1, 2 });
     list.add(1, new Integer[] { 1, 2 });
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     rowBatch.setRows(list);
     boolean result = rowBatch.hasNext();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(result);
   }
 
@@ -79,6 +83,7 @@ public class RowBatchTest {
     list.add(0, new Integer[] { 1, 2 });
     rowBatch.setRows(list);
     Object[] actualValue = rowBatch.getRawRow(0);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(list.get(0) == actualValue);
   }
 
@@ -86,6 +91,7 @@ public class RowBatchTest {
     List<Object[]> list = new ArrayList<>();
     list.add(0, new Integer[] { 1, 2 });
     list.add(1, new Integer[] { 1, 2 });
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     rowBatch.setRows(list);
     int actualValue = rowBatch.getSize();
     int expectedValue = 2;

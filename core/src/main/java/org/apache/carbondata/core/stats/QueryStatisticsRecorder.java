@@ -27,6 +27,7 @@ public interface QueryStatisticsRecorder {
   void logStatistics();
 
   TaskStatistics statisticsForTask(long taskId, long startTime);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
 
   void logStatisticsForTask(TaskStatistics task);
 

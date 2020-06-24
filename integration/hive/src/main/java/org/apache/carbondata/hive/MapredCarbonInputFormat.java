@@ -67,17 +67,20 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(MapredCarbonInputFormat.class.getCanonicalName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
 
   /**
    * This method will read the schema from the physical file and populate into CARBON_TABLE
    */
   private static void populateCarbonTable(Configuration configuration, String paths)
       throws IOException, InvalidConfigurationException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     if (null != paths) {
       // read the schema file to get the absoluteTableIdentifier having the correct table id
       // persisted in the schema
       CarbonTable carbonTable;
       AbsoluteTableIdentifier absoluteTableIdentifier = AbsoluteTableIdentifier
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
           .from(configuration.get(hive_metastoreConstants.META_TABLE_LOCATION),
               getDatabaseName(configuration), getTableName(configuration));
       String schemaPath =
@@ -100,6 +103,8 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
   }
 
   private static CarbonTable getCarbonTable(Configuration configuration, String path)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1994
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1995
       throws IOException, InvalidConfigurationException {
     populateCarbonTable(configuration, path);
     // read it from schema file in the store
@@ -112,9 +117,11 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     jobConf.set(DATABASE_NAME, "_dummyDb_" + UUID.randomUUID().toString());
     jobConf.set(TABLE_NAME, "_dummyTable_" + UUID.randomUUID().toString());
     org.apache.hadoop.mapreduce.JobContext jobContext = Job.getInstance(jobConf);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     CarbonTable carbonTable;
     try {
       carbonTable = getCarbonTable(jobContext.getConfiguration(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
           jobContext.getConfiguration().get(hive_metastoreConstants.META_TABLE_LOCATION));
     } catch (Exception e) {
       throw new IOException("Unable read Carbon Schema: ", e);
@@ -137,6 +144,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     CarbonInputFormat<Void> carbonInputFormat;
     if (carbonTable.isTransactionalTable()) {
       carbonInputFormat = new CarbonTableInputFormat<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
       jobContext.getConfiguration().set(CARBON_TRANSACTIONAL_TABLE, "true");
     } else {
       carbonInputFormat = new CarbonFileInputFormat<>();
@@ -144,12 +152,14 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     List<org.apache.hadoop.mapreduce.InputSplit> splitList =
         carbonInputFormat.getSplits(jobContext);
     InputSplit[] splits = new InputSplit[splitList.size()];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1158
     CarbonInputSplit split;
     for (int i = 0; i < splitList.size(); i++) {
       split = (CarbonInputSplit) splitList.get(i);
       CarbonHiveInputSplit inputSplit = new CarbonHiveInputSplit(split.getSegmentId(),
           split.getPath(), split.getStart(), split.getLength(),
           split.getLocations(), split.getNumberOfBlocklets(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3364
           split.getVersion(), split.getBlockStorageIdMap(), split.getDetailInfo());
       splits[i] = inputSplit;
     }
@@ -163,6 +173,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
         return;
       }
       ExprNodeGenericFuncDesc exprNodeGenericFuncDesc =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3719
           SerializationUtilities.deserializeObject(expr, ExprNodeGenericFuncDesc.class);
       LOGGER.debug("hive expression:" + exprNodeGenericFuncDesc.getGenericUDF());
       LOGGER.debug("hive expression string:" + exprNodeGenericFuncDesc.getExprString());
@@ -171,6 +182,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
         return;
       }
       LOGGER.debug("carbon expression:" + expression.getString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       IndexFilter filter = new IndexFilter(carbonTable, expression, true);
       CarbonInputFormat.setFilterPredicates(configuration, filter);
     } catch (Exception e) {
@@ -185,24 +197,31 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     if (inputSplit instanceof CarbonHiveInputSplit) {
       path = ((CarbonHiveInputSplit) inputSplit).getPath().toString();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     QueryModel queryModel;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3441
       jobConf.set(DATABASE_NAME, "_dummyDb_" + UUID.randomUUID().toString());
       jobConf.set(TABLE_NAME, "_dummyTable_" + UUID.randomUUID().toString());
       queryModel = getQueryModel(jobConf, path);
     } catch (InvalidConfigurationException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Failed to create record reader: " + e.getMessage(), e);
       return null;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     CarbonReadSupport<ArrayWritable> readSupport = new WritableReadSupport<>();
     return new CarbonHiveRecordReader(queryModel, readSupport, inputSplit, jobConf);
   }
 
   private QueryModel getQueryModel(Configuration configuration, String path)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1994
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1995
       throws IOException, InvalidConfigurationException {
     CarbonTable carbonTable = getCarbonTable(configuration, path);
     String projectionString = getProjection(configuration, carbonTable);
     String[] projectionColumns = projectionString.split(",");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     return new QueryModelBuilder(carbonTable)
         .projectColumns(projectionColumns)
         .filterExpression(getFilterPredicates(configuration))
@@ -224,16 +243,21 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     StringBuilder allColumns = new StringBuilder();
     StringBuilder projectionColumns = new StringBuilder();
     for (CarbonColumn column : carbonColumns) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1465
       carbonColumnNames.add(column.getColName().toLowerCase());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
       allColumns.append(column.getColName()).append(",");
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3441
     if (null != projection && !projection.equals("")) {
       String[] columnNames = projection.split(",");
       //verify that the columns parsed by Hive exist in the table
       for (String col : columnNames) {
         //show columns command will return these data
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1465
         if (carbonColumnNames.contains(col.toLowerCase())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
           projectionColumns.append(col).append(",");
         }
       }

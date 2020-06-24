@@ -65,6 +65,7 @@ public class LocalCarbonFile implements CarbonFile {
 
   public LocalCarbonFile(String filePath) {
     Path pathWithoutSchemeAndAuthority = Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     filePath = pathWithoutSchemeAndAuthority.toString().replace("\\", "/");
     absoluteFilePath = FileFactory.getUpdatedFilePath(filePath);
     file = new File(absoluteFilePath);
@@ -83,6 +84,7 @@ public class LocalCarbonFile implements CarbonFile {
 
   @Override
   public CarbonFile[] listFiles(final CarbonFileFilter fileFilter) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     if (!isDirectory()) {
       return new CarbonFile[0];
     }
@@ -117,6 +119,7 @@ public class LocalCarbonFile implements CarbonFile {
     try {
       return file.getCanonicalPath();
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error("Exception occured" + e.getMessage(), e);
     }
     return null;
@@ -143,6 +146,7 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   public boolean delete() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     return deleteFile();
   }
 
@@ -153,6 +157,7 @@ public class LocalCarbonFile implements CarbonFile {
     }
     File[] files = file.listFiles();
     if (files == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
       return new CarbonFile[0];
     }
     CarbonFile[] carbonFiles = new CarbonFile[files.length];
@@ -164,6 +169,7 @@ public class LocalCarbonFile implements CarbonFile {
 
   @Override
   public CarbonFile[] listFiles(boolean recursive, int maxCount)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3678
       throws IOException {
     // ignore the maxCount for local filesystem
     return listFiles();
@@ -171,6 +177,7 @@ public class LocalCarbonFile implements CarbonFile {
 
   @Override
   public List<CarbonFile> listFiles(Boolean recursive) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     if (!isDirectory()) {
       return new ArrayList<>();
     }
@@ -185,6 +192,7 @@ public class LocalCarbonFile implements CarbonFile {
   @Override
   public List<CarbonFile> listFiles(boolean recursive, CarbonFileFilter fileFilter) {
     if (!file.isDirectory()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       return new ArrayList<>();
     }
     Collection<File> fileCollection = FileUtils.listFiles(file, null, recursive);
@@ -231,6 +239,7 @@ public class LocalCarbonFile implements CarbonFile {
     // temporary file name
     String tempWriteFilePath = fileName + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       CarbonFile tempFile;
       // delete temporary file if it already exists at a given path
       if (isFileExist()) {
@@ -256,6 +265,7 @@ public class LocalCarbonFile implements CarbonFile {
       tempFile.renameForce(fileName);
       fileTruncatedSuccessfully = true;
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Exception occured while truncating the file " + e.getMessage(), e);
     } finally {
       CarbonUtil.closeStreams(source, destination);
@@ -282,6 +292,7 @@ public class LocalCarbonFile implements CarbonFile {
   @Override
   public boolean renameForce(String changeToName) {
     File destFile = new File(changeToName);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2012
     if (destFile.exists() && !file.getAbsolutePath().equals(destFile.getAbsolutePath())) {
       if (destFile.delete()) {
         return file.renameTo(new File(changeToName));
@@ -292,6 +303,7 @@ public class LocalCarbonFile implements CarbonFile {
 
   @Override
   public DataOutputStream getDataOutputStream(int bufferSize, boolean append) throws
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       FileNotFoundException {
     return new DataOutputStream(
         new BufferedOutputStream(new FileOutputStream(absoluteFilePath, append), bufferSize));
@@ -340,6 +352,7 @@ public class LocalCarbonFile implements CarbonFile {
    */
   @Override
   public DataInputStream getDataInputStream(int bufferSize, long offset) throws
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       IOException {
     FileInputStream fis = new FileInputStream(absoluteFilePath);
     long actualSkipSize = 0;
@@ -359,6 +372,7 @@ public class LocalCarbonFile implements CarbonFile {
   @Override
   public DataOutputStream getDataOutputStream()
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(absoluteFilePath)));
   }
 
@@ -414,6 +428,7 @@ public class LocalCarbonFile implements CarbonFile {
 
   @Override
   public boolean isFileExist() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     return file.exists();
   }
 
@@ -456,6 +471,7 @@ public class LocalCarbonFile implements CarbonFile {
   @Override
   public boolean setReplication(short replication) {
     // local carbon file does not need replication
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2032
     return true;
   }
 
@@ -471,6 +487,7 @@ public class LocalCarbonFile implements CarbonFile {
 
   @Override
   public boolean equals(Object o) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3659
     if (this == o) {
       return true;
     }
@@ -478,6 +495,7 @@ public class LocalCarbonFile implements CarbonFile {
       return false;
     }
     LocalCarbonFile that = (LocalCarbonFile) o;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     return Objects.equals(file.getAbsolutePath(), that.file.getAbsolutePath());
   }
 

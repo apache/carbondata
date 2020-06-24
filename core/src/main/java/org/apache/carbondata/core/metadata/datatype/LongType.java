@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata.datatype;
 
 class LongType extends DataType {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
 
   static final DataType LONG = new LongType(DataTypes.LONG_TYPE_ID, 5, "LONG", 8);
 

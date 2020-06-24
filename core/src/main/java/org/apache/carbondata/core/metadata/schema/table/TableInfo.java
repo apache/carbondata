@@ -43,6 +43,7 @@ public class TableInfo implements Serializable, Writable {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(TableInfo.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1286
 
   /**
    * serialization version
@@ -98,6 +99,7 @@ public class TableInfo implements Serializable, Writable {
   private boolean isSchemaModified;
 
   public TableInfo() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     isTransactionalTable = true;
   }
 
@@ -113,11 +115,15 @@ public class TableInfo implements Serializable, Writable {
    */
   public void setFactTable(TableSchema factTable) {
     this.factTable = factTable;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     updateIsSchemaModified();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
     updateHasColumnDrift();
   }
 
   private void updateIsSchemaModified() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
     if (null != factTable.getSchemaEvolution()) {
       // If schema evolution entry list size is > 1 that means an alter operation is performed
       // which has added the new schema entry in the schema evolution list.
@@ -201,6 +207,7 @@ public class TableInfo implements Serializable, Writable {
       return false;
     }
     TableInfo other = (TableInfo) obj;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     if (null == databaseName || null == other.databaseName) {
       return false;
     }
@@ -220,6 +227,7 @@ public class TableInfo implements Serializable, Writable {
    * in case not specified by the user
    */
   int getTableBlockSizeInMB() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1286
     String tableBlockSize = null;
     // In case of old store there will not be any map for table properties so table properties
     // will be null
@@ -228,6 +236,7 @@ public class TableInfo implements Serializable, Writable {
       tableBlockSize = tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE);
     }
     if (null == tableBlockSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3087
       tableBlockSize = CarbonCommonConstants.TABLE_BLOCK_SIZE_DEFAULT;
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug(
@@ -245,9 +254,14 @@ public class TableInfo implements Serializable, Writable {
     out.writeUTF(tableUniqueName);
     factTable.write(out);
     out.writeLong(lastUpdatedTime);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
     out.writeUTF(getOrCreateAbsoluteTableIdentifier().getTablePath());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     out.writeBoolean(isTransactionalTable);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
     out.writeBoolean(hasColumnDrift);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     out.writeBoolean(isSchemaModified);
   }
 
@@ -258,9 +272,14 @@ public class TableInfo implements Serializable, Writable {
     this.factTable = new TableSchema();
     this.factTable.readFields(in);
     this.lastUpdatedTime = in.readLong();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
     this.tablePath = in.readUTF();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     this.isTransactionalTable = in.readBoolean();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
     this.hasColumnDrift = in.readBoolean();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     this.isSchemaModified = in.readBoolean();
   }
 
@@ -268,6 +287,7 @@ public class TableInfo implements Serializable, Writable {
     if (identifier == null) {
       CarbonTableIdentifier carbontableIdentifier =
           new CarbonTableIdentifier(databaseName, factTable.getTableName(), factTable.getTableId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
       identifier = AbsoluteTableIdentifier.from(tablePath, carbontableIdentifier);
     }
     return identifier;
@@ -287,6 +307,7 @@ public class TableInfo implements Serializable, Writable {
   }
 
   public boolean isTransactionalTable() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     return isTransactionalTable;
   }
 
@@ -295,10 +316,13 @@ public class TableInfo implements Serializable, Writable {
   }
 
   public boolean isSchemaModified() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     return isSchemaModified;
   }
 
   private void updateHasColumnDrift() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
     this.hasColumnDrift = false;
     for (ColumnSchema columnSchema : factTable.getListOfColumns()) {
       if (columnSchema.isDimensionColumn() && !columnSchema.isInvisible()) {
@@ -318,6 +342,7 @@ public class TableInfo implements Serializable, Writable {
   }
 
   public String getTablePath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3555
     return tablePath;
   }
 }

@@ -29,5 +29,6 @@ public interface AtomicFileOperations {
 
   DataOutputStream openForWrite(FileWriteOperation operation) throws IOException;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2749
   void setFailed();
 }

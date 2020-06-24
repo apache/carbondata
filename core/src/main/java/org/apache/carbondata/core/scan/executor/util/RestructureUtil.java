@@ -65,6 +65,7 @@ public class RestructureUtil {
    * @return list of query dimension which is present in the table block
    */
   public static List<ProjectionDimension> createDimensionInfoAndGetCurrentBlockQueryDimension(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
       BlockExecutionInfo blockExecutionInfo, ProjectionDimension[] queryDimensions,
       List<CarbonDimension> tableBlockDimensions, List<CarbonDimension> tableComplexDimension,
       int measureCount, boolean isTransactionalTable) {
@@ -79,16 +80,20 @@ public class RestructureUtil {
     int newNoDictionaryColumnCount = 0;
     // selecting only those dimension which is present in the query
     int dimIndex = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     for (ProjectionDimension queryDimension : queryDimensions) {
       if (queryDimension.getDimension().hasEncoding(Encoding.IMPLICIT)) {
         presentDimension.add(queryDimension);
         isDimensionExists[dimIndex] = true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
         dimensionInfo.dataType[queryDimension.getOrdinal()] =
             queryDimension.getDimension().getDataType();
       } else {
         for (CarbonDimension tableDimension : tableBlockDimensions) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
           if (isColumnMatches(isTransactionalTable, queryDimension.getDimension(),
               tableDimension)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
             ProjectionDimension currentBlockDimension = new ProjectionDimension(tableDimension);
             tableDimension.getColumnSchema()
                 .setPrecision(queryDimension.getDimension().getColumnSchema().getPrecision());
@@ -110,8 +115,10 @@ public class RestructureUtil {
           continue;
         }
         for (CarbonDimension tableDimension : tableComplexDimension) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
           if (isColumnMatches(isTransactionalTable, queryDimension.getDimension(),
               tableDimension)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
             ProjectionDimension currentBlockDimension = null;
             // If projection dimension is child of struct field and contains Parent Ordinal
             if (null != queryDimension.getDimension().getComplexParentDimension()) {
@@ -124,6 +131,8 @@ public class RestructureUtil {
             currentBlockDimension.setOrdinal(queryDimension.getOrdinal());
             presentDimension.add(currentBlockDimension);
             isDimensionExists[dimIndex] = true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
             dimensionInfo.dataType[currentBlockDimension.getOrdinal()] =
                 currentBlockDimension.getDimension().getDataType();
             break;
@@ -136,6 +145,7 @@ public class RestructureUtil {
           // set the flag to say whether a new dictionary column or no dictionary column
           // has been added. This will be useful after restructure for compaction scenarios where
           // newly added columns data need to be filled
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
           if (queryDimension.getDimension().getDataType() == DataTypes.DATE) {
             dimensionInfo.setDictionaryColumnAdded(true);
             newDictionaryColumnCount++;
@@ -165,6 +175,7 @@ public class RestructureUtil {
     // If it is non transactional table just check the column names, no need to validate
     // column id as multiple sdk's output placed in a single folder doesn't have same
     // column ID but can have same column name
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
     if (tableColumn.getDataType().isComplexType() && !(tableColumn.getDataType().getId()
         == DataTypes.ARRAY_TYPE_ID)) {
       if (tableColumn.getColumnId().equalsIgnoreCase(queryColumn.getColumnId()) || tableColumn
@@ -234,12 +245,14 @@ public class RestructureUtil {
   public static Object validateAndGetDefaultValue(CarbonDimension queryDimension) {
     byte[] defaultValue = queryDimension.getDefaultValue();
     Object defaultValueToBeConsidered = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     if (queryDimension.getDataType() == DataTypes.DATE) {
       // direct dictionary case
       defaultValueToBeConsidered = getDirectDictionaryDefaultValue(queryDimension.getDataType(),
           queryDimension.getDefaultValue());
     } else {
       // no dictionary
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1450
       defaultValueToBeConsidered =
           getNoDictionaryDefaultValue(queryDimension.getDataType(), defaultValue);
     }
@@ -276,8 +289,10 @@ public class RestructureUtil {
    */
   private static Object getNoDictionaryDefaultValue(DataType datatype, byte[] defaultValue) {
     Object noDictionaryDefaultValue = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1491
     String value = null;
     if (!isDefaultValueNull(defaultValue)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       if (datatype == DataTypes.INT) {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         noDictionaryDefaultValue = Integer.parseInt(value);
@@ -285,9 +300,12 @@ public class RestructureUtil {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         noDictionaryDefaultValue = Long.parseLong(value);
       } else if (datatype == DataTypes.TIMESTAMP) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
         long timestampValue = ByteUtil.toXorLong(defaultValue, 0, defaultValue.length);
         noDictionaryDefaultValue = timestampValue * 1000L;
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
         noDictionaryDefaultValue =
             DataTypeUtil.getDataTypeConverter().convertFromByteToUTF8Bytes(defaultValue);
       }
@@ -302,6 +320,7 @@ public class RestructureUtil {
    * @return
    */
   private static boolean isDefaultValueNull(byte[] defaultValue) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     return null == defaultValue;
   }
 
@@ -315,6 +334,7 @@ public class RestructureUtil {
   public static Object getMeasureDefaultValue(ColumnSchema columnSchema, byte[] defaultValue) {
     Object measureDefaultValue = null;
     if (!isDefaultValueNull(defaultValue)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2016
       String value;
       DataType dataType = columnSchema.getDataType();
       if (dataType == DataTypes.SHORT) {
@@ -357,7 +377,10 @@ public class RestructureUtil {
       byte[] defaultValue) {
     Object measureDefaultValue = null;
     if (!isDefaultValueNull(defaultValue)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2133
       String value;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = columnSchema.getDataType();
       if (dataType == DataTypes.SHORT) {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
@@ -368,14 +391,20 @@ public class RestructureUtil {
       } else if (dataType == DataTypes.LONG) {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         measureDefaultValue = Long.parseLong(value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2133
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2133
       } else if (dataType == DataTypes.BOOLEAN) {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         measureDefaultValue = Boolean.valueOf(value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       } else if (DataTypes.isDecimal(dataType)) {
         BigDecimal decimal = DataTypeUtil.byteToBigDecimal(defaultValue);
         if (columnSchema.getScale() > decimal.scale()) {
           decimal = decimal.setScale(columnSchema.getScale(), RoundingMode.HALF_UP);
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
         measureDefaultValue = decimal;
       } else {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
@@ -400,7 +429,9 @@ public class RestructureUtil {
    * @return measures present in the block
    */
   public static List<ProjectionMeasure> createMeasureInfoAndGetCurrentBlockQueryMeasures(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
       BlockExecutionInfo blockExecutionInfo, ProjectionMeasure[] queryMeasures,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
       List<CarbonMeasure> currentBlockMeasures, boolean isTransactionalTable) {
     MeasureInfo measureInfo = new MeasureInfo();
     List<ProjectionMeasure> presentMeasure = new ArrayList<>(queryMeasures.length);
@@ -426,6 +457,7 @@ public class RestructureUtil {
           presentMeasure.add(currentBlockMeasure);
           measureOrdinalList.add(carbonMeasure.getOrdinal());
           measureExistsInCurrentBlock[index] = true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
           measureDataTypes[index] = carbonMeasure.getDataType();
           break;
         }
@@ -443,6 +475,7 @@ public class RestructureUtil {
     measureInfo.setDefaultValues(defaultValues);
     measureInfo.setMeasureOrdinals(measureOrdinals);
     measureInfo.setMeasureExists(measureExistsInCurrentBlock);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
     measureInfo.setMeasureDataTypes(measureDataTypes);
     blockExecutionInfo.setMeasureInfo(measureInfo);
     return presentMeasure;

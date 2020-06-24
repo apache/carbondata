@@ -57,6 +57,7 @@ public class DataFileFooterConverterFactory {
     switch (version) {
       case V3:
         return new DataFileFooterConverterV3();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3650
       default:
         throw new UnsupportedOperationException("Unsupported file version: " + version);
     }

@@ -100,6 +100,8 @@ public class Segment implements Serializable, Writable {
   }
 
   public Segment(String segmentNo, ReadCommittedScope readCommittedScope) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     this.segmentNo = segmentNo;
     this.readCommittedScope = readCommittedScope;
     segmentString = segmentNo;
@@ -115,6 +117,7 @@ public class Segment implements Serializable, Writable {
   public Segment(String segmentNo, String segmentFileName) {
     this.segmentNo = segmentNo;
     this.segmentFileName = segmentFileName;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
     this.readCommittedScope = null;
     if (segmentFileName != null) {
       segmentString = segmentNo + "#" + segmentFileName;
@@ -124,6 +127,7 @@ public class Segment implements Serializable, Writable {
   }
 
   public Segment(String segmentNo, String segmentFileName, String segmentPath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
       Map<String, String> options) {
     this(segmentNo, segmentFileName);
     this.segmentPath = segmentPath;
@@ -157,17 +161,25 @@ public class Segment implements Serializable, Writable {
    * @param readCommittedScope
    */
   public Segment(String segmentNo, String segmentFileName, ReadCommittedScope readCommittedScope,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2386
       LoadMetadataDetails loadMetadataDetails) {
     this.segmentNo = segmentNo;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
     this.segmentFileName = segmentFileName;
     this.readCommittedScope = readCommittedScope;
     this.loadMetadataDetails = loadMetadataDetails;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     if (loadMetadataDetails.getIndexSize() != null) {
       this.indexSize = Long.parseLong(loadMetadataDetails.getIndexSize());
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     if (segmentFileName != null) {
       segmentString = segmentNo + "#" + segmentFileName;
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
       segmentString = segmentNo;
     }
   }
@@ -184,6 +196,7 @@ public class Segment implements Serializable, Writable {
   }
 
   public SegmentRefreshInfo getSegmentRefreshInfo(UpdateVO updateVo) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2389
     return readCommittedScope.getCommittedSegmentRefreshInfo(this, updateVo);
   }
 
@@ -196,14 +209,18 @@ public class Segment implements Serializable, Writable {
   }
 
   public void setReadCommittedScope(ReadCommittedScope readCommittedScope) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
     this.readCommittedScope = readCommittedScope;
   }
 
   public ReadCommittedScope getReadCommittedScope() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     return readCommittedScope;
   }
 
   public static List<Segment> toSegmentList(String[] segmentIds,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
       ReadCommittedScope readCommittedScope) {
     List<Segment> list = new ArrayList<>(segmentIds.length);
     for (String segmentId : segmentIds) {
@@ -245,6 +262,7 @@ public class Segment implements Serializable, Writable {
    */
   public static Segment toSegment(String segmentId) {
     // SegmentId can be combination of segmentNo and segmentFileName.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     return toSegment(segmentId, null);
   }
 
@@ -255,8 +273,10 @@ public class Segment implements Serializable, Writable {
    * @return
    */
   public static Segment getSegment(String segmentNo, String tablePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2209
     LoadMetadataDetails[] loadMetadataDetails =
         SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     return getSegment(segmentNo, loadMetadataDetails);
   }
 
@@ -276,6 +296,7 @@ public class Segment implements Serializable, Writable {
   }
 
   public Configuration getConfiguration() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     return readCommittedScope.getConfiguration();
   }
 
@@ -284,6 +305,7 @@ public class Segment implements Serializable, Writable {
   }
 
   public void setFilteredIndexShardNames(Set<String> filteredIndexShardNames) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3592
     this.filteredIndexShardNames = filteredIndexShardNames;
   }
 
@@ -302,14 +324,18 @@ public class Segment implements Serializable, Writable {
 
   @Override
   public String toString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     return segmentString;
   }
 
   public LoadMetadataDetails getLoadMetadataDetails() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2386
     return loadMetadataDetails;
   }
 
   public long getIndexSize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     return indexSize;
   }
 
@@ -318,6 +344,7 @@ public class Segment implements Serializable, Writable {
   }
 
   public boolean isCacheable() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
     return isCacheable;
   }
 
@@ -326,6 +353,7 @@ public class Segment implements Serializable, Writable {
   }
 
   public String getSegmentPath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3555
     if (segmentPath == null) {
       if (loadMetadataDetails != null) {
         segmentPath = loadMetadataDetails.getPath();
@@ -343,6 +371,7 @@ public class Segment implements Serializable, Writable {
   }
 
   public boolean isCarbonSegment() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3516
     if (loadMetadataDetails != null) {
       return loadMetadataDetails.isCarbonFormat();
     }
@@ -388,6 +417,7 @@ public class Segment implements Serializable, Writable {
   }
 
   public SegmentMetaDataInfo getSegmentMetaDataInfo() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
     return segmentMetaDataInfo;
   }
 

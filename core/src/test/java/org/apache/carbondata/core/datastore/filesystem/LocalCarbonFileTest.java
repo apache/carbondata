@@ -45,6 +45,7 @@ public class LocalCarbonFileTest {
 
     @BeforeClass
     static public void setUp() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
         file = new File("TestLocalCarbonFile");
         dir = new File("TestLocalCarbonDir");
         if (!file.exists())
@@ -61,6 +62,7 @@ public class LocalCarbonFileTest {
             byte[] bytes = "core java api".getBytes();
 
             oFile.write(bytes);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
             oFile.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -93,6 +95,7 @@ public class LocalCarbonFileTest {
 
 
         };
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
         assertArrayEquals(localCarbonFile.listFiles(carbonFileFilter), new CarbonFile[0]);
     }
 
@@ -123,6 +126,7 @@ public class LocalCarbonFileTest {
     @Test
     public void testRenameForce() {
         localCarbonFile = new LocalCarbonFile(file);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
         String destFile = "TestRename" + UUID.randomUUID().toString();
         assertTrue(localCarbonFile.renameForce(destFile));
         File file1 = new File(destFile);
@@ -134,6 +138,7 @@ public class LocalCarbonFileTest {
     @Test
     public void testRenameTo() {
         localCarbonFile = new LocalCarbonFile(file);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
         String destFile = "TestRename" + UUID.randomUUID().toString();
         assertTrue(!localCarbonFile.renameTo(destFile));
         File file1 = new File(destFile);
@@ -303,6 +308,7 @@ public class LocalCarbonFileTest {
             @Mock
             public File[] listFiles(FileFilter filter) {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
                 return new File[]{dir};
             }
 
@@ -345,6 +351,7 @@ public class LocalCarbonFileTest {
         };
         localCarbonFile = new LocalCarbonFile(dir);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
         assertArrayEquals(localCarbonFile.listFiles(carbonFileFilter) , new CarbonFile[0]);
     }
 
@@ -471,6 +478,7 @@ public class LocalCarbonFileTest {
 
         localCarbonFile = new LocalCarbonFile("demo.txt");
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
         assertEquals(localCarbonFile.renameForce("renameToFile"), true);
     }
 }

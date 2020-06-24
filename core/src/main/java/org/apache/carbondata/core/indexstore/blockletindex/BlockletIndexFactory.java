@@ -80,6 +80,7 @@ import org.apache.hadoop.fs.Path;
  */
 public class BlockletIndexFactory extends CoarseGrainIndexFactory
     implements BlockletDetailsFetcher, SegmentPropertiesFetcher, CacheableIndex {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
   private static final String NAME = "clustered.btree.blocklet";
   /**
@@ -89,6 +90,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
 
   public static final IndexSchema INDEX_SCHEMA =
       new IndexSchema(NAME, BlockletIndexFactory.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
 
   private AbsoluteTableIdentifier identifier;
 
@@ -98,6 +100,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   private Cache<TableBlockIndexUniqueIdentifierWrapper, BlockletIndexWrapper> cache;
 
   public BlockletIndexFactory(CarbonTable carbonTable, IndexSchema indexSchema) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     super(carbonTable, indexSchema);
     this.identifier = carbonTable.getAbsoluteTableIdentifier();
     cache = CacheProvider.getInstance()
@@ -114,6 +117,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
     boolean cacheLevelBlock = BlockletIndexUtil.isCacheLevelBlock(carbonTable);
     if (cacheLevelBlock) {
       // case1: when CACHE_LEVEL = BLOCK
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       return new BlockIndex();
     } else {
       // case2: when CACHE_LEVEL = BLOCKLET
@@ -123,6 +127,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
 
   @Override
   public IndexWriter createWriter(Segment segment, String shardName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       SegmentProperties segmentProperties) {
     throw new UnsupportedOperationException("not implemented");
   }
@@ -138,6 +143,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
    */
   public Map<Segment, List<CoarseGrainIndex>> getIndexes(List<Segment> segments,
       IndexFilter filter) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
     return getIndexes(segments, new HashSet<>(), filter);
   }
 
@@ -148,15 +154,18 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
       Set<Path> partitionLocations, IndexFilter filter) throws IOException {
     List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers =
         new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     Map<Segment, List<CoarseGrainIndex>> indexMap = new HashMap<>();
     Map<String, Segment> segmentMap = new HashMap<>();
     for (Segment segment : segments) {
       segmentMap.put(segment.getSegmentNo(), segment);
       Set<TableBlockIndexUniqueIdentifier> identifiers =
           getTableBlockIndexUniqueIdentifiers(segment);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
       if (!partitionLocations.isEmpty()) {
         // get tableBlockIndexUniqueIdentifierWrappers from segment file info
         getTableBlockUniqueIdentifierWrappers(partitionLocations,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
             tableBlockIndexUniqueIdentifierWrappers, identifiers);
       } else {
         SegmentMetaDataInfo segmentMetaDataInfo = segment.getSegmentMetaDataInfo();
@@ -181,6 +190,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
         cache.getAll(tableBlockIndexUniqueIdentifierWrappers);
     for (BlockletIndexWrapper wrapper : blockletIndexWrappers) {
       Segment segment = segmentMap.get(wrapper.getSegmentId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       List<CoarseGrainIndex> indexes = indexMap.get(segment);
       if (null == indexes) {
         indexes = new ArrayList<CoarseGrainIndex>();
@@ -199,6 +209,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
       List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers,
       Set<TableBlockIndexUniqueIdentifier> identifiers) {
     for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier : identifiers) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
       if (!partitionLocations.isEmpty()) {
         // add only tableBlockUniqueIdentifier that matches the partition
         // get the indexFile Parent path and compare with the PartitionPath, if matches, then add
@@ -227,7 +238,9 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
    * @param tableBlockIndexUniqueIdentifierWrappers to add tableBlockIndexUniqueIdentifiers
    */
   private void getTableBlockIndexUniqueIdentifierUsingSegmentMinMax(Segment segment,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       SegmentMetaDataInfo segmentMetaDataInfo, IndexFilter filter,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
       Set<TableBlockIndexUniqueIdentifier> identifiers,
       List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers) {
     boolean isScanRequired = false;
@@ -288,6 +301,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
         .getSegmentProperties();
 
     FilterResolverIntf resolver =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         new IndexFilter(segmentProperties, this.getCarbonTable(), filter.getExpression())
             .getResolver();
     // prepare filter executer using datmapFilter resolver
@@ -328,15 +342,20 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
 
   @Override
   public List<CoarseGrainIndex> getIndexes(Segment segment) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
     return getIndexes(segment, new HashSet<>());
   }
 
   @Override
   public List<CoarseGrainIndex> getIndexes(Segment segment,
       Set<Path> partitionLocations) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     List<CoarseGrainIndex> indexes = new ArrayList<>();
     Set<TableBlockIndexUniqueIdentifier> identifiers =
         getTableBlockIndexUniqueIdentifiers(segment);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2472
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2570
     List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers =
         new ArrayList<>(identifiers.size());
     getTableBlockUniqueIdentifierWrappers(partitionLocations,
@@ -344,6 +363,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
     List<BlockletIndexWrapper> blockletIndexWrappers =
         cache.getAll(tableBlockIndexUniqueIdentifierWrappers);
     for (BlockletIndexWrapper wrapper : blockletIndexWrappers) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       indexes.addAll(wrapper.getIndexes());
     }
     return indexes;
@@ -351,6 +371,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
 
   public Set<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers(Segment segment)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
     SegmentBlockIndexInfo segmentBlockIndexInfo = segmentMap.get(segment.getSegmentNo());
     Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = null;
     if (null != segmentBlockIndexInfo &&
@@ -363,6 +384,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
       return segmentBlockIndexInfo.getTableBlockIndexUniqueIdentifiers();
     } else {
       tableBlockIndexUniqueIdentifiers =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           BlockletIndexUtil.getTableBlockUniqueIdentifiers(segment);
       if (tableBlockIndexUniqueIdentifiers.size() > 0) {
         segmentMap.put(segment.getSegmentNo(),
@@ -381,8 +403,10 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   @Override
   public List<ExtendedBlocklet> getExtendedBlocklets(List<Blocklet> blocklets, Segment segment)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     List<ExtendedBlocklet> detailedBlocklets = new ArrayList<>(blocklets.size() + 1);
     // if the blocklets is empty, return the empty detailed blocklets list directly.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3700
     if (blocklets.size() == 0) {
       return detailedBlocklets;
     }
@@ -393,8 +417,15 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
       }
       return detailedBlocklets;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     Set<TableBlockIndexUniqueIdentifier> identifiers =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
         getTableBlockIndexUniqueIdentifiers(segment);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2472
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2570
     Set<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers =
         new HashSet<>(identifiers.size());
     for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier : identifiers) {
@@ -415,6 +446,9 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
     if (blocklet instanceof ExtendedBlocklet) {
       return (ExtendedBlocklet) blocklet;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2472
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2570
     Set<TableBlockIndexUniqueIdentifier> identifiers =
         getTableBlockIndexUniqueIdentifiers(segment);
 
@@ -433,6 +467,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
       throws IOException {
     for (TableBlockIndexUniqueIdentifierWrapper identifierWrapper : identifiersWrapper) {
       BlockletIndexWrapper wrapper = cache.get(identifierWrapper);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       List<BlockIndex> indexes = wrapper.getIndexes();
       for (Index index : indexes) {
         if (((BlockIndex) index)
@@ -442,15 +477,18 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2971
     throw new IOException("Blocklet not found: " + blocklet.toString());
   }
 
   @Override
   public List<IndexInputSplit> toDistributable(Segment segment) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     List<IndexInputSplit> distributables = new ArrayList<>();
     try {
       BlockletIndexInputSplit distributable = new BlockletIndexInputSplit();
       distributable.setSegment(segment);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       distributable.setIndexSchema(INDEX_SCHEMA);
       distributable.setSegmentPath(CarbonTablePath.getSegmentPath(identifier.getTablePath(),
           segment.getSegmentNo()));
@@ -469,6 +507,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
 
   @Override
   public void clear(String segment) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
     SegmentBlockIndexInfo segmentBlockIndexInfo = segmentMap.remove(segment);
     Set<TableBlockIndexUniqueIdentifier> blockIndexes = null;
     if (null != segmentBlockIndexInfo) {
@@ -480,6 +519,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
             new TableBlockIndexUniqueIdentifierWrapper(blockIndex, this.getCarbonTable());
         BlockletIndexWrapper wrapper = cache.getIfPresent(blockIndexWrapper);
         if (null != wrapper) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           List<BlockIndex> indexes = wrapper.getIndexes();
           for (Index index : indexes) {
             if (index != null) {
@@ -495,6 +535,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   @Override
   public synchronized void clear() {
     if (segmentMap.size() > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1505
       for (String segmentId : segmentMap.keySet().toArray(new String[segmentMap.size()])) {
         clear(segmentId);
       }
@@ -505,8 +546,10 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   public String getCacheSize() {
     long sum = 0L;
     int numOfIndexFiles = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
     for (Map.Entry<String, SegmentBlockIndexInfo> entry : segmentMap.entrySet()) {
       for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier : entry.getValue()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
               .getTableBlockIndexUniqueIdentifiers()) {
         BlockletIndexWrapper blockletIndexWrapper = cache.getIfPresent(
             new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier,
@@ -523,6 +566,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   @Override
   public List<CoarseGrainIndex> getIndexes(IndexInputSplit distributable)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     BlockletIndexInputSplit mapDistributable = (BlockletIndexInputSplit) distributable;
     List<TableBlockIndexUniqueIdentifierWrapper> identifiersWrapper;
     String segmentNo = mapDistributable.getSegment().getSegmentNo();
@@ -532,6 +576,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
       identifiersWrapper =
           getTableBlockIndexUniqueIdentifier(mapDistributable.getFilePath(), segmentNo);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     List<CoarseGrainIndex> indexes = new ArrayList<>();
     try {
       List<BlockletIndexWrapper> wrappers = cache.getAll(identifiersWrapper);
@@ -545,8 +590,10 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   }
 
   private List<TableBlockIndexUniqueIdentifierWrapper> getTableBlockIndexUniqueIdentifier(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       IndexInputSplit distributable) throws IOException {
     List<TableBlockIndexUniqueIdentifierWrapper> identifiersWrapper = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
     SegmentBlockIndexInfo segmentBlockIndexInfo =
         segmentMap.get(distributable.getSegment().getSegmentNo());
     Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = null;
@@ -555,6 +602,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
           segmentBlockIndexInfo.getTableBlockIndexUniqueIdentifiers();
     }
     if (tableBlockIndexUniqueIdentifiers == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3384
       tableBlockIndexUniqueIdentifiers = new HashSet<>();
       Set<String> indexFiles = distributable.getSegment().getCommittedIndexFile().keySet();
       for (String indexFile : indexFiles) {
@@ -577,6 +625,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
                 this.getCarbonTable()));
         tableBlockIndexUniqueIdentifiers.add(tableBlockIndexUniqueIdentifier);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
       segmentMap.put(distributable.getSegment().getSegmentNo(),
           new SegmentBlockIndexInfo(tableBlockIndexUniqueIdentifiers,
               distributable.getSegment().getSegmentMetaDataInfo()));
@@ -594,12 +643,14 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   private List<TableBlockIndexUniqueIdentifierWrapper> getTableBlockIndexUniqueIdentifier(
       String indexFilePath, String segmentId) throws IOException {
     List<TableBlockIndexUniqueIdentifierWrapper> identifiersWrapper = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3659
     String parent = indexFilePath.substring(0, indexFilePath.lastIndexOf("/"));
     String name =
         indexFilePath.substring(indexFilePath.lastIndexOf("/") + 1, indexFilePath.length());
     if (indexFilePath.endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
       identifiersWrapper.add(new TableBlockIndexUniqueIdentifierWrapper(
           new TableBlockIndexUniqueIdentifier(parent, name, null, segmentId),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3440
           this.getCarbonTable()));
     } else if (indexFilePath.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
       SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
@@ -631,6 +682,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
 
   @Override
   public SegmentProperties getSegmentProperties(Segment segment) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
     return getSegmentProperties(segment, new HashSet<>());
   }
 
@@ -638,6 +690,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   public SegmentProperties getSegmentProperties(Segment segment, Set<Path> partitionLocations)
       throws IOException {
     List<CoarseGrainIndex> indexes = getIndexes(segment, partitionLocations);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     assert (indexes.size() > 0);
     CoarseGrainIndex coarseGrainIndex = indexes.get(0);
     assert (coarseGrainIndex instanceof BlockIndex);
@@ -656,6 +709,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   public List<Blocklet> getAllBlocklets(Segment segment, Set<Path> partitionLocations)
       throws IOException {
     List<Blocklet> blocklets = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
     List<CoarseGrainIndex> indexes = getIndexes(segment, partitionLocations);
     if (indexes.size() == 0) {
       return blocklets;
@@ -670,11 +724,13 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
 
   @Override
   public boolean willBecomeStale(TableOperation operation) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2347
     return false;
   }
 
   @Override
   public void cache(TableBlockIndexUniqueIdentifierWrapper tableBlockIndexUniqueIdentifierWrapper,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       BlockletIndexWrapper blockletIndexWrapper) throws IOException {
     cache.put(tableBlockIndexUniqueIdentifierWrapper, blockletIndexWrapper);
   }
@@ -686,11 +742,16 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
     for (IndexInputSplit distributable : distributables) {
       Segment segment = distributable.getSegment();
       Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
           getTableBlockIndexUniqueIdentifiers(segment);
       // filter out the tableBlockIndexUniqueIdentifiers based on distributable
       TableBlockIndexUniqueIdentifier validIdentifier = BlockletIndexUtil
           .filterIdentifiersBasedOnDistributable(tableBlockIndexUniqueIdentifiers,
               (BlockletIndexInputSplit) distributable);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2472
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2570
       if (null == cache.getIfPresent(
           new TableBlockIndexUniqueIdentifierWrapper(validIdentifier, this.getCarbonTable()))) {
         ((BlockletIndexInputSplit) distributable)
@@ -703,6 +764,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
 
   private Set<TableBlockIndexUniqueIdentifier> getTableSegmentUniqueIdentifiers(Segment segment)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3779
     SegmentBlockIndexInfo segmentBlockIndexInfo = segmentMap.get(segment.getSegmentNo());
     if (segmentBlockIndexInfo == null) {
       return BlockletIndexUtil.getSegmentUniqueIdentifiers(segment);
@@ -714,12 +776,14 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
       Map<String, Set<TableBlockIndexUniqueIdentifier>> indexUniqueIdentifiers) {
     for (Map.Entry<String, Set<TableBlockIndexUniqueIdentifier>> identifier : indexUniqueIdentifiers
         .entrySet()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
       segmentMap.put(identifier.getKey(), new SegmentBlockIndexInfo(identifier.getValue(), null));
     }
   }
 
   @Override
   public List<IndexInputSplit> getAllUncachedDistributables(List<Segment> validSegments,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       IndexExprWrapper indexExprWrapper) throws IOException {
     List<IndexInputSplit> distributablesToBeLoaded = new ArrayList<>();
     for (Segment segment : validSegments) {
@@ -742,8 +806,10 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
 
   @Override
   public IndexInputSplitWrapper toDistributableSegment(Segment segment,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       IndexSchema schema, AbsoluteTableIdentifier identifier, String uniqueId) {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       BlockletIndexInputSplit distributable = new BlockletIndexInputSplit();
       distributable.setIndexSchema(schema);
       distributable.setSegment(segment);

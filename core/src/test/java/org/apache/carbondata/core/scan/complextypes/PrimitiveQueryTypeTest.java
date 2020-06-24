@@ -38,6 +38,7 @@ public class PrimitiveQueryTypeTest {
     int blockIndex = 1;
     int keySize = 1;
     boolean isDirectDictionary = true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
    primitiveQueryTypeForDate =
         new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.DATE, true);
   }

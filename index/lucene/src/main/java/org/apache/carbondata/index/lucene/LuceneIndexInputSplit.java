@@ -30,6 +30,7 @@ class LuceneIndexInputSplit extends IndexInputSplit {
 
   LuceneIndexInputSplit(String dataPath, String indexPath) {
     this.dataPath = dataPath;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2347
     this.indexPath = indexPath;
   }
 

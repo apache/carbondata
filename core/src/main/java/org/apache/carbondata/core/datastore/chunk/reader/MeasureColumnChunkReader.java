@@ -37,6 +37,7 @@ public interface MeasureColumnChunkReader {
    * @param columnIndexRange blocks to be read
    * @return measure data chunks
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   MeasureRawColumnChunk[] readRawMeasureChunks(FileReader fileReader, int[][] columnIndexRange)
       throws IOException;
 
@@ -59,6 +60,7 @@ public interface MeasureColumnChunkReader {
    */
   ColumnPage decodeColumnPage(MeasureRawColumnChunk measureRawColumnChunk, int pageNumber,
       ReusableDataBuffer reusableDataBuffer) throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
   /**
    * Decode raw data and fill the vector

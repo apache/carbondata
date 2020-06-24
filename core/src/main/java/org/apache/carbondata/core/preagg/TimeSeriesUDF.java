@@ -36,6 +36,7 @@ public class TimeSeriesUDF {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(TimeSeriesUDF.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3531
 
   public final List<String> TIMESERIES_FUNCTION = new ArrayList<>();
 
@@ -76,6 +77,7 @@ public class TimeSeriesUDF {
     Calendar calendar = calanderThreadLocal.get();
     calendar.clear();
     calendar.setTimeInMillis(data.getTime());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1519
     TimeSeriesFunctionEnum timeSeriesFunctionEnum =
         TimeSeriesFunctionEnum.valueOf(function.toUpperCase());
     switch (timeSeriesFunctionEnum) {
@@ -86,6 +88,7 @@ public class TimeSeriesUDF {
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.SECOND, 0);
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3531
       case FIVE_MINUTE:
         setData(calendar, 5);
         break;
@@ -120,6 +123,7 @@ public class TimeSeriesUDF {
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MINUTE, 0);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2042
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.DAY_OF_MONTH, 1);
         break;
@@ -142,6 +146,7 @@ public class TimeSeriesUDF {
    * This method sets the calender data based on the interval time of granularity
    */
   private void setData(Calendar calendar, int intervalTime) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3531
     calendar.set(Calendar.MILLISECOND, 0);
     calendar.set(Calendar.SECOND, 0);
     calendar.set(Calendar.MINUTE, (calendar.get(Calendar.MINUTE) / intervalTime) * intervalTime);
@@ -157,6 +162,7 @@ public class TimeSeriesUDF {
     if (TIMESERIES_FUNCTION.isEmpty()) {
       TIMESERIES_FUNCTION.add("second");
       TIMESERIES_FUNCTION.add("minute");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3531
       TIMESERIES_FUNCTION.add("five_minute");
       TIMESERIES_FUNCTION.add("ten_minute");
       TIMESERIES_FUNCTION.add("fifteen_minute");

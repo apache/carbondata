@@ -89,6 +89,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
 
   @Override
   public RecordReader<NullWritable, StringArrayWritable> createRecordReader(InputSplit inputSplit,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       TaskAttemptContext context) {
     return new CSVRecordReader();
   }
@@ -132,6 +133,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
    * @param skipEmptyLine
    */
   public static void setSkipEmptyLine(Configuration configuration, String skipEmptyLine) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1734
     if (skipEmptyLine != null && !skipEmptyLine.isEmpty()) {
       configuration.set(SKIP_EMPTY_LINE, skipEmptyLine);
     } else {
@@ -200,12 +202,14 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   }
 
   public static void setLineSeparator(Configuration configuration, String lineSeparator) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3740
     if (lineSeparator != null && !lineSeparator.isEmpty()) {
       configuration.set(LINE_SEPARATOR, lineSeparator);
     }
   }
 
   public static CsvParserSettings extractCsvParserSettings(Configuration job) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     CsvParserSettings parserSettings = new CsvParserSettings();
     parserSettings.getFormat().setDelimiter(job.get(DELIMITER, DELIMITER_DEFAULT).charAt(0));
     parserSettings.getFormat().setComment(job.get(COMMENT, COMMENT_DEFAULT).charAt(0));
@@ -216,14 +220,17 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
       parserSettings.setLineSeparatorDetectionEnabled(true);
     }
     parserSettings.setNullValue("");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-784
     parserSettings.setEmptyValue("");
     parserSettings.setIgnoreLeadingWhitespaces(false);
     parserSettings.setIgnoreTrailingWhitespaces(false);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1734
     parserSettings.setSkipEmptyLines(
         Boolean.valueOf(job.get(SKIP_EMPTY_LINE,
             CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE_DEFAULT)));
     // todo: will verify whether there is a performance degrade using -1 here
     // parserSettings.setMaxCharsPerColumn(CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     parserSettings.setMaxCharsPerColumn(CarbonCommonConstants.MAX_CHARS_PER_COLUMN_INFINITY);
     String maxColumns = job.get(MAX_COLUMNS, "" + DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING);
     parserSettings.setMaxColumns(Integer.parseInt(maxColumns));
@@ -232,7 +239,9 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     // setting the content length to to limit the length of displayed contents being parsed/written
     // in the exception message when an error occurs.
     parserSettings.setErrorContentLength(CarbonCommonConstants.CARBON_ERROR_CONTENT_LENGTH);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2410
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3219
     String selectColumnIndex = job.get(SELECT_COLUMN_INDEX, null);
     if (!StringUtils.isBlank(selectColumnIndex)) {
       parserSettings.selectIndexes(Integer.parseInt(selectColumnIndex));
@@ -258,6 +267,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
 
     @Override
     public void initialize(InputSplit inputSplit, TaskAttemptContext context)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
         throws IOException {
       FileSplit split = (FileSplit) inputSplit;
       start = split.getStart();
@@ -301,9 +311,11 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
       }
 
       //Wrap input stream with BOMInputStream to skip UTF-8 BOM characters
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2234
       reader = new InputStreamReader(new BOMInputStream(inputStream),
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
       CsvParserSettings settings = extractCsvParserSettings(job);
       if (start == 0) {
         settings.setHeaderExtractionEnabled(job.getBoolean(HEADER_PRESENT,
@@ -365,6 +377,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
         if (boundedInputStream != null) {
           boundedInputStream.close();
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1318
         if (null != csvParser) {
           csvParser.stopParsing();
         }

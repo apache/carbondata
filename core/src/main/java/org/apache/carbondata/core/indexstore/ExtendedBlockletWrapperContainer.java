@@ -85,6 +85,7 @@ public class ExtendedBlockletWrapperContainer implements Writable {
       List<Future<List<ExtendedBlocklet>>> futures = new ArrayList<>();
       for (int i = 0; i < split.length; i++) {
         end += split[i];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
         futures.add(executorService.submit(
             new ExtendedBlockletDeserializerThread(start, end, tablePath, queryId, isCountJob)));
         start += split[i];
@@ -109,6 +110,7 @@ public class ExtendedBlockletWrapperContainer implements Writable {
     } else {
       List<ExtendedBlocklet> extendedBlocklets = new ArrayList<>();
       for (ExtendedBlockletWrapper extendedBlockletWrapper: extendedBlockletWrappers) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
         extendedBlocklets
             .addAll(extendedBlockletWrapper.readBlocklet(tablePath, queryId, isCountJob));
       }
@@ -129,6 +131,7 @@ public class ExtendedBlockletWrapperContainer implements Writable {
     private boolean isCountJob;
 
     public ExtendedBlockletDeserializerThread(int start, int end, String tablePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
         String queryId, boolean isCountJob) {
       this.start = start;
       this.end = end;

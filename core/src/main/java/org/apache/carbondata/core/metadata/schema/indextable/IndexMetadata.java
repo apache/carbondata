@@ -65,6 +65,7 @@ public class IndexMetadata implements Serializable {
   }
 
   public IndexMetadata(Map<String, Map<String, Map<String, String>>> indexProviderMap,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       String parentTableName, boolean isIndexTable, String parentTablePath, String parentTableId) {
     this(parentTableName, isIndexTable, parentTablePath);
     this.indexProviderMap = indexProviderMap;
@@ -161,6 +162,7 @@ public class IndexMetadata implements Serializable {
   }
 
   public String getIndexColumns(String provider, String indexName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return indexProviderMap.get(provider).get(indexName).get(CarbonCommonConstants.INDEX_COLUMNS);
   }
 }

@@ -55,6 +55,7 @@ public interface ColumnPageValueConverter {
 
   double decodeDouble(double value);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
   void decodeAndFillVector(byte[] pageData, ColumnVectorInfo vectorInfo, BitSet nullBits,
       DataType pageDataType, int pageSize);
 }

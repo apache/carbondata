@@ -68,6 +68,7 @@ public class IntPointerBuffer {
     assert rowId >= 0 : "rowId (" + rowId + ") should >= 0";
     assert rowId < length : "rowId (" + rowId + ") should < length (" + length + ")";
     if (pointerBlock == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
       return CarbonUnsafe.getUnsafe().getInt(pointerMemoryBlock.getBaseObject(),
           pointerMemoryBlock.getBaseOffset() + (rowId << 2));
     }
@@ -75,12 +76,14 @@ public class IntPointerBuffer {
   }
 
   public void loadToUnsafe() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3267
     pointerMemoryBlock =
         UnsafeSortMemoryManager.INSTANCE.allocateMemory(this.taskId, pointerBlock.length * 4);
     // pointerMemoryBlock it means sort storage memory manager does not have space to loaf pointer
     // buffer in that case use pointerBlock
     if (null != pointerMemoryBlock) {
       for (int i = 0; i < pointerBlock.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
         CarbonUnsafe.getUnsafe()
             .putInt(pointerMemoryBlock.getBaseObject(), pointerMemoryBlock.getBaseOffset() + i * 4,
                 pointerBlock[i]);
@@ -111,6 +114,7 @@ public class IntPointerBuffer {
   public void freeMemory() {
     pointerBlock = null;
     if (pointerMemoryBlock != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1318
       UnsafeSortMemoryManager.INSTANCE.freeMemory(this.taskId, pointerMemoryBlock);
     }
   }

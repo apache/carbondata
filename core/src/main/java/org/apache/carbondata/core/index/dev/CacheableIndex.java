@@ -40,6 +40,9 @@ public interface CacheableIndex {
    * @param tableBlockIndexUniqueIdentifierWrapper
    * @param blockletIndexWrapper
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2472
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2570
   void cache(TableBlockIndexUniqueIdentifierWrapper tableBlockIndexUniqueIdentifierWrapper,
       BlockletIndexWrapper blockletIndexWrapper) throws IOException;
 
@@ -49,12 +52,14 @@ public interface CacheableIndex {
    * @param distributables
    * @return
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
   List<IndexInputSplit> getAllUncachedDistributables(List<IndexInputSplit> distributables)
       throws IOException;
 
   List<IndexInputSplit> getAllUncachedDistributables(
       List<Segment> segments, IndexExprWrapper indexExprWrapper) throws IOException;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
   void updateSegmentIndex(
       Map<String, Set<TableBlockIndexUniqueIdentifier>> indexUniqueIdentifier);
 }

@@ -24,6 +24,7 @@ public class FilterModificationNode {
   private Expression parentExp;
   private ExpressionType expType;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   FilterModificationNode(Expression currentNode, Expression parentNode, ExpressionType expType) {
     this.currentExp = currentNode;
     this.parentExp = parentNode;

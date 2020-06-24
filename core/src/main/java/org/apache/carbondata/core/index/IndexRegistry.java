@@ -54,6 +54,7 @@ public class IndexRegistry {
   private static Map<String, String> shortNameToClassName = new ConcurrentHashMap<>();
 
   private static void registerIndex(String indexClassName, String shortName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     Objects.requireNonNull(indexClassName);
     Objects.requireNonNull(shortName);
     shortNameToClassName.put(shortName, indexClassName);

@@ -40,6 +40,7 @@ public interface Cache<K, V> {
    * @return
    */
   V get(K key);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
   /**
    * This method will return a list of values for the given list of keys.
@@ -74,12 +75,14 @@ public interface Cache<K, V> {
    * @param value
    */
   void put(K key, V value) throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
   /**
    * Access count of Cacheable entry will be decremented
    *
    * @param keys
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-484
   void clearAccessCount(List<K> keys);
 }
 

@@ -72,6 +72,7 @@ public class HiveCarbonUtil {
     String[] tableUniqueName = tableProperties.get("name").split("\\.");
     String databaseName = tableUniqueName[0];
     String tableName = tableUniqueName[1];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
     String tablePath = tableProperties.get(hive_metastoreConstants.META_TABLE_LOCATION);
     String columns = tableProperties.get(hive_metastoreConstants.META_TABLE_COLUMNS);
     String sortColumns = tableProperties.get("sort_columns");
@@ -98,6 +99,7 @@ public class HiveCarbonUtil {
   }
 
   public static CarbonLoadModel getCarbonLoadModel(Properties tableProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
       Configuration configuration) {
     String[] tableUniqueName = tableProperties.getProperty("name").split("\\.");
     String databaseName = tableUniqueName[0];
@@ -118,6 +120,7 @@ public class HiveCarbonUtil {
 
   public static CarbonLoadModel getCarbonLoadModel(String tableName, String databaseName,
       String location, String sortColumnsString, String[] columns, String[] columnTypes,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
       Configuration configuration) {
     CarbonLoadModel loadModel;
     CarbonTable carbonTable;
@@ -147,10 +150,12 @@ public class HiveCarbonUtil {
     options.put("fileheader", Strings.mkString(columns, ","));
     try {
       loadModel = carbonLoadModelBuilder.build(options, System.currentTimeMillis(), "");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
     } catch (InvalidLoadOptionException | IOException e) {
       throw new RuntimeException(e);
     }
     loadModel.setSkipParsers();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     loadModel.setMetrics(new DataLoadMetrics());
     return loadModel;
   }
@@ -202,6 +207,7 @@ public class HiveCarbonUtil {
 
   private static void writeSchemaFile(TableInfo tableInfo) throws IOException {
     ThriftWrapperSchemaConverterImpl schemaConverter = new ThriftWrapperSchemaConverterImpl();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
     String schemaFilePath = CarbonTablePath.getSchemaFilePath(tableInfo.getTablePath());
     String metadataPath = CarbonTablePath.getMetadataPath(tableInfo.getTablePath());
     FileFactory.mkdirs(metadataPath);

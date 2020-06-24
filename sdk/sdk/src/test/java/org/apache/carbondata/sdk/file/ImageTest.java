@@ -72,6 +72,7 @@ public class ImageTest extends TestCase {
     } catch (IOException e) {
       e.printStackTrace();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
     Field[] fields = new Field[7];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -102,6 +103,7 @@ public class ImageTest extends TestCase {
         while ((bis.read(originBinary)) != -1) {
         }
         // write data
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
         writer.write(new Object[]{"robot" + (i % 10), i, originBinary,
             originBinary, originBinary, "YWJj", "YWJj".getBytes()});
         bis.close();
@@ -111,6 +113,7 @@ public class ImageTest extends TestCase {
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
         .projection(projection)
         .build();
 
@@ -119,6 +122,7 @@ public class ImageTest extends TestCase {
     while (i < 20 && reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
       byte[] outputBinary = (byte[]) row[2];
       byte[] outputBinary2 = (byte[]) row[3];
       byte[] outputBinary3 = (byte[]) row[4];
@@ -327,6 +331,7 @@ public class ImageTest extends TestCase {
     byte[] originBinary = null;
 
     // read and write image data
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3461
     String binaryValue = null;
     for (int j = 0; j < num; j++) {
       CarbonWriter writer = CarbonWriter
@@ -346,6 +351,7 @@ public class ImageTest extends TestCase {
           hexValue = Hex.encodeHex(originBinary);
         }
         // write data
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3461
         binaryValue = String.valueOf(hexValue);
         writer.write(new String[]{"robot" + (i % 10), String.valueOf(i), binaryValue});
         bis.close();
@@ -418,6 +424,7 @@ public class ImageTest extends TestCase {
 
     // Read data with filter for binary
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3461
     CarbonReader reader3 = CarbonReader
         .builder(path, "_temp")
         .filter(prepareEqualToExpression("image", "binary", binaryValue))
@@ -733,6 +740,7 @@ public class ImageTest extends TestCase {
 
   @Test
   public void testWriteNonBase64WithBase64Decoder() throws IOException, InvalidLoadOptionException, InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
     String imagePath = "./src/test/resources/image/carbondatalogo.jpg";
     int num = 1;
     int rows = 10;
@@ -760,6 +768,7 @@ public class ImageTest extends TestCase {
           .withCsvInput(new Schema(fields))
           .writtenBy("SDKS3Example")
           .withPageSizeInMb(1)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
           .withLoadOption("binary_decoder", "base64")
           .build();
 
@@ -973,6 +982,7 @@ public class ImageTest extends TestCase {
   @Test
   public void testBinaryWithProjectionAndFileListsAndWithFile() throws Exception {
     int num = 5;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3363
     String path = "./target/flowersFolder";
     try {
       FileUtils.deleteDirectory(new File(path));
@@ -1188,6 +1198,7 @@ public class ImageTest extends TestCase {
   }
 
   @Test public void testBinaryWithComplexType()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3495
       throws IOException, InvalidLoadOptionException, InterruptedException {
     int num = 1;
     int rows = 1;
@@ -1228,6 +1239,7 @@ public class ImageTest extends TestCase {
   }
 
   @Test public void testHugeBinaryWithComplexType()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
       throws IOException, InvalidLoadOptionException, InterruptedException {
     int num = 1;
     int rows = 1;

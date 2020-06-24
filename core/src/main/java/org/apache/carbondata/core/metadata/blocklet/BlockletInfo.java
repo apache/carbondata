@@ -162,6 +162,7 @@ public class BlockletInfo implements Serializable, Writable {
 
   @Override
   public void write(DataOutput output) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1232
     output.writeLong(dimensionOffset);
     output.writeLong(measureOffsets);
     int dsize = dimensionChunkOffsets != null ? dimensionChunkOffsets.size() : 0;
@@ -182,10 +183,12 @@ public class BlockletInfo implements Serializable, Writable {
     }
 
     boolean isSortedPresent = (isSorted != null);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
     output.writeBoolean(isSortedPresent);
     if (isSortedPresent) {
       output.writeBoolean(isSorted);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     if (null != getNumberOfRowsPerPage()) {
       output.writeShort(getNumberOfRowsPerPage().length);
       for (int i = 0; i < getNumberOfRowsPerPage().length; i++) {
@@ -220,6 +223,7 @@ public class BlockletInfo implements Serializable, Writable {
     for (int i = 0; i < measureChunkOffsetsSize; i++) {
       measureChunksLength.add(input.readInt());
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
     final boolean isSortedPresent = input.readBoolean();
     if (isSortedPresent) {
       this.isSorted = input.readBoolean();
@@ -235,6 +239,7 @@ public class BlockletInfo implements Serializable, Writable {
   }
 
   public int[] getNumberOfRowsPerPage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1854
     return numberOfRowsPerPage;
   }
 
@@ -243,6 +248,7 @@ public class BlockletInfo implements Serializable, Writable {
   }
 
   public Boolean isSorted() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
     return isSorted;
   }
 

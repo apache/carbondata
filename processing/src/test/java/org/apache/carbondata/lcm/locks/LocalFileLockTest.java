@@ -45,8 +45,10 @@ public class LocalFileLockTest {
    * @throws java.lang.Exception
    */
   @Before public void setUp() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2642
     rootPath = new File(this.getClass().getResource("/").getPath()
         + "../../..").getCanonicalPath();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     String storeLocation = rootPath + "/target/store_new/";
     CarbonProperties.getInstance()
         .addProperty("carbon.storelocation", storeLocation);
@@ -56,9 +58,11 @@ public class LocalFileLockTest {
    * @throws java.lang.Exception
    */
   @After public void tearDown() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2642
     Field f = secretClass.getDeclaredField("lockPath");
     f.setAccessible(true);
     f.set(secretClass, "");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     String storeLocation = rootPath + "/target/store_new/";
     new File(storeLocation).delete();
   }
@@ -79,16 +83,19 @@ public class LocalFileLockTest {
 
     Assert.assertTrue(localLock1.unlock());
     Assert.assertTrue(localLock2.lock());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
     Assert.assertTrue(localLock2.unlock());
   }
 
   @Test public void testConfigurablePathForLock() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2642
     try {
       Field f = secretClass.getDeclaredField("lockPath");
       f.setAccessible(true);
       f.set(secretClass, rootPath + "/target/");
       AbsoluteTableIdentifier absoluteTableIdentifier = AbsoluteTableIdentifier
           .from(CarbonProperties.getInstance().getProperty("carbon.storelocation"), "databaseName",
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
               "tableName1", "1");
       ICarbonLock carbonLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier, LockUsage.TABLE_STATUS_LOCK);
       carbonLock.lockWithRetries();

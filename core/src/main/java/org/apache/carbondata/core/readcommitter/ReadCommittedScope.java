@@ -48,10 +48,12 @@ import org.apache.hadoop.conf.Configuration;
   Map<String, String> getCommittedIndexFile(Segment segment) throws IOException;
 
   SegmentRefreshInfo getCommittedSegmentRefreshInfo(Segment segment, UpdateVO updateVo);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
   void takeCarbonIndexFileSnapShot() throws IOException;
 
   Configuration getConfiguration();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
 
   void setConfiguration(Configuration configuration);
 
@@ -61,5 +63,6 @@ import org.apache.hadoop.conf.Configuration;
    *
    * @return
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3366
   String getFilePath();
 }

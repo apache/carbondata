@@ -37,10 +37,12 @@ public class TaskStatistics implements Serializable {
       new Column("total_time", QueryStatisticsConstants.EXECUTOR_PART, true),
       new Column("load_blocks_time", QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, true),
       new Column("load_dictionary_time", QueryStatisticsConstants.LOAD_DICTIONARY, true),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2319
       new Column("carbon_scan_time", QueryStatisticsConstants.SCAN_BLOCKlET_TIME),
       new Column("carbon_IO_time", QueryStatisticsConstants.READ_BLOCKlET_TIME),
       new Column("scan_blocks_num", QueryStatisticsConstants.SCAN_BLOCKS_NUM),
       new Column("total_blocklets", QueryStatisticsConstants.TOTAL_BLOCKLET_NUM),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3593
       new Column("scanned_blocklets", QueryStatisticsConstants.BLOCKLET_SCANNED_NUM),
       new Column("valid_blocklets", QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM),
       new Column("total_pages", QueryStatisticsConstants.TOTAL_PAGE_SCANNED),

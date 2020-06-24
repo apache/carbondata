@@ -50,6 +50,7 @@ public class FileFactoryImplUnitTest {
 
   @AfterClass
   public static void tearDown() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
     cleanUp();
   }
 
@@ -70,6 +71,7 @@ public class FileFactoryImplUnitTest {
   }
 
   @Test public void testFileExistsForVIEWFSType() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     FileFactory.isFileExist("fakefilePath");
   }
 
@@ -78,6 +80,7 @@ public class FileFactoryImplUnitTest {
   }
 
   @Test public void testFileExistsForDefaultTypeWithPerformFileCheck() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
     assertTrue(FileFactory.isFileExist(filePath, true));
   }
 
@@ -94,7 +97,9 @@ public class FileFactoryImplUnitTest {
   }
 
   @Test public void testCreateNewFileWithDefaultFileType() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
     cleanUp();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     assertTrue(FileFactory.createNewFile(filePath));
   }
 
@@ -121,6 +126,7 @@ public class FileFactoryImplUnitTest {
     if (file.exists()) {
       file.delete();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     assertTrue(FileFactory.createNewFile(filePath));
   }
 
@@ -137,6 +143,7 @@ public class FileFactoryImplUnitTest {
       }
     };
     tearDown();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     assertTrue(FileFactory.mkdirs(filePath));
   }
 
@@ -154,6 +161,7 @@ public class FileFactoryImplUnitTest {
   }
 
   @Test public void getDataOutputStreamForVIEWFSType() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     DataOutputStream outputStream = FileFactory.getDataOutputStream(filePath);
     assertNotNull(outputStream);
     outputStream.close();
@@ -171,6 +179,7 @@ public class FileFactoryImplUnitTest {
   }
 
   @Test public void testTruncateFile() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     FileWriter writer = null;
     String path = null;
     try {
@@ -203,6 +212,7 @@ public class FileFactoryImplUnitTest {
       }
       if (path != null) {
         try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
           FileFactory.deleteFile(path);
         } catch (IOException e) {
           e.printStackTrace();
@@ -213,6 +223,7 @@ public class FileFactoryImplUnitTest {
 
   @Test public void testCustomFS() throws IOException {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CUSTOM_FILE_PROVIDER,
         "org.apache.carbondata.DummyFileProvider");
 

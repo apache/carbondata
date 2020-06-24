@@ -83,6 +83,7 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
     this.mergedAddresses = new long[totalSize];
     this.rowPageIndexes = new byte[totalSize];
     this.entryCount = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2238
     this.totalSize = totalSize;
     this.sortParameters = sortParameters;
     this.sortStepRowHandler = new SortStepRowHandler(sortParameters);
@@ -117,6 +118,7 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
             + ", containing rows: " + totalSize);
       }
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error("Problem while intermediate merging", e);
       throw e;
     } finally {
@@ -212,6 +214,7 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
    * @return sorted row
    */
   private UnsafeCarbonRowForMerge next() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     if (hasNext()) {
       return getSortedRecordFromMemory();
     } else {
@@ -239,6 +242,7 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
   }
 
   private void initSortTempFile() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2238
     String tmpDir = sortParameters.getTempFileLocation()[
         new Random().nextInt(sortParameters.getTempFileLocation().length)];
     outputFile = new File(tmpDir + File.separator
@@ -246,6 +250,7 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
         + sortParameters.getRangeId() + '_' + System.nanoTime()
         + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
     outputStream = FileFactory.getDataOutputStream(outputFile.getPath(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         sortParameters.getFileWriteBufferSize(), sortParameters.getSortTempCompressorName());
     outputStream.writeInt(totalSize);
   }
@@ -272,6 +277,7 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
   }
 
   public boolean isSpillDisk() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2238
     return spillDisk;
   }
 

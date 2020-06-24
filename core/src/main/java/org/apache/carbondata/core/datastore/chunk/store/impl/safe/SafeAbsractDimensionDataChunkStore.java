@@ -74,6 +74,7 @@ public abstract class SafeAbsractDimensionDataChunkStore implements DimensionDat
    */
   @Override
   public void freeMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2307
     data = null;
     invertedIndex = null;
     invertedIndexReverse = null;
@@ -98,6 +99,7 @@ public abstract class SafeAbsractDimensionDataChunkStore implements DimensionDat
    */
   @Override
   public int getInvertedReverseIndex(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1538
     return invertedIndexReverse[rowId];
   }
 

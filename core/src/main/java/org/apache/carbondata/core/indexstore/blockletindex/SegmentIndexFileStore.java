@@ -64,6 +64,7 @@ public class SegmentIndexFileStore {
    * Logger constant
    */
   private static final Logger LOGGER =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2019
       LogServiceFactory.getLogService(SegmentIndexFileStore.class.getName());
   /**
    * Stores the indexfile name and related binary file data in it.
@@ -86,12 +87,15 @@ public class SegmentIndexFileStore {
     carbonIndexMap = new HashMap<>();
     carbonIndexMapWithFullPath = new TreeMap<>();
     carbonMergeFileToIndexFilesMap = new HashMap<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     configuration = FileFactory.getConfiguration();
   }
 
   public SegmentIndexFileStore(Configuration configuration) {
     carbonIndexMap = new HashMap<>();
     carbonIndexMapWithFullPath = new TreeMap<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     carbonMergeFileToIndexFilesMap = new HashMap<>();
     this.configuration = configuration;
   }
@@ -103,6 +107,7 @@ public class SegmentIndexFileStore {
    * @throws IOException
    */
   public void readAllIIndexOfSegment(String segmentPath) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentPath, configuration);
     for (int i = 0; i < carbonIndexFiles.length; i++) {
       if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
@@ -120,8 +125,10 @@ public class SegmentIndexFileStore {
    * @throws IOException
    */
   public void readAllIIndexOfSegment(SegmentFileStore.SegmentFile segmentFile, String tablePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2219
       SegmentStatus status, boolean ignoreStatus) throws IOException {
     List<CarbonFile> carbonIndexFiles = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2209
     Set<String> indexFiles = new HashSet<>();
     if (segmentFile == null) {
       return;
@@ -134,6 +141,7 @@ public class SegmentIndexFileStore {
         if (locations.getValue().isRelative()) {
           location = tablePath + CarbonCommonConstants.FILE_SEPARATOR + location;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2209
         String mergeFileName = locations.getValue().getMergeFileName();
         if (mergeFileName != null) {
           CarbonFile mergeFile = FileFactory
@@ -169,8 +177,10 @@ public class SegmentIndexFileStore {
    * @throws IOException
    */
   public void readAllIndexAndFillBolckletInfo(String segmentPath) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     CarbonFile[] carbonIndexFiles =
         getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2019
     for (int i = 0; i < carbonIndexFiles.length; i++) {
       if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
         readMergeFile(carbonIndexFiles[i].getCanonicalPath());
@@ -187,6 +197,7 @@ public class SegmentIndexFileStore {
    * @throws IOException
    */
   public void readAllIIndexOfSegment(CarbonFile[] carbonFiles) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2037
     CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(carbonFiles);
     for (int i = 0; i < carbonIndexFiles.length; i++) {
       if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
@@ -207,6 +218,7 @@ public class SegmentIndexFileStore {
   public Map<String, String> getIndexFilesFromSegment(String segmentPath) throws IOException {
     CarbonFile[] carbonIndexFiles =
         getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     Map<String, String> indexFiles = new HashMap<>();
     for (int i = 0; i < carbonIndexFiles.length; i++) {
       if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
@@ -230,8 +242,12 @@ public class SegmentIndexFileStore {
    * @return
    */
   public Map<String, String> getMergeOrIndexFilesFromSegment(String segmentPath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     CarbonFile[] carbonIndexFiles =
         getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     Map<String, String> indexFiles = new HashMap<>();
     for (int i = 0; i < carbonIndexFiles.length; i++) {
       if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
@@ -254,6 +270,7 @@ public class SegmentIndexFileStore {
     ThriftReader thriftReader = new ThriftReader(mergeFile);
     thriftReader.open();
     MergedBlockIndexHeader indexHeader = readMergeBlockIndexHeader(thriftReader);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1903
     List<String> fileNames = indexHeader.getFile_names();
     thriftReader.close();
     return fileNames;
@@ -266,14 +283,18 @@ public class SegmentIndexFileStore {
    * @throws IOException
    */
   public void readMergeFile(String mergeFilePath) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     ThriftReader thriftReader = new ThriftReader(mergeFilePath, configuration);
     try {
       thriftReader.open();
       MergedBlockIndexHeader indexHeader = readMergeBlockIndexHeader(thriftReader);
       MergedBlockIndex mergedBlockIndex = readMergeBlockIndex(thriftReader);
       List<String> file_names = indexHeader.getFile_names();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
       carbonMergeFileToIndexFilesMap.put(mergeFilePath, file_names);
       List<ByteBuffer> fileData = mergedBlockIndex.getFileData();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
       CarbonFile mergeFile = FileFactory.getCarbonFile(mergeFilePath, configuration);
       String mergeFileAbsolutePath = mergeFile.getParentFile().getAbsolutePath();
       assert (file_names.size() == fileData.size());
@@ -298,13 +319,16 @@ public class SegmentIndexFileStore {
   public void readIndexFile(CarbonFile indexFile) throws IOException {
     String indexFilePath = indexFile.getCanonicalPath();
     DataInputStream dataInputStream = FileFactory
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         .getDataInputStream(indexFilePath, configuration);
     byte[] bytes = new byte[(int) indexFile.getSize()];
     try {
       dataInputStream.readFully(bytes);
       carbonIndexMap.put(indexFile.getName(), bytes);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3659
       carbonIndexMapWithFullPath.put(indexFile.getAbsolutePath(), bytes);
     } finally {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1617
       dataInputStream.close();
     }
   }
@@ -345,6 +369,9 @@ public class SegmentIndexFileStore {
    * @return
    */
   public static CarbonFile[] getCarbonIndexFiles(CarbonFile carbonFile) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2472
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2570
     return carbonFile.listFiles(new CarbonFileFilter() {
       @Override
       public boolean accept(CarbonFile file) {
@@ -360,6 +387,7 @@ public class SegmentIndexFileStore {
    * @param carbonFile directory
    */
   public static void getCarbonIndexFilesRecursively(CarbonFile carbonFile,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2888
       List<CarbonFile> indexFiles) {
     CarbonFile[] carbonFiles = carbonFile.listFiles();
     for (CarbonFile file : carbonFiles) {
@@ -379,10 +407,13 @@ public class SegmentIndexFileStore {
    * @return
    */
   public static CarbonFile[] getCarbonIndexFiles(String segmentPath, Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath, configuration);
     return carbonFile.listFiles(new CarbonFileFilter() {
       @Override
       public boolean accept(CarbonFile file) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
         return ((file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
             .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) && file.getSize() > 0);
       }
@@ -396,6 +427,7 @@ public class SegmentIndexFileStore {
    * @return
    */
   public static CarbonFile[] getCarbonIndexFiles(CarbonFile[] carbonFiles) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2037
     List<CarbonFile> indexFiles = new ArrayList<>();
     for (CarbonFile file: carbonFiles) {
       if (file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) ||
@@ -416,6 +448,7 @@ public class SegmentIndexFileStore {
   }
 
   public Map<String, byte[]> getCarbonIndexMapWithFullPath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     return carbonIndexMapWithFullPath;
   }
 
@@ -431,6 +464,7 @@ public class SegmentIndexFileStore {
     // If the index file does not contain the file footer then carbondata file footer
     // read is required else not required
     boolean isCarbonDataFileFooterReadRequired = true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2019
     List<BlockletInfo> blockletInfoList = null;
     List<BlockIndex> blockIndexThrift =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -439,8 +473,10 @@ public class SegmentIndexFileStore {
       indexReader.openThriftReader(indexFile.getCanonicalPath());
       // get the index header
       org.apache.carbondata.format.IndexHeader indexHeader = indexReader.readIndexHeader();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
       DataFileFooterConverter fileFooterConverter =
           new DataFileFooterConverter(FileFactory.getConfiguration());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2753
       String filePath = FileFactory.getUpdatedFilePath(indexFile.getCanonicalPath());
       String parentPath =
           filePath.substring(0, filePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
@@ -508,6 +544,7 @@ public class SegmentIndexFileStore {
   private List<BlockletInfo> getBlockletInfoFromIndexInfo(TableBlockInfo blockInfo)
       throws IOException {
     long startTime = System.currentTimeMillis();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
     DataFileFooter carbondataFileFooter = CarbonUtil.readMetadataFile(blockInfo);
     LOGGER.info(
         "Time taken to read carbondata file footer to get blocklet info " + blockInfo.getFilePath()
@@ -516,10 +553,13 @@ public class SegmentIndexFileStore {
   }
 
   public Map<String, List<String>> getCarbonMergeFileToIndexFilesMap() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     return carbonMergeFileToIndexFilesMap;
   }
 
   public static IndexHeader readIndexHeader(String indexFilePath, Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3349
     byte[] indexContent = null;
     if (indexFilePath.toLowerCase().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
       SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore(configuration);

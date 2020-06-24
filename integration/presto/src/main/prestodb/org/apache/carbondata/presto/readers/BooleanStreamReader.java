@@ -37,6 +37,7 @@ public class BooleanStreamReader extends CarbonColumnVectorImpl
   public BooleanStreamReader(int batchSize, DataType dataType) {
     super(batchSize, dataType);
     this.batchSize = batchSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2818
     this.builder = type.createBlockBuilder(null, batchSize);
   }
 
@@ -52,6 +53,7 @@ public class BooleanStreamReader extends CarbonColumnVectorImpl
 
   @Override
   public void putByte(int rowId, byte value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
     type.writeBoolean(builder, value == 1);
   }
 
@@ -74,6 +76,7 @@ public class BooleanStreamReader extends CarbonColumnVectorImpl
 
   @Override
   public void putNulls(int rowId, int count) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     for (int i = 0; i < count; i++) {
       builder.appendNull();
     }
@@ -81,6 +84,7 @@ public class BooleanStreamReader extends CarbonColumnVectorImpl
 
   @Override
   public void reset() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2818
     builder = type.createBlockBuilder(null, batchSize);
   }
 
@@ -89,6 +93,7 @@ public class BooleanStreamReader extends CarbonColumnVectorImpl
     if (value == null) {
       putNull(rowId);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
       putBoolean(rowId, (boolean) value);
     }
   }

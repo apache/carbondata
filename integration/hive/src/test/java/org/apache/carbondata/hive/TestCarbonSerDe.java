@@ -96,6 +96,7 @@ public class TestCarbonSerDe {
         Assert.assertEquals("deserialization gives the wrong object", t, row);
 
         // Serialize
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
         final CarbonHiveRow serializedArr = (CarbonHiveRow) serDe.serialize(row, oi);
         Assert.assertEquals("size correct after serialization", serDe.getSerDeStats().getRawDataSize(),
                 serializedArr.getData().length);
@@ -115,6 +116,7 @@ public class TestCarbonSerDe {
     }
 
     private static boolean arrayWritableEquals(final Object[] a1, final Object[] a2) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
         if (a1.length != a2.length) {
             return false;
         }

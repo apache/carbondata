@@ -40,15 +40,18 @@ public class TableBlockIndexUniqueIdentifier implements Serializable {
   private String uniqueName;
 
   public TableBlockIndexUniqueIdentifier(String indexFilePath, String indexFileName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
       String mergeIndexFileName, String segmentId) {
     this.indexFilePath = indexFilePath;
     this.indexFileName = indexFileName;
     this.mergeIndexFileName = mergeIndexFileName;
     this.segmentId = segmentId;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     this.uniqueName = indexFilePath + CarbonCommonConstants.FILE_SEPARATOR + indexFileName;
   }
 
   public TableBlockIndexUniqueIdentifier(String segmentId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     this.segmentId = segmentId;
   }
 
@@ -58,10 +61,12 @@ public class TableBlockIndexUniqueIdentifier implements Serializable {
    * @return
    */
   public String getUniqueTableSegmentIdentifier() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     return this.uniqueName;
   }
 
   public String getIndexFilePath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     return indexFilePath;
   }
 

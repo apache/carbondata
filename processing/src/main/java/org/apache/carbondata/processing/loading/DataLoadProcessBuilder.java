@@ -60,18 +60,23 @@ public final class DataLoadProcessBuilder {
       LogServiceFactory.getLogService(DataLoadProcessBuilder.class.getName());
 
   public AbstractDataLoadProcessorStep build(CarbonLoadModel loadModel, String[] storeLocation,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       CarbonIterator[] inputIterators) {
     CarbonDataLoadConfiguration configuration = createConfiguration(loadModel, storeLocation);
     SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
     if (configuration.getBucketingInfo() != null &&
             CarbonProperties.isBadRecordHandlingEnabledForInsert()) {
       // if use old flow, both load and insert of bucket table use same. Otherwise, load of bucket
       // will use buildInternalForBucketing but insert will use buildInternalWithNoConverter.
       return buildInternalForBucketing(inputIterators, configuration);
     } else if (loadModel.isLoadWithoutConverterStep()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
       return buildInternalWithNoConverter(inputIterators, configuration, sortScope, false);
     } else if (loadModel.isLoadWithoutConverterWithoutReArrangeStep()) {
       return buildInternalWithNoConverter(inputIterators, configuration, sortScope, true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2608
     } else if (loadModel.isJsonFileLoad()) {
       return buildInternalWithJsonInputProcessor(inputIterators, configuration, sortScope);
     } else if (configuration.getBucketingInfo() != null) {
@@ -94,9 +99,11 @@ public final class DataLoadProcessBuilder {
     AbstractDataLoadProcessorStep converterProcessorStep =
         new DataConverterProcessorStepImpl(configuration, inputProcessorStep);
     // 3. Sorts the data by SortColumn
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-842
     AbstractDataLoadProcessorStep sortProcessorStep =
         new SortProcessorStepImpl(configuration, converterProcessorStep);
     // 4. Writes the sorted data in carbondata format.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
     return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
   }
 
@@ -118,10 +125,13 @@ public final class DataLoadProcessBuilder {
    */
   private AbstractDataLoadProcessorStep buildInternalWithNoConverter(
       CarbonIterator[] inputIterators, CarbonDataLoadConfiguration configuration,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
       SortScopeOptions.SortScope sortScope, boolean withoutReArrange) {
     // Wraps with dummy processor.
     AbstractDataLoadProcessorStep inputProcessorStep =
         new InputProcessorStepWithNoConverterImpl(configuration, inputIterators, withoutReArrange);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
     if (sortScope.equals(SortScopeOptions.SortScope.LOCAL_SORT) ||
             configuration.getBucketingInfo() != null) {
       AbstractDataLoadProcessorStep sortProcessorStep =
@@ -138,6 +148,7 @@ public final class DataLoadProcessBuilder {
    * Build pipe line for Load with json input processor.
    */
   private AbstractDataLoadProcessorStep buildInternalWithJsonInputProcessor(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2608
       CarbonIterator[] inputIterators, CarbonDataLoadConfiguration configuration,
       SortScopeOptions.SortScope sortScope) {
     // currently row by row conversion of string json to carbon row is supported.
@@ -154,11 +165,13 @@ public final class DataLoadProcessBuilder {
       return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
     } else {
       // In all other cases like global sort and no sort uses this step
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1903
       return new CarbonRowDataWriterProcessorStepImpl(configuration, converterProcessorStep);
     }
   }
 
   private AbstractDataLoadProcessorStep buildInternalForBucketing(CarbonIterator[] inputIterators,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       CarbonDataLoadConfiguration configuration) {
     // 1. Reads the data input iterators and parses the data.
     AbstractDataLoadProcessorStep inputProcessorStep =
@@ -166,15 +179,20 @@ public final class DataLoadProcessBuilder {
     // 2. Converts the data like dictionary or non dictionary or complex objects depends on
     // data types and configurations.
     AbstractDataLoadProcessorStep converterProcessorStep =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
         new DataConverterProcessorStepImpl(configuration, inputProcessorStep);
     // 3. Sorts the data by SortColumn or not
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-842
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-842
     AbstractDataLoadProcessorStep sortProcessorStep =
         new SortProcessorStepImpl(configuration, converterProcessorStep);
     // 4. Writes the sorted data in carbondata format.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
     return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
   }
 
   public static CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
       String[] storeLocation) {
     CarbonDataProcessorUtil.createLocations(storeLocation);
 
@@ -182,6 +200,7 @@ public final class DataLoadProcessBuilder {
     String tableName = loadModel.getTableName();
     String tempLocationKey = CarbonDataProcessorUtil
         .getTempStoreLocationKey(databaseName, tableName, loadModel.getSegmentId(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-940
             loadModel.getTaskNo(), false, false);
     CarbonProperties.getInstance().addProperty(tempLocationKey,
         StringUtils.join(storeLocation, File.pathSeparator));
@@ -194,11 +213,14 @@ public final class DataLoadProcessBuilder {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     configuration.setTableIdentifier(identifier);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     configuration.setCarbonTransactionalTable(loadModel.isCarbonTransactionalTable());
     configuration.setSchemaUpdatedTimeStamp(carbonTable.getTableLastUpdatedTime());
     configuration.setHeader(loadModel.getCsvHeaderColumns());
     configuration.setSegmentId(loadModel.getSegmentId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     configuration.setNonSchemaColumnsPresent(loadModel.isNonSchemaColumnsPresent());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
     List<LoadMetadataDetails> loadMetadataDetails = loadModel.getLoadMetadataDetails();
     if (loadMetadataDetails != null) {
       for (LoadMetadataDetails detail : loadMetadataDetails) {
@@ -208,9 +230,12 @@ public final class DataLoadProcessBuilder {
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     configuration.setSkipParsers(loadModel.isSkipParsers());
     configuration.setTaskNo(loadModel.getTaskNo());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     configuration.setMetrics(loadModel.getMetrics());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3017
     String[] complexDelimiters = new String[loadModel.getComplexDelimiters().size()];
     loadModel.getComplexDelimiters().toArray(complexDelimiters);
     configuration
@@ -223,8 +248,10 @@ public final class DataLoadProcessBuilder {
         loadModel.getBadRecordsLoggerEnable().split(",")[1]);
     configuration.setDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ACTION,
         loadModel.getBadRecordsAction().split(",")[1]);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-784
     configuration.setDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD,
         loadModel.getIsEmptyDataBadRecord().split(",")[1]);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1734
     configuration.setDataLoadProperty(DataLoadProcessorConstants.SKIP_EMPTY_LINE,
         loadModel.getSkipEmptyLine());
     configuration.setDataLoadProperty(DataLoadProcessorConstants.FACT_FILE_PATH,
@@ -235,9 +262,12 @@ public final class DataLoadProcessBuilder {
         loadModel.getGlobalSortPartitions());
     configuration.setDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,
         loadModel.getBadRecordsLocation());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
     configuration.setDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER,
         loadModel.getBinaryDecoder());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
     if (loadModel.isLoadWithoutConverterWithoutReArrangeStep()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3728
       configuration.setDataLoadProperty(DataLoadProcessorConstants.NO_REARRANGE_OF_ROWS,
           loadModel.isLoadWithoutConverterWithoutReArrangeStep());
     }
@@ -252,28 +282,39 @@ public final class DataLoadProcessBuilder {
           partitionColumns, dataFields);
     } else {
       getDataFields(loadModel, dimensions, measures, complexDataFields, dataFields);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3734
       dataFields = updateDataFieldsBasedOnSortColumns(dataFields);
     }
     configuration.setDataFields(dataFields.toArray(new DataField[0]));
     configuration.setBucketingInfo(carbonTable.getBucketingInfo());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
     configuration.setBucketHashMethod(carbonTable.getBucketHashMethod());
     configuration.setPreFetch(loadModel.isPreFetch());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
     configuration.setNumberOfSortColumns(carbonTable.getNumberOfSortColumns());
     configuration.setNumberOfNoDictSortColumns(carbonTable.getNumberOfNoDictSortColumns());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     configuration.setDataWritePath(loadModel.getDataWritePath());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     setSortColumnInfo(carbonTable, loadModel, configuration);
     // For partition loading always use single core as it already runs in multiple
     // threads per partition
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1908
     if (carbonTable.isHivePartitionTable()) {
       configuration.setWritingCoresCount((short) 1);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3728
     TableSpec tableSpec = new TableSpec(carbonTable, false);
     configuration.setTableSpec(tableSpec);
     if (loadModel.getSdkWriterCores() > 0) {
       configuration.setWritingCoresCount(loadModel.getSdkWriterCores());
     }
     configuration.setNumberOfLoadingCores(CarbonProperties.getInstance().getNumberOfLoadingCores());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3031
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     configuration.setColumnCompressor(loadModel.getColumnCompressor());
     return configuration;
   }
@@ -284,15 +325,21 @@ public final class DataLoadProcessBuilder {
     // And then add complex data types and measures.
     for (CarbonColumn column : dimensions) {
       DataField dataField = new DataField(column);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1762
       if (column.getDataType() == DataTypes.DATE) {
         dataField.setDateFormat(loadModel.getDateFormat());
         column.setDateFormat(loadModel.getDateFormat());
       } else if (column.getDataType() == DataTypes.TIMESTAMP) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3740
         dataField.setTimestampFormat(loadModel.getTimestampFormat());
         column.setTimestampFormat(loadModel.getTimestampFormat());
       }
       if (column.isComplex()) {
         complexDataFields.add(dataField);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2452
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2451
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2450
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2453
         List<CarbonDimension> childDimensions =
             ((CarbonDimension) dataField.getColumn()).getListOfChildDimensions();
         for (CarbonDimension childDimension : childDimensions) {
@@ -316,6 +363,7 @@ public final class DataLoadProcessBuilder {
   }
 
   private static void getReArrangedDataFields(CarbonLoadModel loadModel, CarbonTable carbonTable,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
       List<CarbonDimension> dimensions, List<CarbonMeasure> measures,
       List<DataField> complexDataFields, List<DataField> partitionColumns,
       List<DataField> dataFields) {
@@ -328,6 +376,7 @@ public final class DataLoadProcessBuilder {
     }
     // 1.1 compatibility, dimensions will not have sort columns in the beginning in 1.1.
     // Need to keep at the beginning now
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3734
     List<DataField> sortDataFields = new ArrayList<>();
     List<DataField> noSortDataFields = new ArrayList<>();
     for (CarbonColumn column : dimensions) {
@@ -339,6 +388,8 @@ public final class DataLoadProcessBuilder {
           if (childDimension.getDataType() == DataTypes.DATE) {
             childDimension.setDateFormat(loadModel.getDateFormat());
           } else if (childDimension.getDataType() == DataTypes.TIMESTAMP) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3740
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3740
             childDimension.setTimestampFormat(loadModel.getTimestampFormat());
           }
         }
@@ -353,6 +404,7 @@ public final class DataLoadProcessBuilder {
           dataField.setDateFormat(loadModel.getDateFormat());
           column.setDateFormat(loadModel.getDateFormat());
         } else if (column.getDataType() == DataTypes.TIMESTAMP) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3740
           dataField.setTimestampFormat(loadModel.getTimestampFormat());
           column.setTimestampFormat(loadModel.getTimestampFormat());
         }
@@ -360,6 +412,7 @@ public final class DataLoadProcessBuilder {
             .contains(column.getColumnSchema())) {
           partitionColumns.add(dataField);
         } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3734
           if (dataField.getColumn().getColumnSchema().isSortColumn()) {
             sortDataFields.add(dataField);
           } else {
@@ -411,6 +464,7 @@ public final class DataLoadProcessBuilder {
    * @param configuration configuration
    */
   private static void setSortColumnInfo(CarbonTable carbonTable, CarbonLoadModel loadModel,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
       CarbonDataLoadConfiguration configuration) {
     List<String> sortCols = carbonTable.getSortColumns();
     SortScopeOptions.SortScope sortScope = SortScopeOptions.getSortScope(loadModel.getSortScope());
@@ -439,6 +493,7 @@ public final class DataLoadProcessBuilder {
           columnExist = true;
 
           sortColIndex[j] = i;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
           isSortColNoDict[j] = !outFields[i].isDateDataType();
           j++;
         }
@@ -478,6 +533,7 @@ public final class DataLoadProcessBuilder {
    * sort column, bring it to first.
    */
   private static List<DataField> updateDataFieldsBasedOnSortColumns(List<DataField> dataFields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
     List<DataField> updatedDataFields = new ArrayList<>();
     List<DataField> sortFields = new ArrayList<>();
     List<DataField> nonSortFields = new ArrayList<>();

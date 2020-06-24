@@ -52,6 +52,7 @@ public class InterfaceAudience {
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
   public @interface Developer {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2186
     String[] value();
   }
 

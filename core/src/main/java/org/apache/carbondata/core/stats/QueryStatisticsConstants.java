@@ -53,6 +53,7 @@ public interface QueryStatisticsConstants {
   String VALID_SCAN_BLOCKLET_NUM = "The num of valid scanned blocklet";
 
   String BLOCKLET_SCANNED_NUM = "The num of blocklet scanned";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3593
 
   String VALID_PAGE_SCANNED = "The number of valid page scanned";
 

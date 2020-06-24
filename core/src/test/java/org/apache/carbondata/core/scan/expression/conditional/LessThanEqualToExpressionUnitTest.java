@@ -45,6 +45,7 @@ public class LessThanEqualToExpressionUnitTest {
 
   @Test public void testEvaluateForLessThanEqualToExpressionWithBothStringISSame()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression left = new ColumnExpression("left_name", DataTypes.STRING);
     left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("right_name", DataTypes.STRING);
@@ -111,7 +112,9 @@ public class LessThanEqualToExpressionUnitTest {
   }
 
   @Test public void testEvaluateForLessThanEqualToExpressionWithShortDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("id", DataTypes.SHORT);
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("id", DataTypes.SHORT);
@@ -146,6 +149,7 @@ public class LessThanEqualToExpressionUnitTest {
 
   @Test public void testEvaluateForLessThanEqualToExpressionWithDoubleDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("right_contact", DataTypes.DOUBLE);
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("left_contact", DataTypes.DOUBLE);
@@ -179,6 +183,7 @@ public class LessThanEqualToExpressionUnitTest {
 
   @Test public void testEvaluateForLessThanEqualToExpressionWithIntDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("right_number", DataTypes.INT);
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("left_number", DataTypes.INT);
@@ -256,8 +261,10 @@ public class LessThanEqualToExpressionUnitTest {
   }
 
   @Test public void testEvaluateForLessThanEqualToExpressionWithTimestampDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       ColumnExpression left = new ColumnExpression("timestamp", DataTypes.TIMESTAMP);
       left.setColIndex(0);
       ColumnExpression right = new ColumnExpression("timestamp", DataTypes.TIMESTAMP);
@@ -302,6 +309,7 @@ public class LessThanEqualToExpressionUnitTest {
 
   @Test public void testEvaluateForLessThanEqualToExpressionWithLongDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("right_contact", DataTypes.LONG);
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("left_contact", DataTypes.LONG);
@@ -332,6 +340,7 @@ public class LessThanEqualToExpressionUnitTest {
 
   @Test public void testEvaluateForLessThanEqualToExpressionWithDecimalDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     ColumnExpression right = new ColumnExpression("right_contact", DataTypes.createDefaultDecimalType());
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("left_contact", DataTypes.createDefaultDecimalType());
@@ -361,6 +370,7 @@ public class LessThanEqualToExpressionUnitTest {
   }
 
   @Test public void testEvaluateForLessThanEqualToExpressionWithDecimalDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right =
         new ColumnExpression("right_contact", DataTypes.createDefaultDecimalType());
@@ -370,6 +380,8 @@ public class LessThanEqualToExpressionUnitTest {
     left.setColIndex(1);
     lessThanEqualToExpression = new LessThanEqualToExpression(left, right);
     RowImpl value = new RowImpl();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
     BigDecimal[] row = new BigDecimal[] { new BigDecimal(46851.2) };
     BigDecimal[] row1 = new BigDecimal[] { new BigDecimal(45821.02) };
     Object objectRow[] = { row1, row };
@@ -394,6 +406,7 @@ public class LessThanEqualToExpressionUnitTest {
 
   @Test public void testForLessThanEqualToExpressionWithDefaultCase()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("contact", DataTypes.BOOLEAN);
     right.setColIndex(0);
     lessThanEqualToExpression = new LessThanEqualToExpression(right, right);
@@ -432,7 +445,9 @@ public class LessThanEqualToExpressionUnitTest {
   }
 
   @Test public void testEvaluateForLessThanEqualToExpressionWithIsNullReturnTrue1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("id", DataTypes.SHORT);
     right.setColIndex(0);
     lessThanEqualToExpression = new LessThanEqualToExpression(right, right);
@@ -465,6 +480,7 @@ public class LessThanEqualToExpressionUnitTest {
 
   @Test public void testEvaluateForLessThanEqualToExpressionWithLeftAndRightDifferentDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression left = new ColumnExpression("name", DataTypes.STRING);
     left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("number", DataTypes.INT);
@@ -496,6 +512,7 @@ public class LessThanEqualToExpressionUnitTest {
   }
 
   @Test public void testEvaluateForLessThanEqualToExpressionWithLeftAndRightDifferentDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression left = new ColumnExpression("name", DataTypes.INT);
     left.setColIndex(0);
@@ -528,6 +545,7 @@ public class LessThanEqualToExpressionUnitTest {
   }
 
   @Test public void testForLessThanEqualToExpressionWithGetString() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("right_name", DataTypes.STRING);
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("left_name", DataTypes.STRING);

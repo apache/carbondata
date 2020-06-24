@@ -38,6 +38,7 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
   @Override
   public BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
       boolean useBitsetPipeLine) throws FilterUnsupportedException, IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     BitSetGroup leftFilters = leftExecuter.applyFilter(rawBlockletColumnChunks, useBitsetPipeLine);
     if (leftFilters.isEmpty()) {
       return leftFilters;
@@ -53,6 +54,7 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
 
   @Override
   public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3013
       throws FilterUnsupportedException, IOException {
     BitSet leftFilters = leftExecuter.prunePages(rawBlockletColumnChunks);
     if (leftFilters.isEmpty()) {
@@ -68,6 +70,7 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
 
   @Override
   public boolean applyFilter(RowIntf value, int dimOrdinalMax)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
       throws FilterUnsupportedException, IOException {
     return leftExecuter.applyFilter(value, dimOrdinalMax) &&
         rightExecuter.applyFilter(value, dimOrdinalMax);
@@ -90,6 +93,7 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
 
   @Override
   public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     leftExecuter.readColumnChunks(rawBlockletColumnChunks);
     rightExecuter.readColumnChunks(rawBlockletColumnChunks);
   }
@@ -97,6 +101,7 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
   @Override
   public BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
       String uniqueBlockPath, boolean[] isMinMaxSet) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1854
     BitSet leftFilters = null;
     if (leftExecuter instanceof ImplicitColumnFilterExecutor) {
       leftFilters = ((ImplicitColumnFilterExecutor) leftExecuter)
@@ -111,6 +116,7 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
     BitSet rightFilter = null;
     if (rightExecuter instanceof ImplicitColumnFilterExecutor) {
       rightFilter = ((ImplicitColumnFilterExecutor) rightExecuter)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
           .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath, isMinMaxSet);
     } else {
       rightFilter = rightExecuter.isScanRequired(maxValue, minValue, isMinMaxSet);
@@ -129,6 +135,7 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
     BitSet tempFilter;
     if (leftExecuter instanceof ImplicitColumnFilterExecutor) {
       leftRes = ((ImplicitColumnFilterExecutor) leftExecuter)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
           .isFilterValuesPresentInAbstractIndex(maxValue, minValue, isMinMaxSet);
     } else {
       tempFilter = leftExecuter
@@ -142,6 +149,7 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
     Boolean rightRes = null;
     if (rightExecuter instanceof ImplicitColumnFilterExecutor) {
       rightRes = ((ImplicitColumnFilterExecutor) rightExecuter)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
           .isFilterValuesPresentInAbstractIndex(maxValue, minValue, isMinMaxSet);
     } else {
       tempFilter = rightExecuter

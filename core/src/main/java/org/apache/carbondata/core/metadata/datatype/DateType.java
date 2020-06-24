@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata.datatype;
 
 class DateType extends DataType {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
 
   static final DataType DATE = new DateType(DataTypes.DATE_TYPE_ID, 1, "DATE", -1);
 

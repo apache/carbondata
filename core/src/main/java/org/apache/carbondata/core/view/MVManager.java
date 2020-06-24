@@ -146,6 +146,7 @@ public abstract class MVManager {
    * @param viewName index name
    */
   public void deleteSchema(String databaseName, String viewName) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3778
     schemaProvider.dropSchema(this, databaseName, viewName);
   }
 
@@ -240,6 +241,7 @@ public abstract class MVManager {
    */
   List<MVStatusDetail> getEnabledStatusDetails(String databaseName)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3778
     List<MVStatusDetail> statusDetails = schemaProvider.getStatusDetails(this, databaseName);
     List<MVStatusDetail> enabledStatusDetails = new ArrayList<>(statusDetails.size());
     for (MVStatusDetail statusDetail : statusDetails) {
@@ -255,6 +257,7 @@ public abstract class MVManager {
     MVSchema schema = getSchema(
         viewIdentifier.getDatabaseName(), viewIdentifier.getTableName());
     if (schema != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3778
       schemaProvider.updateStatus(this, Collections.singletonList(schema), viewStatus);
     }
   }
@@ -271,6 +274,7 @@ public abstract class MVManager {
     MVSchema viewSchema = getSchema(databaseName, viewName);
     if (viewSchema != null) {
       schemaProvider.updateStatus(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3778
           this, Collections.singletonList(viewSchema), MVStatus.DROPPED);
     }
   }

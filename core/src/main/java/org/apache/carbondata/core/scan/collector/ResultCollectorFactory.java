@@ -54,6 +54,7 @@ public class ResultCollectorFactory {
     AbstractScannedResultCollector scannerResultAggregator = null;
     if (blockExecutionInfo.isRawRecordDetailQuery()) {
       if (blockExecutionInfo.isRestructuredBlock()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2727
         if (blockExecutionInfo.isRequiredRowId()) {
           LOGGER.info("RowId Restructure based raw ollector is used to scan and collect the data");
           scannerResultAggregator = new RowIdRestructureBasedRawResultCollector(blockExecutionInfo);
@@ -82,6 +83,7 @@ public class ResultCollectorFactory {
       if (blockExecutionInfo.isRestructuredBlock()) {
         LOGGER.info("Restructure based dictionary collector is used to scan and collect the data");
         scannerResultAggregator = new RestructureBasedDictionaryResultCollector(blockExecutionInfo);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2390
       } else if (blockExecutionInfo.isRequiredRowId()) {
         LOGGER.info("RowId based dictionary collector is used to scan and collect the data");
         scannerResultAggregator = new RowIdBasedResultCollector(blockExecutionInfo);

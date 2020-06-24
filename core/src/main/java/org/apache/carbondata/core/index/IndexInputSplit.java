@@ -49,6 +49,7 @@ public abstract class IndexInputSplit extends InputSplit
   }
 
   public Segment getSegment() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     return segment;
   }
 
@@ -57,6 +58,7 @@ public abstract class IndexInputSplit extends InputSplit
   }
 
   public IndexSchema getIndexSchema() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return indexSchema;
   }
 

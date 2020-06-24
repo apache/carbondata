@@ -25,6 +25,8 @@ public abstract class IndexStorageCodec implements ColumnPageCodec {
   protected boolean isSort;
   protected boolean isInvertedIndex;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
   IndexStorageCodec(boolean isSort, boolean isInvertedIndex) {
     this.isSort = isSort;
     this.isInvertedIndex = isInvertedIndex;

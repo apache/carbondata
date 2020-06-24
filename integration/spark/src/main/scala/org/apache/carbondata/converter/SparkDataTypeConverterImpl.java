@@ -45,12 +45,16 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
 
   @Override
   public Object convertFromStringToDecimal(Object data) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2872
     BigDecimal javaDecVal = new BigDecimal(data.toString());
     return org.apache.spark.sql.types.Decimal.apply(javaDecVal);
   }
 
   @Override
   public Object convertFromBigDecimalToDecimal(Object data) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
     if (null == data) {
       return null;
     }
@@ -75,6 +79,8 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
     if (null == data) {
       return null;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
     return UTF8String.fromBytes(data);
   }
 
@@ -103,6 +109,7 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
 
   @Override
   public Object wrapWithArrayBasedMapData(Object[] keyArray, Object[] valueArray) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
     return new ArrayBasedMapData(new GenericArrayData(keyArray), new GenericArrayData(valueArray));
   }
 
@@ -113,7 +120,9 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
   }
 
   public static org.apache.spark.sql.types.DataType convertCarbonToSparkDataType(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2165
       DataType carbonDataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3497
     if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.STRING
         || carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.VARCHAR) {
       return DataTypes.StringType;
@@ -133,6 +142,7 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
       return DataTypes.TimestampType;
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
       return DataTypes.DateType;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BINARY) {
       return DataTypes.BinaryType;
     } else {
@@ -171,6 +181,7 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.INT
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.LONG
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3497
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BINARY
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.VARCHAR) {
           fields[i] = new StructField(carbonColumn.getColName(),

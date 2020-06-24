@@ -56,6 +56,7 @@ public class CarbonColumnarBatch {
     actualSize = 0;
     rowCounter = 0;
     rowsFiltered = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     if (filteredRows != null) {
       Arrays.fill(filteredRows, false);
     }

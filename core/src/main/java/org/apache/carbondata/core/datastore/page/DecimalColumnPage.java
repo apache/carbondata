@@ -33,6 +33,8 @@ public abstract class DecimalColumnPage extends UnsafeVarLengthColumnPageBase {
    */
   DecimalConverterFactory.DecimalConverter decimalConverter;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
   DecimalColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     super(columnPageEncoderMeta, pageSize);
     decimalConverter = DecimalConverterFactory.INSTANCE.getDecimalConverter(
@@ -46,6 +48,8 @@ public abstract class DecimalColumnPage extends UnsafeVarLengthColumnPageBase {
 
   @Override
   public byte[] getBytePage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
@@ -112,6 +116,7 @@ public abstract class DecimalColumnPage extends UnsafeVarLengthColumnPageBase {
 
   @Override
   public void putFloat(int rowId, float value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
@@ -130,6 +135,7 @@ public abstract class DecimalColumnPage extends UnsafeVarLengthColumnPageBase {
 
   // used for building index in loading process
   private BigDecimal getDecimalFromRawData(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2757
     long value;
     switch (decimalConverter.getDecimalConverterType()) {
       case DECIMAL_INT:
@@ -146,6 +152,8 @@ public abstract class DecimalColumnPage extends UnsafeVarLengthColumnPageBase {
 
   private BigDecimal getDecimalFromDecompressData(int rowId) {
     long value;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE) {
       value = getByte(rowId);
     } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT) {

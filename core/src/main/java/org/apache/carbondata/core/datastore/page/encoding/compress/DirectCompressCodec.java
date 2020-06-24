@@ -61,6 +61,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
   boolean isComplexPrimitiveIntLengthEncoding = false;
 
   public void setComplexPrimitiveIntLengthEncoding(boolean complexPrimitiveIntLengthEncoding) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
     isComplexPrimitiveIntLengthEncoding = complexPrimitiveIntLengthEncoding;
   }
 
@@ -72,6 +73,8 @@ public class DirectCompressCodec implements ColumnPageCodec {
   @Override
   public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
     return new ColumnPageEncoder() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
 
       @Override
       protected ByteBuffer encodeData(ColumnPage input) throws IOException {
@@ -83,6 +86,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
       @Override
       protected List<Encoding> getEncodingList() {
         List<Encoding> encodings = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
         encodings.add(dataType == DataTypes.VARCHAR ?
             Encoding.DIRECT_COMPRESS_VARCHAR :
             Encoding.DIRECT_COMPRESS);
@@ -104,9 +108,11 @@ public class DirectCompressCodec implements ColumnPageCodec {
       @Override
       public ColumnPage decode(byte[] input, int offset, int length) {
         ColumnPage decodedPage;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         if (DataTypes.isDecimal(dataType)) {
           decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length);
         } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
           decodedPage = ColumnPage
               .decompress(meta, input, offset, length, false, isComplexPrimitiveIntLengthEncoding);
         }
@@ -115,8 +121,11 @@ public class DirectCompressCodec implements ColumnPageCodec {
 
       @Override
       public void decodeAndFillVector(byte[] input, int offset, int length,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
           ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
           ReusableDataBuffer reusableDataBuffer) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
         Compressor compressor =
             CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
         int uncompressedLength;
@@ -136,6 +145,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
                   .getDecimalConverter(columnSpec.getPrecision(), columnSpec.getScale());
           vectorInfo.decimalConverter = decimalConverter;
           if (DataTypes.isDecimal(meta.getStoreDataType())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
             ColumnPage decimalColumnPage = VarLengthColumnPageBase
                 .newDecimalColumnPage(meta, unCompressData, uncompressedLength);
             decimalConverter.fillVector(decimalColumnPage.getByteArrayPage(), pageSize, vectorInfo,
@@ -154,6 +164,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
 
       @Override
       public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
         return LazyColumnPage.newPage(ColumnPage
             .decompress(meta, input, offset, length, isLVEncoded,
                 isComplexPrimitiveIntLengthEncoding), converter);
@@ -239,14 +250,18 @@ public class DirectCompressCodec implements ColumnPageCodec {
 
     @Override
     public void decodeAndFillVector(byte[] pageData, ColumnVectorInfo vectorInfo, BitSet nullBits,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
         DataType pageDataType, int pageSize) {
       CarbonColumnVector vector = vectorInfo.vector;
       DataType vectorDataType = vector.getType();
       BitSet deletedRows = vectorInfo.deletedRows;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3014
       vector = ColumnarVectorWrapperDirectFactory
           .getDirectVectorWrapperFactory(vector, vectorInfo.invertedIndex, nullBits, deletedRows,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3048
               true, false);
       fillVector(pageData, vector, vectorDataType, pageDataType, pageSize, vectorInfo, nullBits);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
       if ((deletedRows == null || deletedRows.isEmpty())
           && !(vectorInfo.vector instanceof SequentialFill)) {
         for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
@@ -259,6 +274,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
     }
 
     private void fillVector(byte[] pageData, CarbonColumnVector vector, DataType vectorDataType,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
         DataType pageDataType, int pageSize, ColumnVectorInfo vectorInfo, BitSet nullBits) {
       int rowId = 0;
       if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
@@ -329,6 +345,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
         } else if (vectorDataType == DataTypes.TIMESTAMP) {
           for (int i = 0; i < pageSize; i++) {
             int shortInt = ByteUtil.valueOf3Bytes(pageData, i * 3);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3014
             vector.putLong(i, (long) shortInt * 1000);
           }
         } else if (DataTypes.isDecimal(vectorDataType)) {

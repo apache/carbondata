@@ -58,6 +58,8 @@ public class SortDataRows {
   public SortDataRows(SortParameters parameters,
       SortIntermediateFileMerger intermediateFileMerger) {
     this.parameters = parameters;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
     this.sortStepRowHandler = new SortStepRowHandler(parameters);
     this.intermediateFileMerger = intermediateFileMerger;
 
@@ -83,6 +85,7 @@ public class SortDataRows {
   }
 
   public void setInstanceId(int instanceId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
     this.instanceId = instanceId;
   }
 
@@ -108,15 +111,21 @@ public class SortDataRows {
     // if record holder list size is equal to sort buffer size then it will
     // sort the list and then write current list data to file
     int sizeLeft = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
     if (entryCount + size >= sortBufferSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1049
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1049
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("************ Writing to temp file ********** ");
       }
       Object[][] recordHolderListLocal = recordHolderList;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
       sizeLeft = sortBufferSize - entryCount;
       if (sizeLeft > 0) {
         System.arraycopy(rowBatch, 0, recordHolderListLocal, entryCount, sizeLeft);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
       handlePreviousPage(recordHolderListLocal);
       // create the new holder Array
       this.recordHolderList = new Object[this.sortBufferSize][];
@@ -154,11 +163,14 @@ public class SortDataRows {
               locationChosen + File.separator + parameters.getTableName()
                       + '_' + parameters.getRangeId() + '_' + instanceId + '_' + System.nanoTime()
                       + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1839
       writeDataToFile(recordHolderArray, recordHolderArray.length, sortTempFile);
       // add sort temp filename to arrayList. When the list size reaches 20 then
       // intermediate merging of sort temp files will be triggered
       intermediateFileMerger.addFileToMerge(sortTempFile);
       LOGGER.info("Time taken to sort and write sort temp file " + sortTempFile + " is: " + (
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
               System.currentTimeMillis() - startTime) + ", sort temp file size in MB is "
               + sortTempFile.length() * 0.1 * 10 / 1024 / 1024);
     } catch (Throwable e) {
@@ -192,8 +204,10 @@ public class SortDataRows {
       String[] tmpLocation = parameters.getTempFileLocation();
       String locationChosen = tmpLocation[new Random().nextInt(tmpLocation.length)];
       File file = new File(locationChosen + File.separator + parameters.getTableName()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
           + '_' + parameters.getRangeId() + '_' + instanceId + '_' + System.nanoTime()
           + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1839
       writeDataToFile(recordHolderList, this.entryCount, file);
     }
 
@@ -210,12 +224,14 @@ public class SortDataRows {
     DataOutputStream stream = null;
     try {
       // open stream
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       stream = FileFactory.getDataOutputStream(file.getPath(),
           parameters.getFileWriteBufferSize(), parameters.getSortTempCompressorName());
       // write number of entries to the file
       stream.writeInt(entryCountLocal);
       for (int i = 0; i < entryCountLocal; i++) {
         sortStepRowHandler.writeRawRowAsIntermediateSortTempRowToOutputStream(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
             recordHolderList[i], stream, reUsableByteArrayDataOutputStream.get());
       }
     } catch (IOException e) {

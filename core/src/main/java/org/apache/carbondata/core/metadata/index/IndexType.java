@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata.index;
 
 public enum IndexType {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
   LUCENE("org.apache.carbondata.index.lucene.LuceneFineGrainIndexFactory", "lucene"),
   BLOOMFILTER("org.apache.carbondata.index.bloom.BloomCoarseGrainIndexFactory", "bloomfilter"),
   SI("", "si");
@@ -33,6 +34,7 @@ public enum IndexType {
    */
   private String shortName;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
   IndexType(String className, String shortName) {
     this.className = className;
     this.shortName = shortName;

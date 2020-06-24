@@ -206,6 +206,7 @@ class DoubleWriter extends ArrowFieldWriter {
   }
 }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3365
 class DateWriter extends ArrowFieldWriter {
   private DateDayVector dateDayVector;
 
@@ -259,6 +260,7 @@ class StringWriter extends ArrowFieldWriter {
 
   @Override
   public void setValue(Object data, int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3365
     byte[] bytes =
         (String.valueOf(data)).getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);

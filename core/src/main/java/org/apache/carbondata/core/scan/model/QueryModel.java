@@ -119,8 +119,10 @@ public class QueryModel {
 
   private QueryModel(CarbonTable carbonTable) {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     this.table = carbonTable;
     this.queryId = String.valueOf(System.nanoTime());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3509
     this.preFetchData = CarbonProperties.getQueryPrefetchEnable();
   }
 
@@ -129,6 +131,7 @@ public class QueryModel {
   }
 
   public static void processFilterExpression(FilterProcessVO processVO, Expression filterExpression,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3287
       final boolean[] isFilterDimensions, final boolean[] isFilterMeasures,
       CarbonTable carbonTable) {
     if (null != filterExpression) {
@@ -177,6 +180,7 @@ public class QueryModel {
     CarbonMeasure msr;
     String columnName;
     columnName = col.getColumnName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     col.reset();
     dim = CarbonUtil
         .findDimension(processVO.getCarbonDimensions(), columnName);
@@ -187,6 +191,7 @@ public class QueryModel {
       col.setCarbonColumn(dim);
       col.setDimension(dim);
       col.setDimension(true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
       if (null != isFilterDimensions) {
         isFilterDimensions[dim.getOrdinal()] = true;
       }
@@ -197,6 +202,7 @@ public class QueryModel {
       if (null != isFilterMeasures) {
         isFilterMeasures[msr.getOrdinal()] = true;
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3287
     } else if (null != CarbonUtil.findDimension(processVO.getImplicitDimensions(), columnName)) {
       // check if this is an implicit dimension
       dim = CarbonUtil.findDimension(processVO.getImplicitDimensions(), columnName);
@@ -224,6 +230,7 @@ public class QueryModel {
    */
   public CarbonColumn[] getProjectionColumns() {
     CarbonColumn[] carbonColumns =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         new CarbonColumn[getProjectionDimensions().size() + getProjectionMeasures().size()];
     for (ProjectionDimension dimension : getProjectionDimensions()) {
       carbonColumns[dimension.getOrdinal()] = dimension.getDimension();
@@ -254,6 +261,7 @@ public class QueryModel {
   }
 
   public void setQueryId(String queryId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     this.queryId = queryId;
   }
 
@@ -272,6 +280,7 @@ public class QueryModel {
   }
 
   public IndexFilter getIndexFilter() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     return indexFilter;
   }
 
@@ -283,6 +292,7 @@ public class QueryModel {
    * @return the absoluteTableIdentifier
    */
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     return table.getAbsoluteTableIdentifier();
   }
 
@@ -318,6 +328,7 @@ public class QueryModel {
   }
 
   public DataTypeConverter getConverter() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1238
     return converter;
   }
 
@@ -326,6 +337,7 @@ public class QueryModel {
   }
 
   public boolean[] getIsFilterDimensions() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     return isFilterDimensions;
   }
 
@@ -342,6 +354,7 @@ public class QueryModel {
   }
 
   public boolean isReadPageByPage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
     return readPageByPage;
   }
 
@@ -350,6 +363,7 @@ public class QueryModel {
   }
 
   public boolean isRequiredRowId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2390
     return requiredRowId;
   }
 
@@ -358,6 +372,7 @@ public class QueryModel {
   }
 
   public boolean isFG() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2614
     return isFG;
   }
 
@@ -374,6 +389,7 @@ public class QueryModel {
   }
 
   public boolean isDirectVectorFill() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3011
     return isDirectVectorFill;
   }
 
@@ -382,6 +398,7 @@ public class QueryModel {
   }
 
   public boolean isReadOnlyDelta() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
     return readOnlyDelta;
   }
 
@@ -391,9 +408,11 @@ public class QueryModel {
 
   @Override
   public String toString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2377
     return String.format("scan on table %s.%s, %d projection columns with filter (%s)",
         table.getDatabaseName(), table.getTableName(),
         projection.getDimensions().size() + projection.getMeasures().size(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         indexFilter.getExpression().toString());
   }
 
@@ -414,6 +433,7 @@ public class QueryModel {
     private List<CarbonDimension> implicitDimensions;
 
     public FilterProcessVO(List<CarbonDimension> carbonDimensions,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
         List<CarbonMeasure> carbonMeasures, List<CarbonDimension> implicitDimensions) {
       this.carbonDimensions = carbonDimensions;
       this.carbonMeasures = carbonMeasures;

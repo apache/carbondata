@@ -50,6 +50,7 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
     ExpressionResult val2 = erRes;
     if (elRes.isNull() || erRes.isNull()) {
       if (isNotNull) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         elRes.set(DataTypes.BOOLEAN, elRes.isNull() != erRes.isNull());
       } else {
         elRes.set(DataTypes.BOOLEAN, false);
@@ -63,7 +64,9 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
         val2 = elRes;
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     DataType dataType = val1.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BOOLEAN) {
       result = !val1.getBoolean().equals(val2.getBoolean());
     } else if (dataType == DataTypes.STRING) {
@@ -74,12 +77,14 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
       result = val1.getInt().intValue() != val2.getInt().intValue();
     } else if (dataType == DataTypes.DOUBLE) {
       result = val1.getDouble().doubleValue() != val2.getDouble().doubleValue();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     } else if (dataType == DataTypes.DATE) {
       result = val1.getTime().longValue() != val2.getTime().longValue();
     } else if (dataType == DataTypes.TIMESTAMP) {
       result = val1.getTimeAsMillisecond().longValue() != val2.getTimeAsMillisecond().longValue();
     } else if (dataType == DataTypes.LONG) {
       result = elRes.getLong().longValue() != (erRes.getLong()).longValue();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       result = elRes.getDecimal().compareTo(erRes.getDecimal()) != 0;
     } else {
@@ -102,6 +107,7 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
 
   @Override
   public String getStatement() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     return left.getStatement() + " <> " + right.getStatement();
   }
 }

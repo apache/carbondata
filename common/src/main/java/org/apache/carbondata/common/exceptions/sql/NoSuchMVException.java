@@ -34,6 +34,7 @@ public class NoSuchMVException extends MalformedCarbonCommandException {
   private static final long serialVersionUID = 1L;
 
   public NoSuchMVException(String databaseName, String mvName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     super("Materialized view with name " + databaseName + "." + mvName + " does not exist");
   }
 

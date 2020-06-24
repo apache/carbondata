@@ -34,6 +34,7 @@ public class ColumnExpressionTest {
 
   @Before public void setUp() {
     String columnName = "IMEI";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     DataType dataType = DataTypes.STRING;
     columnExpression = new ColumnExpression(columnName, dataType);
   }
@@ -46,8 +47,10 @@ public class ColumnExpressionTest {
         return 1;
       }
     };
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expectedValue = new ExpressionResult(DataTypes.INT, 1);
     assertEquals(expectedValue, columnExpression.evaluate(rowImpl));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     assertEquals(1, rowImpl.size());
   }
 

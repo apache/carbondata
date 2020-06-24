@@ -50,6 +50,7 @@ class ScanBenchmark implements Command {
   private DataFile file;
   private List<String> outPuts;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
   ScanBenchmark(String dataFolder, List<String> outPuts) {
     this.dataFolder = dataFolder;
     this.outPuts = outPuts;
@@ -61,12 +62,14 @@ class ScanBenchmark implements Command {
       String filePath = line.getOptionValue("f");
       file = new DataFile(FileFactory.getCarbonFile(filePath));
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
       FileCollector collector = new FileCollector(outPuts);
       collector.collectFiles(dataFolder);
       if (collector.getNumDataFiles() == 0) {
         return;
       }
       Map<String, DataFile> dataFiles = collector.getDataFiles();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3053
       Iterator<DataFile> iterator = dataFiles.values().iterator();
       // use the first file and close the rest
       file = iterator.next();
@@ -75,6 +78,7 @@ class ScanBenchmark implements Command {
       }
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
     outPuts.add("\n## Benchmark");
     final AtomicReference<FileHeader> fileHeaderRef = new AtomicReference<>();
     final AtomicReference<FileFooter3> fileFoorterRef = new AtomicReference<>();
@@ -111,6 +115,7 @@ class ScanBenchmark implements Command {
     if (line.hasOption("c")) {
       String columnName = line.getOptionValue("c");
       outPuts.add("\nScan column '" + columnName + "'");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
 
       final DataFileFooter footer = convertedFooterRef.get();
       final AtomicReference<AbstractRawColumnChunk> columnChunk = new AtomicReference<>();
@@ -118,6 +123,7 @@ class ScanBenchmark implements Command {
       final boolean dimension = file.getColumn(columnName).isDimensionColumn();
       for (int i = 0; i < footer.getBlockletList().size(); i++) {
         final int blockletId = i;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
         outPuts.add(String.format("Blocklet#%d: total size %s, %,d pages, %,d rows",
             blockletId,
             Strings.formatSize(file.getColumnDataSizeInBytes(blockletId, columnIndex)),
@@ -149,10 +155,12 @@ class ScanBenchmark implements Command {
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3053
     file.close();
   }
 
   interface Operation {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     void run() throws IOException;
   }
 
@@ -161,6 +169,7 @@ class ScanBenchmark implements Command {
     start = System.nanoTime();
     op.run();
     end = System.nanoTime();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
     outPuts.add(String.format("%s takes %,d us", opName, (end - start) / 1000));
   }
 
@@ -170,6 +179,7 @@ class ScanBenchmark implements Command {
         new TableBlockInfo(file.getFilePath(), file.getFooterOffset(),
             segmentId, new String[]{"localhost"}, file.getFileSizeInBytes(),
             ColumnarFormatVersion.V3, new String[0]);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
 
     DataFileFooterConverterV3 converter = new DataFileFooterConverterV3();
     return converter.readDataFileFooter(blockInfo);
@@ -190,6 +200,7 @@ class ScanBenchmark implements Command {
     if (dimension) {
       dimensionColumnChunkReader = CarbonDataReaderFactory.getInstance()
           .getDimensionColumnChunkReader(ColumnarFormatVersion.V3, blockletInfo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
               file.getFilePath(), false);
       return dimensionColumnChunkReader.readRawDimensionChunk(file.getFileReader(), columnIndex);
     } else {
@@ -203,20 +214,24 @@ class ScanBenchmark implements Command {
   }
 
   private DimensionColumnPage[] decompressDimensionPages(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       AbstractRawColumnChunk rawColumnChunk, int numPages) throws IOException {
     DimensionColumnPage[] pages = new DimensionColumnPage[numPages];
     for (int i = 0; i < pages.length; i++) {
       pages[i] = dimensionColumnChunkReader.decodeColumnPage(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
           (DimensionRawColumnChunk) rawColumnChunk, i, null);
     }
     return pages;
   }
 
   private ColumnPage[] decompressMeasurePages(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       AbstractRawColumnChunk rawColumnChunk, int numPages) throws IOException {
     ColumnPage[] pages = new ColumnPage[numPages];
     for (int i = 0; i < pages.length; i++) {
       pages[i] = measureColumnChunkReader.decodeColumnPage(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
           (MeasureRawColumnChunk) rawColumnChunk, i, null);
     }
     return pages;

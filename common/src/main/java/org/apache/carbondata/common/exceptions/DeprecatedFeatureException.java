@@ -20,10 +20,12 @@ package org.apache.carbondata.common.exceptions;
 public class DeprecatedFeatureException extends RuntimeException {
 
   private DeprecatedFeatureException(String featureName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3606
     super(featureName + " is deprecated in CarbonData 2.0");
   }
 
   public static void globalDictNotSupported() throws DeprecatedFeatureException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     throw new DeprecatedFeatureException("Global dictionary");
   }
 

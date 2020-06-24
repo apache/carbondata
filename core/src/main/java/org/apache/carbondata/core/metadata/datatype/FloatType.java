@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata.datatype;
 
 class FloatType extends DataType {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
 
   static final DataType FLOAT = new FloatType(DataTypes.FLOAT_TYPE_ID, 4, "FLOAT", 4);
 

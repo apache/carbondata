@@ -28,5 +28,6 @@ public interface ColumnUniqueIdService {
    * @param columnSchema
    * @return generate unique id
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
   String generateUniqueId(ColumnSchema columnSchema);
 }

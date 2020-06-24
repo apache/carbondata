@@ -36,8 +36,11 @@ public class LazyColumnPage extends ColumnPage {
   private ColumnPageValueConverter converter;
 
   private LazyColumnPage(ColumnPage columnPage, ColumnPageValueConverter converter) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     super(columnPage.getColumnPageEncoderMeta(), columnPage.getPageSize());
     this.columnPage = columnPage;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
     this.converter = converter;
   }
 
@@ -52,7 +55,9 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public long getLong(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     DataType dataType = columnPage.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       return converter.decodeLong(columnPage.getByte(rowId));
     } else if (dataType == DataTypes.SHORT) {
@@ -71,7 +76,9 @@ public class LazyColumnPage extends ColumnPage {
   @Override
   public double getDouble(int rowId) {
     DataType dataType = columnPage.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
       return converter.decodeDouble(columnPage.getByte(rowId));
     } else if (dataType == DataTypes.SHORT) {
       return converter.decodeDouble(columnPage.getShort(rowId));
@@ -85,6 +92,7 @@ public class LazyColumnPage extends ColumnPage {
       return converter.decodeDouble(columnPage.getFloat(rowId));
     } else if (dataType == DataTypes.DOUBLE) {
       return columnPage.getDouble(rowId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     } else if (dataType == DataTypes.BINARY) {
       return converter.decodeDouble(columnPage.getByte(rowId));
     } else {
@@ -94,6 +102,7 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public float getFloat(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     return (float) getDouble(rowId);
   }
 
@@ -101,6 +110,7 @@ public class LazyColumnPage extends ColumnPage {
   public BigDecimal getDecimal(int rowId) {
     DecimalConverterFactory.DecimalConverter decimalConverter =
         ((DecimalColumnPage) columnPage).getDecimalConverter();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     DataType dataType = columnPage.getDataType();
     if (dataType == DataTypes.BYTE) {
       return decimalConverter.getDecimal(converter.decodeLong(columnPage.getByte(rowId)));
@@ -110,7 +120,9 @@ public class LazyColumnPage extends ColumnPage {
       return decimalConverter.getDecimal(converter.decodeLong(columnPage.getShortInt(rowId)));
     } else if (dataType == DataTypes.INT) {
       return decimalConverter.getDecimal(converter.decodeLong(columnPage.getInt(rowId)));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (dataType == DataTypes.LONG || DataTypes.isDecimal(dataType)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1098
       return columnPage.getDecimal(rowId);
     } else {
       throw new RuntimeException("internal error: " + this.toString());
@@ -119,11 +131,13 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public byte[] getBytes(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
     return columnPage.getBytes(rowId);
   }
 
   @Override
   public byte[] getBytePage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1248
     throw new UnsupportedOperationException("internal error");
   }
 
@@ -264,6 +278,7 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public void putFloat(int rowId, float value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     throw new UnsupportedOperationException("internal error");
   }
 
@@ -284,6 +299,7 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public byte getByte(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1756
     return columnPage.getByte(rowId);
   }
 

@@ -159,6 +159,7 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
 
   @Override
   public void putByte(int rowId, byte value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     if (!filteredRows[rowId]) {
       columnVector.putByte(counter++, value);
     }
@@ -243,11 +244,13 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
 
   @Override
   public DataType getType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1779
     return columnVector.getType();
   }
 
   @Override
   public DataType getBlockDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1946
     return blockDataType;
   }
 
@@ -273,11 +276,13 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
 
   @Override
   public CarbonColumnVector getDictionaryVector() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3143
     return this.columnVector.getDictionaryVector();
   }
 
   @Override
   public void putFloats(int rowId, int count, float[] src, int srcIndex) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     for (int i = srcIndex; i < count; i++) {
       if (!filteredRows[rowId]) {
         columnVector.putFloat(counter++, src[i]);

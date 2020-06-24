@@ -52,6 +52,7 @@ public abstract class IndexWriter {
       Segment segment, String shardName) {
     this.tablePath = tablePath;
     this.segmentId = segment.getSegmentNo();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.indexPath = CarbonTablePath.getIndexStorePathOnShardName(
         tablePath, segmentId, indexName, shardName);
     this.indexColumns = indexColumns;
@@ -109,6 +110,7 @@ public abstract class IndexWriter {
    * @throws IOException if IO fails
    */
   protected void commitFile(String indexFile) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     if (!indexFile.startsWith(indexPath)) {
       throw new UnsupportedOperationException(
           "index file " + indexFile + " is not written in provided directory path "
@@ -120,10 +122,12 @@ public abstract class IndexWriter {
     String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
     if (carbonFilePath.length() > 0) {
       carbonFilePath = segmentPath + carbonFilePath;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       FileFactory.mkdirs(carbonFilePath);
     } else {
       carbonFilePath = segmentPath;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     CarbonUtil.copyCarbonDataFileToCarbonStorePath(indexFile, carbonFilePath, 0);
   }
 
@@ -136,6 +140,7 @@ public abstract class IndexWriter {
   }
 
   public boolean isWritingFinished() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2520
     return isWritingFinished;
   }
 

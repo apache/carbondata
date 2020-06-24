@@ -67,6 +67,7 @@ public class IndexSchema implements Serializable, Writable {
   protected TableSchema childSchema;
 
   public IndexSchema(String indexName, String providerName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.indexName = indexName;
     this.providerName = providerName;
   }
@@ -107,6 +108,7 @@ public class IndexSchema implements Serializable, Writable {
    * @return
    */
   public boolean isIndex() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return true;
   }
 
@@ -115,6 +117,7 @@ public class IndexSchema implements Serializable, Writable {
    */
   public boolean isLazy() {
     String deferredRebuild = getProperties().get(IndexProperty.DEFERRED_REBUILD);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2416
     return deferredRebuild != null && deferredRebuild.equalsIgnoreCase("true");
   }
 
@@ -145,10 +148,14 @@ public class IndexSchema implements Serializable, Writable {
 
   @Override
   public void readFields(DataInput in) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.indexName = in.readUTF();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2172
     this.providerName = in.readUTF();
     boolean isRelationIdentifierExists = in.readBoolean();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2545
     if (isRelationIdentifierExists) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1523
       this.relationIdentifier = new RelationIdentifier(null, null, null);
       this.relationIdentifier.readFields(in);
     }
@@ -172,11 +179,13 @@ public class IndexSchema implements Serializable, Writable {
    */
   public String[] getIndexColumns()
       throws MalformedIndexCommandException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
     String columns = getProperties().get(INDEX_COLUMNS);
     if (columns == null) {
       columns = getProperties().get(INDEX_COLUMNS.toLowerCase());
     }
     if (columns == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       throw new MalformedIndexCommandException(INDEX_COLUMNS + " INDEXPROPERTY is required");
     } else if (StringUtils.isBlank(columns)) {
       throw new MalformedIndexCommandException(INDEX_COLUMNS + " INDEXPROPERTY is blank");
@@ -189,6 +198,7 @@ public class IndexSchema implements Serializable, Writable {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     IndexSchema that = (IndexSchema) o;
     return Objects.equals(indexName, that.indexName);
   }

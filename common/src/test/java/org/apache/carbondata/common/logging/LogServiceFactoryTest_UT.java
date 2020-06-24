@@ -32,6 +32,7 @@ public class LogServiceFactoryTest_UT extends TestCase {
   }
 
   @Test public void testGetLogService() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
     Logger logger = LogServiceFactory.getLogService(this.getClass().getName());
     assertTrue(logger instanceof Logger);
   }

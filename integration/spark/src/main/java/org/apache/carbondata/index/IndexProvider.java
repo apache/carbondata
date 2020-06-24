@@ -46,6 +46,7 @@ public class IndexProvider {
 
   public IndexProvider(CarbonTable table, IndexSchema schema, SparkSession sparkSession)
       throws MalformedIndexCommandException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3776
     this.mainTable = table;
     this.indexSchema = schema;
     this.sparkSession = sparkSession;

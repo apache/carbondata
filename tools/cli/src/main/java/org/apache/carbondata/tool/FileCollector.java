@@ -56,6 +56,7 @@ class FileCollector {
   private CarbonFile tableStatusFile;
   private CarbonFile schemaFile;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
   FileCollector(List<String> outPuts) {
     this.outPuts = outPuts;
   }
@@ -63,6 +64,7 @@ class FileCollector {
   void collectFiles(String dataFolder) throws IOException {
     Set<String> shards = new HashSet<>();
     CarbonFile folder = FileFactory.getCarbonFile(dataFolder);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3544
     List<CarbonFile> files = new ArrayList<>();
     if (folder.exists()) {
       if (folder.isDirectory()) {
@@ -85,6 +87,7 @@ class FileCollector {
       } else if (file.getName().startsWith(CarbonTablePath.SCHEMA_FILE)) {
         schemaFile = file;
       } else if (isStreamFile(file.getName())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
         outPuts.add(("WARN: input path contains streaming file, this tool does not support it yet, "
             + "skipping it..."));
 
@@ -151,6 +154,7 @@ class FileCollector {
       System.out.println("no data file found");
       return;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
     outPuts.add("## Summary");
     String format = String
         .format("total: %,d blocks, %,d shards, %,d blocklets, %,d pages, %,d rows, %s", numBlock,
@@ -165,6 +169,7 @@ class FileCollector {
   }
 
   private String makeSortColumnsString(List<ColumnSchema> columnList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3349
     StringBuilder builder = new StringBuilder();
     for (ColumnSchema column : columnList) {
       if (column.isDimension()) {
@@ -186,6 +191,7 @@ class FileCollector {
   public void collectSortColumns(String segmentFolder) {
     CarbonFile[] files = SegmentIndexFileStore.getCarbonIndexFiles(
         segmentFolder, FileFactory.getConfiguration());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3429
     if (files.length == 0) {
       throw new IllegalArgumentException("\"" + segmentFolder + "\" is not a valid Segment Folder");
     }
@@ -218,6 +224,7 @@ class FileCollector {
   }
 
   public void close() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3053
     for (DataFile file : dataFiles.values()) {
       file.close();
     }

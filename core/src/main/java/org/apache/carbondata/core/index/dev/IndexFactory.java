@@ -48,6 +48,7 @@ public abstract class IndexFactory<T extends Index> {
 
   public IndexFactory(CarbonTable carbonTable, IndexSchema indexSchema) {
     this.carbonTable = carbonTable;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.indexSchema = indexSchema;
   }
 
@@ -60,6 +61,7 @@ public abstract class IndexFactory<T extends Index> {
   }
 
   public IndexSchema getIndexSchema() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return indexSchema;
   }
 
@@ -87,6 +89,7 @@ public abstract class IndexFactory<T extends Index> {
    */
   public Map<Segment, List<CoarseGrainIndex>> getIndexes(List<Segment> segments,
       IndexFilter filter) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     Map<Segment, List<CoarseGrainIndex>> indexes = new HashMap<>();
     for (Segment segment : segments) {
       indexes.put(segment, (List<CoarseGrainIndex>) this.getIndexes(segment));
@@ -99,6 +102,7 @@ public abstract class IndexFactory<T extends Index> {
    * matches the partition.
    */
   public Map<Segment, List<CoarseGrainIndex>> getIndexes(List<Segment> segments,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
       Set<Path> partitionLocations, IndexFilter indexFilter) throws IOException {
     Map<Segment, List<CoarseGrainIndex>> indexes = new HashMap<>();
     for (Segment segment : segments) {

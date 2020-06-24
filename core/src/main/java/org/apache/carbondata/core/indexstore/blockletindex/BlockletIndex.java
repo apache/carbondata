@@ -54,6 +54,7 @@ public class BlockletIndex extends BlockIndex implements Serializable {
 
   @Override
   public void init(IndexModel indexModel) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     super.init(indexModel);
   }
 
@@ -65,7 +66,9 @@ public class BlockletIndex extends BlockIndex implements Serializable {
    */
   @Override
   protected IndexRowImpl loadMetadata(CarbonRowSchema[] taskSummarySchema,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       SegmentProperties segmentProperties, BlockletIndexModel blockletIndexModel,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       List<DataFileFooter> indexInfo) {
     return loadBlockletMetaInfo(taskSummarySchema, segmentProperties, blockletIndexModel,
         indexInfo);
@@ -73,11 +76,13 @@ public class BlockletIndex extends BlockIndex implements Serializable {
 
   @Override
   protected CarbonRowSchema[] getTaskSummarySchema() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     return segmentPropertiesWrapper.getTaskSummarySchemaForBlocklet(false, isFilePathStored);
   }
 
   @Override
   protected CarbonRowSchema[] getFileFooterEntrySchema() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3482
     return segmentPropertiesWrapper.getBlockletFileFooterEntrySchema();
   }
 
@@ -88,7 +93,9 @@ public class BlockletIndex extends BlockIndex implements Serializable {
    * @param indexInfo
    */
   private IndexRowImpl loadBlockletMetaInfo(CarbonRowSchema[] taskSummarySchema,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       SegmentProperties segmentProperties, BlockletIndexModel blockletIndexModel,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       List<DataFileFooter> indexInfo) {
     String tempFilePath = null;
     IndexRowImpl summaryRow = null;
@@ -100,8 +107,10 @@ public class BlockletIndex extends BlockIndex implements Serializable {
     for (DataFileFooter fileFooter : indexInfo) {
       // update the min max flag for summary row
       updateMinMaxFlag(fileFooter, summaryRowMinMaxFlag);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       TableBlockInfo blockInfo = fileFooter.getBlockInfo();
       BlockMetaInfo blockMetaInfo =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           blockletIndexModel.getBlockMetaInfoMap().get(blockInfo.getFilePath());
       // Here it loads info about all blocklets of index
       // Only add if the file exists physically. There are scenarios which index file exists inside
@@ -110,20 +119,27 @@ public class BlockletIndex extends BlockIndex implements Serializable {
       if (blockMetaInfo != null) {
         // this case is for CACHE_LEVEL = BLOCKLET
         // blocklet ID will start from 0 again only when part file path is changed
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2039
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2645
         if (null == tempFilePath || !tempFilePath.equals(blockInfo.getFilePath())) {
           tempFilePath = blockInfo.getFilePath();
           relativeBlockletId = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2929
           blockNum++;
         }
         summaryRow = loadToUnsafe(schema, taskSummarySchema, fileFooter, segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
             getMinMaxCacheColumns(), blockInfo.getFilePath(), summaryRow,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2071
             blockMetaInfo, relativeBlockletId);
         // this is done because relative blocklet id need to be incremented based on the
         // total number of blocklets
         relativeBlockletId += fileFooter.getBlockletList().size();
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3293
     summaryRow.setLong(0L, TASK_ROW_COUNT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     setMinMaxFlagForTaskSummary(summaryRow, taskSummarySchema, segmentProperties,
         summaryRowMinMaxFlag);
     return summaryRow;
@@ -131,7 +147,9 @@ public class BlockletIndex extends BlockIndex implements Serializable {
 
   private IndexRowImpl loadToUnsafe(CarbonRowSchema[] schema, CarbonRowSchema[] taskSummarySchema,
       DataFileFooter fileFooter, SegmentProperties segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       List<CarbonColumn> minMaxCacheColumns, String filePath, IndexRowImpl summaryRow,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2071
       BlockMetaInfo blockMetaInfo, int relativeBlockletId) {
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
     // Add one row to maintain task level min max for segment pruning
@@ -143,10 +161,12 @@ public class BlockletIndex extends BlockIndex implements Serializable {
       int ordinal = 0;
       int taskMinMaxOrdinal = 1;
       BlockletInfo blockletInfo = blockletList.get(index);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
       blockletInfo.setSorted(fileFooter.isSorted());
       BlockletMinMaxIndex minMaxIndex = blockletInfo.getBlockletIndex().getMinMaxIndex();
       // get min max values for columns to be cached
       byte[][] minValuesForColumnsToBeCached = BlockletIndexUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
           .getMinMaxForColumnsToBeCached(segmentProperties, minMaxCacheColumns,
               minMaxIndex.getMinValues());
       byte[][] maxValuesForColumnsToBeCached = BlockletIndexUtil
@@ -179,11 +199,13 @@ public class BlockletIndex extends BlockIndex implements Serializable {
       byte[] serializedData;
       try {
         // Add block footer offset, it is used if we need to read footer of block
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         row.setLong(fileFooter.getBlockInfo().getBlockOffset(), ordinal++);
         setLocations(blockMetaInfo.getLocationInfo(), row, ordinal++);
         // Store block size
         row.setLong(blockMetaInfo.getSize(), ordinal++);
         // add min max flag for all the dimension columns
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3036
         addMinMaxFlagValues(row, schema[ordinal], minMaxFlagValuesForColumnsToBeCached, ordinal);
         ordinal++;
         // add blocklet info
@@ -196,6 +218,7 @@ public class BlockletIndex extends BlockIndex implements Serializable {
         row.setShort((short) blockletInfo.getNumberOfPages(), ordinal++);
         // for relative blocklet id i.e blocklet id that belongs to a particular carbondata file
         row.setShort((short) relativeBlockletId++, ordinal);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2701
         memoryDMStore.addIndexRow(schema, row);
       } catch (Exception e) {
         throw new RuntimeException(e);
@@ -207,6 +230,7 @@ public class BlockletIndex extends BlockIndex implements Serializable {
   @Override
   public ExtendedBlocklet getDetailedBlocklet(String blockletId) {
     int absoluteBlockletId = Integer.parseInt(blockletId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     IndexRow row = memoryDMStore.getIndexRow(getFileFooterEntrySchema(), absoluteBlockletId);
     short relativeBlockletId = row.getShort(BLOCKLET_ID_INDEX);
     String filePath = getFilePath();
@@ -216,6 +240,7 @@ public class BlockletIndex extends BlockIndex implements Serializable {
 
   @Override
   protected short getBlockletId(IndexRow indexRow) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     return indexRow.getShort(BLOCKLET_ID_INDEX);
   }
 
@@ -233,6 +258,7 @@ public class BlockletIndex extends BlockIndex implements Serializable {
     blocklet.setColumnSchema(getColumnSchema());
     blocklet.setUseMinMaxForPruning(useMinMaxForPruning);
     blocklet.setIsBlockCache(false);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     blocklet.setIndexRow(row);
     return blocklet;
   }

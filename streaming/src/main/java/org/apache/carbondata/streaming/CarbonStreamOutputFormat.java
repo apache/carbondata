@@ -55,6 +55,7 @@ public class CarbonStreamOutputFormat extends FileOutputFormat<Void, Object> {
 
   @Override
   public RecordWriter<Void, Object> getRecordWriter(TaskAttemptContext job)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
     return new CarbonStreamRecordWriter(job);
   }
@@ -76,6 +77,7 @@ public class CarbonStreamOutputFormat extends FileOutputFormat<Void, Object> {
   }
 
   public static void setSegmentId(Configuration hadoopConf, String segmentId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     if (segmentId != null) {
       hadoopConf.set(SEGMENT_ID, segmentId);
     }

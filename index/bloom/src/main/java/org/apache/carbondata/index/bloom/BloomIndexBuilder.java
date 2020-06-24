@@ -34,6 +34,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 @InterfaceAudience.Internal
 public class BloomIndexBuilder extends AbstractBloomIndexWriter implements IndexBuilder {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
   BloomIndexBuilder(String tablePath, String indexName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp,
       boolean bloomCompress) throws IOException {
@@ -50,6 +51,7 @@ public class BloomIndexBuilder extends AbstractBloomIndexWriter implements Index
   public void addRow(int blockletId, int pageId, int rowId, Object[] values) {
     if (currentBlockletId != blockletId) {
       // new blocklet started, flush bloom filter to index fileh
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       super.writeBloomIndexFile();
       currentBlockletId = blockletId;
     }
@@ -63,6 +65,7 @@ public class BloomIndexBuilder extends AbstractBloomIndexWriter implements Index
   @Override
   protected byte[] convertNonDictionaryValue(int indexColIdx, Object value) {
     // no dictionary measure columns will be of original data, so convert it to bytes
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     if (DataTypeUtil.isPrimitiveColumn(indexColumns.get(indexColIdx).getDataType())) {
       return CarbonUtil.getValueAsBytes(indexColumns.get(indexColIdx).getDataType(), value);
     }
@@ -71,8 +74,10 @@ public class BloomIndexBuilder extends AbstractBloomIndexWriter implements Index
 
   @Override
   public void finish() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2653
     if (!isWritingFinished()) {
       if (indexBloomFilters.size() > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         writeBloomIndexFile();
       }
       releaseResouce();
@@ -83,6 +88,7 @@ public class BloomIndexBuilder extends AbstractBloomIndexWriter implements Index
   @Override
   protected byte[] convertDictionaryValue(int indexColIdx, Object value) {
     // input value from IndexIndexRebuildRDD is already decoded as surrogate key
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2727
     return CarbonUtil.getValueAsBytes(DataTypes.INT, value);
   }
 
@@ -93,6 +99,7 @@ public class BloomIndexBuilder extends AbstractBloomIndexWriter implements Index
 
   @Override
   public boolean isIndexForCarbonRawBytes() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2637
     return true;
   }
 }

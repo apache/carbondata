@@ -30,11 +30,13 @@ public abstract class AbstractCarbonColumnarVector
   protected CarbonColumnVector columnVector;
 
   public AbstractCarbonColumnarVector(CarbonColumnVector columnVector) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
     this.columnVector = columnVector;
   }
 
   @Override
   public void putShorts(int rowId, int count, short value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
     throw new UnsupportedOperationException("Not allowed from here " + getClass().getName());
   }
 

@@ -111,6 +111,7 @@ public class CarbondataSplitManager extends HiveSplitManager {
       return super.getSplits(transactionHandle, session, layoutHandle, splitSchedulingStrategy);
     }
     // for hive metastore, get table location from catalog table's tablePath
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3786
     String location = table.getStorage().getSerdeParameters().get("tablePath");
     if (StringUtils.isEmpty(location))  {
       // file metastore case tablePath can be null, so get from location
@@ -131,14 +132,17 @@ public class CarbondataSplitManager extends HiveSplitManager {
             schemaTableName.getTableName()), new Path(location));
     configuration = carbonTableReader.updateS3Properties(configuration);
     // set the hadoop configuration to thread local, so that FileFactory can use it.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3282
     ThreadLocalSessionInfo.setConfigurationToCurrentThread(configuration);
     CarbonTableCacheModel cache =
         carbonTableReader.getCarbonCache(schemaTableName, location, configuration);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     Expression filters = PrestoFilterUtil.parseFilterExpression(predicate);
     try {
 
       List<CarbonLocalMultiBlockSplit> splits =
           carbonTableReader.getInputSplits(cache, filters, predicate, configuration);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
 
       ImmutableList.Builder<ConnectorSplit> cSplits = ImmutableList.builder();
       long index = 0;
@@ -155,6 +159,7 @@ public class CarbondataSplitManager extends HiveSplitManager {
         cSplits.add(new HiveSplit(schemaTableName.getSchemaName(), schemaTableName.getTableName(),
             schemaTableName.getTableName(), "", 0, 0, 0, properties, new ArrayList(),
             getHostAddresses(split.getLocations()), OptionalInt.empty(), false, predicate,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3311
             new HashMap<>(), Optional.empty(), false));
       }
 
@@ -171,6 +176,7 @@ public class CarbondataSplitManager extends HiveSplitManager {
   }
 
   private static List<HostAddress> getHostAddresses(String[] hosts) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3194
     return Arrays.stream(hosts).map(HostAddress::fromString).collect(toImmutableList());
   }
 

@@ -66,6 +66,7 @@ public final class CarbonMetadata {
    * @param tableName
    */
   public void removeTable(String databaseName, String tableName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1820
     removeTable(CarbonTable.buildUniqueName(databaseName, tableName));
   }
 
@@ -76,8 +77,10 @@ public final class CarbonMetadata {
    */
   public void loadTableMetadata(TableInfo tableInfo) {
     CarbonTable carbonTable = tableInfoMap.get(convertToLowerCase(tableInfo.getTableUniqueName()));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
     if (null == carbonTable ||
         carbonTable.getTableLastUpdatedTime() < tableInfo.getLastUpdatedTime()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1286
       carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
       tableInfoMap.put(convertToLowerCase(tableInfo.getTableUniqueName()), carbonTable);
     }
@@ -101,6 +104,7 @@ public final class CarbonMetadata {
    * @return
    */
   public CarbonTable getCarbonTable(String databaseName, String tableName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1820
     return getCarbonTable(CarbonTable.buildUniqueName(databaseName, tableName));
   }
 
@@ -172,6 +176,7 @@ public final class CarbonMetadata {
   }
 
   public List<CarbonTable> getAllTables() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3480
     return new ArrayList<>(tableInfoMap.values());
   }
 

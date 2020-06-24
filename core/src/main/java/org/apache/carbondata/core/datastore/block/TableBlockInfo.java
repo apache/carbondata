@@ -93,6 +93,7 @@ public class TableBlockInfo implements Distributable, Serializable {
    * so we allow some deviation for these splits.
    */
   public static final Comparator<Distributable> DATA_SIZE_DESC_COMPARATOR =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2023
       new Comparator<Distributable>() {
         @Override
         public int compare(Distributable o1, Distributable o2) {
@@ -107,6 +108,7 @@ public class TableBlockInfo implements Distributable, Serializable {
       String[] deletedDeltaFilePath) {
     this.filePath = FileFactory.getUpdatedFilePath(filePath);
     this.blockOffset = blockOffset;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     this.segment = Segment.toSegment(segmentId);
     this.locations = locations;
     this.blockLength = blockLength;
@@ -126,11 +128,13 @@ public class TableBlockInfo implements Distributable, Serializable {
     info.filePath = filePath;
     info.blockOffset = blockOffset;
     info.blockLength = blockLength;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     info.segment = segment;
     info.locations = locations;
     info.version = version;
     info.deletedDeltaFilePath = deletedDeltaFilePath;
     info.detailInfo = detailInfo.copy();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     info.indexWriterPath = indexWriterPath;
     return info;
   }
@@ -157,6 +161,7 @@ public class TableBlockInfo implements Distributable, Serializable {
    * @return the segmentId
    */
   public String getSegmentId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     if (segment == null) {
       return null;
     } else {
@@ -172,6 +177,7 @@ public class TableBlockInfo implements Distributable, Serializable {
    * @return the blockLength
    */
   public long getBlockLength() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1537
     if (blockLength == 0) {
       Path path = new Path(filePath);
       try {
@@ -201,6 +207,7 @@ public class TableBlockInfo implements Distributable, Serializable {
       return false;
     }
     TableBlockInfo other = (TableBlockInfo) obj;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     if (!segment.equals(other.segment)) {
       return false;
     }
@@ -211,10 +218,12 @@ public class TableBlockInfo implements Distributable, Serializable {
       return false;
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     if (null == filePath || null == other.filePath) {
       return  false;
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3659
     if (!new Path(filePath).equals(new Path(other.filePath))) {
       return false;
     }
@@ -250,6 +259,7 @@ public class TableBlockInfo implements Distributable, Serializable {
     // the file
     if (CarbonTablePath.isCarbonDataFile(filePath)) {
       int compare = ByteUtil.compare(DataFileUtil.getTaskNo(filePath)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
               .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
           DataFileUtil.getTaskNo(((TableBlockInfo) other).filePath)
               .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
@@ -284,7 +294,9 @@ public class TableBlockInfo implements Distributable, Serializable {
     int result = filePath.hashCode();
     result = 31 * result + (int) (blockOffset ^ (blockOffset >>> 32));
     result = 31 * result + (int) (blockLength ^ (blockLength >>> 32));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     result = 31 * result + segment.hashCode();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     result = 31 * result;
     return result;
   }
@@ -307,10 +319,12 @@ public class TableBlockInfo implements Distributable, Serializable {
   }
 
   public void setFilePath(String filePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1232
     this.filePath = filePath;
   }
 
   public long getFileSize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3523
     return fileSize;
   }
 
@@ -327,6 +341,7 @@ public class TableBlockInfo implements Distributable, Serializable {
   }
 
   public String getIndexWriterPath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return indexWriterPath;
   }
 
@@ -335,6 +350,7 @@ public class TableBlockInfo implements Distributable, Serializable {
   }
 
   public DataFileFooter getDataFileFooter() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
     return dataFileFooter;
   }
 
@@ -344,10 +360,12 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   @Override
   public String toString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2023
     final StringBuilder sb = new StringBuilder("TableBlockInfo{");
     sb.append("filePath='").append(filePath).append('\'');
     sb.append(", blockOffset=").append(blockOffset);
     sb.append(", blockLength=").append(blockLength);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     sb.append(", segment='").append(segment.toString()).append('\'');
     sb.append(", locations=").append(Arrays.toString(locations));
     sb.append('}');

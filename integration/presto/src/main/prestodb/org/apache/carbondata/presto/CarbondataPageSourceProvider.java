@@ -57,6 +57,7 @@ public class CarbondataPageSourceProvider extends HivePageSourceProvider {
   private HdfsEnvironment hdfsEnvironment;
 
   @Inject public CarbondataPageSourceProvider(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3194
       HiveClientConfig hiveClientConfig,
       HdfsEnvironment hdfsEnvironment,
       Set<HiveRecordCursorProvider> cursorProviders,
@@ -82,6 +83,7 @@ public class CarbondataPageSourceProvider extends HivePageSourceProvider {
         new HdfsEnvironment.HdfsContext(session, carbonSplit.getDatabase(), carbonSplit.getTable()),
         new Path(carbonSplit.getSchema().getProperty("tablePath")));
     configuration = carbonTableReader.updateS3Properties(configuration);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
     CarbonTable carbonTable = getCarbonTable(carbonSplit, configuration);
     boolean isDirectVectorFill = carbonTableReader.config.getPushRowFilter() == null ||
         carbonTableReader.config.getPushRowFilter().equalsIgnoreCase("false");
@@ -94,10 +96,12 @@ public class CarbondataPageSourceProvider extends HivePageSourceProvider {
    * @return
    */
   private CarbonTable getCarbonTable(HiveSplit carbonSplit, Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3194
     CarbonTableCacheModel tableCacheModel = carbonTableReader
         .getCarbonCache(new SchemaTableName(carbonSplit.getDatabase(), carbonSplit.getTable()),
             carbonSplit.getSchema().getProperty("tablePath"), configuration);
     checkNotNull(tableCacheModel, "tableCacheModel should not be null");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     checkNotNull(tableCacheModel.getCarbonTable(),
         "tableCacheModel.carbonTable should not be null");
     checkNotNull(tableCacheModel.getCarbonTable().getTableInfo(),

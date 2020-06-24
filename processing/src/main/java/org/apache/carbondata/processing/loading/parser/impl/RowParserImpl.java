@@ -39,7 +39,9 @@ public class RowParserImpl implements RowParser {
   private boolean skipParsing;
 
   public RowParserImpl(DataField[] output, CarbonDataLoadConfiguration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     skipParsing = configuration.isSkipParsers();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3017
     String[] tempComplexDelimiters =
         (String[]) configuration.getDataLoadProperty(DataLoadProcessorConstants.COMPLEX_DELIMITERS);
     ArrayList<String> complexDelimiters = new ArrayList<>();
@@ -74,6 +76,7 @@ public class RowParserImpl implements RowParser {
     inputMapping = new int[input.length];
     int k = 0;
     for (int i = 0; i < fields.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
       if (fields[i].getColumn().isSpatialColumn()) {
         // Index columns are non-schema fields. They are not present in the header. So set
         // the input mapping as -1 for the field and continue
@@ -96,6 +99,7 @@ public class RowParserImpl implements RowParser {
 
   @Override
   public Object[] parseRow(Object[] row) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2919
     if (row == null) {
       return new String[numberOfColumns];
     }
@@ -107,11 +111,13 @@ public class RowParserImpl implements RowParser {
     }
     Object[] out = new Object[genericParsers.length];
     for (int i = 0; i < genericParsers.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
       if (inputMapping[i] == -1) {
         // Skip non-schema columns. They are not present the input row
         continue;
       }
       Object obj = row[inputMapping[i]];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
       if (skipParsing) {
         out[outputMapping[i]] = genericParsers[i].parseRaw(obj);
       } else {

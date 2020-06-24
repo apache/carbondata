@@ -35,6 +35,7 @@ public interface IndexJob extends Serializable {
   void execute(CarbonTable carbonTable, FileInputFormat<Void, BlockletIndexWrapper> format);
 
   List<ExtendedBlocklet> execute(IndexInputFormat indexInputFormat);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
 
   Long executeCountJob(IndexInputFormat indexInputFormat);
 

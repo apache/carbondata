@@ -36,6 +36,8 @@ public abstract class CarbonRowSchema implements Serializable {
   }
 
   public void setDataType(DataType dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     this.dataType = dataType;
   }
 
@@ -54,10 +56,12 @@ public abstract class CarbonRowSchema implements Serializable {
    * @return
    */
   public int getLength() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     return dataType.getSizeInBytes();
   }
 
   public void setBytePosition(int bytePosition) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     this.bytePosition = bytePosition;
   }
 
@@ -99,6 +103,7 @@ public abstract class CarbonRowSchema implements Serializable {
 
     @Override
     public IndexSchemaType getSchemaType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       return IndexSchemaType.FIXED;
     }
   }
@@ -111,6 +116,7 @@ public abstract class CarbonRowSchema implements Serializable {
     }
 
     public VariableCarbonRowSchema(DataType dataType, boolean isVarcharType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
       super(dataType);
       this.isVarcharType = isVarcharType;
     }
@@ -122,6 +128,7 @@ public abstract class CarbonRowSchema implements Serializable {
 
     @Override
     public IndexSchemaType getSchemaType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       return isVarcharType ? IndexSchemaType.VARIABLE_INT : IndexSchemaType.VARIABLE_SHORT;
     }
   }
@@ -146,11 +153,13 @@ public abstract class CarbonRowSchema implements Serializable {
 
     @Override
     public IndexSchemaType getSchemaType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       return IndexSchemaType.STRUCT;
     }
   }
 
   public enum IndexSchemaType {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     FIXED, VARIABLE_INT, VARIABLE_SHORT, STRUCT
   }
 }

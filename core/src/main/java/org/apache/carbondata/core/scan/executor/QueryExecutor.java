@@ -38,6 +38,7 @@ public interface QueryExecutor<E> {
    * @throws IOException if fail to read files
    */
   CarbonIterator<E> execute(QueryModel queryModel) throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
   /**
    * Below method will be used for cleanup

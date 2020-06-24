@@ -34,7 +34,9 @@ public interface FilterProcessor {
    * @throws FilterUnsupportedException
    */
   FilterResolverIntf getFilterResolver(Expression expressionTree,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2458
       AbsoluteTableIdentifier tableIdentifier)
       throws FilterUnsupportedException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
 }

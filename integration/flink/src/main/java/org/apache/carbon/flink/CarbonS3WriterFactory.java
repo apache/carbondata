@@ -39,6 +39,8 @@ public final class CarbonS3WriterFactory extends CarbonWriterFactory {
     final String writeTempPath = writerProperties.getProperty(CarbonS3Property.DATA_TEMP_PATH);
     if (writeTempPath == null) {
       throw new IllegalArgumentException(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
           "Writer property [" + CarbonS3Property.DATA_TEMP_PATH + "] is not set."
       );
     }

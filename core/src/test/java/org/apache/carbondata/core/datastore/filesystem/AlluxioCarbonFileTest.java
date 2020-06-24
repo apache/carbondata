@@ -67,6 +67,7 @@ public class AlluxioCarbonFileTest {
             }
         try {
             FileOutputStream oFile = new FileOutputStream(file, true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
             oFile.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -91,6 +92,7 @@ public class AlluxioCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
                 return new DistributedFileSystem();
             }
 
@@ -127,6 +129,7 @@ public class AlluxioCarbonFileTest {
     @Test
     public void testListFilesForNullListStatus() {
         alluxioCarbonFile = new AlluxioCarbonFile(fileStatusWithOutDirectoryPermission);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2218
         new MockUp<FileStatus>() {
             @Mock
             public Path getPath() {
@@ -159,6 +162,7 @@ public class AlluxioCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2218
                 return new DummyAlluxioFileSystem();
             }
 
@@ -189,6 +193,7 @@ public class AlluxioCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
                 return new DistributedFileSystem();
             }
 
@@ -229,12 +234,16 @@ public class AlluxioCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2218
                 return new DummyAlluxioFileSystem();
             }
         };
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2218
         new MockUp<DummyAlluxioFileSystem>() {
             @Mock
             public FileStatus[] listStatus(Path var1) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
                 return new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
             }
         };
@@ -257,6 +266,7 @@ public class AlluxioCarbonFileTest {
                 );
             }
         };
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2218
         alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
         assertFalse(alluxioCarbonFile.getParentFile().equals(null));
     }
@@ -293,6 +303,7 @@ public class AlluxioCarbonFileTest {
 
     //@Test
     public void testrenameForceForDisributedSystem() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2218
         new MockUp<FileStatus>() {
             @Mock
             public Path getPath() {

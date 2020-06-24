@@ -38,6 +38,7 @@ public interface DimensionDataChunkStore {
   /**
    * Fill the vector with decoded data.
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
   void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo);
 

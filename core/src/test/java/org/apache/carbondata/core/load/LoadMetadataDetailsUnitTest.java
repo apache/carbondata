@@ -113,6 +113,7 @@ public class LoadMetadataDetailsUnitTest {
     try {
       return simpleDateFormat.parse(date).getTime() * 1000;
     } catch (ParseException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Error while parsing " + date + " " + e.getMessage(), e);
       return null;
     }

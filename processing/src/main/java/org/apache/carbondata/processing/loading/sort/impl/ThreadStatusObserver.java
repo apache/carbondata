@@ -39,6 +39,7 @@ public class ThreadStatusObserver {
     // should assign the throwable object else the actual cause for failure can be overridden as
     // all the running threads will throw interrupted exception on calling shutdownNow and
     // will override the throwable object
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     synchronized (lock) {
       if (null == this.throwable) {
         executorService.shutdownNow();

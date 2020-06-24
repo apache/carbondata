@@ -27,6 +27,7 @@ import org.apache.hadoop.conf.Configuration;
 
 public class SDKUtil {
   public static ArrayList listFiles(String sourceFolder, final String suf) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3342
     return listFiles(sourceFolder, suf, new Configuration(true));
   }
 
@@ -34,6 +35,7 @@ public class SDKUtil {
                                     final String suf, Configuration conf) {
     final String sufImageFinal = suf;
     ArrayList result = new ArrayList();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3363
     CarbonFile[] fileList = FileFactory.getCarbonFile(sourceImageFolder, conf).listFiles();
     for (int i = 0; i < fileList.length; i++) {
       if (fileList[i].isDirectory()) {
@@ -76,6 +78,7 @@ public class SDKUtil {
   }
 
   public static Object[] readObjects(Object[] input, int i) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3446
     return (Object[]) input[i];
   }
 

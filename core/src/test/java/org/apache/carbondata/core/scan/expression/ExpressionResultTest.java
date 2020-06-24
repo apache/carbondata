@@ -44,6 +44,7 @@ public class ExpressionResultTest {
   private static ExpressionResult expressionResult;
 
   @BeforeClass public static void setUp() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     expressionResult = new ExpressionResult(DataTypes.INT, null);
   }
 
@@ -52,6 +53,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetIntForString() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "5");
     int actualValue = expressionResultForString.getInt();
     int expectedValue = 5;
@@ -60,6 +62,7 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetIntForNumberFormatException() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "FOOBAR");
     expressionResultForString.getInt();
   }
@@ -80,6 +83,7 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetIntForIllegalMemberException() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForInt = new ExpressionResult(DataTypes.FLOAT, 25.36);
     expressionResultForInt.getInt();
   }
@@ -95,6 +99,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetShortForString() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "5");
     short actualValue = expressionResultForString.getShort();
     short expectedValue = 5;
@@ -103,6 +108,7 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetShortForNumberFormatException() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "FOOBAR");
     expressionResultForString.getShort();
   }
@@ -123,6 +129,7 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetShortForIllegalMemberException() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForInt = new ExpressionResult(DataTypes.FLOAT, 25.36);
     expressionResultForInt.getShort();
   }
@@ -138,6 +145,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetStringForString() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "5");
     String actualValue = expressionResultForString.getString();
     String expectedValue = "5";
@@ -156,6 +164,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetDoubleForString() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "5");
     double actualValue = expressionResultForString.getDouble();
     double expectedValue = 5;
@@ -164,6 +173,7 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetDoubleForNumberFormatException() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "FOOBAR");
     expressionResultForString.getDouble();
   }
@@ -184,6 +194,7 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetDoubleForIllegalMemberException() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForDouble = new ExpressionResult(DataTypes.FLOAT, 25.36);
     expressionResultForDouble.getDouble();
   }
@@ -199,6 +210,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetLongForString() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "5");
     long actualValue = expressionResultForString.getLong();
     long expectedValue = 5;
@@ -207,6 +219,7 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetLongForNumberFormatException() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "FOOBAR");
     expressionResultForString.getLong();
   }
@@ -228,6 +241,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetDecimalForString() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "5");
     BigDecimal actualValue = expressionResultForString.getDecimal();
     BigDecimal expectedValue = new BigDecimal(5.00);
@@ -255,6 +269,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetDecimalForDecimal() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     ExpressionResult expressionResultForDecimal = new ExpressionResult(DataTypes.createDefaultDecimalType(), 5);
     BigDecimal actualValue = expressionResultForDecimal.getDecimal();
     BigDecimal expectedValue = new BigDecimal(5);
@@ -263,6 +278,7 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetDecimalForIllegalMemberException() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForFloat = new ExpressionResult(DataTypes.FLOAT, 25.36);
     expressionResultForFloat.getDecimal();
   }
@@ -279,6 +295,7 @@ public class ExpressionResultTest {
 
   @Test public void testGetTimeForString() throws FilterIllegalMemberException {
     ExpressionResult expressionResultForString =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         new ExpressionResult(DataTypes.STRING, "2016-11-07 10:15:09");
     long actualValue = expressionResultForString.getTime();
     long expectedValue = getTime("2016-11-07 10:15:09");
@@ -303,6 +320,7 @@ public class ExpressionResultTest {
   @Test(expected = FilterIllegalMemberException.class) public void testGetTimeForParseException()
       throws FilterIllegalMemberException {
     ExpressionResult expressionResultForParseException =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         new ExpressionResult(DataTypes.STRING, "FOOBAR");
     expressionResultForParseException.getTime();
   }
@@ -324,6 +342,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetBooleanForString() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "true");
     boolean actualValue = expressionResultForString.getBoolean();
     boolean expectedValue = true;
@@ -339,6 +358,7 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetBooleanForIllegalMemberException() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResultForFloat = new ExpressionResult(DataTypes.FLOAT, 25.36);
     expressionResultForFloat.getBoolean();
   }
@@ -352,6 +372,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testHashCode() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult obj = new ExpressionResult(DataTypes.INT, 1);
     int actualValue = obj.hashCode();
     int expectedValue = 80;
@@ -366,6 +387,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testHashCodeForNul() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult obj = new ExpressionResult(DataTypes.DOUBLE, null);
     int actualValue = obj.hashCode();
     int expectedValue = 31;
@@ -382,6 +404,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testEqualsForString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expressionResult = new ExpressionResult(DataTypes.STRING, "5");
     ExpressionResult objToCompare = new ExpressionResult(DataTypes.STRING, "6");
     boolean result = expressionResult.equals(objToCompare);
@@ -403,6 +426,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testEqualsForDecimal() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     ExpressionResult expressionResult = new ExpressionResult(DataTypes.createDefaultDecimalType(), 5);
     ExpressionResult objToCompare = new ExpressionResult(DataTypes.createDefaultDecimalType(), 6);
     boolean result = expressionResult.equals(objToCompare);
@@ -443,6 +467,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void compareToForDecimal() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     ExpressionResult obj = new ExpressionResult(DataTypes.createDefaultDecimalType(), 5);
     ExpressionResult expressionResult = new ExpressionResult(DataTypes.createDefaultDecimalType(), 6);
     int actualValue = expressionResult.compareTo(obj);
@@ -452,6 +477,7 @@ public class ExpressionResultTest {
 
   @Test public void compareToForException() {
     ExpressionResult obj = new ExpressionResult(DataTypes.INT, 5);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     ExpressionResult expressionResult = new ExpressionResult(DataTypes.createDefaultDecimalType(), 6);
     int actualValue = expressionResult.compareTo(obj);
     int expectedValue = -1;
@@ -476,6 +502,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void compareToForString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult obj = new ExpressionResult(DataTypes.STRING, "2016");
     ExpressionResult expressionResult = new ExpressionResult(DataTypes.STRING, "2016");
     int actualValue = expressionResult.compareTo(obj);

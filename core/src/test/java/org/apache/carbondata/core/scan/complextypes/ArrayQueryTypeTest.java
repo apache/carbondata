@@ -42,6 +42,7 @@ public class ArrayQueryTypeTest {
     surrogateData.put(1, (byte) 0xFF);
     surrogateData.put(2, (byte) 0xFF);
     surrogateData.put(3, (byte) 0xFF);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
     assertNull(arrayQueryType.getDataBasedOnDataType(surrogateData));
   }
 
@@ -49,8 +50,10 @@ public class ArrayQueryTypeTest {
     ByteBuffer surrogateData = ByteBuffer.allocate(10);
     surrogateData.put(3, (byte) 1);
     arrayQueryType.setName("testName");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     arrayQueryType.setParentName("testName");
     arrayQueryType.addChildren(arrayQueryType);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
     assertNotNull(arrayQueryType.getDataBasedOnDataType(surrogateData));
   }
 }

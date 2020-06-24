@@ -40,6 +40,8 @@ import static org.apache.hadoop.fs.s3a.Constants.SECRET_KEY;
  */
 public class SDKS3ReadExample {
   public static void main(String[] args) throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3363
     Logger logger = LogServiceFactory.getLogService(SDKS3ReadExample.class.getName());
     if (args == null || args.length < 3) {
       logger.error("Usage: java CarbonS3Example: <access-key> <secret-key>"
@@ -47,6 +49,7 @@ public class SDKS3ReadExample {
       System.exit(0);
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3073
     String path = "s3a://sdk/WriterOutput/carbondata5";
     if (args.length > 3) {
       path = args[3];
@@ -89,6 +92,7 @@ public class SDKS3ReadExample {
     CarbonReader reader2 = CarbonReader
         .builder(path, "_temp")
         .projection(new String[]{"name", "age"})
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3073
         .withHadoopConf(ACCESS_KEY, args[0])
         .withHadoopConf(SECRET_KEY, args[1])
         .withHadoopConf(ENDPOINT, args[2])

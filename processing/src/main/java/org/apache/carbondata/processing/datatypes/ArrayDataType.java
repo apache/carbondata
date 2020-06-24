@@ -75,7 +75,10 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   private int depth;
 
   private ArrayDataType(int outputArrayIndex, int dataCounter, GenericDataType children,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
       String name) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
     this.outputArrayIndex = outputArrayIndex;
     this.dataCounter = dataCounter;
     this.children = children;
@@ -90,6 +93,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
    */
   public ArrayDataType(String name, String parentName, String columnId) {
     this.name = name;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     this.parentName = parentName;
     this.columnId = columnId;
   }
@@ -102,6 +106,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
    * @param isDictionary
    */
   public ArrayDataType(String name, String parentName, String columnId,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       Boolean isDictionary) {
     this.name = name;
     this.parentName = parentName;
@@ -114,6 +119,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
    */
   @Override
   public void addChildren(GenericDataType children) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     if (this.getName().equals(children.getParentName())) {
       this.children = children;
     } else {
@@ -142,6 +148,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
    */
   @Override
   public String getParentName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     return parentName;
   }
 
@@ -167,11 +174,13 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
 
   @Override
   public boolean getIsColumnDictionary() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     return isDictionary;
   }
 
   @Override
   public void writeByteArray(ArrayObject input, DataOutputStream dataOutputStream,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3761
       BadRecordLogHolder logHolder, Boolean isWithoutConverter) throws IOException {
     if (input == null) {
       dataOutputStream.writeInt(1);
@@ -193,6 +202,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
     dataOutputStream.writeInt(dataLength);
     if (children instanceof PrimitiveDataType) {
       if (children.getIsColumnDictionary()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         dataOutputStream.writeInt(ByteUtil.dateBytesSize());
       }
     }
@@ -248,6 +258,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
     columnsArray.get(this.outputArrayIndex).add(b.array());
 
     if (children instanceof PrimitiveDataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2437
       PrimitiveDataType child = ((PrimitiveDataType) children);
       if (child.getIsColumnDictionary()) {
         child.setKeySize(inputArray.getInt());
@@ -269,12 +280,15 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
 
   @Override
   public GenericDataType<ArrayObject> deepCopy() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     return new ArrayDataType(this.outputArrayIndex, this.dataCounter, this.children.deepCopy(),
         this.name);
   }
 
   @Override
   public void getComplexColumnInfo(List<ComplexColumnInfo> columnInfoList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     columnInfoList.add(
         new ComplexColumnInfo(ColumnType.COMPLEX_ARRAY, DataTypeUtil.valueOf("array"),
             name, false));
@@ -283,6 +297,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
 
   @Override
   public int getDepth() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     if (depth == 0) {
       // calculate only one time
       List<ComplexColumnInfo> complexColumnInfoList = new ArrayList<>();

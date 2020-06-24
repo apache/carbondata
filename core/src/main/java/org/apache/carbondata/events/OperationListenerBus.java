@@ -64,6 +64,7 @@ public class OperationListenerBus {
     }
     // addIfAbsent will only add the listener if it is not already present in the List.
     operationEventListeners.addIfAbsent(operationEventListener);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1520
     return INSTANCE;
   }
 

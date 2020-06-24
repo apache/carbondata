@@ -50,6 +50,7 @@ public class QueryStatisticsRecorderDummy implements QueryStatisticsRecorder, Se
   }
 
   public TaskStatistics statisticsForTask(long taskId, long startTime) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     return null;
   }
 

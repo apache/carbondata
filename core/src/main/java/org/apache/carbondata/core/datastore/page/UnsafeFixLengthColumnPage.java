@@ -60,7 +60,10 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   private static final int floatBits = DataTypes.FLOAT.getSizeBits();
   private static final int doubleBits = DataTypes.DOUBLE.getSizeBits();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
   UnsafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     super(columnPageEncoderMeta, pageSize);
     if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BOOLEAN ||
         columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE ||
@@ -70,9 +73,11 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
         columnPageEncoderMeta.getStoreDataType() == DataTypes.FLOAT ||
         columnPageEncoderMeta.getStoreDataType() == DataTypes.DOUBLE) {
       int size = pageSize << columnPageEncoderMeta.getStoreDataType().getSizeBits();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1318
       memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
       baseAddress = memoryBlock.getBaseObject();
       baseOffset = memoryBlock.getBaseOffset();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
       capacity = size;
     } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT_INT) {
       int size = pageSize * 3;
@@ -92,8 +97,10 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
       int eachRowSize) {
     this(columnPageEncoderMeta, pageSize);
     this.eachRowSize = eachRowSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     totalLength = 0;
     if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE_ARRAY) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3519
       capacity = pageSize * eachRowSize;
       memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, capacity);
       baseAddress = memoryBlock.getBaseObject();
@@ -110,16 +117,21 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   }
 
   private void updatePageSize(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     if (pageSize < rowId) {
       // update the actual number of rows
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3233
       pageSize = rowId + 1;
     }
   }
 
   @Override
   public void putByte(int rowId, byte value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     ensureMemory(ByteUtil.SIZEOF_BYTE);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     long offset = ((long)rowId) << byteBits;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset, value);
     totalLength += ByteUtil.SIZEOF_BYTE;
     updatePageSize(rowId);
@@ -127,6 +139,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putShort(int rowId, short value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     ensureMemory(shortBits);
     long offset = ((long)rowId) << shortBits;
     CarbonUnsafe.getUnsafe().putShort(baseAddress, baseOffset + offset, value);
@@ -136,6 +149,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putShortInt(int rowId, int value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     ensureMemory(ByteUtil.SIZEOF_SHORT_INT);
     byte[] data = ByteUtil.to3Bytes(value);
     long offset = rowId * 3L;
@@ -148,7 +162,9 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putInt(int rowId, int value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     ensureMemory(ByteUtil.SIZEOF_INT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     long offset = ((long)rowId) << intBits;
     CarbonUnsafe.getUnsafe().putInt(baseAddress, baseOffset + offset, value);
     totalLength += ByteUtil.SIZEOF_INT;
@@ -157,6 +173,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putLong(int rowId, long value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     ensureMemory(ByteUtil.SIZEOF_LONG);
     long offset = ((long)rowId) << longBits;
     CarbonUnsafe.getUnsafe().putLong(baseAddress, baseOffset + offset, value);
@@ -166,6 +183,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putDouble(int rowId, double value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     ensureMemory(ByteUtil.SIZEOF_DOUBLE);
     long offset = ((long)rowId) << doubleBits;
     CarbonUnsafe.getUnsafe().putDouble(baseAddress, baseOffset + offset, value);
@@ -176,6 +194,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   @Override
   public void putFloat(int rowId, float value) {
     ensureMemory(ByteUtil.SIZEOF_FLOAT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
     long offset = ((long) rowId) << floatBits;
     CarbonUnsafe.getUnsafe().putFloat(baseAddress, baseOffset + offset, value);
@@ -185,12 +204,21 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putBytes(int rowId, byte[] bytes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     ensureMemory(eachRowSize);
     // copy the data to memory
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
     long offset = (long)rowId * eachRowSize;
     CarbonUnsafe.getUnsafe()
         .copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
             baseOffset + offset, bytes.length);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     updatePageSize(rowId);
     totalLength += eachRowSize;
   }
@@ -209,7 +237,9 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte getByte(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     long offset = ((long)rowId) << byteBits;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     return CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset);
   }
 
@@ -231,6 +261,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public int getInt(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     long offset = ((long)rowId) << intBits;
     return CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset);
   }
@@ -262,6 +293,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   @Override
   public byte[] getBytes(int rowId) {
     // creating a row
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
     byte[] data = new byte[eachRowSize];
     //copy the row from memory block based on offset
     // offset position will be index * each column value length
@@ -279,7 +311,9 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[] getBytePage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     byte[] data = new byte[getEndLoop()];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     for (long i = 0; i < data.length; i++) {
       long offset = i << byteBits;
       data[(int)i] = CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset);
@@ -289,7 +323,9 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public short[] getShortPage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     short[] data = new short[getEndLoop()];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     for (long i = 0; i < data.length; i++) {
       long offset = i << shortBits;
       data[(int)i] = CarbonUnsafe.getUnsafe().getShort(baseAddress, baseOffset + offset);
@@ -299,7 +335,9 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[] getShortIntPage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     byte[] data = new byte[getEndLoop() * 3];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset,
         data, CarbonUnsafe.BYTE_ARRAY_OFFSET, data.length);
     return data;
@@ -308,6 +346,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   @Override
   public int[] getIntPage() {
     int[] data = new int[getEndLoop()];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     for (long i = 0; i < data.length; i++) {
       long offset = i << intBits;
       data[(int)i] = CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset);
@@ -317,7 +356,9 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public long[] getLongPage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     long[] data = new long[getEndLoop()];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     for (long i = 0; i < data.length; i++) {
       long offset = i << longBits;
       data[(int)i] = CarbonUnsafe.getUnsafe().getLong(baseAddress, baseOffset + offset);
@@ -328,6 +369,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   @Override
   public float[] getFloatPage() {
     float[] data = new float[getEndLoop()];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     for (long i = 0; i < data.length; i++) {
       long offset = i << floatBits;
       data[(int)i] = CarbonUnsafe.getUnsafe().getFloat(baseAddress, baseOffset + offset);
@@ -338,6 +380,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   @Override
   public double[] getDoublePage() {
     double[] data = new double[getEndLoop()];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     for (long i = 0; i < data.length; i++) {
       long offset = i << doubleBits;
       data[(int)i] = CarbonUnsafe.getUnsafe().getDouble(baseAddress, baseOffset + offset);
@@ -347,6 +390,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[][] getByteArrayPage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2760
     byte[][] data = new byte[getEndLoop()][eachRowSize];
     long offset = baseOffset;
     for (int i = 0; i < data.length; i++) {
@@ -362,6 +406,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   @Override
   public ByteBuffer getByteBuffer() {
     int numRow = getEndLoop();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     ByteBuffer out = ByteBuffer.allocateDirect(numRow * eachRowSize);
     CarbonUnsafe.getUnsafe().copyMemory(
         memoryBlock.getBaseOffset(), ((DirectBuffer)out).address(), numRow * eachRowSize);
@@ -389,8 +434,10 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void setBytePage(byte[] byteData) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     CarbonUnsafe.getUnsafe().copyMemory(byteData, CarbonUnsafe.BYTE_ARRAY_OFFSET,
         baseAddress, baseOffset, byteData.length << byteBits);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     capacity = byteData.length;
   }
 
@@ -438,12 +485,15 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void setByteArrayPage(byte[][] byteArray) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   public void freeMemory() {
     if (memoryBlock != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1318
       UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
       memoryBlock = null;
       baseAddress = null;
@@ -454,6 +504,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   @Override
   public void convertValue(ColumnPageValueConverter codec) {
     int endLoop = getEndLoop();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE) {
       for (long i = 0; i < endLoop; i++) {
         long offset = i << byteBits;
@@ -485,6 +537,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
         codec.encode((int) i, CarbonUnsafe.getUnsafe().getDouble(baseAddress, baseOffset + offset));
       }
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       throw new UnsupportedOperationException(
           "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
     }
@@ -508,6 +562,12 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE_ARRAY) {
       return totalLength / eachRowSize;
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       throw new UnsupportedOperationException(
           "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
     }
@@ -517,6 +577,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   public long getPageLengthInBytes() {
     // For unsafe column page, we are always tracking the total length
     // so return it directly instead of calculate it again (super class implementation)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2977
     return totalLength;
   }
 
@@ -524,6 +585,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
    * reallocate memory if capacity length than current size + request size
    */
   protected void ensureMemory(int requestSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     checkDataFileSize();
     if (totalLength + requestSize > capacity) {
       int newSize = Math.max(2 * capacity, totalLength + requestSize);
@@ -539,6 +601,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   }
 
   public int getActualRowCount() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     return getEndLoop();
   }
 }

@@ -36,11 +36,13 @@ public class TableBlockInfoTest {
 
   @BeforeClass public static void setup() {
     tableBlockInfo = new TableBlockInfo("filePath", 4, "segmentId", null, 6, ColumnarFormatVersion.V1, null);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     tableBlockInfos = new TableBlockInfo("filepath", 6, "5", null, 6, ColumnarFormatVersion.V1, null);
   }
 
   @Test public void equalTestWithSameObject() {
     Boolean res = tableBlockInfo.equals(tableBlockInfo);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(res);
   }
 
@@ -80,6 +82,7 @@ public class TableBlockInfoTest {
 
   @Test public void equalsTestWithDiffBlockletNumber() {
     TableBlockInfo tableBlockInfoTest =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         new TableBlockInfo("filepath", 6, "segmentId", null, 6, ColumnarFormatVersion.V1, null);
     Boolean res = tableBlockInfos.equals(tableBlockInfoTest);
     Assert.assertTrue(!res);
@@ -142,6 +145,7 @@ public class TableBlockInfoTest {
     assertEquals(res1, expectedResult1);
 
     TableBlockInfo tableBlockInfoTest =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         new TableBlockInfo("filePath", 6, "5", null, 7, ColumnarFormatVersion.V1, null);
     int res2 = tableBlockInfos.compareTo(tableBlockInfoTest);
     int expectedResult2 = -1;

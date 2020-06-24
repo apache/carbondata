@@ -77,6 +77,7 @@ public class PartitionInfo implements Serializable, Writable {
   public PartitionInfo(List<ColumnSchema> columnSchemaList, PartitionType partitionType) {
     this.columnSchemaList = columnSchemaList;
     this.partitionType = partitionType;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1250
     this.partitionIds = new ArrayList<>();
   }
 
@@ -85,6 +86,7 @@ public class PartitionInfo implements Serializable, Writable {
   }
 
   public void setColumnSchemaList(List<ColumnSchema> columnSchemaList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-936
     this.columnSchemaList = columnSchemaList;
   }
 
@@ -94,6 +96,7 @@ public class PartitionInfo implements Serializable, Writable {
 
   @Override
   public void write(DataOutput output) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1448
     output.writeInt(columnSchemaList.size());
     for (ColumnSchema columnSchema: columnSchemaList) {
       columnSchema.write(output);

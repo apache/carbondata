@@ -90,6 +90,7 @@ public class CarbonReaderTest extends TestCase {
     Assert.assertEquals(i, 200);
 
     // Read again
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2491
     CarbonReader reader2 = CarbonReader
         .builder(path, "_temp")
         .projection(new String[]{"name", "age"})
@@ -98,6 +99,12 @@ public class CarbonReaderTest extends TestCase {
     i = 0;
     while (reader2.hasNext()) {
       Object[] row = (Object[]) reader2.readNextRow();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3162
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3164
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3162
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3164
       Assert.assertEquals(("robot" + (i % 10)), row[0]);
       Assert.assertEquals(i, row[1]);
       i++;
@@ -164,6 +171,7 @@ public class CarbonReaderTest extends TestCase {
   }
 
   @Test public void testReadWithZeroBatchSize() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3246
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     IndexStoreManager.getInstance().clearIndexCache(AbsoluteTableIdentifier.from(path), false);
@@ -189,8 +197,11 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testReadBatchWithZeroBatchSize() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     IndexStoreManager.getInstance().clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
@@ -214,13 +225,16 @@ public class CarbonReaderTest extends TestCase {
   public void testReadWithFilterOfNonTransactionalSimple() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     IndexStoreManager.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     String path1 = path + "/0testdir";
     String path2 = path + "/testdir";
 
     FileUtils.deleteDirectory(new File(path));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     FileFactory.getCarbonFile(path1);
     FileFactory.mkdirs(path1);
 
@@ -232,6 +246,7 @@ public class CarbonReaderTest extends TestCase {
     fields[1] = new Field("age", DataTypes.INT);
 
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3030
 
     ColumnExpression columnExpression = new ColumnExpression("name", DataTypes.STRING);
     EqualToExpression equalToExpression = new EqualToExpression(columnExpression,
@@ -358,6 +373,7 @@ public class CarbonReaderTest extends TestCase {
     EqualToExpression equalToExpression2 = new EqualToExpression(columnExpression2,
         new LiteralExpression("robot7", DataTypes.STRING));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2629
     OrExpression orExpression = new OrExpression(equalToExpression, equalToExpression2);
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
@@ -392,6 +408,7 @@ public class CarbonReaderTest extends TestCase {
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
 
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3030
 
     ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
     GreaterThanExpression greaterThanExpression = new GreaterThanExpression(columnExpression,
@@ -413,6 +430,7 @@ public class CarbonReaderTest extends TestCase {
       Object[] row = (Object[]) reader.readNextRow();
       assert (((String) row[0]).contains("robot7"));
       assert (7 == ((int) (row[1]) % 10));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2629
       assert ((double) row[2] > 13.5);
       i++;
     }
@@ -425,6 +443,7 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testReadWithFilterEqualSet() throws IOException, InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3461
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     Field[] fields = new Field[3];
@@ -471,6 +490,7 @@ public class CarbonReaderTest extends TestCase {
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(prepareEqualToExpressionSet("age", "int", values2))
         .build();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
 
     i = 0;
     while (reader2.hasNext()) {
@@ -705,7 +725,9 @@ public class CarbonReaderTest extends TestCase {
   public void testReadWithFilterOfNonTransactionalNotIn() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     IndexStoreManager.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[3];
     fields[0] = new Field("name", DataTypes.STRING);
@@ -713,6 +735,13 @@ public class CarbonReaderTest extends TestCase {
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
 
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3030
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3030
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3030
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3030
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3030
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3030
 
     ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
     LessThanExpression lessThanExpression = new LessThanExpression(columnExpression,
@@ -750,7 +779,9 @@ public class CarbonReaderTest extends TestCase {
     String path2 = "./testWriteFiles2";
     FileUtils.deleteDirectory(new File(path1));
     FileUtils.deleteDirectory(new File(path2));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     IndexStoreManager.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         .clearIndexCache(AbsoluteTableIdentifier.from(path1), false);
     IndexStoreManager.getInstance()
         .clearIndexCache(AbsoluteTableIdentifier.from(path2), false);
@@ -761,9 +792,12 @@ public class CarbonReaderTest extends TestCase {
     CarbonWriter carbonWriter = null;
     try {
       carbonWriter = builder.outputPath(path1).uniqueIdentifier(12345)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
           .withCsvInput(schema).writtenBy("CarbonReaderTest").build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
       Assert.fail(e.getMessage());
     }
     carbonWriter.write(new String[]{"MNO", "100"});
@@ -776,9 +810,11 @@ public class CarbonReaderTest extends TestCase {
     CarbonWriter carbonWriter1 = null;
     try {
       carbonWriter1 = builder1.outputPath(path2).uniqueIdentifier(12345)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
           .withCsvInput(schema1).writtenBy("CarbonReaderTest").build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
       Assert.fail(e.getMessage());
     }
     carbonWriter1.write(new String[]{"PQR", "200"});
@@ -788,6 +824,7 @@ public class CarbonReaderTest extends TestCase {
       CarbonReader reader =
           CarbonReader.builder(path1, "_temp")
               .projection(new String[]{"c1", "c3"})
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
               .build();
       Assert.fail();
     } catch (Exception e) {
@@ -800,6 +837,7 @@ public class CarbonReaderTest extends TestCase {
             .build();
 
     while (reader1.hasNext()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
       Object[] row1 = (Object[]) reader1.readNextRow();
       System.out.println(row1[0]);
       System.out.println(row1[1]);
@@ -831,6 +869,9 @@ public class CarbonReaderTest extends TestCase {
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
       // Default sort column is applied for dimensions. So, need  to validate accordingly
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3162
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3164
       Assert.assertEquals(("robot" + (i % 10)), row[0]);
       Assert.assertEquals(i, row[1]);
       Assert.assertEquals(i, row[2]);
@@ -858,7 +899,9 @@ public class CarbonReaderTest extends TestCase {
     fields[1] = new Field("age", DataTypes.INT);
 
     TestUtil.writeFilesAndVerify(100, new Schema(fields), path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
         .projection(new String[]{"name", "age"})
@@ -894,7 +937,9 @@ public class CarbonReaderTest extends TestCase {
     fields[1] = new Field("age", DataTypes.INT);
 
     TestUtil.writeFilesAndVerify(100, new Schema(fields), path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2313
     CarbonReader reader = CarbonReader.builder(path, "_temp")
         .projection(new String[]{"name", "age"}).build();
 
@@ -935,6 +980,7 @@ public class CarbonReaderTest extends TestCase {
     fields[1] = new Field("age", DataTypes.INT);
 
     TestUtil.writeFilesAndVerify(100, new Schema(fields), path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
 
     CarbonReader reader = CarbonReader
         .builder(path)
@@ -958,13 +1004,40 @@ public class CarbonReaderTest extends TestCase {
   public void testWriteAndReadFilesWithoutTableName2() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     IndexStoreManager.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         .clearIndexCache(AbsoluteTableIdentifier.from(path), false);
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
     TestUtil.writeFilesAndVerify(new Schema(fields), path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
 
     CarbonReader reader = CarbonReader.builder(path).build();
 
@@ -1000,7 +1073,9 @@ public class CarbonReaderTest extends TestCase {
     });
     Assert.assertTrue(dataFiles != null);
     Assert.assertTrue(dataFiles.length > 0);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2996
     Schema schema = CarbonSchemaReader.readSchema(dataFiles[0].getAbsolutePath());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2558
     Assert.assertTrue(schema.getFields().length == 2);
     Assert.assertEquals("name", (schema.getFields())[0].getFieldName());
     Assert.assertEquals("age", (schema.getFields())[1].getFieldName());
@@ -1021,6 +1096,7 @@ public class CarbonReaderTest extends TestCase {
 
     // Write to a Non Transactional Table
     TestUtil.writeFilesAndVerify(new Schema(fields), path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
 
     CarbonReader reader = CarbonReader.builder(path, "_temp")
         .projection(new String[]{"name", "age"})
@@ -1039,6 +1115,7 @@ public class CarbonReaderTest extends TestCase {
   }
 
   CarbonProperties carbonProperties;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2491
 
   @Override
   public void setUp() {
@@ -1081,6 +1158,7 @@ public class CarbonReaderTest extends TestCase {
       CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
 
       CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CarbonReaderTest").build();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
 
       for (int i = 0; i < 100; i++) {
         String[] row = new String[]{
@@ -1126,6 +1204,9 @@ public class CarbonReaderTest extends TestCase {
     Assert.assertTrue(dataFiles.length > 0);
 
     CarbonReader reader = CarbonReader.builder(path, "_temp")
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2472
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2570
 
         .projection(new String[]{
             "stringField"
@@ -1196,8 +1277,12 @@ public class CarbonReaderTest extends TestCase {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
 
       CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CarbonReaderTest").build();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
 
       for (int i = 0; i < 100; i++) {
         String[] row2 = new String[]{
@@ -1227,8 +1312,11 @@ public class CarbonReaderTest extends TestCase {
     });
 
     Schema schema = CarbonSchemaReader.readSchema(dataFiles2[0].getAbsolutePath());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2996
 
     // sort the schema
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2558
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2558
     Arrays.sort(schema.getFields(), new Comparator<Field>() {
       @Override
       public int compare(Field o1, Field o2) {
@@ -1306,6 +1394,7 @@ public class CarbonReaderTest extends TestCase {
     fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
 
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
       CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path)
           .writtenBy("SDK_1.0.0");
 
@@ -1331,6 +1420,7 @@ public class CarbonReaderTest extends TestCase {
       Assert.fail(e.getMessage());
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
     File[] dataFiles1 = new File(path).listFiles(new FilenameFilter() {
       @Override
       public boolean accept(File dir, String name) {
@@ -1430,6 +1520,21 @@ public class CarbonReaderTest extends TestCase {
     int i = 0;
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3162
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3164
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3162
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3164
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3162
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3164
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3162
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3164
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3162
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3164
       Assert.assertEquals(("robot" + (i % 10)), row[0]);
       Assert.assertEquals(i, row[1]);
       i++;
@@ -1448,7 +1553,13 @@ public class CarbonReaderTest extends TestCase {
     fields[1] = new Field("age", DataTypes.INT);
 
     TestUtil.writeFilesAndVerify(100, new Schema(fields), path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2546
     try {
       CarbonReader reader = CarbonReader
           .builder(path, "_temp")
@@ -1462,15 +1573,18 @@ public class CarbonReaderTest extends TestCase {
 
   private void WriteAvroComplexData(String mySchema, String json, String path)
       throws IOException, InvalidLoadOptionException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
 
     // conversion to GenericData.Record
     org.apache.avro.Schema nn = new org.apache.avro.Schema.Parser().parse(mySchema);
     GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2627
 
     try {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
           .withAvroInput(nn).writtenBy("CarbonReaderTest").build();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -1520,12 +1634,17 @@ public class CarbonReaderTest extends TestCase {
         + "   \"doorNum\" : [1,2,3,4]}";
 
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
       WriteAvroComplexData(mySchema, json, path);
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
       Assert.fail(e.getMessage());
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
     File folder = new File(path);
     Assert.assertTrue(folder.exists());
 
@@ -1539,6 +1658,9 @@ public class CarbonReaderTest extends TestCase {
     Assert.assertEquals(1, dataFiles.length);
 
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
     File[] dataFiles2 = new File(path).listFiles(new FilenameFilter() {
       @Override
       public boolean accept(File dir, String name) {
@@ -1547,6 +1669,8 @@ public class CarbonReaderTest extends TestCase {
     });
 
     Schema schema = CarbonSchemaReader.readSchema(dataFiles2[0].getAbsolutePath()).asOriginOrder();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2996
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2996
 
     for (int i = 0; i < schema.getFields().length; i++) {
       System.out.println((schema.getFields())[i].getFieldName() + "\t" + schema.getFields()[i].getSchemaOrdinal());
@@ -1560,6 +1684,7 @@ public class CarbonReaderTest extends TestCase {
     FileUtils.deleteDirectory(new File(path));
 
     String mySchema =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
         "{ " +
             "  \"name\": \"address\", " +
             "  \"type\": \"record\", " +
@@ -1586,9 +1711,11 @@ public class CarbonReaderTest extends TestCase {
         "{\"name\":\"bob\", \"age\":10, \"mapRecord\": {\"street\": \"k-lane\", \"city\": \"bangalore\"}}";
 
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
       WriteAvroComplexData(mySchema, json, path);
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
       Assert.fail(e.getMessage());
     }
 
@@ -1598,11 +1725,13 @@ public class CarbonReaderTest extends TestCase {
     fields[2] = new Field("mapRecord", DataTypes.createMapType(DataTypes.STRING, DataTypes.STRING));
 
     CarbonReader reader = CarbonReader.builder(path, "_temp").build();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
 
     // expected output
     String name = "bob";
     int age = 10;
     Object[] mapKeValue = new Object[2];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     mapKeValue[0] = new Object[]{"city", "street"};
     mapKeValue[1] = new Object[]{"bangalore", "k-lane"};
     int i = 0;
@@ -1619,15 +1748,18 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testReadWithFilterOfnonTransactionalwithsubfolders() throws IOException, InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     String path1 = "./testWriteFiles/1/" + System.nanoTime();
     String path2 = "./testWriteFiles/2/" + System.nanoTime();
     String path3 = "./testWriteFiles/3/" + System.nanoTime();
     FileUtils.deleteDirectory(new File("./testWriteFiles"));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2888
 
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3030
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path1);
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path2);
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path3);
@@ -1657,6 +1789,7 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testReadSchemaFromDataFileArrayString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2982
     String path = "./testWriteFiles";
     try {
       FileUtils.deleteDirectory(new File(path));
@@ -1710,6 +1843,7 @@ public class CarbonReaderTest extends TestCase {
         }
       });
       if (dataFiles == null || dataFiles.length < 1) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2996
         throw new RuntimeException("Carbon data file not exists.");
       }
       Schema schema = CarbonSchemaReader
@@ -1748,6 +1882,7 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testReadNextRowWithRowUtil() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2981
     String path = "./carbondata";
     try {
       FileUtils.deleteDirectory(new File(path));
@@ -1806,6 +1941,7 @@ public class CarbonReaderTest extends TestCase {
         throw new RuntimeException("Carbon index file not exists.");
       }
       Schema schema = CarbonSchemaReader
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2996
           .readSchema(dataFiles[0].getAbsolutePath())
           .asOriginOrder();
       // Transform the schema
@@ -1868,6 +2004,7 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testReadNextRowWithProjectionAndRowUtil() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-300
     String path = "./carbondata";
     try {
       FileUtils.deleteDirectory(new File(path));
@@ -1941,6 +2078,7 @@ public class CarbonReaderTest extends TestCase {
         i++;
       }
       assert (i == 10);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3057
       reader.close();
     } catch (Throwable e) {
       e.printStackTrace();
@@ -1979,6 +2117,7 @@ public class CarbonReaderTest extends TestCase {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
           .withLoadOptions(map)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-300
           .withCsvInput(new Schema(fields))
           .writtenBy("CarbonReaderTest")
           .build();
@@ -2162,6 +2301,8 @@ public class CarbonReaderTest extends TestCase {
           .writtenBy("CarbonReaderTest")
           .build();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
       for (int i = 0; i < 300; i++) {
         String[] row2 = new String[]{
             "robot" + (i % 10000),
@@ -2184,6 +2325,8 @@ public class CarbonReaderTest extends TestCase {
       int batchSize = 150;
       CarbonReader reader = CarbonReader
           .builder(path, "_temp")
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
           .withBatch(batchSize)
           .build();
 
@@ -2223,6 +2366,8 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testReadingNullValues() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2591
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3081
     String path = "./testWriteFiles";
     try {
       FileUtils.deleteDirectory(new File(path));
@@ -2272,13 +2417,16 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testSdkWriteWhenArrayOfStringIsEmpty()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3224
       throws IOException, InvalidLoadOptionException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3119
     String badRecordAction =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION);
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL");
 
     String path = "./testSdkWriteWhenArrayOfStringIsEmpty";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     String[] rec = {"aaa", "bbb", "aaa@cdf.com", "", "", "mmm", ""};
     Field[] fields = new Field[7];
     fields[0] = new Field("stringField", DataTypes.STRING);
@@ -2301,6 +2449,7 @@ public class CarbonReaderTest extends TestCase {
     writer.close();
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, badRecordAction);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3224
     FileUtils.deleteDirectory(new File(path));
   }
 
@@ -2516,6 +2665,8 @@ public class CarbonReaderTest extends TestCase {
           .build();
     } catch (IllegalArgumentException e) {
       e.printStackTrace();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
       Assert.fail(e.getMessage());
     } catch (Exception e) {
       Assert.fail(e.getMessage());
@@ -2526,6 +2677,7 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testWriteWithDifferentDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     String path = "./carbondata";
     try {
       FileUtils.deleteDirectory(new File(path));
@@ -2576,6 +2728,7 @@ public class CarbonReaderTest extends TestCase {
       // Read data
       CarbonReader reader = CarbonReader
           .builder(path, "_temp")
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3057
           .withRowRecordReader()
           .build();
 
@@ -2602,16 +2755,26 @@ public class CarbonReaderTest extends TestCase {
 
         i++;
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
       assert (i == 10);
       reader.close();
     } catch (Throwable e) {
       e.printStackTrace();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
       Assert.fail(e.getMessage());
     } finally {
       try {
         FileUtils.deleteDirectory(new File(path));
       } catch (IOException e) {
         e.printStackTrace();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3280
         Assert.fail(e.getMessage());
       }
     }
@@ -2619,6 +2782,7 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testReadBlocklet() throws IOException, InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3366
     String path = "./testWriteFiles/" + System.nanoTime();
     FileUtils.deleteDirectory(new File(path));
 
@@ -2651,6 +2815,7 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testGetSplits() throws IOException, InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3405
     String path = "./testWriteFiles/" + System.nanoTime();
     FileUtils.deleteDirectory(new File(path));
 
@@ -2672,6 +2837,7 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testReadWithFilterNonResult() throws IOException, InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3342
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
     Field[] fields = new Field[2];
@@ -2679,6 +2845,7 @@ public class CarbonReaderTest extends TestCase {
     fields[1] = new Field("age", DataTypes.INT);
 
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3030
 
     ColumnExpression columnExpression = new ColumnExpression("age", DataTypes.INT);
 
@@ -2689,6 +2856,17 @@ public class CarbonReaderTest extends TestCase {
       .projection(new String[]{"name", "age"})
       .filter(equalToExpression)
       .build();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
 
     int i = 0;
     while (reader.hasNext()) {
@@ -2698,6 +2876,8 @@ public class CarbonReaderTest extends TestCase {
     Assert.assertEquals(i, 0);
 
     reader.close();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2392
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2479
 
     FileUtils.deleteDirectory(new File(path));
   }

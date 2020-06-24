@@ -36,6 +36,7 @@ public class DirectDictionaryKeyGeneratorFactoryUnitTest {
 
   @Test public void testGetDirectDictionaryGeneratorReturnNull() throws Exception {
     DirectDictionaryGenerator result =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
         DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.STRING);
     Assert.assertNull(result);
   }

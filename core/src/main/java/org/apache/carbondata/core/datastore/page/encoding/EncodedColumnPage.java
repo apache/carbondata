@@ -46,6 +46,8 @@ public class EncodedColumnPage {
    * @param encodedData encoded data for this page
    */
   public EncodedColumnPage(DataChunk2 pageMetadata, ByteBuffer encodedData,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
       ColumnPage actualPage) {
     if (pageMetadata == null) {
       throw new IllegalArgumentException("data chunk2 must not be null");
@@ -55,6 +57,8 @@ public class EncodedColumnPage {
     }
     this.pageMetadata = pageMetadata;
     this.encodedData = encodedData;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     this.actualPage = actualPage;
   }
 
@@ -62,6 +66,7 @@ public class EncodedColumnPage {
    * return the encoded data as ByteBuffer
    */
   public ByteBuffer getEncodedData() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     return encodedData;
   }
 
@@ -79,6 +84,8 @@ public class EncodedColumnPage {
   }
 
   public SimpleStatsResult getStats() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     return actualPage.getStatistics();
   }
 
@@ -102,6 +109,7 @@ public class EncodedColumnPage {
   }
 
   public void cleanBuffer() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3787
     UnsafeMemoryManager.destroyDirectByteBuffer(encodedData);
   }
 }

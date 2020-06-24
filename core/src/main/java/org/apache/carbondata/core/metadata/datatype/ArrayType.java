@@ -23,12 +23,14 @@ public class ArrayType extends DataType {
 
   private String elementName;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
   ArrayType(DataType elementType) {
     super(DataTypes.ARRAY_TYPE_ID, 9, "ARRAY", -1);
     this.elementType = elementType;
   }
 
   public ArrayType(DataType elementType, String elementName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3446
     super(DataTypes.ARRAY_TYPE_ID, 9, "ARRAY", -1);
     this.elementType = elementType;
     this.elementName = elementName;
@@ -41,12 +43,14 @@ public class ArrayType extends DataType {
 
   @Override
   public boolean equals(Object obj) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     if (this == obj) {
       return true;
     }
     if (obj == null) {
       return false;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2493
     if (getClass() != obj.getClass()) {
       return false;
     }
@@ -65,15 +69,18 @@ public class ArrayType extends DataType {
     final int prime = 31;
     int result = 1;
     result = prime * result + getName().hashCode();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2493
     result = prime * result + getElementType().hashCode();
     return result;
   }
 
   public DataType getElementType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2430
     return elementType;
   }
 
   public String getElementName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3446
     return elementName;
   }
 

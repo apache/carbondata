@@ -54,6 +54,7 @@ import org.apache.carbondata.format.Encoding;
 public class AdaptiveIntegralCodec extends AdaptiveCodec {
 
   public AdaptiveIntegralCodec(DataType srcDataType, DataType targetDataType,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       SimpleStatsResult stats, boolean isInvertedIndex) {
     super(srcDataType, targetDataType, stats, isInvertedIndex);
   }
@@ -66,6 +67,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
   @Override
   public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
     return new ColumnPageEncoder() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
       ByteBuffer result = null;
       @Override
       protected ByteBuffer encodeData(ColumnPage input) throws IOException {
@@ -87,6 +89,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       protected List<Encoding> getEncodingList() {
         List<Encoding> encodings = new ArrayList<Encoding>();
         encodings.add(Encoding.ADAPTIVE_INTEGRAL);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
         if (null != indexStorage && indexStorage.getRowIdPageLengthInBytes() > 0) {
           encodings.add(Encoding.INVERTED_INDEX);
         }
@@ -96,6 +99,8 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       @Override
       protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
         return new ColumnPageEncoderMeta(inputPage.getColumnSpec(), targetDataType, stats,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
             inputPage.getColumnCompressorName());
       }
 
@@ -112,9 +117,11 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       @Override
       public ColumnPage decode(byte[] input, int offset, int length) {
         ColumnPage page = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         if (DataTypes.isDecimal(meta.getSchemaDataType())) {
           page = ColumnPage.decompressDecimalPage(meta, input, offset, length);
         } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
           page = ColumnPage.decompress(meta, input, offset, length, false, false);
         }
         return LazyColumnPage.newPage(page, converter);
@@ -122,8 +129,11 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
 
       @Override
       public void decodeAndFillVector(byte[] input, int offset, int length,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
           ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
           ReusableDataBuffer reusableDataBuffer) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
         Compressor compressor =
             CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
         byte[] unCompressData;
@@ -156,6 +166,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
   private ColumnPageValueConverter converter = new ColumnPageValueConverter() {
     @Override
     public void encode(int rowId, byte value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       if (targetDataType == DataTypes.BYTE) {
         encodedPage.putByte(rowId, value);
       } else {
@@ -285,14 +296,18 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
 
     @Override
     public void decodeAndFillVector(byte[] pageData, ColumnVectorInfo vectorInfo, BitSet nullBits,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
         DataType pageDataType, int pageSize) {
       CarbonColumnVector vector = vectorInfo.vector;
       DataType vectorDataType = vector.getType();
       BitSet deletedRows = vectorInfo.deletedRows;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3014
       vector = ColumnarVectorWrapperDirectFactory
           .getDirectVectorWrapperFactory(vector, vectorInfo.invertedIndex, nullBits, deletedRows,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3048
               true, false);
       fillVector(pageData, vector, vectorDataType, pageDataType, pageSize, vectorInfo, nullBits);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
       if ((deletedRows == null || deletedRows.isEmpty())
           && !(vectorInfo.vector instanceof SequentialFill)) {
         for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
@@ -306,6 +321,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
     }
 
     private void fillVector(byte[] pageData, CarbonColumnVector vector, DataType vectorDataType,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
         DataType pageDataType, int pageSize, ColumnVectorInfo vectorInfo, BitSet nullBits) {
       int rowId = 0;
       if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
@@ -384,6 +400,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         } else if (vectorDataType == DataTypes.TIMESTAMP) {
           for (int i = 0; i < pageSize; i++) {
             int shortInt = ByteUtil.valueOf3Bytes(pageData, i * 3);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3014
             vector.putLong(i, (long) shortInt * 1000);
           }
         } else if (DataTypes.isDecimal(vectorDataType)) {

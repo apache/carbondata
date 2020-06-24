@@ -74,6 +74,7 @@ public class StartsWithExpression extends BinaryConditionalExpression {
 
   @Override
   public String getStatement() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     return left.getStatement() + " like '" + right.getStatement() + "%'";
   }
 }

@@ -47,10 +47,12 @@ public class BloomIndexCache
 
   @Override
   public BloomCacheKeyValue.CacheValue get(BloomCacheKeyValue.CacheKey key) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
     BloomCacheKeyValue.CacheKey cacheKey =
         new BloomCacheKeyValue.CacheKey(key.getShardPath(), key.getIndexColumn());
     BloomCacheKeyValue.CacheValue cacheValue = getIfPresent(cacheKey);
     if (cacheValue == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2845
       List<CarbonBloomFilter> bloomFilters =
               BloomIndexFileStore.loadBloomFilterFromFile(key.getShardPath(), key.getIndexColumn());
       cacheValue = new BloomCacheKeyValue.CacheValue(bloomFilters);

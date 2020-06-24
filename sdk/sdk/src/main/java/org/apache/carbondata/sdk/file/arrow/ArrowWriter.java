@@ -133,6 +133,7 @@ public class ArrowWriter {
           arrowFieldWriters.toArray(new ArrowFieldWriter[arrowFieldWriters.size()]));
     } else if (valueVector instanceof VarBinaryVector) {
       return new BinaryWriter((VarBinaryVector) valueVector);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3365
     } else if (valueVector instanceof DateDayVector) {
       return new DateWriter((DateDayVector) valueVector);
     } else if (valueVector instanceof TimeStampMicroTZVector) {

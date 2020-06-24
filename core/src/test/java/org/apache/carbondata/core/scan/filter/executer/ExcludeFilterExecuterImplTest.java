@@ -33,6 +33,9 @@ public class ExcludeFilterExecuterImplTest extends IncludeFilterExecuterImplTest
    if (filterValues.length > 1) {
      for (int j = 0; j < numerOfRows; j++) {
        int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
            dimColumnDataChunk, j);
        if (index >= 0) {
          bitSet.flip(j);

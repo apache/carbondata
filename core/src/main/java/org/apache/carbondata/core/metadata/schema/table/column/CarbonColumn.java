@@ -130,6 +130,7 @@ public class CarbonColumn implements Serializable {
    * false.
    */
   public Boolean isComplex() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     return columnSchema.getDataType().isComplexType();
   }
 
@@ -171,6 +172,7 @@ public class CarbonColumn implements Serializable {
    * @return Returns True if the column is an spatial index column. Otherwise returns False.
    */
   public boolean isSpatialColumn() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     return columnSchema.isSpatialColumn();
   }
 
@@ -193,6 +195,7 @@ public class CarbonColumn implements Serializable {
   }
 
   public String getDateFormat() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
     return dateFormat;
   }
 

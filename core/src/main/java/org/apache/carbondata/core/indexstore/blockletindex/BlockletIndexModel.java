@@ -62,6 +62,7 @@ public class BlockletIndexModel extends IndexModel {
       boolean addToUnsafe, Configuration configuration, boolean serializeDmStore) {
     this(carbonTable, filePath, fileData, blockMetaInfoMap, segmentId, configuration);
     this.addToUnsafe = addToUnsafe;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     this.serializeDmStore = serializeDmStore;
   }
 
@@ -70,6 +71,7 @@ public class BlockletIndexModel extends IndexModel {
   }
 
   public Map<String, BlockMetaInfo> getBlockMetaInfoMap() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2071
     return blockMetaInfoMap;
   }
 
@@ -78,14 +80,18 @@ public class BlockletIndexModel extends IndexModel {
   }
 
   public boolean isAddToUnsafe() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     return addToUnsafe;
   }
 
   public CarbonTable getCarbonTable() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2701
     return carbonTable;
   }
 
   public void setIndexInfos(List<DataFileFooter> indexInfos) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     this.indexInfos = indexInfos;
   }
 
@@ -94,6 +100,7 @@ public class BlockletIndexModel extends IndexModel {
   }
 
   public boolean isSerializeDmStore() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     return serializeDmStore;
   }
 }

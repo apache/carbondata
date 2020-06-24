@@ -40,6 +40,7 @@ public class IntermediateSortTempRowComparator implements Comparator<Intermediat
    * @param isSortColumnNoDictionary isSortColumnNoDictionary
    */
   public IntermediateSortTempRowComparator(boolean[] isSortColumnNoDictionary,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       DataType[] noDicSortDataTypes) {
     this.isSortColumnNoDictionary = isSortColumnNoDictionary;
     this.noDicSortDataTypes = noDicSortDataTypes;
@@ -57,6 +58,7 @@ public class IntermediateSortTempRowComparator implements Comparator<Intermediat
     for (boolean isNoDictionary : isSortColumnNoDictionary) {
 
       if (isNoDictionary) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
         if (DataTypeUtil.isPrimitiveColumn(noDicSortDataTypes[noDicTypeIdx])) {
           // use data types based comparator for the no dictionary measure columns
           SerializableComparator comparator = org.apache.carbondata.core.util.comparator.Comparator
@@ -76,6 +78,7 @@ public class IntermediateSortTempRowComparator implements Comparator<Intermediat
           }
         }
         nonDictIndex++;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2953
         noDicTypeIdx++;
       } else {
         int dimFieldA = rowA.getDictSortDims()[dictIndex];

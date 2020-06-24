@@ -32,6 +32,7 @@ public class CacheType<K, V> {
    */
   public static final CacheType<TableSegmentUniqueIdentifier, AbstractIndex>
       DRIVER_BLOCKLET_INDEX = new CacheType("driver_blocklet_index");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
 
   /**
    * cacheName which is unique name for a cache

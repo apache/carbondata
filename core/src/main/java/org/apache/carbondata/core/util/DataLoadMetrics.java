@@ -42,6 +42,7 @@ public class DataLoadMetrics implements Serializable {
   private long numOutputRows = 0L;
 
   public synchronized int getFileCount() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     return fileCount;
   }
 
@@ -89,6 +90,7 @@ public class DataLoadMetrics implements Serializable {
   }
 
   public synchronized void addOutputBytes(long numOutputBytes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     this.numOutputBytes += numOutputBytes;
   }
 

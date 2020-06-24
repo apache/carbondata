@@ -33,12 +33,14 @@ public interface FilterExecuter {
    * @return
    * @throws FilterUnsupportedException
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
       boolean useBitsetPipeLine) throws FilterUnsupportedException, IOException;
 
   /**
    * Prune pages as per the filter
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3013
   BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
       throws FilterUnsupportedException, IOException;
 
@@ -48,6 +50,7 @@ public interface FilterExecuter {
    */
   boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
 
   /**
    * API will verify whether the block can be shortlisted based on block
@@ -59,6 +62,7 @@ public interface FilterExecuter {
    * @return BitSet
    */
   BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue, boolean[] isMinMaxSet);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
 
   /**
    * It just reads necessary block for filter executor, it does not uncompress the data.

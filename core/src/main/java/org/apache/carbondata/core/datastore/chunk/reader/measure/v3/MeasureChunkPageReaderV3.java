@@ -137,12 +137,16 @@ public class MeasureChunkPageReaderV3 extends MeasureChunkReaderV3 {
    */
   @Override
   public ColumnPage decodeColumnPage(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       MeasureRawColumnChunk rawColumnPage, int pageNumber, ReusableDataBuffer reusableDataBuffer)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
     // data chunk of blocklet column
     DataChunk3 dataChunk3 = rawColumnPage.getDataChunkV3();
     // data chunk of page
     DataChunk2 pageMetadata = dataChunk3.getData_chunk_list().get(pageNumber);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
         pageMetadata.getChunk_meta());
     this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
@@ -155,6 +159,7 @@ public class MeasureChunkPageReaderV3 extends MeasureChunkReaderV3 {
         .readByteBuffer(filePath, offset, pageMetadata.data_page_length);
 
     BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     ColumnPage decodedPage =
         decodeMeasure(pageMetadata, buffer, 0, null, nullBitSet, reusableDataBuffer);
     decodedPage.setNullBits(nullBitSet);

@@ -36,6 +36,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
  */
 public abstract class SafeVariableLengthDimensionDataChunkStore
     extends SafeAbsractDimensionDataChunkStore {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
 
   /**
    * total number of rows
@@ -54,6 +55,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       int dataLength) {
     super(isInvertedIndex);
     this.numberOfRows = numberOfRows;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     this.dataOffsets = new int[numberOfRows];
     this.dataLength = dataLength;
   }
@@ -70,6 +72,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       byte[] data) {
     // first put the data, inverted index and reverse inverted index to memory
     super.putArray(invertedIndex, invertedIndexReverse, data);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
     this.dataOffsets = new int[numberOfRows];
     // As data is of variable length and data format is
     // <length in short><data><length in short><data>
@@ -86,6 +89,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
     // as first position will be start from 2 byte as data is stored first in the memory block
     // we need to skip first two bytes this is because first two bytes will be length of the data
     // which we have to skip
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     dataOffsets[0] = getLengthSize();
     // creating a byte buffer which will wrap the length of the row
     ByteBuffer buffer = ByteBuffer.wrap(data);
@@ -104,6 +108,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
   public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
     CarbonColumnVector vector = vectorInfo.vector;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     vector.setDictionary(null);
     DataType dt = vector.getType();
     AbstractNonDictionaryVectorFiller vectorFiller = NonDictionaryVectorFillerFactory
@@ -137,9 +142,11 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
     int length = 0;
     // calculating the length of data
     if (rowId < numberOfRows - 1) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
       length = dataOffsets[rowId + 1] - (currentDataOffset + getLengthSize());
     } else {
       // for last record
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       length = this.dataLength - currentDataOffset;
     }
     byte[] currentRowData = new byte[length];
@@ -149,6 +156,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
 
   @Override
   public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     vector.setDictionary(null);
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplictSorted) {
@@ -167,9 +175,11 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       length = dataOffsets[rowId + 1] - (currentDataOffset + getLengthSize());
     } else {
       // for last record
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       length = this.dataLength - currentDataOffset;
     }
     DataType dt = vector.getType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1450
 
     if (((!(dt == DataTypes.STRING) && !(dt == DataTypes.VARCHAR)) && length == 0)
         || ByteUtil.UnsafeComparer.INSTANCE
@@ -178,15 +188,20 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
             length)) {
       vector.putNull(vectorRow);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
       if (dt == DataTypes.STRING || dt == DataTypes.VARCHAR || dt == DataTypes.BINARY) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
         vector.putByteArray(vectorRow, currentDataOffset, length, data);
       } else if (dt == DataTypes.BOOLEAN) {
         vector.putBoolean(vectorRow, ByteUtil.toBoolean(data[currentDataOffset]));
       } else if (dt == DataTypes.SHORT) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
         vector.putShort(vectorRow, ByteUtil.toXorShort(data, currentDataOffset, length));
       } else if (dt == DataTypes.INT) {
         vector.putInt(vectorRow, ByteUtil.toXorInt(data, currentDataOffset, length));
       } else if (dt == DataTypes.LONG) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
         vector.putLong(vectorRow,
             DataTypeUtil.getDataBasedOnRestructuredDataType(data, vector.getBlockDataType(),
                 currentDataOffset, length));
@@ -210,9 +225,11 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
     int length = 0;
     // calculating the length of data
     if (rowId < numberOfRows - 1) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
       length = dataOffsets[rowId + 1] - (currentDataOffset + getLengthSize());
     } else {
       // for last record
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       length = this.dataLength - currentDataOffset;
     }
     return ByteUtil.UnsafeComparer.INSTANCE
@@ -221,6 +238,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
 
   @Override
   public void freeMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2307
     super.freeMemory();
     dataOffsets = null;
   }

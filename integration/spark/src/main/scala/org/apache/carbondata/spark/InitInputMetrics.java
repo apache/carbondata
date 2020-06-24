@@ -27,5 +27,6 @@ import org.apache.spark.TaskContext;
  */
 public interface InitInputMetrics extends InputMetricsStats {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3487
   void initBytesReadCallback(TaskContext context, CarbonMultiBlockSplit carbonMultiBlockSplit, Long inputMetricsInterval);
 }

@@ -31,11 +31,13 @@ public abstract class AbstractDimensionColumnPage implements DimensionColumnPage
    * data chunks
    */
   DimensionDataChunkStore dataChunkStore;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
 
   /**
    * @return whether data is explicitly sorted or not
    */
   protected boolean isExplicitSorted(int[] invertedIndex) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     return (null == invertedIndex || 0 == invertedIndex.length) ? false : true;
   }
 
@@ -103,6 +105,7 @@ public abstract class AbstractDimensionColumnPage implements DimensionColumnPage
    */
   @Override
   public void freeMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2307
     if (dataChunkStore != null) {
       dataChunkStore.freeMemory();
       dataChunkStore = null;

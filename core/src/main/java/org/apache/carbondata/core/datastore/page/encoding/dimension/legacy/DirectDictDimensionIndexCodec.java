@@ -34,6 +34,8 @@ import org.apache.carbondata.format.Encoding;
 public class DirectDictDimensionIndexCodec extends IndexStorageCodec {
 
   public DirectDictDimensionIndexCodec(boolean isSort, boolean isInvertedIndex) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     super(isSort, isInvertedIndex);
   }
 
@@ -47,14 +49,18 @@ public class DirectDictDimensionIndexCodec extends IndexStorageCodec {
     return new IndexStorageEncoder() {
       @Override
       void encodeIndexStorage(ColumnPage inputPage) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
         BlockIndexerStorage<byte[][]> indexStorage;
         byte[][] data = inputPage.getByteArrayPage();
         if (isInvertedIndex) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3730
           indexStorage = new ByteArrayBlockIndexerStorage(data, false, false, isSort);
         } else {
           indexStorage = new ByteArrayBlockIndexerStorageWithoutRowId(data, false);
         }
         byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
         Compressor compressor = CompressorFactory.getInstance().getCompressor(
             inputPage.getColumnCompressorName());
         super.compressedDataPage = compressor.compressByte(flattened);

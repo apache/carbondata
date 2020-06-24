@@ -101,6 +101,7 @@ public class SegmentFileStore {
    */
   public static void writeSegmentFile(String tablePath, final String taskNo, String location,
       String timeStamp, List<String> partionNames) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3415
     writeSegmentFile(tablePath, taskNo, location, timeStamp, partionNames, false);
   }
 
@@ -114,8 +115,10 @@ public class SegmentFileStore {
     String writePath = CarbonTablePath.getSegmentFilesLocation(tablePath) + "/" + tempFolderLoc;
     CarbonFile carbonFile = FileFactory.getCarbonFile(writePath);
     if (!carbonFile.exists()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       carbonFile.mkdirs();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
     CarbonFile tempFolder;
     if (isMergeIndexFlow) {
       tempFolder = FileFactory.getCarbonFile(location);
@@ -146,12 +149,14 @@ public class SegmentFileStore {
         folderDetails.setPartitions(partionNames);
         folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
         for (CarbonFile file : carbonFiles) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3415
           if (file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
             folderDetails.setMergeFileName(file.getName());
           } else {
             folderDetails.getFiles().add(file.getName());
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
         segmentFile.addPath(location, folderDetails);
         String path = null;
         if (isMergeIndexFlow) {
@@ -176,6 +181,7 @@ public class SegmentFileStore {
    * @return
    */
   public static String genSegmentFileName(String segmentId, String UUID) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
     return segmentId + "_" + UUID;
   }
 
@@ -189,11 +195,13 @@ public class SegmentFileStore {
    * @return segment file name
    */
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
       SegmentMetaDataInfo segmentMetaDataInfo) throws IOException {
     return writeSegmentFile(carbonTable, segmentId, UUID, null, segmentMetaDataInfo);
   }
 
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
       throws IOException {
     return writeSegmentFile(carbonTable, segmentId, UUID, null, null);
   }
@@ -209,6 +217,7 @@ public class SegmentFileStore {
    * @return segment file name
    */
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
       String segPath, SegmentMetaDataInfo segmentMetaDataInfo) throws IOException {
     return writeSegmentFile(carbonTable, segmentId, UUID, null, segPath, segmentMetaDataInfo);
   }
@@ -276,6 +285,7 @@ public class SegmentFileStore {
   }
 
   public static boolean writeSegmentFileForOthers(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3566
       CarbonTable carbonTable,
       Segment segment,
       PartitionSpec partitionSpec,
@@ -310,6 +320,8 @@ public class SegmentFileStore {
       String segmentFileFolder = CarbonTablePath.getSegmentFilesLocation(tablePath);
       CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFileFolder);
       if (!carbonFile.exists()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         carbonFile.mkdirs();
       }
       // write segment info to new file.
@@ -322,6 +334,7 @@ public class SegmentFileStore {
   }
 
   public static void mergeIndexAndWriteSegmentFile(CarbonTable carbonTable, String segmentId,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
       String UUID) {
     String tablePath = carbonTable.getTablePath();
     String segmentFileName = genSegmentFileName(segmentId, UUID) + CarbonTablePath.SEGMENT_EXT;
@@ -347,10 +360,13 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
       final String currentLoadTimeStamp, String absSegPath, SegmentMetaDataInfo segmentMetaDataInfo)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     String tablePath = carbonTable.getTablePath();
     boolean supportFlatFolder = carbonTable.isSupportFlatFolder();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
     String segmentPath = absSegPath;
     if (absSegPath == null) {
       segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
@@ -359,6 +375,7 @@ public class SegmentFileStore {
     CarbonFile[] indexFiles = segmentFolder.listFiles(new CarbonFileFilter() {
       @Override
       public boolean accept(CarbonFile file) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3393
         if (null != currentLoadTimeStamp) {
           return file.getName().contains(currentLoadTimeStamp) && (
               file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
@@ -371,6 +388,7 @@ public class SegmentFileStore {
     if (indexFiles != null && indexFiles.length > 0) {
       SegmentFile segmentFile = new SegmentFile();
       FolderDetails folderDetails = new FolderDetails();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
       folderDetails.setRelative(absSegPath == null);
       folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
       for (CarbonFile file : indexFiles) {
@@ -380,8 +398,10 @@ public class SegmentFileStore {
           folderDetails.getFiles().add(file.getName());
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
       String segmentRelativePath = "/";
       if (!supportFlatFolder) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
         if (absSegPath != null) {
           segmentRelativePath = absSegPath;
         } else {
@@ -390,12 +410,14 @@ public class SegmentFileStore {
       }
       segmentFile.addPath(segmentRelativePath, folderDetails);
       // set segmentMinMax to segmentFile
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
       if (null != segmentMetaDataInfo) {
         segmentFile.setSegmentMetaDataInfo(segmentMetaDataInfo);
       }
       String segmentFileFolder = CarbonTablePath.getSegmentFilesLocation(tablePath);
       CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFileFolder);
       if (!carbonFile.exists()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         carbonFile.mkdirs();
       }
       String segmentFileName = genSegmentFileName(segmentId, UUID) + CarbonTablePath.SEGMENT_EXT;
@@ -403,6 +425,7 @@ public class SegmentFileStore {
       writeSegmentFile(segmentFile, segmentFileFolder + File.separator + segmentFileName);
 
       // Move all files to table path from segment folder.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
       if (supportFlatFolder) {
         moveFromTempFolder(segmentPath, tablePath);
       }
@@ -433,6 +456,7 @@ public class SegmentFileStore {
    */
   public static void writeSegmentFile(SegmentFile segmentFile, String path) throws IOException {
     AtomicFileOperations fileWrite =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2745
         AtomicFileOperationFactory.getAtomicFileOperations(path);
     BufferedWriter brWriter = null;
     DataOutputStream dataOutputStream = null;
@@ -445,6 +469,7 @@ public class SegmentFileStore {
       String metadataInstance = gsonObjectToWrite.toJson(segmentFile);
       brWriter.write(metadataInstance);
       brWriter.flush();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2749
     } catch (IOException ie) {
       LOGGER.error("Error message: " + ie.getLocalizedMessage());
       fileWrite.setFailed();
@@ -465,6 +490,7 @@ public class SegmentFileStore {
       throws IOException {
     CarbonFile[] segmentFiles = getSegmentFiles(readPath);
     if (segmentFiles != null && segmentFiles.length > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
       SegmentFile segmentFile = mergeSegmentFiles(mergeFileName, writePath, segmentFiles);
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(readPath));
       return segmentFile;
@@ -504,6 +530,7 @@ public class SegmentFileStore {
    */
   public static boolean updateTableStatusFile(CarbonTable carbonTable, String segmentId,
       String segmentFile, String tableId, SegmentFileStore segmentFileStore) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3566
     return updateTableStatusFile(carbonTable, segmentId, segmentFile, tableId, segmentFileStore,
         null);
   }
@@ -519,12 +546,15 @@ public class SegmentFileStore {
       SegmentStatus segmentStatus) throws IOException {
     boolean status = false;
     String tablePath = carbonTable.getTablePath();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
     String tableStatusPath = CarbonTablePath.getTableStatusFilePath(tablePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     if (!FileFactory.isFileExist(tableStatusPath)) {
       return status;
     }
     String metadataPath = CarbonTablePath.getMetadataPath(tablePath);
     AbsoluteTableIdentifier absoluteTableIdentifier =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2642
         AbsoluteTableIdentifier.from(tablePath, null, null, tableId);
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
@@ -543,8 +573,10 @@ public class SegmentFileStore {
         for (LoadMetadataDetails detail : listOfLoadFolderDetailsArray) {
           // if the segments is in the list of marked for delete then update the status.
           if (segmentId.equals(detail.getLoadName())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3766
             detail.setLoadEndTime(System.currentTimeMillis());
             detail.setSegmentFile(segmentFile);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
             if (segmentStatus != null) {
               HashMap<String, Long> dataSizeAndIndexSize =
                   CarbonUtil.getDataSizeAndIndexSize(segmentFileStore, detail.isCarbonFormat());
@@ -556,6 +588,7 @@ public class SegmentFileStore {
                       .toString());
               detail.setSegmentStatus(segmentStatus);
             } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2704
               detail.setIndexSize(String.valueOf(CarbonUtil
                   .getCarbonIndexSize(segmentFileStore, segmentFileStore.getLocationMap())));
             }
@@ -566,6 +599,7 @@ public class SegmentFileStore {
         SegmentStatusManager
             .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
         // clear index cache for the segmentId for which the table status file is getting updated
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         clearBlockIndexCache(carbonTable, segmentId);
         status = true;
       } else {
@@ -594,6 +628,7 @@ public class SegmentFileStore {
    * @param segmentId
    */
   public static void clearBlockIndexCache(CarbonTable carbonTable, String segmentId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     TableIndex defaultIndex = IndexStoreManager.getInstance().getDefaultIndex(carbonTable);
     LOGGER.info(
         "clearing cache while updating segment file entry in table status file for segmentId: "
@@ -620,6 +655,8 @@ public class SegmentFileStore {
    * @param partitionSpecs
    */
   public static SegmentFile getSegmentFileForPhysicalDataPartitions(String tablePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2209
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
       List<PartitionSpec> partitionSpecs) throws IOException {
     SegmentFile segmentFile = null;
     for (PartitionSpec spec : partitionSpecs) {
@@ -650,6 +687,7 @@ public class SegmentFileStore {
             folderDetails.getFiles().add(file.getName());
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
         localSegmentFile.addPath(location, folderDetails);
         if (segmentFile == null) {
           segmentFile = localSegmentFile;
@@ -675,8 +713,10 @@ public class SegmentFileStore {
     SegmentFile segmentFile;
     AtomicFileOperations fileOperation =
         AtomicFileOperationFactory.getAtomicFileOperations(segmentFilePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2745
 
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (!FileFactory.isFileExist(segmentFilePath)) {
         return null;
       }
@@ -723,10 +763,12 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public void readIndexFiles(Configuration configuration) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     readIndexFiles(SegmentStatus.SUCCESS, false, configuration);
   }
 
   public SegmentFile getSegmentFile() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2209
     return segmentFile;
   }
 
@@ -738,6 +780,7 @@ public class SegmentFileStore {
    * @throws IOException
    */
   private List<String> readIndexFiles(SegmentStatus status, boolean ignoreStatus,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
       Configuration configuration) throws IOException {
     if (indexFilesMap != null) {
       return new ArrayList<>();
@@ -745,20 +788,25 @@ public class SegmentFileStore {
     List<String> indexOrMergeFiles = new ArrayList<>();
     SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
     indexFilesMap = new HashMap<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2219
     indexFileStore.readAllIIndexOfSegment(this.segmentFile, tablePath, status, ignoreStatus);
     Map<String, byte[]> carbonIndexMap = indexFileStore.getCarbonIndexMapWithFullPath();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter(configuration);
     for (Map.Entry<String, byte[]> entry : carbonIndexMap.entrySet()) {
       List<DataFileFooter> indexInfo =
           fileFooterConverter.getIndexInfo(entry.getKey(), entry.getValue());
       // carbonindex file stores blocklets so block filename will be duplicated, use set to remove
       // duplicates
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2803
       Set<String> blocks = new LinkedHashSet<>();
       for (DataFileFooter footer : indexInfo) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         blocks.add(footer.getBlockInfo().getFilePath());
       }
       indexFilesMap.put(entry.getKey(), new ArrayList<>(blocks));
       boolean added = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2714
       for (Map.Entry<String, List<String>> mergeFile : indexFileStore
           .getCarbonMergeFileToIndexFilesMap().entrySet()) {
         if (mergeFile.getValue().contains(entry.getKey()
@@ -781,6 +829,7 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public static Map<String, List<ColumnSchema>> getSchemaFiles(SegmentFile segmentFile,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2219
       String tablePath) throws IOException {
     Map<String, List<ColumnSchema>> schemaMap = new HashMap<>();
     if (segmentFile == null) {
@@ -791,6 +840,7 @@ public class SegmentFileStore {
     Map<String, byte[]> carbonIndexMap = indexFileStore.getCarbonIndexMapWithFullPath();
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
     for (Map.Entry<String, byte[]> entry : carbonIndexMap.entrySet()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
       List<DataFileFooter> indexInfo = fileFooterConverter
           .getIndexInfo(entry.getKey(), entry.getValue());
       if (indexInfo.size() > 0) {
@@ -810,6 +860,7 @@ public class SegmentFileStore {
       for (Map.Entry<String, FolderDetails> entry : getLocationMap().entrySet()) {
         String location = entry.getKey();
         if (entry.getValue().isRelative) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2223
           location = tablePath + location;
         }
         if (entry.getValue().status.equals(SegmentStatus.SUCCESS.getMessage())) {
@@ -828,11 +879,14 @@ public class SegmentFileStore {
    * @return
    */
   public Map<String, String> getIndexOrMergeFiles() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     Map<String, String> indexFiles = new HashMap<>();
     if (segmentFile != null) {
       for (Map.Entry<String, FolderDetails> entry : getLocationMap().entrySet()) {
         String location = entry.getKey();
         if (entry.getValue().isRelative) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3811
           if (location.equals("/")) {
             // incase of flat folder, the relative segment location is '/',
             // so don't append it as we again add file separator for file names.
@@ -850,6 +904,7 @@ public class SegmentFileStore {
           Set<String> files = entry.getValue().getFiles();
           if (null != files && !files.isEmpty()) {
             for (String indexFile : files) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2753
               String indexFilePath = location + CarbonCommonConstants.FILE_SEPARATOR + indexFile;
               // In the 1.3 store, files field contain the carbonindex files names
               // even if they are merged to a carbonindexmerge file. In that case we have to check
@@ -871,6 +926,7 @@ public class SegmentFileStore {
    * @return
    */
   public List<CarbonFile> getIndexCarbonFiles() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2209
     Map<String, String> indexFiles = getIndexFiles();
     Set<String> files = new HashSet<>();
     for (Map.Entry<String, String> entry: indexFiles.entrySet()) {
@@ -910,6 +966,7 @@ public class SegmentFileStore {
       }
       Path path = new Path(location);
       // Update the status to delete if path equals
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2217
       if (null != partitionSpecs) {
         for (PartitionSpec spec : partitionSpecs) {
           if (path.equals(spec.getLocation())) {
@@ -923,6 +980,7 @@ public class SegmentFileStore {
     if (updateSegment) {
       String writePath = CarbonTablePath.getSegmentFilesLocation(tablePath);
       writePath =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
           writePath + CarbonCommonConstants.FILE_SEPARATOR +
               SegmentFileStore.genSegmentFileName(segment.getSegmentNo(),  String.valueOf(uniqueId))
               + CarbonTablePath.SEGMENT_EXT;
@@ -959,8 +1017,10 @@ public class SegmentFileStore {
     if (toBeDeleteSegments.size() > 0 || toBeUpdatedSegments.size() > 0) {
       Set<Segment> segmentSet = new HashSet<>(
           new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
               .getValidAndInvalidSegments(carbonTable.isMV()).getValidSegments());
       CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, uniqueId, true,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
           Segment.toSegmentList(toBeDeleteSegments, null),
           Segment.toSegmentList(toBeUpdatedSegments, null), uuid);
     }
@@ -977,6 +1037,7 @@ public class SegmentFileStore {
   public static void cleanSegments(CarbonTable table, List<PartitionSpec> partitionSpecs,
       boolean forceDelete) throws IOException {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(table.getMetadataPath());
     // scan through each segment.
     for (LoadMetadataDetails segment : details) {
@@ -992,9 +1053,11 @@ public class SegmentFileStore {
         // take the list of files from this segment.
         SegmentFileStore fileStore =
             new SegmentFileStore(table.getTablePath(), segment.getSegmentFile());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
         List<String> indexOrMergeFiles = fileStore
             .readIndexFiles(SegmentStatus.MARKED_FOR_DELETE, false, FileFactory.getConfiguration());
         if (forceDelete) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
           deletePhysicalPartition(
               partitionSpecs,
               fileStore.getIndexFilesMap(),
@@ -1012,6 +1075,7 @@ public class SegmentFileStore {
             toBeDeletedDataFiles.addAll(entry.getValue());
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2714
         for (String indexFile : indexOrMergeFiles) {
           Long fileTimestamp = 0L;
           if (indexFile.endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
@@ -1029,6 +1093,7 @@ public class SegmentFileStore {
         }
         if (toBeDeletedIndexFiles.size() > 0) {
           for (String dataFile : toBeDeletedIndexFiles) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
             FileFactory.deleteFile(dataFile);
           }
           for (String dataFile : toBeDeletedDataFiles) {
@@ -1047,13 +1112,16 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public static void deleteSegment(String tablePath, Segment segment,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2806
       List<PartitionSpec> partitionSpecs,
       SegmentUpdateStatusManager updateStatusManager) throws Exception {
     SegmentFileStore fileStore = new SegmentFileStore(tablePath, segment.getSegmentFileName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     List<String> indexOrMergeFiles = fileStore.readIndexFiles(SegmentStatus.SUCCESS, true,
         FileFactory.getConfiguration());
     Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
     for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       FileFactory.deleteFile(entry.getKey());
       for (String file : entry.getValue()) {
         String[] deltaFilePaths =
@@ -1064,6 +1132,7 @@ public class SegmentFileStore {
         FileFactory.deleteFile(file);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2714
     deletePhysicalPartition(partitionSpecs, indexFilesMap, indexOrMergeFiles, tablePath);
     String segmentFilePath =
         CarbonTablePath.getSegmentFilePath(tablePath, segment.getSegmentFileName());
@@ -1078,7 +1147,9 @@ public class SegmentFileStore {
    * If partition specs are null, then directly delete parent directory in locationMap.
    */
   private static void deletePhysicalPartition(List<PartitionSpec> partitionSpecs,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       Map<String, List<String>> locationMap, List<String> indexOrMergeFiles, String tablePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2714
     for (String indexOrMergFile : indexOrMergeFiles) {
       if (null != partitionSpecs) {
         Path location = new Path(indexOrMergFile);
@@ -1093,6 +1164,7 @@ public class SegmentFileStore {
     }
     for (Map.Entry<String, List<String>> entry : locationMap.entrySet()) {
       if (partitionSpecs != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2426
         Path location = new Path(entry.getKey());
         boolean exists = pathExistsInPartitionSpec(partitionSpecs, location);
         if (!exists) {
@@ -1102,11 +1174,13 @@ public class SegmentFileStore {
           }
         }
         CarbonFile path = FileFactory.getCarbonFile(location.getParent().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3320
         deleteEmptyPartitionFolders(path);
       } else {
         Path location = new Path(entry.getKey()).getParent();
         // delete the segment folder
         CarbonFile segmentPath = FileFactory.getCarbonFile(location.toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
         if (null != segmentPath && segmentPath.exists() &&
             !new Path(tablePath).equals(new Path(segmentPath.getAbsolutePath()))) {
           FileFactory.deleteAllCarbonFilesOfDir(segmentPath);
@@ -1123,6 +1197,7 @@ public class SegmentFileStore {
    * year partition
    */
   private static void deleteEmptyPartitionFolders(CarbonFile path) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3320
     if (path != null && path.listFiles().length == 0) {
       FileFactory.deleteAllCarbonFilesOfDir(path);
       Path parentsLocation = new Path(path.getAbsolutePath()).getParent();
@@ -1149,6 +1224,7 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public static List<PartitionSpec> getPartitionSpecs(String segmentId, String tablePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3415
       LoadMetadataDetails[] details)
       throws IOException {
     LoadMetadataDetails segEntry = null;
@@ -1166,6 +1242,7 @@ public class SegmentFileStore {
       }
       return partitionSpecs;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     return new ArrayList<>();
   }
 
@@ -1254,6 +1331,7 @@ public class SegmentFileStore {
    * This method returns the list of indx/merge index files for a segment in carbonTable.
    */
   public static Set<String> getIndexFilesListForSegment(Segment segment, String tablePath)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3754
       throws IOException {
     Set<String> indexFiles;
     if (segment.getSegmentFileName() == null) {
@@ -1307,6 +1385,7 @@ public class SegmentFileStore {
             locationMap.put(entry.getKey(), entry.getValue());
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
         if (segmentMetaDataInfo != null) {
           SegmentMetaDataInfo currentSegmentMetaDataInfo =
               (SegmentMetaDataInfo) ObjectSerializationUtil
@@ -1340,6 +1419,7 @@ public class SegmentFileStore {
         }
       }
       if (locationMap == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
         locationMap = segmentFile.locationMap;
       }
       return this;
@@ -1352,11 +1432,13 @@ public class SegmentFileStore {
     /**
      * Add index file parent folder and the index file folder info
      */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
     void addPath(String path, FolderDetails details) {
       locationMap.put(path, details);
     }
 
     public Map<String, String> getOptions() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
       return options;
     }
 
@@ -1365,6 +1447,7 @@ public class SegmentFileStore {
     }
 
     public SegmentMetaDataInfo getSegmentMetaDataInfo() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
       SegmentMetaDataInfo newSegmentMetaDataInfo = null;
       try {
         newSegmentMetaDataInfo = (SegmentMetaDataInfo) ObjectSerializationUtil
@@ -1382,6 +1465,7 @@ public class SegmentFileStore {
   }
 
   public static SegmentFile createSegmentFile(String partitionPath, FolderDetails folderDetails) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
     SegmentFile segmentFile = new SegmentFile();
     segmentFile.addPath(partitionPath, folderDetails);
     return segmentFile;

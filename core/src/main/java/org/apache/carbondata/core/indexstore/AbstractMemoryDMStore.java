@@ -59,6 +59,7 @@ public abstract class AbstractMemoryDMStore implements Serializable {
   }
 
   public boolean isSerialized() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     return isSerialized;
   }
 }

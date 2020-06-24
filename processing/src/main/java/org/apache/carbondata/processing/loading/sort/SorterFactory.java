@@ -42,6 +42,7 @@ public class SorterFactory {
     Sorter sorter;
     if (offheapsort) {
       if (configuration.getBucketingInfo() != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
         sorter = new UnsafeParallelReadMergeSorterWithColumnRangeImpl(counter,
             configuration.getBucketingInfo());
       } else if (configuration.getSortColumnRangeInfo() != null) {

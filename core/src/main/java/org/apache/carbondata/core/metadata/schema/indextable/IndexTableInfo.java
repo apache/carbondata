@@ -38,6 +38,7 @@ public class IndexTableInfo implements Serializable {
   private Map<String, String> indexProperties;
 
   public IndexTableInfo(String databaseName, String tableName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       Map<String, String> indexProperties) {
     this.databaseName = databaseName;
     this.tableName = tableName;
@@ -150,6 +151,7 @@ public class IndexTableInfo implements Serializable {
         }
       }
       indexTableInfos[i].setIndexCols(newColumnList);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       Map<String, String> indexProperties = indexTableInfos[i].getIndexProperties();
       indexProperties
           .put(CarbonCommonConstants.INDEX_COLUMNS, String.join(",", newColumnList));

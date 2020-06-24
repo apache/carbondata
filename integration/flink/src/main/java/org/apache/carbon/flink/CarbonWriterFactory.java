@@ -46,6 +46,8 @@ public abstract class CarbonWriterFactory extends ProxyFileWriterFactory<Object[
   @Override
   public CarbonWriter create(final String identifier, final String path) throws IOException {
     this.setCarbonProperties();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     return this.create0(identifier, path);
   }
 

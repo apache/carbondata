@@ -37,6 +37,7 @@ public class EncodedTablePage {
   private int encodedSize;
 
   public static EncodedTablePage newInstance(int pageSize,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       EncodedColumnPage[] dimensionPages, EncodedColumnPage[] measurePages) {
     return new EncodedTablePage(pageSize, dimensionPages, measurePages);
   }
@@ -51,6 +52,7 @@ public class EncodedTablePage {
 
   // return size in bytes of this encoded page
   private int calculatePageSize(EncodedColumnPage[] dimensionPages,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       EncodedColumnPage[] measurePages) {
     int size = 0;
     for (EncodedColumnPage dimensionPage : dimensionPages) {
@@ -71,6 +73,7 @@ public class EncodedTablePage {
   }
 
   public int getNumDimensions() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
     return dimensionPages.length;
   }
 

@@ -85,6 +85,7 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
     // next column and get the total length.
     // but for last column we need to use lastDimensionOffset which is the end position
     // of the last dimension, we can subtract current dimension offset from lastDimensionOffset
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
     if (measureColumnChunkOffsets.size() - 1 == columnIndex) {
       dataLength = (int) (measureOffsets - measureColumnChunkOffsets.get(columnIndex));
     } else {
@@ -106,6 +107,7 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
         dataChunk);
   }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   MeasureRawColumnChunk getMeasureRawColumnChunk(FileReader fileReader, int columnIndex,
       long offset, int dataLength, ByteBuffer buffer, DataChunk3 dataChunk) {
     // creating a raw chunks instance and filling all the details
@@ -157,6 +159,7 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
     // to calculate the length of the data to be read
     // column we can subtract the offset of start column offset with
     // end column+1 offset and get the total length.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     long currentMeasureOffset = measureColumnChunkOffsets.get(startColumnIndex);
     ByteBuffer buffer = null;
     // read the data from carbon data file
@@ -174,6 +177,7 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
           (int) (measureColumnChunkOffsets.get(i + 1) - measureColumnChunkOffsets.get(i));
       DataChunk3 dataChunk =
           CarbonUtil.readDataChunk3(buffer, runningLength, measureColumnChunkLength.get(i));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
       MeasureRawColumnChunk measureRawColumnChunk =
           getMeasureRawColumnChunk(fileReader, i, runningLength, currentLength, buffer, dataChunk);
       measureDataChunk[index] = measureRawColumnChunk;
@@ -193,6 +197,7 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
   @Override
   public ColumnPage decodeColumnPage(MeasureRawColumnChunk rawColumnChunk, int pageNumber,
       ReusableDataBuffer reusableDataBuffer)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
     return decodeColumnPage(rawColumnChunk, pageNumber, null, reusableDataBuffer);
   }
@@ -211,6 +216,8 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
     DataChunk3 dataChunk3 = rawColumnChunk.getDataChunkV3();
     // data chunk of page
     DataChunk2 pageMetadata = dataChunk3.getData_chunk_list().get(pageNumber);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
         pageMetadata.getChunk_meta());
     this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
@@ -222,6 +229,7 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
         dataChunk3.getPage_offset().get(pageNumber);
     BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor);
     ColumnPage decodedPage =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
         decodeMeasure(pageMetadata, rawColumnChunk.getRawData(), offset, vectorInfo, nullBitSet,
             reusableDataBuffer);
     if (decodedPage == null) {
@@ -236,8 +244,10 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
    */
   protected ColumnPage decodeMeasure(DataChunk2 pageMetadata, ByteBuffer pageData, int offset,
       ColumnVectorInfo vectorInfo, BitSet nullBitSet, ReusableDataBuffer reusableDataBuffer)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
     List<Encoding> encodings = pageMetadata.getEncoders();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3061
     org.apache.carbondata.core.metadata.encoder.Encoding.validateEncodingTypes(encodings);
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
     String compressorName =
@@ -245,6 +255,7 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
     ColumnPageDecoder codec =
         encodingFactory.createDecoder(encodings, encoderMetas, compressorName, vectorInfo != null);
     if (vectorInfo != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       codec.decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo,
           nullBitSet, false, pageMetadata.numberOfRowsInpage, reusableDataBuffer);
       return null;

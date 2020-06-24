@@ -62,15 +62,20 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
   public void write(DeleteDeltaBlockDetails deleteDeltaBlockDetails) throws IOException {
     BufferedWriter brWriter = null;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       FileFactory.createNewFile(filePath);
       dataOutStream = FileFactory.getDataOutputStream(filePath);
       Gson gsonObjectToWrite = new Gson();
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutStream,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
           CarbonCommonConstants.DEFAULT_CHARSET));
       String deletedData = gsonObjectToWrite.toJson(deleteDeltaBlockDetails);
       brWriter.write(deletedData);
     } catch (IOException ioe) {
       LOGGER.error("Error message: " + ioe.getLocalizedMessage());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2275
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2275
       throw ioe;
     } finally {
       if (null != brWriter) {
@@ -79,6 +84,8 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
       if (null != dataOutStream) {
         dataOutStream.flush();
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2275
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2275
       if (null != brWriter) {
         brWriter.close();
       }

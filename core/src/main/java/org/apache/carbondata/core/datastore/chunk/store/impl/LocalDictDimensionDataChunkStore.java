@@ -41,6 +41,7 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
   private int dataLength;
 
   public LocalDictDimensionDataChunkStore(DimensionDataChunkStore dimensionDataChunkStore,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       CarbonDictionary dictionary, int dataLength) {
     this.dimensionDataChunkStore = dimensionDataChunkStore;
     this.dictionary = dictionary;
@@ -60,14 +61,17 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
 
   @Override
   public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
       ColumnVectorInfo vectorInfo) {
     int columnValueSize = dimensionDataChunkStore.getColumnValueSize();
     int rowsNum = dataLength / columnValueSize;
     CarbonColumnVector vector = vectorInfo.vector;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     if (!dictionary.isDictionaryUsed()) {
       vector.setDictionary(dictionary);
       dictionary.setDictionaryUsed();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3048
     BitSet nullBitset = new BitSet();
     CarbonColumnVector dictionaryVector = ColumnarVectorWrapperDirectFactory
         .getDirectVectorWrapperFactory(vector.getDictionaryVector(), invertedIndex, nullBitset,
@@ -83,6 +87,7 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
       } else {
         // if vector is 'ColumnarVectorWrapperDirectWithDeleteDelta', it needs to call 'putNotNull'
         // to increase 'counter', otherwise it will set the null value to the wrong index.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3561
         vector.putNotNull(i);
         dictionaryVector.putInt(i, surrogate);
       }
@@ -99,12 +104,14 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
 
   @Override
   public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     if (!dictionary.isDictionaryUsed()) {
       vector.setDictionary(dictionary);
       dictionary.setDictionaryUsed();
     }
     int surrogate = dimensionDataChunkStore.getSurrogate(rowId);
     if (surrogate == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2758
       vector.putNull(vectorRow);
       vector.getDictionaryVector().putNull(vectorRow);
       return;

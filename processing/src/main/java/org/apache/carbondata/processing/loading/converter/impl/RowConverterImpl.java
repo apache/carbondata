@@ -65,6 +65,7 @@ public class RowConverterImpl implements RowConverter {
   }
 
   public RowConverterImpl(DataField[] fields, CarbonDataLoadConfiguration configuration,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
       BadRecordsLogger badRecordLogger, boolean isConvertToBinary) {
     this.fields = fields;
     this.configuration = configuration;
@@ -78,9 +79,11 @@ public class RowConverterImpl implements RowConverter {
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
             .toString();
     boolean isEmptyBadRecord = Boolean.parseBoolean(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-784
         configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
             .toString());
     List<FieldConverter> fieldConverterList = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     List<FieldConverter> nonSchemaFieldConverterList = new ArrayList<>();
     long lruCacheStartTime = System.currentTimeMillis();
 
@@ -105,9 +108,11 @@ public class RowConverterImpl implements RowConverter {
 
   @Override
   public CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-784
     logHolder.setLogged(false);
     logHolder.clear();
     for (int i = 0; i < fieldConverters.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
       if (configuration.isNonSchemaColumnsPresent() && !fieldConverters[i].getDataField()
           .getColumn().isSpatialColumn()) {
         // Skip the conversion for schema columns if the conversion is required only for non-schema
@@ -116,8 +121,11 @@ public class RowConverterImpl implements RowConverter {
       }
       fieldConverters[i].convert(row, logHolder);
       if (!logHolder.isLogged() && logHolder.isBadRecordNotAdded()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1249
         badRecordLogger.addBadRecordsToBuilder(row.getRawData(), logHolder.getReason());
         if (badRecordLogger.isDataLoadFail()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-794
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1439
           String error = "Data load failed due to bad record: " + logHolder.getReason();
           if (!badRecordLogger.isBadRecordLoggerEnable()) {
             error += "Please enable bad record logger to know the detail reason.";
@@ -132,12 +140,14 @@ public class RowConverterImpl implements RowConverter {
       }
     }
     // rawData will not be required after this so reset the entry to null.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1249
     row.setRawData(null);
     return row;
   }
 
   @Override
   public void finish() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3591
     for (int i = 0; i < fieldConverters.length; i++) {
       fieldConverters[i].clear();
     }
@@ -146,9 +156,11 @@ public class RowConverterImpl implements RowConverter {
   @Override
   public RowConverter createCopyForNewThread() {
     RowConverterImpl converter =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
         new RowConverterImpl(this.fields, this.configuration, this.badRecordLogger,
             this.isConvertToBinary);
     List<FieldConverter> fieldConverterList = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     List<FieldConverter> nonSchemaFieldConverterList = new ArrayList<>();
     String nullFormat =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
@@ -160,8 +172,11 @@ public class RowConverterImpl implements RowConverter {
       FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
           .createFieldEncoder(fields[i], i, nullFormat, isEmptyBadRecord, isConvertToBinary,
               (String) configuration.getDataLoadProperty(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
                   CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER),
               configuration);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
       if (fields[i].getColumn().isSpatialColumn()) {
         nonSchemaFieldConverterList.add(fieldConverter);
       } else {
@@ -176,6 +191,7 @@ public class RowConverterImpl implements RowConverter {
 
   @Override
   public FieldConverter[] getFieldConverters() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     return fieldConverters;
   }
 }

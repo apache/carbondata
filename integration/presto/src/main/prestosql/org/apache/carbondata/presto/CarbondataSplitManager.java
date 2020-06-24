@@ -85,6 +85,7 @@ public class CarbondataSplitManager extends HiveSplitManager {
   private final HdfsEnvironment hdfsEnvironment;
 
   @Inject public CarbondataSplitManager(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
       HiveConfig hiveConfig,
       Function<HiveTransactionHandle, SemiTransactionalHiveMetastore> metastoreProvider,
       HivePartitionManager partitionManager,
@@ -117,9 +118,11 @@ public class CarbondataSplitManager extends HiveSplitManager {
         metastore.getTable(schemaTableName.getSchemaName(), schemaTableName.getTableName())
             .orElseThrow(() -> new TableNotFoundException(schemaTableName));
     if (!table.getStorage().getStorageFormat().getInputFormat().contains("carbon")) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
       return super.getSplits(transactionHandle, session, tableHandle, splitSchedulingStrategy);
     }
     // for hive metastore, get table location from catalog table's tablePath
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3786
     String location = table.getStorage().getSerdeParameters().get("tablePath");
     if (StringUtils.isEmpty(location))  {
       // file metastore case tablePath can be null, so get from location
@@ -134,20 +137,24 @@ public class CarbondataSplitManager extends HiveSplitManager {
 
     carbonTableReader.setQueryId(queryId);
     TupleDomain<HiveColumnHandle> predicate =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
         (TupleDomain<HiveColumnHandle>) hiveTable.getCompactEffectivePredicate();
     Configuration configuration = this.hdfsEnvironment.getConfiguration(
         new HdfsEnvironment.HdfsContext(session, schemaTableName.getSchemaName(),
             schemaTableName.getTableName()), new Path(location));
     configuration = carbonTableReader.updateS3Properties(configuration);
     // set the hadoop configuration to thread local, so that FileFactory can use it.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3282
     ThreadLocalSessionInfo.setConfigurationToCurrentThread(configuration);
     CarbonTableCacheModel cache =
         carbonTableReader.getCarbonCache(schemaTableName, location, configuration);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     Expression filters = PrestoFilterUtil.parseFilterExpression(predicate);
     try {
 
       List<CarbonLocalMultiBlockSplit> splits =
           carbonTableReader.getInputSplits(cache, filters, predicate, configuration);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
 
       ImmutableList.Builder<ConnectorSplit> cSplits = ImmutableList.builder();
       long index = 0;
@@ -162,6 +169,7 @@ public class CarbondataSplitManager extends HiveSplitManager {
         properties.setProperty("queryId", queryId);
         properties.setProperty("index", String.valueOf(index));
         cSplits.add(new HiveSplit(schemaTableName.getSchemaName(), schemaTableName.getTableName(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
             schemaTableName.getTableName(), cache.getCarbonTable().getTablePath(), 0, 0, 0,
             properties, new ArrayList(), getHostAddresses(split.getLocations()),
             OptionalInt.empty(), false, new HashMap<>(),
@@ -181,6 +189,7 @@ public class CarbondataSplitManager extends HiveSplitManager {
   }
 
   private static List<HostAddress> getHostAddresses(String[] hosts) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3194
     return Arrays.stream(hosts).map(HostAddress::fromString).collect(toImmutableList());
   }
 

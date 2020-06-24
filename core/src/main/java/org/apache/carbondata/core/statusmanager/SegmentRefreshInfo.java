@@ -26,6 +26,7 @@ public class SegmentRefreshInfo implements Serializable {
   private Long segmentFileTimestamp = 0L;
 
   public SegmentRefreshInfo(Long segmentUpdatedTimestamp, Integer countOfFileInSegment,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3759
       Long segmentFileTimestamp) {
     if (segmentUpdatedTimestamp != null) {
       this.segmentUpdatedTimestamp = segmentUpdatedTimestamp;
@@ -47,6 +48,7 @@ public class SegmentRefreshInfo implements Serializable {
   }
 
   public Long getSegmentFileTimestamp() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3759
     return segmentFileTimestamp;
   }
 

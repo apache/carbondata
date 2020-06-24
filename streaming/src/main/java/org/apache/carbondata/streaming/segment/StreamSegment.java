@@ -78,15 +78,19 @@ public class StreamSegment {
     try {
       if (carbonLock.lockWithRetries()) {
         LOGGER.info(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1739
             "Acquired lock for table" + table.getDatabaseName() + "." + table.getTableName()
                 + " for stream table get or create segment");
 
         LoadMetadataDetails[] details =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
             SegmentStatusManager.readLoadMetadata(
                 CarbonTablePath.getMetadataPath(table.getTablePath()));
         LoadMetadataDetails streamSegment = null;
         for (LoadMetadataDetails detail : details) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
           if (FileFormat.ROW_V1.equals(detail.getFileFormat())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
             if (SegmentStatus.STREAMING == detail.getSegmentStatus()) {
               streamSegment = detail;
               break;
@@ -107,6 +111,7 @@ public class StreamSegment {
             newDetails[i] = details[i];
           }
           newDetails[i] = newDetail;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
           SegmentStatusManager.writeLoadDetailsIntoFile(
               CarbonTablePath.getTableStatusFilePath(table.getTablePath()), newDetails);
           return newDetail.getLoadName();
@@ -116,6 +121,7 @@ public class StreamSegment {
       } else {
         LOGGER.error(
             "Not able to acquire the lock for stream table get or create segment for table " + table
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1739
                 .getDatabaseName() + "." + table.getTableName());
         throw new IOException("Failed to get stream segment");
       }
@@ -142,10 +148,12 @@ public class StreamSegment {
     try {
       if (carbonLock.lockWithRetries()) {
         LOGGER.info(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1739
             "Acquired lock for table" + table.getDatabaseName() + "." + table.getTableName()
                 + " for stream table finish segment");
 
         LoadMetadataDetails[] details =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
             SegmentStatusManager.readLoadMetadata(
                 CarbonTablePath.getMetadataPath(table.getTablePath()));
         for (LoadMetadataDetails detail : details) {
@@ -158,10 +166,15 @@ public class StreamSegment {
 
         int newSegmentId = SegmentStatusManager.createNewSegmentId(details);
         LoadMetadataDetails newDetail = new LoadMetadataDetails();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3578
         newDetail.setLoadName(String.valueOf(newSegmentId));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1614
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1614
         newDetail.setFileFormat(FileFormat.ROW_V1);
         newDetail.setLoadStartTime(System.currentTimeMillis());
         newDetail.setSegmentStatus(SegmentStatus.STREAMING);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
 
         LoadMetadataDetails[] newDetails = new LoadMetadataDetails[details.length + 1];
         int i = 0;
@@ -170,12 +183,14 @@ public class StreamSegment {
         }
         newDetails[i] = newDetail;
         SegmentStatusManager
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
             .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(
                 table.getTablePath()), newDetails);
         return newDetail.getLoadName();
       } else {
         LOGGER.error(
             "Not able to acquire the lock for stream table status updation for table " + table
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1739
                 .getDatabaseName() + "." + table.getTableName());
         throw new IOException("Failed to get stream segment");
       }
@@ -195,23 +210,28 @@ public class StreamSegment {
    * change the status of the segment from "streaming" to "streaming finish"
    */
   public static void finishStreaming(CarbonTable carbonTable) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1904
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1905
     ICarbonLock statusLock = CarbonLockFactory.getCarbonLockObj(
         carbonTable.getTableInfo().getOrCreateAbsoluteTableIdentifier(),
         LockUsage.TABLE_STATUS_LOCK);
     try {
       if (statusLock.lockWithRetries()) {
         LoadMetadataDetails[] details =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
             SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
         boolean updated = false;
         for (LoadMetadataDetails detail : details) {
           if (SegmentStatus.STREAMING == detail.getSegmentStatus()) {
             detail.setLoadEndTime(System.currentTimeMillis());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
             detail.setSegmentStatus(SegmentStatus.STREAMING_FINISH);
             updated = true;
           }
         }
         if (updated) {
           SegmentStatusManager.writeLoadDetailsIntoFile(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
               CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath()),
               details);
         }
@@ -233,6 +253,7 @@ public class StreamSegment {
   }
 
   public static BlockletMinMaxIndex collectMinMaxIndex(SimpleStatsResult[] dimStats,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2853
       SimpleStatsResult[] mrsStats) {
     BlockletMinMaxIndex minMaxIndex = new BlockletMinMaxIndex();
     byte[][] maxIndexes = new byte[dimStats.length + mrsStats.length][];
@@ -258,6 +279,7 @@ public class StreamSegment {
     minMaxIndex.setMinValues(minIndexes);
     // TODO: handle the min max writing for string type based on character limit for streaming
     boolean[] isMinMaxSet = new boolean[dimStats.length + mrsStats.length];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     Arrays.fill(isMinMaxSet, true);
     minMaxIndex.setIsMinMaxSet(isMinMaxSet);
     return minMaxIndex;
@@ -277,6 +299,7 @@ public class StreamSegment {
    * invoke CarbonStreamOutputFormat to append batch data to existing carbondata file
    */
   public static StreamFileIndex appendBatchData(CarbonIterator<Object[]> inputIterators,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1766
       TaskAttemptContext job, CarbonLoadModel carbonLoadModel) throws Exception {
     CarbonStreamRecordWriter writer = null;
     try {
@@ -290,6 +313,7 @@ public class StreamSegment {
       int blockletRowCount = 0;
       while (inputIterators.hasNext()) {
         writer.write(null, inputIterators.next());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2853
         blockletRowCount++;
       }
       inputIterators.close();
@@ -298,8 +322,10 @@ public class StreamSegment {
           blockletRowCount);
     } catch (Throwable ex) {
       if (writer != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
         LOGGER.error("Failed to append batch data to stream segment: " +
             writer.getSegmentDir(), ex);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2058
         writer.setHasException(true);
       }
       throw ex;
@@ -317,6 +343,7 @@ public class StreamSegment {
    * 2. after job failed (CarbonAppendableStreamSink.writeDataFileJob)
    */
   public static void recoverSegmentIfRequired(String segmentDir) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     if (FileFactory.isFileExist(segmentDir)) {
       String indexName = CarbonTablePath.getCarbonStreamIndexFileName();
       String indexPath = segmentDir + File.separator + indexName;
@@ -342,6 +369,7 @@ public class StreamSegment {
               if (null == size || size == 0) {
                 file.delete();
               } else if (size < file.getSize()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
                 FileFactory.truncateFile(file.getCanonicalPath(), size);
               }
             }
@@ -370,6 +398,7 @@ public class StreamSegment {
       String indexName) throws IOException {
 
     String filePath = segmentDir + File.separator + fileName;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     CarbonFile file = FileFactory.getCarbonFile(filePath);
     String indexPath = segmentDir + File.separator + indexName;
     CarbonFile index = FileFactory.getCarbonFile(indexPath);
@@ -383,8 +412,10 @@ public class StreamSegment {
             if (blockIndex.getFile_size() == 0) {
               file.delete();
             } else if (blockIndex.getFile_size() < file.getSize()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
               FileFactory.truncateFile(filePath, blockIndex.getFile_size());
             }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2853
             break;
           }
         }
@@ -398,6 +429,7 @@ public class StreamSegment {
    * list all carbondata files of a segment
    */
   public static CarbonFile[] listDataFiles(String segmentDir) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     CarbonFile carbonDir = FileFactory.getCarbonFile(segmentDir);
     if (carbonDir.exists()) {
       return carbonDir.listFiles(new CarbonFileFilter() {
@@ -420,6 +452,7 @@ public class StreamSegment {
    * @throws IOException
    */
   public static List<BlockIndex> readIndexFile(String indexPath)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2853
       throws IOException {
     List<BlockIndex> blockIndexList = new ArrayList<>();
     CarbonFile index = FileFactory.getCarbonFile(indexPath);
@@ -453,6 +486,7 @@ public class StreamSegment {
       return;
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2984
     BlockletMinMaxIndex minMaxIndex = blockletIndex.getMinMaxIndex();
     // if min/max of new blocklet is null, use min/max of old file
     if (minMaxIndex == null) {
@@ -466,6 +500,7 @@ public class StreamSegment {
     }
 
     // min value
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2984
     byte[][] minValues = minMaxIndex.getMinValues();
     byte[][] mergedMinValues = fileIndex.getMinValues();
     if (minValues == null || minValues.length == 0) {
@@ -495,6 +530,7 @@ public class StreamSegment {
     }
 
     // max value
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2984
     byte[][] maxValues = minMaxIndex.getMaxValues();
     byte[][] mergedMaxValues = fileIndex.getMaxValues();
     if (maxValues == null || maxValues.length == 0) {
@@ -588,6 +624,7 @@ public class StreamSegment {
    * merge new blocklet index and old file index to create new file index
    */
   private static void updateStreamFileIndex(Map<String, StreamFileIndex> indexMap,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       String indexPath, DataType[] msrDataTypes
   ) throws IOException {
     List<BlockIndex> blockIndexList = readIndexFile(indexPath);
@@ -619,6 +656,7 @@ public class StreamSegment {
       indexMap.put(fileIndex.getFileName(), fileIndex);
     }
     updateStreamFileIndex(indexMap, filePath, msrDataTypes);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
 
     String tempFilePath = filePath + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
     CarbonIndexFileWriter writer = new CarbonIndexFileWriter();
@@ -632,6 +670,7 @@ public class StreamSegment {
         blockIndex.setFile_size(file.getSize());
         blockIndex.setOffset(-1);
         // set min/max index
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2853
         BlockletIndex blockletIndex = new BlockletIndex();
         blockIndex.setBlock_index(blockletIndex);
         StreamFileIndex streamFileIndex = indexMap.get(blockIndex.getFile_name());
@@ -646,6 +685,7 @@ public class StreamSegment {
         writer.writeThrift(blockIndex);
       }
       writer.close();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       CarbonFile tempFile = FileFactory.getCarbonFile(tempFilePath);
       if (!tempFile.renameForce(filePath)) {
         throw new IOException(
@@ -666,8 +706,10 @@ public class StreamSegment {
    */
   public static long size(String segmentDir) throws IOException {
     long size = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     if (FileFactory.isFileExist(segmentDir)) {
       String indexPath = CarbonTablePath.getCarbonStreamIndexFilePath(segmentDir);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       CarbonFile index = FileFactory.getCarbonFile(indexPath);
       if (index.exists()) {
         CarbonIndexFileReader indexReader = new CarbonIndexFileReader();

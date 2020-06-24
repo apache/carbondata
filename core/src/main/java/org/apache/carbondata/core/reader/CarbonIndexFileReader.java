@@ -37,6 +37,7 @@ public class CarbonIndexFileReader {
   }
 
   public CarbonIndexFileReader(Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     this.configuration = configuration;
   }
 
@@ -52,6 +53,7 @@ public class CarbonIndexFileReader {
    * @throws IOException if any problem  while reader the header
    */
   public IndexHeader readIndexHeader() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
     return (IndexHeader) thriftReader.read(new ThriftReader.TBaseCreator() {
       @Override
       public TBase create() {
@@ -74,6 +76,7 @@ public class CarbonIndexFileReader {
    * @throws IOException if problem while reading the block index
    */
   public BlockIndex readBlockIndexInfo() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
     return (BlockIndex) thriftReader.read(new ThriftReader.TBaseCreator() {
       @Override
       public TBase create() {
@@ -89,6 +92,7 @@ public class CarbonIndexFileReader {
    * @throws IOException
    */
   public void openThriftReader(String filePath) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     thriftReader = new ThriftReader(filePath, configuration);
     thriftReader.open();
   }
@@ -99,6 +103,7 @@ public class CarbonIndexFileReader {
    * @param fileData
    */
   public void openThriftReader(byte[] fileData) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1617
     thriftReader = new ThriftReader(fileData);
   }
 

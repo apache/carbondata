@@ -29,6 +29,7 @@ import org.apache.carbondata.common.annotations.InterfaceStability;
 public class NoSuchIndexException extends MalformedCarbonCommandException {
 
   public NoSuchIndexException(String indexName, String tableName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     super("Index with name " + indexName + " does not exist under table " + tableName);
   }
 

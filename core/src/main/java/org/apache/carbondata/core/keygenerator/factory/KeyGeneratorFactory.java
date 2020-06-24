@@ -32,6 +32,7 @@ public final class KeyGeneratorFactory {
     boolean isFullyFilled =
         Boolean.parseBoolean(CarbonCommonConstants.IS_FULLY_FILLED_BITS_DEFAULT_VALUE);
     if (!isFullyFilled) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2130
       incrementedCardinality = CarbonUtil.getIncrementedCardinality(dimension);
     } else {
       incrementedCardinality = CarbonUtil.getIncrementedCardinalityFullyFilled(dimension);

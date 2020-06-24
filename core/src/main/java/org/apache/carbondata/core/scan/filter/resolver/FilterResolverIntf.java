@@ -35,6 +35,7 @@ public interface FilterResolverIntf extends Serializable {
    * @throws FilterUnsupportedException
    */
   void resolve() throws FilterUnsupportedException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
 
   /**
    * This API will provide the left column filter expression

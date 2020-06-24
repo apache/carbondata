@@ -50,6 +50,7 @@ public class UnsafeIndexRow extends IndexRow {
     switch (schemas[ordinal].getSchemaType()) {
       case VARIABLE_SHORT:
       case VARIABLE_INT:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
         final int schemaOrdinal = schemas[ordinal].getBytePosition();
         currentOffset = getUnsafe().getInt(block.getBaseObject(),
             block.getBaseOffset() + pointer + schemaOrdinal);
@@ -100,8 +101,10 @@ public class UnsafeIndexRow extends IndexRow {
 
   @Override
   public IndexRow getRow(int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1520
     CarbonRowSchema[] childSchemas =
         ((CarbonRowSchema.StructCarbonRowSchema) schemas[ordinal]).getChildSchemas();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     return new UnsafeIndexRow(childSchemas, block, pointer);
   }
 
@@ -112,6 +115,7 @@ public class UnsafeIndexRow extends IndexRow {
 
   @Override
   public int getInt(int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     return getUnsafe().getInt(block.getBaseObject(),
         block.getBaseOffset() + pointer + schemas[ordinal].getBytePosition());
   }
@@ -128,6 +132,7 @@ public class UnsafeIndexRow extends IndexRow {
 
   @Override
   public byte getByte(int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     return getUnsafe().getByte(block.getBaseObject(),
         block.getBaseOffset() + pointer + schemas[ordinal].getBytePosition());
   }
@@ -139,6 +144,7 @@ public class UnsafeIndexRow extends IndexRow {
 
   @Override
   public short getShort(int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     return getUnsafe().getShort(block.getBaseObject(),
         block.getBaseOffset() + pointer + schemas[ordinal].getBytePosition());
   }
@@ -150,6 +156,7 @@ public class UnsafeIndexRow extends IndexRow {
 
   @Override
   public long getLong(int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     return getUnsafe().getLong(block.getBaseObject(),
         block.getBaseOffset() + pointer + schemas[ordinal].getBytePosition());
   }
@@ -161,6 +168,7 @@ public class UnsafeIndexRow extends IndexRow {
 
   @Override
   public float getFloat(int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     return getUnsafe().getFloat(block.getBaseObject(),
         block.getBaseOffset() + pointer + schemas[ordinal].getBytePosition());
   }
@@ -172,6 +180,7 @@ public class UnsafeIndexRow extends IndexRow {
 
   @Override
   public double getDouble(int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     return getUnsafe().getDouble(block.getBaseObject(),
         block.getBaseOffset() + pointer + schemas[ordinal].getBytePosition());
   }

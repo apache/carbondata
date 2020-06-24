@@ -77,8 +77,11 @@ public class LocalDictColumnPage extends ColumnPage {
    * Create a new column page with input data type and page size.
    */
   protected LocalDictColumnPage(ColumnPage actualDataColumnPage, ColumnPage encodedColumnpage,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
       LocalDictionaryGenerator localDictionaryGenerator, boolean isComplexTypePrimitive,
       boolean isDecoderBasedFallBackEnabled) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     super(actualDataColumnPage.getColumnPageEncoderMeta(), actualDataColumnPage.getPageSize());
     // if threshold is not reached then create page level dictionary
     // for encoding with local dictionary
@@ -94,6 +97,7 @@ public class LocalDictColumnPage extends ColumnPage {
       // else free the encoded column page memory as its of no use
       encodedColumnpage.freeMemory();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
     this.isDecoderBasedFallBackEnabled = isDecoderBasedFallBackEnabled;
     this.actualDataColumnPage = actualDataColumnPage;
   }
@@ -109,6 +113,7 @@ public class LocalDictColumnPage extends ColumnPage {
 
   @Override
   public ByteBuffer getByteBuffer() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     if (null != pageLevelDictionary) {
       return encodedDataColumnPage.getByteBuffer();
     } else {
@@ -137,6 +142,7 @@ public class LocalDictColumnPage extends ColumnPage {
     if (null != pageLevelDictionary) {
       try {
         actualDataColumnPage.putBytes(rowId, bytes);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
         byte[] input;
         DataType dataType = actualDataColumnPage.columnPageEncoderMeta.getStoreDataType();
         if (dataType == DataTypes.STRING) {
@@ -155,6 +161,8 @@ public class LocalDictColumnPage extends ColumnPage {
         dummyKey[0] = pageLevelDictionary.getDictionaryValue(input);
         encodedDataColumnPage.putBytes(rowId, keyGenerator.generateKey(dummyKey));
       } catch (DictionaryThresholdReachedException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
         LOGGER.warn("Local Dictionary threshold reached for the column: " + actualDataColumnPage
             .getColumnSpec().getFieldName() + ", " + e.getMessage());
         pageLevelDictionary = null;
@@ -164,6 +172,7 @@ public class LocalDictColumnPage extends ColumnPage {
     } else {
       actualDataColumnPage.putBytes(rowId, bytes);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3212
     if (pageSize <= rowId) {
       pageSize = rowId + 1;
     }
@@ -225,6 +234,7 @@ public class LocalDictColumnPage extends ColumnPage {
     // free the encoded column page as data is already encoded and it is of no use, during fallback
     // if goes to actual databased fallback, we need actual data and decoder based fallback we need
     // just the encoded data to form a new page
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
     if (null != encodedDataColumnPage) {
       encodedDataColumnPage.freeMemory();
     }
@@ -388,6 +398,7 @@ public class LocalDictColumnPage extends ColumnPage {
   @Override
   public byte[] getComplexChildrenLVFlattenedBytePage(DataType dataType) throws IOException {
     if (null != encodedDataColumnPage) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
       return encodedDataColumnPage.getComplexChildrenLVFlattenedBytePage(dataType);
     } else {
       return actualDataColumnPage.getComplexChildrenLVFlattenedBytePage(dataType);
@@ -415,6 +426,7 @@ public class LocalDictColumnPage extends ColumnPage {
 
   @Override
   public long getPageLengthInBytes() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2977
     if (null != pageLevelDictionary) {
       return encodedDataColumnPage.getPageLengthInBytes();
     } else {

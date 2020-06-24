@@ -67,6 +67,7 @@ public class IndexChooser {
   public IndexChooser(CarbonTable carbonTable) throws IOException {
     this.carbonTable = carbonTable;
     // read all indexes for this table and populate CG and FG index list
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     List<TableIndex> visibleIndexes = carbonTable.getAllVisibleIndexes();
     cgIndexes = new ArrayList<>(visibleIndexes.size());
     fgIndexes = new ArrayList<>(visibleIndexes.size());
@@ -91,6 +92,7 @@ public class IndexChooser {
     if (filter != null) {
       Expression expression = filter.getFilterExpression();
       // First check for FG Indexes if any exist
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       ExpressionTuple tuple = selectIndex(expression, fgIndexes, filter);
       if (tuple.indexExprWrapper == null) {
         // Check for CG Index
@@ -143,6 +145,7 @@ public class IndexChooser {
       FilterResolverIntf resolverIntf) {
     // Return the default index if no other index exists.
     return new IndexExprWrapperImpl(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         IndexStoreManager.getInstance().getDefaultIndex(carbonTable), resolverIntf);
   }
 
@@ -181,6 +184,7 @@ public class IndexChooser {
               // Apply AND expression.
               ExpressionTuple tuple = new ExpressionTuple();
               tuple.columnExpressions = columnExpressions;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
               tuple.indexExprWrapper = new AndIndexExprWrapper(left.indexExprWrapper,
                   right.indexExprWrapper, resolver);
               tuple.expression = resolver.getFilterExpression();
@@ -198,12 +202,14 @@ public class IndexChooser {
       case OR:
         if (expression instanceof OrExpression) {
           OrExpression orExpression = (OrExpression) expression;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           ExpressionTuple left = selectIndex(orExpression.getLeft(), allIndex,
               filterResolverIntf.getLeft());
           ExpressionTuple right = selectIndex(orExpression.getRight(), allIndex,
               filterResolverIntf.getRight());
           // If both left and right has Index then we can either merge both Indexes to single
           // Index if possible. Otherwise apply OR expression.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           if (left.indexExprWrapper != null && right.indexExprWrapper != null) {
             TrueConditionalResolverImpl resolver = new TrueConditionalResolverImpl(
                 new OrExpression(left.expression, right.expression), false,
@@ -213,6 +219,7 @@ public class IndexChooser {
             columnExpressions.addAll(right.columnExpressions);
             ExpressionTuple tuple = new ExpressionTuple();
             tuple.columnExpressions = columnExpressions;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
             tuple.indexExprWrapper = new OrIndexExprWrapper(left.indexExprWrapper,
                 right.indexExprWrapper, resolver);
             tuple.expression = resolver.getFilterExpression();
@@ -228,9 +235,11 @@ public class IndexChooser {
         extractColumnExpression(expression, tuple.columnExpressions);
         Set<ExpressionType> filterExpressionTypes = new HashSet<>();
         filterExpressionTypes.add(expression.getFilterExpressionType());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2974
         TrueConditionalResolverImpl resolver = new TrueConditionalResolverImpl(
             filterResolverIntf.getFilterExpression(), false,
             true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         TableIndex index =
             chooseIndex(allIndex, tuple.columnExpressions, filterExpressionTypes);
         if (index != null) {
@@ -247,6 +256,7 @@ public class IndexChooser {
       List<ColumnExpression> columnExpressions) {
     if (expression instanceof ColumnExpression) {
       columnExpressions.add((ColumnExpression) expression);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2747
     } else if (expression instanceof MatchExpression) {
       // this is a special case for lucene
       // build a fake ColumnExpression to filter Indexes which contain target column
@@ -259,6 +269,7 @@ public class IndexChooser {
       List<Expression> children = expression.getChildren();
       if (children != null && children.size() > 0) {
         for (Expression exp : children) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2974
           if (exp != null && exp.getFilterExpressionType() != ExpressionType.UNKNOWN) {
             extractColumnExpression(exp, columnExpressions);
           }
@@ -270,6 +281,7 @@ public class IndexChooser {
   private TableIndex chooseIndex(List<TableIndex> allIndex,
       List<ColumnExpression> columnExpressions, Set<ExpressionType> expressionTypes) {
     List<IndexTuple> tuples = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     for (TableIndex index : allIndex) {
       if (null != index.getIndexFactory().getMeta() && contains(
           index.getIndexFactory().getMeta(), columnExpressions, expressionTypes)) {
@@ -296,6 +308,7 @@ public class IndexChooser {
     }
     boolean contains = true;
     for (ColumnExpression expression : columnExpressions) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
       if (!mapMeta.getIndexedColumnNames().contains(expression.getColumnName()) ||
           !mapMeta.getOptimizedOperation().containsAll(expressionTypes)) {
         contains = false;
@@ -308,10 +321,12 @@ public class IndexChooser {
   private static class ExpressionTuple {
 
     IndexExprWrapper indexExprWrapper;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
     List<ColumnExpression> columnExpressions = new ArrayList<>();
 
     Set<ExpressionType> filterExpressionTypes = new HashSet<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2974
 
     Expression expression;
 
@@ -322,6 +337,7 @@ public class IndexChooser {
     int order;
 
     TableIndex index;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
 
     public IndexTuple(int order, TableIndex index) {
       this.order = order;
@@ -339,8 +355,10 @@ public class IndexChooser {
       if (o == null || getClass() != o.getClass()) return false;
 
       IndexTuple that = (IndexTuple) o;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
       if (order != that.order) return false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       return index != null ? index.equals(that.index) : that.index == null;
     }
 

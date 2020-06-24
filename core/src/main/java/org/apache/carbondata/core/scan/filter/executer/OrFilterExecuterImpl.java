@@ -38,6 +38,7 @@ public class OrFilterExecuterImpl implements FilterExecuter {
   @Override
   public BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
       boolean useBitsetPipeLine) throws FilterUnsupportedException, IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     BitSetGroup leftFilters = leftExecuter.applyFilter(rawBlockletColumnChunks, false);
     BitSetGroup rightFilters = rightExecuter.applyFilter(rawBlockletColumnChunks, false);
     leftFilters.or(rightFilters);
@@ -47,6 +48,7 @@ public class OrFilterExecuterImpl implements FilterExecuter {
 
   @Override
   public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3013
       throws FilterUnsupportedException, IOException {
     BitSet leftFilters = leftExecuter.prunePages(rawBlockletColumnChunks);
     BitSet rightFilters = rightExecuter.prunePages(rawBlockletColumnChunks);
@@ -56,6 +58,7 @@ public class OrFilterExecuterImpl implements FilterExecuter {
 
   @Override
   public boolean applyFilter(RowIntf value, int dimOrdinalMax)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
       throws FilterUnsupportedException, IOException {
     return leftExecuter.applyFilter(value, dimOrdinalMax) ||
         rightExecuter.applyFilter(value, dimOrdinalMax);
@@ -64,6 +67,7 @@ public class OrFilterExecuterImpl implements FilterExecuter {
   @Override
   public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
       boolean[] isMinMaxSet) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     BitSet leftFilters = leftExecuter.isScanRequired(blockMaxValue, blockMinValue, isMinMaxSet);
     BitSet rightFilters = rightExecuter.isScanRequired(blockMaxValue, blockMinValue, isMinMaxSet);
     leftFilters.or(rightFilters);

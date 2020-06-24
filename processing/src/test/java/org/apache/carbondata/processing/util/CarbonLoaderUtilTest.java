@@ -74,6 +74,7 @@ public class CarbonLoaderUtilTest {
   }
 
   private List<Distributable> generateBlocks2() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2309
     List<Distributable> blockInfos = new ArrayList<>();
     String filePath = "/fakepath";
     String blockId = "1";
@@ -110,6 +111,7 @@ public class CarbonLoaderUtilTest {
     List<String> activeNodes = generateExecutors();
 
     // the blocks are assigned by size, so the number of block for each node are different
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2309
     Map<String, List<Distributable>> nodeMappingBySize = CarbonLoaderUtil
         .nodeBlockMapping(blockInfos, -1, activeNodes,
             CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_SIZE_FIRST, null);
@@ -126,6 +128,7 @@ public class CarbonLoaderUtilTest {
     }
 
     // the blocks are assigned by number, so the number of blocks for each node are nearly the same
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2309
     Map<String, List<Distributable>> nodeMappingByNum = CarbonLoaderUtil
         .nodeBlockMapping(blockInfos, -1, activeNodes,
             CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_NUM_FIRST, null);
@@ -139,6 +142,7 @@ public class CarbonLoaderUtilTest {
 
   @Test
   public void testNodeBlockMappingByNodeRandom() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2309
     List<Distributable> blockInfos = generateBlocks2();
     List<String> activeNodes = generateExecutors();
 

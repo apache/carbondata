@@ -73,10 +73,12 @@ public class EncodedBlocklet {
   private Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap;
 
   public EncodedBlocklet(ExecutorService executorService, boolean isDecoderBasedFallBackEnabled,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
       Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap) {
     this.executorService = executorService;
     this.isDecoderBasedFallBackEnabled = isDecoderBasedFallBackEnabled;
     this.localDictionaryGeneratorMap = localDictionaryGeneratorMap;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     this.rowCountInPage = new ArrayList<>();
   }
 
@@ -87,6 +89,7 @@ public class EncodedBlocklet {
    * encoded table page
    */
   private void addPageMetadata(EncodedTablePage encodedTablePage) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     if (null == rowCountInPage) {
       rowCountInPage = new ArrayList<>();
     }
@@ -108,6 +111,7 @@ public class EncodedBlocklet {
       encodedMeasureColumnPages = new ArrayList<>();
       // adding measure pages
       for (int i = 0; i < encodedTablePage.getNumMeasures(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
         BlockletEncodedColumnPage blockletEncodedColumnPage =
             new BlockletEncodedColumnPage(null, false, null);
         blockletEncodedColumnPage.addEncodedColumnPage(encodedTablePage.getMeasure(i));
@@ -133,6 +137,7 @@ public class EncodedBlocklet {
       // adding measure pages
       for (int i = 0; i < encodedTablePage.getNumDimensions(); i++) {
         BlockletEncodedColumnPage blockletEncodedColumnPage =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
             new BlockletEncodedColumnPage(executorService, isDecoderBasedFallBackEnabled,
                 localDictionaryGeneratorMap.get(
                     encodedTablePage.getDimension(i).getActualPage().getColumnSpec()
@@ -184,6 +189,7 @@ public class EncodedBlocklet {
   }
 
   public List<Short> getRowCountInPage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     return rowCountInPage;
   }
 
@@ -192,6 +198,7 @@ public class EncodedBlocklet {
   }
 
   public void clear() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3787
     if (null != encodedDimensionColumnPages) {
       for (BlockletEncodedColumnPage blockletEncodedColumnPage : encodedDimensionColumnPages) {
         blockletEncodedColumnPage.cleanBuffer();

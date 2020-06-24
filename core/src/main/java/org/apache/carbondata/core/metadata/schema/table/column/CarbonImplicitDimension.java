@@ -47,6 +47,7 @@ public class CarbonImplicitDimension extends CarbonDimension {
   private String implicitDimensionName;
 
   public CarbonImplicitDimension(int ordinal, String implicitDimensionName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     super(null, ordinal, -1, -1);
     encodingList = new ArrayList<Encoding>();
     encodingList.add(Encoding.IMPLICIT);
@@ -113,6 +114,7 @@ public class CarbonImplicitDimension extends CarbonDimension {
    */
   @Override
   public DataType getDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     return DataTypes.STRING;
   }
 

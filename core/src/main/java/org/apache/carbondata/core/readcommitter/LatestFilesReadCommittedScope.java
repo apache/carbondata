@@ -60,8 +60,10 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
    * @param segmentId segment id
    */
   public LatestFilesReadCommittedScope(String path, String segmentId, Configuration configuration)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
       throws IOException {
     this.configuration = configuration;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2389
     Objects.requireNonNull(path);
     this.carbonFilePath = path;
     this.segmentId = segmentId;
@@ -74,6 +76,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
    * @param path carbon file path
    */
   public LatestFilesReadCommittedScope(String path, Configuration configuration)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
       throws IOException {
     this(path, null, configuration);
   }
@@ -84,7 +87,9 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
    * @param indexFiles carbon index files
    */
   public LatestFilesReadCommittedScope(CarbonFile[] indexFiles, Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     this.configuration = configuration;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2872
     takeCarbonIndexFileSnapShot(indexFiles);
   }
 
@@ -140,6 +145,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
       index = new LinkedList<>();
     }
     for (String indexPath : index) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2831
       if (indexPath.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
         indexFileStore.put(indexPath, indexPath.substring(indexPath.lastIndexOf('/') + 1));
       } else {
@@ -151,6 +157,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
 
   @Override
   public SegmentRefreshInfo getCommittedSegmentRefreshInfo(Segment segment, UpdateVO updateVo) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2431
     Map<String, SegmentRefreshInfo> snapShot =
         readCommittedIndexFileSnapShot.getSegmentTimestampUpdaterMap();
     String segName;
@@ -168,6 +175,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
       // This is CarbonFile case where the Index files are present inside the Segment Folder
       // So the Segment has to be extracted from the path not from the CarbonIndex file.
       String segString = indexFilePath.substring(0, indexFilePath.lastIndexOf("/") + 1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2872
       String segName =
           segString.substring(segString.lastIndexOf("_") + 1, segString.lastIndexOf("/"));
       return segName;
@@ -182,21 +190,28 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
   public void takeCarbonIndexFileSnapShot() throws IOException {
     // Read the current file Path get the list of indexes from the path.
     CarbonFile file = FileFactory.getCarbonFile(carbonFilePath, configuration);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2956
 
     CarbonFile[] carbonIndexFiles = null;
     if (file.isDirectory()) {
       if (segmentId == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2888
         List<CarbonFile> indexFiles = new ArrayList<>();
         SegmentIndexFileStore.getCarbonIndexFilesRecursively(file, indexFiles);
         carbonIndexFiles = indexFiles.toArray(new CarbonFile[0]);
       } else {
         String segmentPath = CarbonTablePath.getSegmentPath(carbonFilePath, segmentId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
         carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(segmentPath, configuration);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2472
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2570
       if (carbonIndexFiles.length == 0) {
         throw new IOException(
             "No Index files are present in the table location :" + carbonFilePath);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2872
       takeCarbonIndexFileSnapShot(carbonIndexFiles);
     } else {
       throw new IOException("Path is not pointing to directory");
@@ -205,9 +220,11 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
 
   private void takeCarbonIndexFileSnapShot(CarbonFile[] carbonIndexFiles) {
     Map<String, List<String>> indexFileStore = new HashMap<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2431
     Map<String, SegmentRefreshInfo> segmentTimestampUpdaterMap = new HashMap<>();
     for (int i = 0; i < carbonIndexFiles.length; i++) {
       // TODO. Nested File Paths.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2831
       if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)
           || carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
         // Get Segment Name from the IndexFile.
@@ -220,6 +237,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
         if (indexFileStore.get(timestamp) == null) {
           indexList = new ArrayList<>(1);
           segmentRefreshInfo =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3759
               new SegmentRefreshInfo(carbonIndexFiles[i].getLastModifiedTime(), 0, 0L);
           segmentTimestampUpdaterMap.put(timestamp, segmentRefreshInfo);
         } else {
@@ -227,6 +245,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
           indexList = indexFileStore.get(timestamp);
           segmentRefreshInfo = segmentTimestampUpdaterMap.get(timestamp);
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2645
         indexList.add(indexFilePath);
         if (segmentRefreshInfo.getSegmentUpdatedTimestamp() < carbonIndexFiles[i]
             .getLastModifiedTime()) {
@@ -244,6 +263,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
   }
 
   public Configuration getConfiguration() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     return configuration;
   }
 

@@ -76,12 +76,14 @@ public class CarbonReaderBuilder {
    * @param tablePath table path
    * @param tableName table name
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2313
   CarbonReaderBuilder(String tablePath, String tableName) {
     this.tablePath = tablePath;
     this.tableName = tableName;
     ThreadLocalSessionInfo.setCarbonSessionInfo(new CarbonSessionInfo());
   }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3366
   CarbonReaderBuilder(InputSplit inputSplit) {
     this.inputSplit = inputSplit;
     ThreadLocalSessionInfo.setCarbonSessionInfo(new CarbonSessionInfo());
@@ -92,8 +94,11 @@ public class CarbonReaderBuilder {
    *
    * @param tableName table name
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3363
   CarbonReaderBuilder(String tableName) {
     this.tableName = tableName;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
     ThreadLocalSessionInfo.setCarbonSessionInfo(new CarbonSessionInfo());
   }
 
@@ -141,6 +146,7 @@ public class CarbonReaderBuilder {
    * @return CarbonReaderBuilder object
    */
   public CarbonReaderBuilder withReadSupport(Class<? extends CarbonReadSupport> readSupportClass) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     this.readSupportClass = readSupportClass;
     return this;
   }
@@ -164,6 +170,8 @@ public class CarbonReaderBuilder {
    * @return
    */
   public CarbonReaderBuilder projection(List<String> projectionColumnNames) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3367
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3368
     Objects.requireNonNull(projectionColumnNames);
     String[] strings = new String[projectionColumnNames.size()];
     for (int i = 0; i < projectionColumnNames.size(); i++) {
@@ -191,6 +199,7 @@ public class CarbonReaderBuilder {
    * @return updated CarbonReaderBuilder
    */
   public CarbonReaderBuilder withHadoopConf(Configuration conf) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
     if (conf != null) {
       this.hadoopConf = conf;
     }
@@ -204,6 +213,7 @@ public class CarbonReaderBuilder {
    * @return updated CarbonReaderBuilder
    */
   public CarbonReaderBuilder withBatch(int batch) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-300
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE,
             String.valueOf(batch));
@@ -218,6 +228,7 @@ public class CarbonReaderBuilder {
    * @return this object
    */
   public CarbonReaderBuilder withHadoopConf(String key, String value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2952
     if (this.hadoopConf == null) {
       this.hadoopConf = new Configuration();
     }
@@ -230,6 +241,7 @@ public class CarbonReaderBuilder {
    *
    */
   public CarbonReaderBuilder withRowRecordReader() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3057
     this.useVectorReader = false;
     return this;
   }
@@ -243,21 +255,25 @@ public class CarbonReaderBuilder {
    * @throws InterruptedException
    */
   public <T> ArrowCarbonReader<T> buildArrowReader() throws IOException, InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3365
     useArrowReader = true;
     return (ArrowCarbonReader<T>) this.build();
   }
 
   private CarbonFileInputFormat prepareFileInputFormat(Job job, boolean enableBlockletDistribution,
       boolean disableLoadBlockIndex) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3366
     if (inputSplit != null && inputSplit instanceof CarbonInputSplit) {
       tablePath =
           ((CarbonInputSplit) inputSplit).getSegment().getReadCommittedScope().getFilePath();
       tableName = "UnknownTable" + UUID.randomUUID();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3363
     if (null == this.fileLists && null == tablePath) {
       throw new IllegalArgumentException("Please set table path first.");
     }
     // infer schema
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     CarbonTable table;
     if (null != this.fileLists) {
       if (fileLists.size() < 1) {
@@ -289,23 +305,29 @@ public class CarbonReaderBuilder {
     format.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
     if (filterExpression != null) {
       format.setFilterPredicates(job.getConfiguration(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           new IndexFilter(table, filterExpression, true));
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3363
     if (null != this.fileLists) {
       format.setFileLists(this.fileLists);
     }
     if (projectionColumns != null) {
       // set the user projection
       int len = projectionColumns.length;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2960
       for (int i = 0; i < len; i++) {
         if (projectionColumns[i].contains(".")) {
           throw new UnsupportedOperationException(
               "Complex child columns projection NOT supported through CarbonReader");
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2546
       format.setColumnProjection(job.getConfiguration(), projectionColumns);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     if ((disableLoadBlockIndex) && (filterExpression == null)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3057
       job.getConfiguration().set("filter_blocks", "false");
     }
     return format;
@@ -334,6 +356,7 @@ public class CarbonReaderBuilder {
     try {
       reader.initialize(split, attempt);
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3051
       CarbonUtil.closeStreams(readers.toArray(new RecordReader[0]));
       throw e;
     }
@@ -350,6 +373,7 @@ public class CarbonReaderBuilder {
    */
   public <T> CarbonReader<T> build()
       throws IOException, InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3366
     if (inputSplit != null) {
       return buildWithSplits(inputSplit);
     }
@@ -374,7 +398,10 @@ public class CarbonReaderBuilder {
       }
     } catch (Exception ex) {
       // Clear the index cache as it can get added in getSplits() method
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       IndexStoreManager.getInstance().clearIndexCache(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3411
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3414
           format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier(),
           false);
       throw ex;
@@ -382,19 +409,24 @@ public class CarbonReaderBuilder {
   }
 
   private  <T> CarbonReader<T> buildWithSplits(InputSplit inputSplit)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3366
       throws IOException, InterruptedException {
     if (hadoopConf == null) {
       hadoopConf = FileFactory.getConfiguration();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     CarbonTableInputFormat.setCarbonReadSupport(hadoopConf, readSupportClass);
     final Job job = new Job(new JobConf(hadoopConf));
     CarbonFileInputFormat format = prepareFileInputFormat(job, false, true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3395
     format.setAllColumnProjectionIfNotConfigured(job,
         format.getOrCreateCarbonTable(job.getConfiguration()));
     try {
       List<RecordReader<Void, T>> readers = new ArrayList<>(1);
       RecordReader reader = getRecordReader(job, format, readers, inputSplit);
       readers.add(reader);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3365
       if (useArrowReader) {
         return new ArrowCarbonReader<>(readers);
       } else {
@@ -419,6 +451,7 @@ public class CarbonReaderBuilder {
     if (hadoopConf == null) {
       hadoopConf = FileFactory.getConfiguration();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3405
     Job job = null;
     List<InputSplit> splits;
     CarbonFileInputFormat format = null;
@@ -426,6 +459,7 @@ public class CarbonReaderBuilder {
       job = new Job(new JobConf(hadoopConf));
       format = prepareFileInputFormat(job, enableBlockletDistribution, false);
       splits = format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3395
       for (InputSplit split : splits) {
         // Load the detailInfo
         ((CarbonInputSplit) split).getDetailInfo();
@@ -433,7 +467,10 @@ public class CarbonReaderBuilder {
     } finally {
       if (format != null) {
         // Clear the index cache as it is added in getSplits() method
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         IndexStoreManager.getInstance().clearIndexCache(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3411
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3414
             format.getOrCreateCarbonTable((job.getConfiguration())).getAbsoluteTableIdentifier(),
             false);
       }

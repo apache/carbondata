@@ -43,6 +43,7 @@ public final class DirectDictionaryKeyGeneratorFactory {
   public static DirectDictionaryGenerator getDirectDictionaryGenerator(DataType dataType,
       String dateFormat) {
     DirectDictionaryGenerator directDictionaryGenerator = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     if (dataType == DataTypes.DATE) {
       directDictionaryGenerator = new DateDirectDictionaryGenerator(dateFormat);
     } else if (dataType == DataTypes.TIMESTAMP) {
@@ -52,6 +53,7 @@ public final class DirectDictionaryKeyGeneratorFactory {
   }
 
   public static DirectDictionaryGenerator getDirectDictionaryGenerator(DataType dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-603
     return getDirectDictionaryGenerator(dataType, CarbonUtil.getFormatFromProperty(dataType));
   }
 }

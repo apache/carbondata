@@ -75,12 +75,14 @@ public class CarbonLocalMultiBlockSplit {
       @JsonProperty("locations") String[] locations) {
     this.splitList = splitList;
     this.locations = locations;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
     if (!splitList.isEmpty()) {
       this.fileFormat = splitList.get(0).getFileFormat();
     }
   }
 
   public String getJsonString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3194
     Gson gson = new Gson();
     return gson.toJson(this);
   }
@@ -96,6 +98,7 @@ public class CarbonLocalMultiBlockSplit {
     CarbonMultiBlockSplit carbonMultiBlockSplit =
         new CarbonMultiBlockSplit(carbonInputSplitList, carbonLocalMultiBlockSplit.getLocations());
     carbonMultiBlockSplit.setFileFormat(carbonLocalMultiBlockSplit.getFileFormat());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
 
     return carbonMultiBlockSplit;
   }

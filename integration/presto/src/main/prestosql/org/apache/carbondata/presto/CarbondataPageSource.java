@@ -394,6 +394,7 @@ class CarbondataPageSource implements ConnectorPageSource {
       CarbonTableInputFormat carbonTableInputFormat = createInputFormat(
           jobConf,
           carbonTable,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           new IndexFilter(
               carbonTable,
               PrestoFilterUtil.parseFilterExpression(hiveTable.getCompactEffectivePredicate())),
@@ -427,6 +428,7 @@ class CarbondataPageSource implements ConnectorPageSource {
    */
   private CarbonTableInputFormat<Object> createInputFormat(Configuration conf,
       CarbonTable carbonTable, IndexFilter indexFilter, CarbonProjection projection) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
 
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     CarbonTableInputFormat format = new CarbonTableInputFormat<Object>();
@@ -440,6 +442,7 @@ class CarbondataPageSource implements ConnectorPageSource {
     } catch (Exception e) {
       throw new RuntimeException("Unable to create the CarbonTableInputFormat", e);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     CarbonTableInputFormat.setFilterPredicates(conf, indexFilter);
     CarbonTableInputFormat.setColumnProjection(conf, projection);
 

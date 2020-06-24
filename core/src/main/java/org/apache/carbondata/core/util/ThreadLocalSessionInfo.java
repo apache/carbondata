@@ -35,6 +35,8 @@ public class ThreadLocalSessionInfo {
   }
 
   public static synchronized CarbonSessionInfo getOrCreateCarbonSessionInfo() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
     CarbonSessionInfo info = threadLocal.get();
     if (info == null || info.getSessionParams() == null) {
       info = new CarbonSessionInfo();
@@ -56,6 +58,7 @@ public class ThreadLocalSessionInfo {
    * use to check whether the thread has the hadoop configuration or not
    */
   public static void shouldHaveCarbonConf() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     CarbonSessionInfo sessionInfo = getCarbonSessionInfo();
     if (sessionInfo == null) {
       throw new RuntimeException("the thread not contain CarbonSessionInfo");

@@ -65,13 +65,16 @@ public class CarbonTableInputFormatTest {
   static {
     CarbonProperties.getInstance().
         addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "CarbonTableInputFormatTest");
     try {
       creator = new StoreCreator(new File("target/store").getAbsolutePath(),
           new File("../hadoop/src/test/resources/data.csv").getCanonicalPath());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3555
       loadModel = creator.createCarbonStore();
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
       e.printStackTrace();
       Assert.fail("create table failed: " + e.getMessage());
     }
@@ -82,6 +85,7 @@ public class CarbonTableInputFormatTest {
     JobConf jobConf = new JobConf(new Configuration());
     Job job = Job.getInstance(jobConf);
     job.getConfiguration().set("query.id", UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     String tblPath = creator.getAbsoluteTableIdentifier().getTablePath();
     FileInputFormat.addInputPath(job, new Path(tblPath));
     CarbonTableInputFormat.setDatabaseName(job.getConfiguration(), creator.getAbsoluteTableIdentifier().getDatabaseName());
@@ -89,6 +93,7 @@ public class CarbonTableInputFormatTest {
     Expression expression = new EqualToExpression(new ColumnExpression("country", DataTypes.STRING),
         new LiteralExpression("china", DataTypes.STRING));
     CarbonTableInputFormat.setFilterPredicates(job.getConfiguration(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         new IndexFilter(loadModel.getCarbonDataLoadSchema().getCarbonTable(), expression));
     List splits = carbonInputFormat.getSplits(job);
 
@@ -102,6 +107,7 @@ public class CarbonTableInputFormatTest {
     JobConf jobConf = new JobConf(new Configuration());
     Job job = Job.getInstance(jobConf);
     job.getConfiguration().set("query.id", UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     String tblPath = creator.getAbsoluteTableIdentifier().getTablePath();
     FileInputFormat.addInputPath(job, new Path(tblPath));
     CarbonTableInputFormat.setDatabaseName(job.getConfiguration(), creator.getAbsoluteTableIdentifier().getDatabaseName());
@@ -144,6 +150,7 @@ public class CarbonTableInputFormatTest {
       Assert.assertTrue("failed", false);
       throw e;
     } finally {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       creator.clearIndexes();
       FileFactory.deleteAllFilesOfDir(new File(outPath));
     }
@@ -184,6 +191,8 @@ public class CarbonTableInputFormatTest {
     } catch (Exception e) {
       Assert.assertTrue("failed", false);
     } finally {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       creator.clearIndexes();
     }
   }
@@ -257,12 +266,14 @@ public class CarbonTableInputFormatTest {
     job.setMapperClass(Map.class);
     job.setInputFormatClass(CarbonTableInputFormat.class);
     job.setOutputFormatClass(TextOutputFormat.class);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     AbsoluteTableIdentifier abs = creator.getAbsoluteTableIdentifier();
     if (projection != null) {
       CarbonTableInputFormat.setColumnProjection(job.getConfiguration(), projection);
     }
     if (filter != null) {
       CarbonTableInputFormat.setFilterPredicates(job.getConfiguration(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           new IndexFilter(loadModel.getCarbonDataLoadSchema().getCarbonTable(), filter));
     }
     CarbonTableInputFormat.setDatabaseName(job.getConfiguration(),

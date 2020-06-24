@@ -41,6 +41,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
 
   public RestructureBasedVectorResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     queryDimensions = executionInfo.getActualQueryDimensions();
     queryMeasures = executionInfo.getActualQueryMeasures();
     measureDefaultValues = new Object[queryMeasures.length];
@@ -59,11 +60,13 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
         // add a dummy column vector result collector object
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
         columnVectorInfo.dimension = queryDimensions[i];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         if (queryDimensions[i].getDimension().getDataType().equals(DataTypes.TIMESTAMP)
             || queryDimensions[i].getDimension().getDataType().equals(DataTypes.DATE)) {
           columnVectorInfo.directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
               .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         allColumnInfo[queryDimensions[i].getOrdinal()] = columnVectorInfo;
       }
     }
@@ -77,7 +80,9 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
       if (!measureInfo.getMeasureExists()[i]) {
         // add a dummy column vector result collector object
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         allColumnInfo[queryMeasures[i].getOrdinal()] = columnVectorInfo;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1450
         columnVectorInfo.measure = queryMeasures[i];
         measureDefaultValues[i] = getMeasureDefaultValue(queryMeasures[i].getMeasure());
       }
@@ -97,6 +102,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
 
   @Override
   public List<Object[]> collectResultInRow(BlockletScannedResult scannedResult, int batchSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     throw new UnsupportedOperationException("collectResultInRow is not supported here");
   }
 
@@ -124,6 +130,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
       fillDataForNonExistingDimensions();
       fillDataForNonExistingMeasures();
       // fill existing dimensions and measures data
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       fillResultToColumnarBatch(
           scannedResult, columnarBatch, rowCounter, availableRows, requiredRows);
       columnarBatch.setActualSize(columnarBatch.getActualSize() + requiredRows - filteredRows);
@@ -134,11 +141,13 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
    * This method will fill the default values of non existing dimensions in the current block
    */
   private void fillDataForNonExistingDimensions() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     for (int i = 0; i < executionInfo.getActualQueryDimensions().length; i++) {
       if (!dimensionInfo.getDimensionExists()[i]) {
         int queryOrder = executionInfo.getActualQueryDimensions()[i].getOrdinal();
         CarbonDimension dimension =
             executionInfo.getActualQueryDimensions()[i].getDimension();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         if (dimension.getDataType() == DataTypes.DATE) {
           // fill direct dictionary column data
           fillDirectDictionaryData(allColumnInfo[queryOrder].vector, allColumnInfo[queryOrder],
@@ -146,6 +155,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
         } else {
           // fill no dictionary data
           fillNoDictionaryData(allColumnInfo[queryOrder].vector, allColumnInfo[queryOrder],
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1450
               dimensionInfo.getDefaultValues()[i]);
         }
       }
@@ -162,6 +172,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
   private void fillDirectDictionaryData(CarbonColumnVector vector,
       ColumnVectorInfo columnVectorInfo, Object defaultValue) {
     if (null != defaultValue) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       if (columnVectorInfo.directDictionaryGenerator.getReturnType().equals(DataTypes.INT)) {
         vector.putInts(columnVectorInfo.vectorOffset, columnVectorInfo.size, (int) defaultValue);
       } else {
@@ -188,6 +199,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
       } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
         vector.putLongs(columnVectorInfo.vectorOffset, columnVectorInfo.size, (long) defaultValue);
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
         vector.putByteArray(columnVectorInfo.vectorOffset, columnVectorInfo.size,
             (byte[]) defaultValue);
       }
@@ -200,6 +212,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
    * This method will fill the default values of non existing measures in the current block
    */
   private void fillDataForNonExistingMeasures() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     for (int i = 0; i < executionInfo.getActualQueryMeasures().length; i++) {
       if (!measureInfo.getMeasureExists()[i]) {
         int queryOrder = executionInfo.getActualQueryMeasures()[i].getOrdinal();
@@ -210,6 +223,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
         if (null == defaultValue) {
           vector.putNulls(columnVectorInfo.vectorOffset, columnVectorInfo.size);
         } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
           DataType dataType = measureInfo.getMeasureDataTypes()[i];
           if (dataType == DataTypes.SHORT) {
             vector.putShorts(columnVectorInfo.vectorOffset, columnVectorInfo.size,
@@ -220,9 +234,13 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
           } else if (dataType == DataTypes.LONG) {
             vector.putLongs(columnVectorInfo.vectorOffset, columnVectorInfo.size,
                 (long) defaultValue);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
           } else if (DataTypes.isDecimal(dataType)) {
             vector.putDecimals(columnVectorInfo.vectorOffset, columnVectorInfo.size,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
                 (BigDecimal) defaultValue, measure.getPrecision());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2133
           } else if (dataType == DataTypes.BOOLEAN) {
             vector.putBoolean(columnVectorInfo.vectorOffset, (Boolean) defaultValue);
           } else {

@@ -50,6 +50,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   ColumnarVectorWrapper(CarbonVectorProxy writableColumnVector,
       boolean[] filteredRows, int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     this.sparkColumnVectorProxy = writableColumnVector.getColumnVector(ordinal);
     this.filteredRows = filteredRows;
     this.carbonVectorProxy = writableColumnVector;
@@ -59,6 +60,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   @Override
   public void putBoolean(int rowId, boolean value) {
     if (!filteredRows[rowId]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
       sparkColumnVectorProxy.putBoolean(counter++, value);
     }
   }
@@ -82,6 +84,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
           sparkColumnVectorProxy.putShort(counter++, value);
         }
         rowId++;
@@ -107,6 +110,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
           sparkColumnVectorProxy.putInt(counter++, value);
         }
         rowId++;
@@ -128,6 +132,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
           sparkColumnVectorProxy.putLong(counter++, value);
         }
         rowId++;
@@ -150,6 +155,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     Decimal decimal = Decimal.apply(value);
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
         sparkColumnVectorProxy.putDecimal(counter++, decimal, precision);
       }
       rowId++;
@@ -168,6 +174,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
           sparkColumnVectorProxy.putDouble(counter++, value);
         }
         rowId++;
@@ -187,6 +195,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   @Override
   public void putByteArray(int rowId, byte[] value) {
     if (!filteredRows[rowId]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3048
       sparkColumnVectorProxy.putByteArray(counter++, value, 0, value.length);
     }
   }
@@ -204,6 +213,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   @Override
   public void putByteArray(int rowId, int offset, int length, byte[] value) {
     if (!filteredRows[rowId]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
       sparkColumnVectorProxy.putByteArray(counter++, value, offset, length);
     }
   }
@@ -220,6 +230,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
           sparkColumnVectorProxy.putNull(counter++);
         }
         rowId++;
@@ -241,6 +252,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
           sparkColumnVectorProxy.putNotNull(counter++);
         }
         rowId++;
@@ -270,6 +282,9 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   public void reset() {
     counter = 0;
     filteredRowsExist = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
     if (null != dictionaryVector) {
       dictionaryVector.reset();
     }
@@ -278,11 +293,13 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   @Override
   public DataType getType() {
     return CarbonSparkDataSourceUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
         .convertSparkToCarbonDataType(sparkColumnVectorProxy.dataType());
   }
 
   @Override
   public DataType getBlockDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1946
     return blockDataType;
   }
 
@@ -298,6 +315,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override
   public void setDictionary(CarbonDictionary dictionary) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
       sparkColumnVectorProxy.setDictionary(dictionary);
   }
 
@@ -321,6 +339,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   public void putFloats(int rowId, int count, float[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       if (!filteredRows[rowId]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
         sparkColumnVectorProxy.putFloat(counter++, src[i]);
       }
       rowId++;
@@ -331,6 +350,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   public void putShorts(int rowId, int count, short[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       if (!filteredRows[rowId]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
         sparkColumnVectorProxy.putShort(counter++, src[i]);
       }
       rowId++;
@@ -341,6 +361,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   public void putInts(int rowId, int count, int[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       if (!filteredRows[rowId]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
         sparkColumnVectorProxy.putInt(counter++, src[i]);
       }
       rowId++;
@@ -351,6 +372,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   public void putLongs(int rowId, int count, long[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       if (!filteredRows[rowId]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
         sparkColumnVectorProxy.putLong(counter++, src[i]);
       }
       rowId++;
@@ -361,6 +383,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
       if (!filteredRows[rowId]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
         sparkColumnVectorProxy.putDouble(counter++, src[i]);
       }
       rowId++;
@@ -384,6 +407,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override
   public void putArray(int rowId, int offset, int length) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
     if (!filteredRows[rowId]) {
       sparkColumnVectorProxy.putArray(rowId, offset, length);
     }

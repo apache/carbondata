@@ -89,6 +89,7 @@ public class TableSchema implements Serializable, Writable, Cloneable {
 
   public TableSchema() {
     this.listOfColumns = new ArrayList<ColumnSchema>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1700
     this.tableProperties = new HashMap<String, String>();
   }
 
@@ -124,6 +125,7 @@ public class TableSchema implements Serializable, Writable, Cloneable {
    * @return the schemaEvolution
    */
   public SchemaEvolution getSchemaEvolution() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
     return schemaEvolution;
   }
 
@@ -145,6 +147,7 @@ public class TableSchema implements Serializable, Writable, Cloneable {
    * @param tableName the tableName to set
    */
   public void setTableName(String tableName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3480
     if (tableName != null) {
       tableName = tableName.toLowerCase(Locale.getDefault());
     }
@@ -213,6 +216,7 @@ public class TableSchema implements Serializable, Writable, Cloneable {
   }
 
   public PartitionInfo getPartitionInfo() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-935
     return partitionInfo;
   }
 
@@ -222,6 +226,7 @@ public class TableSchema implements Serializable, Writable, Cloneable {
 
   @Override
   public void write(DataOutput out) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1286
     out.writeUTF(tableId);
     out.writeUTF(tableName);
     out.writeInt(listOfColumns.size());
@@ -229,12 +234,14 @@ public class TableSchema implements Serializable, Writable, Cloneable {
       column.write(out);
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1700
     out.writeInt(tableProperties.size());
     for (Map.Entry<String, String> entry : tableProperties.entrySet()) {
       out.writeUTF(entry.getKey());
       out.writeUTF(entry.getValue());
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1448
     if (null != partitionInfo) {
       out.writeBoolean(true);
       partitionInfo.write(out);
@@ -262,6 +269,7 @@ public class TableSchema implements Serializable, Writable, Cloneable {
     }
 
     int propertySize = in.readInt();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1700
     this.tableProperties = new HashMap<String, String>(propertySize);
     for (int i = 0; i < propertySize; i++) {
       String key = in.readUTF();
@@ -270,6 +278,7 @@ public class TableSchema implements Serializable, Writable, Cloneable {
     }
 
     boolean partitionExists = in.readBoolean();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1448
     if (partitionExists) {
       this.partitionInfo = new PartitionInfo();
       this.partitionInfo.readFields(in);
@@ -286,6 +295,7 @@ public class TableSchema implements Serializable, Writable, Cloneable {
    * Create a {@link TableSchemaBuilder} to create {@link TableSchema}
    */
   public static TableSchemaBuilder builder() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1997
     return new TableSchemaBuilder();
   }
 
@@ -294,6 +304,7 @@ public class TableSchema implements Serializable, Writable, Cloneable {
    */
   @Override
   public Object clone() throws CloneNotSupportedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3518
     try {
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
       DataOutputStream dos = new DataOutputStream(bos);

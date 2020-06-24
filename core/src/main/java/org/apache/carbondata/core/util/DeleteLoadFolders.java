@@ -63,6 +63,7 @@ public final class DeleteLoadFolders {
   private static String getSegmentPath(AbsoluteTableIdentifier identifier,
       LoadMetadataDetails oneLoad) {
     String segmentId = oneLoad.getLoadName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     return CarbonTablePath.getSegmentPath(identifier.getTablePath(), segmentId);
   }
 
@@ -70,6 +71,7 @@ public final class DeleteLoadFolders {
       LoadMetadataDetails[] newAddedLoadHistoryList,
       boolean isForceDelete,
       List<PartitionSpec> specs) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
     LoadMetadataDetails[] currentDetails =
         SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
     physicalFactAndMeasureMetadataDeletion(carbonTable,
@@ -95,8 +97,10 @@ public final class DeleteLoadFolders {
    * @param currLoadDetails Current table status load details which are required for update manager.
    */
   private static void physicalFactAndMeasureMetadataDeletion(CarbonTable carbonTable,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
       LoadMetadataDetails[] loadDetails, boolean isForceDelete, List<PartitionSpec> specs,
       LoadMetadataDetails[] currLoadDetails) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     List<TableIndex> indexes = new ArrayList<>();
     try {
       for (TableIndex index : IndexStoreManager.getInstance().getAllCGAndFGIndexes(carbonTable)) {
@@ -107,6 +111,7 @@ public final class DeleteLoadFolders {
     } catch (IOException e) {
       LOGGER.warn(String.format(
           "Failed to get indexes for %s.%s, therefore the index files could not be cleaned.",
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
           carbonTable.getAbsoluteTableIdentifier().getDatabaseName(),
           carbonTable.getAbsoluteTableIdentifier().getTableName()));
     }
@@ -116,12 +121,14 @@ public final class DeleteLoadFolders {
       if (checkIfLoadCanBeDeletedPhysically(oneLoad, isForceDelete)) {
         try {
           if (oneLoad.getSegmentFile() != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
             SegmentFileStore.deleteSegment(carbonTable.getAbsoluteTableIdentifier().getTablePath(),
                 new Segment(oneLoad.getLoadName(), oneLoad.getSegmentFile()),
                 specs, updateStatusManager);
           } else {
             String path = getSegmentPath(carbonTable.getAbsoluteTableIdentifier(), oneLoad);
             boolean status = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
             if (FileFactory.isFileExist(path)) {
               CarbonFile file = FileFactory.getCarbonFile(path);
               CarbonFile[] filesToBeDeleted = file.listFiles(new CarbonFileFilter() {
@@ -160,11 +167,13 @@ public final class DeleteLoadFolders {
             }
           }
           List<Segment> segments = new ArrayList<>(1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           for (TableIndex index : indexes) {
             segments.clear();
             segments.add(new Segment(oneLoad.getLoadName()));
             index.deleteIndexData(segments);
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2806
         } catch (Exception e) {
           LOGGER.warn("Unable to delete the file as per delete command " + oneLoad.getLoadName());
         }
@@ -197,6 +206,7 @@ public final class DeleteLoadFolders {
     if ((SegmentStatus.MARKED_FOR_DELETE == oneLoad.getSegmentStatus()
         || SegmentStatus.COMPACTED == oneLoad.getSegmentStatus()) && (oneLoad.getPath() == null
         || oneLoad.getPath().equalsIgnoreCase("NA"))) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1896
       if (isForceDelete) {
         return true;
       }

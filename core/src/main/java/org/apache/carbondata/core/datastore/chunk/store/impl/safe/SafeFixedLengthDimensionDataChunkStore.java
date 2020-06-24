@@ -46,6 +46,7 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
       int numOfRows) {
     super(isInvertedIndex);
     this.columnValueSize = columnValueSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     this.numOfRows = numOfRows;
   }
 
@@ -53,9 +54,11 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
   public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
     CarbonColumnVector vector = vectorInfo.vector;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3014
     BitSet deletedRows = vectorInfo.deletedRows;
     BitSet nullBits = new BitSet(numOfRows);
     vector = ColumnarVectorWrapperDirectFactory
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3048
         .getDirectVectorWrapperFactory(vector, invertedIndex, nullBits, deletedRows, false, false);
     fillVector(data, vectorInfo, vector);
     if (vector instanceof ConvertableVector) {

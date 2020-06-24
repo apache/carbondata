@@ -49,6 +49,7 @@ public class CarbonStreamRecordReader extends StreamRecordReader {
 
   public CarbonStreamRecordReader(boolean isVectorReader, InputMetricsStats inputMetricsStats,
       QueryModel mdl, boolean useRawRow) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
     super(mdl, useRawRow);
     this.isVectorReader = isVectorReader;
     this.inputMetricsStats = inputMetricsStats;
@@ -57,6 +58,7 @@ public class CarbonStreamRecordReader extends StreamRecordReader {
   protected void initializeAtFirstRow() throws IOException {
     super.initializeAtFirstRow();
     outputRow = new GenericInternalRow(outputValues);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2165
     outputSchema = new StructType((StructField[])
         DataTypeUtil.getDataTypeConverter().convertCarbonSchemaToSparkSchema(projection));
   }
@@ -80,8 +82,11 @@ public class CarbonStreamRecordReader extends StreamRecordReader {
 
   @Override
   public Object getCurrentValue() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2532
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
     if (isVectorReader) {
       int value = vectorProxy.numRows();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2185
       if (inputMetricsStats != null) {
         inputMetricsStats.incrementRecordRead((long) value);
       }
@@ -124,8 +129,11 @@ public class CarbonStreamRecordReader extends StreamRecordReader {
 
   private boolean scanBlockletAndFillVector(BlockletHeader header) throws IOException {
     // if filter is null and output projection is empty, use the row number of blocklet header
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2532
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
     if (skipScanData) {
       int rowNums = header.getBlocklet_info().getNum_rows();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
       vectorProxy = new CarbonVectorProxy(MemoryMode.OFF_HEAP, outputSchema, rowNums, false);
       vectorProxy.setNumRows(rowNums);
       input.skipBlockletData(true);
@@ -161,6 +169,7 @@ public class CarbonStreamRecordReader extends StreamRecordReader {
     for (int i = 0; i < projection.length; i++) {
       Object value = outputValues[i];
       vectorProxy.getColumnVector(i).putRowToColumnBatch(rowId,value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
 
     }
   }

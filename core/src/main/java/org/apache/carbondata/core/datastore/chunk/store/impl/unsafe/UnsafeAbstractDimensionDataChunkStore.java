@@ -75,7 +75,9 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
       int numberOfRows, int dataLength) {
     // allocating the data page
     this.dataPageMemoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, totalSize);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3304
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     this.dataLength = dataLength;
     this.isExplicitSorted = isInvertedIdex;
   }
@@ -97,6 +99,7 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
           invertedIndex.length * CarbonCommonConstants.INT_SIZE_IN_BYTE;
     }
     // copy the data to memory
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     CarbonUnsafe.getUnsafe()
         .copyMemory(data, CarbonUnsafe.BYTE_ARRAY_OFFSET, dataPageMemoryBlock.getBaseObject(),
             dataPageMemoryBlock.getBaseOffset(), this.dataLength);
@@ -115,6 +118,7 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
 
   @Override
   public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
       ColumnVectorInfo vectorInfo) {
     throw new UnsupportedOperationException("This method not supposed to be called here");
   }
@@ -128,6 +132,7 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
       return;
     }
     // free data page memory
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1472
     UnsafeMemoryManager.INSTANCE.freeMemory(taskId, dataPageMemoryBlock);
     isMemoryReleased = true;
     this.dataPageMemoryBlock = null;
@@ -142,6 +147,7 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    */
   @Override
   public int getInvertedIndex(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     return CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
         dataPageMemoryBlock.getBaseOffset() + dataLength + ((long)rowId
             * CarbonCommonConstants.INT_SIZE_IN_BYTE));
@@ -155,6 +161,7 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    */
   @Override
   public int getInvertedReverseIndex(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1538
     return CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
         dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)rowId
             * CarbonCommonConstants.INT_SIZE_IN_BYTE));

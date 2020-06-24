@@ -37,6 +37,7 @@ import org.junit.Test;
 
 public class TestBlockletIndex {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1979
   ImplicitIncludeFilterExecutorImpl implicitIncludeFilterExecutor;
   @Before public void setUp() throws Exception {
     CarbonImplicitDimension carbonImplicitDimension =
@@ -54,6 +55,7 @@ public class TestBlockletIndex {
 
     new MockUp<ImplicitIncludeFilterExecutorImpl>() {
       @Mock BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
           String uniqueBlockPath, boolean[] isMinMaxSet) {
         BitSet bitSet = new BitSet(1);
         bitSet.set(8);
@@ -62,13 +64,16 @@ public class TestBlockletIndex {
     };
 
     BlockIndex blockIndex = new BlockletIndex();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
     new MockUp<CarbonTable>() {
       @Mock public boolean isHivePartitionTable() {
         return false;
       }
     };
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     blockIndex.setSegmentPropertiesWrapper(
         new SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper(new CarbonTable(),
             new ArrayList<>()));
@@ -81,6 +86,7 @@ public class TestBlockletIndex {
     byte[][] maxValue = { ByteUtil.toBytes("resa") };
     boolean[] minMaxFlag = new boolean[] {true};
     Object result = method
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         .invoke(blockIndex, implicitIncludeFilterExecutor, minValue, maxValue, minMaxFlag,
             "/opt/store/default/carbon_table/Fact/Part0/Segment_0/part-0-0_batchno0-0-1514989110586.carbondata",
             0);

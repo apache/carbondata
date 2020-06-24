@@ -47,6 +47,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
    */
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(DictionaryBasedVectorResultCollector.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
 
   protected ProjectionDimension[] queryDimensions;
 
@@ -61,6 +62,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
   private ColumnVectorInfo[] measureColumnInfo;
 
   ColumnVectorInfo[] allColumnInfo;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
 
   private ColumnVectorInfo[] implicitColumnInfo;
 
@@ -68,6 +70,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
 
   public DictionaryBasedVectorResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     this.isDirectVectorFill = blockExecutionInfos.isDirectVectorFill();
     if (this.isDirectVectorFill) {
       LOGGER.info("Direct pagewise vector fill collector is used to scan and collect the data");
@@ -87,8 +90,10 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     List<ColumnVectorInfo> dictInfoList = new ArrayList<>();
     List<ColumnVectorInfo> noDictInfoList = new ArrayList<>();
     List<ColumnVectorInfo> complexList = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3126
     List<ColumnVectorInfo> implicitColumnList = new ArrayList<>();
     for (int i = 0; i < queryDimensions.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1450
       if (!dimensionInfo.getDimensionExists()[i]) {
         continue;
       }
@@ -97,7 +102,9 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
         implicitColumnList.add(columnVectorInfo);
         columnVectorInfo.dimension = queryDimensions[i];
         columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         allColumnInfo[queryDimensions[i].getOrdinal()] = columnVectorInfo;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       } else if (queryDimensions[i].getDimension().getDataType() != DataTypes.DATE) {
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
         noDictInfoList.add(columnVectorInfo);
@@ -111,6 +118,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
         columnVectorInfo.directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
         columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         allColumnInfo[queryDimensions[i].getOrdinal()] = columnVectorInfo;
       } else if (queryDimensions[i].getDimension().isComplex()) {
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
@@ -142,11 +150,13 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
       columnVectorInfo.ordinal = queryMeasures[i].getMeasure().getOrdinal();
       columnVectorInfo.measure = queryMeasures[i];
       this.measureColumnInfo[j++] = columnVectorInfo;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       allColumnInfo[queryMeasures[i].getOrdinal()] = columnVectorInfo;
     }
     dictionaryInfo = dictInfoList.toArray(new ColumnVectorInfo[dictInfoList.size()]);
     noDictionaryInfo = noDictInfoList.toArray(new ColumnVectorInfo[noDictInfoList.size()]);
     complexInfo = complexList.toArray(new ColumnVectorInfo[complexList.size()]);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3126
     implicitColumnInfo = implicitColumnList.toArray(
             new ColumnVectorInfo[implicitColumnList.size()]);
     Arrays.sort(dictionaryInfo);
@@ -155,12 +165,14 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
 
   @Override
   public List<Object[]> collectResultInRow(BlockletScannedResult scannedResult, int batchSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     throw new UnsupportedOperationException("collectResultInRow is not supported here");
   }
 
   @Override
   public void collectResultInColumnarBatch(BlockletScannedResult scannedResult,
       CarbonColumnarBatch columnarBatch) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     if (isDirectVectorFill) {
       collectResultInColumnarBatchDirect(scannedResult, columnarBatch);
     } else {
@@ -197,6 +209,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     scannedResult.fillColumnarNoDictionaryBatch(noDictionaryInfo);
     scannedResult.fillColumnarMeasureBatch(measureColumnInfo, measureInfo.getMeasureOrdinals());
     scannedResult.fillColumnarComplexBatch(complexInfo);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3126
     scannedResult.fillColumnarImplicitBatch(implicitColumnInfo);
     // it means fetched all data out of page so increment the page counter
     if (availableRows == requiredRows) {
@@ -208,6 +221,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     columnarBatch.setRowCounter(columnarBatch.getRowCounter() + requiredRows);
   }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
   void fillColumnVectorDetails(CarbonColumnarBatch columnarBatch, int rowCount, int requiredRows) {
     for (int i = 0; i < allColumnInfo.length; i++) {
       allColumnInfo[i].size = requiredRows;
@@ -216,6 +230,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
       allColumnInfo[i].vector = columnarBatch.columnVectors[i];
       if (null != allColumnInfo[i].dimension) {
         allColumnInfo[i].vector
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2199
             .setBlockDataType(dimensionInfo.dataType[i]);
       }
     }
@@ -225,6 +240,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
    * Fill the vector during the page decoding.
    */
   private void collectResultInColumnarBatchDirect(BlockletScannedResult scannedResult,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
       CarbonColumnarBatch columnarBatch) {
     int numberOfPages = scannedResult.numberOfpages();
     while (scannedResult.getCurrentPageCounter() < numberOfPages) {

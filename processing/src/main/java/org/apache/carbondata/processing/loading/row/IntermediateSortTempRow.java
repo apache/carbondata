@@ -44,6 +44,7 @@ public class IntermediateSortTempRow {
   }
 
   public IntermediateSortTempRow(int[] dictSortDims, Object[] noDictSortDims,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2836
       Object[] measures) {
     this.dictSortDims = dictSortDims;
     this.noDictSortDims = noDictSortDims;
@@ -67,6 +68,7 @@ public class IntermediateSortTempRow {
   }
 
   public void setNoDictData(Object[] noDictSortDims) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
     this.noDictSortDims = noDictSortDims;
   }
 

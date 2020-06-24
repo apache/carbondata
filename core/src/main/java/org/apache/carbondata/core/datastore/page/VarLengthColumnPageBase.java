@@ -43,6 +43,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   static final double FACTOR = 1.25;
 
   final String taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2991
 
   // the offset of row in the unsafe memory, its size is pageSize + 1
   protected ColumnPage rowOffset;
@@ -50,18 +51,24 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   // the length of bytes added in the page
   protected int totalLength;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
   VarLengthColumnPageBase(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     super(columnPageEncoderMeta, pageSize);
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec.newInstance(
         columnPageEncoderMeta.getColumnSpec().getFieldName(), DataTypes.INT, ColumnType.MEASURE);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     rowOffset = ColumnPage.newPage(
         new ColumnPageEncoderMeta(spec, DataTypes.INT, columnPageEncoderMeta.getCompressorName()),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3519
         pageSize + 1);
     totalLength = 0;
   }
 
   @Override
   public void setBytePage(byte[] byteData) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
@@ -106,6 +113,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
    * Create a new column page for decimal page
    */
   public static ColumnPage newDecimalColumnPage(ColumnPageEncoderMeta meta,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       byte[] lvEncodedBytes, int actualDataLength) {
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
     DecimalConverterFactory.DecimalConverter decimalConverter =
@@ -118,6 +126,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
           CarbonCommonConstants.INT_SIZE_IN_BYTE, meta.getCompressorName());
     } else {
       // Here the size is always fixed.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       return getDecimalColumnPage(meta, lvEncodedBytes, size, actualDataLength);
     }
   }
@@ -135,6 +144,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
    * Create a new column page based on the LV (Length Value) encoded bytes
    */
   static ColumnPage newComplexLVBytesColumnPage(TableSpec.ColumnSpec columnSpec,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       byte[] lvEncodedBytes, int lvLength, String compressorName) {
     return getComplexLVBytesColumnPage(columnSpec, lvEncodedBytes, DataTypes.BYTE_ARRAY,
         lvLength, compressorName);
@@ -152,6 +162,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     int offset;
     int rowId = 0;
     int counter = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     for (offset = 0; offset < actualDataLength; offset += size) {
       rowOffset.putInt(counter, offset);
       rowId++;
@@ -160,7 +171,10 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     rowOffset.putInt(counter, offset);
 
     VarLengthColumnPageBase page;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     if (isUnsafeEnabled(meta)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       page = new UnsafeDecimalColumnPage(
           new ColumnPageEncoderMeta(columnSpec, columnSpec.getSchemaDataType(), compressorName),
           rowId);
@@ -172,7 +186,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
     // set total length and rowOffset in page
     page.totalLength = offset;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2751
     page.rowOffset.freeMemory();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     page.rowOffset = rowOffset;
     for (int i = 0; i < rowId; i++) {
       page.putBytes(i, lvEncodedBytes, i * size, size);
@@ -184,6 +200,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
       byte[] lvEncodedBytes, DataType dataType, int lvLength, String compressorName) {
     // extract length and data, set them to rowOffset and unsafe memory correspondingly
     int rowId = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
         .newInstance(columnSpec.getFieldName(), DataTypes.INT, ColumnType.MEASURE);
     ColumnPage rowOffset = ColumnPage.newPage(
@@ -202,11 +219,15 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
       counter++;
     }
     rowOffset.putInt(counter, offset);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     return getVarLengthColumnPage(columnSpec, lvEncodedBytes, dataType,
         lvLength, rowId, rowOffset, offset, compressorName);
   }
 
   private static ColumnPage getComplexLVBytesColumnPage(TableSpec.ColumnSpec columnSpec,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       byte[] lvEncodedBytes, DataType dataType, int lvLength, String compressorName) {
     // extract length and data, set them to rowOffset and unsafe memory correspondingly
     int rowId = 0;
@@ -221,6 +242,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     int counter = 0;
     // extract Length field in input and calculate total length
     for (offset = 0; lvEncodedOffset < lvEncodedBytes.length; offset += length) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
       if (lvLength == CarbonCommonConstants.INT_SIZE_IN_BYTE) {
         length = ByteUtil.toInt(lvEncodedBytes, lvEncodedOffset);
         rowOffset.putInt(counter, offset);
@@ -249,6 +271,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     VarLengthColumnPageBase page;
     int inputDataLength = offset;
     if (unsafe) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       page = new UnsafeDecimalColumnPage(
           new ColumnPageEncoderMeta(columnSpec, dataType, compressorName), numRows,
           inputDataLength);
@@ -259,13 +283,16 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
     // set total length and rowOffset in page
     page.totalLength = offset;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2751
     page.rowOffset.freeMemory();
     page.rowOffset = rowOffset;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
 
     // set data in page
     lvEncodedOffset = 0;
     for (int i = 0; i < numRows; i++) {
       length = rowOffset.getInt(i + 1) - rowOffset.getInt(i);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
       page.putBytes(i, lvEncodedBytes, lvEncodedOffset + lvLength, length);
       lvEncodedOffset += lvLength + length;
     }
@@ -274,6 +301,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   @Override
   public void putByte(int rowId, byte value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
@@ -310,6 +339,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   @Override
   public void putFloat(int rowId, float value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
@@ -319,12 +349,14 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   @Override
   public void putBytes(int rowId, byte[] bytes) {
     // rowId * 4 represents the length of L in LV
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     if (bytes.length > (Integer.MAX_VALUE - totalLength - rowId * 4)) {
       // since we later store a column page in a byte array, so its maximum size is 2GB
       throw new RuntimeException("Carbondata only support maximum 2GB size for one column page,"
           + " exceed this limit at rowId " + rowId);
     }
     if (rowId == 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
       rowOffset.putInt(0, 0);
     }
     rowOffset.putInt(rowId + 1, rowOffset.getInt(rowId) + bytes.length);
@@ -334,6 +366,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   @Override
   public byte getByte(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
@@ -438,6 +472,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   public byte[] getLVFlattenedBytePage() throws IOException {
     // output LV encoded byte array
     int offset = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     byte[] data = new byte[totalLength + ((rowOffset.getActualRowCount() - 1) * 4)];
     for (int rowId = 0; rowId < rowOffset.getActualRowCount() - 1; rowId++) {
       int length = rowOffset.getInt(rowId + 1) - rowOffset.getInt(rowId);
@@ -453,6 +488,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     // output LV encoded byte array
     int offset = 0;
     int outputLength;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
     if (dataType == DataTypes.BYTE_ARRAY) {
       outputLength = totalLength + ((rowOffset.getActualRowCount() - 1)
           * CarbonCommonConstants.INT_SIZE_IN_BYTE);
@@ -482,6 +518,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     // output LV encoded byte array
     int offset = 0;
     byte[] data = new byte[totalLength];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     for (int rowId = 0; rowId < rowOffset.getActualRowCount() - 1; rowId++) {
       int length =  (rowOffset.getInt(rowId + 1) - rowOffset.getInt(rowId));
       copyBytes(rowId, data, offset, length);
@@ -492,6 +529,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   @Override
   public void convertValue(ColumnPageValueConverter codec) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
@@ -500,6 +539,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
    * free memory as needed
    */
   public void freeMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     if (null != rowOffset) {
       rowOffset.freeMemory();
       rowOffset = null;
@@ -508,6 +548,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   @Override
   public long getPageLengthInBytes() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2977
     return totalLength;
   }
 }

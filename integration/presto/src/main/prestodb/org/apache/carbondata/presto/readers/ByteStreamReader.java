@@ -86,6 +86,7 @@ public class ByteStreamReader extends CarbonColumnVectorImpl implements PrestoVe
     if (value == null) {
       putNull(rowId);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
       putByte(rowId, (byte) value);
     }
   }

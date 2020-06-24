@@ -61,12 +61,14 @@ public class CarbonPropertiesValidationTest extends TestCase {
     validateMethodType.invoke(carbonProperties);
     String valueAfterValidation =
         carbonProperties.getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
     assertTrue(valueBeforeValidation.equals(valueAfterValidation));
     assertTrue(
         CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT.equalsIgnoreCase(valueAfterValidation));
   }
 
   @Test public void testValidateEnableOffHeapSort()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2507
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     Method validateMethodType =
         carbonProperties.getClass().getDeclaredMethod("validateEnableOffHeapSort");
@@ -102,6 +104,7 @@ public class CarbonPropertiesValidationTest extends TestCase {
     String valueAfterValidation =
         carbonProperties.getProperty(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION);
     assertTrue(valueBeforeValidation.equals(valueAfterValidation));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2036
     assertTrue("false"
         .equalsIgnoreCase(valueAfterValidation));
   }
@@ -117,6 +120,7 @@ public class CarbonPropertiesValidationTest extends TestCase {
     validateMethodType.invoke(carbonProperties);
     String valueAfterValidation =
         carbonProperties.getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
     assertTrue(valueBeforeValidation.equals(valueAfterValidation));
     assertTrue(
         CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT.equalsIgnoreCase(valueAfterValidation));
@@ -149,6 +153,7 @@ public class CarbonPropertiesValidationTest extends TestCase {
     validateMethodType.invoke(carbonProperties);
     String valueAfterValidation =
         carbonProperties.getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
     assertTrue(valueBeforeValidation.equals(valueAfterValidation));
     assertTrue(
         CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT.equalsIgnoreCase(valueAfterValidation));
@@ -165,12 +170,15 @@ public class CarbonPropertiesValidationTest extends TestCase {
     validateMethodType.invoke(carbonProperties);
     valueAfterValidation =
         carbonProperties.getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
     assertTrue(valueBeforeValidation.equals(valueAfterValidation));
     assertTrue(
         CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT.equalsIgnoreCase(valueAfterValidation));
   }
 
   @Test public void testValidateHandoffSize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1818
     assertEquals(CarbonCommonConstants.HANDOFF_SIZE_DEFAULT, carbonProperties.getHandoffSize());
     long newSize = 1024L * 1024 * 100;
     carbonProperties.addProperty(CarbonCommonConstants.HANDOFF_SIZE, "" + newSize);
@@ -178,6 +186,7 @@ public class CarbonPropertiesValidationTest extends TestCase {
   }
 
   @Test public void testValidateTimeStampFormat()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     Method validateMethodType = carbonProperties.getClass()
         .getDeclaredMethod("validateTimeFormatKey", new Class[] { String.class, String.class });
@@ -226,12 +235,14 @@ public class CarbonPropertiesValidationTest extends TestCase {
     validateMethodType.invoke(carbonProperties);
     String valueAfterValidation =
         carbonProperties.getProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1929
     assertTrue(valueBeforeValidation.equals(valueAfterValidation));
     assertTrue(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE
         .equalsIgnoreCase(valueAfterValidation));
   }
 
   @Test public void testValidateDynamicSchedulerTimeOut() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2043
     carbonProperties
         .addProperty(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT, "2");
     String valueAfterValidation = carbonProperties

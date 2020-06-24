@@ -52,6 +52,7 @@ public class IndexWrapperSimpleInfo {
   public static IndexWrapperSimpleInfo fromIndexWrapper(IndexExprWrapper indexExprWrapper) {
     if (indexExprWrapper instanceof IndexExprWrapperImpl) {
       return new IndexWrapperSimpleInfo(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           ((IndexExprWrapperImpl) indexExprWrapper).getIndexSchema());
     } else if (indexExprWrapper instanceof AndIndexExprWrapper) {
       return new IndexWrapperSimpleInfo(WrapperType.AND,

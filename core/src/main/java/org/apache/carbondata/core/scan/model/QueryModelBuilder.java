@@ -48,6 +48,7 @@ public class QueryModelBuilder {
    */
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(QueryModelBuilder.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
 
   public QueryModelBuilder(CarbonTable table) {
     this.table = table;
@@ -62,7 +63,9 @@ public class QueryModelBuilder {
     for (String projectionColumnName : projectionColumns) {
       CarbonDimension dimension = table.getDimensionByName(projectionColumnName);
       if (dimension != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
         CarbonDimension complexParentDimension = dimension.getComplexParentDimension();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         if (null != complexParentDimension && dimension.getDataType() == DataTypes.DATE) {
           if (!isAlreadyExists(complexParentDimension, projection.getDimensions())) {
             projection.addDimension(complexParentDimension, i);
@@ -83,6 +86,7 @@ public class QueryModelBuilder {
       }
     }
     projection = optimizeProjectionForComplexColumns(projection, projectionColumns, factTableName);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
     List<String> projectionDimensionAndMeasures = new ArrayList<>();
     this.projection = projection;
     for (ProjectionDimension projectionDimension : projection.getDimensions()) {
@@ -287,6 +291,7 @@ public class QueryModelBuilder {
   }
 
   public QueryModelBuilder filterExpression(IndexFilter filterExpression) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     this.indexFilter = filterExpression;
     return this;
   }
@@ -302,6 +307,7 @@ public class QueryModelBuilder {
   }
 
   public QueryModelBuilder convertToRangeFilter(boolean convertToRangeFilter) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3343
     this.convertToRangeFilter = convertToRangeFilter;
     return this;
   }
@@ -321,6 +327,7 @@ public class QueryModelBuilder {
     queryModel.setReadPageByPage(readPageByPage);
     queryModel.setProjection(projection);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
     if (table.isTransactionalTable() && !table.hasColumnDrift()) {
       // set the filter to the query model in order to filter blocklet before scan
       boolean[] isFilterDimensions = new boolean[table.getDimensionOrdinalMax()];
@@ -328,6 +335,7 @@ public class QueryModelBuilder {
       queryModel.setIsFilterDimensions(isFilterDimensions);
       queryModel.setIsFilterMeasures(isFilterMeasures);
       // In case of Dictionary Include Range Column we donot optimize the range expression
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       if (indexFilter != null) {
         if (isConvertToRangeFilter()) {
           indexFilter.processFilterExpression(isFilterDimensions, isFilterMeasures);

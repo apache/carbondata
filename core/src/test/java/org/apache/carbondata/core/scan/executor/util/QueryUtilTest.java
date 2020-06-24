@@ -45,6 +45,7 @@ public class QueryUtilTest extends TestCase {
     int[] dummyArray = { 1, 2, 3, 4, 5 };
     int searchInput = 6;
     boolean result = QueryUtil.searchInArray(dummyArray, searchInput);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(!result);
   }
 
@@ -66,6 +67,7 @@ public class QueryUtilTest extends TestCase {
   }
 
   @Test public void testGetSortDimensionIndexes() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     List<ProjectionDimension> sortedDimensions = new ArrayList<ProjectionDimension>();
     for (int i = 0; i < 2; i++) {
       ProjectionDimension dimension =

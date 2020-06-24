@@ -55,6 +55,7 @@ public class ListExpression extends Expression {
 
   @Override
   public String getString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     StringBuffer value = new StringBuffer();
     value.append("ListExpression(");
     for (Expression expr : children) {
@@ -67,6 +68,7 @@ public class ListExpression extends Expression {
 
   @Override
   public String getStatement() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     StringBuffer value = new StringBuffer();
     value.append("(");
     for (Expression expr : children) {

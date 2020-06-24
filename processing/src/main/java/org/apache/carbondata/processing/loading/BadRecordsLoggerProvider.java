@@ -71,6 +71,7 @@ public class BadRecordsLoggerProvider {
 
     return new BadRecordsLogger(identifier.getBadRecordLoggerKey(),
         identifier.getTableName() + '_' + System.currentTimeMillis(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2666
         getBadLogStoreLocation(configuration), badRecordsLogRedirect,
         badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail);
   }

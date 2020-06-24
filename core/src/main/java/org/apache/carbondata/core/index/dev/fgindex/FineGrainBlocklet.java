@@ -44,6 +44,7 @@ public class FineGrainBlocklet extends Blocklet implements Serializable {
 
   /** For FG, pass the shardName instead of file name */
   public FineGrainBlocklet(String shardName, String blockletId, List<Page> pages) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
     super(shardName, blockletId);
     this.pages = pages;
   }

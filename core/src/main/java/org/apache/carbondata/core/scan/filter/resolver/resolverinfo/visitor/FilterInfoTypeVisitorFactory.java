@@ -35,8 +35,10 @@ public class FilterInfoTypeVisitorFactory {
   public static ResolvedFilterInfoVisitorIntf getResolvedFilterInfoVisitor(
       ColumnExpression columnExpression, Expression exp) {
     if (exp instanceof RangeExpression) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (columnExpression.getDimension().getDataType() == DataTypes.DATE) {
         return new RangeDirectDictionaryVisitor();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1854
       } else if (columnExpression.getDimension().hasEncoding(Encoding.IMPLICIT)) {
         return new ImplicitColumnVisitor();
       } else if (columnExpression.getDimension().getDataType() != DataTypes.DATE) {
@@ -47,6 +49,7 @@ public class FilterInfoTypeVisitorFactory {
       if (null != columnExpression.getDimension()) {
         if (columnExpression.getDimension().getDataType() == DataTypes.DATE) {
           return new CustomTypeDictionaryVisitor();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1854
         } else if (columnExpression.getDimension().hasEncoding(Encoding.IMPLICIT)) {
           return new ImplicitColumnVisitor();
         } else if (columnExpression.getDimension().getDataType() != DataTypes.DATE) {

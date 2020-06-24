@@ -38,6 +38,8 @@ public interface BlockletDetailsFetcher {
    * @return
    * @throws IOException
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
   List<ExtendedBlocklet> getExtendedBlocklets(List<Blocklet> blocklets, Segment segment)
       throws IOException;
 
@@ -57,11 +59,14 @@ public interface BlockletDetailsFetcher {
    * @param segment
    * @return
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
   List<Blocklet> getAllBlocklets(Segment segment, Set<Path> partitionLocations)
       throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1544
 
   /**
    * clears the index from cache and segmentMap from executor
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2484
   void clear();
 }

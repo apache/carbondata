@@ -52,6 +52,7 @@ public class ConcurrentSdkWriterTest {
       CarbonWriterBuilder builder = CarbonWriter.builder()
           .outputPath(path).withThreadSafe(numOfThreads);
       CarbonWriter writer =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
           builder.withCsvInput(new Schema(fields)).writtenBy("ConcurrentSdkWriterTest").build();
       // write in multi-thread
       for (int i = 0; i < numOfThreads; i++) {
@@ -69,8 +70,10 @@ public class ConcurrentSdkWriterTest {
     CarbonReader reader;
     try {
       reader = CarbonReader
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
           .builder(path, "_temp1121")
           .projection(new String[]{"name", "age"})
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
           .build();
       int i = 0;
       while (reader.hasNext()) {

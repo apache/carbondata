@@ -37,6 +37,7 @@ public abstract class AbstractIndexJob implements IndexJob {
 
   @Override
   public List<ExtendedBlocklet> execute(IndexInputFormat indexInputFormat) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     return null;
   }
 }

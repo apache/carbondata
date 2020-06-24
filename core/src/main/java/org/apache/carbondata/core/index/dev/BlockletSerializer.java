@@ -41,7 +41,9 @@ public class BlockletSerializer {
   public void serializeBlocklet(FineGrainBlocklet grainBlocklet, String writePath)
       throws IOException {
     DataOutputStream dataOutputStream =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         FileFactory.getDataOutputStream(writePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     try {
       grainBlocklet.write(dataOutputStream);
     } finally {
@@ -57,8 +59,10 @@ public class BlockletSerializer {
    */
   public FineGrainBlocklet deserializeBlocklet(String writePath) throws IOException {
     DataInputStream inputStream =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         FileFactory.getDataInputStream(writePath);
     FineGrainBlocklet blocklet = new FineGrainBlocklet();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     try {
       blocklet.readFields(inputStream);
     } finally {

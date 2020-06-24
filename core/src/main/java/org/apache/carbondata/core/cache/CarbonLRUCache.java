@@ -64,6 +64,7 @@ public final class CarbonLRUCache {
    */
   public CarbonLRUCache(String propertyName, String defaultPropertyName) {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3305
       lruCacheMemorySize = Long
           .parseLong(CarbonProperties.getInstance().getProperty(propertyName, defaultPropertyName));
     } catch (NumberFormatException e) {
@@ -74,6 +75,7 @@ public final class CarbonLRUCache {
     }
 
     // if lru cache is bigger than jvm max heap then set part size of max heap (60% default)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3281
     if (isBeyondMaxMemory()) {
       double changeSize = getPartOfXmx();
       LOGGER.warn("Configured LRU size " + lruCacheMemorySize +
@@ -84,6 +86,7 @@ public final class CarbonLRUCache {
 
     initCache();
     if (lruCacheMemorySize > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-484
       LOGGER.info("Configured LRU cache size is " + lruCacheMemorySize + " MB");
       // convert in bytes
       lruCacheMemorySize = lruCacheMemorySize * BYTE_CONVERSION_CONSTANT;
@@ -100,6 +103,7 @@ public final class CarbonLRUCache {
     // Cache entries can have individual variable expiration times and policies by adding
     // variableExpiration to the map. ExpirationPolicy.ACCESSED means the expiration can occur based
     // on last access time
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
     expiringMap =
         ExpiringMap.builder().expirationPolicy(ExpirationPolicy.ACCESSED).variableExpiration()
             .build();
@@ -113,6 +117,7 @@ public final class CarbonLRUCache {
     List<String> toBeDeletedKeys =
         new ArrayList<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     long removedSize = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
     for (Entry<String, Cacheable> entry : expiringMap.entrySet()) {
       String key = entry.getKey();
       Cacheable cacheInfo = entry.getValue();
@@ -170,7 +175,10 @@ public final class CarbonLRUCache {
    * @param keys
    */
   public void removeAll(List<String> keys) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
     synchronized (expiringMap) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3305
       for (String key : keys) {
         removeKey(key);
       }
@@ -183,6 +191,7 @@ public final class CarbonLRUCache {
    * @param key
    */
   private void removeKey(String key) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
     Cacheable cacheable = expiringMap.get(key);
     if (null != cacheable) {
       long memorySize = cacheable.getMemorySize();
@@ -201,8 +210,11 @@ public final class CarbonLRUCache {
    * @param cacheInfo
    */
   public boolean put(String columnIdentifier, Cacheable cacheInfo, long requiredSize,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
       long expiration_time) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1049
     if (LOGGER.isDebugEnabled()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-484
       LOGGER.debug("Required size for entry " + columnIdentifier + " :: " + requiredSize
           + " Current cache size :: " + currentSize);
     }
@@ -221,8 +233,11 @@ public final class CarbonLRUCache {
         }
       }
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
       synchronized (expiringMap) {
         addEntryToLRUCacheMap(columnIdentifier, cacheInfo, expiration_time);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
         currentSize = currentSize + requiredSize;
       }
       columnKeyAddedSuccessfully = true;
@@ -237,11 +252,13 @@ public final class CarbonLRUCache {
    * @param cacheInfo
    */
   private void addEntryToLRUCacheMap(String columnIdentifier, Cacheable cacheInfo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
       long expirationTimeSeconds) {
     if (null == expiringMap.get(columnIdentifier) && expirationTimeSeconds != 0L) {
       expiringMap.put(columnIdentifier, cacheInfo, ExpirationPolicy.ACCESSED, expirationTimeSeconds,
           TimeUnit.SECONDS);
     } else expiringMap.putIfAbsent(columnIdentifier, cacheInfo);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1049
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Added entry to InMemory lru cache :: " + columnIdentifier);
     }
@@ -265,6 +282,7 @@ public final class CarbonLRUCache {
    */
   private boolean freeMemorySizeForAddingCache(long requiredSize) {
     boolean memoryAvailable = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-484
     if (isSizeAvailableToLoadColumnDictionary(requiredSize)) {
       memoryAvailable = true;
     } else {
@@ -296,6 +314,7 @@ public final class CarbonLRUCache {
    * @return
    */
   public Cacheable get(String key) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
     synchronized (expiringMap) {
       return expiringMap.get(key);
     }
@@ -305,6 +324,7 @@ public final class CarbonLRUCache {
    * This method will empty the level cache
    */
   public void clear() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
     synchronized (expiringMap) {
       for (Cacheable cachebleObj : expiringMap.values()) {
         cachebleObj.invalidate();
@@ -324,6 +344,7 @@ public final class CarbonLRUCache {
    * @return true LRU cache is bigger than max memory of jvm, false otherwise
    */
   private boolean isBeyondMaxMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3281
     long mSize = Runtime.getRuntime().maxMemory();
     long lruSize = lruCacheMemorySize * BYTE_CONVERSION_CONSTANT;
     return lruSize >= mSize;
@@ -343,6 +364,8 @@ public final class CarbonLRUCache {
    * @return current size of the cache in memory.
    */
   public long getCurrentSize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     return currentSize;
   }
 }

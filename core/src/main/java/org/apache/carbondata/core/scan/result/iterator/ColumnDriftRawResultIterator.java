@@ -67,6 +67,7 @@ public class ColumnDriftRawResultIterator extends RawResultIterator {
         new ArrayList<>(destinationSegProperties.getDimensions().size());
     for (CarbonDimension dimension : destinationSegProperties.getDimensions()) {
       if (dimension.getNumberOfChild() == 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         if (dimension.getDataType() != DataTypes.DATE) {
           noDictDims.add(dimension);
         }

@@ -33,6 +33,7 @@ public final class Comparator {
   private static final SerializableComparator BYTE = new ByteArraySerializableComparator();
 
   public static SerializableComparator getComparator(DataType dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3489
     if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
       return LONG;
     } else if (dataType == DataTypes.STRING) {
@@ -50,6 +51,7 @@ public final class Comparator {
    */
   public static SerializableComparator getComparatorByDataTypeForMeasure(DataType dataType) {
     if (dataType == DataTypes.BOOLEAN) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3489
       return BOOLEAN;
     } else if (dataType == DataTypes.INT) {
       return INT;
@@ -61,11 +63,14 @@ public final class Comparator {
       return DOUBLE;
     } else if (dataType == DataTypes.FLOAT) {
       return FLOAT;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       return DECIMAL;
     } else if (dataType == DataTypes.BYTE) {
       return BYTE;
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3019
       throw new IllegalArgumentException("Unsupported data type: " + dataType.getName());
     }
   }

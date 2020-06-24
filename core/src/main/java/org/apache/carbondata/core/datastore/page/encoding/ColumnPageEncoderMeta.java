@@ -56,7 +56,10 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   }
 
   public ColumnPageEncoderMeta(TableSpec.ColumnSpec columnSpec, DataType storeDataType,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       String compressorName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
     if (columnSpec == null) {
       throw new IllegalArgumentException("columm spec must not be null");
     }
@@ -69,13 +72,17 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
     this.columnSpec = columnSpec;
     this.storeDataType = storeDataType;
     this.compressorName = compressorName;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1537
     setType(DataType.convertType(storeDataType));
   }
 
   public ColumnPageEncoderMeta(TableSpec.ColumnSpec columnSpec, DataType storeDataType,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       SimpleStatsResult stats, String compressorName) {
     this(columnSpec, storeDataType, compressorName);
     if (stats != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1419
       setDecimal(stats.getDecimalCount());
       setMaxValue(stats.getMax());
       setMinValue(stats.getMin());
@@ -89,6 +96,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   @Override
   public void write(DataOutput out) throws IOException {
     columnSpec.write(out);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     out.writeByte(storeDataType.getId());
     out.writeInt(getDecimal());
     out.writeByte(getDataTypeSelected());
@@ -100,7 +108,9 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   public void readFields(DataInput in) throws IOException {
     columnSpec = new TableSpec.ColumnSpec();
     columnSpec.readFields(in);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     storeDataType = DataTypes.valueOf(in.readByte());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     if (DataTypes.isDecimal(storeDataType)) {
       DecimalType decimalType = (DecimalType) storeDataType;
       decimalType.setPrecision(columnSpec.getPrecision());
@@ -114,7 +124,9 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   }
 
   private void writeMinMax(DataOutput out) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     DataType dataType = columnSpec.getSchemaDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       out.writeByte((byte) getMaxValue());
       out.writeByte((byte) getMinValue());
@@ -127,6 +139,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       out.writeInt((int) getMaxValue());
       out.writeInt((int) getMinValue());
       out.writeLong(0L); // unique value is obsoleted, maintain for compatibility
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       out.writeLong((Long) getMaxValue());
       out.writeLong((Long) getMinValue());
@@ -135,11 +148,14 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       out.writeDouble((Double) getMaxValue());
       out.writeDouble((Double) getMinValue());
       out.writeDouble(0d); // unique value is obsoleted, maintain for compatibility
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType == DataTypes.FLOAT) {
       out.writeFloat((Float) getMaxValue());
       out.writeFloat((Float) getMinValue());
       out.writeFloat(0f); // unique value is obsoleted, maintain for compatibility
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1429
       byte[] maxAsBytes = getMaxAsBytes(columnSpec.getSchemaDataType());
       byte[] minAsBytes = getMinAsBytes(columnSpec.getSchemaDataType());
       byte[] unique = DataTypeUtil.bigDecimalToByte(BigDecimal.ZERO);
@@ -150,6 +166,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       // unique value is obsoleted, maintain for compatibility
       out.writeShort((short) unique.length);
       out.write(unique);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       if (DataTypes.isDecimal(dataType)) {
         DecimalType decimalType = (DecimalType) dataType;
         out.writeInt(decimalType.getScale());
@@ -168,6 +185,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
 
   private void readMinMax(DataInput in) throws IOException {
     DataType dataType = columnSpec.getSchemaDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       this.setMaxValue(in.readByte());
       this.setMinValue(in.readByte());
@@ -180,6 +198,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       this.setMaxValue(in.readInt());
       this.setMinValue(in.readInt());
       in.readLong();  // for non exist value which is obsoleted, it is backward compatibility;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       this.setMaxValue(in.readLong());
       this.setMinValue(in.readLong());
@@ -188,10 +207,12 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       this.setMaxValue(in.readDouble());
       this.setMinValue(in.readDouble());
       in.readDouble(); // for non exist value which is obsoleted, it is backward compatibility;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType == DataTypes.FLOAT) {
       this.setMaxValue(in.readFloat());
       this.setMinValue(in.readFloat());
       in.readFloat(); // for non exist value which is obsoleted, it is backward compatibility;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       byte[] max = new byte[in.readShort()];
       in.readFully(max);
@@ -203,13 +224,17 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       short uniqueLength = in.readShort();
       in.readFully(new byte[uniqueLength]);
       // scale field is obsoleted. It is stored in the schema data type in columnSpec
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       in.readInt();
       // precision field is obsoleted. It is stored in the schema data type in columnSpec
       in.readInt();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     } else if (dataType == DataTypes.BYTE_ARRAY || dataType == DataTypes.BINARY) {
       // for complex type, it will come here, ignoring stats for complex type
       // TODO: support stats for complex type
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
       throw new IllegalArgumentException("invalid data type: " + storeDataType);
     }
   }
@@ -227,6 +252,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
    */
   private byte[] getValueAsBytes(Object value, DataType dataType) {
     ByteBuffer b;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     if (dataType == DataTypes.BYTE_ARRAY) {
       b = ByteBuffer.allocate(8);
       b.putLong((byte) value);
@@ -252,17 +278,20 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       b.putDouble((double) value);
       b.flip();
       return b.array();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       return DataTypeUtil.bigDecimalToByte((BigDecimal) value);
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.TIMESTAMP
         || dataType == DataTypes.DATE) {
       return (byte[]) value;
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
       throw new IllegalArgumentException("Invalid data type: " + storeDataType);
     }
   }
 
   public int getScale() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     if (DataTypes.isDecimal(columnSpec.getSchemaDataType())) {
       return columnSpec.getScale();
     }
@@ -277,6 +306,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   }
 
   public TableSpec.ColumnSpec getColumnSpec() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
     return columnSpec;
   }
 
@@ -289,6 +319,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   }
 
   public boolean isFillCompleteVector() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     return fillCompleteVector;
   }
 

@@ -41,6 +41,7 @@ public class CarbondataColumnConstraint {
       @JsonProperty("domain") Optional<Domain> domain,
       @JsonProperty("invertedIndexed") boolean invertedIndexed) {
     this.name = requireNonNull(name, "name is null");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
     this.invertedIndexed = requireNonNull(invertedIndexed, "invertedIndexed is null");
     this.domain = requireNonNull(domain, "domain is null");
   }
@@ -67,6 +68,7 @@ public class CarbondataColumnConstraint {
 
   @Override
   public int hashCode() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
     return Objects.hash(name, domain, invertedIndexed);
   }
 
@@ -82,6 +84,7 @@ public class CarbondataColumnConstraint {
 
     CarbondataColumnConstraint other = (CarbondataColumnConstraint) obj;
     return Objects.equals(this.name, other.name) && Objects.equals(this.domain, other.domain)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
         && Objects.equals(this.invertedIndexed, other.invertedIndexed);
   }
 

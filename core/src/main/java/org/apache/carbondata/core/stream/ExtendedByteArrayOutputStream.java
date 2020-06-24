@@ -33,6 +33,7 @@ public class ExtendedByteArrayOutputStream extends ByteArrayOutputStream {
   }
 
   public byte[] getBuffer() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     return buf;
   }
 

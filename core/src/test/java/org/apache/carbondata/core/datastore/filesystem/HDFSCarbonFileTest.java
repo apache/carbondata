@@ -77,6 +77,7 @@ public class HDFSCarbonFileTest {
             BufferedWriter br = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
             br.write("Hello World");
             br.close();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
             os.close();
             fs.close();
 
@@ -92,6 +93,7 @@ public class HDFSCarbonFileTest {
         try {
             fs.delete(pt, true);
         } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
             LOGGER.error("Exception Occured" + e.getMessage(), e);
         }
     }
@@ -102,6 +104,7 @@ public class HDFSCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
                 return new DistributedFileSystem();
             }
 
@@ -142,6 +145,7 @@ public class HDFSCarbonFileTest {
             }
 
         };
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         new MockUp<LocalFileSystem>() {
             @Mock
             public FileStatus[] listStatus(Path p) throws IOException {
@@ -295,6 +299,9 @@ public class HDFSCarbonFileTest {
             @Mock
             public FileStatus[] listStatus(Path var1) throws IOException {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
                 return new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
             }
 
@@ -313,6 +320,7 @@ public class HDFSCarbonFileTest {
             }
 
         };
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         new MockUp<DistributedFileSystem>() {
             @Mock
             public FileStatus getFileStatus(Path f) throws IOException {
@@ -384,6 +392,7 @@ public class HDFSCarbonFileTest {
             }
 
         };
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1827
         new MockUp<WebHdfsFileSystem>(){
             @Mock
             public boolean rename(final Path src, final Path dst) throws IOException {
@@ -391,6 +400,7 @@ public class HDFSCarbonFileTest {
             }
         };
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         assertEquals(new HDFSCarbonFile(fileStatus).renameForce(fileName), true);
     }
 
@@ -399,6 +409,7 @@ public class HDFSCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
                 return new DistributedFileSystem();
             }
 

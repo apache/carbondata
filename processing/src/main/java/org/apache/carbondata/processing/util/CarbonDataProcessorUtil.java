@@ -70,12 +70,14 @@ public final class CarbonDataProcessorUtil {
    * This method will be used to delete sort temp location is it is exites
    */
   public static void deleteSortLocationIfExists(String[] locations) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
     for (String loc : locations) {
       File file = new File(loc);
       if (file.exists()) {
         try {
           CarbonUtil.deleteFoldersAndFiles(file);
         } catch (IOException | InterruptedException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
           LOGGER.error("Failed to delete " + loc, e);
         }
       }
@@ -88,10 +90,12 @@ public final class CarbonDataProcessorUtil {
    */
   public static void createLocations(String[] locations) {
     for (String loc : locations) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2220
       File dir = new File(loc);
       if (dir.exists()) {
         LOGGER.warn("dir already exists, skip dir creation: " + loc);
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3452
         if (!dir.mkdirs() && !dir.exists()) {
           // concurrent scenario mkdir may fail, so checking dir
           LOGGER.error("Error occurs while creating dir: " + loc);
@@ -114,6 +118,7 @@ public final class CarbonDataProcessorUtil {
    * @return
    */
   public static String[] getLocalDataFolderLocation(CarbonTable carbonTable,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1992
       String taskId, String segmentId, boolean isCompactionFlow, boolean isAltPartitionFlow) {
     String tempLocationKey =
         getTempStoreLocationKey(carbonTable.getDatabaseName(), carbonTable.getTableName(),
@@ -130,9 +135,11 @@ public final class CarbonDataProcessorUtil {
     String[] baseTmpStorePathArray = StringUtils.split(baseTempStorePath, File.pathSeparator);
     String[] localDataFolderLocArray = new String[baseTmpStorePathArray.length];
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3591
     for (int i = 0; i < baseTmpStorePathArray.length; i++) {
       String tmpStore = baseTmpStorePathArray[i];
       String carbonDataDirectoryPath = CarbonTablePath.getSegmentPath(tmpStore, segmentId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
 
       localDataFolderLocArray[i] = carbonDataDirectoryPath + File.separator + taskId;
     }
@@ -150,7 +157,9 @@ public final class CarbonDataProcessorUtil {
    * @return
    */
   public static String getTempStoreLocationKey(String databaseName, String tableName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-940
       String segmentId, String taskId, boolean isCompactionFlow, boolean isAltPartitionFlow) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     String tempLocationKey = DatabaseLocationProvider.get().provide(databaseName)
         + CarbonCommonConstants.UNDERSCORE + tableName
         + CarbonCommonConstants.UNDERSCORE + segmentId + CarbonCommonConstants.UNDERSCORE + taskId;
@@ -176,6 +185,7 @@ public final class CarbonDataProcessorUtil {
         break;
       }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (!field.isDateDataType() && field.getColumn().isDimension()) {
         noDictionaryMapping.add(true);
       } else if (field.getColumn().isDimension()) {
@@ -190,6 +200,7 @@ public final class CarbonDataProcessorUtil {
    * Preparing the boolean [] to map whether the dimension is varchar data type or not.
    */
   public static boolean[] getIsVarcharColumnMapping(DataField[] fields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     List<Boolean> isVarcharColumnMapping = new ArrayList<Boolean>();
     for (DataField field : fields) {
       // for complex type need to break the loop
@@ -207,12 +218,14 @@ public final class CarbonDataProcessorUtil {
   }
 
   public static boolean[] getNoDictionaryMapping(CarbonColumn[] carbonColumns) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     List<Boolean> noDictionaryMapping = new ArrayList<Boolean>();
     for (CarbonColumn column : carbonColumns) {
       // for  complex type need to break the loop
       if (column.isComplex()) {
         break;
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (column.getDataType() != DataTypes.DATE && column.isDimension()) {
         noDictionaryMapping.add(true);
       } else if (column.isDimension()) {
@@ -225,6 +238,7 @@ public final class CarbonDataProcessorUtil {
 
   private static String getComplexTypeString(DataField[] dataFields) {
     StringBuilder dimString = new StringBuilder();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     for (DataField dataField : dataFields) {
       if (dataField.getColumn().getDataType().isComplexType()) {
         addAllComplexTypeChildren((CarbonDimension) dataField.getColumn(), dimString, "");
@@ -236,6 +250,7 @@ public final class CarbonDataProcessorUtil {
 
   private static String isDictionaryType(CarbonDimension dimension) {
     boolean isDictionary = true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     if (dimension.getDataType() != DataTypes.DATE) {
       isDictionary = false;
     }
@@ -261,6 +276,7 @@ public final class CarbonDataProcessorUtil {
         dimString.append(childDim.getColName()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
             .append(childDim.getDataType()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
             .append(dimension.getColName()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
             .append(isDictionaryType(dimension)).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
             .append(childDim.getColumnId()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
             .append(childDim.getOrdinal()).append(CarbonCommonConstants.HASH_SPC_CHARACTER);
@@ -270,6 +286,7 @@ public final class CarbonDataProcessorUtil {
 
   // TODO: need to simplify it. Not required create string first.
   public static Map<String, GenericDataType> getComplexTypesMap(DataField[] dataFields,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3160
       String nullFormat) {
     String complexTypeString = getComplexTypeString(dataFields);
 
@@ -281,6 +298,7 @@ public final class CarbonDataProcessorUtil {
     for (int i = 0; i < hierarchies.length; i++) {
       String[] levels = hierarchies[i].split(CarbonCommonConstants.HASH_SPC_CHARACTER);
       String[] levelInfo = levels[0].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
       String level1Info = levelInfo[1].toLowerCase();
       GenericDataType g = (level1Info.contains(CarbonCommonConstants.ARRAY) || level1Info
           .contains(CarbonCommonConstants.MAP)) ?
@@ -298,6 +316,7 @@ public final class CarbonDataProcessorUtil {
         } else {
           g.addChildren(
               new PrimitiveDataType(levelInfo[0], DataTypeUtil.valueOf(levelInfo[1]),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2755
                   levelInfo[2], levelInfo[4], levelInfo[3].contains("true"), nullFormat
               ));
         }
@@ -307,8 +326,10 @@ public final class CarbonDataProcessorUtil {
   }
 
   public static boolean isHeaderValid(String tableName, String[] csvHeader,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
       CarbonDataLoadSchema schema, List<String> ignoreColumns) {
     Iterator<String> columnIterator =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
         CarbonDataProcessorUtil.getSchemaColumnNames(schema).iterator();
     Set<String> csvColumns = new HashSet<String>(csvHeader.length);
     Collections.addAll(csvColumns, csvHeader);
@@ -316,6 +337,7 @@ public final class CarbonDataProcessorUtil {
     // file header should contain all columns of carbon table.
     // So csvColumns should contain all elements of columnIterator.
     while (columnIterator.hasNext()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
       String column = columnIterator.next().toLowerCase();
       if (!csvColumns.contains(column) && !ignoreColumns.contains(column)) {
         return false;
@@ -334,6 +356,7 @@ public final class CarbonDataProcessorUtil {
     List<CarbonDimension> dimensions =
         schema.getCarbonTable().getVisibleDimensions();
     for (CarbonDimension dimension : dimensions) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
       if (!dimension.isSpatialColumn()) {
         // skip the non-schema column
         columnNames.add(dimension.getColName());
@@ -368,6 +391,7 @@ public final class CarbonDataProcessorUtil {
     List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
     List<DataType> type = new ArrayList<>();
     for (int i = 0; i < dimensions.size(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (dimensions.get(i).isSortColumn() && dimensions.get(i).getDataType() != DataTypes.DATE) {
         type.add(dimensions.get(i).getDataType());
       }
@@ -382,6 +406,7 @@ public final class CarbonDataProcessorUtil {
    * @return
    */
   public static DataType[] getNoDictDataTypesAsDataFieldOrder(DataField[] dataFields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3728
     List<DataType> type = new ArrayList<>();
     for (DataField dataField : dataFields) {
       if (!dataField.getColumn().isInvisible() && dataField.getColumn().isDimension()) {
@@ -405,6 +430,7 @@ public final class CarbonDataProcessorUtil {
     List<Boolean> noDicSortColMap = new ArrayList<>();
     for (int i = 0; i < dimensions.size(); i++) {
       if (dimensions.get(i).isSortColumn()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         if (dimensions.get(i).getDataType() != DataTypes.DATE) {
           noDicSortColMap.add(true);
         } else {
@@ -427,6 +453,7 @@ public final class CarbonDataProcessorUtil {
    * @return
    */
   public static boolean[] getNoDictSortColMappingAsDataFieldOrder(DataField[] dataFields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3728
     List<Boolean> noDicSortColMap = new ArrayList<>();
     for (DataField dataField : dataFields) {
       if (!dataField.getColumn().isInvisible() && dataField.getColumn().isDimension()) {
@@ -439,6 +466,7 @@ public final class CarbonDataProcessorUtil {
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
     Boolean[] mapping = noDicSortColMap.toArray(new Boolean[0]);
     boolean[] noDicSortColMapping = new boolean[mapping.length];
     for (int i = 0; i < mapping.length; i++) {
@@ -460,6 +488,7 @@ public final class CarbonDataProcessorUtil {
     List<Integer> noDicSortColMap = new ArrayList<>();
     int counter = 0;
     for (CarbonDimension dimension : dimensions) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (dimension.getDataType() == DataTypes.DATE) {
         continue;
       }
@@ -485,6 +514,7 @@ public final class CarbonDataProcessorUtil {
    * data.
    */
   public static int[] getColumnIdxBasedOnSchemaInRowAsDataFieldOrder(DataField[] dataFields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3728
     List<Integer> noDicSortColMap = new ArrayList<>();
     int counter = 0;
     for (DataField dataField : dataFields) {
@@ -518,6 +548,7 @@ public final class CarbonDataProcessorUtil {
     List<DataType> noDictSortType = new ArrayList<>();
     List<DataType> noDictNoSortType = new ArrayList<>();
     for (int i = 0; i < dimensions.size(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (dimensions.get(i).getDataType() != DataTypes.DATE) {
         if (dimensions.get(i).isSortColumn()) {
           noDictSortType.add(dimensions.get(i).getDataType());
@@ -541,6 +572,7 @@ public final class CarbonDataProcessorUtil {
    * @return
    */
   public static Map<String, DataType[]> getNoDictSortAndNoSortDataTypesAsDataFieldOrder(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3728
       DataField[] dataFields) {
     List<DataType> noDictSortType = new ArrayList<>();
     List<DataType> noDictNoSortType = new ArrayList<>();
@@ -568,6 +600,7 @@ public final class CarbonDataProcessorUtil {
    * @return data directory path
    */
   public static String createCarbonStoreLocation(CarbonTable carbonTable, String segmentId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     return CarbonTablePath.getSegmentPath(carbonTable.getTablePath(), segmentId);
   }
 
@@ -576,8 +609,11 @@ public final class CarbonDataProcessorUtil {
    */
   public static DataType[] initDataType(CarbonTable carbonTable, String tableName,
       int measureCount) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1015
     DataType[] type = new DataType[measureCount];
     for (int i = 0; i < type.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       type[i] = DataTypes.DOUBLE;
     }
     List<CarbonMeasure> measures = carbonTable.getVisibleMeasures();
@@ -614,6 +650,7 @@ public final class CarbonDataProcessorUtil {
   }
 
   public static SortScopeOptions.SortScope getSortScope(String sortScopeString) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1268
     SortScopeOptions.SortScope sortScope;
     try {
       // first check whether user input it from ddl, otherwise get from carbon properties
@@ -624,6 +661,8 @@ public final class CarbonDataProcessorUtil {
       } else {
         sortScope = SortScopeOptions.getSortScope(sortScopeString);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2220
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2220
       LOGGER.info("sort scope is set to " + sortScope);
     } catch (Exception e) {
       sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
@@ -642,6 +681,7 @@ public final class CarbonDataProcessorUtil {
     int numPartitions;
     try {
       // First try to get the number from ddl, otherwise get it from carbon properties.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2168
       if (globalSortPartitions == null) {
         numPartitions = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
@@ -663,6 +703,7 @@ public final class CarbonDataProcessorUtil {
    * @return
    */
   public static String prepareFailureReason(String columnName, DataType dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1049
     return "The value with column name " + columnName + " and column data type " + dataType
         .getName() + " is not a valid " + dataType + " type.";
   }
@@ -674,6 +715,7 @@ public final class CarbonDataProcessorUtil {
    * @return result
    */
   public static String[] arrayAppend(String[] inputArr, String... append) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
     String[] outArr = new String[inputArr.length];
     StringBuffer sb = new StringBuffer();
     for (String str : append) {
@@ -693,8 +735,10 @@ public final class CarbonDataProcessorUtil {
    * @return
    */
   public static String trimErrorMessage(String input) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1470
     String errorMessage = input;
     if (input != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2410
       if (input.split("Hint").length > 1) {
         errorMessage = input.split("Hint")[0];
       } else if (input.split("Parser Configuration:").length > 1) {
@@ -711,6 +755,7 @@ public final class CarbonDataProcessorUtil {
    */
   public static boolean isRawDataRequired(CarbonDataLoadConfiguration configuration) {
     boolean isRawDataRequired = Boolean.parseBoolean(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1249
         configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ENABLE)
             .toString());
     // if logger is disabled then check if action is redirect then raw data will be required.
@@ -742,12 +787,14 @@ public final class CarbonDataProcessorUtil {
     if (sdkWriterCores > 0) {
       numberOfCores = sdkWriterCores;
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3031
       numberOfCores = CarbonProperties.getInstance().getNumberOfLoadingCores();
     }
     // Get the minimum of number of cores and iterators size to get the number of parallel threads
     // to be launched.
     int parallelThreadNumber = Math.min(inputIterators.length, numberOfCores);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2608
     if (parallelThreadNumber <= 0) {
       parallelThreadNumber = 1;
     }

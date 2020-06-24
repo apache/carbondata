@@ -79,19 +79,29 @@ public class CarbonLoadModelBuilder {
         columns[i] = csvHeader.get(i).getColName();
       }
       optionsFinal.put("fileheader", Strings.mkString(columns, ","));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     } else {
       optionsFinal.put("fileheader", options.get("fileheader"));
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2666
     optionsFinal.put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options, table));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2879
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2918
     optionsFinal.put("sort_scope",
         Maps.getOrDefault(options, "sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT));
     CarbonLoadModel model = new CarbonLoadModel();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     model.setCarbonTransactionalTable(table.isTransactionalTable());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2916
     model.setFactTimeStamp(timestamp);
     model.setTaskNo(taskNo);
 
     // we have provided 'fileheader', so it hadoopConf can be null
     build(options, optionsFinal, model, null);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2452
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2451
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2450
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2453
     String timestampFormat = options.get("timestampformat");
     if (timestampFormat == null) {
       timestampFormat = CarbonProperties.getInstance()
@@ -105,8 +115,10 @@ public class CarbonLoadModelBuilder {
               CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
     }
     model.setDateFormat(dateFormat);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3740
     model.setTimestampFormat(timestampFormat);
     validateAndSetColumnCompressor(model);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
     validateAndSetBinaryDecoder(model);
     return model;
   }
@@ -124,6 +136,7 @@ public class CarbonLoadModelBuilder {
       Map<String, String> optionsFinal,
       CarbonLoadModel carbonLoadModel,
       Configuration hadoopConf) throws InvalidLoadOptionException, IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
     build(options, optionsFinal, carbonLoadModel, hadoopConf, new HashMap<String, String>(), false);
   }
 
@@ -148,6 +161,7 @@ public class CarbonLoadModelBuilder {
     carbonLoadModel.setDatabaseName(table.getDatabaseName());
     carbonLoadModel.setTablePath(table.getTablePath());
     carbonLoadModel.setTableName(table.getTableName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     carbonLoadModel.setCarbonTransactionalTable(table.isTransactionalTable());
     CarbonDataLoadSchema dataLoadSchema = new CarbonDataLoadSchema(table);
     // Need to fill dimension relation
@@ -159,6 +173,7 @@ public class CarbonLoadModelBuilder {
     String global_sort_partitions = optionsFinal.get("global_sort_partitions");
     String timestampformat = optionsFinal.get("timestampformat");
     String dateFormat = optionsFinal.get("dateformat");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3126
     String delimiter = optionsFinal.get("delimiter");
     String complex_delimiter_level1 = optionsFinal.get("complex_delimiter_level_1");
     String complex_delimiter_level2 = optionsFinal.get("complex_delimiter_level_2");
@@ -169,6 +184,7 @@ public class CarbonLoadModelBuilder {
 
     if (Boolean.parseBoolean(bad_records_logger_enable) ||
         LoggerAction.REDIRECT.name().equalsIgnoreCase(bad_records_action)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2666
       if (!StringUtils.isEmpty(bad_record_path)) {
         bad_record_path = CarbonUtil.checkAndAppendHDFSUrl(bad_record_path);
       } else {
@@ -184,6 +200,7 @@ public class CarbonLoadModelBuilder {
     carbonLoadModel.setQuoteChar(
         CarbonUtil.unescapeChar(checkDefaultValue(optionsFinal.get("quotechar"), "\"")));
     carbonLoadModel.setCommentChar(checkDefaultValue(optionsFinal.get("commentchar"), "#"));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3740
     String lineSeparator = CarbonUtil.unescapeChar(options.get("line_separator"));
     if (lineSeparator != null) {
       carbonLoadModel.setLineSeparator(lineSeparator);
@@ -192,6 +209,7 @@ public class CarbonLoadModelBuilder {
     // if there isn't file header in csv file and load sql doesn't provide FILEHEADER option,
     // we should use table schema to generate file header.
     String fileHeader = optionsFinal.get("fileheader");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     String headerOption = optionsFinal.get("header");
     if (StringUtils.isNotEmpty(headerOption)) {
       if (!headerOption.equalsIgnoreCase("true") &&
@@ -211,6 +229,7 @@ public class CarbonLoadModelBuilder {
           List<String> columnNames = new ArrayList<>();
           List<String> partitionColumns = new ArrayList<>();
           for (int i = 0; i < columns.size(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3606
             columnNames.add(columns.get(i).getColName());
           }
           columnNames.addAll(partitionColumns);
@@ -219,8 +238,10 @@ public class CarbonLoadModelBuilder {
       }
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
     String binaryDecoder = options.get("binary_decoder");
     carbonLoadModel.setBinaryDecoder(binaryDecoder);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3740
     carbonLoadModel.setTimestampFormat(timestampformat);
     carbonLoadModel.setDateFormat(dateFormat);
     carbonLoadModel.setDefaultTimestampFormat(
@@ -250,11 +271,13 @@ public class CarbonLoadModelBuilder {
     carbonLoadModel.setSkipEmptyLine(optionsFinal.get("skip_empty_line"));
 
     carbonLoadModel.setSortScope(sort_scope);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     if (global_sort_partitions == null) {
       global_sort_partitions = table.getGlobalSortPartitions();
     }
     carbonLoadModel.setGlobalSortPartitions(global_sort_partitions);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3126
     if (delimiter.equalsIgnoreCase(complex_delimiter_level1) ||
         complex_delimiter_level1.equalsIgnoreCase(complex_delimiter_level2) ||
         delimiter.equalsIgnoreCase(complex_delimiter_level2) ||
@@ -269,6 +292,7 @@ public class CarbonLoadModelBuilder {
     carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter));
     carbonLoadModel.setCsvHeader(fileHeader);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
     List<String> ignoreColumns = new ArrayList<>();
     if (!isDataFrame) {
       for (Map.Entry<String, String> partition : partitions.entrySet()) {
@@ -286,19 +310,25 @@ public class CarbonLoadModelBuilder {
         optionsFinal.get("maxcolumns"));
 
     carbonLoadModel.setMaxColumns(String.valueOf(validatedMaxColumns));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2898
     if (carbonLoadModel.isCarbonTransactionalTable()) {
       carbonLoadModel.readAndSetLoadMetadataDetails();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     carbonLoadModel.setSortColumnsBoundsStr(optionsFinal.get("sort_column_bounds"));
     carbonLoadModel.setLoadMinSize(
         optionsFinal.get(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB));
     validateAndSetLoadMinSize(carbonLoadModel);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     validateAndSetColumnCompressor(carbonLoadModel);
     validateAndSetBinaryDecoder(carbonLoadModel);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
 
     validateRangeColumn(optionsFinal, carbonLoadModel);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     carbonLoadModel.setMetrics(new DataLoadMetrics());
   }
 
@@ -395,6 +425,8 @@ public class CarbonLoadModelBuilder {
   }
 
   private void validateAndSetColumnCompressor(CarbonLoadModel carbonLoadModel)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       throws InvalidLoadOptionException {
     try {
       String columnCompressor = carbonLoadModel.getColumnCompressor();
@@ -406,13 +438,16 @@ public class CarbonLoadModelBuilder {
       CompressorFactory.getInstance().getCompressor(columnCompressor);
       carbonLoadModel.setColumnCompressor(columnCompressor);
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error(e.getMessage(), e);
       throw new InvalidLoadOptionException("Failed to load the compressor");
     }
   }
 
   private void validateAndSetBinaryDecoder(CarbonLoadModel carbonLoadModel) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
     String binaryDecoder = carbonLoadModel.getBinaryDecoder();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3408
     if (!CarbonLoaderUtil.isValidBinaryDecoder(binaryDecoder)) {
       throw new CarbonDataLoadingException("Binary decoder only support Base64, " +
           "Hex or no decode for string, don't support " + binaryDecoder);

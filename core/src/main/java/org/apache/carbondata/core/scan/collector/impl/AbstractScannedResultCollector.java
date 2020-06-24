@@ -44,6 +44,7 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
    * table block execution infos
    */
   BlockExecutionInfo executionInfo;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
 
   /**
    * maintains the measure information like datatype, ordinal, measure existence
@@ -85,6 +86,8 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
         Object defaultValue = measureInfo.getDefaultValues()[i];
         if (null != defaultValue && DataTypes.isDecimal(measureInfo.getMeasureDataTypes()[i])) {
           // convert data type as per the computing engine
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
           defaultValue =
               DataTypeUtil.getDataTypeConverter().convertFromBigDecimalToDecimal(defaultValue);
         }
@@ -120,6 +123,7 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
       } else {
         // if not then get the default value and use that value in aggregation
         Object defaultValue = measureInfo.getDefaultValues()[i];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         if (null != defaultValue && DataTypes.isDecimal(measureInfo.getMeasureDataTypes()[i])) {
           // convert data type as per the computing engine
           defaultValue =
@@ -133,9 +137,12 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
     }
   }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   Object getMeasureData(ColumnPage dataChunk, int index, CarbonMeasure carbonMeasure) {
     if (!dataChunk.getNullBits().get(index)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = carbonMeasure.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
       if (dataType == DataTypes.BOOLEAN) {
         return dataChunk.getBoolean(index);
       } else if (dataType == DataTypes.SHORT) {
@@ -144,10 +151,13 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
         return (int) dataChunk.getLong(index);
       } else if (dataType == DataTypes.LONG) {
         return dataChunk.getLong(index);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
       } else if (dataType == DataTypes.FLOAT) {
         return dataChunk.getFloat(index);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2964
       } else if (dataType == DataTypes.BYTE) {
         return dataChunk.getByte(index);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       } else if (DataTypes.isDecimal(dataType)) {
         BigDecimal bigDecimalMsrValue = dataChunk.getDecimal(index);
         if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
@@ -155,9 +165,12 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
               bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
         }
         // convert data type as per the computing engine
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
         return DataTypeUtil.getDataTypeConverter().convertFromBigDecimalToDecimal(
             bigDecimalMsrValue);
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
         return dataChunk.getDouble(index);
       }
     }

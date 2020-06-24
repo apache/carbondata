@@ -110,6 +110,7 @@ public class CarbondataModule extends HiveClientModule {
     binder.bind(HiveSessionProperties.class).in(Scopes.SINGLETON);
     binder.bind(HiveTableProperties.class).in(Scopes.SINGLETON);
     binder.bind(HiveAnalyzeProperties.class).in(Scopes.SINGLETON);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3311
 
     binder.bind(NamenodeStats.class).in(Scopes.SINGLETON);
     newExporter(binder).export(NamenodeStats.class)
@@ -166,6 +167,7 @@ public class CarbondataModule extends HiveClientModule {
     fileWriterFactoryBinder.addBinding().to(RcFileFileWriterFactory.class).in(Scopes.SINGLETON);
     binder.bind(CarbonTableReader.class).in(Scopes.SINGLETON);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3311
     configBinder(binder).bindConfig(ParquetFileWriterConfig.class);
   }
 

@@ -22,6 +22,7 @@ import com.facebook.presto.spi.block.Block;
 public interface PrestoVectorBlockBuilder {
 
   Block buildBlock();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2656
 
   void setBatchSize(int batchSize);
 

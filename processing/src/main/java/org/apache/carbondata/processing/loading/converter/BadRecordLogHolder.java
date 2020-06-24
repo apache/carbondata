@@ -54,6 +54,7 @@ public class BadRecordLogHolder {
   }
 
   public boolean isLogged() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-784
     return isLogged;
   }
 
@@ -62,6 +63,7 @@ public class BadRecordLogHolder {
   }
 
   public Map<String, String> getColumnMessageMap() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1049
     return columnMessageMap;
   }
 

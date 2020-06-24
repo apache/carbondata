@@ -56,6 +56,7 @@ public class ComplexColumnPage {
   private int[] currentRowIdList;
 
   public ComplexColumnPage(List<ComplexColumnInfo> complexColumnInfoList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     this.complexColumnIndex = complexColumnInfoList.size();
     this.complexColumnInfoList = complexColumnInfoList;
     this.columnPages = new ColumnPage[this.complexColumnIndex];
@@ -68,6 +69,7 @@ public class ComplexColumnPage {
    * @param pageSize number of records
    */
   public void initialize(Map<String, LocalDictionaryGenerator> columnToDictMap, int pageSize,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       String columnCompressor) {
     DataType dataType;
     for (int i = 0; i < this.columnPages.length; i++) {
@@ -79,6 +81,8 @@ public class ComplexColumnPage {
         if (isColumnPageBasedOnDataType(i)) {
           // no dictionary primitive types need adaptive encoding,
           // hence store as actual value instead of byte array
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
           this.columnPages[i] = ColumnPage.newPage(
               new ColumnPageEncoderMeta(spec, dataType, columnCompressor), pageSize);
           this.columnPages[i].setStatsCollector(PrimitivePageStatsCollector.newInstance(dataType));
@@ -97,6 +101,7 @@ public class ComplexColumnPage {
   }
 
   private TableSpec.ColumnSpec getColumnSpec(int columnPageIndex,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
       LocalDictionaryGenerator localDictionaryGenerator) {
     if ((localDictionaryGenerator == null) && isColumnPageBasedOnDataType(columnPageIndex)) {
       return TableSpec.ColumnSpec
@@ -116,9 +121,11 @@ public class ComplexColumnPage {
     if ((complexColumnInfoList.get(columnPageIndex).isNoDictionary() &&
         !((DataTypes.isStructType(dataType) ||
             DataTypes.isArrayType(dataType) ||
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
             DataTypes.isMapType(dataType) ||
             (dataType == DataTypes.STRING) ||
             (dataType == DataTypes.VARCHAR) ||
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3495
             (dataType == DataTypes.BINARY) ||
             (dataType == DataTypes.DATE) ||
             DataTypes.isDecimal(dataType))))) {

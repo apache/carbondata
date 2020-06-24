@@ -23,6 +23,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 public class ConcurrentOperationException extends MalformedCarbonCommandException {
 
   public ConcurrentOperationException(String dbName, String tableName, String command1,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2104
       String command2) {
     super(command1 + " is in progress for table " + dbName + "." + tableName + ", " + command2 +
         " operation is not allowed");

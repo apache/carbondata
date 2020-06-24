@@ -118,11 +118,13 @@ public final class FilterUtil {
   private static FilterExecuter createFilterExecuterTree(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
       Map<Integer, GenericQueryType> complexDimensionInfoMap,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
       List<CarbonColumn> minMaxCacheColumns, boolean isStreamDataFile) {
     FilterExecuterType filterExecuterType = filterExpressionResolverTree.getFilterExecuterType();
     if (null != filterExecuterType) {
       switch (filterExecuterType) {
         case INCLUDE:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1704
           if (null != filterExpressionResolverTree.getDimColResolvedFilterInfo()
               && null != filterExpressionResolverTree.getDimColResolvedFilterInfo()
               .getFilterValues() && filterExpressionResolverTree.getDimColResolvedFilterInfo()
@@ -132,7 +134,9 @@ public final class FilterUtil {
                 filterExpressionResolverTree.getMsrColResolvedFilterInfo(), segmentProperties);
           }
           // return true filter expression if filter column min/max is not cached in driver
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
           if (checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(filterExpressionResolverTree,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
               segmentProperties, minMaxCacheColumns, isStreamDataFile)) {
             return new TrueFilterExecutor();
           }
@@ -146,6 +150,7 @@ public final class FilterUtil {
         case OR:
           return new OrFilterExecuterImpl(
               createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
                   complexDimensionInfoMap, minMaxCacheColumns, isStreamDataFile),
               createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
                   complexDimensionInfoMap, minMaxCacheColumns, isStreamDataFile));
@@ -165,25 +170,30 @@ public final class FilterUtil {
           if (checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(
               rowLevelRangeFilterResolver.getDimColEvaluatorInfoList(),
               rowLevelRangeFilterResolver.getMsrColEvalutorInfoList(), segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
               minMaxCacheColumns, isStreamDataFile)) {
             return new TrueFilterExecutor();
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2277
           return RowLevelRangeTypeExecuterFactory
               .getRowLevelRangeTypeExecuter(filterExecuterType, filterExpressionResolverTree,
                   segmentProperties);
         case RANGE:
           // return true filter expression if filter column min/max is not cached in driver
           if (checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(filterExpressionResolverTree,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
               segmentProperties, minMaxCacheColumns, isStreamDataFile)) {
             return new TrueFilterExecutor();
           }
           return new RangeValueFilterExecuterImpl(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
               filterExpressionResolverTree.getDimColResolvedFilterInfo(),
               filterExpressionResolverTree.getFilterExpression(),
               ((ConditionalFilterResolverImpl) filterExpressionResolverTree)
                   .getFilterRangeValues(segmentProperties), segmentProperties);
         case TRUE:
           return new TrueFilterExecutor();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1454
         case FALSE:
           return new FalseFilterExecutor();
         case ROWLEVEL:
@@ -236,6 +246,8 @@ public final class FilterUtil {
             msrColResolvedFilterInfo, true);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1854
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     CarbonDimension dimension = dimColResolvedFilterInfo.getDimension();
     if (dimension.hasEncoding(Encoding.IMPLICIT)) {
       return new ImplicitIncludeFilterExecutorImpl(dimColResolvedFilterInfo);
@@ -268,8 +280,10 @@ public final class FilterUtil {
    * @return
    */
   private static boolean checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
       List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvaluatorInfoList,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
       SegmentProperties segmentProperties, List<CarbonColumn> minMaxCacheColumns,
       boolean isStreamDataFile) {
     boolean replaceCurrentNodeWithTrueFilter = false;
@@ -302,6 +316,7 @@ public final class FilterUtil {
    */
   private static boolean checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
       List<CarbonColumn> minMaxCacheColumns, boolean isStreamDataFile) {
     boolean replaceCurrentNodeWithTrueFilter = false;
     ColumnResolvedFilterInfo columnResolvedFilterInfo = null;
@@ -333,6 +348,7 @@ public final class FilterUtil {
    */
   private static boolean checkIfFilterColumnIsCachedInDriver(
       ColumnResolvedFilterInfo columnResolvedFilterInfo, SegmentProperties segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
       List<CarbonColumn> minMaxCacheColumns, boolean isMeasure, boolean isStreamDataFile) {
     boolean replaceCurrentNodeWithTrueFilter = false;
     CarbonColumn columnFromCurrentBlock = null;
@@ -361,6 +377,7 @@ public final class FilterUtil {
           // when read from stream data file, minmax columns cache don't include complex columns,
           // so it can not use 'segmentProperties.getLastDimensionColOrdinal()' as
           // last dimension ordinal.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
           if (isStreamDataFile) {
             columnResolvedFilterInfo.setColumnIndexInMinMaxByteArray(
                 segmentProperties.getDimensions().size() + columnFromCurrentBlock.getOrdinal());
@@ -411,6 +428,8 @@ public final class FilterUtil {
       MeasureColumnResolvedFilterInfo msrColResolvedFilterInfo,
       SegmentProperties segmentProperties) {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     if (null != msrColResolvedFilterInfo && msrColResolvedFilterInfo.getMeasure().isMeasure()) {
       CarbonMeasure measuresFromCurrentBlock =
           segmentProperties.getMeasureFromCurrentBlock(msrColResolvedFilterInfo.getMeasure());
@@ -425,9 +444,12 @@ public final class FilterUtil {
             segmentProperties, true);
       } else {
         return new RestructureExcludeFilterExecutorImpl(dimColResolvedFilterInfo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
             msrColResolvedFilterInfo, true);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     CarbonDimension dimensionFromCurrentBlock =
         segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
     if (null != dimensionFromCurrentBlock) {
@@ -440,6 +462,8 @@ public final class FilterUtil {
           segmentProperties, false);
     } else {
       return new RestructureExcludeFilterExecutorImpl(dimColResolvedFilterInfo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
           msrColResolvedFilterInfo, false);
     }
   }
@@ -489,9 +513,11 @@ public final class FilterUtil {
    * @return
    */
   public static boolean checkIfDataTypeNotTimeStamp(Expression expression) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
     if (expression.getFilterExpressionType() == ExpressionType.LITERAL
         && expression instanceof LiteralExpression) {
       DataType dataType = ((LiteralExpression) expression).getLiteralExpDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       if (!(dataType == DataTypes.TIMESTAMP || dataType == DataTypes.DATE)) {
         return true;
       }
@@ -532,18 +558,21 @@ public final class FilterUtil {
    * @return ColumnFilterInfo
    */
   public static ColumnFilterInfo getNoDictionaryValKeyMemberForFilter(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
       List<String> evaluateResultListFinal, boolean isIncludeFilter, DataType dataType)
       throws FilterUnsupportedException {
     List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
     String result = null;
     try {
       int length = evaluateResultListFinal.size();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1450
       String timeFormat = CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
               CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
       for (int i = 0; i < length; i++) {
         result = evaluateResultListFinal.get(i);
         if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(result)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
           if (dataType == DataTypes.STRING) {
             filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
           } else {
@@ -600,6 +629,7 @@ public final class FilterUtil {
           continue;
         }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
         filterValuesList.add(DataTypeUtil
             .getMeasureValueBasedOnDataType(result, dataType, carbonMeasure.getScale(),
                 carbonMeasure.getPrecision()));
@@ -623,6 +653,7 @@ public final class FilterUtil {
   }
 
   public static DataType getMeasureDataType(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
       MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo) {
     if (msrColumnEvaluatorInfo.getType() == DataTypes.BOOLEAN) {
       return DataTypes.BOOLEAN;
@@ -645,6 +676,9 @@ public final class FilterUtil {
 
   public static boolean isExcludeFilterNeedsToApply(int dictionarySize,
       int size) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
     if ((size * 100) / dictionarySize >= 60) {
       LOGGER.info("Applying CBO to convert include filter to exclude filter.");
       return true;
@@ -664,6 +698,7 @@ public final class FilterUtil {
       }
       if (null != listOfsurrogates) {
         for (Integer surrogate : listOfsurrogates) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
           keys[keyOrdinalOfDimensionFromCurrentBlock] = surrogate;
           filterValuesList.add(ByteUtil.convertIntToBytes(surrogate));
         }
@@ -683,6 +718,7 @@ public final class FilterUtil {
             "Filter values cannot be null in case of range in dictionary include");
       }
       // Here we only get the first column as there can be only one range column.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       keys[keyOrdinalOfDimensionFromCurrentBlock] = listOfsurrogates.get(0);
       filterValuesList.add(ByteUtil.convertIntToBytes(listOfsurrogates.get(0)));
     }
@@ -723,8 +759,10 @@ public final class FilterUtil {
    * @return
    */
   public static byte[][] getKeyArray(ColumnFilterInfo columnFilterInfo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3343
       CarbonDimension carbonDimension, SegmentProperties segmentProperties, boolean isExclude,
       boolean isDictRange) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     if (carbonDimension.getDataType() != DataTypes.DATE) {
       return columnFilterInfo.getNoDictionaryFilterValuesList()
           .toArray((new byte[columnFilterInfo.getNoDictionaryFilterValuesList().size()][]));
@@ -734,6 +772,8 @@ public final class FilterUtil {
     Arrays.fill(keys, 0);
     int keyOrdinalOfDimensionFromCurrentBlock = carbonDimension.getKeyOrdinal();
     if (!isDictRange) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       return getFilterValuesInBytes(columnFilterInfo, isExclude, keys, filterValuesList,
           keyOrdinalOfDimensionFromCurrentBlock);
     } else {
@@ -752,7 +792,9 @@ public final class FilterUtil {
    */
   public static FilterExecuter getFilterExecuterTree(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
       Map<Integer, GenericQueryType> complexDimensionInfoMap, boolean isStreamDataFile) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
     return getFilterExecuterTree(filterExpressionResolverTree, segmentProperties,
         complexDimensionInfoMap, null, isStreamDataFile);
   }
@@ -767,6 +809,7 @@ public final class FilterUtil {
   public static FilterExecuter getFilterExecuterTree(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
       Map<Integer, GenericQueryType> complexDimensionInfoMap,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
       List<CarbonColumn> minMaxCacheColumns, boolean isStreamDataFile) {
     return createFilterExecuterTree(filterExpressionResolverTree, segmentProperties,
         complexDimensionInfoMap, minMaxCacheColumns, isStreamDataFile);
@@ -785,6 +828,7 @@ public final class FilterUtil {
       DimColumnExecuterFilterInfo dimColumnExecuterInfo, CarbonMeasure measures,
       MeasureColumnExecuterFilterInfo msrColumnExecuterInfo) {
     if (null != measures) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3486
       DataType filterColumnDataType = DataTypes.valueOf(measures.getDataType().getId());
       DataTypeConverterImpl converter = new DataTypeConverterImpl();
       Object[] keysBasedOnFilter = filterValues.getMeasuresFilterValuesList()
@@ -801,6 +845,7 @@ public final class FilterUtil {
       if (filterValues == null) {
         dimColumnExecuterInfo.setFilterKeys(new byte[0][]);
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3343
         byte[][] keysBasedOnFilter =
             getKeyArray(filterValues, dimension, segmentProperties, false, false);
         if (!filterValues.isIncludeFilter() || filterValues.isOptimized()) {
@@ -815,10 +860,12 @@ public final class FilterUtil {
   public static int compareFilterKeyBasedOnDataType(String dictionaryVal, String memberVal,
       DataType dataType) {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
       if (dataType == DataTypes.BOOLEAN) {
         return Boolean.compare((Boolean.parseBoolean(dictionaryVal)),
                 (Boolean.parseBoolean(memberVal)));
       } else if (dataType == DataTypes.SHORT) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         return Short.compare((Short.parseShort(dictionaryVal)), (Short.parseShort(memberVal)));
       } else if (dataType == DataTypes.INT) {
         return Integer.compare((Integer.parseInt(dictionaryVal)), (Integer.parseInt(memberVal)));
@@ -837,6 +884,8 @@ public final class FilterUtil {
         dateToStr = parser.parse(memberVal);
         dictionaryDate = parser.parse(dictionaryVal);
         return dictionaryDate.compareTo(dateToStr);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       } else if (DataTypes.isDecimal(dataType)) {
         java.math.BigDecimal javaDecValForDictVal = new java.math.BigDecimal(dictionaryVal);
         java.math.BigDecimal javaDecValForMemberVal = new java.math.BigDecimal(memberVal);
@@ -859,6 +908,7 @@ public final class FilterUtil {
    */
   public static boolean isExpressionNeedsToResolved(Expression rightExp, boolean isIncludeFilter) {
     if (!isIncludeFilter && rightExp instanceof LiteralExpression && (
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         DataTypes.NULL == ((LiteralExpression) rightExp)
             .getLiteralExpDataType())) {
       return true;
@@ -878,6 +928,7 @@ public final class FilterUtil {
    */
   public static void logError(Throwable e, boolean invalidRowsPresent) {
     if (!invalidRowsPresent) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error(CarbonCommonConstants.FILTER_INVALID_MEMBER + e.getMessage(), e);
     }
   }
@@ -893,6 +944,7 @@ public final class FilterUtil {
    */
   public static boolean nanSafeEqualsDoubles(Double d1, Double d2) {
     return (d1.doubleValue() == d2.doubleValue()) || (Double.isNaN(d1) && Double.isNaN(d2));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
 
   }
 
@@ -932,8 +984,10 @@ public final class FilterUtil {
    * @param bitSet
    */
   public static void removeNullValues(DimensionColumnPage dimensionColumnPage, BitSet bitSet,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
       byte[] defaultValue) {
     if (!bitSet.isEmpty()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2975
       if (null != dimensionColumnPage.getNullBits()) {
         if (!dimensionColumnPage.getNullBits().isEmpty()) {
           for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
@@ -954,9 +1008,11 @@ public final class FilterUtil {
 
   public static void updateIndexOfColumnExpression(Expression exp, int dimOridnalMax) {
     // if expression is null, not require to update index.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2151
     if (exp == null) {
       return;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     if (exp.getChildren() == null || exp.getChildren().size() == 0) {
       if (exp instanceof ColumnExpression) {
         ColumnExpression ce = (ColumnExpression) exp;
@@ -986,6 +1042,7 @@ public final class FilterUtil {
    * @return
    */
   public static ColumnFilterInfo getImplicitColumnFilterList(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3217
       Map<String, Set<Integer>> implicitColumnFilterList, boolean isIncludeFilter) {
     ColumnFilterInfo columnFilterInfo = new ColumnFilterInfo();
     columnFilterInfo.setIncludeFilter(isIncludeFilter);
@@ -1004,6 +1061,7 @@ public final class FilterUtil {
    * @param expression
    */
   public static void removeInExpressionNodeWithPositionIdColumn(Expression expression) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3217
     if (null != getImplicitFilterExpression(expression)) {
       setTrueExpressionAsRightChild(expression);
     }
@@ -1042,6 +1100,7 @@ public final class FilterUtil {
    * @return
    */
   public static Expression getImplicitFilterExpression(Expression expression) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2134
     ExpressionType filterExpressionType = expression.getFilterExpressionType();
     if (ExpressionType.AND == filterExpressionType) {
       Expression rightExpression = ((AndExpression) expression).getRight();
@@ -1055,6 +1114,7 @@ public final class FilterUtil {
             // Remove the right expression node and point the expression to left node expression
             // if 1st children is implict column positionID then 2nd children will be
             // implicit filter list
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3217
             return children.get(1);
           }
         }
@@ -1093,6 +1153,9 @@ public final class FilterUtil {
     if (null == dictionary) {
       return actualFilterValues;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
     KeyGenerator keyGenerator = KeyGeneratorFactory
         .getKeyGenerator(new int[] { CarbonCommonConstants.LOCAL_DICTIONARY_MAX });
     int[] dummy = new int[1];
@@ -1104,6 +1167,7 @@ public final class FilterUtil {
         }
         if (ByteUtil.UnsafeComparer.INSTANCE
             .compareTo(actualFilter, dictionary.getDictionaryValue(i)) == 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
           dummy[0] = i;
           encodedFilters.add(keyGenerator.generateKey(dummy));
           break;
@@ -1146,6 +1210,9 @@ public final class FilterUtil {
     ConditionalExpression conExp = (ConditionalExpression) expression;
     ColumnExpression columnExpression = conExp.getColumnList().get(0);
     BitSet includeFilterBitSet = new BitSet();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
     for (int i = 2; i < dictionary.getDictionarySize(); i++) {
       if (null == dictionary.getDictionaryValue(i)) {
         continue;
@@ -1183,12 +1250,16 @@ public final class FilterUtil {
    * @return encoded filter values
    */
   private static byte[][] getEncodedFilterValuesForRange(BitSet includeDictValues,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
       CarbonDictionary carbonDictionary, boolean useExclude) {
     KeyGenerator keyGenerator = KeyGeneratorFactory
         .getKeyGenerator(new int[] { CarbonCommonConstants.LOCAL_DICTIONARY_MAX });
     List<byte[]> encodedFilterValues = new ArrayList<>();
     int[] dummy = new int[1];
     if (!useExclude) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       for (int i = includeDictValues.nextSetBit(0);
            i >= 0; i = includeDictValues.nextSetBit(i + 1)) {
         dummy[0] = i;
@@ -1196,6 +1267,9 @@ public final class FilterUtil {
       }
       return encodedFilterValues.toArray(new byte[encodedFilterValues.size()][]);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
       for (int i = 1; i < carbonDictionary.getDictionarySize(); i++) {
         if (!includeDictValues.get(i) && null != carbonDictionary.getDictionaryValue(i)) {
           dummy[0] = i;
@@ -1252,8 +1326,10 @@ public final class FilterUtil {
    * @return
    */
   public static int compareValues(byte[] filterValue, byte[] minMaxBytes,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       CarbonDimension carbonDimension, boolean isMin) {
     DataType dataType = carbonDimension.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     if (DataTypeUtil.isPrimitiveColumn(dataType) &&
         dataType != DataTypes.DATE) {
       Object value =
@@ -1286,10 +1362,12 @@ public final class FilterUtil {
     DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
         .getDirectDictionaryGenerator(currentBlockDimension.getDataType());
     int key = directDictionaryGenerator.generateDirectSurrogateKey(null);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     return ByteUtil.convertIntToBytes(key);
   }
 
   public static Expression prepareEqualToExpression(String columnName, String dataType,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3461
       Object value) {
     if (DataTypes.STRING.getName().equalsIgnoreCase(dataType)) {
       return new EqualToExpression(
@@ -1385,6 +1463,7 @@ public final class FilterUtil {
       return prepareEqualToExpressionSet(columnName, DataTypes.TIMESTAMP, values);
     } else if (DataTypes.BYTE.getName().equalsIgnoreCase(dataType)) {
       return prepareEqualToExpressionSet(columnName, DataTypes.BYTE, values);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
     } else {
       throw new IllegalArgumentException("Unsupported data type: " + dataType);
     }

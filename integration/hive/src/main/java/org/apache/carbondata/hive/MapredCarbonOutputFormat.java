@@ -48,8 +48,10 @@ import org.apache.hadoop.util.Progressable;
 
 public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
     implements HiveOutputFormat<Void, T>, OutputFormat<Void, T> {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
 
   static {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "hive");
   }
@@ -68,6 +70,7 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
   public FileSinkOperator.RecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath,
       Class<? extends Writable> valueClass, boolean isCompressed, Properties tableProperties,
       Progressable progress) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
     ThreadLocalSessionInfo.setConfigurationToCurrentThread(jc);
     CarbonLoadModel carbonLoadModel = null;
     // Try to get loadmodel from JobConf.
@@ -102,9 +105,11 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
         partitionInfo != null ? partitionInfo.getColumnSchemaList().size() : 0;
     String finalOutputPath = FileFactory.getCarbonFile(finalOutPath.toString()).getAbsolutePath();
     if (carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().isHivePartitionTable()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
       carbonLoadModel.getMetrics().addToPartitionPath(finalOutputPath);
       context.getConfiguration().set("carbon.outputformat.writepath", finalOutputPath);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
     CarbonTableOutputFormat.setLoadModel(jc, carbonLoadModel);
     org.apache.hadoop.mapreduce.RecordWriter<NullWritable, ObjectArrayWritable> re =
         super.getRecordWriter(context);

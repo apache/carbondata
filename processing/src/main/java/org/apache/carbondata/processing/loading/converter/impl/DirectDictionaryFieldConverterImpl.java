@@ -44,6 +44,7 @@ public class DirectDictionaryFieldConverterImpl implements FieldConverter {
       boolean isEmptyBadRecord) {
     this.nullFormat = nullFormat;
     this.column = dataField.getColumn();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1762
     if (dataField.getColumn().getDataType() == DataTypes.DATE && dataField.getDateFormat() != null
         && !dataField.getDateFormat().isEmpty()) {
       this.directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
@@ -60,13 +61,16 @@ public class DirectDictionaryFieldConverterImpl implements FieldConverter {
           .getDirectDictionaryGenerator(dataField.getColumn().getDataType());
     }
     this.index = index;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     this.dataField = dataField;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-784
     this.isEmptyBadRecord = isEmptyBadRecord;
   }
 
   @Override
   public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
     String value = row.getString(index);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
     row.update(convert(value, logHolder), index);
   }
 
@@ -93,12 +97,14 @@ public class DirectDictionaryFieldConverterImpl implements FieldConverter {
           logHolder.setReason(message);
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
       return key;
     }
   }
 
   @Override
   public DataField getDataField() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     return dataField;
   }
 

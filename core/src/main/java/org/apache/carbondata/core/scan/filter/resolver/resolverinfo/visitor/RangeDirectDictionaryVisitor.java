@@ -46,6 +46,7 @@ public class RangeDirectDictionaryVisitor extends CustomTypeDictionaryVisitor
    */
   public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     if (visitableObj instanceof DimColumnResolvedFilterInfo) {
       DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
       ColumnFilterInfo resolvedFilterObject = null;
@@ -71,6 +72,7 @@ public class RangeDirectDictionaryVisitor extends CustomTypeDictionaryVisitor
               metadata.getColumnExpression().getDimension().getDataType());
 
       if (!metadata.isIncludeFilter() && null != resolvedFilterObject && !resolvedFilterObject
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1704
           .getExcludeFilterList()
           .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
         // Adding default surrogate key of null member inorder to not display the same while

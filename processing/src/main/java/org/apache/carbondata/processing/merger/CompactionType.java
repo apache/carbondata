@@ -24,14 +24,20 @@ package org.apache.carbondata.processing.merger;
  * called IUD compaction.
  */
 public enum CompactionType {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1586
     MINOR,
     MAJOR,
     IUD_UPDDEL_DELTA,
     IUD_DELETE_DELTA,
     STREAMING,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1904
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1905
     CLOSE_STREAMING,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2033
     CUSTOM,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2714
     SEGMENT_INDEX,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3440
     UPGRADE_SEGMENT,
     NONE
 }

@@ -72,6 +72,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = this.getDataType();
       if (dataType == DataTypes.STRING) {
         try {
@@ -122,6 +123,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = this.getDataType();
       if (dataType == DataTypes.STRING) {
         try {
@@ -170,8 +172,10 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = this.getDataType();
       if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-603
         String format = CarbonUtil.getFormatFromProperty(this.getDataType());
         SimpleDateFormat parser = new SimpleDateFormat(format);
         if (this.getDataType() == DataTypes.DATE) {
@@ -187,6 +191,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           }
           return parser.format(new Timestamp((long) value));
         } else if (value instanceof Integer) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1379
           long date = ((int) value) * DateDirectDictionaryGenerator.MILLIS_PER_DAY;
           return parser.format(new java.sql.Date(date));
         }
@@ -205,6 +210,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = this.getDataType();
       if (dataType == DataTypes.STRING) {
         try {
@@ -251,6 +257,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = this.getDataType();
       if (dataType == DataTypes.STRING) {
         try {
@@ -295,6 +302,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = this.getDataType();
       if (dataType == DataTypes.STRING) {
         try {
@@ -308,6 +316,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         return new BigDecimal((int) value);
       } else if (dataType == DataTypes.LONG) {
         return new BigDecimal((long) value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       } else if (dataType == DataTypes.DOUBLE || DataTypes.isDecimal(dataType)) {
         return new BigDecimal(value.toString());
       } else if (dataType == DataTypes.DATE) {
@@ -341,6 +350,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = this.getDataType();
       if (dataType == DataTypes.STRING) {
         // Currently the query engine layer only supports yyyy-MM-dd HH:mm:ss date format
@@ -390,6 +400,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
   }
 
   public Long getTimeAsMillisecond() throws FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     if (value == null) {
       return null;
     }
@@ -445,6 +456,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       return null;
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = this.getDataType();
       if (dataType == DataTypes.STRING) {
         try {
@@ -535,6 +547,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       dataType = objToCompare.getDataType();
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       if (dataType == DataTypes.STRING) {
         result = this.getString().equals(objToCompare.getString());
       } else if (dataType == DataTypes.SHORT) {
@@ -547,6 +560,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         result = this.getLong().equals(objToCompare.getLong());
       } else if (dataType == DataTypes.DOUBLE) {
         result = this.getDouble().equals(objToCompare.getDouble());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       } else if (DataTypes.isDecimal(dataType)) {
         result = this.getDecimal().equals(objToCompare.getDecimal());
       }
@@ -564,6 +578,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
   @Override
   public int compareTo(ExpressionResult o) {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType type = o.dataType;
       if (type == DataTypes.SHORT ||
           type == DataTypes.INT ||
@@ -572,6 +587,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         Double d1 = this.getDouble();
         Double d2 = o.getDouble();
         return d1.compareTo(d2);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       } else if (DataTypes.isDecimal(type)) {
         java.math.BigDecimal val1 = this.getDecimal();
         java.math.BigDecimal val2 = o.getDecimal();

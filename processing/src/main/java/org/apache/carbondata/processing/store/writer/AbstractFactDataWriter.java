@@ -153,6 +153,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
   private DataLoadMetrics metrics;
 
   public AbstractFactDataWriter(CarbonFactDataHandlerModel model) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1983
     this.model = model;
     blockIndexInfoList = new ArrayList<>();
     // get max file size;
@@ -178,30 +179,38 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     this.enableDirectlyWriteDataToStorePath = "TRUE".equalsIgnoreCase(directlyWriteData2Hdfs);
 
     if (enableDirectlyWriteDataToStorePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3186
       LOGGER.info("Carbondata will directly write fact data to store path.");
     } else {
       LOGGER.info("Carbondata will write temporary fact data to local disk.");
     }
 
     this.executorService = Executors.newFixedThreadPool(1,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3304
         new CarbonThreadFactory("CompleteHDFSBackendPool:" + this.model.getTableName(),
                 true));
     executorServiceSubmitList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // in case of compaction we will pass the cardinality.
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     thriftColumnSchemaList = getColumnSchemaListAndCardinality(this.model.getWrapperColumnSchema());
     blockletMetadata = new ArrayList<BlockletInfo3>();
     blockletIndex = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     listener = this.model.getIndexWriterlistener();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     if (model.getColumnLocalDictGenMap().size() > 0) {
       int numberOfCores = 1;
       if (model.getNumberOfCores() > 1) {
         numberOfCores = model.getNumberOfCores() / 2;
       }
       fallbackExecutorService = Executors.newFixedThreadPool(numberOfCores, new CarbonThreadFactory(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3304
           "FallbackPool:" + model.getTableName() + ", range: " + model.getBucketId(),
               true));
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     this.metrics = this.model.getMetrics();
   }
 
@@ -217,6 +226,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    * @throws CarbonDataWriterException if any problem
    */
   protected void createNewFileIfReachThreshold(long blockletSizeToBeAdded)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1363
       throws CarbonDataWriterException {
     if ((currentFileSize + blockletSizeToBeAdded) >= blockSizeThreshold && currentFileSize != 0) {
       // set the current file size to zero
@@ -225,11 +235,13 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       LOGGER.info("Writing data to file as max file size reached for file: "
           + activeFile + ". Data block size: " + currentFileSize);
       // write meta data to end of the existing file
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2935
       writeFooterToFile();
       this.blockletMetadata = new ArrayList<>();
       this.blockletIndex = new ArrayList<>();
       commitCurrentFile(false);
       // initialize the new channel
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3186
       this.currentFileSize = 0;
       initializeWriter();
     }
@@ -239,8 +251,10 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
   private void notifyBlockStart() {
     if (listener != null) {
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
         listener.onBlockStart(carbonDataFileName);
       } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         throw new CarbonDataWriterException("Problem while writing index", e);
       }
     }
@@ -261,16 +275,20 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    * @param copyInCurrentThread set to false if want to do data copy in a new thread
    */
   protected void commitCurrentFile(boolean copyInCurrentThread) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     notifyBlockEnd();
     CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
     if (!enableDirectlyWriteDataToStorePath) {
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3186
         if (currentFileSize == 0) {
           handleEmptyDataFile(carbonDataFileTempPath);
         } else {
           if (copyInCurrentThread) {
             CarbonUtil.copyCarbonDataFileToCarbonStorePath(carbonDataFileTempPath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
                 model.getCarbonDataDirectoryPath(), fileSizeInBytes, metrics);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
             FileFactory.deleteFile(carbonDataFileTempPath);
           } else {
             executorServiceSubmitList
@@ -292,6 +310,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
   }
 
   private void handleEmptyDataFile(String filePath) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     FileFactory.deleteFile(filePath);
     if (blockIndexInfoList.size() > 0 && blockIndexInfoList.get(blockIndexInfoList.size() - 1)
         .getFileName().equals(carbonDataFileName)) {
@@ -316,11 +335,13 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     this.carbonDataFileStorePath = model.getCarbonDataDirectoryPath() + File.separator
         + carbonDataFileName;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
       FileFactory.mkdirs(model.getCarbonDataDirectoryPath());
       if (enableDirectlyWriteDataToStorePath) {
         // the block size will be twice the block_size specified by user to make sure that
         // one carbondata file only consists exactly one HDFS block.
         fileOutputStream = FileFactory
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
             .getDataOutputStream(carbonDataFileStorePath, CarbonCommonConstants.BYTEBUFFER_SIZE,
                 fileSizeInBytes * 2);
       } else {
@@ -330,6 +351,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
             tempFileLocations[new Random().nextInt(tempFileLocations.length)];
         LOGGER.info("Randomly choose factdata temp location: " + chosenTempLocation);
         carbonDataFileTempPath = chosenTempLocation + File.separator + carbonDataFileName;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         fileOutputStream = FileFactory
             .getDataOutputStream(carbonDataFileTempPath, CarbonCommonConstants.BYTEBUFFER_SIZE,
                 true);
@@ -343,6 +365,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       throw new CarbonDataWriterException(
           "Problem while getting the channel for fact data file", ex);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     notifyBlockStart();
   }
 
@@ -361,6 +384,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    */
   protected abstract void fillBlockIndexInfoDetails(long numberOfRows, String carbonDataFileName,
       long footerOffset, long fileSize);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3523
 
   public static List<org.apache.carbondata.format.ColumnSchema> getColumnSchemaListAndCardinality(
       List<ColumnSchema> wrapperColumnSchemaList) {
@@ -382,18 +406,22 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    * @throws CarbonDataWriterException data writing
    */
   protected void writeIndexFile() throws IOException, CarbonDataWriterException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3186
     if (blockIndexInfoList.size() == 0) {
       // no need to write index file, if data file is not there.
       return;
     }
     // get the header
     IndexHeader indexHeader = CarbonMetadataUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         .getIndexHeader(thriftColumnSchemaList, model.getBucketId(),
             model.getSchemaUpdatedTimeStamp());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
     indexHeader.setIs_sort(model.getSortScope() != null && model.getSortScope() != NO_SORT);
     // get the block index info thrift
     List<BlockIndex> blockIndexThrift = CarbonMetadataUtil.getBlockIndexInfo(blockIndexInfoList);
     // get all block minmax and add to segmentMinMaxMap
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
     CarbonTable carbonTable = model.getTableSpec().getCarbonTable();
     if (null != model.getSegmentId() && !carbonTable.isHivePartitionTable() && !carbonTable
         .isIndexTable()) {
@@ -412,7 +440,9 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       String rawFileName = model.getCarbonDataDirectoryPath() + CarbonCommonConstants.FILE_SEPARATOR
           + CarbonTablePath.getCarbonIndexFileName(model.getCarbonDataFileAttributes().getTaskId(),
           model.getBucketId(), model.getTaskExtension(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
           "" + model.getCarbonDataFileAttributes().getFactTimeStamp(), model.getSegmentId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       indexFileName = FileFactory.getUpdatedFilePath(rawFileName);
     } else {
       // randomly choose a temp location for index file
@@ -422,6 +452,8 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       indexFileName = chosenTempLocation + File.separator + CarbonTablePath
           .getCarbonIndexFileName(model.getCarbonDataFileAttributes().getTaskId(),
               model.getBucketId(), model.getTaskExtension(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
               "" + model.getCarbonDataFileAttributes().getFactTimeStamp(), model.getSegmentId());
     }
 
@@ -438,7 +470,9 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     if (!enableDirectlyWriteDataToStorePath) {
       CarbonUtil
           .copyCarbonDataFileToCarbonStorePath(indexFileName, model.getCarbonDataDirectoryPath(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
               fileSizeInBytes, metrics);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       FileFactory.deleteFile(indexFileName);
     }
   }
@@ -450,7 +484,10 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    * @throws CarbonDataWriterException
    */
   protected void closeExecutorService() throws CarbonDataWriterException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2817
     CarbonDataWriterException exception = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3689
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3694
     if (listener != null) {
       try {
         listener.finish();
@@ -470,6 +507,8 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
         exception = new CarbonDataWriterException(e);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     if (null != fallbackExecutorService) {
       fallbackExecutorService.shutdownNow();
     }
@@ -504,7 +543,9 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     @Override
     public Void call() throws Exception {
       CarbonUtil.copyCarbonDataFileToCarbonStorePath(fileName, model.getCarbonDataDirectoryPath(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
           fileSizeInBytes, metrics);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       FileFactory.deleteFile(fileName);
       return null;
     }

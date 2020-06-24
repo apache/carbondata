@@ -52,6 +52,7 @@ public abstract class AbstractDataFileFooterConverter {
 
   protected Configuration configuration;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
   AbstractDataFileFooterConverter(Configuration configuration) {
     this.configuration = configuration;
   }
@@ -65,8 +66,10 @@ public abstract class AbstractDataFileFooterConverter {
    * @throws IOException problem while reading the index file
    */
   public List<DataFileFooter> getIndexInfo(String filePath, List<TableBlockInfo>
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
       tableBlockInfoList)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1232
     CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
     List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
     try {
@@ -78,6 +81,8 @@ public abstract class AbstractDataFileFooterConverter {
       List<org.apache.carbondata.format.ColumnSchema> table_columns =
           readIndexHeader.getTable_columns();
       for (int i = 0; i < table_columns.size(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
         columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
       }
       // get the segment info
@@ -99,7 +104,9 @@ public abstract class AbstractDataFileFooterConverter {
           dataFileFooter.setBlockletIndex(blockletIndex);
           dataFileFooter.setColumnInTable(columnSchemaList);
           dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
           dataFileFooter.setBlockInfo(tableBlockInfo);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
           if (readIndexHeader.isSetIs_sort()) {
             dataFileFooter.setSorted(readIndexHeader.isIs_sort());
           } else {
@@ -127,6 +134,7 @@ public abstract class AbstractDataFileFooterConverter {
    * @throws IOException problem while reading the index file
    */
   public List<DataFileFooter> getIndexInfo(String filePath, byte[] fileData) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     return getIndexInfo(filePath, fileData, true);
   }
 
@@ -135,12 +143,16 @@ public abstract class AbstractDataFileFooterConverter {
    */
   public List<DataFileFooter> getIndexInfo(String filePath, byte[] fileData,
       boolean isTransactionalTable) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     CarbonIndexFileReader indexReader = new CarbonIndexFileReader(configuration);
     List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
     String formattedPath = filePath.replace("\\", "/");
     String parentPath = formattedPath.substring(0, formattedPath.lastIndexOf("/"));
     try {
       // open the reader
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1617
       if (fileData != null) {
         indexReader.openThriftReader(fileData);
       } else {
@@ -154,6 +166,7 @@ public abstract class AbstractDataFileFooterConverter {
       for (int i = 0; i < table_columns.size(); i++) {
         columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
       if (!isTransactionalTable) {
         QueryUtil.updateColumnUniqueIdForNonTransactionTable(columnSchemaList);
       }
@@ -164,19 +177,24 @@ public abstract class AbstractDataFileFooterConverter {
         BlockIndex readBlockIndexInfo = indexReader.readBlockIndexInfo();
         blockletIndex = getBlockletIndex(readBlockIndexInfo.getBlock_index());
         dataFileFooter = new DataFileFooter();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2019
         TableBlockInfo tableBlockInfo =
             getTableBlockInfo(readBlockIndexInfo, readIndexHeader, parentPath);
         dataFileFooter.setBlockletIndex(blockletIndex);
         dataFileFooter.setColumnInTable(columnSchemaList);
         dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         dataFileFooter.setBlockInfo(tableBlockInfo);
         dataFileFooter.setVersionId(tableBlockInfo.getVersion());
         // In case of old schema time stamp will not be found in the index header
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2092
         if (readIndexHeader.isSetSchema_time_stamp()) {
           dataFileFooter.setSchemaUpdatedTimeStamp(readIndexHeader.getSchema_time_stamp());
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1364
         if (readBlockIndexInfo.isSetBlocklet_info()) {
           List<BlockletInfo> blockletInfoList = new ArrayList<BlockletInfo>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
           BlockletInfo blockletInfo = new DataFileFooterConverterV3(configuration)
               .getBlockletInfo(readBlockIndexInfo.getBlocklet_info(),
                   CarbonUtil.getNumberOfDimensionColumns(columnSchemaList));
@@ -201,19 +219,24 @@ public abstract class AbstractDataFileFooterConverter {
    * @return
    */
   public TableBlockInfo getTableBlockInfo(BlockIndex readBlockIndexInfo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2019
       org.apache.carbondata.format.IndexHeader readIndexHeader, String parentPath) {
     TableBlockInfo tableBlockInfo = new TableBlockInfo();
     tableBlockInfo.setBlockOffset(readBlockIndexInfo.getOffset());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1364
     ColumnarFormatVersion version =
         ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion());
     tableBlockInfo.setVersion(version);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1537
     String fileName = readBlockIndexInfo.file_name;
     // Take only name of file.
     if (fileName.lastIndexOf("/") > 0) {
       fileName = fileName.substring(fileName.lastIndexOf("/"));
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2113
     fileName = (CarbonCommonConstants.FILE_SEPARATOR + fileName).replaceAll("//", "/");
     tableBlockInfo.setFilePath(parentPath + fileName);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3523
     if (readBlockIndexInfo.isSetFile_size()) {
       tableBlockInfo.setFileSize(readBlockIndexInfo.getFile_size());
     }
@@ -251,6 +274,7 @@ public abstract class AbstractDataFileFooterConverter {
     for (int i = 1; i < blockletIndexList.size(); i++) {
       minValue = blockletIndexList.get(i).getMinMaxIndex().getMinValues();
       maxValue = blockletIndexList.get(i).getMinMaxIndex().getMaxValues();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
       blockletMinMaxFlag = blockletIndexList.get(i).getMinMaxIndex().getIsMinMaxSet();
       for (int j = 0; j < maxValue.length; j++) {
         // can be null for stores < 1.5.0 version
@@ -268,6 +292,7 @@ public abstract class AbstractDataFileFooterConverter {
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     if (null == blockMinMaxFlag) {
       blockMinMaxFlag = new boolean[currentMaxValue.length];
       Arrays.fill(blockMinMaxFlag, true);
@@ -285,7 +310,9 @@ public abstract class AbstractDataFileFooterConverter {
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
     wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
     wrapperColumnSchema.setColumnName(externalColumnSchema.getColumn_name());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2933
     DataType dataType = CarbonUtil.thriftDataTypeToWrapperDataType(externalColumnSchema.data_type);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     if (DataTypes.isDecimal(dataType)) {
       DecimalType decimalType = (DecimalType) dataType;
       decimalType.setPrecision(externalColumnSchema.getPrecision());
@@ -302,14 +329,18 @@ public abstract class AbstractDataFileFooterConverter {
     wrapperColumnSchema.setPrecision(externalColumnSchema.getPrecision());
     wrapperColumnSchema.setScale(externalColumnSchema.getScale());
     wrapperColumnSchema.setDefaultValue(externalColumnSchema.getDefault_value());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
     Map<String, String> properties = externalColumnSchema.getColumnProperties();
     if (properties != null) {
       if (properties.get(CarbonCommonConstants.SORT_COLUMNS) != null) {
         wrapperColumnSchema.setSortColumn(true);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     wrapperColumnSchema.setSpatialColumn(externalColumnSchema.isSpatialColumn());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1888
     wrapperColumnSchema.setFunction(externalColumnSchema.getAggregate_function());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1609
     List<org.apache.carbondata.format.ParentColumnTableRelation> parentColumnTableRelation =
         externalColumnSchema.getParentColumnTableRelations();
     if (null != parentColumnTableRelation) {
@@ -375,6 +406,7 @@ public abstract class AbstractDataFileFooterConverter {
         blockletIndexThrift.getB_tree_index();
     org.apache.carbondata.format.BlockletMinMaxIndex minMaxIndex =
         blockletIndexThrift.getMin_max_index();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     List<Boolean> isMinMaxSet = null;
     // Below logic is added to handle backward compatibility
     if (minMaxIndex.isSetMin_max_presence()) {

@@ -42,10 +42,12 @@ public class HashPartitionerImpl implements Partitioner<CarbonRow> {
     this.numberOfBuckets = numberOfBuckets;
     hashes = new Hash[indexes.size()];
     for (int i = 0; i < indexes.size(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = columnSchemas.get(i).getDataType();
       if (dataType == DataTypes.SHORT || dataType == DataTypes.INT || dataType == DataTypes.LONG) {
         hashes[i] = new IntegralHash(indexes.get(i));
       } else if (dataType == DataTypes.DOUBLE || dataType == DataTypes.FLOAT ||
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
           DataTypes.isDecimal(dataType)) {
         hashes[i] = new DecimalHash(indexes.get(i));
       } else {
@@ -58,6 +60,7 @@ public class HashPartitionerImpl implements Partitioner<CarbonRow> {
   public int getPartition(CarbonRow key) {
     int hashCode = 0;
     for (Hash hash : hashes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
       hashCode += hash.getHash(key.getData());
     }
     return (hashCode & Integer.MAX_VALUE) % numberOfBuckets;
@@ -103,6 +106,8 @@ public class HashPartitionerImpl implements Partitioner<CarbonRow> {
 
     @Override
     public int getHash(Object[] value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
       try {
         String valueStr = new String((byte[]) value[index], "utf-8");
         return value[index] != null ? valueStr.hashCode() : 0;

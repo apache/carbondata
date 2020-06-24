@@ -42,6 +42,7 @@ public class RowLevelRangeTypeExecuterFactory {
     switch (filterExecuterType) {
 
       case ROWLEVEL_LESSTHAN:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2277
         return new RowLevelRangeLessThanFilterExecuterImpl(
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getDimColEvaluatorInfoList(),

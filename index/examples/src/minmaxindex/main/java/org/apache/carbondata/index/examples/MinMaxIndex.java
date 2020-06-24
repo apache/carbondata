@@ -55,6 +55,7 @@ public class MinMaxIndex extends CoarseGrainIndex {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(MinMaxIndex.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
 
   private String[] indexFilePath;
 
@@ -82,6 +83,7 @@ public class MinMaxIndex extends CoarseGrainIndex {
     });
 
     this.indexFilePath = new String[indexFileStatus.length];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.readMinMaxIndex = new MinMaxIndexBlockDetails[indexFileStatus.length][];
     for (int i = 0; i < indexFileStatus.length; i++) {
       this.indexFilePath[i] = indexFileStatus[i].getPath().toString();
@@ -103,6 +105,7 @@ public class MinMaxIndex extends CoarseGrainIndex {
         return null;
       }
       dataInputStream = fileOperation.openForRead();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1544
       inStream = new InputStreamReader(dataInputStream, "UTF-8");
       buffReader = new BufferedReader(inStream);
       readMinMax = gsonObjectToRead.fromJson(buffReader, MinMaxIndexBlockDetails[].class);
@@ -127,6 +130,7 @@ public class MinMaxIndex extends CoarseGrainIndex {
     List<Blocklet> blocklets = new ArrayList<>();
 
     if (filterExp == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       for (int i = 0; i < readMinMaxIndex.length; i++) {
         for (int j = 0; j < readMinMaxIndex[i].length; j++) {
           blocklets.add(new Blocklet(indexFilePath[i],
@@ -135,6 +139,7 @@ public class MinMaxIndex extends CoarseGrainIndex {
       }
     } else {
       FilterExecuter filterExecuter =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
           FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null, false);
       for (int blkIdx = 0; blkIdx < readMinMaxIndex.length; blkIdx++) {
         for (int blkltIdx = 0; blkltIdx < readMinMaxIndex[blkIdx].length; blkltIdx++) {
@@ -163,11 +168,13 @@ public class MinMaxIndex extends CoarseGrainIndex {
 
   @Override
   public boolean isScanRequired(FilterResolverIntf filterExp) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1544
     throw new UnsupportedOperationException();
   }
 
   @Override
   public void clear() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     readMinMaxIndex = null;
   }
 

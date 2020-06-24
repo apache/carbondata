@@ -55,6 +55,7 @@ public class ViewFsCarbonFileTest {
         file = new File("Test.carbondata");
         if (!file.exists())
             try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
               file.createNewFile();
             } catch (IOException e) {
               e.printStackTrace();
@@ -85,6 +86,7 @@ public class ViewFsCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
                 return new ViewFileSystem();
             }
         };
@@ -176,6 +178,7 @@ public class ViewFsCarbonFileTest {
             }
 
         };
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
         assertTrue(viewFSCarbonFile.listFiles().length == 1);
     }
@@ -243,6 +246,8 @@ public class ViewFsCarbonFileTest {
             @Mock
             public FileStatus[] listStatus(Path var1) throws IOException {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
                 return new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
             }
 
@@ -306,6 +311,7 @@ public class ViewFsCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
                 return new ViewFileSystem();
             }
 
@@ -327,6 +333,7 @@ public class ViewFsCarbonFileTest {
             }
 
         };
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
         assertTrue(viewFSCarbonFile.renameForce(fileName));
 

@@ -34,6 +34,7 @@ public abstract class BlockIndexerStorage<T> {
   protected short[] dataRlePage;
 
   public short[] getRowIdPage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3730
     return rowIdPage;
   }
 
@@ -109,6 +110,7 @@ public abstract class BlockIndexerStorage<T> {
     } else {
       list.add(rowIds[i - 1]);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3730
     if ((((list.size() + map.size()) * 100) / rowIds.length) > 70) {
       this.rowIdPage = rowIds;
       this.rowIdRlePage = new short[0];

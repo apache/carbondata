@@ -47,6 +47,7 @@ public class CarbonTableBuilder {
   }
 
   public CarbonTableBuilder isTransactionalTable(boolean isTransactionalTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     Objects.requireNonNull(isTransactionalTable, "Transactional Table should not be null");
     this.isTransactionalTable = isTransactionalTable;
     return this;
@@ -63,12 +64,15 @@ public class CarbonTableBuilder {
     Objects.requireNonNull(tableSchema, "tableSchema should not be null");
     Objects.requireNonNull(isTransactionalTable, "Transactional Table should not be null");
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
 
     TableInfo tableInfo = new TableInfo();
     tableInfo.setDatabaseName(databaseName);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     tableInfo.setTableUniqueName(CarbonTable.buildUniqueName(databaseName, tableName));
     tableInfo.setFactTable(tableSchema);
     tableInfo.setTablePath(tablePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     tableInfo.setTransactionalTable(isTransactionalTable);
     tableInfo.setLastUpdatedTime(System.currentTimeMillis());
     return CarbonTable.buildFromTableInfo(tableInfo);

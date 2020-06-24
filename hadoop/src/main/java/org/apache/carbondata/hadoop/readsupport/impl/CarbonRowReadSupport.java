@@ -37,6 +37,7 @@ public class CarbonRowReadSupport implements CarbonReadSupport<CarbonRow> {
 
   @Override
   public void initialize(CarbonColumn[] carbonColumns, CarbonTable carbonTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     this.carbonColumns = carbonColumns;
   }
 
@@ -47,6 +48,7 @@ public class CarbonRowReadSupport implements CarbonReadSupport<CarbonRow> {
         Calendar c = Calendar.getInstance();
         c.setTime(new Date(0));
         c.add(Calendar.DAY_OF_YEAR, (Integer) data[i]);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
         c.add(Calendar.DATE, 1);
         data[i] = new Date(c.getTime().getTime());
       } else if (carbonColumns[i].getDataType() == DataTypes.TIMESTAMP) {

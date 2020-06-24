@@ -93,6 +93,7 @@ public class ExplainCollector {
   public static void setShowPruningInfo(boolean showPruningInfo) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2902
       scan.setShowPruningInfo(showPruningInfo);
     }
   }
@@ -135,6 +136,7 @@ public class ExplainCollector {
   }
 
   public static void addTotalBlocks(int numBlocks) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2929
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
       scan.addTotalBlocks(numBlocks);
@@ -160,6 +162,7 @@ public class ExplainCollector {
   }
 
   public static String getFormatedOutput() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2563
     if (null != get()) {
       return get().toString();
     } else {
@@ -170,8 +173,10 @@ public class ExplainCollector {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     for (int i = 0; i < mvProviders.size(); i++) {
       if (i == 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         builder.append("Query rewrite based on Index:").append("\n");
       }
       builder.append(" - ").append(mvNames.get(i)).append(" (")

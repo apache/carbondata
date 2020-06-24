@@ -34,6 +34,7 @@ public final class LogServiceFactory {
    * @return LogService
    */
   public static Logger getLogService(final String className) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
     return Logger.getLogger(className);
   }
 }

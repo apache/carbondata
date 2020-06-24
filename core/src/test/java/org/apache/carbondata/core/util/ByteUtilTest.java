@@ -34,6 +34,7 @@ import java.nio.charset.Charset;
  */
 public class ByteUtilTest extends TestCase {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
   String dimensionValue1 = "aaaaaaaa1235";
   String dimensionValue2 = "aaaaaaaa1234";
   private ByteBuffer buff1;
@@ -117,6 +118,7 @@ public class ByteUtilTest extends TestCase {
 
   @Test
   public void testIntConversion() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2464
     byte[] data = new byte[4];
     ByteUtil.setInt(data, 0, 968);
     assertEquals(ByteUtil.toInt(data, 0), 968);

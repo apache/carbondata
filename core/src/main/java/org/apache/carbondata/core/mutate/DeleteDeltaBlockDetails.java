@@ -47,6 +47,7 @@ public class DeleteDeltaBlockDetails implements Serializable {
 
   public DeleteDeltaBlockDetails(String blockName) {
     this.blockName = blockName;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2137
     blockletDetailsMap = new TreeMap<>();
   }
 
@@ -67,7 +68,9 @@ public class DeleteDeltaBlockDetails implements Serializable {
   }
 
   public List<DeleteDeltaBlockletDetails> getBlockletDetails() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2137
     List<DeleteDeltaBlockletDetails> deleteDeltaBlockletDetailsList = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2275
     if (null != blockletDetailsMap) {
       Set<Map.Entry<String, DeleteDeltaBlockletDetails>> entries = blockletDetailsMap.entrySet();
       if (null != entries && !entries.isEmpty()) {
@@ -98,6 +101,7 @@ public class DeleteDeltaBlockDetails implements Serializable {
       blocklet.addDeletedRow(CarbonUpdateUtil.getIntegerValue(offset));
       return addBlockletDetails(blocklet);
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1049
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug(e.getMessage());
       }

@@ -39,6 +39,8 @@ public class RLEEncoderMeta extends ColumnPageEncoderMeta implements Writable {
   }
 
   public RLEEncoderMeta(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       SimpleStatsResult stats, String compressorName) {
     super(columnSpec, dataType, stats, compressorName);
     this.pageSize = pageSize;

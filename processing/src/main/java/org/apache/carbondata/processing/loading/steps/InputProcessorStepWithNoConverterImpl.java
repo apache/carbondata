@@ -81,6 +81,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
   private Partitioner<CarbonRow> partitioner;
 
   public InputProcessorStepWithNoConverterImpl(CarbonDataLoadConfiguration configuration,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
       CarbonIterator<Object[]>[] inputIterators, boolean withoutReArrange) {
     super(configuration, null);
     this.inputIterators = inputIterators;
@@ -97,9 +98,11 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
   public void initialize() throws IOException {
     super.initialize();
     // if logger is enabled then raw data will be required.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     rowConverter =
         new RowConverterImpl(configuration.getDataFields(), configuration, null);
     rowConverter.initialize();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
     if (!withoutReArrange) {
       noDictionaryMapping =
           CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
@@ -109,15 +112,19 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     dataTypes = new DataType[configuration.getDataFields().length];
     for (int i = 0; i < dataTypes.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (configuration.getDataFields()[i].getColumn().getDataType() == DataTypes.DATE) {
         dataTypes[i] = DataTypes.INT;
       } else {
         dataTypes[i] = configuration.getDataFields()[i].getColumn().getDataType();
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
     if (!withoutReArrange) {
       orderOfData = arrangeData(configuration.getDataFields(), configuration.getHeader());
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
     if (null != configuration.getBucketingInfo()) {
       this.isBucketColumnEnabled = true;
       initializeBucketColumnPartitioner();
@@ -173,6 +180,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       if (srcDataField[i].getColumn().isComplex()) {
         // create a ComplexDataType
         dataFieldsWithComplexDataType.put(srcDataField[i].getColumn().getOrdinal(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3655
             FieldEncoderFactory.createComplexDataType(srcDataField[i], nullFormat, null));
       }
     }
@@ -201,6 +209,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       outIterators[i] =
           new InputProcessorIterator(readerIterators[i], batchSize,
               rowCounter, orderOfData, noDictionaryMapping, dataTypes, configuration,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
               dataFieldsWithComplexDataType, rowConverter, withoutReArrange, isBucketColumnEnabled,
                   partitioner);
     }
@@ -267,6 +277,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     private boolean withoutReArrange;
 
     public InputProcessorIterator(List<CarbonIterator<Object[]>> inputIterators, int batchSize,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
         AtomicLong rowCounter, int[] orderOfData, boolean[] noDictionaryMapping,
         DataType[] dataTypes, CarbonDataLoadConfiguration configuration,
         Map<Integer, GenericDataType> dataFieldsWithComplexDataType, RowConverter converter,
@@ -284,11 +295,16 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       this.dataFields = configuration.getDataFields();
       this.orderOfData = orderOfData;
       this.dataFieldsWithComplexDataType = dataFieldsWithComplexDataType;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
       this.isHivePartitionTable =
           configuration.getTableSpec().getCarbonTable().isHivePartitionTable();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
       this.configuration = configuration;
       this.converter = converter;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
       this.withoutReArrange = withoutReArrange;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
       this.isBucketColumnEnabled = bucketColumnEnabled;
       this.partitioner = partitioner;
     }
@@ -328,8 +344,10 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       // Create batch and fill it.
       CarbonRowBatch carbonRowBatch = new CarbonRowBatch(batchSize);
       int count = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
       if (!withoutReArrange) {
         while (internalHasNext() && count < batchSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
           CarbonRow carbonRow =
               new CarbonRow(convertToNoDictionaryToBytes(currentIterator.next(), dataFields));
           if (configuration.isNonSchemaColumnsPresent()) {
@@ -346,9 +364,15 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
         while (internalHasNext() && count < batchSize) {
           CarbonRow carbonRow = new CarbonRow(
               convertToNoDictionaryToBytesWithoutReArrange(currentIterator.next(), dataFields));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
           if (configuration.isNonSchemaColumnsPresent()) {
             carbonRow = converter.convert(carbonRow);
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
           if (isBucketColumnEnabled) {
             short rangeNumber = (short) partitioner.getPartition(carbonRow);
             carbonRow.setRangeId(rangeNumber);
@@ -365,12 +389,15 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     }
 
     private Object[] convertToNoDictionaryToBytes(Object[] data, DataField[] dataFields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
       Object[] newData = new Object[dataFields.length];
       for (int i = 0; i < dataFields.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
         if (dataFields[i].getColumn().isSpatialColumn()) {
           continue;
         }
         if (i < noDictionaryMapping.length && noDictionaryMapping[i]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
           if (DataTypeUtil.isPrimitiveColumn(dataTypes[i])) {
             // keep the no dictionary measure column as original data
             newData[i] = data[orderOfData[i]];
@@ -380,11 +407,14 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
           }
         } else {
           // if this is a complex column then recursively comver the data into Byte Array.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
           if (dataTypes[i].isComplexType() && isHivePartitionTable) {
             newData[i] = data[orderOfData[i]];
           } else if (dataTypes[i].isComplexType()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3761
             getComplexTypeByteArray(newData, i, data, dataFields[i], orderOfData[i], false);
           } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2554
             DataType dataType = dataFields[i].getColumn().getDataType();
             if (dataType == DataTypes.DATE && data[orderOfData[i]] instanceof Long) {
               if (dateDictionaryGenerator == null) {
@@ -394,6 +424,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
               newData[i] = dateDictionaryGenerator.generateKey((long) data[orderOfData[i]]);
             } else if (dataType == DataTypes.TIMESTAMP && data[orderOfData[i]] instanceof Long) {
               if (timestampDictionaryGenerator == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2608
                 timestampDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
                     .getDirectDictionaryGenerator(dataType, dataFields[i].getTimestampFormat());
               }
@@ -409,9 +440,11 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     private Object[] convertToNoDictionaryToBytesWithoutReArrange(Object[] data,
         DataField[] dataFields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3815
       Object[] newData = new Object[dataFields.length];
       // now dictionary is removed, no need of no dictionary mapping
       for (int i = 0, index = 0; i < dataFields.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
         if (dataFields[i].getColumn().isSpatialColumn()) {
           continue;
         }
@@ -436,6 +469,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
     }
 
     private void getComplexTypeByteArray(Object[] newData, int index, Object[] data,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3761
         DataField dataField, int orderedIndex, boolean isWithoutConverter) {
       ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
       DataOutputStream dataOutputStream = new DataOutputStream(byteArray);

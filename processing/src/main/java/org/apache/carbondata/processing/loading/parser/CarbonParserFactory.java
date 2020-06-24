@@ -39,6 +39,7 @@ public final class CarbonParserFactory {
    * @return
    */
   public static GenericParser createParser(CarbonColumn carbonColumn,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3017
       ArrayList<String> complexDelimiters,
       String nullFormat) {
     return createParser(carbonColumn, complexDelimiters, nullFormat, 0);
@@ -56,8 +57,10 @@ public final class CarbonParserFactory {
    * @return GenericParser
    */
   private static GenericParser createParser(CarbonColumn carbonColumn,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3017
       ArrayList<String> complexDelimiters, String nullFormat, int depth) {
     DataType dataType = carbonColumn.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     if (DataTypes.isArrayType(dataType)) {
       List<CarbonDimension> listOfChildDimensions =
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
@@ -77,6 +80,7 @@ public final class CarbonParserFactory {
         mapParser.addChildren(createParser(dimension, complexDelimiters, nullFormat, depth + 1));
       }
       return mapParser;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     } else if (DataTypes.isStructType(dataType)) {
       List<CarbonDimension> dimensions =
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();

@@ -54,6 +54,7 @@ public final class DataTypeUtil {
   private static final ThreadLocal<DateFormat> timeStampformatter = new ThreadLocal<DateFormat>() {
     @Override
     protected DateFormat initialValue() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1450
       DateFormat dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
               CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
@@ -97,10 +98,13 @@ public final class DataTypeUtil {
    */
   public static Object getMeasureValueBasedOnDataType(String msrValue, DataType dataType,
       int scale, int precision, boolean useConverter) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2168
     if (dataType == DataTypes.BOOLEAN) {
       return BooleanConvert.parseBoolean(msrValue);
     } else if (DataTypes.isDecimal(dataType)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       BigDecimal bigDecimal =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
           new BigDecimal(msrValue).setScale(scale, RoundingMode.HALF_UP);
       BigDecimal decimal = normalizeDecimalValue(bigDecimal, precision);
       if (useConverter) {
@@ -114,6 +118,7 @@ public final class DataTypeUtil {
       return Integer.parseInt(msrValue);
     } else if (dataType == DataTypes.LONG) {
       return Long.valueOf(msrValue);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType == DataTypes.FLOAT) {
       return Float.parseFloat(msrValue);
     } else if (dataType == DataTypes.BYTE) {
@@ -136,12 +141,15 @@ public final class DataTypeUtil {
    */
   public static Object getNoDictionaryValueBasedOnDataType(String dimValue, DataType dataType,
       int scale, int precision, boolean useConverter, String timeStampFormat) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
     if (dataType == DataTypes.BOOLEAN) {
       return BooleanConvert.parseBoolean(dimValue);
     } else if (DataTypes.isDecimal(dataType)) {
       BigDecimal bigDecimal = new BigDecimal(dimValue).setScale(scale, RoundingMode.HALF_UP);
       BigDecimal decimal = normalizeDecimalValue(bigDecimal, precision);
       if (useConverter) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
         return converter.convertFromBigDecimalToDecimal(decimal);
       } else {
         return decimal;
@@ -185,18 +193,22 @@ public final class DataTypeUtil {
       return null;
     }
     ByteBuffer bb = ByteBuffer.wrap(data);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BOOLEAN) {
       return BooleanConvert.byte2Boolean(bb.get());
     } else if (dataType == DataTypes.SHORT) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       return (short) bb.getLong();
     } else if (dataType == DataTypes.INT) {
       return (int) bb.getLong();
     } else if (dataType == DataTypes.LONG) {
       return bb.getLong();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType == DataTypes.FLOAT) {
       return bb.getFloat();
     } else if (dataType == DataTypes.BYTE) {
       return bb.get();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       return byteToBigDecimal(data);
     } else {
@@ -206,6 +218,7 @@ public final class DataTypeUtil {
 
   public static Object getMeasureObjectBasedOnDataType(ColumnPage measurePage, int index,
       DataType dataType, CarbonMeasure carbonMeasure) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BOOLEAN) {
       return measurePage.getBoolean(index);
     } else if (dataType == DataTypes.SHORT) {
@@ -214,19 +227,23 @@ public final class DataTypeUtil {
       return (int) measurePage.getLong(index);
     } else if (dataType == DataTypes.LONG) {
       return measurePage.getLong(index);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType == DataTypes.FLOAT) {
       return measurePage.getFloat(index);
     } else if (dataType == DataTypes.BYTE) {
       return measurePage.getByte(index);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       BigDecimal bigDecimalMsrValue = measurePage.getDecimal(index);
       if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
         bigDecimalMsrValue =
             bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
       if (null != bigDecimalMsrValue) {
         return normalizeDecimalValue(bigDecimalMsrValue, carbonMeasure.getPrecision());
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         return null;
       }
     } else {
@@ -319,12 +336,14 @@ public final class DataTypeUtil {
       return null;
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
       if (actualDataType == DataTypes.BOOLEAN) {
         if (data.isEmpty()) {
           return null;
         }
         return BooleanConvert.parseBoolean(data);
       } else if (actualDataType == DataTypes.INT) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         if (data.isEmpty()) {
           return null;
         }
@@ -335,6 +354,7 @@ public final class DataTypeUtil {
         }
         return Short.parseShort(data);
       } else if (actualDataType == DataTypes.FLOAT) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1149
         if (data.isEmpty()) {
           return null;
         }
@@ -350,6 +370,7 @@ public final class DataTypeUtil {
         }
         return Long.parseLong(data);
       } else if (actualDataType == DataTypes.DATE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-603
         if (data.isEmpty()) {
           return null;
         }
@@ -368,13 +389,18 @@ public final class DataTypeUtil {
           Date dateToStr = timeStampformatter.get().parse(data);
           return dateToStr.getTime() * 1000;
         } catch (ParseException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
           LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
           return null;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       } else if (DataTypes.isDecimal(actualDataType)) {
         if (data.isEmpty()) {
           return null;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
         return converter.convertFromStringToDecimal(data);
       } else {
         return converter.convertFromStringToUTF8String(data);
@@ -386,10 +412,12 @@ public final class DataTypeUtil {
   }
 
   public static byte[] getBytesBasedOnDataTypeForNoDictionaryColumn(String dimensionValue,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1450
       DataType actualDataType, String dateFormat) {
     if (actualDataType == DataTypes.BOOLEAN) {
       return ByteUtil.toBytes(BooleanConvert.parseBoolean(dimensionValue));
     } else if (actualDataType == DataTypes.SHORT) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
       return ByteUtil.toXorBytes(Short.parseShort(dimensionValue));
     } else if (actualDataType == DataTypes.INT) {
       return ByteUtil.toXorBytes(Integer.parseInt(dimensionValue));
@@ -397,6 +425,7 @@ public final class DataTypeUtil {
       return ByteUtil.toXorBytes(Long.parseLong(dimensionValue));
     } else if (actualDataType == DataTypes.DOUBLE) {
       return ByteUtil.toXorBytes(Double.parseDouble(dimensionValue));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (actualDataType == DataTypes.FLOAT) {
       return ByteUtil.toXorBytes(Float.parseFloat(dimensionValue));
     } else if (actualDataType == DataTypes.BYTE) {
@@ -414,6 +443,7 @@ public final class DataTypeUtil {
           dateFormatter = timeStampformatter.get();
         }
         dateToStr = dateFormatter.parse(dimensionValue);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
         return ByteUtil.toXorBytes(dateToStr.getTime());
       } catch (ParseException e) {
         throw new NumberFormatException(e.getMessage());
@@ -425,6 +455,7 @@ public final class DataTypeUtil {
   }
 
   public static Object getDataDataTypeForNoDictionaryColumn(String dimensionValue,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2168
       DataType actualDataType, String dateFormat) {
     if (actualDataType == DataTypes.BOOLEAN) {
       return BooleanConvert.parseBoolean(dimensionValue);
@@ -434,6 +465,7 @@ public final class DataTypeUtil {
       return Integer.parseInt(dimensionValue);
     } else if (actualDataType == DataTypes.LONG) {
       return Long.parseLong(dimensionValue);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2471
     } else if (actualDataType == DataTypes.DOUBLE) {
       return Double.parseDouble(dimensionValue);
     } else if (DataTypes.isDecimal(actualDataType)) {
@@ -442,8 +474,11 @@ public final class DataTypeUtil {
       Date dateToStr = null;
       DateFormat dateFormatter = null;
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1762
         if (null != dateFormat && !dateFormat.trim().isEmpty()) {
           dateFormatter = new SimpleDateFormat(dateFormat);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2514
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2514
           dateFormatter.setLenient(false);
         } else {
           dateFormatter = timeStampformatter.get();
@@ -476,6 +511,7 @@ public final class DataTypeUtil {
       return ByteUtil.toXorBytes((Integer) dimensionValue);
     } else if (actualDataType == DataTypes.LONG) {
       return ByteUtil.toXorBytes((Long) dimensionValue);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3761
     } else if (actualDataType == DataTypes.DOUBLE) {
       return ByteUtil.toXorBytes((double) dimensionValue);
     } else if (actualDataType == DataTypes.FLOAT) {
@@ -486,8 +522,10 @@ public final class DataTypeUtil {
     } else if (actualDataType == DataTypes.BYTE) {
       return ByteUtil.toXorBytes((byte) dimensionValue);
     } else if (actualDataType == DataTypes.TIMESTAMP) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
       return ByteUtil.toXorBytes((Long) dimensionValue);
     } else if (actualDataType == DataTypes.BINARY) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3408
       if (dimensionValue instanceof String) {
         return ((String) dimensionValue).getBytes(
             Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
@@ -508,6 +546,7 @@ public final class DataTypeUtil {
    * @return
    */
   public static byte[] getMinMaxBytesBasedOnDataTypeForNoDictionaryColumn(Object dimensionValue,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       DataType actualDataType) {
     if (dimensionValue == null) {
       if (actualDataType == DataTypes.STRING) {
@@ -538,10 +577,13 @@ public final class DataTypeUtil {
    * @return
    */
   public static boolean isFixedSizeDataType(DataType dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2683
     if (dataType == DataTypes.STRING ||
         dataType == DataTypes.VARCHAR ||
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3495
         dataType == DataTypes.BINARY ||
         DataTypes.isDecimal(dataType)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
       return false;
     } else {
       return true;
@@ -557,6 +599,7 @@ public final class DataTypeUtil {
    */
   public static Object getDataBasedOnDataTypeForNoDictionaryColumn(byte[] dataInBytes,
       DataType actualDataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     return getDataBasedOnDataTypeForNoDictionaryColumn(dataInBytes, actualDataType, true);
   }
 
@@ -578,14 +621,17 @@ public final class DataTypeUtil {
     try {
       if (actualDataType == DataTypes.BOOLEAN) {
         return ByteUtil.toBoolean(dataInBytes);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
       } else if (actualDataType == DataTypes.BYTE) {
         return dataInBytes[0];
       } else if (actualDataType == DataTypes.SHORT) {
         // for non string type no dictionary column empty byte array is empty value
         // so no need to parse
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1907
         if (isEmptyByteArray(dataInBytes)) {
           return null;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
         return ByteUtil.toXorShort(dataInBytes, 0, dataInBytes.length);
       } else if (actualDataType == DataTypes.INT) {
         if (isEmptyByteArray(dataInBytes)) {
@@ -606,11 +652,13 @@ public final class DataTypeUtil {
         } else {
           return ByteUtil.toXorLong(dataInBytes, 0, dataInBytes.length);
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2471
       } else if (actualDataType == DataTypes.DOUBLE) {
         if (isEmptyByteArray(dataInBytes)) {
           return null;
         }
         return ByteUtil.toXorDouble(dataInBytes, 0, dataInBytes.length);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
       } else if (actualDataType == DataTypes.FLOAT) {
         if (isEmptyByteArray(dataInBytes)) {
           return null;
@@ -620,7 +668,9 @@ public final class DataTypeUtil {
         if (isEmptyByteArray(dataInBytes)) {
           return null;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2683
         return getDataTypeConverter().convertFromBigDecimalToDecimal(byteToBigDecimal(dataInBytes));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
       } else if (actualDataType == DataTypes.BINARY) {
         if (isEmptyByteArray(dataInBytes)) {
           return null;
@@ -646,6 +696,7 @@ public final class DataTypeUtil {
    * @return
    */
   private static boolean isEmptyByteArray(byte[] dataInBytes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1907
     return dataInBytes.length == 0;
   }
 
@@ -663,6 +714,7 @@ public final class DataTypeUtil {
       return null;
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = dimension.getDataType();
       if (dataType == DataTypes.INT) {
         String data1 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
@@ -709,9 +761,12 @@ public final class DataTypeUtil {
           Date dateToStr = timeStampformatter.get().parse(data6);
           return dateToStr.getTime() * 1000;
         } catch (ParseException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
           LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
           return null;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       } else if (DataTypes.isDecimal(dataType)) {
         String data7 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
         if (data7.isEmpty()) {
@@ -721,7 +776,10 @@ public final class DataTypeUtil {
         if (dimension.getColumnSchema().getScale() > javaDecVal.scale()) {
           javaDecVal = javaDecVal.setScale(dimension.getColumnSchema().getScale());
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
         return getDataTypeConverter().convertFromBigDecimalToDecimal(javaDecVal);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3584
       } else if (dataType == DataTypes.BOOLEAN) {
         String data8 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
         if (data8.isEmpty()) {
@@ -729,6 +787,7 @@ public final class DataTypeUtil {
         }
         return BooleanConvert.parseBoolean(data8);
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1238
         return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
       }
     } catch (NumberFormatException ex) {
@@ -753,6 +812,7 @@ public final class DataTypeUtil {
     }
     try {
       if (actualDataType == DataTypes.SHORT) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
         Short.parseShort(data);
       } else if (actualDataType == DataTypes.INT) {
         Integer.parseInt(data);
@@ -780,6 +840,7 @@ public final class DataTypeUtil {
       Object parsedValue = null;
       // validation will not be done for timestamp datatype as for timestamp direct dictionary
       // is generated. No dictionary file is created for timestamp datatype column
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = dimension.getDataType();
       if (DataTypes.isDecimal(dataType)) {
         return parseStringToBigDecimal(value, dimension);
@@ -813,7 +874,10 @@ public final class DataTypeUtil {
       return null;
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = dimension.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       if (DataTypes.isDecimal(dataType)) {
         return parseStringToBigDecimal(value, dimension);
       } else if (dataType == DataTypes.INT) {
@@ -854,6 +918,7 @@ public final class DataTypeUtil {
    * @return boolean after comparing two double values.
    */
   public static int compareDoubleWithNan(Double d1, Double d2) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-270
     if ((d1.doubleValue() == d2.doubleValue()) || (Double.isNaN(d1) && Double.isNaN(d2))) {
       return 0;
     } else if (d1 < d2) {
@@ -878,6 +943,7 @@ public final class DataTypeUtil {
     }
     try {
       long parsedIntVal = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = columnSchema.getDataType();
       if (dataType == DataTypes.INT) {
         parsedIntVal = (long) Integer.parseInt(data);
@@ -900,6 +966,7 @@ public final class DataTypeUtil {
         return String.valueOf(value)
             .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
       } else if (dataType == DataTypes.TIMESTAMP) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         if (columnSchema.getDataType() == DataTypes.DATE) {
           DirectDictionaryGenerator directDictionaryGenerator1 = DirectDictionaryKeyGeneratorFactory
               .getDirectDictionaryGenerator(columnSchema.getDataType());
@@ -908,8 +975,10 @@ public final class DataTypeUtil {
               .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         } else {
           try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2277
             timeStampformatter.remove();
             Date dateToStr = timeStampformatter.get().parse(data);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
             return ByteUtil.toXorBytes(dateToStr.getTime());
           } catch (ParseException e) {
             LOGGER.error(
@@ -918,6 +987,8 @@ public final class DataTypeUtil {
             return null;
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       } else if (DataTypes.isDecimal(dataType)) {
         String parsedValue = parseStringToBigDecimal(data, columnSchema);
         if (null == parsedValue) {
@@ -926,6 +997,7 @@ public final class DataTypeUtil {
         java.math.BigDecimal javaDecVal = new java.math.BigDecimal(parsedValue);
         return bigDecimalToByte(javaDecVal);
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1238
         return getDataTypeConverter().convertFromStringToByte(data);
       }
     } catch (NumberFormatException ex) {
@@ -945,7 +1017,9 @@ public final class DataTypeUtil {
   public static String normalizeColumnValueForItsDataType(String value, ColumnSchema columnSchema) {
     try {
       Object parsedValue = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       DataType dataType = columnSchema.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       if (DataTypes.isDecimal(dataType)) {
         return parseStringToBigDecimal(value, columnSchema);
       } else if (dataType == DataTypes.SHORT || dataType == DataTypes.INT ||
@@ -981,7 +1055,9 @@ public final class DataTypeUtil {
    * @param converterLocal
    */
   public static void setDataTypeConverter(DataTypeConverter converterLocal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2301
     if (converterLocal != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1238
       converter = converterLocal;
       timeStampformatter.remove();
       dateformatter.remove();
@@ -992,6 +1068,10 @@ public final class DataTypeUtil {
    * As each load can have it's own time format. Reset the thread local for each load.
    */
   public static void clearFormatter() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3162
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3164
     timeStampformatter.remove();
     dateformatter.remove();
   }
@@ -1004,6 +1084,7 @@ public final class DataTypeUtil {
   }
 
   public static DataType valueOf(String name) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1935
     if (DataTypes.STRING.getName().equalsIgnoreCase(name)) {
       return DataTypes.STRING;
     } else if (DataTypes.DATE.getName().equalsIgnoreCase(name)) {
@@ -1026,12 +1107,14 @@ public final class DataTypeUtil {
       return DataTypes.FLOAT;
     } else if (DataTypes.DOUBLE.getName().equalsIgnoreCase(name)) {
       return DataTypes.DOUBLE;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     } else if (DataTypes.VARCHAR.getName().equalsIgnoreCase(name)) {
       return DataTypes.VARCHAR;
     } else if (DataTypes.NULL.getName().equalsIgnoreCase(name)) {
       return DataTypes.NULL;
     } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(name)) {
       return DataTypes.BYTE_ARRAY;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3495
     } else if (DataTypes.BINARY.getName().equalsIgnoreCase(name)) {
       return DataTypes.BINARY;
     } else if (name.equalsIgnoreCase("decimal")) {
@@ -1052,6 +1135,7 @@ public final class DataTypeUtil {
    * @return returns the datatype based on the input string from json to deserialize the tableInfo
    */
   public static DataType valueOf(DataType dataType, int precision, int scale) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3657
     if (DataTypes.isDecimal(dataType)) {
       return DataTypes.createDecimalType(precision, scale);
     } else {
@@ -1071,8 +1155,10 @@ public final class DataTypeUtil {
    */
   public static long getDataBasedOnRestructuredDataType(byte[] data, DataType restructuredDataType,
       int currentDataOffset, int length) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1946
     long value = 0L;
     if (restructuredDataType == DataTypes.INT) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
       value = ByteUtil.toXorInt(data, currentDataOffset, length);
     } else if (restructuredDataType == DataTypes.LONG) {
       value = ByteUtil.toXorLong(data, currentDataOffset, length);
@@ -1087,7 +1173,9 @@ public final class DataTypeUtil {
    * @return
    */
   public static boolean isPrimitiveColumn(DataType dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE || dataType == DataTypes.SHORT
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
         || dataType == DataTypes.INT || dataType == DataTypes.LONG
         || dataType == DataTypes.TIMESTAMP || DataTypes.isDecimal(dataType)
         || dataType == DataTypes.FLOAT || dataType == DataTypes.DOUBLE) {
@@ -1103,6 +1191,7 @@ public final class DataTypeUtil {
    * @return
    */
   public static boolean isByteArrayComplexChildColumn(DataType dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
     return ((dataType == DataTypes.STRING) ||
         (dataType == DataTypes.VARCHAR) ||
         (dataType == DataTypes.BINARY) ||

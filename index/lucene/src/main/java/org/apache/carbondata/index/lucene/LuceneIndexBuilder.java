@@ -54,6 +54,7 @@ public class LuceneIndexBuilder implements IndexBuilder {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(LuceneIndexWriter.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
   private String indexPath;
 
@@ -76,6 +77,7 @@ public class LuceneIndexBuilder implements IndexBuilder {
 
   private int currentBlockletId = -1;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
   LuceneIndexBuilder(String tablePath, String indexName, Segment segment, String shardName,
       List<CarbonColumn> indexColumns, int writeCacheSize, boolean storeBlockletWise) {
     this.indexPath = CarbonTablePath
@@ -90,6 +92,7 @@ public class LuceneIndexBuilder implements IndexBuilder {
   public void initialize() throws IOException {
     if (!storeBlockletWise) {
       // get index path, put index data into segment's path
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       indexWriter = createIndexWriter(indexPath);
     }
   }
@@ -125,6 +128,7 @@ public class LuceneIndexBuilder implements IndexBuilder {
           .setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_COMPRESSION));
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2494
     return new IndexWriter(indexDir, new IndexWriterConfig(analyzer));
   }
 
@@ -134,11 +138,13 @@ public class LuceneIndexBuilder implements IndexBuilder {
     if (storeBlockletWise) {
       if (currentBlockletId != blockletId) {
         close();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         indexWriter = createIndexWriter(indexPath + File.separator + blockletId);
         currentBlockletId = blockletId;
       }
     }
     // add other fields
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     LuceneIndexWriter.LuceneColumnKeys columns =
         new LuceneIndexWriter.LuceneColumnKeys(columnsCount);
     for (int colIdx = 0; colIdx < columnsCount; colIdx++) {
@@ -174,6 +180,7 @@ public class LuceneIndexBuilder implements IndexBuilder {
 
   @Override
   public boolean isIndexForCarbonRawBytes() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2637
     return false;
   }
 }

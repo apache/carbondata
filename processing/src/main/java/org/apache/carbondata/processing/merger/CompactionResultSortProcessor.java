@@ -151,6 +151,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
 
   public CompactionResultSortProcessor(CarbonLoadModel carbonLoadModel, CarbonTable carbonTable,
       SegmentProperties segmentProperties, CompactionType compactionType, String tableName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
       PartitionSpec partitionSpec) {
     this.carbonLoadModel = carbonLoadModel;
     this.carbonTable = carbonTable;
@@ -171,11 +172,13 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * @throws Exception
    */
   public boolean execute(List<RawResultIterator> unsortedResultIteratorList,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
       List<RawResultIterator> sortedResultIteratorList) throws Exception {
     boolean isCompactionSuccess = false;
     try {
       initTempStoreLocation();
       initSortDataRows();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1653
       dataTypes = CarbonDataProcessorUtil.initDataType(carbonTable, tableName, measureCount);
       processResult(unsortedResultIteratorList);
       // After delete command, if no records are fetched from one split,
@@ -187,9 +190,11 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       }
       isCompactionSuccess = true;
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3019
       LOGGER.error(e.getLocalizedMessage(), e);
       throw e;
     } finally {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
       if (partitionSpec != null) {
         try {
           SegmentFileStore
@@ -197,6 +202,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
                   partitionSpec.getLocation().toString(), carbonLoadModel.getFactTimeStamp() + "",
                   partitionSpec.getPartitions());
         } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2316
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2316
           throw e;
         }
       }
@@ -209,6 +216,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   @Override
   public void close() {
     // close the sorter executor service
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2181
     if (null != sortDataRows) {
       sortDataRows.close();
     }
@@ -227,10 +235,12 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void deleteTempStoreLocation() {
     if (null != tempStoreLocation) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
       for (String tempLoc : tempStoreLocation) {
         try {
           CarbonUtil.deleteFoldersAndFiles(new File(tempLoc));
         } catch (IOException | InterruptedException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
           LOGGER.error("Problem deleting local folders during compaction: " + e.getMessage(), e);
         }
       }
@@ -244,9 +254,11 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void processResult(List<RawResultIterator> resultIteratorList) throws Exception {
     for (RawResultIterator resultIterator : resultIteratorList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1586
       if (CompactionType.STREAMING == compactionType) {
         while (resultIterator.hasNext()) {
           // the input iterator of streaming segment is already using raw row
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
           addRowForSorting(prepareStreamingRowObjectForSorting(resultIterator.next()));
           isRecordFound = true;
         }
@@ -256,11 +268,13 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
           isRecordFound = true;
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2304
       resultIterator.close();
     }
     try {
       sortDataRows.startSorting();
     } catch (CarbonSortKeyAndGroupByException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error(e.getMessage(), e);
       throw new Exception("Problem loading data during compaction: " + e.getMessage(), e);
     }
@@ -273,9 +287,11 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * @return
    */
   private Object[] prepareStreamingRowObjectForSorting(Object[] row) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
     Object[] preparedRow = new Object[dimensions.size() + measureCount];
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dims = dimensions.get(i);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (dims.getDataType() == DataTypes.DATE) {
         // dictionary
         preparedRow[i] = row[i];
@@ -315,6 +331,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     int[] keyArray = ByteUtil.convertBytesToIntArray(dictionaryKey);
     Object[] dictionaryValues = new Object[dimensionColumnCount + measureCount];
     for (int i = 0; i < keyArray.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       dictionaryValues[i] = keyArray[i];
     }
     int noDictionaryIndex = 0;
@@ -323,11 +340,13 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
 
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dims = dimensions.get(i);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (dims.getDataType() == DataTypes.DATE && !dims.isComplex()) {
         // dictionary
         preparedRow[i] = dictionaryValues[dictionaryIndex++];
       } else if (!dims.isComplex()) {
         // no dictionary dims
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
         byte[] noDictionaryKeyByIndex = wrapper.getNoDictionaryKeyByIndex(noDictionaryIndex++);
         if (DataTypeUtil.isPrimitiveColumn(dims.getDataType())) {
           // no dictionary measure columns are expected as original data
@@ -336,12 +355,15 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
                   dims.getDataType());
           // for timestamp the above method will give the original data, so it should be
           // converted again to the format to be loaded (without micros)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
           if (null != preparedRow[i] && dims.getDataType() == DataTypes.TIMESTAMP) {
             preparedRow[i] = (long) preparedRow[i] / 1000L;
           }
         } else {
           preparedRow[i] = noDictionaryKeyByIndex;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3196
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3203
       } else {
         preparedRow[i] = wrapper.getComplexKeyByIndex(complexIndex++);
       }
@@ -365,8 +387,11 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * @return
    */
   private Object getConvertedMeasureValue(Object value, DataType type) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     if (DataTypes.isDecimal(type)) {
       if (value != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
         value = DataTypeUtil.getDataTypeConverter().convertFromDecimalToBigDecimal(value);
       }
       return value;
@@ -379,6 +404,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * This method will read sort temp files, perform merge sort and add it to store for data loading
    */
   private void readAndLoadDataFromSortTempFiles(List<RawResultIterator> sortedRawResultIterator)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
       throws Exception {
     try {
       intermediateFileMerger.finish();
@@ -393,6 +419,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       }
       dataHandler.finish();
     } catch (CarbonDataWriterException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error(e.getMessage(), e);
       throw new Exception("Problem loading data during compaction.", e);
     } catch (Exception e) {
@@ -403,6 +430,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
         try {
           dataHandler.closeHandler();
         } catch (CarbonDataWriterException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
           LOGGER.error("Error in close data handler", e);
           throw new Exception("Error in close data handler", e);
         }
@@ -419,6 +447,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     try {
       sortDataRows.addRow(row);
     } catch (CarbonSortKeyAndGroupByException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error(e.getMessage(), e);
       throw new Exception("Row addition for sorting failed during compaction: "
           + e.getMessage(), e);
@@ -430,17 +459,22 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void initSortDataRows() {
     measureCount = carbonTable.getVisibleMeasures().size();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3422
     dimensions = new ArrayList<>(2);
     dimensions.addAll(segmentProperties.getDimensions());
     dimensions.addAll(segmentProperties.getComplexDimensions());
     noDictionaryColMapping = new boolean[dimensions.size()];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     sortColumnMapping = new boolean[dimensions.size()];
     isVarcharDimMapping = new boolean[dimensions.size()];
     int i = 0;
     for (CarbonDimension dimension : dimensions) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2998
       if (dimension.isSortColumn()) {
         sortColumnMapping[i] = true;
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (dimension.getDataType() == DataTypes.DATE) {
         i++;
         continue;
@@ -453,15 +487,18 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       noDictionaryCount++;
     }
     dimensionColumnCount = dimensions.size();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1839
     sortParameters = createSortParameters();
     intermediateFileMerger = new SortIntermediateFileMerger(sortParameters);
     // Delete if any older file exists in sort temp folder
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
     CarbonDataProcessorUtil.deleteSortLocationIfExists(sortParameters.getTempFileLocation());
     // create new sort temp directory
     CarbonDataProcessorUtil.createLocations(sortParameters.getTempFileLocation());
     // TODO: Now it is only supported onheap merge, but we can have unsafe merge
     // as well by using UnsafeSortDataRows.
     this.sortDataRows = new SortDataRows(sortParameters, intermediateFileMerger);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     this.sortDataRows.initialize();
   }
 
@@ -472,10 +509,12 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private SortParameters createSortParameters() {
     int numberOfCompactingCores = CarbonProperties.getInstance().getNumberOfCompactingCores();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
     return SortParameters
         .createSortParameters(carbonTable, carbonLoadModel.getDatabaseName(), tableName,
             dimensionColumnCount, segmentProperties.getComplexDimensions().size(), measureCount,
             noDictionaryCount, segmentId, carbonLoadModel.getTaskNo(), noDictionaryColMapping,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3031
             sortColumnMapping, isVarcharDimMapping, true, numberOfCompactingCores / 2);
   }
 
@@ -485,8 +524,11 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void initializeFinalThreadMergerForMergeSort() {
     boolean[] noDictionarySortColumnMapping = CarbonDataProcessorUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
         .getNoDictSortColMapping(carbonTable);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1839
     sortParameters.setNoDictionarySortColumn(noDictionarySortColumnMapping);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
     String[] sortTempFileLocation = CarbonDataProcessorUtil.arrayAppend(tempStoreLocation,
         CarbonCommonConstants.FILE_SEPARATOR, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     finalMerger =
@@ -497,6 +539,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * initialise carbon data writer instance
    */
   private void initDataHandler() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     String carbonStoreLocation;
     if (partitionSpec != null) {
       carbonStoreLocation =
@@ -504,20 +547,28 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
               + carbonLoadModel.getFactTimeStamp() + ".tmp";
     } else {
       carbonStoreLocation = CarbonDataProcessorUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
           .createCarbonStoreLocation(carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable(),
               carbonLoadModel.getSegmentId());
     }
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
         .getCarbonFactDataHandlerModel(carbonLoadModel, carbonTable, segmentProperties, tableName,
             tempStoreLocation, carbonStoreLocation);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     carbonFactDataHandlerModel.setSegmentId(carbonLoadModel.getSegmentId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
     carbonFactDataHandlerModel.setBucketId(carbonLoadModel.getBucketId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     setDataFileAttributesInModel(carbonLoadModel, compactionType, carbonFactDataHandlerModel);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
     this.noDicAndComplexColumns = carbonFactDataHandlerModel.getNoDictAndComplexColumns();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(carbonFactDataHandlerModel);
     try {
       dataHandler.initialise();
     } catch (CarbonDataWriterException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error(e.getMessage(), e);
       throw new Exception("Problem initialising data handler during compaction: "
           + e.getMessage(), e);
@@ -529,6 +580,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void initTempStoreLocation() {
     tempStoreLocation = CarbonDataProcessorUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1992
         .getLocalDataFolderLocation(carbonTable, carbonLoadModel.getTaskNo(),
            segmentId, true, false);
   }

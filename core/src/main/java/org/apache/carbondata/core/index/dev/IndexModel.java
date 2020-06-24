@@ -30,6 +30,7 @@ public class IndexModel {
 
   public IndexModel(String filePath, Configuration configuration) {
     this.filePath = filePath;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     this.configuration = configuration;
   }
 

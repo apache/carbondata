@@ -65,8 +65,10 @@ public class StreamPruner {
       List<ColumnSchema> listOfColumns =
           carbonTable.getTableInfo().getFactTable().getListOfColumns();
       // initial filter executor
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       SegmentProperties segmentProperties = new SegmentProperties(listOfColumns);
       filterExecuter = FilterUtil.getFilterExecuterTree(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
           filterExp, segmentProperties, null, minMaxCacheColumns, false);
     }
   }
@@ -95,6 +97,7 @@ public class StreamPruner {
     }
     byte[][] maxValue = streamFile.getMinMaxIndex().getMaxValues();
     byte[][] minValue = streamFile.getMinMaxIndex().getMinValues();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     BitSet bitSet = filterExecuter
         .isScanRequired(maxValue, minValue, streamFile.getMinMaxIndex().getIsMinMaxSet());
     if (!bitSet.isEmpty()) {
@@ -112,6 +115,7 @@ public class StreamPruner {
       String segmentDir = CarbonTablePath.getSegmentPath(
           carbonTable.getAbsoluteTableIdentifier().getTablePath(), segment.getSegmentNo());
       String indexFile = CarbonTablePath.getCarbonStreamIndexFilePath(segmentDir);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (FileFactory.isFileExist(indexFile)) {
         CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
         indexReader.openThriftReader(indexFile);
@@ -135,6 +139,7 @@ public class StreamPruner {
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2923
     totalFileNums = streamFileList.size();
     return streamFileList;
   }

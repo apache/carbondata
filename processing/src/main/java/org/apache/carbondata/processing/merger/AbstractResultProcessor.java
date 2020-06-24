@@ -41,6 +41,7 @@ public abstract class AbstractResultProcessor {
    */
   public abstract boolean execute(List<RawResultIterator> unsortedResultIteratorList,
       List<RawResultIterator> sortedResultIteratorList) throws Exception;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
 
   /**
    * This method will be sued to clean up the resources and close all the spawned threads to avoid
@@ -49,9 +50,11 @@ public abstract class AbstractResultProcessor {
   public abstract void close();
 
   protected void setDataFileAttributesInModel(CarbonLoadModel loadModel,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
       CompactionType compactionType, CarbonFactDataHandlerModel carbonFactDataHandlerModel)
       throws IOException {
     CarbonDataFileAttributes carbonDataFileAttributes;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1586
     if (compactionType == CompactionType.IUD_UPDDEL_DELTA) {
       long taskNo = CarbonUpdateUtil.getLatestTaskIdForSegment(loadModel.getSegment(),
           loadModel.getTablePath());
@@ -61,6 +64,8 @@ public abstract class AbstractResultProcessor {
       carbonDataFileAttributes = new CarbonDataFileAttributes(index, loadModel.getFactTimeStamp());
     } else {
       carbonDataFileAttributes =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3513
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3325
           new CarbonDataFileAttributes(loadModel.getTaskNo(),
               loadModel.getFactTimeStamp());
     }

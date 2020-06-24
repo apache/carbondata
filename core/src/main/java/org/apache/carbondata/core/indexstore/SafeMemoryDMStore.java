@@ -46,6 +46,7 @@ public class SafeMemoryDMStore extends AbstractMemoryDMStore {
    */
   @Override
   public void addIndexRow(CarbonRowSchema[] schema, IndexRow indexRow) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     indexRows.add(indexRow);
     runningLength += indexRow.getTotalSizeInBytes();
   }
@@ -73,6 +74,7 @@ public class SafeMemoryDMStore extends AbstractMemoryDMStore {
 
   @Override
   public int getRowCount() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     return indexRows.size();
   }
 

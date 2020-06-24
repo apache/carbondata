@@ -32,6 +32,7 @@ public class ProjectionColumn {
    */
   private int projectionOrdinal;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   ProjectionColumn(String columnName) {
     this.columnName = columnName;
   }
@@ -47,6 +48,7 @@ public class ProjectionColumn {
    * @return the projectionOrdinal
    */
   public int getOrdinal() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     return projectionOrdinal;
   }
 

@@ -64,6 +64,7 @@ public class CarbonLRUCacheTest {
   @Test public void testBiggerThanMaxSizeConfiguration() {
     CarbonLRUCache carbonLRUCacheForConfig =
             new CarbonLRUCache("prop2", "200000");//200GB
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
     assertTrue(carbonLRUCacheForConfig.put("Column1", cacheable, 10L, 5));
     assertFalse(carbonLRUCacheForConfig.put("Column2", cacheable, 107374182400L, 5));//100GB
   }

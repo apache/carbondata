@@ -54,6 +54,7 @@ import org.apache.log4j.Logger;
 public abstract class BlockletScannedResult {
 
   private static final Logger LOGGER =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       LogServiceFactory.getLogService(BlockletScannedResult.class.getName());
   /**
    * current row number
@@ -155,6 +156,7 @@ public abstract class BlockletScannedResult {
 
   public BlockletScannedResult(BlockExecutionInfo blockExecutionInfo,
       QueryStatisticsModel queryStatisticsModel) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3764
     this.dimensionReusableBuffer = blockExecutionInfo.getDimensionReusableDataBuffer();
     this.measureReusableBuffer = blockExecutionInfo.getMeasureReusableDataBuffer();
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
@@ -175,6 +177,7 @@ public abstract class BlockletScannedResult {
    * @param columnPages dimension chunks used in query
    */
   public void setDimensionColumnPages(DimensionColumnPage[][] columnPages) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     this.dimensionColumnPages = columnPages;
   }
 
@@ -188,6 +191,7 @@ public abstract class BlockletScannedResult {
   }
 
   public void setDimRawColumnChunks(DimensionRawColumnChunk[] dimRawColumnChunks) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
     this.dimRawColumnChunks = dimRawColumnChunks;
   }
 
@@ -196,6 +200,7 @@ public abstract class BlockletScannedResult {
   }
 
   public LazyBlockletLoader getLazyBlockletLoader() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
     return lazyBlockletLoader;
   }
 
@@ -210,6 +215,7 @@ public abstract class BlockletScannedResult {
    * @return measure column chunk
    */
   public ColumnPage getMeasureChunk(int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     return measureColumnPages[ordinal][pageCounter];
   }
 
@@ -225,6 +231,7 @@ public abstract class BlockletScannedResult {
     int column = 0;
     for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
       column = dimensionColumnPages[dictionaryColumnChunkIndexes[i]][pageCounter]
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
           .fillSurrogateKey(rowId, column, completeKey);
     }
     return completeKey;
@@ -237,6 +244,7 @@ public abstract class BlockletScannedResult {
     int column = 0;
     for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
       column = dimensionColumnPages[dictionaryColumnChunkIndexes[i]][pageCounter]
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
           .fillVector(vectorInfo, column);
     }
   }
@@ -246,6 +254,7 @@ public abstract class BlockletScannedResult {
    */
   public void fillColumnarNoDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
     for (int i = 0; i < this.noDictionaryColumnChunkIndexes.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       dimensionColumnPages[noDictionaryColumnChunkIndexes[i]][pageCounter]
           .fillVector(vectorInfo, i);
     }
@@ -257,11 +266,13 @@ public abstract class BlockletScannedResult {
   public void fillColumnarMeasureBatch(ColumnVectorInfo[] vectorInfo, int[] measuresOrdinal) {
     for (int i = 0; i < measuresOrdinal.length; i++) {
       vectorInfo[i].measureVectorFiller
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
           .fillMeasureVector(measureColumnPages[measuresOrdinal[i]][pageCounter], vectorInfo[i]);
     }
   }
 
   public void fillColumnarComplexBatch(ColumnVectorInfo[] vectorInfos) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3145
     ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
     ReUsableByteArrayDataOutputStream reuseableDataOutput =
         new ReUsableByteArrayDataOutputStream(byteStream);
@@ -283,6 +294,7 @@ public abstract class BlockletScannedResult {
           reuseableDataOutput.reset();
         } catch (IOException e) {
           isExceptionThrown = true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
           LOGGER.error(e.getMessage(), e);
         } finally {
           if (isExceptionThrown) {
@@ -312,10 +324,12 @@ public abstract class BlockletScannedResult {
         if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
             .equals(columnVectorInfo.dimension.getColumnName())) {
           data = data + CarbonCommonConstants.FILE_SEPARATOR + pageCounter
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
               + CarbonCommonConstants.FILE_SEPARATOR + (pageFilteredRowId == null ?
               j :
               pageFilteredRowId[pageCounter][j]);
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
         vector.putByteArray(vectorOffset++,
             data.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       }
@@ -357,6 +371,7 @@ public abstract class BlockletScannedResult {
    * Just increment the page counter and reset the remaining counters.
    */
   public void incrementPageCounter(ColumnVectorInfo[] vectorInfos) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     rowCounter = 0;
     currentRow = -1;
     pageCounter++;
@@ -377,6 +392,7 @@ public abstract class BlockletScannedResult {
     long startTime = System.currentTimeMillis();
     for (int i = 0; i < dimensionColumnPages.length; i++) {
       if (dimensionColumnPages[i][pageCounter] == null && dimRawColumnChunks[i] != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
         dimensionColumnPages[i][pageCounter] = dimRawColumnChunks[i]
             .convertToDimColDataChunkWithOutCache(pageCounter, null);
       }
@@ -407,6 +423,7 @@ public abstract class BlockletScannedResult {
     for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
       dictionaryInfo[i].vector.setLazyPage(
           new LazyPageLoader(lazyBlockletLoader, dictionaryColumnChunkIndexes[i], false,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
               pageIdFiltered[pageCounter], dictionaryInfo[i], dimensionReusableBuffer[i]));
     }
     int startIndex = dictionaryColumnChunkIndexes.length;
@@ -427,6 +444,7 @@ public abstract class BlockletScannedResult {
 
   // free the memory for the last page chunk
   private void freeDataChunkMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     for (int i = 0; i < dimensionColumnPages.length; i++) {
       if (pageCounter > 0 && dimensionColumnPages[i][pageCounter - 1] != null) {
         dimensionColumnPages[i][pageCounter - 1].freeMemory();
@@ -447,6 +465,7 @@ public abstract class BlockletScannedResult {
   }
 
   public int[] getPageIdFiltered() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     return pageIdFiltered;
   }
 
@@ -460,6 +479,7 @@ public abstract class BlockletScannedResult {
    * @return
    */
   public int getCurrentPageRowCount() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     return pageFilteredRowCount[pageCounter];
   }
 
@@ -482,6 +502,7 @@ public abstract class BlockletScannedResult {
    * @return no dictionary keys for all no dictionary dimension
    */
   protected byte[][] getNoDictionaryKeyArray(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     byte[][] noDictionaryColumnsKeys = new byte[noDictionaryColumnChunkIndexes.length][];
     int position = 0;
     for (int i = 0; i < this.noDictionaryColumnChunkIndexes.length; i++) {
@@ -520,6 +541,7 @@ public abstract class BlockletScannedResult {
    */
   protected List<byte[][]> getComplexTypeKeyArrayBatch() {
     List<byte[][]> complexTypeArrayList = new ArrayList<>(validRowIds.size());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3145
     ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
     ReUsableByteArrayDataOutputStream reUseableDataOutput =
         new ReUsableByteArrayDataOutputStream(byteStream);
@@ -537,6 +559,7 @@ public abstract class BlockletScannedResult {
       for (int j = 0; j < validRowIds.size(); j++) {
         try {
           genericQueryType
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3145
               .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks, dimensionColumnPages,
                   validRowIds.get(j), pageCounter, reUseableDataOutput);
           // get the key array in columnar way
@@ -545,6 +568,7 @@ public abstract class BlockletScannedResult {
           reUseableDataOutput.reset();
         } catch (IOException e) {
           isExceptionThrown = true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
           LOGGER.error(e.getMessage(), e);
         } finally {
           if (isExceptionThrown) {
@@ -571,6 +595,7 @@ public abstract class BlockletScannedResult {
    * "Part0/Segment_0/part-0-0_batchno0-0-1517155583332.carbondata/0"
    */
   public void setBlockletId(String blockletId, String blockletNumber) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
     this.blockletId = blockletId + CarbonCommonConstants.FILE_SEPARATOR + blockletNumber;
     this.blockletNumber = blockletNumber;
     // if deleted recors map is present for this block
@@ -594,6 +619,7 @@ public abstract class BlockletScannedResult {
    * @return complex type key array for all the complex dimension selected in query
    */
   protected byte[][] getComplexTypeKeyArray(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3145
     ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
     ReUsableByteArrayDataOutputStream reUsableDataOutput =
         new ReUsableByteArrayDataOutputStream(byteStream);
@@ -610,6 +636,7 @@ public abstract class BlockletScannedResult {
         reUsableDataOutput.reset();
       } catch (IOException e) {
         isExceptionThrown = true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
         LOGGER.error(e.getMessage(), e);
       } finally {
         if (isExceptionThrown) {
@@ -629,6 +656,7 @@ public abstract class BlockletScannedResult {
    * @return
    */
   public boolean hasNext() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     if (pageCounter
         < pageFilteredRowCount.length && rowCounter < this.pageFilteredRowCount[pageCounter]) {
       return true;
@@ -640,6 +668,7 @@ public abstract class BlockletScannedResult {
       if (this.pageFilteredRowCount[pageCounter] == 0) {
         return hasNext();
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
       fillDataChunks();
       rowCounter = 0;
       currentRow = -1;
@@ -656,12 +685,14 @@ public abstract class BlockletScannedResult {
    */
   public void freeMemory() {
     // first free the dimension chunks
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     if (null != dimensionColumnPages) {
       for (int i = 0; i < dimensionColumnPages.length; i++) {
         if (null != dimensionColumnPages[i]) {
           for (int j = 0; j < dimensionColumnPages[i].length; j++) {
             if (null != dimensionColumnPages[i][j]) {
               dimensionColumnPages[i][j].freeMemory();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2307
               dimensionColumnPages[i][j] = null;
             }
           }
@@ -675,6 +706,7 @@ public abstract class BlockletScannedResult {
           for (int j = 0; j < measureColumnPages[i].length; j++) {
             if (null != measureColumnPages[i][j]) {
               measureColumnPages[i][j].freeMemory();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2307
               measureColumnPages[i][j] = null;
             }
           }
@@ -682,10 +714,12 @@ public abstract class BlockletScannedResult {
       }
     }
     // free the raw chunks
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
     if (null != dimRawColumnChunks) {
       for (int i = 0; i < dimRawColumnChunks.length; i++) {
         if (null != dimRawColumnChunks[i]) {
           dimRawColumnChunks[i].freeMemory();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2307
           dimRawColumnChunks[i] = null;
         }
       }
@@ -698,7 +732,9 @@ public abstract class BlockletScannedResult {
    * @param pageFilteredRowCount set total of number rows valid after scanning
    */
   public void setPageFilteredRowCount(int[] pageFilteredRowCount) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     this.pageFilteredRowCount = pageFilteredRowCount;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     if (pageIdFiltered == null) {
       pageIdFiltered = new int[pageFilteredRowCount.length];
       for (int i = 0; i < pageIdFiltered.length; i++) {
@@ -741,6 +777,7 @@ public abstract class BlockletScannedResult {
   public List<byte[]> getDictionaryKeyArrayBatch(int batchSize) {
     // rowId from where computing need to start
     int startRowId = currentRow + 1;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3343
     fillValidRowIdsBatchFilling(startRowId, batchSize);
     List<byte[]> dictionaryKeyArrayList = new ArrayList<>(validRowIds.size());
     int[] columnDataOffsets = null;
@@ -795,6 +832,7 @@ public abstract class BlockletScannedResult {
    * @return no dictionary keys for all no dictionary dimension
    */
   public List<byte[][]> getNoDictionaryKeyArrayBatch(int batchSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3343
     List<byte[][]> noDictionaryKeyArrayList = new ArrayList<>(validRowIds.size());
     byte[][] noDictionaryColumnsKeys = null;
     // everyTime it is initialized new as in case of prefetch it can modify the data
@@ -840,6 +878,7 @@ public abstract class BlockletScannedResult {
   }
 
   public DeleteDeltaVo getCurrentDeleteDeltaVo() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     return currentDeleteDeltaVo;
   }
 

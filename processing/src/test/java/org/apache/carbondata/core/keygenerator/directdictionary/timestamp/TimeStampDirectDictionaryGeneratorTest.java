@@ -51,6 +51,7 @@ public class TimeStampDirectDictionaryGeneratorTest {
     // default timestamp format is "yyyy-MM-dd HH:mm:ss" and the data being passed
     // in "dd/MM/yyyy" so the parsing should fail and method should return 1.
     int key = generator.generateDirectSurrogateKey("20/12/2014");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-220
     Assert.assertEquals(1, key);
     key = generator.generateDirectSurrogateKey("2015-10-20 12:30:01");
     Assert.assertEquals(surrogateKey, key);
@@ -80,6 +81,7 @@ public class TimeStampDirectDictionaryGeneratorTest {
    * @throws Exception
    */
   @Test public void getSurrogateWithCutoff() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1452
     SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
             CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
@@ -106,12 +108,14 @@ public class TimeStampDirectDictionaryGeneratorTest {
    */
   @Test public void lowerBoundaryValueTest() throws Exception {
     TimeStampDirectDictionaryGenerator generator = new TimeStampDirectDictionaryGenerator( );
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-220
     long valueFromSurrogate = (long) generator.getValueFromSurrogate(2);
     Date date = new Date(valueFromSurrogate / 1000);
     SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
             CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
     timeParser.setLenient(false);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-220
     timeParser.setTimeZone(TimeZone.getTimeZone("IST"));
     String actualValue = timeParser.format(date);
     Assert.assertEquals("1970-01-01 05:30:00", actualValue);

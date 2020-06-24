@@ -36,6 +36,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
   private CarbonTable carbonTable;
 
   @BeforeClass public void setUp() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1286
     carbonTable = CarbonTable.buildFromTableInfo(getTableInfo(1000L));
   }
 
@@ -56,6 +57,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
   }
 
   @Test public void testFactTableNameReturnsProperFactTableName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3480
     assertEquals("carbontesttable", carbonTable.getTableName());
   }
 
@@ -70,6 +72,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
@@ -82,6 +85,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     ColumnSchema structColumn = new ColumnSchema();
     structColumn.setColumnName("mobile");
     structColumn.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     structColumn.setDataType(DataTypes.createDefaultStructType());
     structColumn.setDimensionColumn(true);
     structColumn.setEncodingList(encodeList);
@@ -91,6 +95,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     ColumnSchema primitiveColumn = new ColumnSchema();
     primitiveColumn.setColumnName("mobile.stdcode");
     primitiveColumn.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     primitiveColumn.setDataType(DataTypes.STRING);
     primitiveColumn.setDimensionColumn(true);
     primitiveColumn.setEncodingList(encodeList);
@@ -100,6 +105,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     ColumnSchema arrayColumn = new ColumnSchema();
     arrayColumn.setColumnName("mobile.val");
     arrayColumn.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     arrayColumn.setDataType(DataTypes.createDefaultArrayType());
     arrayColumn.setDimensionColumn(true);
     arrayColumn.setEncodingList(encodeList);
@@ -109,6 +115,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     ColumnSchema primitiveColumn1 = new ColumnSchema();
     primitiveColumn1.setColumnName("mobile.val.phoneno");
     primitiveColumn1.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     primitiveColumn1.setDataType(DataTypes.STRING);
     primitiveColumn1.setDimensionColumn(true);
     primitiveColumn1.setEncodingList(encodeList);
@@ -122,6 +129,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI_COUNT");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(false);
     return dimColumn;
@@ -144,6 +152,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     info.setLastUpdatedTime(timeStamp);
     info.setTableUniqueName("carbonTestDatabase_carbonTestTable");
     info.setFactTable(getTableSchema());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
     info.setTablePath("testStore");
     return info;
   }

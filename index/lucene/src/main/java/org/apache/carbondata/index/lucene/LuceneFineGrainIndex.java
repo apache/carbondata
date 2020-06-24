@@ -67,6 +67,7 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
    */
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(LuceneFineGrainIndex.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
   /**
    * search limit will help in deciding the size of priority queue which is used by lucene to store
@@ -95,8 +96,10 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
 
   private IndexReader indexReader;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
   LuceneFineGrainIndex(Analyzer analyzer, IndexSchema schema) {
     this.analyzer = analyzer;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     writeCacheSize = LuceneIndexFactoryBase.validateAndGetWriteCacheSize(schema);
     storeBlockletWise = LuceneIndexFactoryBase.validateAndGetStoreBlockletWise(schema);
   }
@@ -112,8 +115,10 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
     LOGGER.info("Lucene index read path " + indexPath.toString());
 
     this.filePath = indexPath.getName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
 
     this.indexSearcherMap = new HashMap<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2494
 
     // get file system , use hdfs file system , realized in solr project
     CarbonFile indexFilePath = FileFactory.getCarbonFile(indexPath.toString());
@@ -144,6 +149,7 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
 
     }
     LOGGER.info(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2545
         "Time taken to initialize lucene searcher: " + (System.currentTimeMillis() - startTime));
   }
 
@@ -151,6 +157,7 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
     // open this index path , use HDFS default configuration
     Directory indexDir = new HdfsDirectory(indexPath, FileFactory.getConfiguration());
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2433
     this.indexReader = DirectoryReader.open(indexDir);
     if (indexReader == null) {
       throw new RuntimeException("failed to create index reader object");
@@ -202,6 +209,7 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
    */
   @Override
   public List<FineGrainBlocklet> prune(FilterResolverIntf filterExp,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
       SegmentProperties segmentProperties, FilterExecuter filterExecuter,
       CarbonTable carbonTable) throws IOException {
 
@@ -211,12 +219,14 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
     // only for test , query all data
     String strQuery = getQueryString(filterExp.getFilterExpression());
     int maxDocs;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2356
     try {
       maxDocs = getMaxDoc(filterExp.getFilterExpression());
     } catch (NumberFormatException e) {
       maxDocs = Integer.MAX_VALUE;
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2347
     if (null == strQuery) {
       return null;
     }
@@ -234,17 +244,21 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
     queryParser.setAllowLeadingWildcard(true);
     Query query;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2455
       query = queryParser.parse(strQuery);
     } catch (ParseException e) {
       String errorMessage = String.format(
           "failed to filter block with query %s, detail is %s", strQuery, e.getMessage());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error(errorMessage, e);
       return null;
     }
     // temporary data, delete duplicated data
     // Map<BlockId, Map<BlockletId, Map<PageId, Set<RowId>>>>
     Map<String, Map<Integer, List<Short>>> mapBlocks = new HashMap<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2494
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2433
     long luceneSearchStartTime = System.currentTimeMillis();
     for (Map.Entry<String, IndexSearcher> searcherEntry : indexSearcherMap.entrySet()) {
       IndexSearcher indexSearcher = searcherEntry.getValue();
@@ -264,12 +278,14 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
       } catch (IOException e) {
         String errorMessage =
             String.format("failed to search lucene data, detail is %s", e.getMessage());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
         LOGGER.error(errorMessage, e);
         throw new IOException(errorMessage, e);
       }
 
       ByteBuffer intBuffer = ByteBuffer.allocate(4);
       // last scoreDoc in a result to be used in searchAfter API
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2433
       ScoreDoc lastScoreDoc = null;
       while (true) {
         for (ScoreDoc scoreDoc : result.scoreDocs) {
@@ -307,6 +323,7 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
 
     // transform all blocks into result type blocklets
     // Map<BlockId, Map<BlockletId, Map<PageId, Set<RowId>>>>
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2494
     for (Map.Entry<String, Map<Integer, List<Short>>> mapBlocklet :
         mapBlocks.entrySet()) {
       String blockletId = mapBlocklet.getKey();
@@ -332,6 +349,7 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
       }
 
       // add a FineGrainBlocklet
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
       blocklets.add(new FineGrainBlocklet(filePath, blockletId, pages));
     }
 
@@ -343,6 +361,7 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
    * rows and combine as per there uniqueness.
    */
   private void fillMapForCombineRows(ByteBuffer intBuffer,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2494
       Map<String, Map<Integer, List<Short>>> mapBlocks, List<IndexableField> fieldsInDoc,
       String blockletId) {
     for (int i = 0; i < fieldsInDoc.size(); i++) {
@@ -428,6 +447,7 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
 
   @Override
   public void finish() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2433
     if (null != indexReader) {
       try {
         int referenceCount = indexReader.getRefCount();
@@ -438,6 +458,7 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
           }
         }
       } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
         LOGGER.error("Ignoring the exception, Error while closing the lucene index reader", e);
       }
     }

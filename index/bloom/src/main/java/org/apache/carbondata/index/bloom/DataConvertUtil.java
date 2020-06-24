@@ -55,12 +55,14 @@ public class DataConvertUtil {
   public static Object getNullValueForMeasure(DataType dataType, int scale) {
     if (dataType == DataTypes.BOOLEAN) {
       return false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2757
     } else if (dataType == DataTypes.BYTE) {
       return (byte) 0;
     } else if (dataType == DataTypes.SHORT) {
       return (short) 0;
     } else if (dataType == DataTypes.INT) {
       return 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       return 0L;
     } else if (dataType == DataTypes.DOUBLE) {

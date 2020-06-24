@@ -43,6 +43,7 @@ public class BloomCacheKeyValue {
     }
 
     public CacheKey(String shardPath, String indexColumn, long expirationTime) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
       this.shardPath = shardPath;
       this.indexColumn = indexColumn;
       this.expirationTime = expirationTime;
@@ -80,6 +81,7 @@ public class BloomCacheKeyValue {
     }
 
     public long getExpirationTime() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
       return expirationTime;
     }
 

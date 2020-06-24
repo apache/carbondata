@@ -40,6 +40,7 @@ public class ReadCommittedIndexFileSnapShot implements Serializable {
   private Map<String, SegmentRefreshInfo> segmentTimestampUpdaterMap;
 
   public ReadCommittedIndexFileSnapShot(Map<String, List<String>> segmentIndexFileMap,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2431
       Map<String, SegmentRefreshInfo> segmentTimestampUpdaterMap) {
     this.segmentIndexFileMap = segmentIndexFileMap;
     this.segmentTimestampUpdaterMap = segmentTimestampUpdaterMap;

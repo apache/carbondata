@@ -44,6 +44,7 @@ public class IndexExprWrapperImpl extends IndexExprWrapper {
   private String uniqueId;
 
   public IndexExprWrapperImpl(TableIndex index, FilterResolverIntf expression) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.index = index;
     this.expression = expression;
     this.uniqueId = UUID.randomUUID().toString();
@@ -52,6 +53,7 @@ public class IndexExprWrapperImpl extends IndexExprWrapper {
   @Override
   public List<ExtendedBlocklet> prune(List<Segment> segments, List<PartitionSpec> partitionsToPrune)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return index.prune(segments, new IndexFilter(expression), partitionsToPrune);
   }
 
@@ -88,6 +90,7 @@ public class IndexExprWrapperImpl extends IndexExprWrapper {
 
   @Override
   public List<IndexInputSplitWrapper> toDistributable(List<Segment> segments) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     List<IndexInputSplit> indexInputSplits = index.toDistributable(segments);
     List<IndexInputSplitWrapper> wrappers = new ArrayList<>();
     for (IndexInputSplit distributable : indexInputSplits) {
@@ -98,6 +101,7 @@ public class IndexExprWrapperImpl extends IndexExprWrapper {
 
   @Override
   public IndexLevel getIndexLevel() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return index.getIndexFactory().getIndexLevel();
   }
 
@@ -120,6 +124,7 @@ public class IndexExprWrapperImpl extends IndexExprWrapper {
    */
   public IndexInputSplitWrapper toDistributableSegment(Segment segment)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return index.toDistributableSegment(segment, uniqueId);
   }
 }

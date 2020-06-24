@@ -92,6 +92,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
    */
   private Map<Integer, Map<CarbonDimension, ByteBuffer>> mergedComplexDimensionIndex =
       new HashMap<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
 
   private boolean readOnlyDelta;
 
@@ -102,6 +103,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     initDimensionAndMeasureIndexesForFillingData();
     isDimensionExists = queryDimensions.length > 0;
     this.comlexDimensionInfoMap = executionInfo.getComlexDimensionInfoMap();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
     this.readOnlyDelta = executionInfo.isReadOnlyDelta();
   }
 
@@ -115,6 +117,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     int rowCounter = 0;
     boolean isStructQueryType = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
     for (Object obj : scannedResult.complexParentIndexToQueryMap.values()) {
       if (obj instanceof StructQueryType) {
         //if any one of the map elements contains struct,need to shift rows if contains null.
@@ -133,8 +136,10 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       }
     }
     while (scannedResult.hasNext() && rowCounter < batchSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
       scannedResult.incrementCounter();
       if (readOnlyDelta) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
         if (!scannedResult.containsDeletedRow(scannedResult.getCurrentRowId()) &&
                 scannedResult.getCurrentDeleteDeltaVo() != null) {
           continue;
@@ -147,6 +152,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       Object[] row = new Object[queryDimensions.length + queryMeasures.length];
       if (isDimensionExists) {
         surrogateResult = scannedResult.getDictionaryKeyIntegerArray();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
         noDictionaryKeys = scannedResult.getNoDictionaryKeyArray();
         complexTypeKeyArray = scannedResult.getComplexTypeKeyArray();
         dictionaryColumnIndex = 0;
@@ -154,13 +160,16 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         complexTypeColumnIndex = 0;
 
         // get the complex columns data of this row
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
         fillComplexColumnDataBufferForThisRow();
         for (int i = 0; i < queryDimensions.length; i++) {
           fillDimensionData(scannedResult, surrogateResult, noDictionaryKeys, complexTypeKeyArray,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3596
               comlexDimensionInfoMap, row, i, queryDimensions[i].getDimension().getOrdinal());
         }
       }
       fillMeasureData(scannedResult, row);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
       if (isStructQueryType) {
         shiftNullForStruct(row, isComplexChildColumn);
       }
@@ -182,6 +191,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     // projection list,then object array will contain a,null,d as result, because for a.b,
     // a will be filled and for a.c null will be placed.
     // Instead place null in the end of object array and send a,d,null as result.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
     for (int j = 0; j < row.length; j++) {
       if (null == row[j] && !isComplexChildColumn[j]) {
         // if it is a primitive column, don't shift the null to the end.
@@ -195,14 +205,17 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
   }
 
   private void fillComplexColumnDataBufferForThisRow() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     mergedComplexDimensionIndex.clear();
     int noDictionaryComplexColumnIndex = 0;
     int complexTypeComplexColumnIndex = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
     for (int i = 0; i < queryDimensions.length; i++) {
       int complexParentOrdinal = queryDimensionToComplexParentOrdinal.get(i);
       if (complexParentOrdinal != -1) {
         Map<CarbonDimension, ByteBuffer> childColumnByteBuffer;
         // Add the parent and the child ordinal to the parentToChildColumnsMap
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         if (mergedComplexDimensionIndex.get(complexParentOrdinal) == null) {
           childColumnByteBuffer = new HashMap<>();
         } else {
@@ -216,7 +229,9 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         // TODO have to fill out for dictionary columns. Once the support for push down in
         // complex dictionary columns comes.
         ByteBuffer buffer;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         if (queryDimensions[i].getDimension().getDataType() != DataTypes.DATE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3126
           if (implicitColumnArray[i]) {
             throw new RuntimeException("Not Supported Column Type");
           } else if (complexDataTypeArray[i]) {
@@ -224,6 +239,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
           } else {
             buffer = ByteBuffer.wrap(noDictionaryKeys[noDictionaryComplexColumnIndex++]);
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         } else if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
           throw new RuntimeException("Direct Dictionary Column Type Not Supported Yet.");
         } else if (complexDataTypeArray[i]) {
@@ -234,7 +250,9 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
 
         childColumnByteBuffer
             .put(queryDimensions[i].getDimension(), buffer);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         mergedComplexDimensionIndex.put(complexParentOrdinal, childColumnByteBuffer);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2940
       } else if (!queryDimensions[i].getDimension().isComplex()) {
         // If Dimension is not a Complex Column, then increment index for noDictionaryComplexColumn
         noDictionaryComplexColumnIndex++;
@@ -255,17 +273,23 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
    * @param actualOrdinal: the actual ordinal of dimension columns in segment
    *
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   void fillDimensionData(BlockletScannedResult scannedResult, int[] surrogateResult,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
       byte[][] noDictionaryKeys, byte[][] complexTypeKeyArray,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3596
       Map<Integer, GenericQueryType> complexDimensionInfoMap, Object[] row, int i,
       int actualOrdinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     if (queryDimensions[i].getDimension().getDataType() != DataTypes.DATE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3126
       if (implicitColumnArray[i]) {
         if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
             .equals(queryDimensions[i].getColumnName())) {
           row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
               scannedResult.getBlockletId() + CarbonCommonConstants.FILE_SEPARATOR + scannedResult
                   .getCurrentPageCounter() + CarbonCommonConstants.FILE_SEPARATOR + scannedResult
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
                   .getCurrentRowId(), DataTypes.STRING);
         } else {
           row[order[i]] =
@@ -273,11 +297,13 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         }
       } else if (complexDataTypeArray[i]) {
         // Complex Type With No Dictionary Encoding.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
         if (queryDimensionToComplexParentOrdinal.get(i) != -1) {
           fillRow(complexDimensionInfoMap, row, i,
               ByteBuffer.wrap(complexTypeKeyArray[complexTypeColumnIndex++]));
         } else {
           row[order[i]] =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3596
               complexDimensionInfoMap.get(actualOrdinal).getDataBasedOnDataType(
                   ByteBuffer.wrap(complexTypeKeyArray[complexTypeColumnIndex++]));
         }
@@ -288,18 +314,23 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
           fillRow(complexDimensionInfoMap, row, i,
               ByteBuffer.wrap(noDictionaryKeys[noDictionaryColumnIndex++]));
         } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
           row[order[i]] = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(
               noDictionaryKeys[noDictionaryColumnIndex++],
               queryDimensions[i].getDimension().getDataType());
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     } else if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-739
       if (directDictionaryGenerators[i] != null) {
         row[order[i]] = directDictionaryGenerators[i].getValueFromSurrogate(
             surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]]);
       }
     } else if (complexDataTypeArray[i]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3596
       row[order[i]] = complexDimensionInfoMap.get(actualOrdinal)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
           .getDataBasedOnDataType(ByteBuffer.wrap(complexTypeKeyArray[complexTypeColumnIndex++]));
       dictionaryColumnIndex++;
     } else {
@@ -331,6 +362,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     if (childColumns.get(0).equals(queryDimensions[i].getDimension().getOrdinal())) {
       // Fill out Parent Column.
       row[order[i]] = complexDimensionInfoMap.get(complexParentOrdinal).getDataBasedOnColumnList(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           mergedComplexDimensionIndex.get(queryDimensions[i].getParentDimension().getOrdinal()),
           queryDimensions[i].getParentDimension());
     } else {
@@ -338,6 +370,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     }
   }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   void fillMeasureData(BlockletScannedResult scannedResult, Object[] row) {
     if (measureInfo.getMeasureDataTypes().length > 0) {
       Object[] msrValues = new Object[measureInfo.getMeasureDataTypes().length];
@@ -348,9 +381,11 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     }
   }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   void initDimensionAndMeasureIndexesForFillingData() {
     List<Integer> dictionaryIndexes = new ArrayList<Integer>();
     for (int i = 0; i < queryDimensions.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
         dictionaryIndexes.add(queryDimensions[i].getDimension().getOrdinal());
       }
@@ -361,12 +396,15 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     actualIndexInSurrogateKey = new int[dictionaryIndexes.size()];
     int index = 0;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3126
     implicitColumnArray = CarbonUtil.getImplicitColumnArray(queryDimensions);
     complexDataTypeArray = CarbonUtil.getComplexDataTypeArray(queryDimensions);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
 
     parentToChildColumnsMap.clear();
     queryDimensionToComplexParentOrdinal.clear();
     for (int i = 0; i < queryDimensions.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
         actualIndexInSurrogateKey[index++] =
             Arrays.binarySearch(primitive, queryDimensions[i].getDimension().getOrdinal());
@@ -394,6 +432,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
 
     order = new int[queryDimensions.length + queryMeasures.length];
     for (int i = 0; i < queryDimensions.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       order[i] = queryDimensions[i].getOrdinal();
     }
     for (int i = 0; i < queryMeasures.length; i++) {

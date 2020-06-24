@@ -17,9 +17,11 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
 class TimestampType extends DataType {
   static final TimestampType TIMESTAMP =
       new TimestampType(DataTypes.TIMESTAMP_TYPE_ID, 2, "TIMESTAMP", -1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
 
   private TimestampType(int id, int precedenceOrder, String name, int sizeInBytes) {
     super(id, precedenceOrder, name, sizeInBytes);

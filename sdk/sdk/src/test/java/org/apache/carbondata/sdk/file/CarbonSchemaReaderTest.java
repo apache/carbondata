@@ -106,6 +106,7 @@ public class CarbonSchemaReaderTest extends TestCase {
       String dataFilePath = carbonFiles[0].getAbsolutePath();
 
       Schema schema = CarbonSchemaReader
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2996
           .readSchema(dataFilePath)
           .asOriginOrder();
 
@@ -179,6 +180,7 @@ public class CarbonSchemaReaderTest extends TestCase {
         throw new RuntimeException("Carbon index file not exists.");
       }
       String indexFilePath = carbonFiles[0].getAbsolutePath();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2996
 
       Schema schema = CarbonSchemaReader
           .readSchema(indexFilePath)

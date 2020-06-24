@@ -47,11 +47,13 @@ public class StructQueryTypeTest {
     structQueryType.addChildren(arrayQueryType);
     List children = new ArrayList();
     children.add(arrayQueryType);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
     assertNotNull(structQueryType.getDataBasedOnDataType(surrogateData));
   }
 
   @Test public void testGetColsCount() {
     structQueryType.setName("testName");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     structQueryType.setParentName("testName");
     structQueryType.addChildren(arrayQueryType);
     new MockUp<ArrayQueryType>() {

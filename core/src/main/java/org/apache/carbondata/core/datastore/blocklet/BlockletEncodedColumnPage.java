@@ -88,9 +88,13 @@ public class BlockletEncodedColumnPage {
    */
   private LocalDictionaryGenerator localDictionaryGenerator;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
   BlockletEncodedColumnPage(ExecutorService fallbackExecutorService,
       boolean isDecoderBasedFallBackEnabled, LocalDictionaryGenerator localDictionaryGenerator) {
     this.fallbackExecutorService = fallbackExecutorService;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
     this.fallbackFutureQueue = new ArrayDeque<>();
     this.isDecoderBasedFallBackEnabled = isDecoderBasedFallBackEnabled;
     this.localDictionaryGenerator = localDictionaryGenerator;
@@ -102,6 +106,7 @@ public class BlockletEncodedColumnPage {
    * @param encodedColumnPage
    * encoded column page
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
   void addEncodedColumnPage(EncodedColumnPage encodedColumnPage) {
     if (null == encodedColumnPageList) {
       this.encodedColumnPageList = new ArrayList<>();
@@ -121,6 +126,7 @@ public class BlockletEncodedColumnPage {
       LOGGER.info(
           "Local dictionary Fallback is initiated for column: " + this.columnName + " for page:"
               + encodedColumnPageList.size());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
       initiateFallBack(encodedColumnPage, encodedColumnPageList.size());
       // fill null so once page is decoded again fill the re-encoded page again
       this.encodedColumnPageList.add(null);
@@ -138,11 +144,14 @@ public class BlockletEncodedColumnPage {
     else {
       isLocalDictEncoded = false;
       pageLevelDictionary = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
       LOGGER.info("Local dictionary Fallback is initiated for column: " + this.columnName
           + " for pages: 1 to " + encodedColumnPageList.size());
       // submit all the older pages encoded with dictionary for fallback
       for (int pageIndex = 0; pageIndex < encodedColumnPageList.size(); pageIndex++) {
         if (encodedColumnPageList.get(pageIndex).getActualPage().isLocalDictGeneratedPage()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
           initiateFallBack(encodedColumnPageList.get(pageIndex), pageIndex);
         }
       }
@@ -196,6 +205,7 @@ public class BlockletEncodedColumnPage {
     if (null != pageLevelDictionary) {
       try {
         return pageLevelDictionary.getLocalDictionaryChunkForBlocklet();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -209,16 +219,19 @@ public class BlockletEncodedColumnPage {
    * @param pageIndex
    */
   private void initiateFallBack(EncodedColumnPage encodedColumnPage, int pageIndex) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
     if (isDecoderBasedFallBackEnabled) {
       fallbackFutureQueue.add(fallbackExecutorService.submit(
           new DecoderBasedFallbackEncoder(encodedColumnPage, pageIndex, localDictionaryGenerator)));
     } else {
       fallbackFutureQueue.add(fallbackExecutorService.submit(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2940
           new ActualDataBasedFallbackEncoder(encodedColumnPage, pageIndex)));
     }
   }
 
   public void cleanBuffer() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3787
     for (EncodedColumnPage encodedColumnPage : encodedColumnPageList) {
       encodedColumnPage.cleanBuffer();
     }

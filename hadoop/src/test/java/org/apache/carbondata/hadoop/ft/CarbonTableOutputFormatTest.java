@@ -52,9 +52,11 @@ public class CarbonTableOutputFormatTest {
   static {
     CarbonProperties.getInstance().
         addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "CarbonTableOutputFormatTest");
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
       carbonLoadModel = new StoreCreator(new File("target/store").getAbsolutePath(),
           new File("../hadoop/src/test/resources/data.csv").getCanonicalPath()).createTableAndLoadModel();
     } catch (Exception e) {
@@ -67,16 +69,20 @@ public class CarbonTableOutputFormatTest {
     runJob("");
     String segmentPath = CarbonTablePath.getSegmentPath(carbonLoadModel.getTablePath(), "0");
     File file = new File(segmentPath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(file.exists());
     File[] listFiles = file.listFiles(new FilenameFilter() {
       @Override
       public boolean accept(File dir, String name) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1859
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1861
         return name.endsWith(".carbondata") ||
             name.endsWith(".carbonindex") ||
             name.endsWith(".carbonindexmerge");
       }
     });
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(listFiles.length == 2);
   }
 
@@ -98,6 +104,7 @@ public class CarbonTableOutputFormatTest {
    @Override
    protected void map(NullWritable key, StringArrayWritable value, Context context)
        throws IOException, InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2168
      writable.set(value.get());
      context.write(key, writable);
    }
@@ -105,11 +112,13 @@ public class CarbonTableOutputFormatTest {
 
   private void runJob(String outPath) throws Exception {
     Configuration configuration = new Configuration();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2703
     String mrLocalDir = new File(outPath + "1").getCanonicalPath();
     configuration.set("mapreduce.cluster.local.dir", mrLocalDir);
     Job job = Job.getInstance(configuration);
     job.setJarByClass(CarbonTableOutputFormatTest.class);
     job.setOutputKeyClass(NullWritable.class);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2168
     job.setOutputValueClass(ObjectArrayWritable.class);
     job.setMapperClass(Map.class);
     job.setNumReduceTasks(0);
@@ -126,6 +135,7 @@ public class CarbonTableOutputFormatTest {
     job.getConfiguration().set("query.id", String.valueOf(System.nanoTime()));
     job.waitForCompletion(true);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2703
     CarbonUtil.deleteFoldersAndFiles(new File(mrLocalDir));
   }
 

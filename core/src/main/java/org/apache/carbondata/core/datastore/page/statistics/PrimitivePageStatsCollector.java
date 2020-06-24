@@ -51,6 +51,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   // this is for encode flow
   public static PrimitivePageStatsCollector newInstance(DataType dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     return new PrimitivePageStatsCollector(dataType);
   }
 
@@ -59,6 +60,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     PrimitivePageStatsCollector instance =
         new PrimitivePageStatsCollector(meta.getSchemaDataType());
     // set min max from meta
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     DataType dataType = meta.getSchemaDataType();
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       instance.minByte = (byte) meta.getMinValue();
@@ -80,12 +82,14 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       instance.minFloat = (float) meta.getMinValue();
       instance.maxFloat = (float) meta.getMaxValue();
       instance.decimal = meta.getDecimal();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       instance.minDecimal = (BigDecimal) meta.getMinValue();
       instance.maxDecimal = (BigDecimal) meta.getMaxValue();
       instance.decimal = meta.getDecimal();
     } else {
       throw new UnsupportedOperationException(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
           "unsupported data type for stats collection: " + meta.getSchemaDataType());
     }
     return instance;
@@ -93,9 +97,13 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   public static PrimitivePageStatsCollector newInstance(ValueEncoderMeta meta) {
     PrimitivePageStatsCollector instance =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         new PrimitivePageStatsCollector(DataType.getDataType(meta.getType()));
     // set min max from meta
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     DataType dataType = DataType.getDataType(meta.getType());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       instance.minByte = (byte) meta.getMinValue();
       instance.maxByte = (byte) meta.getMaxValue();
@@ -105,6 +113,8 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     } else if (dataType == DataTypes.INT) {
       instance.minInt = (int) meta.getMinValue();
       instance.maxInt = (int) meta.getMaxValue();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3650
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       instance.minLong = (long) meta.getMinValue();
       instance.maxLong = (long) meta.getMaxValue();
@@ -112,10 +122,13 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       instance.minDouble = (double) meta.getMinValue();
       instance.maxDouble = (double) meta.getMaxValue();
       instance.decimal = meta.getDecimal();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType == DataTypes.FLOAT) {
       instance.minFloat = (float) meta.getMinValue();
       instance.maxFloat = (float) meta.getMaxValue();
       instance.decimal = meta.getDecimal();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       instance.minDecimal = (BigDecimal) meta.getMinValue();
       instance.maxDecimal = (BigDecimal) meta.getMaxValue();
@@ -129,6 +142,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   private PrimitivePageStatsCollector(DataType dataType) {
     this.dataType = dataType;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BOOLEAN) {
       minByte = TRUE_VALUE;
       maxByte = FALSE_VALUE;
@@ -141,17 +155,21 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     } else if (dataType == DataTypes.INT) {
       minInt = Integer.MAX_VALUE;
       maxInt = Integer.MIN_VALUE;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3650
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       minLong = Long.MAX_VALUE;
       maxLong = Long.MIN_VALUE;
     } else if (dataType == DataTypes.DOUBLE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1419
       minDouble = Double.POSITIVE_INFINITY;
       maxDouble = Double.NEGATIVE_INFINITY;
       decimal = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType == DataTypes.FLOAT) {
       minFloat = Float.MAX_VALUE;
       maxFloat = Float.MIN_VALUE;
       decimal = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       this.zeroDecimal = BigDecimal.ZERO;
       decimal = 0;
@@ -164,18 +182,22 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   @Override
   public void updateNull(int rowId) {
     long value = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       update((byte) value);
     } else if (dataType == DataTypes.SHORT) {
       update((short) value);
     } else if (dataType == DataTypes.INT) {
       update((int) value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       update(value);
     } else if (dataType == DataTypes.DOUBLE) {
       update(0d);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType == DataTypes.FLOAT) {
       update(0f);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       if (isFirst) {
         maxDecimal = zeroDecimal;
@@ -237,6 +259,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   private int getDecimalCount(double value) {
     int decimalPlaces = 0;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3753
       BigDecimal decimalValue = BigDecimal.valueOf(value);
       decimalPlaces = decimalValue.scale();
       if (decimalPlaces == 1) {
@@ -256,6 +279,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   }
 
   private int getDecimalCount(float value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3098
     return getDecimalCount((double) value);
   }
 
@@ -282,14 +306,17 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   @Override
   public void update(float value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     if (minFloat > value) {
       minFloat = value;
     }
     if (maxFloat < value) {
       maxFloat = value;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1419
     if (decimal >= 0) {
       int decimalCount = getDecimalCount(value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
       decimalCountForComplexPrimitive = decimalCount;
       if (decimalCount > 5) {
         // If decimal count is too big, we do not do adaptive encoding.
@@ -302,6 +329,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   }
 
   public int getDecimalForComplexPrimitive() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     decimal = decimalCountForComplexPrimitive;
     return decimalCountForComplexPrimitive;
   }
@@ -314,6 +342,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       isFirst = false;
     } else {
       maxDecimal = (decimalValue.compareTo(maxDecimal) > 0) ? decimalValue : maxDecimal;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1353
       minDecimal = (decimalValue.compareTo(minDecimal) < 0) ? decimalValue : minDecimal;
     }
   }
@@ -329,6 +358,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   @Override
   public String toString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BOOLEAN) {
       return String.format("min: %s, max: %s ", BooleanConvert.byte2Boolean(minByte),
               BooleanConvert.byte2Boolean(minByte));
@@ -342,6 +372,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       return String.format("min: %s, max: %s, decimal: %s ", minLong, maxLong, decimal);
     } else if (dataType == DataTypes.DOUBLE) {
       return String.format("min: %s, max: %s, decimal: %s ", minDouble, maxDouble, decimal);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType == DataTypes.FLOAT) {
       return String.format("min: %s, max: %s, decimal: %s ", minFloat, maxFloat, decimal);
     }
@@ -350,18 +381,22 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   @Override
   public Object getMin() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       return minByte;
     } else if (dataType == DataTypes.SHORT) {
       return minShort;
     } else if (dataType == DataTypes.INT) {
       return minInt;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       return minLong;
     } else if (dataType == DataTypes.DOUBLE) {
       return minDouble;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType == DataTypes.FLOAT) {
       return minFloat;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       return minDecimal;
     }
@@ -370,18 +405,22 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   @Override
   public Object getMax() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       return maxByte;
     } else if (dataType == DataTypes.SHORT) {
       return maxShort;
     } else if (dataType == DataTypes.INT) {
       return maxInt;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       return maxLong;
     } else if (dataType == DataTypes.DOUBLE) {
       return maxDouble;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType == DataTypes.FLOAT) {
       return maxFloat;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       return maxDecimal;
     }

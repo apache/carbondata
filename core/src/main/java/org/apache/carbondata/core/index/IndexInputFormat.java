@@ -58,6 +58,7 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
 
   private static final transient Logger LOGGER =
       LogServiceFactory.getLogService(IndexInputFormat.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
   private static final long serialVersionUID = 9189779090091151248L;
 
@@ -97,10 +98,12 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
   private boolean isAsyncCall;
 
   IndexInputFormat() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
   }
 
   IndexInputFormat(CarbonTable table,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       List<Segment> validSegments, List<String> invalidSegments, boolean isJobToClearIndexes,
       String indexToClear) {
     this(table, null, validSegments, invalidSegments, null,
@@ -120,9 +123,11 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
     }
     this.invalidSegments = invalidSegments;
     this.partitions = partitions;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.isJobToClearIndexes = isJobToClearIndexes;
     this.indexLevel = indexLevel;
     this.isFallbackJob = isFallbackJob;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3492
     this.isAsyncCall = isAsyncCall;
   }
 
@@ -130,6 +135,7 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
   public List<InputSplit> getSplits(JobContext job) throws IOException {
     List<IndexInputSplitWrapper> distributables;
     distributables =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         IndexChooser.getDefaultIndex(table, filterResolverIntf).toDistributable(validSegments);
     List<InputSplit> inputSplits = new ArrayList<>(distributables.size());
     inputSplits.addAll(distributables);
@@ -138,7 +144,9 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
 
   @Override
   public RecordReader<Void, ExtendedBlocklet> createRecordReader(InputSplit inputSplit,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       TaskAttemptContext taskAttemptContext) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1505
     return new RecordReader<Void, ExtendedBlocklet>() {
       private Iterator<ExtendedBlocklet> blockletIterator;
       private ExtendedBlocklet currBlocklet;
@@ -152,6 +160,7 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
         segmentsToLoad.add(distributable.getDistributable().getSegment());
         List<ExtendedBlocklet> blocklets = new ArrayList<>();
         if (indexLevel == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           TableIndex defaultIndex = IndexStoreManager.getInstance()
               .getIndex(table, distributable.getDistributable().getIndexSchema());
           blocklets = defaultIndex
@@ -172,6 +181,7 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
         boolean hasNext = blockletIterator.hasNext();
         if (hasNext) {
           currBlocklet = blockletIterator.next();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2433
         } else {
           // close all resources when all the results are returned
           close();
@@ -198,7 +208,9 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
       public void close() {
         // Clear the Indexes from executor
         if (isFallbackJob) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           IndexStoreManager.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
               .clearIndexCache(table.getAbsoluteTableIdentifier(), false);
         }
       }
@@ -206,6 +218,8 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
   }
 
   public CarbonTable getCarbonTable() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     return table;
   }
 
@@ -216,8 +230,10 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
     for (String invalidSegment : invalidSegments) {
       out.writeUTF(invalidSegment);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     out.writeBoolean(isJobToClearIndexes);
     out.writeBoolean(isFallbackJob);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     if (indexLevel == null) {
       out.writeBoolean(false);
     } else {
@@ -247,12 +263,17 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
     } else {
       out.writeBoolean(false);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     out.writeUTF(indexToClear);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3378
     out.writeUTF(taskGroupId);
     out.writeUTF(taskGroupDesc);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     out.writeUTF(queryId);
     out.writeBoolean(isWriteToFile);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
     out.writeBoolean(isCountStarJob);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3492
     out.writeBoolean(isAsyncCall);
   }
 
@@ -265,9 +286,11 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
     for (int i = 0; i < invalidSegmentSize; i++) {
       invalidSegments.add(in.readUTF());
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.isJobToClearIndexes = in.readBoolean();
     this.isFallbackJob = in.readBoolean();
     if (in.readBoolean()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       this.indexLevel = IndexLevel.valueOf(in.readUTF());
     }
     int validSegmentSize = in.readInt();
@@ -294,17 +317,23 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
       this.filterResolverIntf = (FilterResolverIntf) ObjectSerializationUtil
           .convertStringToObject(new String(filterResolverBytes, Charset.defaultCharset()));
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.indexToClear = in.readUTF();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3378
     this.taskGroupId = in.readUTF();
     this.taskGroupDesc = in.readUTF();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     this.queryId = in.readUTF();
     this.isWriteToFile = in.readBoolean();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
     this.isCountStarJob = in.readBoolean();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3492
     this.isAsyncCall = in.readBoolean();
   }
 
   private void initReadCommittedScope() throws IOException {
     if (readCommittedScope == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3412
       if (table.isTransactionalTable()) {
         this.readCommittedScope =
             new TableStatusReadCommittedScope(table.getAbsoluteTableIdentifier(),
@@ -328,6 +357,7 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
    * @return Whether asyncCall to the IndexServer.
    */
   public boolean ifAsyncCall() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3492
     return isAsyncCall;
   }
 
@@ -335,10 +365,12 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
    * @return Whether the job is to clear cached Indexes or not.
    */
   public boolean isJobToClearIndexes() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return isJobToClearIndexes;
   }
 
   public String getTaskGroupId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3378
     return taskGroupId;
   }
 
@@ -375,6 +407,7 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
   }
 
   public FilterResolverIntf getFilterResolverIntf() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3397
     return filterResolverIntf;
   }
 
@@ -391,6 +424,7 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
   }
 
   public String getIndexToClear() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return indexToClear;
   }
 
@@ -407,6 +441,7 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
   }
 
   public List<String> getValidSegmentIds() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3440
     List<String> validSegments = new ArrayList<>();
     for (Segment segment : this.validSegments) {
       validSegments.add(segment.getSegmentNo());
@@ -415,11 +450,13 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
   }
 
   public List<Segment> getValidSegments() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
     return validSegments;
   }
 
   public void createIndexChooser() throws IOException {
     if (null != filterResolverIntf) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       this.indexChooser = new IndexChooser(table);
     }
   }

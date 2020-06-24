@@ -82,6 +82,7 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_PROPERTIES_FILE_PATH_DEFAULT =
       "../../../conf/carbon.properties";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3038
 
   /**
    * CARBON_DDL_BASE_HDFS_URL
@@ -216,6 +217,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String LOCAL_DICTIONARY_DECODER_BASED_FALLBACK =
       "carbon.local.dictionary.decoder.fallback";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
 
   /**
    * System property to enable or disable decoder based local dictionary fallback default value
@@ -237,6 +239,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String SPARK_SCHEMA_STRING_LENGTH_THRESHOLD =
       "spark.sql.sources.schemaStringLengthThreshold";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3034
 
   public static final int SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT = 4000;
 
@@ -271,13 +274,16 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_SQLASTBUILDER_CLASSNAME =
       "spark.carbon.sqlastbuilder.classname";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2285
 
   public static final String CARBON_SQLASTBUILDER_CLASSNAME_DEFAULT =
       "org.apache.spark.sql.hive.CarbonSqlAstBuilder";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3038
 
   @CarbonProperty
   public static final String CARBON_LEASE_RECOVERY_RETRY_COUNT =
       "carbon.lease.recovery.retry.count";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1277
 
   public static final String CARBON_LEASE_RECOVERY_RETRY_COUNT_DEFAULT = "5";
 
@@ -330,6 +336,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS =
       "carbon.segment.lock.files.preserve.hours";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2230
 
   /**
    * default value is 2 days
@@ -343,6 +350,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT =
       "carbon.invisible.segments.preserve.count";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2258
 
   /**
    * default value is 200, it means that it will preserve 200 invisible segment info
@@ -368,6 +376,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_MERGE_INDEX_IN_SEGMENT =
       "carbon.merge.index.in.segment";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2714
 
   public static final String CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT = "true";
 
@@ -380,6 +389,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_MERGE_INDEX_FAILURE_THROW_EXCEPTION =
       "carbon.merge.index.failure.throw.exception";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3393
 
   public static final String CARBON_MERGE_INDEX_FAILURE_THROW_EXCEPTION_DEFAULT = "true";
 
@@ -390,6 +400,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_MINMAX_ALLOWED_BYTE_COUNT =
       "carbon.minmax.allowed.byte.count";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
 
   public static final String CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT = "200";
 
@@ -876,6 +887,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_HORIZONTAL_COMPACTION_ENABLE =
       "carbon.horizontal.compaction.enable";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3038
 
   /**
    * Default value for HorizontalCompaction is true.
@@ -892,6 +904,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_UPDATE_CHECK_UNIQUE_VALUE =
       "carbon.update.check.unique.value";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3618
 
   /**
    * Default validation of unique value check enabled for the update.
@@ -907,6 +920,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_UPDATE_STORAGE_LEVEL =
       "carbon.update.storage.level";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1462
 
   /**
    * The default value(MEMORY_AND_DISK) is the same as the default storage level of Dataset.
@@ -1032,6 +1046,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL =
       "carbon.global.sort.rdd.storage.level";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1366
 
   /**
    * The default value(MEMORY_ONLY) is designed for executors with big memory, if user's executor
@@ -1050,6 +1065,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_UPDATE_SEGMENT_PARALLELISM =
       "carbon.update.segment.parallelism";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1373
 
   /**
    * In default we will not optimize the update
@@ -1108,6 +1124,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION =
       "carbon.enable.page.level.reader.in.compaction";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
 
   /**
    * Default value
@@ -1127,6 +1144,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_COMPACTION_PREFETCH_ENABLE =
       "carbon.compaction.prefetch.enable";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2304
 
   public static final String CARBON_COMPACTION_PREFETCH_ENABLE_DEFAULT = "false";
 
@@ -1196,6 +1214,7 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB =
       "carbon.local.dictionary.size.threshold.inmb";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3515
 
   public static final int CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB_DEFAULT = 4;
 
@@ -1206,6 +1225,7 @@ public final class CarbonCommonConstants {
   */
   public static final String CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT =
       "carbon.enable.bad.record.handling.for.insert";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
 
   public static final String CARBON_ENABLE_BAD_RECORD_HANDLING_FOR_INSERT_DEFAULT = "false";
 
@@ -1271,6 +1291,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE =
       "carbon.max.executor.lru.cache.size";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-484
 
   /**
    * max lru cache size default value in MB
@@ -1393,6 +1414,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO =
       "carbon.scheduler.min.registered.resources.ratio";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3038
 
   /**
    * default minimum required registered resource for starting block distribution
@@ -1453,6 +1475,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_READ_PARTITION_HIVE_DIRECT =
       "carbon.read.partition.hive.direct";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1937
 
   public static final String CARBON_READ_PARTITION_HIVE_DIRECT_DEFAULT = "true";
 
@@ -1466,6 +1489,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES =
       "carbon.heap.memory.pooling.threshold.bytes";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2184
 
   public static final String CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT = "1048576";
 
@@ -1478,6 +1502,8 @@ public final class CarbonCommonConstants {
   @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_PUSH_ROW_FILTERS_FOR_VECTOR =
       "carbon.push.rowfilters.for.vector";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3011
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3038
 
   public static final String CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT = "false";
 
@@ -1486,6 +1512,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty public static final String CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING =
       "carbon.max.driver.threads.for.block.pruning";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3118
 
   public static final String CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT = "4";
 
@@ -1493,6 +1520,7 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT =
       "carbon.driver.pruning.multi.thread.enable.files.count";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3700
 
   // the default value of file count to trigger block prune in multi-thread is 100K files.
   public static final String CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT_DEFAULT =
@@ -1503,6 +1531,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty public static final String CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING =
       "carbon.max.executor.threads.for.block.pruning";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
 
   public static final String CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING_DEFAULT = "4";
 
@@ -1512,12 +1541,14 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_QUERY_PREFETCH_ENABLE =
       "carbon.query.prefetch.enable";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3509
 
   public static final String CARBON_QUERY_PREFETCH_ENABLE_DEFAULT = "true";
 
   @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_QUERY_STAGE_INPUT =
       "carbon.query.stage.input.enable";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3710
 
   public static final String CARBON_QUERY_STAGE_INPUT_DEFAULT = "false";
 
@@ -1689,6 +1720,7 @@ public final class CarbonCommonConstants {
    */
   public static final byte[] MEMBER_DEFAULT_VAL_ARRAY =
       MEMBER_DEFAULT_VAL.getBytes(Charset.forName(DEFAULT_CHARSET));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
 
   /**
    * Empty byte array
@@ -2218,6 +2250,7 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_INDEXSEVER_ENABLE_PREPRIMING =
           "carbon.indexserver.enable.prepriming";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3492
 
   /**
    * Property is used to enable/disable fallback for indexserver.
@@ -2259,6 +2292,7 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD =
       "carbon.index.server.inmemory.serialization.threshold.inKB";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
 
   /**
    * default value for in memory serialization size
@@ -2292,12 +2326,14 @@ public final class CarbonCommonConstants {
 
   public static final String DATABASE_LOCATION_PROVIDER =
       "org.apache.carbondata.database.location.provider";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
 
   /**
    * Carbon property for timeseries MV to define the first day of week
    */
   public static final String CARBON_TIMESERIES_FIRST_DAY_OF_WEEK =
       "carbon.timeseries.first.day.of.week";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3531
 
   /**
    * Default first day of week
@@ -2308,6 +2344,7 @@ public final class CarbonCommonConstants {
   public static final String CARBON_PUSH_LEFTSEMIEXIST_JOIN_AS_IN_FILTER =
       "carbon.infilter.subquery.pushdown.enable";
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
 
   /**
    * CARBON_PUSH_LEFTSEMIEXIST_JOIN_AS_IN_FILTER_DEFAULT
@@ -2393,6 +2430,7 @@ public final class CarbonCommonConstants {
    */
   public static final String INDEX_CACHE_EXPIRATION_TIME_IN_SECONDS =
       "index_cache_expiration_seconds";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
 
   /**
    * By default, the index cache is not expired by time, thus the cache size is controlled by
@@ -2405,6 +2443,7 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_LOAD_ALL_SEGMENT_INDEXES_TO_CACHE =
       "carbon.load.all.segment.indexes.to.cache";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
 
   /**
    * Default value for loading cache is true

@@ -31,8 +31,10 @@ import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.SortState;
 
 public abstract class IndexStorageEncoder extends ColumnPageEncoder {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
   BlockIndexerStorage indexStorage;
   ByteBuffer compressedDataPage;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
 
   abstract void encodeIndexStorage(ColumnPage inputPage);
 
@@ -95,6 +97,7 @@ public abstract class IndexStorageEncoder extends ColumnPageEncoder {
     if (indexStorage.getDataRlePageLengthInBytes() > 0) {
       dataChunk.setRle_page_length(indexStorage.getDataRlePageLengthInBytes());
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     dataChunk.setData_page_length(compressedDataPage.limit() - compressedDataPage.position());
   }
 }

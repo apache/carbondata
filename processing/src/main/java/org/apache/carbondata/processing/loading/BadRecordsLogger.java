@@ -47,6 +47,7 @@ public class BadRecordsLogger {
    * the status
    */
   private static Map<String, String> badRecordEntry =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       new ConcurrentHashMap<String, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   /**
    * File Name
@@ -120,9 +121,11 @@ public class BadRecordsLogger {
   }
 
   public void addBadRecordsToBuilder(Object[] row, String reason)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1210
       throws CarbonDataLoadingException {
     // setting partial success entry since even if bad records are there then load
     // status should be partial success regardless of bad record logged
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     badRecordEntry.put(taskKey, "Partially");
     if (badRecordsLogRedirect || badRecordLoggerEnable) {
       StringBuilder logStrings = new StringBuilder();
@@ -168,6 +171,7 @@ public class BadRecordsLogger {
    *
    */
   private synchronized void writeBadRecordsToFile(StringBuilder logStrings)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1210
       throws CarbonDataLoadingException {
     if (null == logFilePath) {
       logFilePath =
@@ -176,6 +180,7 @@ public class BadRecordsLogger {
     }
     try {
       if (null == bufferedWriter) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         if (!FileFactory.isFileExist(this.storePath)) {
           // create the folders if not exist
           FileFactory.mkdirs(this.storePath);
@@ -194,6 +199,7 @@ public class BadRecordsLogger {
       bufferedWriter.newLine();
     } catch (FileNotFoundException e) {
       LOGGER.error("Bad Log Files not found");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1210
       throw new CarbonDataLoadingException("Bad Log Files not found", e);
     } catch (IOException e) {
       LOGGER.error("Error While writing bad record log File");
@@ -207,6 +213,7 @@ public class BadRecordsLogger {
    * @param logStrings
    */
   private synchronized void writeBadRecordsToCSVFile(StringBuilder logStrings)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1210
       throws CarbonDataLoadingException {
     if (null == csvFilePath) {
       csvFilePath =
@@ -215,6 +222,7 @@ public class BadRecordsLogger {
     }
     try {
       if (null == bufferedCSVWriter) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         if (!FileFactory.isFileExist(this.storePath)) {
           // create the folders if not exist
           FileFactory.mkdirs(this.storePath);
@@ -233,6 +241,7 @@ public class BadRecordsLogger {
       bufferedCSVWriter.newLine();
     } catch (FileNotFoundException e) {
       LOGGER.error("Bad record csv Files not found");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1210
       throw new CarbonDataLoadingException("Bad record csv Files not found", e);
     } catch (IOException e) {
       LOGGER.error("Error While writing bad record csv File");
@@ -249,6 +258,7 @@ public class BadRecordsLogger {
   }
 
   public boolean isBadRecordLoggerEnable() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1342
     return badRecordLoggerEnable;
   }
 
@@ -262,6 +272,7 @@ public class BadRecordsLogger {
   public synchronized void closeStreams() {
     // removing taskKey Entry while closing the stream
     // This will make sure the cleanup of the task status even in case of some failure.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1218
     removeBadRecordKey(taskKey);
     CarbonUtil.closeStreams(bufferedWriter, outStream, bufferedCSVWriter, outCSVStream);
   }

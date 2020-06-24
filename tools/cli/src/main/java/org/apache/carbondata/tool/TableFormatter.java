@@ -20,6 +20,7 @@ package org.apache.carbondata.tool;
 import java.util.LinkedList;
 import java.util.List;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
 class TableFormatter {
   private List<String[]> table = new LinkedList<>();
   private List<String> outPuts;
@@ -48,6 +49,7 @@ class TableFormatter {
     }
 
     for (String[] row : table) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
       StringBuilder outString = new StringBuilder();
       for (int i = 0; i < row.length; i++) {
         outString.append(row[i]);

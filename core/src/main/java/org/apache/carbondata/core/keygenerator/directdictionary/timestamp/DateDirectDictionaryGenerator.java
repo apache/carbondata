@@ -59,6 +59,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
       LogServiceFactory.getLogService(DateDirectDictionaryGenerator.class.getName());
 
   static {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1258
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
     df.setTimeZone(TimeZone.getTimeZone("GMT"));
     long minValue = 0;
@@ -107,6 +108,8 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
     } else {
       if (null == memberStr || memberStr.trim().isEmpty() || memberStr
           .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
         return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
       }
       return getDirectSurrogateForMember(memberStr);
@@ -123,6 +126,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
       }
       dateToStr = simpleDateFormat.parse(memberStr);
     } catch (ParseException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1049
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("Cannot convert value to Time/Long type value. Value considered as null." + e
             .getMessage());
@@ -131,6 +135,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
     }
     //adding +2 to reserve the first cuttOffDiff value for null or empty date
     if (null == dateToStr) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
       return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {
       return generateKey(dateToStr.getTime());
@@ -145,6 +150,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
    */
   @Override
   public Object getValueFromSurrogate(int key) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
     if (key == CarbonCommonConstants.DIRECT_DICT_VALUE_NULL) {
       return null;
     }
@@ -154,14 +160,17 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   private int generateDirectSurrogateKeyForNonTimestampType(String memberStr) {
     long timeValue = -1;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
       timeValue = Long.parseLong(memberStr) / 1000;
     } catch (NumberFormatException e) {
       if (LOGGER.isDebugEnabled()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
         LOGGER.debug("Cannot convert value to Long type value. Value considered as null."
             + e.getMessage(), e);
       }
     }
     if (timeValue == -1) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
       return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {
       return generateKey(timeValue);
@@ -169,12 +178,15 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   }
 
   public int generateKey(long timeValue) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1258
     if (timeValue < MIN_VALUE || timeValue > MAX_VALUE) {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("Value for date type column is not in valid range. Value considered as null.");
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
       return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1379
     return (int) Math.floor((double) timeValue / MILLIS_PER_DAY) + cutOffDate;
   }
 
@@ -188,6 +200,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
 
   @Override
   public DataType getReturnType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     return DataTypes.INT;
   }
 }

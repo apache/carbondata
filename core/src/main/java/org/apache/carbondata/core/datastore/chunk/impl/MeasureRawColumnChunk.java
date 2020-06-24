@@ -57,6 +57,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     for (int i = 0; i < pagesCount; i++) {
       try {
         if (columnPages[i] == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
           columnPages[i] = chunkReader.decodeColumnPage(this, i, null);
         }
       } catch (Exception e) {
@@ -71,6 +72,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
    * Convert raw data with specified `columnIndex` processed to ColumnPage
    */
   public ColumnPage decodeColumnPage(int pageNumber) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     assert pageNumber < pagesCount;
     if (columnPages == null) {
       columnPages = new ColumnPage[pagesCount];
@@ -78,6 +80,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
 
     try {
       if (columnPages[pageNumber] == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
         columnPages[pageNumber] = chunkReader.decodeColumnPage(this, pageNumber, null);
       }
     } catch (IOException e) {
@@ -94,14 +97,18 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
    * @return
    */
   public ColumnPage convertToColumnPageWithOutCache(int index,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       ReusableDataBuffer reusableDataBuffer) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
     assert index < pagesCount;
     // in case of filter query filter columns blocklet pages will uncompressed
     // so no need to decode again
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2325
     if (null != columnPages && columnPages[index] != null) {
       return columnPages[index];
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       return chunkReader.decodeColumnPage(this, index, reusableDataBuffer);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -116,10 +123,15 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
    * @param vectorInfo vector to be filled with column page
    */
   public void convertToColumnPageAndFillVector(int pageNumber, ColumnVectorInfo vectorInfo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       ReusableDataBuffer reusableDataBuffer) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     assert pageNumber < pagesCount;
     try {
       chunkReader.decodeColumnPageAndFillVector(this, pageNumber, vectorInfo, reusableDataBuffer);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -127,6 +139,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
 
   @Override
   public void freeMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2307
     super.freeMemory();
     if (null != columnPages) {
       for (int i = 0; i < columnPages.length; i++) {
@@ -136,6 +149,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2325
     rawData = null;
   }
 

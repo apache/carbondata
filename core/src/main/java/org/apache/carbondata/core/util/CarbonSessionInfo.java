@@ -58,8 +58,10 @@ public class CarbonSessionInfo implements Serializable, Cloneable {
   public CarbonSessionInfo clone() throws CloneNotSupportedException {
     super.clone();
     CarbonSessionInfo newObj = new CarbonSessionInfo();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2294
     newObj.setSessionParams(sessionParams.clone());
     newObj.setThreadParams(threadParams.clone());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2329
     for (Map.Entry<String, Object> entry : getNonSerializableExtraInfo().entrySet()) {
       newObj.getNonSerializableExtraInfo().put(entry.getKey(), entry.getValue());
     }

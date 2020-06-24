@@ -54,6 +54,7 @@ public class TableBlockIndexUniqueIdentifierWrapper implements Serializable {
       TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier, CarbonTable carbonTable) {
     this.tableBlockIndexUniqueIdentifier = tableBlockIndexUniqueIdentifier;
     this.carbonTable = carbonTable;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     this.configuration = FileFactory.getConfiguration();
   }
 
@@ -69,6 +70,8 @@ public class TableBlockIndexUniqueIdentifierWrapper implements Serializable {
   // Kindly do not remove
   public TableBlockIndexUniqueIdentifierWrapper(
       TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier, CarbonTable carbonTable,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
       Configuration configuration, boolean addTableBlockToUnsafeAndLRUCache) {
     this(tableBlockIndexUniqueIdentifier, carbonTable, configuration);
     this.addTableBlockToUnsafeAndLRUCache = addTableBlockToUnsafeAndLRUCache;
@@ -77,9 +80,11 @@ public class TableBlockIndexUniqueIdentifierWrapper implements Serializable {
   // Note: The constructor is getting used in extensions with other functionalities.
   // Kindly do not remove
   public TableBlockIndexUniqueIdentifierWrapper(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
       TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier, CarbonTable carbonTable,
       boolean addTableBlockToUnsafeAndLRUCache, boolean addToUnsafe, boolean serializeDmStore) {
     this(tableBlockIndexUniqueIdentifier, carbonTable);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     this.configuration = FileFactory.getConfiguration();
     this.addTableBlockToUnsafeAndLRUCache = addTableBlockToUnsafeAndLRUCache;
     this.addToUnsafe = addToUnsafe;
@@ -95,14 +100,17 @@ public class TableBlockIndexUniqueIdentifierWrapper implements Serializable {
   }
 
   public boolean isAddTableBlockToUnsafeAndLRUCache() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2924
     return addTableBlockToUnsafeAndLRUCache;
   }
 
   public Configuration getConfiguration() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     return configuration;
   }
 
   public boolean isAddToUnsafe() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     return addToUnsafe;
   }
 

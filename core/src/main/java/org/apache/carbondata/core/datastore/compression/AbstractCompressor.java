@@ -33,7 +33,9 @@ public abstract class AbstractCompressor implements Compressor {
 
   @Override
   public ByteBuffer compressShort(short[] unCompInput) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     ByteBuffer unCompBuffer = ByteBuffer.allocateDirect(unCompInput.length * ByteUtil.SIZEOF_SHORT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3787
     try {
       unCompBuffer.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(unCompInput);
       unCompBuffer.position(unCompBuffer.limit());
@@ -55,7 +57,9 @@ public abstract class AbstractCompressor implements Compressor {
 
   @Override
   public ByteBuffer compressInt(int[] unCompInput) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     ByteBuffer unCompBuffer = ByteBuffer.allocateDirect(unCompInput.length * ByteUtil.SIZEOF_INT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3787
     try {
       unCompBuffer.order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().put(unCompInput);
       unCompBuffer.position(unCompBuffer.limit());
@@ -77,7 +81,9 @@ public abstract class AbstractCompressor implements Compressor {
 
   @Override
   public ByteBuffer compressLong(long[] unCompInput) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     ByteBuffer unCompBuffer = ByteBuffer.allocateDirect(unCompInput.length * ByteUtil.SIZEOF_LONG);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3787
     try {
       unCompBuffer.order(ByteOrder.LITTLE_ENDIAN).asLongBuffer().put(unCompInput);
       unCompBuffer.position(unCompBuffer.limit());
@@ -99,7 +105,9 @@ public abstract class AbstractCompressor implements Compressor {
 
   @Override
   public ByteBuffer compressFloat(float[] unCompInput) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     ByteBuffer unCompBuffer = ByteBuffer.allocateDirect(unCompInput.length * ByteUtil.SIZEOF_FLOAT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3787
     try {
       unCompBuffer.order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer().put(unCompInput);
       unCompBuffer.position(unCompBuffer.limit());
@@ -121,8 +129,10 @@ public abstract class AbstractCompressor implements Compressor {
 
   @Override
   public ByteBuffer compressDouble(double[] unCompInput) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     ByteBuffer unCompBuffer =
         ByteBuffer.allocateDirect(unCompInput.length * ByteUtil.SIZEOF_DOUBLE);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3787
     try {
       unCompBuffer.order(ByteOrder.LITTLE_ENDIAN).asDoubleBuffer().put(unCompInput);
       unCompBuffer.position(unCompBuffer.limit());
@@ -154,6 +164,7 @@ public abstract class AbstractCompressor implements Compressor {
 
   @Override
   public boolean supportUnsafe() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
     return false;
   }
 }

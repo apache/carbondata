@@ -80,10 +80,12 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
 
   @Override
   public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
     List<CarbonInputSplit> splitList;
     if (inputSplit instanceof CarbonInputSplit) {
       // Read the footer offset and set.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
       CarbonInputSplit carbonInputSplit = ((CarbonInputSplit) inputSplit);
       String splitPath = carbonInputSplit.getFilePath();
       if ((null != carbonInputSplit.getDetailInfo()
@@ -100,6 +102,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
         } else {
           carbonInputSplit.getDetailInfo().setBlockFooterOffset(buffer.getLong());
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3221
         reader.finish();
       }
       splitList = new ArrayList<>(1);
@@ -135,6 +138,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     if (iterator.hasNext()) {
       iterator.processNextBatch(carbonColumnarBatch);
       numBatched = carbonColumnarBatch.getActualSize();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3342
       if (numBatched == 0) {
         return nextBatch();
       }
@@ -157,12 +161,14 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
         DataType dataType = msr.getMeasure().getDataType();
         if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.SHORT
             || dataType == DataTypes.INT || dataType == DataTypes.LONG
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
             || dataType == DataTypes.FLOAT || dataType == DataTypes.BYTE
             || dataType == DataTypes.BINARY) {
           fields[msr.getOrdinal()] =
               new StructField(msr.getColumnName(), msr.getMeasure().getDataType());
         } else if (DataTypes.isDecimal(dataType)) {
           fields[msr.getOrdinal()] = new StructField(msr.getColumnName(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3081
               DataTypes.createDecimalType(msr.getMeasure().getPrecision(),
                   msr.getMeasure().getScale()));
         } else {
@@ -171,6 +177,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
       }
       CarbonColumnVector[] vectors = new CarbonColumnVector[fields.length];
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3080
       Map<String, Integer> colmap = new HashMap<>();
       for (int i = 0; i < fields.length; i++) {
         vectors[i] = new CarbonColumnVectorImpl(
@@ -196,6 +203,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   @Override
   public Object getCurrentValue() {
     rowCount += 1;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3080
     Object[] row = new Object[projectionMapping.size()];
     for (int i = 0; i < projectionMapping.size(); i++) {
       // if projectionMapping.get(i) <i it means row is fetched already
@@ -206,6 +214,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
                 .getData(batchIdx - 1);
         if (carbonColumnarBatch.columnVectors[i].getType() == DataTypes.STRING
                 || carbonColumnarBatch.columnVectors[i].getType() == DataTypes.VARCHAR) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3081
           if (data == null) {
             row[i] = null;
           } else {

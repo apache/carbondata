@@ -46,6 +46,7 @@ class CSVCarbonWriter extends CarbonWriter {
   private TaskAttemptContext context;
   private ObjectArrayWritable writable;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
   CSVCarbonWriter(CarbonLoadModel loadModel, Configuration hadoopConf) throws IOException {
     CarbonTableOutputFormat.setLoadModel(hadoopConf, loadModel);
     CarbonTableOutputFormat format = new CarbonTableOutputFormat();
@@ -56,6 +57,7 @@ class CSVCarbonWriter extends CarbonWriter {
     TaskAttemptContextImpl context = new TaskAttemptContextImpl(hadoopConf, attemptID);
     this.recordWriter = format.getRecordWriter(context);
     this.context = context;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
     this.writable = new ObjectArrayWritable();
   }
 
@@ -65,6 +67,7 @@ class CSVCarbonWriter extends CarbonWriter {
   @Override
   public void write(Object object) throws IOException {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
       writable.set((Object[]) object);
       recordWriter.write(NullWritable.get(), writable);
     } catch (Exception e) {

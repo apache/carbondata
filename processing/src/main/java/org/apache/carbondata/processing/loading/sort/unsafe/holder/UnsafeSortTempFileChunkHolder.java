@@ -111,12 +111,15 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
     this.tempFile = tempFile;
     this.readBufferSize = parameters.getBufferSize();
     this.compressorName = parameters.getSortTempCompressorName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
     this.tableFieldStat = tableFieldStat;
     this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
     this.executorService = Executors.newFixedThreadPool(1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2836
     this.convertNoSortFields = convertNoSortFields;
     this.sortTempRowUpdater = tableFieldStat.getSortTempRowUpdater();
     if (!this.convertNoSortFields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       comparator = new IntermediateSortTempRowComparator(parameters.getNoDictionarySortColumn(),
           parameters.getNoDictDataType());
     } else {
@@ -144,9 +147,11 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
 
   private void initialise() {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       stream = FileFactory.getDataInputStream(tempFile.getPath(),
           readBufferSize, compressorName);
       this.entryCount = stream.readInt();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2220
       LOGGER.info("Processing unsafe mode file rows with size : " + entryCount);
       if (prefetch) {
         new DataFetcher(false).call();
@@ -156,6 +161,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
         }
       }
     } catch (FileNotFoundException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(tempFile + " No Found", e);
     } catch (IOException e) {
@@ -177,8 +183,12 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
     if (prefetch) {
       fillDataForPrefetch();
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2836
         if (convertNoSortFields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
           IntermediateSortTempRow intermediateSortTempRow =
               sortStepRowHandler.readWithNoSortFieldConvert(stream);
           sortTempRowUpdater
@@ -208,6 +218,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
         try {
           submit.get();
         } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
           LOGGER.error(e.getMessage(), e);
         }
         bufferRowCounter = 0;
@@ -234,7 +245,9 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
       throws IOException {
     IntermediateSortTempRow[] holders = new IntermediateSortTempRow[expected];
     for (int i = 0; i < expected; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2836
       if (convertNoSortFields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
         IntermediateSortTempRow intermediateSortTempRow =
             sortStepRowHandler.readWithNoSortFieldConvert(stream);
         sortTempRowUpdater
@@ -264,6 +277,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
    * @return more row present in file
    */
   public boolean hasNext() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1839
     if (prefetch) {
       return this.prefetchRecordsProceesed < this.entryCount;
     }
@@ -275,6 +289,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
    */
   public void close() {
     CarbonUtil.closeStreams(stream);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1410
     if (null != executorService && !executorService.isShutdown()) {
       executorService.shutdownNow();
     }
@@ -311,6 +326,8 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
   @Override
   public int hashCode() {
     int hash = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
     hash += tableFieldStat.hashCode();
     hash += tempFile.hashCode();
     return hash;
@@ -342,6 +359,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
           currentBuffer = prefetchRecordsFromFile(numberOfRecords);
         }
       } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
         LOGGER.error(e.getMessage(), e);
       }
       return null;
@@ -357,6 +375,8 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
    * @throws IOException if error occurs reading records from file
    */
   private IntermediateSortTempRow[] prefetchRecordsFromFile(int numberOfRecords)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
       throws IOException {
     return readBatchedRowFromStream(numberOfRecords);
   }

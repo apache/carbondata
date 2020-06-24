@@ -46,6 +46,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   // total number of entries in array
   private int arrayElementCount = 0;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
   SafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     super(columnPageEncoderMeta, pageSize);
   }
@@ -55,6 +57,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putByte(int rowId, byte value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     ensureArraySize(rowId, DataTypes.BYTE);
     byteData[rowId] = value;
     arrayElementCount++;
@@ -66,6 +69,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putShort(int rowId, short value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     ensureArraySize(rowId, DataTypes.SHORT);
     shortData[rowId] = value;
     arrayElementCount++;
@@ -77,6 +81,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putInt(int rowId, int value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     ensureArraySize(rowId, DataTypes.INT);
     intData[rowId] = value;
     arrayElementCount++;
@@ -88,6 +93,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putLong(int rowId, long value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     ensureArraySize(rowId, DataTypes.LONG);
     longData[rowId] = value;
     arrayElementCount++;
@@ -99,6 +105,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putDouble(int rowId, double value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     ensureArraySize(rowId, DataTypes.DOUBLE);
     doubleData[rowId] = value;
     arrayElementCount++;
@@ -110,6 +117,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putFloat(int rowId, float value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     ensureArraySize(rowId, DataTypes.FLOAT);
     floatData[rowId] = value;
     arrayElementCount++;
@@ -121,7 +129,9 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putBytes(int rowId, byte[] bytes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2760
     ensureArraySize(rowId, DataTypes.BYTE_ARRAY);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
     this.fixedLengthdata[rowId] = bytes;
     arrayElementCount++;
     totalLength += bytes.length;
@@ -129,6 +139,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putShortInt(int rowId, int value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     ensureArraySize(rowId, DataTypes.SHORT_INT);
     byte[] converted = ByteUtil.to3Bytes(value);
     System.arraycopy(converted, 0, shortIntData, rowId * 3, 3);
@@ -138,6 +149,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putBytes(int rowId, byte[] bytes, int offset, int length) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
@@ -218,6 +231,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[] getBytes(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
     return this.fixedLengthdata[rowId];
   }
 
@@ -282,6 +296,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public byte[][] getByteArrayPage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2760
     byte[][] data = new byte[arrayElementCount][];
     for (int i = 0; i < arrayElementCount; i++) {
       data[i] = fixedLengthdata[i];
@@ -297,6 +312,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[] getComplexChildrenLVFlattenedBytePage(DataType dataType) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2760
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream out = new DataOutputStream(stream);
     for (int i = 0; i < arrayElementCount; i++) {
@@ -371,12 +387,19 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void setByteArrayPage(byte[][] byteArray) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override
   public void freeMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2168
     byteData = null;
     shortData = null;
     intData = null;
@@ -384,6 +407,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     floatData = null;
     doubleData = null;
     shortIntData = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2760
     fixedLengthdata = null;
   }
 
@@ -393,7 +417,10 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void convertValue(ColumnPageValueConverter codec) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
       for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, byteData[i]);
       }
@@ -424,8 +451,10 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   }
 
   private void ensureArraySize(int requestSize, DataType dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     if (dataType == DataTypes.BYTE) {
       if (requestSize >= byteData.length) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2760
         byte[] newArray = new byte[arrayElementCount * 2];
         System.arraycopy(byteData, 0, newArray, 0, arrayElementCount);
         byteData = newArray;
@@ -467,6 +496,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
         doubleData = newArray;
       }
     } else if (dataType == DataTypes.BYTE_ARRAY) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
       if (fixedLengthdata == null) {
         fixedLengthdata = new byte[pageSize][];
       }
@@ -485,6 +515,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   }
 
   public int getActualRowCount() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     return arrayElementCount;
   }
 

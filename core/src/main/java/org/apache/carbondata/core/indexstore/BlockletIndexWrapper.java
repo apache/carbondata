@@ -39,6 +39,7 @@ public class BlockletIndexWrapper implements Cacheable, Serializable {
   private long wrapperSize;
 
   public BlockletIndexWrapper(String segmentId, List<BlockIndex> indexes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.indexes = indexes;
     this.wrapperSize = 0L;
     this.segmentId = segmentId;
@@ -60,6 +61,7 @@ public class BlockletIndexWrapper implements Cacheable, Serializable {
 
   @Override
   public void invalidate() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     for (Index index : indexes) {
       index.clear();
     }
@@ -70,6 +72,7 @@ public class BlockletIndexWrapper implements Cacheable, Serializable {
   }
 
   public String getSegmentId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2625
     return segmentId;
   }
 }

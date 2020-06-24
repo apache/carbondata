@@ -111,6 +111,7 @@ public class QueryStatistic implements Serializable {
   }
 
   public long getStartTime() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     return this.startTime;
   }
 

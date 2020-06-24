@@ -71,14 +71,17 @@ public class CarbonTablePath {
   }
 
   public static String getStageDir(String tablePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + STAGE_DIR;
   }
 
   public static String getStageDataDir(String tablePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3709
     return tablePath + CarbonCommonConstants.FILE_SEPARATOR + STAGE_DATA_DIR;
   }
 
   public static String getStageSnapshotFile(String tablePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3599
     return CarbonTablePath.getStageDir(tablePath) + CarbonCommonConstants.FILE_SEPARATOR +
         SNAPSHOT_FILE_NAME;
   }
@@ -91,7 +94,9 @@ public class CarbonTablePath {
   public static String getFolderContainingFile(String carbonFilePath) {
     int lastIndex = carbonFilePath.lastIndexOf('/');
     // below code for handling windows environment
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2208
     if (-1 == lastIndex) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3648
       lastIndex = carbonFilePath.lastIndexOf(File.separator);
     }
     return carbonFilePath.substring(0, lastIndex);
@@ -191,6 +196,7 @@ public class CarbonTablePath {
         return file.getName().startsWith(SCHEMA_FILE);
       }
     });
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3659
     if (schemaFile != null && schemaFile.length > 0 &&
         FileFactory.getFileType(tablePath) != FileFactory.FileType.ALLUXIO) {
       return schemaFile[0].getAbsolutePath();
@@ -203,11 +209,14 @@ public class CarbonTablePath {
    * Return absolute path of table status file
    */
   public static String getTableStatusFilePath(String tablePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2204
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3599
     return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + TABLE_STATUS_FILE;
   }
 
   public static String getTableStatusFilePathWithUUID(String tablePath, String uuid) {
     if (!uuid.isEmpty()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
       return getTableStatusFilePath(tablePath) + CarbonCommonConstants.UNDERSCORE + uuid;
     } else {
       return getTableStatusFilePath(tablePath);
@@ -223,10 +232,12 @@ public class CarbonTablePath {
    * @return full qualified carbon index path
    */
   private static String getCarbonIndexFilePath(final String tablePath, final String taskId,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
       final String segmentId, final String bucketNumber) {
     String segmentDir = getSegmentPath(tablePath, segmentId);
     CarbonFile carbonFile =
         FileFactory.getCarbonFile(segmentDir);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
 
     CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
       @Override
@@ -241,6 +252,7 @@ public class CarbonTablePath {
     if (files.length > 0) {
       return files[0].getAbsolutePath();
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1992
       throw new RuntimeException("Missing Carbon index file for Segment[" + segmentId + "], "
           + "taskId[" + taskId + "]");
     }
@@ -261,9 +273,12 @@ public class CarbonTablePath {
   public static String getCarbonIndexFilePath(String tablePath, String taskId, String segmentId,
       String bucketNumber, String timeStamp, ColumnarFormatVersion columnarFormatVersion) {
     switch (columnarFormatVersion) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3650
       case V3:
         String segmentDir = getSegmentPath(tablePath, segmentId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3599
         return segmentDir + CarbonCommonConstants.FILE_SEPARATOR + getCarbonIndexFileName(taskId,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
             Integer.parseInt(bucketNumber), timeStamp, segmentId);
       default:
         throw new UnsupportedOperationException(
@@ -295,6 +310,7 @@ public class CarbonTablePath {
    * Return the segment path from table path and segmentId
    */
   public static String getSegmentPath(String tablePath, String segmentId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3599
     return getPartitionDir(tablePath) + CarbonCommonConstants.FILE_SEPARATOR
         + SEGMENT_PREFIX + segmentId;
   }
@@ -353,6 +369,7 @@ public class CarbonTablePath {
   }
 
   public static String getCarbonStreamIndexFilePath(String segmentDir) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3599
     return segmentDir + CarbonCommonConstants.FILE_SEPARATOR + getCarbonStreamIndexFileName();
   }
 
@@ -361,6 +378,7 @@ public class CarbonTablePath {
 
   public static String getPartitionDir(String tablePath) {
     return getFactDir(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + PARTITION_PREFIX +
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3208
         CarbonTablePath.DEPRECATED_PARTITION_ID;
   }
 
@@ -386,9 +404,11 @@ public class CarbonTablePath {
    * @return store path based on index shard name
    */
   public static String getIndexStorePathOnShardName(String tablePath, String segmentId,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       String indexName, String shardName) {
     return new StringBuilder()
         .append(getIndexesStorePath(tablePath, segmentId, indexName))
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3599
         .append(CarbonCommonConstants.FILE_SEPARATOR)
         .append(shardName)
         .toString();
@@ -403,6 +423,7 @@ public class CarbonTablePath {
       String indexName) {
     return new StringBuilder()
         .append(tablePath)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3599
         .append(CarbonCommonConstants.FILE_SEPARATOR)
         .append(indexName)
         .append(CarbonCommonConstants.FILE_SEPARATOR)
@@ -422,6 +443,7 @@ public class CarbonTablePath {
       // Get the timestamp portion of the file.
       String fileName = getFileName(carbonDataFileName);
       int startIndex;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
       if (carbonDataFileName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
         startIndex = fileName.lastIndexOf(CarbonCommonConstants.UNDERSCORE) + 1;
       } else {
@@ -510,6 +532,7 @@ public class CarbonTablePath {
      * Return task id in the carbon data file name
      */
     public static long getTaskId(String carbonDataFileName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
       return Long.parseLong(getTaskNo(carbonDataFileName).split(BATCH_PREFIX)[0]);
     }
 
@@ -547,6 +570,7 @@ public class CarbonTablePath {
      * Return the batch number from taskNo string
      */
     public static int getBatchNoFromTaskNo(String taskNo) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-940
       return Integer.parseInt(taskNo.split(BATCH_PREFIX)[1]);
     }
 
@@ -556,6 +580,7 @@ public class CarbonTablePath {
     public static String getFileName(String dataFilePath) {
       int endIndex = dataFilePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
       if (endIndex > -1) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
         return dataFilePath.substring(endIndex + 1, dataFilePath.length());
       } else {
         return dataFilePath;
@@ -568,6 +593,7 @@ public class CarbonTablePath {
     public static String getSegmentIdFromPath(String dataFileAbsolutePath) {
       // find segment id from last of data file path
       String tempdataFileAbsolutePath = dataFileAbsolutePath.replace(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
           CarbonCommonConstants.WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR);
       int endIndex = tempdataFileAbsolutePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
       // + 1 for size of "/"
@@ -593,6 +619,7 @@ public class CarbonTablePath {
   public static String getCarbonDataFileName(String carbonDataFilePath) {
     return carbonDataFilePath.substring(
         carbonDataFilePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR) + 1,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
         carbonDataFilePath.lastIndexOf(CARBON_DATA_EXT));
   }
 
@@ -624,6 +651,7 @@ public class CarbonTablePath {
    * @return carbon index merge file extension
    */
   public static String getCarbonMergeIndexExtension() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1626
     return MERGE_INDEX_FILE_EXT;
   }
 
@@ -647,7 +675,9 @@ public class CarbonTablePath {
    * @return shortBlockId
    */
   public static String getShortBlockIdForPartitionTable(String blockId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     return blockId.replace(DATA_PART_PREFIX, "")
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
         .replace(CARBON_DATA_EXT, "");
   }
 
@@ -706,6 +736,7 @@ public class CarbonTablePath {
    * Get the segment file locations of table
    */
   public static String getSegmentFilesLocation(String tablePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + "segments";
   }
 
@@ -713,6 +744,7 @@ public class CarbonTablePath {
    * Get the segment file path of table
    */
   public static String getSegmentFilePath(String tablePath, String segmentFileName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2806
     return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + "segments"
         + CarbonCommonConstants.FILE_SEPARATOR + segmentFileName;
   }
@@ -742,6 +774,7 @@ public class CarbonTablePath {
    * Return table status history file path based on `tablePath`
    */
   public static String getTableStatusHistoryFilePath(String tablePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2258
     return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR
         + TABLE_STATUS_HISTORY_FILE;
   }
@@ -749,6 +782,7 @@ public class CarbonTablePath {
   public static String generateBadRecordsPath(String badLogStoreLocation, String segmentId,
       String taskNo, boolean isTransactionalTable) {
     if (!isTransactionalTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3599
       return badLogStoreLocation + CarbonCommonConstants.FILE_SEPARATOR + "SdkWriterBadRecords"
           + CarbonCommonConstants.FILE_SEPARATOR + taskNo;
     } else {

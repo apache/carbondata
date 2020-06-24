@@ -88,12 +88,15 @@ public final class TableIndex extends OperationEventListener {
 
   private static final Logger LOG =
       LogServiceFactory.getLogService(TableIndex.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
   /**
    * It is called to initialize and load the required table index metadata.
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
   TableIndex(CarbonTable table, IndexSchema indexSchema,
       IndexFactory indexFactory, BlockletDetailsFetcher blockletDetailsFetcher,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1480
       SegmentPropertiesFetcher segmentPropertiesFetcher) {
     this.identifier = table.getAbsoluteTableIdentifier();
     this.table = table;
@@ -104,10 +107,12 @@ public final class TableIndex extends OperationEventListener {
   }
 
   public BlockletDetailsFetcher getBlockletDetailsFetcher() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2484
     return blockletDetailsFetcher;
   }
 
   public CarbonTable getTable() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3287
     return table;
   }
 
@@ -122,8 +127,10 @@ public final class TableIndex extends OperationEventListener {
       final List<PartitionSpec> partitions) throws IOException {
     final List<ExtendedBlocklet> blocklets = new ArrayList<>();
     List<Segment> segments = getCarbonSegments(allsegments);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     final Map<Segment, List<Index>> indexes;
     boolean isFilterPresent = filter != null && !filter.isEmpty();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
     Set<Path> partitionLocations = getPartitionLocations(partitions);
     if (table.isHivePartitionTable() && isFilterPresent && !partitionLocations.isEmpty()) {
       indexes = indexFactory.getIndexes(segments, partitionLocations, filter);
@@ -151,6 +158,7 @@ public final class TableIndex extends OperationEventListener {
     }
     int numOfThreadsForPruning = CarbonProperties.getNumOfThreadsForPruning();
     int carbonDriverPruningMultiThreadEnableFilesCount =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3700
         CarbonProperties.getDriverPruningMultiThreadEnableFilesCount();
     if (numOfThreadsForPruning == 1 || indexesCount < numOfThreadsForPruning || totalFiles
             < carbonDriverPruningMultiThreadEnableFilesCount) {
@@ -158,8 +166,10 @@ public final class TableIndex extends OperationEventListener {
       // As 0.1 million files block pruning can take only 1 second.
       // Doing multi-thread for smaller values is not recommended as
       // driver should have minimum threads opened to support multiple concurrent queries.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3555
       if (filter == null || filter.isEmpty()) {
         // if filter is not passed, then return all the blocklets.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
         return pruneWithoutFilter(segments, partitionLocations, blocklets);
       }
       return pruneWithFilter(segments, filter, partitionLocations, blocklets, indexes);
@@ -171,6 +181,7 @@ public final class TableIndex extends OperationEventListener {
   }
 
   private List<Segment> getCarbonSegments(List<Segment> allsegments) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3516
     List<Segment> segments = new ArrayList<>();
     for (Segment segment : allsegments) {
       if (segment.isCarbonSegment()) {
@@ -181,6 +192,7 @@ public final class TableIndex extends OperationEventListener {
   }
 
   private List<ExtendedBlocklet> pruneWithoutFilter(List<Segment> segments,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
       Set<Path> partitionLocations, List<ExtendedBlocklet> blocklets) throws IOException {
     for (Segment segment : segments) {
       List<Blocklet> allBlocklets =
@@ -193,6 +205,7 @@ public final class TableIndex extends OperationEventListener {
   }
 
   private Set<Path> getPartitionLocations(List<PartitionSpec> partitionSpecs) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
     Set<Path> partitionsLocations = new HashSet<>();
     if (null != partitionSpecs) {
       for (PartitionSpec partitionSpec : partitionSpecs) {
@@ -204,6 +217,7 @@ public final class TableIndex extends OperationEventListener {
 
   private List<ExtendedBlocklet> pruneWithFilter(List<Segment> segments, IndexFilter filter,
       Set<Path> partitionLocations, List<ExtendedBlocklet> blocklets,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       Map<Segment, List<Index>> indexes) throws IOException {
     for (Segment segment : segments) {
       if (indexes.get(segment).isEmpty() || indexes.get(segment) == null) {
@@ -212,6 +226,7 @@ public final class TableIndex extends OperationEventListener {
       boolean isExternalSegment = segment.getSegmentPath() != null;
       List<Blocklet> pruneBlocklets = new ArrayList<>();
       SegmentProperties segmentProperties =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
           segmentPropertiesFetcher.getSegmentProperties(segment, partitionLocations);
       if (filter.isResolvedOnSegment(segmentProperties)) {
         FilterExecuter filterExecuter;
@@ -227,6 +242,7 @@ public final class TableIndex extends OperationEventListener {
         for (Index index : indexes.get(segment)) {
           if (!isExternalSegment) {
             pruneBlocklets.addAll(index
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
                 .prune(filter.getResolver(), segmentProperties, filterExecuter, this.table));
           } else {
             pruneBlocklets.addAll(index
@@ -239,6 +255,7 @@ public final class TableIndex extends OperationEventListener {
         Expression expression = filter.getExpression();
         if (!isExternalSegment) {
           filterExecuter = FilterUtil.getFilterExecuterTree(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
               new IndexFilter(segmentProperties, table, expression).getResolver(),
               segmentProperties, null, table.getMinMaxCacheColumns(segmentProperties), false);
         } else {
@@ -246,9 +263,12 @@ public final class TableIndex extends OperationEventListener {
               new IndexFilter(segmentProperties, table, expression).getExternalSegmentResolver(),
               segmentProperties, null, table.getMinMaxCacheColumns(segmentProperties), false);
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         for (Index index : indexes.get(segment)) {
           if (!isExternalSegment) {
             pruneBlocklets.addAll(index
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
                 .prune(filter.getExpression(), segmentProperties, table, filterExecuter));
           } else {
             pruneBlocklets.addAll(index
@@ -259,12 +279,14 @@ public final class TableIndex extends OperationEventListener {
       }
       blocklets.addAll(
           addSegmentId(blockletDetailsFetcher.getExtendedBlocklets(pruneBlocklets, segment),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
               segment));
     }
     return blocklets;
   }
 
   private List<ExtendedBlocklet> pruneMultiThread(List<Segment> segments,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
       final IndexFilter filter, List<ExtendedBlocklet> blocklets,
       final Map<Segment, List<Index>> indexes, int totalFiles) {
     /*
@@ -296,6 +318,7 @@ public final class TableIndex extends OperationEventListener {
     int prev;
     int filesCount = 0;
     int processedFileCount = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     List<List<SegmentIndexGroup>> indexListForEachThread =
         new ArrayList<>(numOfThreadsForPruning);
     List<SegmentIndexGroup> segmentIndexGroupList = new ArrayList<>();
@@ -330,6 +353,7 @@ public final class TableIndex extends OperationEventListener {
       }
     }
     // adding the last segmentList data
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     indexListForEachThread.add(segmentIndexGroupList);
     processedFileCount += filesCount;
     if (processedFileCount != totalFiles) {
@@ -346,11 +370,13 @@ public final class TableIndex extends OperationEventListener {
         "Number of threads selected for multi-thread block pruning is " + numOfThreadsForPruning
             + ". total files: " + totalFiles + ". total segments: " + segments.size());
     List<Future<Void>> results = new ArrayList<>(numOfThreadsForPruning);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     final Map<Segment, List<ExtendedBlocklet>> prunedBlockletMap =
         new ConcurrentHashMap<>(segments.size());
     final ExecutorService executorService = Executors.newFixedThreadPool(numOfThreadsForPruning);
     final String threadName = Thread.currentThread().getName();
     for (int i = 0; i < numOfThreadsForPruning; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       final List<SegmentIndexGroup> segmentIndexGroups = indexListForEachThread.get(i);
       results.add(executorService.submit(new Callable<Void>() {
         @Override
@@ -374,11 +400,13 @@ public final class TableIndex extends OperationEventListener {
                     .getFilterExecuterTree(filter.getExternalSegmentResolver(), segmentProperties,
                         null, table.getMinMaxCacheColumns(segmentProperties), false);
               }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
               for (int i = segmentIndexGroup.getFromIndex();
                    i <= segmentIndexGroup.getToIndex(); i++) {
                 List<Blocklet> dmPruneBlocklets;
                 if (!isExternalSegment) {
                   dmPruneBlocklets = indexList.get(i)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
                       .prune(filter.getResolver(), segmentProperties, filterExecuter, table);
                 } else {
                   dmPruneBlocklets = indexList.get(i)
@@ -394,6 +422,7 @@ public final class TableIndex extends OperationEventListener {
               FilterExecuter filterExecuter;
               if (!isExternalSegment) {
                 filterExecuter = FilterUtil.getFilterExecuterTree(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
                     new IndexFilter(segmentProperties, table, filterExpression).getResolver(),
                     segmentProperties, null, table.getMinMaxCacheColumns(segmentProperties), false);
               } else {
@@ -407,6 +436,7 @@ public final class TableIndex extends OperationEventListener {
                 List<Blocklet> dmPruneBlocklets;
                 if (!isExternalSegment) {
                   dmPruneBlocklets = indexList.get(i)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
                       .prune(filterExpression, segmentProperties, table, filterExecuter);
                 } else {
                   dmPruneBlocklets = indexList.get(i)
@@ -415,11 +445,14 @@ public final class TableIndex extends OperationEventListener {
                 }
                 pruneBlocklets.addAll(addSegmentId(
                     blockletDetailsFetcher.getExtendedBlocklets(dmPruneBlocklets, segment),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
                     segment));
               }
             }
             synchronized (prunedBlockletMap) {
               List<ExtendedBlocklet> pruneBlockletsExisting =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
                   prunedBlockletMap.get(segmentIndexGroup.getSegment());
               if (pruneBlockletsExisting != null) {
                 pruneBlockletsExisting.addAll(pruneBlocklets);
@@ -446,6 +479,7 @@ public final class TableIndex extends OperationEventListener {
         throw new RuntimeException(e);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     for (Map.Entry<Segment, List<ExtendedBlocklet>> entry : prunedBlockletMap.entrySet()) {
       blocklets.addAll(entry.getValue());
     }
@@ -453,6 +487,7 @@ public final class TableIndex extends OperationEventListener {
   }
 
   private List<ExtendedBlocklet> addSegmentId(List<ExtendedBlocklet> pruneBlocklets,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
       Segment segment) {
     for (ExtendedBlocklet blocklet : pruneBlocklets) {
       blocklet.setSegment(segment);
@@ -468,6 +503,7 @@ public final class TableIndex extends OperationEventListener {
    * @return
    */
   public List<IndexInputSplit> toDistributable(List<Segment> allsegments) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     List<IndexInputSplit> distributables = new ArrayList<>();
     List<Segment> segments = getCarbonSegments(allsegments);
     for (Segment segment : segments) {
@@ -478,6 +514,7 @@ public final class TableIndex extends OperationEventListener {
 
   public IndexInputSplitWrapper toDistributableSegment(Segment segment, String uniqueId)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return indexFactory.toDistributableSegment(segment, indexSchema, identifier, uniqueId);
   }
 
@@ -501,9 +538,11 @@ public final class TableIndex extends OperationEventListener {
    * @return
    */
   public List<ExtendedBlocklet> prune(List<Index> indices, IndexInputSplit distributable,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
       FilterResolverIntf filterExp, List<PartitionSpec> partitions) throws IOException {
     List<ExtendedBlocklet> detailedBlocklets = new ArrayList<>();
     List<Blocklet> blocklets = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
     Set<Path> partitionsToPrune = getPartitionLocations(partitions);
     SegmentProperties segmentProperties = segmentPropertiesFetcher
         .getSegmentProperties(distributable.getSegment(), partitionsToPrune);
@@ -516,13 +555,16 @@ public final class TableIndex extends OperationEventListener {
     }
     BlockletSerializer serializer = new BlockletSerializer();
     String writePath =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         identifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + indexSchema
             .getIndexName();
     if (indexFactory.getIndexLevel() == IndexLevel.FG) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       FileFactory.mkdirs(writePath);
     }
     for (Blocklet blocklet : blocklets) {
       ExtendedBlocklet detailedBlocklet = blockletDetailsFetcher
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
           .getExtendedBlocklet(blocklet, distributable.getSegment());
       if (indexFactory.getIndexLevel() == IndexLevel.FG) {
         String blockletwritePath =
@@ -530,6 +572,7 @@ public final class TableIndex extends OperationEventListener {
         detailedBlocklet.setIndexWriterPath(blockletwritePath);
         serializer.serializeBlocklet((FineGrainBlocklet) blocklet, blockletwritePath);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
       detailedBlocklet.setSegment(distributable.getSegment());
       detailedBlocklets.add(detailedBlocklet);
     }
@@ -541,7 +584,10 @@ public final class TableIndex extends OperationEventListener {
    * @param segmentIds list of segmentIds to be cleared from cache.
    */
   public void clear(List<String> segmentIds) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     for (String segment: segmentIds) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       indexFactory.clear(segment);
     }
   }
@@ -550,6 +596,7 @@ public final class TableIndex extends OperationEventListener {
    * Clears all index
    */
   public void clear() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     if (null != indexFactory) {
       indexFactory.clear();
     }
@@ -561,6 +608,7 @@ public final class TableIndex extends OperationEventListener {
   public void deleteIndexData(List<Segment> allsegments) throws IOException {
     List<Segment> segments = getCarbonSegments(allsegments);
     for (Segment segment: segments) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       indexFactory.deleteIndexData(segment);
     }
   }
@@ -569,6 +617,7 @@ public final class TableIndex extends OperationEventListener {
    * delete index data if any
    */
   public void deleteIndexData() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     indexFactory.deleteIndexData();
   }
 
@@ -580,6 +629,7 @@ public final class TableIndex extends OperationEventListener {
   }
 
   public IndexSchema getIndexSchema() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return indexSchema;
   }
 
@@ -601,6 +651,7 @@ public final class TableIndex extends OperationEventListener {
    * @throws IOException
    */
   public Map<String, Long> getBlockRowCount(List<Segment> allsegments,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       final List<PartitionSpec> partitions, TableIndex defaultIndex)
       throws IOException {
     List<Segment> segments = getCarbonSegments(allsegments);
@@ -608,6 +659,7 @@ public final class TableIndex extends OperationEventListener {
     for (Segment segment : segments) {
       List<CoarseGrainIndex> indexes = defaultIndex.getIndexFactory().getIndexes(segment);
       for (CoarseGrainIndex index : indexes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3773
         if (null != partitions) {
           // if it has partitioned index but there is no partitioned information stored, it means
           // partitions are dropped so return empty list.
@@ -627,6 +679,7 @@ public final class TableIndex extends OperationEventListener {
    */
   public Map<String, Long> getBlockRowCount(TableIndex defaultIndex, List<Segment> allsegments,
       final List<PartitionSpec> partitions) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3516
     List<Segment> segments = getCarbonSegments(allsegments);
     Map<String, Long> blockletToRowCountMap = new HashMap<>();
     for (Segment segment : segments) {
@@ -647,7 +700,9 @@ public final class TableIndex extends OperationEventListener {
    * @throws IOException
    */
   public long getRowCount(List<Segment> allsegments, final List<PartitionSpec> partitions,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       TableIndex defaultIndex) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3516
     List<Segment> segments = getCarbonSegments(allsegments);
     long totalRowCount = 0L;
     for (Segment segment : segments) {
@@ -664,9 +719,12 @@ public final class TableIndex extends OperationEventListener {
    *
    */
   public List<Segment> pruneSegments(List<Segment> segments, FilterResolverIntf filterExp)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2196
     List<Segment> prunedSegments = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (Segment segment : segments) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       List<Index> indices = indexFactory.getIndexes(segment);
       for (Index index : indices) {
         if (index.isScanRequired(filterExp)) {

@@ -20,6 +20,7 @@ package org.apache.carbondata.core.util;
 public interface LoadStatistics {
   //Init PartitionInfo
   void initPartitionInfo(String PartitionId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2130
 
   //Record the time
   void recordDicShuffleAndWriteTime();

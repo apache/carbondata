@@ -68,16 +68,21 @@ public class UnsafeIntermediateMerger {
     // processed file list
     this.rowPages = new ArrayList<UnsafeCarbonRowPage>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     this.mergedPages = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1410
     this.executorService = Executors.newFixedThreadPool(parameters.getNumberOfCores(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3304
         new CarbonThreadFactory("UnsafeIntermediatePool:" + parameters.getTableName(),
                 true));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2807
     this.procFiles = new ArrayList<>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     this.mergerTask = new ArrayList<>();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2644
     Integer spillPercentage = CarbonProperties.getInstance().getSortMemorySpillPercentage();
     this.spillSizeInSortMemory =
         UnsafeSortMemoryManager.INSTANCE.getUsableMemory() * spillPercentage / 100;
     // get memory chunk size
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2658
     long inMemoryChunkSizeInMB = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
     if (spillSizeInSortMemory < inMemoryChunkSizeInMB * 1024 * 1024) {
       LOGGER.warn("the configure spill size is " + spillSizeInSortMemory +
@@ -91,7 +96,9 @@ public class UnsafeIntermediateMerger {
     // intermediate merging of sort temp files will be triggered
     synchronized (lockObject) {
       rowPages.add(rowPage);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
       if (rowPages.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3267
         tryTriggerInMemoryMerging(false);
       }
     }
@@ -102,6 +109,7 @@ public class UnsafeIntermediateMerger {
     // intermediate merging of sort temp files will be triggered
     synchronized (lockObject) {
       procFiles.add(sortTempFile);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
       if (procFiles.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
         File[] fileList = procFiles.toArray(new File[procFiles.size()]);
         this.procFiles = new ArrayList<>();
@@ -112,14 +120,17 @@ public class UnsafeIntermediateMerger {
 
   private void startIntermediateMerging(File[] intermediateFiles) {
     //pick a temp location randomly
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
     String[] tempFileLocations = parameters.getTempFileLocation();
     String targetLocation = tempFileLocations[new Random().nextInt(tempFileLocations.length)];
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     File file = new File(targetLocation + File.separator + parameters.getTableName()
         + '_' + parameters.getRangeId() + '_' + System.nanoTime()
         + CarbonCommonConstants.MERGERD_EXTENSION);
     UnsafeIntermediateFileMerger merger =
         new UnsafeIntermediateFileMerger(parameters, intermediateFiles, file);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Submitting request for intermediate merging number of files: "
               + intermediateFiles.length);
@@ -136,6 +147,7 @@ public class UnsafeIntermediateMerger {
         UnsafeCarbonRowPage page = iter.next();
         if (!spillDisk || sizeAdded + page.getDataBlock().size() < this.spillSizeInSortMemory) {
           pages2Merge.add(page);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2658
           sizeAdded += page.getDataBlock().size();
           totalRows2Merge += page.getBuffer().getActualSize();
           iter.remove();
@@ -162,10 +174,12 @@ public class UnsafeIntermediateMerger {
     UnsafeInMemoryIntermediateDataMerger merger =
         new UnsafeInMemoryIntermediateDataMerger(rowPages, totalRows, parameters, spillDisk);
     mergedPages.add(merger);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Submitting request for intermediate merging of in-memory pages : "
               + rowPages.length);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1410
     mergerTask.add(executorService.submit(merger));
   }
 
@@ -176,6 +190,7 @@ public class UnsafeIntermediateMerger {
     } catch (InterruptedException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while shutdown the server ", e);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1410
     checkForFailure();
   }
 
@@ -192,7 +207,9 @@ public class UnsafeIntermediateMerger {
       try {
         mergerTask.get(i).get();
       } catch (InterruptedException | ExecutionException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
         LOGGER.error(e.getMessage(), e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
         throw new CarbonSortKeyAndGroupByException(e);
       }
     }

@@ -57,6 +57,7 @@ public class CarbonStreamRecordReaderTest extends TestCase {
 
   @Override
   protected void setUp() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
     tablePath = new File("target/stream_input").getCanonicalPath();
     String dbName = "default";
     String tableName = "stream_table_input";
@@ -64,6 +65,7 @@ public class CarbonStreamRecordReaderTest extends TestCase {
         tablePath,
         new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1552
     JobID jobId = CarbonInputFormatUtil.getJobId(new Date(), 0);
     TaskID taskId = new TaskID(jobId, TaskType.MAP, 0);
     taskAttemptId = new TaskAttemptID(taskId, 0);
@@ -76,7 +78,9 @@ public class CarbonStreamRecordReaderTest extends TestCase {
     CarbonInputSplit carbonInputSplit = new CarbonInputSplit();
     List<CarbonInputSplit> splitList = new ArrayList<>();
     splitList.add(carbonInputSplit);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2071
     return new CarbonMultiBlockSplit(splitList, new String[] { "localhost" },
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1614
         FileFormat.ROW_V1);
   }
 
@@ -95,6 +99,7 @@ public class CarbonStreamRecordReaderTest extends TestCase {
   @Override
   protected void tearDown() throws Exception {
     super.tearDown();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
     if (tablePath != null) {
       FileFactory.deleteAllFilesOfDir(new File(tablePath));
     }

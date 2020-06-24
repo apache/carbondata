@@ -35,6 +35,7 @@ public class CarbonTableIdentifierTest {
 
   @Test public void equalsTestWithSameObject() {
     Boolean res = carbonTableIdentifier.equals(carbonTableIdentifier);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(res);
   }
 
@@ -93,6 +94,7 @@ public class CarbonTableIdentifierTest {
   @Test public void toStringTest() {
     String res = carbonTableIdentifier.toString();
     System.out.printf("sfdsdf " + res);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     Assert.assertTrue(res.equalsIgnoreCase("DatabseName_tableName"));
   }
 }

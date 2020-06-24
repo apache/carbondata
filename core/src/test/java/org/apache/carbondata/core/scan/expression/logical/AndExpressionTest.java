@@ -38,6 +38,7 @@ public class AndExpressionTest {
   private AndExpression andExpression;
 
   @Before public void setUp() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression leftExpression = new ColumnExpression("IMEI", DataTypes.BOOLEAN);
     ColumnExpression rightExpression = new ColumnExpression("IMEI", DataTypes.BOOLEAN);
     andExpression = new AndExpression(leftExpression, rightExpression);
@@ -47,6 +48,7 @@ public class AndExpressionTest {
       throws FilterUnsupportedException, FilterIllegalMemberException {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new Boolean[] { true });
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     final ExpressionResult expressionResult = new ExpressionResult(DataTypes.STRING, "test");
     new MockUp<ColumnExpression>() {
       @Mock public ExpressionResult evaluate(RowIntf value)
@@ -60,6 +62,7 @@ public class AndExpressionTest {
   @Test public void testEvaluate() throws FilterUnsupportedException, FilterIllegalMemberException {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new Boolean[] { false });
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     final ExpressionResult expressionResult = new ExpressionResult(DataTypes.BOOLEAN, "test");
     new MockUp<ColumnExpression>() {
       @Mock public ExpressionResult evaluate(RowIntf value)
@@ -72,6 +75,7 @@ public class AndExpressionTest {
   }
 
   @Test public void testEvaluate1() throws FilterIllegalMemberException,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       FilterUnsupportedException {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new Boolean[] { false });

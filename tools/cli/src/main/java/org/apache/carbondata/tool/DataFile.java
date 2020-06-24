@@ -85,6 +85,7 @@ class DataFile {
   private List<ColumnSchema> schema;
   private List<Blocklet> blocklets;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2965
   DataFile(CarbonFile dataFile) {
     this.dataFile = dataFile;
     this.filePath = dataFile.getPath();
@@ -113,12 +114,14 @@ class DataFile {
     this.footer = footer;
     String filePath = dataFile.getPath();
     // folder path that contains this file
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3053
     String fileName =
         filePath.substring(filePath.replaceAll("\\\\", FILE_SEPARATOR).lastIndexOf(FILE_SEPARATOR));
     this.shardName = CarbonTablePath.getShardName(fileName);
     this.partNo = CarbonTablePath.DataFileUtil.getPartNo(fileName);
 
     // calculate blocklet size and column size
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3473
     for (int j = 0; j < footer.getBlocklet_info_list3().size(); j++) {
       // remark start and end offset of current blocklet for computing blocklet size
       // and chunk data size of the last column
@@ -141,9 +144,11 @@ class DataFile {
       for (int i = 0; i < schema.size(); i++) {
         columnDataSize.add(blockletInfo3.column_data_chunks_offsets.get(i) - previousChunkOffset);
         columnMetaSize.add(blockletInfo3.column_data_chunks_length.get(i).longValue());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2965
         previousChunkOffset = blockletInfo3.column_data_chunks_offsets.get(i);
       }
       // update chunk data size of the last column
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3473
       columnDataSize.add(blockletEndOffset - previousChunkOffset);
       columnDataSize.removeFirst();
       this.columnDataSizeInBytes.add(columnDataSize);
@@ -153,6 +158,7 @@ class DataFile {
     assert (blockletSizeInBytes.size() == getNumBlocklets());
   }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2965
   FileHeader readHeader() throws IOException {
     CarbonHeaderReader reader = new CarbonHeaderReader(dataFile.getPath());
     this.schema = reader.readSchema();
@@ -160,6 +166,7 @@ class DataFile {
   }
 
   FileFooter3 readFooter() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3053
     if (this.fileReader == null) {
       this.fileReader = FileFactory.getFileHolder(FileFactory.getFileType(dataFile.getPath()));
     }
@@ -196,6 +203,7 @@ class DataFile {
     return schema;
   }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2965
   FileReader getFileReader() {
     return fileReader;
   }
@@ -276,6 +284,7 @@ class DataFile {
     return columnSize.get(columnIndex);
   }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
   void initAllBlockletStats(String columnName) throws IOException {
     int columnIndex = -1;
     ColumnSchema column = null;
@@ -328,6 +337,7 @@ class DataFile {
     double minPercentage, maxPercentage;
 
     DataChunk3 dataChunk;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2976
 
     /**
      * Constructor
@@ -342,11 +352,13 @@ class DataFile {
       min = index.min_max_index.min_values.get(columnIndex).array();
       max = index.min_max_index.max_values.get(columnIndex).array();
       isMinMaxPresent = index.min_max_index.min_max_presence.get(columnIndex);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
 
       // read the column chunk metadata: DataChunk3
       ByteBuffer buffer = fileReader.readByteBuffer(
           filePath, blockletInfo.column_data_chunks_offsets.get(columnIndex),
           blockletInfo.column_data_chunks_length.get(columnIndex));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2976
       dataChunk = CarbonUtil.readDataChunk3(new ByteArrayInputStream(buffer.array()));
       this.localDict = dataChunk.isSetLocal_dictionary();
       if (this.localDict) {
@@ -386,6 +398,7 @@ class DataFile {
     }
 
     public DataChunk3 getDataChunk3() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2976
       return dataChunk;
     }
 
@@ -412,6 +425,7 @@ class DataFile {
     ColumnChunk columnChunk;
 
     Blocklet(DataFile file, int blockletId, ColumnSchema column, int columnIndex,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
         FileFooter3 footer) throws IOException {
       this.file = file;
       this.id = blockletId;
@@ -446,6 +460,7 @@ class DataFile {
      */
     private double computePercentage(byte[] data, byte[] min, byte[] max, ColumnSchema column) {
       if (column.getDataType() == DataTypes.STRING || column.getDataType() == DataTypes.BOOLEAN
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
           || column.getDataType() == DataTypes.DATE || column.getDataType().isComplexType()) {
         // for string, we do not calculate
         return 0;
@@ -456,6 +471,7 @@ class DataFile {
         return dataValue.divide(factorValue).doubleValue();
       }
       double dataValue, minValue, factorValue;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3060
       if (columnChunk.column.isDimensionColumn() &&
           DataTypeUtil.isPrimitiveColumn(columnChunk.column.getDataType())) {
         minValue = Double.valueOf(String.valueOf(
@@ -473,6 +489,7 @@ class DataFile {
         if (column.isSortColumn()) {
           minValue = ByteUtil.toXorInt(min, 0, min.length);
           dataValue = ByteUtil.toXorInt(data, 0, data.length) - minValue;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2965
           factorValue =
               ByteUtil.toXorInt(max, 0, max.length) - ByteUtil.toXorInt(min, 0, min.length);
         } else {
@@ -513,6 +530,7 @@ class DataFile {
   }
 
   public void close() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3053
     this.fileReader.finish();
   }
 }

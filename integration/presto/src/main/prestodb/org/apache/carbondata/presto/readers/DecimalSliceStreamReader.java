@@ -51,11 +51,13 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
   protected BlockBuilder builder;
 
   public DecimalSliceStreamReader(int batchSize, DataType dataType,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
       org.apache.carbondata.core.metadata.datatype.DecimalType decimalDataType) {
     super(batchSize, dataType);
     this.type =
         DecimalType.createDecimalType(decimalDataType.getPrecision(), decimalDataType.getScale());
     this.batchSize = batchSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2818
     this.builder = type.createBlockBuilder(null, batchSize);
   }
 
@@ -76,6 +78,7 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
 
   @Override
   public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     for (int i = 0; i < count; i++) {
       putDecimal(rowId++, value, precision);
     }
@@ -95,6 +98,7 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
 
   @Override
   public void reset() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2818
     builder = type.createBlockBuilder(null, batchSize);
   }
 
@@ -135,6 +139,7 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
   }
 
   private Slice parseSlice(DecimalType type, Slice slice, int length) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2656
     BigDecimal decimal = parseBigDecimal(type, slice, length);
     return encodeUnscaledValue(decimal.unscaledValue());
   }
@@ -159,6 +164,7 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
     if (value == null) {
       putNull(rowId);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
       decimalBlockWriter((BigDecimal) value);
     }
   }

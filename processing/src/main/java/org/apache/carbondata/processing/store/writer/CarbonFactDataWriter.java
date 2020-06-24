@@ -29,6 +29,7 @@ public interface CarbonFactDataWriter {
    * @param tablePage
    */
   void writeTablePage(TablePage tablePage) throws CarbonDataWriterException, IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
 
   /**
    * Below method will be used to write the leaf meta data to file
@@ -36,6 +37,7 @@ public interface CarbonFactDataWriter {
    * @throws CarbonDataWriterException
    */
   void writeFooter() throws CarbonDataWriterException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2935
 
   /**
    * Below method will be used to initialise the writer

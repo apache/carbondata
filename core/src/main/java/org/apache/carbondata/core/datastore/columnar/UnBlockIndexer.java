@@ -28,6 +28,7 @@ public final class UnBlockIndexer {
   public static int[] uncompressIndex(int[] indexData, int[] indexMap) {
     int actualSize = indexData.length;
     int mapLength = indexMap.length;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     if (indexMap.length == 0) {
       return indexData;
     }
@@ -67,6 +68,7 @@ public final class UnBlockIndexer {
     }
     byte[] uncompressedData = new byte[actualSize * keyLen];
     int picIndex = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     for (int i = 0; i < dataLength; i += keyLen) {
       numberOfCopy = index[picIndex * 2 + 1];
       picIndex++;

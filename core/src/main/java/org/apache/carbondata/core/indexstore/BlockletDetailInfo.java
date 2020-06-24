@@ -102,8 +102,11 @@ public class BlockletDetailInfo implements Serializable, Writable {
   }
 
   public BlockletInfo getBlockletInfo() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     if (null == blockletInfo) {
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3395
         synchronized (this) {
           if (null == blockletInfo) {
             setBlockletInfoFromBinary();
@@ -121,6 +124,8 @@ public class BlockletDetailInfo implements Serializable, Writable {
   }
 
   private void setBlockletInfoFromBinary() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     if (null == this.blockletInfo && null != blockletInfoBinary && blockletInfoBinary.length > 0) {
       blockletInfo = new BlockletInfo();
       ByteArrayInputStream stream = new ByteArrayInputStream(blockletInfoBinary);
@@ -128,7 +133,9 @@ public class BlockletDetailInfo implements Serializable, Writable {
       try {
         blockletInfo.readFields(inputStream);
       } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
         LOGGER.error("Problem in reading blocklet info", e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
         throw new IOException("Problem in reading blocklet info." + e.getMessage(), e);
       } finally {
         try {
@@ -149,6 +156,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
   }
 
   public long getBlockSize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2071
     return blockSize;
   }
 
@@ -161,14 +169,18 @@ public class BlockletDetailInfo implements Serializable, Writable {
     out.writeInt(rowCount);
     out.writeShort(pagesCount);
     out.writeShort(versionNumber);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1731
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1728
     out.writeShort(blockletId);
     out.writeLong(schemaUpdatedTimeStamp);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2020
     out.writeBoolean(blockletInfo != null);
     if (blockletInfo != null) {
       blockletInfo.write(out);
     }
     out.writeLong(blockFooterOffset);
     // convert column schema list to binary format for serializing
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2701
     convertColumnSchemaToBinary();
     if (null != columnSchemaBinary) {
       out.writeInt(columnSchemaBinary.length);
@@ -178,9 +190,13 @@ public class BlockletDetailInfo implements Serializable, Writable {
       // whether schema is written or not
       out.writeInt(-1);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     out.writeInt(blockletInfoBinary.length);
     out.write(blockletInfoBinary);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2071
     out.writeLong(blockSize);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
     out.writeBoolean(useMinMaxForPruning);
   }
 
@@ -189,6 +205,8 @@ public class BlockletDetailInfo implements Serializable, Writable {
     rowCount = in.readInt();
     pagesCount = in.readShort();
     versionNumber = in.readShort();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1731
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1728
     blockletId = in.readShort();
     schemaUpdatedTimeStamp = in.readLong();
     if (in.readBoolean()) {
@@ -198,16 +216,21 @@ public class BlockletDetailInfo implements Serializable, Writable {
     blockFooterOffset = in.readLong();
     int bytesSize = in.readInt();
     // if byteSize is -1 that means schema binary is not written
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2701
     if (bytesSize != -1) {
       byte[] schemaArray = new byte[bytesSize];
       in.readFully(schemaArray);
       readColumnSchema(schemaArray);
     }
     int byteSize = in.readInt();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     blockletInfoBinary = new byte[byteSize];
     in.readFully(blockletInfoBinary);
     setBlockletInfoFromBinary();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2071
     blockSize = in.readLong();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
     useMinMaxForPruning = in.readBoolean();
   }
 
@@ -217,7 +240,9 @@ public class BlockletDetailInfo implements Serializable, Writable {
    * @throws IOException
    */
   public void readColumnSchema(byte[] schemaArray) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
     if (null != schemaArray) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       columnSchemas = BlockletIndexUtil.readColumnSchema(schemaArray);
     }
   }
@@ -243,12 +268,16 @@ public class BlockletDetailInfo implements Serializable, Writable {
     detailInfo.blockFooterOffset = blockFooterOffset;
     detailInfo.columnSchemas = columnSchemas;
     detailInfo.columnSchemaBinary = columnSchemaBinary;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2071
     detailInfo.blockSize = blockSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
     detailInfo.useMinMaxForPruning = useMinMaxForPruning;
     return detailInfo;
   }
 
   public Short getBlockletId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1731
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1728
     return blockletId;
   }
 
@@ -265,6 +294,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
   }
 
   public List<ColumnSchema> getColumnSchemas() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1998
     if (columnSchemas == null && columnSchemaBinary != null) {
       readColumnSchema(columnSchemaBinary);
     }
@@ -276,14 +306,18 @@ public class BlockletDetailInfo implements Serializable, Writable {
   }
 
   public void setBlockletInfoBinary(byte[] blockletInfoBinary) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     this.blockletInfoBinary = blockletInfoBinary;
   }
 
   public void setColumnSchemas(List<ColumnSchema> columnSchemas) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2701
     this.columnSchemas = columnSchemas;
   }
 
   public boolean isUseMinMaxForPruning() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
     return useMinMaxForPruning;
   }
 

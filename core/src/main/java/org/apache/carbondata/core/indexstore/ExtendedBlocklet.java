@@ -51,7 +51,9 @@ public class ExtendedBlocklet extends Blocklet {
 
   public ExtendedBlocklet(String filePath, String blockletId,
       boolean compareBlockletIdForObjectMatching, ColumnarFormatVersion version) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2701
     super(filePath, blockletId, compareBlockletIdForObjectMatching);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3599
     this.inputSplit = CarbonInputSplit.from(null, blockletId, filePath, 0, -1, version, null);
   }
 
@@ -80,6 +82,7 @@ public class ExtendedBlocklet extends Blocklet {
   }
 
   public String getSegmentId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
     if (segmentNo != null) {
       return segmentNo;
     }
@@ -95,10 +98,12 @@ public class ExtendedBlocklet extends Blocklet {
   }
 
   public String getPath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
     return getFilePath();
   }
 
   public Long getRowCount() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
     if (count != null) {
       return count;
     } else {
@@ -107,6 +112,7 @@ public class ExtendedBlocklet extends Blocklet {
   }
 
   public void setIndexWriterPath(String indexWriterPath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.inputSplit.setIndexWritePath(indexWriterPath);
   }
 
@@ -166,21 +172,26 @@ public class ExtendedBlocklet extends Blocklet {
    * @throws IOException
    */
   public void serializeData(DataOutput out, Map<String, Short> uniqueLocation, boolean isCountJob)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
       throws IOException {
     super.write(out);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
     if (isCountJob) {
       // In CarbonInputSplit, getDetailInfo() is a lazy call. we want to avoid this during
       // countStar query. As rowCount is filled inside getDetailInfo(). In countStar case we may
       // not have proper row count. So, always take row count from indexRow.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3751
       out.writeLong(inputSplit.getIndexRow().getInt(BlockletIndexRowIndexes.ROW_COUNT_INDEX));
       out.writeUTF(inputSplit.getSegmentId());
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       if (indexUniqueId == null) {
         out.writeBoolean(false);
       } else {
         out.writeBoolean(true);
         out.writeUTF(indexUniqueId);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
       out.writeBoolean(inputSplit != null);
       if (inputSplit != null) {
         // creating byte array output stream to get the size of input split serializeData size
@@ -211,12 +222,14 @@ public class ExtendedBlocklet extends Blocklet {
       boolean isCountJob)
       throws IOException {
     super.readFields(in);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
     if (isCountJob) {
       count = in.readLong();
       segmentNo = in.readUTF();
       return;
     }
     if (in.readBoolean()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       indexUniqueId = in.readUTF();
     }
     setFilePath(tablePath + getPath());

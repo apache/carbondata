@@ -35,6 +35,8 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
   private byte[] shortIntData;
   private byte[][] byteArrayData;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
   SafeDecimalColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     super(columnPageEncoderMeta, pageSize);
     byteArrayData = new byte[pageSize][];
@@ -188,6 +190,8 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
         }
         break;
       default:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
         throw new UnsupportedOperationException("not support value conversion on "
             + columnPageEncoderMeta.getStoreDataType() + " page");
     }
@@ -195,6 +199,7 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   public byte[] getBytePage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     return byteData;
   }
 
@@ -225,7 +230,9 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   public void freeMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2168
     byteArrayData = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     super.freeMemory();
   }
 }

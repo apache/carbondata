@@ -61,6 +61,7 @@ public class CarbonVectorProxy {
                 .getColumnVector(memMode, outputSchema, rowNum);
         columnVectorProxies = new ColumnVectorProxy[columnVectors.length];
         for (int i = 0; i < columnVectorProxies.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
           if (useLazyLoad) {
             columnVectorProxies[i] = new ColumnVectorProxyWithLazyLoad(columnVectors[i]);
           } else {
@@ -86,6 +87,7 @@ public class CarbonVectorProxy {
      * @return
      */
     public WritableColumnVector column(int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
         return ((ColumnVectorProxy) columnarBatch.column(ordinal)).getVector();
     }
 
@@ -98,6 +100,7 @@ public class CarbonVectorProxy {
      */
     public void reset() {
         for (int i = 0; i < columnarBatch.numCols(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
             ((ColumnVectorProxy) columnarBatch.column(i)).reset();
         }
     }
@@ -132,6 +135,7 @@ public class CarbonVectorProxy {
      * Sets the number of rows in this batch.
      */
     public void setNumRows(int numRows) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2532
         columnarBatch.setNumRows(numRows);
     }
 
@@ -144,6 +148,7 @@ public class CarbonVectorProxy {
         private WritableColumnVector vector;
 
         public ColumnVectorProxy(ColumnVector columnVector) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
             super(columnVector.dataType());
             vector = (WritableColumnVector) columnVector;
         }
@@ -401,6 +406,7 @@ public class CarbonVectorProxy {
         }
 
         public void setLazyPage(LazyPageLoader lazyPage) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
             lazyPage.loadPage();
         }
 

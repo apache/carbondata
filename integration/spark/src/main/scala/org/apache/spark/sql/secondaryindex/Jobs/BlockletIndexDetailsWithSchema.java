@@ -40,8 +40,10 @@ public class BlockletIndexDetailsWithSchema implements Serializable {
   private List<ColumnSchema> columnSchemaList;
 
   public BlockletIndexDetailsWithSchema(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       BlockletIndexWrapper blockletIndexWrapper, boolean isSchemaModified) {
     this.blockletIndexWrapper = blockletIndexWrapper;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     List<BlockIndex> indexes = blockletIndexWrapper.getIndexes();
     if (!indexes.isEmpty()) {
       // In one task all indexes will have the same cardinality and schema therefore
@@ -57,6 +59,7 @@ public class BlockletIndexDetailsWithSchema implements Serializable {
   }
 
   public BlockletIndexWrapper getBlockletIndexWrapper() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     return blockletIndexWrapper;
   }
 

@@ -33,6 +33,7 @@ public class TableSchemaBuilderSuite {
   @Test(expected = NullPointerException.class)
   public void testNullField() {
     TableSchemaBuilder builder = TableSchema.builder();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3065
     builder.addColumn(null, new AtomicInteger(0), true, true);
   }
 
@@ -54,6 +55,7 @@ public class TableSchemaBuilderSuite {
   public void testRepeatedColumn() {
     TableSchemaBuilder builder = TableSchema.builder();
     ColumnSchema columnSchema =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3065
         builder.addColumn(new StructField("a", DataTypes.INT), new AtomicInteger(0), true, false);
     builder.setSortColumns(Arrays.asList(columnSchema));
     builder.addColumn(new StructField("a", DataTypes.DOUBLE), new AtomicInteger(0), false, false);

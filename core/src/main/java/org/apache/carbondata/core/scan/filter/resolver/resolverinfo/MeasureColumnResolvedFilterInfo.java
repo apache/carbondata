@@ -101,6 +101,7 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
   }
 
   public void setType(org.apache.carbondata.core.metadata.datatype.DataType dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3486
     this.type = DataTypes.valueOf(dataType.getId());
   }
 
@@ -130,6 +131,7 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
   }
 
   public void populateFilterInfoBasedOnColumnType(ResolvedFilterInfoVisitorIntf visitor,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
     if (null != visitor) {
       visitor.populateFilterResolvedInfo(this, metadata);
@@ -152,6 +154,7 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
     msrColumnResolvedFilterInfo.rowIndex = this.rowIndex;
     msrColumnResolvedFilterInfo.measureResolvedFilter = this.measureResolvedFilter;
     msrColumnResolvedFilterInfo.setMeasureExistsInCurrentSilce(this.isMeasureExistsInCurrentSilce);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
     msrColumnResolvedFilterInfo.columnIndexInMinMaxByteArray = columnIndexInMinMaxByteArray;
     return msrColumnResolvedFilterInfo;
   }

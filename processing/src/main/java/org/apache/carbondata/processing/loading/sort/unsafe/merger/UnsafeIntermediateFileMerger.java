@@ -88,6 +88,8 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     this.outPutFile = outPutFile;
     this.writeBufferSize = mergerParameters.getBufferSize();
     this.compressorName = mergerParameters.getSortTempCompressorName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
     this.tableFieldStat = new TableFieldStat(mergerParameters);
     this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
   }
@@ -100,14 +102,18 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
       startSorting();
       initialize();
       while (hasNext()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1839
         writeDataToFile(next());
       }
       double intermediateMergeCostTime =
           (System.currentTimeMillis() - intermediateMergeStartTime) / 1000.0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3304
       LOGGER.info("Intermediate Merge of " + fileConterConst
           + " Sort Temp Files Cost Time: " + intermediateMergeCostTime + "(s)");
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error("Problem while intermediate merging", e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1410
       clear();
       throwable = e;
     } finally {
@@ -116,6 +122,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
         try {
           finish();
         } catch (CarbonSortKeyAndGroupByException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
           LOGGER.error("Problem while deleting the merge file", e);
           throwable = e;
         }
@@ -138,6 +145,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
    */
   private void initialize() throws CarbonSortKeyAndGroupByException {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       stream =
           FileFactory.getDataOutputStream(outPutFile.getPath(), writeBufferSize, compressorName);
       this.stream.writeInt(this.totalNumberOfRecords);
@@ -155,6 +163,8 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
    * @throws CarbonSortKeyAndGroupByException
    */
   private IntermediateSortTempRow getSortedRecordFromFile()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
       throws CarbonSortKeyAndGroupByException {
     IntermediateSortTempRow row = null;
 
@@ -213,6 +223,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
       // create chunk holder
       sortTempFileChunkHolder =
           new UnsafeSortTempFileChunkHolder(tempFile, mergerParameters, false, tableFieldStat);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
 
       sortTempFileChunkHolder.readRow();
       this.totalNumberOfRecords += sortTempFileChunkHolder.numberOfRows();
@@ -221,6 +232,8 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
       this.recordHolderHeap.add(sortTempFileChunkHolder);
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
     LOGGER.info("Heap Size: " + this.recordHolderHeap.size());
   }
 
@@ -242,6 +255,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
    * @throws CarbonSortKeyAndGroupByException
    */
   private IntermediateSortTempRow next() throws CarbonSortKeyAndGroupByException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     if (hasNext()) {
       return getSortedRecordFromFile();
     } else {
@@ -266,10 +280,13 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
    * @throws IOException problem while writing
    */
   private void writeDataToFile(IntermediateSortTempRow row) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
     sortStepRowHandler.writeIntermediateSortTempRowToOutputStream(row, stream);
   }
 
   private void finish() throws CarbonSortKeyAndGroupByException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1410
     clear();
     try {
       CarbonUtil.deleteFiles(intermediateFiles);
@@ -279,6 +296,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
   }
 
   private void clear() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1410
     if (null != recordHolderHeap) {
       SortTempChunkHolder sortTempChunkHolder;
       while (!recordHolderHeap.isEmpty()) {

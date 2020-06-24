@@ -34,15 +34,20 @@ public interface CarbonFile {
   CarbonFile[] listFiles();
 
   CarbonFile[] listFiles(boolean recursive, int maxCount) throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3678
 
   List<CarbonFile> listFiles(Boolean recursive) throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3126
 
   List<CarbonFile> listFiles(boolean recursive, CarbonFileFilter fileFilter) throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3057
 
   /**
    * It returns list of files with location details.
    */
   CarbonFile[] locationAwareListFiles(PathFilter pathFilter) throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
 
   String getName();
 
@@ -86,6 +91,7 @@ public interface CarbonFile {
   boolean isFileModified(long fileTimeStamp, long endOffset);
 
   DataOutputStream getDataOutputStream(int bufferSize, boolean append) throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
 
   DataInputStream getDataInputStream(int bufferSize) throws
       IOException;
@@ -142,6 +148,7 @@ public interface CarbonFile {
    * @return
    */
   String[] getLocations() throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2037
 
   /**
    * set the replication factor for this file
@@ -157,6 +164,7 @@ public interface CarbonFile {
    * @return replication factor
    */
   short getDefaultReplication();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
 
   /**
    * Get the length of this file, in bytes.

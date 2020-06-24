@@ -81,6 +81,7 @@ public class SegmentUpdateDetails implements Serializable {
   }
 
   public void setSegmentStatus(SegmentStatus segmentStatus) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
     this.segmentStatus = segmentStatus;
   }
 
@@ -100,6 +101,7 @@ public class SegmentUpdateDetails implements Serializable {
   }
 
   public void setDeltaFileStamp(String deltaFileStamp) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     if (deltaFileStamps == null) {
       deltaFileStamps = new LinkedHashSet<>();
     }
@@ -188,6 +190,7 @@ public class SegmentUpdateDetails implements Serializable {
     try {
       longValue = Long.parseLong(timtstamp);
     } catch (NumberFormatException nfe) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1049
       if (LOGGER.isDebugEnabled()) {
         String errorMsg = "Invalid timestamp : " + timtstamp;
         LOGGER.debug(errorMsg);

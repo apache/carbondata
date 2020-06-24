@@ -33,6 +33,7 @@ public class NodeMultiBlockRelation implements Comparable<NodeMultiBlockRelation
    * bigger nodes first.
    */
   public static final Comparator<NodeMultiBlockRelation> DATA_SIZE_DESC_COMPARATOR =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2023
       new Comparator<NodeMultiBlockRelation>() {
         @Override
         public int compare(NodeMultiBlockRelation o1, NodeMultiBlockRelation o2) {
@@ -71,6 +72,7 @@ public class NodeMultiBlockRelation implements Comparable<NodeMultiBlockRelation
    * @return size in bytes
    */
   public long getTotalSizeOfBlocks() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2023
     long totalSize = 0;
     if (blocks.get(0) instanceof TableBlockInfo) {
       for (Distributable block : blocks) {

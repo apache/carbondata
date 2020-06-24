@@ -38,6 +38,7 @@ import org.apache.hadoop.conf.Configuration;
 public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
 
   public DataFileFooterConverterV3(Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     super(configuration);
   }
 
@@ -66,6 +67,7 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     CarbonFooterReaderV3 reader =
         new CarbonFooterReaderV3(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset());
     FileFooter3 footer = reader.readFooterVersion3();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2965
     return convertDataFileFooter(fileHeader, footer);
   }
 
@@ -74,6 +76,7 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     dataFileFooter.setVersionId(ColumnarFormatVersion.valueOf((short) fileHeader.getVersion()));
     dataFileFooter.setNumberOfRows(footer.getNum_rows());
     dataFileFooter.setSchemaUpdatedTimeStamp(fileHeader.getTime_stamp());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
     if (footer.isSetIs_sort()) {
       dataFileFooter.setSorted(footer.isIs_sort());
     } else {
@@ -82,6 +85,7 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     List<org.apache.carbondata.format.ColumnSchema> table_columns = fileHeader.getColumn_schema();
     for (int i = 0; i < table_columns.size(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
       columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
     }
     dataFileFooter.setColumnInTable(columnSchemaList);
@@ -97,6 +101,7 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     List<BlockletInfo> blockletInfoList = new ArrayList<BlockletInfo>();
     for (int i = 0; i < leaf_node_infos_Thrift.size(); i++) {
       BlockletInfo blockletInfo = getBlockletInfo(leaf_node_infos_Thrift.get(i),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1364
           CarbonUtil.getNumberOfDimensionColumns(columnSchemaList));
       blockletInfo.setBlockletIndex(blockletIndexList.get(i));
       blockletInfoList.add(blockletInfo);
@@ -108,11 +113,13 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
 
   @Override
   public List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1232
     CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(tableBlockInfo.getFilePath());
     FileHeader fileHeader = carbonHeaderReader.readHeader();
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     List<org.apache.carbondata.format.ColumnSchema> table_columns = fileHeader.getColumn_schema();
     for (int i = 0; i < table_columns.size(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
       columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
     }
     return columnSchemaList;
@@ -146,6 +153,7 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     blockletInfo.setDimensionOffset(blockletInfoThrift.getDimension_offsets());
     blockletInfo.setMeasureOffsets(blockletInfoThrift.getMeasure_offsets());
     blockletInfo.setNumberOfPages(blockletInfoThrift.getNumber_number_of_pages());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     if (blockletInfoThrift.getRow_count_in_page() != null
         && blockletInfoThrift.getRow_count_in_page().size() != 0) {
       int[] rowCountInPages = new int[blockletInfoThrift.getRow_count_in_page().size()];

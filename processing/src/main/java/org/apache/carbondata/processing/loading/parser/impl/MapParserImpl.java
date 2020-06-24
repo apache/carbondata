@@ -41,12 +41,14 @@ public class MapParserImpl extends ArrayParserImpl {
   public ArrayObject parse(Object data) {
     if (data != null) {
       String value = data.toString();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3631
       if (!value.isEmpty() && !value.equals(nullFormat)
           // && !value.equals(keyValueDelimiter)
           && !value.equals(CarbonCommonConstants.SIZE_ZERO_DATA_RETURN)) {
         String[] split = pattern.split(value, -1);
         if (ArrayUtils.isNotEmpty(split)) {
           ArrayList<Object> array = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3437
           Map<Object, String> map = new HashMap<>();
           for (int i = 0; i < split.length; i++) {
             Object[] splitedKeyAndValue = split[i].split(keyValueDelimiter);
@@ -62,6 +64,7 @@ public class MapParserImpl extends ArrayParserImpl {
           }
           return new ArrayObject(array.toArray());
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3631
       } else if (value.equals(CarbonCommonConstants.SIZE_ZERO_DATA_RETURN)) {
         // When the data is not map('','') but map(), an array with zero size should be returned.
         Object[] array = new Object[0];
@@ -73,6 +76,7 @@ public class MapParserImpl extends ArrayParserImpl {
 
   @Override
   public ArrayObject parseRaw(Object data) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     Object keyArray = ((Object[]) data)[0];
     Object valueArray = ((Object[]) data)[1];
     return new ArrayObject(new Object[]{child.parseRaw(keyArray), child.parseRaw(valueArray)});

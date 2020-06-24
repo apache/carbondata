@@ -60,6 +60,7 @@ public class CarbonDataReaderFactory {
    * @return dimension column data reader based on version number
    */
   public DimensionColumnChunkReader getDimensionColumnChunkReader(ColumnarFormatVersion version,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       BlockletInfo blockletInfo, String filePath, boolean readPagebyPage) {
     switch (version) {
       case V3:
@@ -68,6 +69,7 @@ public class CarbonDataReaderFactory {
         } else {
           return new DimensionChunkReaderV3(blockletInfo, filePath);
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3061
       default:
         throw new UnsupportedOperationException("Unsupported columnar format version: " + version);
     }
@@ -82,14 +84,17 @@ public class CarbonDataReaderFactory {
    * @return measure column data reader based on version number
    */
   public MeasureColumnChunkReader getMeasureColumnChunkReader(ColumnarFormatVersion version,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
       BlockletInfo blockletInfo, String filePath, boolean readPagebyPage) {
     switch (version) {
       case V3:
         if (readPagebyPage) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3650
           return new MeasureChunkPageReaderV3(blockletInfo, filePath);
         } else {
           return new MeasureChunkReaderV3(blockletInfo, filePath);
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3061
       default:
         throw new UnsupportedOperationException("Unsupported columnar format version: " + version);
     }

@@ -34,8 +34,10 @@ public class IndexWrapper extends AbstractIndex {
   private List<TableBlockInfo> blockInfos;
 
   public IndexWrapper(List<TableBlockInfo> blockInfos, SegmentProperties segmentProperties) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1544
     this.blockInfos = blockInfos;
     this.segmentProperties = segmentProperties;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     dataRefNode = new BlockletDataRefNode(blockInfos, 0);
   }
 
@@ -44,6 +46,7 @@ public class IndexWrapper extends AbstractIndex {
     super.clear();
     if (blockInfos != null) {
       for (TableBlockInfo blockInfo : blockInfos) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         String indexWriterPath = blockInfo.getIndexWriterPath();
         if (indexWriterPath != null) {
           CarbonFile file = FileFactory.getCarbonFile(indexWriterPath);

@@ -110,6 +110,7 @@ public class CarbonDataLoadConfiguration {
   private boolean skipParsers = false;
 
   public boolean isSkipParsers() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     return skipParsers;
   }
 
@@ -129,6 +130,7 @@ public class CarbonDataLoadConfiguration {
       if (column.isDimension()) {
         dimensionCount++;
         if (column.isComplex()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
           if (!dataField.isDateDataType()) {
             complexNonDictionaryColumnCount++;
           } else {
@@ -158,6 +160,7 @@ public class CarbonDataLoadConfiguration {
   }
 
   public int getComplexDictionaryColumnCount() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
     return complexDictionaryColumnCount;
   }
 
@@ -166,6 +169,7 @@ public class CarbonDataLoadConfiguration {
   }
 
   public void setNumberOfSortColumns(int numberOfSortColumns) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
     this.numberOfSortColumns = numberOfSortColumns;
   }
 
@@ -252,6 +256,7 @@ public class CarbonDataLoadConfiguration {
   public DataType[] getMeasureDataType() {
     // data field might be rearranged in case of partition.
     // so refer internal order not the data field order.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
     List<CarbonMeasure> visibleMeasures = tableSpec.getCarbonTable().getVisibleMeasures();
     DataType[] type = new DataType[visibleMeasures.size()];
     for (int i = 0; i < type.length; i++) {
@@ -262,6 +267,7 @@ public class CarbonDataLoadConfiguration {
 
   public DataType[] getMeasureDataTypeAsDataFieldOrder() {
     // same as data fields order
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3728
     List<Integer> measureIndexes = new ArrayList<>(dataFields.length);
     int measureCount = 0;
     for (int i = 0; i < dataFields.length; i++) {
@@ -285,6 +291,7 @@ public class CarbonDataLoadConfiguration {
   public CarbonColumn[] getNoDictAndComplexDimensions() {
     // data field might be rearranged in case of partition.
     // so refer internal order not the data field order.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
     List<CarbonDimension> visibleDimensions = tableSpec.getCarbonTable().getVisibleDimensions();
     List<CarbonColumn> noDictionaryDimensions = new ArrayList<>();
     for (int i = 0; i < visibleDimensions.size(); i++) {
@@ -319,6 +326,7 @@ public class CarbonDataLoadConfiguration {
   }
 
   public short getWritingCoresCount() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1908
     return writingCoresCount;
   }
 
@@ -327,6 +335,7 @@ public class CarbonDataLoadConfiguration {
   }
 
   public String getDataWritePath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     return dataWritePath;
   }
 
@@ -335,6 +344,7 @@ public class CarbonDataLoadConfiguration {
   }
 
   public SortColumnRangeInfo getSortColumnRangeInfo() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     return sortColumnRangeInfo;
   }
 
@@ -343,6 +353,7 @@ public class CarbonDataLoadConfiguration {
   }
 
   public boolean isCarbonTransactionalTable() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     return carbonTransactionalTable;
   }
 
@@ -351,10 +362,13 @@ public class CarbonDataLoadConfiguration {
   }
 
   public int getComplexNonDictionaryColumnCount() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
     return complexNonDictionaryColumnCount;
   }
 
   public String getColumnCompressor() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     return columnCompressor;
   }
 
@@ -363,6 +377,7 @@ public class CarbonDataLoadConfiguration {
   }
 
   public int getNumberOfLoadingCores() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3031
     return numberOfLoadingCores;
   }
 
@@ -371,6 +386,7 @@ public class CarbonDataLoadConfiguration {
   }
 
   public String getSegmentPath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
     return segmentPath;
   }
 
@@ -379,6 +395,7 @@ public class CarbonDataLoadConfiguration {
   }
 
   public DataLoadMetrics getMetrics() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     return metrics;
   }
 
@@ -387,6 +404,8 @@ public class CarbonDataLoadConfiguration {
   }
 
   public String getBucketHashMethod() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
     return bucketHashMethod;
   }
 
@@ -395,6 +414,7 @@ public class CarbonDataLoadConfiguration {
   }
 
   public boolean isNonSchemaColumnsPresent() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     return nonSchemaColumnsPresent;
   }
 

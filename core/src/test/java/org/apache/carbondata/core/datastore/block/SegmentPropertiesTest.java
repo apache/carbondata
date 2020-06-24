@@ -54,10 +54,12 @@ public class SegmentPropertiesTest extends TestCase {
     columnSchema.add(getDimensionColumn7());
     columnSchema.add(getMeasureColumn());
     columnSchema.add(getMeasureColumn1());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     blockMetadataInfos = new SegmentProperties(columnSchema);
   }
 
   @Test public void testTwoSegmentPropertiesAreEqualsWithEachOther() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3700
     List<ColumnSchema> columnSchemasClone = columnSchema.stream()
             .map(t -> deepCopy(t))  // or .map(Suggestion::new)
             .collect(Collectors.toList());
@@ -94,6 +96,7 @@ public class SegmentPropertiesTest extends TestCase {
     dimensionOrdinalToBlockMapping.put(0, 0);
     dimensionOrdinalToBlockMapping.put(1, 1);
     dimensionOrdinalToBlockMapping.put(2, 2);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     dimensionOrdinalToBlockMapping.put(3, 3);
     dimensionOrdinalToBlockMapping.put(4, 4);
     dimensionOrdinalToBlockMapping.put(5, 5);
@@ -102,6 +105,7 @@ public class SegmentPropertiesTest extends TestCase {
     dimensionOrdinalToBlockMapping.put(8, 8);
     dimensionOrdinalToBlockMapping.put(9, 9);
     Map<Integer, Integer> dimensionOrdinalToBlockMappingActual =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         blockMetadataInfos.getDimensionOrdinalToChunkMapping();
     assertEquals(dimensionOrdinalToBlockMapping.size(),
         dimensionOrdinalToBlockMappingActual.size());
@@ -122,6 +126,7 @@ public class SegmentPropertiesTest extends TestCase {
     measureOrdinalToBlockMapping.put(0, 0);
     measureOrdinalToBlockMapping.put(1, 1);
     Map<Integer, Integer> measureOrdinalToBlockMappingActual =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         blockMetadataInfos.getMeasuresOrdinalToChunkMapping();
     assertEquals(measureOrdinalToBlockMapping.size(), measureOrdinalToBlockMappingActual.size());
     Iterator<Entry<Integer, Integer>> iterator = measureOrdinalToBlockMapping.entrySet().iterator();
@@ -161,6 +166,7 @@ public class SegmentPropertiesTest extends TestCase {
   }
 
   private ColumnSchema deepCopy(ColumnSchema scr) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3700
     ColumnSchema dest = new ColumnSchema();
     dest.setColumnName(scr.getColumnName());
     dest.setColumnUniqueId(scr.getColumnUniqueId());
@@ -287,6 +293,7 @@ public class SegmentPropertiesTest extends TestCase {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI5");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     dimColumn.setDataType(DataTypes.createDefaultArrayType());
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
@@ -301,6 +308,15 @@ public class SegmentPropertiesTest extends TestCase {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI6");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
@@ -327,6 +343,8 @@ public class SegmentPropertiesTest extends TestCase {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI_COUNT1");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     dimColumn.setDataType(DataTypes.STRING);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);

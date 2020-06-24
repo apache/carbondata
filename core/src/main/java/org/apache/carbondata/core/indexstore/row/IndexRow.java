@@ -88,11 +88,14 @@ public abstract class IndexRow implements Serializable {
     switch (schemas[ordinal].getSchemaType()) {
       case FIXED:
         return schemas[ordinal].getLength();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
       case VARIABLE_SHORT:
       case VARIABLE_INT:
         return getLengthInBytes(ordinal) + 4;
       case STRUCT:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         IndexRow row = getRow(ordinal);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2648
         CarbonRowSchema[] childSchemas =
             ((CarbonRowSchema.StructCarbonRowSchema) schemas[ordinal]).getChildSchemas();
         // set the child schema. Because schema is transient it can be null
@@ -108,6 +111,7 @@ public abstract class IndexRow implements Serializable {
   }
 
   public void setSchemas(CarbonRowSchema[] schemas) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2701
     if (null == this.schemas) {
       this.schemas = schemas;
     }

@@ -79,6 +79,7 @@ public class ThriftWriter {
    * Open the file for writing.
    */
   public void open() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     dataOutputStream = FileFactory.getDataOutputStream(fileName, bufferSize, append);
     binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
   }
@@ -90,6 +91,7 @@ public class ThriftWriter {
    * @throws IOException
    */
   public void open(FileWriteOperation fileWriteOperation) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2745
     atomicFileOperationsWriter = AtomicFileOperationFactory.getAtomicFileOperations(fileName);
     dataOutputStream = atomicFileOperationsWriter.openForWrite(fileWriteOperation);
     binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
@@ -123,6 +125,7 @@ public class ThriftWriter {
    */
   public void close() throws IOException {
     closeAtomicFileWriter();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1277
     CarbonUtil.closeStream(dataOutputStream);
   }
 

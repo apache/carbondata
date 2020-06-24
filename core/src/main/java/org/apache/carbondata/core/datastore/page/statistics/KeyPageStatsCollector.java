@@ -29,6 +29,7 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
   private byte[] min, max;
 
   public static KeyPageStatsCollector newInstance(DataType dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
     return new KeyPageStatsCollector(dataType);
   }
 
@@ -78,6 +79,7 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
 
   @Override
   public void update(byte[] value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     if (null == min) {
       min = value;
     }
@@ -113,6 +115,7 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
 
       @Override
       public DataType getDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
         return dataType;
       }
 

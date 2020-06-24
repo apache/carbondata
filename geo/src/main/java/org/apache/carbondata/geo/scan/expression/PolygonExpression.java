@@ -51,7 +51,9 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
 
   public PolygonExpression(String polygon, String columnName, CustomIndex indexInstance) {
     this.polygon = polygon;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     this.instance = indexInstance;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     this.column = new ColumnExpression(columnName, DataTypes.LONG);
     this.trueExpRes = new ExpressionResult(DataTypes.BOOLEAN, true);
     this.falseExpRes = new ExpressionResult(DataTypes.BOOLEAN, false);
@@ -61,6 +63,7 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
     // Validate the ranges
     for (Long[] range : ranges) {
       if (range.length != 2) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
         throw new RuntimeException("Query processor must return list of ranges with each range "
             + "containing minimum and maximum values");
       }
@@ -72,6 +75,7 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
    */
   private void processExpression() {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
       ranges = instance.query(polygon);
       validate(ranges);
     } catch (Exception e) {
@@ -128,6 +132,7 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
 
   @Override
   public String getString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     return getStatement();
   }
 
@@ -138,7 +143,9 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
 
   private void writeObject(ObjectOutputStream out) throws IOException {
     out.writeObject(polygon);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     out.writeObject(instance);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     out.writeObject(column);
   }
 

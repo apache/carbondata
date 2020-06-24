@@ -77,6 +77,7 @@ import org.apache.log4j.Logger;
  */
 public class BlockIndex extends CoarseGrainIndex
     implements BlockletIndexRowIndexes, Serializable {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(BlockIndex.class.getName());
@@ -98,6 +99,7 @@ public class BlockIndex extends CoarseGrainIndex
    * index of segmentProperties in the segmentProperties holder
    */
   protected transient SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3482
       segmentPropertiesWrapper;
   /**
    * flag to be used for forming the complete file path from file name. It will be true in case of
@@ -113,6 +115,7 @@ public class BlockIndex extends CoarseGrainIndex
   public void init(IndexModel indexModel) throws IOException {
     long startTime = System.currentTimeMillis();
     assert (indexModel instanceof BlockletIndexModel);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     BlockletIndexModel blockletIndexModel = (BlockletIndexModel) indexModel;
     DataFileFooterConverter fileFooterConverter =
         new DataFileFooterConverter(indexModel.getConfiguration());
@@ -129,6 +132,7 @@ public class BlockIndex extends CoarseGrainIndex
     String path = blockletIndexModel.getFilePath();
     // store file path only in case of partition table, non transactional table and flat folder
     // structure
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     byte[] filePath;
     this.isPartitionTable = blockletIndexModel.getCarbonTable().isHivePartitionTable();
     if (this.isPartitionTable || !blockletIndexModel.getCarbonTable().isTransactionalTable() ||
@@ -136,15 +140,18 @@ public class BlockIndex extends CoarseGrainIndex
         // if the segment data is written in tablepath then no need to store whole path of file.
         !blockletIndexModel.getFilePath().startsWith(
             blockletIndexModel.getCarbonTable().getTablePath())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3659
       filePath = FilenameUtils.getFullPathNoEndSeparator(path)
               .getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
       isFilePathStored = true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     } else {
       filePath = new byte[0];
     }
     byte[] fileName = path.substring(path.lastIndexOf("/") + 1, path.length())
         .getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
     byte[] segmentId =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         blockletIndexModel.getSegmentId().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
     if (!indexInfo.isEmpty()) {
       DataFileFooter fileFooter = indexInfo.get(0);
@@ -163,6 +170,7 @@ public class BlockIndex extends CoarseGrainIndex
     }
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           "Time taken to load blocklet index from file : " + indexModel.getFilePath() + " is "
               + (System.currentTimeMillis() - startTime));
     }
@@ -181,6 +189,7 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   private void serializeDmStore() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     if (memoryDMStore != null) {
       memoryDMStore.serializeMemoryBlock();
     }
@@ -197,6 +206,7 @@ public class BlockIndex extends CoarseGrainIndex
    * @param indexInfo
    */
   protected IndexRowImpl loadMetadata(CarbonRowSchema[] taskSummarySchema,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       SegmentProperties segmentProperties, BlockletIndexModel blockletIndexModel,
       List<DataFileFooter> indexInfo) {
     return loadBlockMetaInfo(taskSummarySchema, segmentProperties, blockletIndexModel, indexInfo);
@@ -211,7 +221,9 @@ public class BlockIndex extends CoarseGrainIndex
   private SegmentProperties initSegmentProperties(BlockletIndexModel blockletIndexModel,
       DataFileFooter fileFooter) {
     List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3482
     segmentPropertiesWrapper = SegmentPropertiesAndSchemaHolder.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         .addSegmentProperties(blockletIndexModel.getCarbonTable(),
             columnInTable, blockletIndexModel.getSegmentId());
     return segmentPropertiesWrapper.getSegmentProperties();
@@ -222,6 +234,7 @@ public class BlockIndex extends CoarseGrainIndex
       boolean[] minMaxFlag) {
     // add min max flag for all the dimension columns
     boolean[] minMaxFlagValuesForColumnsToBeCached = BlockletIndexUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3036
         .getMinMaxFlagValuesForColumnsToBeCached(segmentProperties, getMinMaxCacheColumns(),
             minMaxFlag);
     addMinMaxFlagValues(summaryRow, taskSummarySchema[TASK_MIN_MAX_FLAG],
@@ -235,7 +248,11 @@ public class BlockIndex extends CoarseGrainIndex
    * @param indexInfo
    */
   private IndexRowImpl loadBlockMetaInfo(CarbonRowSchema[] taskSummarySchema,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       SegmentProperties segmentProperties, BlockletIndexModel blockletIndexModel,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       List<DataFileFooter> indexInfo) {
     String tempFilePath = null;
     DataFileFooter previousDataFileFooter = null;
@@ -243,9 +260,11 @@ public class BlockIndex extends CoarseGrainIndex
     byte[][] blockMinValues = null;
     byte[][] blockMaxValues = null;
     IndexRowImpl summaryRow = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2788
     List<Short> blockletCountInEachBlock = new ArrayList<>(indexInfo.size());
     short totalBlockletsInOneBlock = 0;
     boolean isLastFileFooterEntryNeedToBeAdded = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     // flag for each block entry
     boolean[] minMaxFlag = new boolean[segmentProperties.getNumberOfColumns()];
@@ -253,10 +272,14 @@ public class BlockIndex extends CoarseGrainIndex
     // min max flag for task summary
     boolean[] taskSummaryMinMaxFlag = new boolean[segmentProperties.getNumberOfColumns()];
     Arrays.fill(taskSummaryMinMaxFlag, true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3293
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3293
     long totalRowCount = 0;
     for (DataFileFooter fileFooter : indexInfo) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       TableBlockInfo blockInfo = fileFooter.getBlockInfo();
       BlockMetaInfo blockMetaInfo =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           blockletIndexModel.getBlockMetaInfoMap().get(blockInfo.getFilePath());
       footerCounter++;
       if (blockMetaInfo != null) {
@@ -267,6 +290,7 @@ public class BlockIndex extends CoarseGrainIndex
           // 1st time assign the min and max values from the current file footer
           blockMinValues = fileFooter.getBlockletIndex().getMinMaxIndex().getMinValues();
           blockMaxValues = fileFooter.getBlockletIndex().getMinMaxIndex().getMaxValues();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
           updateMinMaxFlag(fileFooter, minMaxFlag);
           updateMinMaxFlag(fileFooter, taskSummaryMinMaxFlag);
           previousDataFileFooter = fileFooter;
@@ -276,11 +300,13 @@ public class BlockIndex extends CoarseGrainIndex
           // min and max at block level. So compare min and max values and update if required
           BlockletMinMaxIndex currentFooterMinMaxIndex =
               fileFooter.getBlockletIndex().getMinMaxIndex();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
           blockMinValues =
               compareAndUpdateMinMax(currentFooterMinMaxIndex.getMinValues(), blockMinValues, true);
           blockMaxValues =
               compareAndUpdateMinMax(currentFooterMinMaxIndex.getMaxValues(), blockMaxValues,
                   false);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
           updateMinMaxFlag(fileFooter, minMaxFlag);
           updateMinMaxFlag(fileFooter, taskSummaryMinMaxFlag);
           totalBlockletsInOneBlock++;
@@ -289,12 +315,16 @@ public class BlockIndex extends CoarseGrainIndex
         // with unique file path because each unique path will correspond to one
         // block in the task. OR condition is to handle the loading of last file footer
         if (!blockInfo.getFilePath().equals(tempFilePath) || footerCounter == indexInfo.size()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
           TableBlockInfo previousBlockInfo = previousDataFileFooter.getBlockInfo();
           summaryRow = loadToUnsafeBlock(schema, taskSummarySchema, previousDataFileFooter,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
               segmentProperties, getMinMaxCacheColumns(), previousBlockInfo.getFilePath(),
               summaryRow,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
               blockletIndexModel.getBlockMetaInfoMap().get(previousBlockInfo.getFilePath()),
               blockMinValues, blockMaxValues, minMaxFlag);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3293
           totalRowCount += previousDataFileFooter.getNumberOfRows();
           minMaxFlag = new boolean[segmentProperties.getNumberOfColumns()];
           Arrays.fill(minMaxFlag, true);
@@ -307,6 +337,7 @@ public class BlockIndex extends CoarseGrainIndex
           tempFilePath = blockInfo.getFilePath();
           blockMinValues = fileFooter.getBlockletIndex().getMinMaxIndex().getMinValues();
           blockMaxValues = fileFooter.getBlockletIndex().getMinMaxIndex().getMaxValues();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
           updateMinMaxFlag(fileFooter, minMaxFlag);
           updateMinMaxFlag(fileFooter, taskSummaryMinMaxFlag);
           previousDataFileFooter = fileFooter;
@@ -321,14 +352,20 @@ public class BlockIndex extends CoarseGrainIndex
     if (isLastFileFooterEntryNeedToBeAdded) {
       summaryRow =
           loadToUnsafeBlock(schema, taskSummarySchema, previousDataFileFooter, segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
               getMinMaxCacheColumns(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
               previousDataFileFooter.getBlockInfo().getFilePath(), summaryRow,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
               blockletIndexModel.getBlockMetaInfoMap()
                   .get(previousDataFileFooter.getBlockInfo().getFilePath()),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
               blockMinValues, blockMaxValues, minMaxFlag);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3293
       totalRowCount += previousDataFileFooter.getNumberOfRows();
       blockletCountInEachBlock.add(totalBlockletsInOneBlock);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2788
     byte[] blockletCount = convertRowCountFromShortToByteArray(blockletCountInEachBlock);
     // set the total row count
     summaryRow.setLong(totalRowCount, TASK_ROW_COUNT);
@@ -340,6 +377,7 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   protected void updateMinMaxFlag(DataFileFooter fileFooter, boolean[] minMaxFlag) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     BlockletIndexUtil
         .updateMinMaxFlag(fileFooter.getBlockletIndex().getMinMaxIndex(), minMaxFlag);
   }
@@ -369,7 +407,9 @@ public class BlockIndex extends CoarseGrainIndex
   protected IndexRowImpl loadToUnsafeBlock(CarbonRowSchema[] schema,
       CarbonRowSchema[] taskSummarySchema, DataFileFooter fileFooter,
       SegmentProperties segmentProperties, List<CarbonColumn> minMaxCacheColumns, String filePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       IndexRowImpl summaryRow, BlockMetaInfo blockMetaInfo, byte[][] minValues,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
       byte[][] maxValues, boolean[] minMaxFlag) {
     // Add one row to maintain task level min max for segment pruning
     if (summaryRow == null) {
@@ -409,12 +449,14 @@ public class BlockIndex extends CoarseGrainIndex
     // add schema updated time
     row.setLong(fileFooter.getSchemaUpdatedTimeStamp(), ordinal++);
     // add block offset
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     row.setLong(fileFooter.getBlockInfo().getBlockOffset(), ordinal++);
     try {
       setLocations(blockMetaInfo.getLocationInfo(), row, ordinal++);
       // store block size
       row.setLong(blockMetaInfo.getSize(), ordinal++);
       // add min max flag for all the dimension columns
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3036
       addMinMaxFlagValues(row, schema[ordinal], minMaxFlagValuesForColumnsToBeCached, ordinal);
       memoryDMStore.addIndexRow(schema, row);
     } catch (Exception e) {
@@ -429,9 +471,11 @@ public class BlockIndex extends CoarseGrainIndex
       boolean[] minMaxFlag, int ordinal) {
     CarbonRowSchema[] minMaxFlagSchema =
         ((CarbonRowSchema.StructCarbonRowSchema) carbonRowSchema).getChildSchemas();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     IndexRow minMaxFlagRow = new IndexRowImpl(minMaxFlagSchema);
     int flagOrdinal = 0;
     // min value adding
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3036
     for (int i = 0; i < minMaxFlag.length; i++) {
       minMaxFlagRow.setBoolean(minMaxFlag[i], flagOrdinal++);
     }
@@ -443,6 +487,7 @@ public class BlockIndex extends CoarseGrainIndex
       return getTableTaskInfo(SUMMARY_INDEX_PATH);
     }
     // create the segment directory path
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3482
     String tablePath = segmentPropertiesWrapper.getTableIdentifier().getTablePath();
     String segmentId = getTableTaskInfo(SUMMARY_SEGMENTID);
     return CarbonTablePath.getSegmentPath(tablePath, segmentId);
@@ -450,8 +495,10 @@ public class BlockIndex extends CoarseGrainIndex
 
   protected String getFileNameWithFilePath(IndexRow indexRow, String filePath) {
     String fileName = filePath + CarbonCommonConstants.FILE_SEPARATOR + new String(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         indexRow.getByteArray(FILE_PATH_INDEX), CarbonCommonConstants.DEFAULT_CHARSET_CLASS)
         + CarbonTablePath.getCarbonDataExtension();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3217
     return FileFactory.getUpdatedFilePath(fileName);
   }
 
@@ -461,6 +508,7 @@ public class BlockIndex extends CoarseGrainIndex
     if (null != summaryRow) {
       summaryRow.setByteArray(fileName, SUMMARY_INDEX_FILE_NAME);
       summaryRow.setByteArray(segmentId, SUMMARY_SEGMENTID);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
       if (filePath.length > 0) {
         summaryRow.setByteArray(filePath, SUMMARY_INDEX_PATH);
       }
@@ -476,6 +524,7 @@ public class BlockIndex extends CoarseGrainIndex
       byte[][] minValues) {
     CarbonRowSchema[] minSchemas =
         ((CarbonRowSchema.StructCarbonRowSchema) carbonRowSchema).getChildSchemas();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     IndexRow minRow = new IndexRowImpl(minSchemas);
     int minOrdinal = 0;
     // min value adding
@@ -497,6 +546,7 @@ public class BlockIndex extends CoarseGrainIndex
    */
   protected void addTaskMinMaxValues(IndexRow taskMinMaxRow, CarbonRowSchema[] carbonRowSchema,
       int taskMinMaxOrdinal, byte[][] minMaxValue, int ordinal, boolean isMinValueComparison) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     IndexRow row = taskMinMaxRow.getRow(ordinal);
     byte[][] updatedMinMaxValues = null;
     if (null == row) {
@@ -507,6 +557,7 @@ public class BlockIndex extends CoarseGrainIndex
       updatedMinMaxValues = minMaxValue;
     } else {
       byte[][] existingMinMaxValues = getMinMaxValue(taskMinMaxRow, ordinal);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
       updatedMinMaxValues =
           compareAndUpdateMinMax(minMaxValue, existingMinMaxValues, isMinValueComparison);
     }
@@ -528,6 +579,7 @@ public class BlockIndex extends CoarseGrainIndex
   private byte[][] compareAndUpdateMinMax(byte[][] minMaxValueCompare1,
       byte[][] minMaxValueCompare2, boolean isMinValueComparison) {
     // Compare and update min max values
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
     byte[][] updatedMinMaxValues = new byte[minMaxValueCompare1.length][];
     System.arraycopy(minMaxValueCompare1, 0, updatedMinMaxValues, 0, minMaxValueCompare1.length);
     for (int i = 0; i < minMaxValueCompare1.length; i++) {
@@ -545,6 +597,7 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   protected void createMemorySchema(BlockletIndexModel blockletIndexModel) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     memoryDMStore = getMemoryDMStore(blockletIndexModel.isAddToUnsafe());
   }
 
@@ -560,12 +613,16 @@ public class BlockIndex extends CoarseGrainIndex
 
   @Override
   public boolean isScanRequired(FilterResolverIntf filterExp) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
     FilterExecuter filterExecuter = FilterUtil.getFilterExecuterTree(
         filterExp, getSegmentProperties(), null, getMinMaxCacheColumns(), false);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     IndexRow unsafeRow = taskSummaryDMStore
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         .getIndexRow(getTaskSummarySchema(), taskSummaryDMStore.getRowCount() - 1);
     boolean isScanRequired = FilterExpressionProcessor
         .isScanRequired(filterExecuter, getMinMaxValue(unsafeRow, TASK_MAX_VALUES_INDEX),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
             getMinMaxValue(unsafeRow, TASK_MIN_VALUES_INDEX),
             getMinMaxFlag(unsafeRow, TASK_MIN_MAX_FLAG));
     if (isScanRequired) {
@@ -575,6 +632,7 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   protected List<CarbonColumn> getMinMaxCacheColumns() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3482
     return segmentPropertiesWrapper.getMinMaxCacheColumns();
   }
 
@@ -583,6 +641,8 @@ public class BlockIndex extends CoarseGrainIndex
    * if data is not legacy store, we can get blocklet count from taskSummaryDMStore
    */
   protected short getBlockletNumOfEntry(int index) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     final byte[] bytes = getBlockletRowCountForEachBlock();
     // if the segment data is written in tablepath
     // then the reuslt of getBlockletRowCountForEachBlock will be empty.
@@ -611,11 +671,13 @@ public class BlockIndex extends CoarseGrainIndex
   @Override
   public long getRowCount(Segment segment, List<PartitionSpec> partitions) {
     long totalRowCount =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         taskSummaryDMStore.getIndexRow(getTaskSummarySchema(), 0).getLong(TASK_ROW_COUNT);
     if (totalRowCount == 0) {
       Map<String, Long> blockletToRowCountMap = new HashMap<>();
       // if it has partitioned index but there is no partitioned information stored, it means
       // partitions are dropped so return empty list.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3773
       if (partitions != null) {
         if (validatePartitionInfo(partitions)) {
           return totalRowCount;
@@ -641,11 +703,13 @@ public class BlockIndex extends CoarseGrainIndex
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     int numEntries = memoryDMStore.getRowCount();
     for (int i = 0; i < numEntries; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       IndexRow indexRow = memoryDMStore.getIndexRow(schema, i);
       String fileName = new String(indexRow.getByteArray(FILE_PATH_INDEX),
           CarbonCommonConstants.DEFAULT_CHARSET_CLASS) + CarbonTablePath.getCarbonDataExtension();
       int rowCount = indexRow.getInt(ROW_COUNT_INDEX);
       // prepend segment number with the blocklet file path
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3391
       String blockletMapKey = segment.getSegmentNo() + "," + fileName;
       Long existingCount = blockletToRowCountMap.get(blockletMapKey);
       if (null != existingCount) {
@@ -658,6 +722,7 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   private List<Blocklet> prune(FilterResolverIntf filterExp, FilterExecuter filterExecuter,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3700
       SegmentProperties segmentProperties) {
     if (memoryDMStore.getRowCount() == 0) {
       return new ArrayList<>();
@@ -673,6 +738,7 @@ public class BlockIndex extends CoarseGrainIndex
     int hitBlocklets = 0;
     if (filterExp == null) {
       for (int i = 0; i < numEntries; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         IndexRow indexRow = memoryDMStore.getIndexRow(schema, i);
         blocklets.add(createBlocklet(indexRow, getFileNameWithFilePath(indexRow, filePath),
             getBlockletId(indexRow), false));
@@ -684,6 +750,7 @@ public class BlockIndex extends CoarseGrainIndex
       int entryIndex = 0;
       // flag to be used for deciding whether use min/max in executor pruning for BlockletIndex
       boolean useMinMaxForPruning = useMinMaxForExecutorPruning(filterExp);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3700
       if (!validateSegmentProperties(segmentProperties)) {
         filterExecuter = FilterUtil
                 .getFilterExecuterTree(filterExp, getSegmentProperties(),
@@ -691,6 +758,7 @@ public class BlockIndex extends CoarseGrainIndex
       }
       // min and max for executor pruning
       while (entryIndex < numEntries) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         IndexRow row = memoryDMStore.getIndexRow(schema, entryIndex);
         boolean[] minMaxFlag = getMinMaxFlag(row, BLOCK_MIN_MAX_FLAG);
         String fileName = getFileNameWithFilePath(row, filePath);
@@ -710,7 +778,9 @@ public class BlockIndex extends CoarseGrainIndex
     if (ExplainCollector.enabled()) {
       ExplainCollector.setShowPruningInfo(true);
       ExplainCollector.addTotalBlocklets(totalBlocklets);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2929
       ExplainCollector.addTotalBlocks(getTotalBlocks());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       ExplainCollector.addDefaultIndexPruningHit(hitBlocklets);
     }
     return blocklets;
@@ -722,7 +792,9 @@ public class BlockIndex extends CoarseGrainIndex
 
   @Override
   public List<Blocklet> prune(Expression expression, SegmentProperties properties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
       CarbonTable carbonTable, FilterExecuter filterExecuter) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     return prune(new IndexFilter(properties, carbonTable, expression).getResolver(), properties,
         filterExecuter, carbonTable);
   }
@@ -742,6 +814,7 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   public boolean validatePartitionInfo(List<PartitionSpec> partitions) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3773
     if (memoryDMStore.getRowCount() == 0) {
       return true;
     }
@@ -756,6 +829,7 @@ public class BlockIndex extends CoarseGrainIndex
         break;
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3773
     return !found;
   }
 
@@ -790,10 +864,14 @@ public class BlockIndex extends CoarseGrainIndex
    * @return
    */
   private boolean addBlockBasedOnMinMaxValue(FilterExecuter filterExecuter, byte[][] maxValue,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
       byte[][] minValue, boolean[] minMaxFlag, String filePath, int blockletId) {
     BitSet bitSet = null;
     if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
       String uniqueBlockPath;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3801
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3805
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3809
       CarbonTable carbonTable = segmentPropertiesWrapper.getCarbonTable();
       if (carbonTable.isHivePartitionTable()) {
         // While data loading to SI created on Partition table, on partition directory, '/' will be
@@ -811,6 +889,7 @@ public class BlockIndex extends CoarseGrainIndex
         uniqueBlockPath = uniqueBlockPath + CarbonCommonConstants.FILE_SEPARATOR + blockletId;
       }
       bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
           .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath, minMaxFlag);
     } else {
       bitSet = filterExecuter.isScanRequired(maxValue, minValue, minMaxFlag);
@@ -818,6 +897,7 @@ public class BlockIndex extends CoarseGrainIndex
     if (!bitSet.isEmpty()) {
       return true;
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
       return false;
     }
   }
@@ -842,6 +922,7 @@ public class BlockIndex extends CoarseGrainIndex
       relativeBlockletId = (short) absoluteBlockletId;
     } else {
       int diff = absoluteBlockletId;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2788
       ByteBuffer byteBuffer = ByteBuffer.wrap(getBlockletRowCountForEachBlock());
       // Example: absoluteBlockletID = 17, blockletRowCountForEachBlock = {4,3,2,5,7}
       // step1: diff = 17-4, diff = 13
@@ -850,12 +931,14 @@ public class BlockIndex extends CoarseGrainIndex
       // step4: diff = 8-5, diff = 3
       // step5: diff = 3-7, diff = -4 (satisfies <= 0)
       // step6: relativeBlockletId = -4+7, relativeBlockletId = 3 (4th index starting from 0)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2788
       while (byteBuffer.hasRemaining()) {
         short blockletCount = byteBuffer.getShort();
         diff = diff - blockletCount;
         if (diff < 0) {
           relativeBlockletId = (short) (diff + blockletCount);
           break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3592
         } else if (diff == 0) {
           relativeBlockletId++;
           break;
@@ -863,7 +946,9 @@ public class BlockIndex extends CoarseGrainIndex
         rowIndex++;
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     IndexRow row =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         memoryDMStore.getIndexRow(getFileFooterEntrySchema(), rowIndex);
     String filePath = getFilePath();
     return createBlocklet(row, getFileNameWithFilePath(row, filePath), relativeBlockletId,
@@ -874,6 +959,7 @@ public class BlockIndex extends CoarseGrainIndex
     // taskSummary DM store will  have only one row
     CarbonRowSchema[] taskSummarySchema = getTaskSummarySchema();
     return taskSummaryDMStore
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         .getIndexRow(taskSummarySchema, taskSummaryDMStore.getRowCount() - 1)
         .getByteArray(taskSummarySchema.length - 1);
   }
@@ -884,6 +970,7 @@ public class BlockIndex extends CoarseGrainIndex
    * @return
    */
   public String getTableTaskInfo(int index) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     IndexRow unsafeRow = taskSummaryDMStore.getIndexRow(getTaskSummarySchema(), 0);
     try {
       return new String(unsafeRow.getByteArray(index), CarbonCommonConstants.DEFAULT_CHARSET);
@@ -894,6 +981,7 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   private byte[][] getMinMaxValue(IndexRow row, int index) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     IndexRow minMaxRow = row.getRow(index);
     byte[][] minMax = new byte[minMaxRow.getColumnCount()][];
     for (int i = 0; i < minMax.length; i++) {
@@ -903,6 +991,7 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   private boolean[] getMinMaxFlag(IndexRow row, int index) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     IndexRow minMaxFlagRow = row.getRow(index);
     boolean[] minMaxFlag = new boolean[minMaxFlagRow.getColumnCount()];
     for (int i = 0; i < minMaxFlag.length; i++) {
@@ -920,6 +1009,7 @@ public class BlockIndex extends CoarseGrainIndex
     short versionNumber = row.getShort(VERSION_INDEX);
     ExtendedBlocklet blocklet = new ExtendedBlocklet(fileName, blockletId + "", false,
         ColumnarFormatVersion.valueOf(versionNumber));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     blocklet.setIndexRow(row);
     blocklet.setUseMinMaxForPruning(useMinMaxForPruning);
     return blocklet;
@@ -928,6 +1018,7 @@ public class BlockIndex extends CoarseGrainIndex
   private String[] getFileDetails() {
     try {
       String[] fileDetails = new String[3];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       IndexRow unsafeRow = taskSummaryDMStore.getIndexRow(getTaskSummarySchema(), 0);
       fileDetails[0] = new String(unsafeRow.getByteArray(SUMMARY_INDEX_PATH),
           CarbonCommonConstants.DEFAULT_CHARSET);
@@ -964,6 +1055,7 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   protected boolean validateSegmentProperties(SegmentProperties tableSegmentProperties) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3700
     return tableSegmentProperties.equals(getSegmentProperties());
   }
 
@@ -986,10 +1078,13 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   protected CarbonRowSchema[] getFileFooterEntrySchema() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3482
     return segmentPropertiesWrapper.getBlockFileFooterEntrySchema();
   }
 
   protected CarbonRowSchema[] getTaskSummarySchema() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3062
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     return segmentPropertiesWrapper.getTaskSummarySchemaForBlock(true, isFilePathStored);
   }
 
@@ -999,6 +1094,7 @@ public class BlockIndex extends CoarseGrainIndex
    */
   public void convertToUnsafeDMStore() {
     if (memoryDMStore instanceof SafeMemoryDMStore) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
       UnsafeMemoryDMStore unsafeMemoryDMStore = memoryDMStore.convertToUnsafeDMStore(
           getFileFooterEntrySchema());
       memoryDMStore.freeMemory();
@@ -1010,6 +1106,7 @@ public class BlockIndex extends CoarseGrainIndex
       taskSummaryDMStore.freeMemory();
       taskSummaryDMStore = unsafeSummaryMemoryDMStore;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     if (memoryDMStore instanceof UnsafeMemoryDMStore) {
       if (memoryDMStore.isSerialized()) {
         memoryDMStore.copyToMemoryBlock();
@@ -1028,11 +1125,13 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   public SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper getSegmentPropertiesWrapper() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3482
     return segmentPropertiesWrapper;
   }
 
   @Override
   public int getNumberOfEntries() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3118
     if (memoryDMStore != null) {
       if (memoryDMStore.getRowCount() == 0) {
         // so that one index considered as one record

@@ -39,6 +39,7 @@ public class LoadEvents {
     private boolean isOverWriteTable;
 
     public LoadTablePreExecutionEvent(CarbonTableIdentifier carbonTableIdentifier,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
         CarbonLoadModel carbonLoadModel, String factPath, boolean isDataFrameDefined,
         Map<String, String> optionsFinal, Map<String, String> userProvidedOptions,
         boolean isOverWriteTable) {
@@ -66,6 +67,7 @@ public class LoadEvents {
     }
 
     public String getFactPath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
       return factPath;
     }
 
@@ -98,6 +100,7 @@ public class LoadEvents {
     public LoadTablePostExecutionEvent(CarbonTableIdentifier carbonTableIdentifier,
         CarbonLoadModel carbonLoadModel) {
       this.carbonTableIdentifier = carbonTableIdentifier;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2012
       this.carbonLoadModel = carbonLoadModel;
     }
 
@@ -120,6 +123,7 @@ public class LoadEvents {
     private CarbonTableIdentifier carbonTableIdentifier;
 
     public LoadTablePreStatusUpdateEvent(CarbonTableIdentifier carbonTableIdentifier,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
         CarbonLoadModel carbonLoadModel) {
       this.carbonTableIdentifier = carbonTableIdentifier;
       this.carbonLoadModel = carbonLoadModel;

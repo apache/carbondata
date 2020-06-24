@@ -70,6 +70,7 @@ public class MapBasedDictionaryStore implements DictionaryStore {
 
   public MapBasedDictionaryStore(int dictionaryThreshold) {
     this.dictionaryThreshold = dictionaryThreshold;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3515
     this.dictionarySizeThresholdInBytes = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB)) << 20;
     this.dictionary = new ConcurrentHashMap<>();
@@ -104,6 +105,7 @@ public class MapBasedDictionaryStore implements DictionaryStore {
           value = ++lastAssignValue;
           currentSize += data.length;
           // if new value is greater than threshold
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3515
           if (value > dictionaryThreshold || currentSize > dictionarySizeThresholdInBytes) {
             // set the threshold boolean to true
             isThresholdReached = true;
@@ -122,6 +124,7 @@ public class MapBasedDictionaryStore implements DictionaryStore {
 
   private void checkIfThresholdReached() throws DictionaryThresholdReachedException {
     if (isThresholdReached) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3515
       if (currentSize > dictionarySizeThresholdInBytes) {
         throw new DictionaryThresholdReachedException(
             "Unable to generate dictionary. Dictionary Size crossed bytes: "

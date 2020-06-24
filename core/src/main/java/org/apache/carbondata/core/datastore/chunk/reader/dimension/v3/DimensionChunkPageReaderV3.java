@@ -54,6 +54,7 @@ public class DimensionChunkPageReaderV3 extends DimensionChunkReaderV3 {
   private long lastDimensionOffsets;
 
   public DimensionChunkPageReaderV3(BlockletInfo blockletInfo, String filePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     super(blockletInfo, filePath);
     lastDimensionOffsets = blockletInfo.getDimensionOffset();
   }
@@ -140,8 +141,10 @@ public class DimensionChunkPageReaderV3 extends DimensionChunkReaderV3 {
    */
   @Override
   public DimensionColumnPage decodeColumnPage(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber,
       ReusableDataBuffer reusableDataBuffer)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
     // data chunk of page
     DataChunk2 pageMetadata = null;
@@ -150,6 +153,7 @@ public class DimensionChunkPageReaderV3 extends DimensionChunkReaderV3 {
 
     pageMetadata = dataChunk3.getData_chunk_list().get(pageNumber);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2958
     if (compressor == null) {
       this.compressor = CompressorFactory.getInstance().getCompressor(
           CarbonMetadataUtil.getCompressorNameFromChunkMeta(pageMetadata.getChunk_meta()));
@@ -161,6 +165,7 @@ public class DimensionChunkPageReaderV3 extends DimensionChunkReaderV3 {
         .get(dimensionRawColumnChunk.getColumnIndex()) + dataChunk3.getPage_offset()
         .get(pageNumber);
     int length = pageMetadata.data_page_length;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
     if (CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX)) {
       length += pageMetadata.rowid_page_length;
     }
@@ -172,6 +177,7 @@ public class DimensionChunkPageReaderV3 extends DimensionChunkReaderV3 {
     ByteBuffer rawData = dimensionRawColumnChunk.getFileReader()
         .readByteBuffer(filePath, offset, length);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     return decodeDimension(dimensionRawColumnChunk, rawData, pageMetadata, 0, null,
         reusableDataBuffer);
   }

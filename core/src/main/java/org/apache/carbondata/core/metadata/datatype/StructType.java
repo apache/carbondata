@@ -24,6 +24,7 @@ public class StructType extends DataType {
   private List<StructField> fields;
 
   public StructType(List<StructField> fields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     super(DataTypes.STRUCT_TYPE_ID, 10, "STRUCT", -1);
     this.fields = fields;
   }
@@ -35,12 +36,14 @@ public class StructType extends DataType {
 
   @Override
   public boolean equals(Object obj) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     if (this == obj) {
       return true;
     }
     if (obj == null) {
       return false;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2493
     if (getClass() != obj.getClass()) {
       return false;
     }
@@ -59,6 +62,7 @@ public class StructType extends DataType {
     final int prime = 31;
     int result = 1;
     result = prime * result + getName().hashCode();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2493
     result = prime * result + getFields().hashCode();
     return result;
   }

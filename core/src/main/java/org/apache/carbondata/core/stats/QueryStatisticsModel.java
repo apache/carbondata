@@ -31,6 +31,7 @@ public class QueryStatisticsModel {
       new HashMap<String, QueryStatistic>();
 
   private boolean isEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
       .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
           CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT));
 
@@ -47,6 +48,7 @@ public class QueryStatisticsModel {
   }
 
   public boolean isEnabled() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     return isEnabled;
   }
 }

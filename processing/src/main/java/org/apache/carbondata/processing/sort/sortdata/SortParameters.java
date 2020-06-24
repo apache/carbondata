@@ -172,12 +172,15 @@ public class SortParameters implements Serializable {
     parameters.numberOfIntermediateFileToBeMerged = numberOfIntermediateFileToBeMerged;
     parameters.fileWriteBufferSize = fileWriteBufferSize;
     parameters.observer = observer;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1839
     parameters.sortTempCompressorName = sortTempCompressorName;
     parameters.prefetch = prefetch;
     parameters.bufferSize = bufferSize;
     parameters.databaseName = databaseName;
     parameters.tableName = tableName;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1015
     parameters.measureDataType = measureDataType;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     parameters.noDictDataType = noDictDataType;
     parameters.noDictSortDataType = noDictSortDataType;
     parameters.noDictNoSortDataType = noDictNoSortDataType;
@@ -187,18 +190,25 @@ public class SortParameters implements Serializable {
     parameters.taskNo = taskNo;
     parameters.noDictionaryDimnesionColumn = noDictionaryDimnesionColumn;
     parameters.sortColumn = sortColumn;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     parameters.isVarcharDimensionColumn = isVarcharDimensionColumn;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
     parameters.noDictionarySortColumn = noDictionarySortColumn;
     parameters.numberOfSortColumns = numberOfSortColumns;
     parameters.numberOfNoDictSortColumns = numberOfNoDictSortColumns;
     parameters.numberOfCores = numberOfCores;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     parameters.rangeId = rangeId;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
     parameters.carbonTable = carbonTable;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
     parameters.isUpdateDictDims = isUpdateDictDims;
     parameters.isUpdateNonDictDims = isUpdateNonDictDims;
     parameters.dictDimActualPosition = dictDimActualPosition;
     parameters.noDictActualPosition = noDictActualPosition;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
     parameters.noDictSortColumnSchemaOrderMapping = noDictSortColumnSchemaOrderMapping;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3728
     parameters.isInsertWithoutReArrangeFlow = isInsertWithoutReArrangeFlow;
     return parameters;
   }
@@ -268,6 +278,7 @@ public class SortParameters implements Serializable {
   }
 
   public String getSortTempCompressorName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1839
     return sortTempCompressorName;
   }
 
@@ -308,6 +319,7 @@ public class SortParameters implements Serializable {
   }
 
   public DataType[] getMeasureDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1015
     return measureDataType;
   }
 
@@ -356,6 +368,7 @@ public class SortParameters implements Serializable {
   }
 
   public boolean[] getIsVarcharDimensionColumn() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     return isVarcharDimensionColumn;
   }
 
@@ -372,6 +385,7 @@ public class SortParameters implements Serializable {
   }
 
   public int getNumberOfSortColumns() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
     return numberOfSortColumns;
   }
 
@@ -396,6 +410,7 @@ public class SortParameters implements Serializable {
   }
 
   public void setCarbonTable(CarbonTable carbonTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
     this.carbonTable = carbonTable;
   }
 
@@ -404,6 +419,7 @@ public class SortParameters implements Serializable {
   }
 
   int[] getNoDictSortColumnSchemaOrderMapping() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
     return noDictSortColumnSchemaOrderMapping;
   }
 
@@ -412,6 +428,7 @@ public class SortParameters implements Serializable {
   }
 
   public boolean isInsertWithoutReArrangeFlow() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3728
     return isInsertWithoutReArrangeFlow;
   }
 
@@ -427,11 +444,13 @@ public class SortParameters implements Serializable {
     parameters.setCarbonTable(configuration.getTableSpec().getCarbonTable());
     parameters.setDatabaseName(tableIdentifier.getDatabaseName());
     parameters.setTableName(tableIdentifier.getTableName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1992
     parameters.setPartitionID("0");
     parameters.setSegmentId(configuration.getSegmentId());
     parameters.setTaskNo(configuration.getTaskNo());
     parameters.setMeasureColCount(configuration.getMeasureCount());
     parameters.setDimColCount(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
         configuration.getDimensionCount() - (configuration.getComplexDictionaryColumnCount()
             + configuration.getComplexNonDictionaryColumnCount()));
     parameters.setNoDictionaryCount(configuration.getNoDictionaryCount());
@@ -439,6 +458,7 @@ public class SortParameters implements Serializable {
         .getComplexNonDictionaryColumnCount());
     parameters.setNoDictionaryDimnesionColumn(
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields()));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     parameters.setIsVarcharDimensionColumn(
         CarbonDataProcessorUtil.getIsVarcharColumnMapping(configuration.getDataFields()));
     parameters.setNumberOfSortColumns(configuration.getNumberOfSortColumns());
@@ -458,6 +478,8 @@ public class SortParameters implements Serializable {
     LOGGER.info("Number of intermediate file to be merged: " + parameters
         .getNumberOfIntermediateFileToBeMerged());
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
     String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(parameters.getCarbonTable(),
             configuration.getTaskNo(), configuration.getSegmentId(), false, false);
@@ -468,8 +490,10 @@ public class SortParameters implements Serializable {
     LOGGER.info("temp file location: " + StringUtils.join(parameters.getTempFileLocation(), ","));
     int numberOfCores = 1;
     // In case of loading from partition we should use the cores specified by it
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2093
     if (configuration.getWritingCoresCount() > 0) {
       numberOfCores = configuration.getWritingCoresCount();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3031
     } else {
       numberOfCores = configuration.getNumberOfLoadingCores() / 2;
     }
@@ -490,6 +514,7 @@ public class SortParameters implements Serializable {
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3728
     if (configuration.getDataLoadProperty(DataLoadProcessorConstants.NO_REARRANGE_OF_ROWS) != null
         && configuration.getTableSpec().getCarbonTable().getPartitionInfo() != null) {
       // In case of partition, partition data will be present in the end for rearrange flow
@@ -514,11 +539,14 @@ public class SortParameters implements Serializable {
       parameters.setUpdateNonDictDims(tableSpec.isUpdateNoDictDims());
     } else {
       parameters.setNoDictionarySortColumn(CarbonDataProcessorUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
           .getNoDictSortColMapping(parameters.getCarbonTable()));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
       parameters.setNoDictSortColumnSchemaOrderMapping(CarbonDataProcessorUtil
           .getColumnIdxBasedOnSchemaInRow(parameters.getCarbonTable()));
       parameters.setMeasureDataType(configuration.getMeasureDataType());
       parameters.setNoDictDataType(CarbonDataProcessorUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
           .getNoDictDataTypes(configuration.getTableSpec().getCarbonTable()));
       Map<String, DataType[]> noDictSortAndNoSortDataTypes = CarbonDataProcessorUtil
           .getNoDictSortAndNoSortDataTypes(configuration.getTableSpec().getCarbonTable());
@@ -534,6 +562,7 @@ public class SortParameters implements Serializable {
   }
 
   public int getRangeId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     return rangeId;
   }
 
@@ -548,20 +577,26 @@ public class SortParameters implements Serializable {
       int numberOfCores) {
     SortParameters parameters = new SortParameters();
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
     parameters.setCarbonTable(carbonTable);
     parameters.setDatabaseName(databaseName);
     parameters.setTableName(tableName);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3208
     parameters.setPartitionID(CarbonTablePath.DEPRECATED_PARTITION_ID);
     parameters.setSegmentId(segmentId);
     parameters.setTaskNo(taskNo);
     parameters.setMeasureColCount(measureColCount);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3196
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3203
     parameters.setDimColCount(dimColCount);
     parameters.setNumberOfSortColumns(carbonTable.getNumberOfSortColumns());
     parameters.setNoDictionaryCount(noDictionaryCount);
     parameters.setNumberOfNoDictSortColumns(carbonTable.getNumberOfNoDictSortColumns());
     parameters.setComplexDimColCount(complexDimColCount);
     parameters.setNoDictionaryDimnesionColumn(noDictionaryColMaping);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     parameters.setSortColumn(sortColumnMapping);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     parameters.setIsVarcharDimensionColumn(isVarcharDimensionColumn);
     parameters.setObserver(new SortObserver());
     // get sort buffer size
@@ -577,8 +612,11 @@ public class SortParameters implements Serializable {
     LOGGER.info("Number of intermediate file to be merged: " + parameters
         .getNumberOfIntermediateFileToBeMerged());
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
     String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
         .getLocalDataFolderLocation(carbonTable, taskNo, segmentId,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-940
             isCompactionFlow, false);
     String[] sortTempDirs = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath,
         File.separator, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
@@ -591,20 +629,25 @@ public class SortParameters implements Serializable {
         .getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE,
             CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE)));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1839
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1839
     parameters.setSortTempCompressorName(CarbonProperties.getInstance().getSortTempCompressor());
     if (!parameters.sortTempCompressorName.isEmpty()) {
       LOGGER.info(" Compression " + parameters.sortTempCompressorName
           + " will be used for writing the sort temp File");
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3591
     parameters.setPrefetch(CarbonCommonConstants.CARBON_PREFETCH_IN_MERGE_VALUE);
     parameters.setBufferSize(Integer.parseInt(carbonProperties.getProperty(
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
 
     DataType[] type = CarbonDataProcessorUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
         .getMeasureDataType(parameters.getMeasureColCount(), parameters.getCarbonTable());
     parameters.setMeasureDataType(type);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     parameters.setNoDictDataType(CarbonDataProcessorUtil
         .getNoDictDataTypes(carbonTable));
     Map<String, DataType[]> noDictSortAndNoSortDataTypes = CarbonDataProcessorUtil
@@ -613,9 +656,12 @@ public class SortParameters implements Serializable {
     parameters.setNoDictNoSortDataType(noDictSortAndNoSortDataTypes.get("noDictNoSortDataTypes"));
     parameters.setNoDictionarySortColumn(CarbonDataProcessorUtil
         .getNoDictSortColMapping(parameters.getCarbonTable()));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
     parameters.setNoDictSortColumnSchemaOrderMapping(CarbonDataProcessorUtil
         .getColumnIdxBasedOnSchemaInRow(parameters.getCarbonTable()));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3728
     TableSpec tableSpec = new TableSpec(carbonTable, false);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
     parameters.setNoDictActualPosition(tableSpec.getNoDictDimActualPosition());
     parameters.setDictDimActualPosition(tableSpec.getDictDimActualPosition());
     parameters.setUpdateDictDims(tableSpec.isUpdateDictDim());
@@ -656,6 +702,7 @@ public class SortParameters implements Serializable {
   }
 
   public boolean isUpdateDictDims() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
     return isUpdateDictDims;
   }
 

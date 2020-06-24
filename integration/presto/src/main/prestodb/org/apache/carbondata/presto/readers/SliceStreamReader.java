@@ -72,6 +72,7 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
 
   @Override
   public void setDictionary(CarbonDictionary dictionary) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3143
     super.setDictionary(dictionary);
     if (dictionary == null) {
       dictionaryBlock = null;
@@ -84,6 +85,7 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     int[] dictOffsets = new int[dictionary.getDictionarySize() + 1];
     int size = 0;
     for (int i = 0; i < dictionary.getDictionarySize(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
       dictOffsets[i] = size;
       if (dictionary.getDictionaryValue(i) != null) {
         size += dictionary.getDictionaryValue(i).length;
@@ -99,6 +101,7 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     dictOffsets[dictOffsets.length - 1] = size;
     dictionaryBlock = new VariableWidthBlock(dictionary.getDictionarySize(),
         Slices.wrappedBuffer(singleArrayDictValues), dictOffsets, Optional.of(nulls));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3237
     this.isLocalDict = true;
   }
 
@@ -133,6 +136,8 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
 
   @Override
   public void putNulls(int rowId, int count) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2818
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     if (dictionaryBlock == null) {
       for (int i = 0; i < count; ++i) {
         builder.appendNull();
@@ -147,6 +152,7 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
 
   @Override
   public void putObject(int rowId, Object value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
     if (value == null) {
       putNull(rowId);
     } else {

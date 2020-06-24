@@ -97,7 +97,9 @@ public class ZooKeeperLockingTest {
     ZookeeperInit zki = ZookeeperInit.getInstance("127.0.0.1:" + freePort);
 
     AbsoluteTableIdentifier tableIdentifier = AbsoluteTableIdentifier
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
         .from(CarbonProperties.getStorePath(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2642
             "dbName", "tableName", UUID.randomUUID().toString());
     ZooKeeperLocking zkl =
         new ZooKeeperLocking(tableIdentifier,

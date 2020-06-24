@@ -50,6 +50,8 @@ public class BlockletIndexInputSplit extends IndexInputSplit {
   }
 
   public TableBlockIndexUniqueIdentifier getTableBlockIndexUniqueIdentifier() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
     return tableBlockIndexUniqueIdentifier;
   }
 
@@ -59,6 +61,8 @@ public class BlockletIndexInputSplit extends IndexInputSplit {
   }
 
   public String getSegmentPath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     return segmentPath;
   }
 

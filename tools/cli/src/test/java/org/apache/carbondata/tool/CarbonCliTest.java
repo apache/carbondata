@@ -45,6 +45,7 @@ public class CarbonCliTest {
   private String pathBinary = "./CarbonCliTestBinary";
 
   private String buildLines(String... lines) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3053
     ByteArrayOutputStream expectedOut = null;
     PrintStream expectedStream = null;
     try {
@@ -75,6 +76,7 @@ public class CarbonCliTest {
   public void buildBinaryData(int rows, Schema schema, String path, String[] sortColumns,
                               int blockletSize, int blockSize)
       throws IOException, InvalidLoadOptionException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
 
     CarbonWriterBuilder builder = CarbonWriter.builder()
         .outputPath(path);
@@ -127,6 +129,7 @@ public class CarbonCliTest {
     String output = new String(out.toByteArray());
 
     String expectedOutput = buildLines(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3080
             "Input Folder: ./CarbonCliTest" ,
             "## Summary",
             "total: 6 blocks, 2 shards, 12 blocklets, 314 pages, 10,000,000 rows, 28.68MB",
@@ -140,6 +143,7 @@ public class CarbonCliTest {
     output = new String(out.toByteArray());
 
     expectedOutput = buildLines(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3065
         "Column Name  Data Type  Column Type  SortColumn  Encoding  Ordinal  Id  ",
         "name         STRING     dimension    true        []        0        NA  ",
         "age          INT        measure      false       []        1        NA  ");
@@ -156,6 +160,7 @@ public class CarbonCliTest {
         "schema file not found");
     Assert.assertTrue(output.contains(expectedOutput));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
     String[] args4 = {"-cmd", "summary", "-p", path, "-b", "7"};
     out = new ByteArrayOutputStream();
     stream = new PrintStream(out);
@@ -163,6 +168,7 @@ public class CarbonCliTest {
     output = new String(out.toByteArray());
 
     expectedOutput = buildLines(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3080
         "BLK  BLKLT  NumPages  NumRows  Size    " ,
         "0    0      28        896,000  2.57MB  " ,
         "0    1      28        896,000  2.57MB  " ,
@@ -179,6 +185,7 @@ public class CarbonCliTest {
     output = new String(out.toByteArray());
 
     expectedOutput = buildLines(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3080
         "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%  Max%  Min     Max     " ,
         "0    0      1.90KB     2.15KB     true       2            18.0B     9.0B         NA    NA    robot0  robot1  " ,
         "0    1      1.90KB     2.16KB     true       3            22.0B     9.0B         NA    NA    robot1  robot3  " ,
@@ -191,6 +198,7 @@ public class CarbonCliTest {
 
   @Test
   public void testSortColumnsOfSegmentFolder() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3349
     String[] args = {"-cmd", "sort_columns", "-p", path};
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     PrintStream stream = new PrintStream(out);
@@ -211,6 +219,7 @@ public class CarbonCliTest {
     String output = new String(out.toByteArray());
 
     String expectedOutput = buildLines(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3080
         "Input Folder: ./CarbonCliTest" ,
         "## Summary",
         "total: 6 blocks, 2 shards, 12 blocklets, 314 pages, 10,000,000 rows, 28.68MB",
@@ -239,6 +248,7 @@ public class CarbonCliTest {
 
     expectedOutput = buildLines(
         "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%  Max%   Min  Max      " ,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3473
         "0    0      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  0    2999990  " ,
         "0    1      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  1    2999992  " ,
         "1    0      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  3    2999994  " ,
@@ -260,12 +270,14 @@ public class CarbonCliTest {
     String output = new String(out.toByteArray());
     String expectedOutput = buildLines(
         "Blocklet 0:",
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3080
         "Page 0 (offset 0, length 9): DataChunk2(chunk_meta:ChunkCompressionMeta(compression_codec:DEPRECATED, total_uncompressed_size:96000, total_compressed_size:9, compressor_name:snappy), rowMajor:false, data_page_length:5, rle_page_length:4, presence:PresenceMeta(represents_presence:false, present_bit_stream:00), sort_state:SORT_NATIVE, encoders:[RLE], encoder_meta:[], min_max:BlockletMinMaxIndex(min_values:[72 6F 62 6F 74 30], max_values:[72 6F 62 6F 74 30], min_max_presence:[true]), numberOfRowsInpage:32000)");
     Assert.assertTrue(output.contains(expectedOutput));
   }
 
   @Test
   public void testSummaryAllColumns() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3544
     String[] args = { "-cmd", "summary", "-p", path, "-C" };
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     PrintStream stream = new PrintStream(out);
@@ -303,6 +315,7 @@ public class CarbonCliTest {
 
   @Test
   public void testBinary() throws IOException, InvalidLoadOptionException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     FileUtils.deleteDirectory(new File(pathBinary));
     Field[] fields = new Field[3];
     fields[0] = new Field("name", DataTypes.STRING);

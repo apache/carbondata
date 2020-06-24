@@ -37,6 +37,7 @@ public abstract class AbstractRecordReader<T> extends RecordReader<Void, T> {
    */
   public void logStatistics(int recordCount, QueryStatisticsRecorder recorder) {
     // result size
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2143
     if (null != recorder) {
       QueryStatistic queryStatistic = new QueryStatistic();
       queryStatistic.addCountStatistic(QueryStatisticsConstants.RESULT_SIZE, recordCount);

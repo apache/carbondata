@@ -37,6 +37,7 @@ public class RestructureExcludeFilterExecutorImpl extends RestructureEvaluatorIm
   private boolean isDefaultValuePresentInFilterValues;
 
   public RestructureExcludeFilterExecutorImpl(DimColumnResolvedFilterInfo dimColEvaluatorInfo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
       MeasureColumnResolvedFilterInfo measureColumnResolvedFilterInfo, boolean isMeasure) {
     if (isMeasure) {
       isDefaultValuePresentInFilterValues =
@@ -52,12 +53,14 @@ public class RestructureExcludeFilterExecutorImpl extends RestructureEvaluatorIm
       boolean useBitsetPipeLine) {
     int numberOfRows = rawBlockletColumnChunks.getDataBlock().numRows();
     return FilterUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         .createBitSetGroupWithDefaultValue(rawBlockletColumnChunks.getDataBlock().numberOfPages(),
             numberOfRows, !isDefaultValuePresentInFilterValues);
   }
 
   @Override
   public boolean applyFilter(RowIntf value, int dimOrdinalMax)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
       throws FilterUnsupportedException {
     throw new FilterUnsupportedException("Unsupported RestructureExcludeFilterExecutorImpl on row");
   }

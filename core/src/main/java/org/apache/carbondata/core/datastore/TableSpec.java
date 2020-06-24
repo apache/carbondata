@@ -61,6 +61,7 @@ public class TableSpec {
     this.carbonTable = carbonTable;
     List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
     List<CarbonMeasure> measures = carbonTable.getVisibleMeasures();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3728
     if (keepPartitionColumnsToEnd && carbonTable.getPartitionInfo() != null) {
       // keep the partition columns in the end
       List<CarbonDimension> reArrangedDimensions = new ArrayList<>();
@@ -92,20 +93,24 @@ public class TableSpec {
       measures = reArrangedMeasures;
     }
     // first calculate total number of columnar field considering column group and complex column
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1268
     numSimpleDimensions = 0;
     for (CarbonDimension dimension : dimensions) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       if (!dimension.isComplex()) {
         numSimpleDimensions++;
       }
     }
     dimensionSpec = new DimensionSpec[dimensions.size()];
     measureSpec = new MeasureSpec[measures.size()];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2926
     noDictionaryDimensionSpec = new ArrayList<>();
     addDimensions(dimensions);
     addMeasures(measures);
   }
 
   private void addDimensions(List<CarbonDimension> dimensions) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
     List<DimensionSpec> dictSortDimSpec = new ArrayList<>();
     List<DimensionSpec> noSortDictDimSpec = new ArrayList<>();
     List<DimensionSpec> noSortNoDictDimSpec = new ArrayList<>();
@@ -121,9 +126,12 @@ public class TableSpec {
       CarbonDimension dimension = dimensions.get(i);
       if (dimension.isComplex()) {
         spec = new DimensionSpec(ColumnType.COMPLEX, dimension, noDictActualPosition++);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
         dimensionSpec[dimIndex++] = spec;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2926
         noDictionaryDimensionSpec.add(spec);
         noSortNoDictDimSpec.add(spec);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       } else if (dimension.getDataType() == DataTypes.TIMESTAMP) {
         spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension, noDictActualPosition++);
         dimensionSpec[dimIndex++] = spec;
@@ -133,6 +141,7 @@ public class TableSpec {
         } else {
           noSortNoDictDimSpec.add(spec);
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       } else if (dimension.getDataType() == DataTypes.DATE) {
         spec = new DimensionSpec(ColumnType.DIRECT_DICTIONARY, dimension, dictActualPosition++);
         dimensionSpec[dimIndex++] = spec;
@@ -145,6 +154,7 @@ public class TableSpec {
       } else {
         spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension, noDictActualPosition++);
         dimensionSpec[dimIndex++] = spec;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2926
         noDictionaryDimensionSpec.add(spec);
         if (dimension.isSortColumn()) {
           noDictSortDimSpec.add(spec);
@@ -171,11 +181,13 @@ public class TableSpec {
   private void addMeasures(List<CarbonMeasure> measures) {
     for (int i = 0; i < measures.size(); i++) {
       CarbonMeasure measure = measures.get(i);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       measureSpec[i] = new MeasureSpec(measure.getColName(), measure.getDataType());
     }
   }
 
   public int[] getDictDimActualPosition() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
     return dictDimActualPosition;
   }
 
@@ -197,6 +209,7 @@ public class TableSpec {
    * @return
    */
   public DimensionSpec[] getNoDictAndComplexDimensions() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     List<DimensionSpec> noDictAndComplexDimensions = new ArrayList<>();
     for (int i = 0; i < dimensionSpec.length; i++) {
       if (dimensionSpec[i].getColumnType() == ColumnType.PLAIN_VALUE
@@ -213,6 +226,7 @@ public class TableSpec {
   }
 
   public List<DimensionSpec> getNoDictionaryDimensionSpec() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2926
     return noDictionaryDimensionSpec;
   }
 
@@ -236,6 +250,7 @@ public class TableSpec {
   }
 
   public CarbonTable getCarbonTable() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1543
     return carbonTable;
   }
 
@@ -259,6 +274,7 @@ public class TableSpec {
     }
 
     public static ColumnSpec newInstance(String fieldName, DataType schemaDataType,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         ColumnType columnType) {
       return new ColumnSpec(fieldName, schemaDataType, columnType);
     }
@@ -287,6 +303,7 @@ public class TableSpec {
     }
 
     public int getScale() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       if (DataTypes.isDecimal(schemaDataType)) {
         return ((DecimalType) schemaDataType).getScale();
       } else if (schemaDataType == DataTypes.BYTE_ARRAY) {
@@ -307,8 +324,10 @@ public class TableSpec {
     @Override
     public void write(DataOutput out) throws IOException {
       out.writeUTF(fieldName);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       out.writeByte(schemaDataType.getId());
       out.writeByte(columnType.ordinal());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       if (DataTypes.isDecimal(schemaDataType)) {
         DecimalType decimalType = (DecimalType) schemaDataType;
         out.writeInt(decimalType.getScale());
@@ -322,10 +341,12 @@ public class TableSpec {
     @Override
     public void readFields(DataInput in) throws IOException {
       this.fieldName = in.readUTF();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       this.schemaDataType = DataTypes.valueOf(in.readByte());
       this.columnType = ColumnType.valueOf(in.readByte());
       int scale = in.readInt();
       int precision = in.readInt();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       if (DataTypes.isDecimal(this.schemaDataType)) {
         DecimalType decimalType = (DecimalType) this.schemaDataType;
         decimalType.setPrecision(precision);
@@ -344,7 +365,9 @@ public class TableSpec {
 
     // indicate the actual postion in blocklet
     private short actualPostion;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3333
     DimensionSpec(ColumnType columnType, CarbonDimension dimension, short actualPostion) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       super(dimension.getColName(), dimension.getDataType(), columnType);
       this.inSortColumns = dimension.isSortColumn();
       this.doInvertedIndex = dimension.isUseInvertedIndex();
@@ -360,11 +383,13 @@ public class TableSpec {
     }
 
     public short getActualPostion() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3333
       return actualPostion;
     }
 
     @Override
     public void write(DataOutput out) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
       super.write(out);
     }
 
@@ -376,6 +401,7 @@ public class TableSpec {
 
   public class MeasureSpec extends ColumnSpec implements Writable {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     MeasureSpec(String fieldName, DataType dataType) {
       super(fieldName, dataType, ColumnType.MEASURE);
     }

@@ -76,6 +76,7 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
     finalMerger = new UnsafeSingleThreadFinalSortFilesMerger(sortParameters,
         sortParameters.getTempFileLocation());
     // Delete if any older file exists in sort temp folder
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
     CarbonDataProcessorUtil.deleteSortLocationIfExists(sortParameters.getTempFileLocation());
     // create new sort temp directory
     CarbonDataProcessorUtil.createLocations(sortParameters.getTempFileLocation());
@@ -87,6 +88,7 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
     int inMemoryChunkSizeInMB = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
     final int batchSize = CarbonProperties.getInstance().getBatchSize();
     this.executorService = Executors.newFixedThreadPool(sortParameters.getNumberOfCores(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3304
         new CarbonThreadFactory("UnsafeParallelSorterPool:" + sortParameters.getTableName(),
                 true));
     this.threadStatusObserver = new ThreadStatusObserver(executorService);
@@ -108,6 +110,8 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
         CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordDictionaryValuesTotalTime(
             sortParameters.getPartitionID(), System.currentTimeMillis());
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2238
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2238
     } catch (Exception e) {
       checkError();
       throw new CarbonDataLoadingException("Problem while shutdown the server ", e);
@@ -148,6 +152,7 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
 
   @Override
   public void close() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1410
     if (null != executorService && !executorService.isShutdown()) {
       executorService.shutdownNow();
     }
@@ -171,6 +176,7 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
     private ThreadStatusObserver threadStatusObserver;
 
     public SortIteratorThread(Iterator<CarbonRowBatch> iterator,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-903
         UnsafeSortDataRows sortDataRows, int batchSize, AtomicLong rowCounter,
         ThreadStatusObserver threadStatusObserver) {
       this.iterator = iterator;
@@ -183,6 +189,7 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
     @Override
     public void run() {
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
         sortDataRows.initialize();
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
@@ -198,9 +205,12 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
             rowCounter.getAndAdd(i);
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
         sortDataRows.startSorting();
       } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
         LOGGER.error(e.getMessage(), e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-903
         this.threadStatusObserver.notifyFailed(e);
       }
     }

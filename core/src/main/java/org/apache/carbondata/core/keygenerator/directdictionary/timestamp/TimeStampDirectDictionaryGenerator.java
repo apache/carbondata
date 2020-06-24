@@ -88,6 +88,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     }
     long cutOffTimeStampLocal;
     if (null == cutOffTimeStampString) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1452
       cutOffTimeStampLocal = 0;
     } else {
       try {
@@ -101,6 +102,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
         LOGGER.warn("Cannot convert" + cutOffTimeStampString
             + " to Time/Long type value. Value considered for cutOffTimeStamp is -1." + e
             .getMessage());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1452
         cutOffTimeStampLocal = 0;
       }
     }
@@ -147,6 +149,8 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     } else {
       if (null == memberStr || memberStr.trim().isEmpty() || memberStr
           .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
         return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
       }
       return getDirectSurrogateForMember(memberStr);
@@ -163,6 +167,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
       }
       dateToStr = simpleDateFormat.parse(memberStr);
     } catch (ParseException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1049
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("Cannot convert value to Time/Long type value. Value considered as null." + e
             .getMessage());
@@ -171,6 +176,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     }
     //adding +2 to reserve the first cuttOffDiff value for null or empty date
     if (null == dateToStr) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
       return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {
       return generateKey(dateToStr.getTime());
@@ -185,9 +191,11 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
    */
   @Override
   public Object getValueFromSurrogate(int key) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
     if (key == CarbonCommonConstants.DIRECT_DICT_VALUE_NULL) {
       return null;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1452
     long timeStamp = ((key - 2) * granularityFactor + cutOffTimeStamp);
     return timeStamp * 1000L;
   }
@@ -195,8 +203,10 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
   private int generateDirectSurrogateKeyForNonTimestampType(String memberStr) {
     long timeValue = -1;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
       timeValue = Long.parseLong(memberStr) / 1000;
     } catch (NumberFormatException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1049
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug(
             "Cannot convert " + memberStr + " Long type value. Value considered as null." + e
@@ -204,6 +214,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
       }
     }
     if (timeValue == -1) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
       return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {
       return generateKey(timeValue);
@@ -211,11 +222,13 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
   }
 
   public int generateKey(long timeValue) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1452
     long time = (timeValue - cutOffTimeStamp) / granularityFactor;
     int keyValue = -1;
     if (time >= (long) Integer.MIN_VALUE && time <= (long) Integer.MAX_VALUE) {
       keyValue = (int) time;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
     return keyValue < 0 ? CarbonCommonConstants.DIRECT_DICT_VALUE_NULL : keyValue + 2;
   }
 
@@ -228,6 +241,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
 
   @Override
   public DataType getReturnType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     return DataTypes.LONG;
   }
 

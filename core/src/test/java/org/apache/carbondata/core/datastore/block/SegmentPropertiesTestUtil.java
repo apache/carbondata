@@ -42,6 +42,7 @@ public class SegmentPropertiesTestUtil {
     columnSchema.add(getDimensionColumn7());
     columnSchema.add(getMeasureColumn());
     columnSchema.add(getMeasureColumn1());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     return new SegmentProperties(columnSchema);
   }
 
@@ -159,6 +160,7 @@ public class SegmentPropertiesTestUtil {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI5");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     dimColumn.setDataType(DataTypes.createDefaultArrayType());
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
@@ -173,6 +175,15 @@ public class SegmentPropertiesTestUtil {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI6");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
@@ -199,6 +210,8 @@ public class SegmentPropertiesTestUtil {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI_COUNT1");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     dimColumn.setDataType(DataTypes.STRING);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);

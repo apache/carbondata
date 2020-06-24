@@ -56,6 +56,7 @@ public class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
   public ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex(
       CarbonColumnVector vectorWrapper, BitSet deletedRows, int[] invertedIndex, BitSet nullBits,
       boolean isnullBitsExists, boolean isDictVector) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3048
     super(new CarbonColumnVectorImpl(invertedIndex.length,
         isDictVector ? DataTypes.INT : vectorWrapper.getType()), invertedIndex, isnullBitsExists);
     this.deletedRows = deletedRows;
@@ -87,6 +88,7 @@ public class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
   public void convert() {
     if (columnVector instanceof CarbonColumnVectorImpl) {
       CarbonColumnVectorImpl localVector = (CarbonColumnVectorImpl) columnVector;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3048
       DataType dataType = columnVector.getType();
       int length = invertedIndex.length;
       int counter = 0;
@@ -170,6 +172,7 @@ public class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
       } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
         int[] offsets = localVector.getOffsets();
         int[] lengths = localVector.getLengths();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
         if (offsets != null && lengths != null) {
           for (int i = 0; i < length; i++) {
             if (!deletedRows.get(i)) {

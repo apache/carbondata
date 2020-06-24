@@ -43,6 +43,7 @@ public class CarbonThreadFactory implements ThreadFactory {
   }
 
   public CarbonThreadFactory(String name, boolean withTime) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3142
     this(name);
     this.withTime = withTime;
   }

@@ -66,6 +66,7 @@ public class StructParserImpl implements ComplexParser<StructObject> {
 
   @Override
   public StructObject parseRaw(Object data) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     Object[] d = ((Object[]) data);
     Object[] array = new Object[children.size()];
     for (int i = 0; i < d.length; i++) {
