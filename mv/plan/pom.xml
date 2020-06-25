@@ -26,8 +26,10 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>carbondata-mv-plan_${spark.binary.version}</artifactId>
+  <artifactId>carbondata-mv-plan</artifactId>
   <name>Apache CarbonData :: Materialized View Plan</name>
+
+  <packaging>jar</packaging>
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
@@ -46,6 +48,7 @@
   </dependencies>
 
   <build>
+    <finalName>carbondata-mv-plan_${spark.binary.version}-${project.version}</finalName>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>

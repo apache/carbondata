@@ -26,8 +26,10 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>carbondata-spark_${spark.binary.version}</artifactId>
+  <artifactId>carbondata-spark</artifactId>
   <name>Apache CarbonData :: Spark</name>
+
+  <packaging>jar</packaging>
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
@@ -159,7 +161,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-mv-plan_${spark.binary.version}</artifactId>
+      <artifactId>carbondata-mv-plan</artifactId>
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
@@ -267,6 +269,7 @@
   </dependencies>
 
   <build>
+    <finalName>carbondata-spark_${spark.binary.version}-${project.version}</finalName>
     <resources>
       <resource>
         <directory>src/resources</directory>

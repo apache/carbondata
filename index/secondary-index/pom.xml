@@ -37,7 +37,7 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark_${spark.binary.version}</artifactId>
+      <artifactId>carbondata-spark</artifactId>
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
