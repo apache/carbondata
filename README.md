@@ -28,8 +28,8 @@ Visit count: [![HitCount](http://hits.dwyl.io/jackylk/apache/carbondata.svg)](ht
 
 
 ## Status
-Spark2.3:
-[![Build Status](https://builds.apache.org/buildStatus/icon?job=carbondata-master-spark-2.3)](https://builds.apache.org/view/A-D/view/CarbonData/job/carbondata-master-spark-2.3/lastBuild/testReport)
+Spark2.4:
+[![Build Status](https://builds.apache.org/buildStatus/icon?job=carbondata-master-spark-2.4)](https://builds.apache.org/view/A-D/view/CarbonData/job/carbondata-master-spark-2.4/lastBuild/testReport)
 [![Coverage Status](https://coveralls.io/repos/github/apache/carbondata/badge.svg?branch=master)](https://coveralls.io/github/apache/carbondata?branch=master)
 <a href="https://scan.coverity.com/projects/carbondata">
   <img alt="Coverity Scan Build Status"
