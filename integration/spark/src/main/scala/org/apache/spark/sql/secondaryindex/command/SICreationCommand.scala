@@ -49,6 +49,7 @@ import org.apache.carbondata.core.metadata.schema.indextable.{IndexMetadata, Ind
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{CreateTablePostExecutionEvent, CreateTablePreExecutionEvent, OperationContext, OperationListenerBus}
@@ -390,8 +391,13 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       }
       val indexTablePath = CarbonTablePath
         .getMetadataPath(tableInfo.getOrCreateAbsoluteTableIdentifier.getTablePath)
+      val mainTblLoadMetadataDetails: Array[LoadMetadataDetails] =
+        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+      val siTblLoadMetadataDetails: Array[LoadMetadataDetails] =
+        SegmentStatusManager.readLoadMetadata(indexTablePath)
       val isMaintableSegEqualToSISegs = CarbonInternalLoaderUtil
-        .checkMainTableSegEqualToSISeg(carbonTable.getMetadataPath, indexTablePath)
+        .checkMainTableSegEqualToSISeg(mainTblLoadMetadataDetails,
+          siTblLoadMetadataDetails)
       if (isMaintableSegEqualToSISegs) {
         // enable the SI table
         sparkSession.sql(

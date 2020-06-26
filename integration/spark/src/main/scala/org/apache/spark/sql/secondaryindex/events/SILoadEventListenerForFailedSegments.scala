@@ -78,19 +78,26 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
                   .getTableMetadata(TableIdentifier(indexTableName,
                     Some(carbonLoadModel.getDatabaseName))).storage.properties
                   .getOrElse("isSITableEnabled", "true").toBoolean
+                val indexTable = metaStore
+                  .lookupRelation(Some(carbonLoadModel.getDatabaseName), indexTableName)(
+                    sparkSession)
+                  .asInstanceOf[CarbonRelation]
+                  .carbonTable
 
-                if (!isLoadSIForFailedSegments) {
+                val mainTblLoadMetadataDetails: Array[LoadMetadataDetails] =
+                  SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+                val siTblLoadMetadataDetails: Array[LoadMetadataDetails] =
+                  SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath)
+                if (!isLoadSIForFailedSegments
+                    || !CarbonInternalLoaderUtil.checkMainTableSegEqualToSISeg(
+                  mainTblLoadMetadataDetails,
+                  siTblLoadMetadataDetails)) {
                   val indexColumns = indexMetadata.getIndexColumns(secondaryIndexProvider,
                     indexTableName)
                   val secondaryIndex = IndexModel(Some(carbonTable.getDatabaseName),
                     indexMetadata.getParentTableName,
                     indexColumns.split(",").toList,
                     indexTableName)
-
-                  val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-                  val indexTable = metaStore
-                    .lookupRelation(Some(carbonLoadModel.getDatabaseName),
-                      indexTableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
 
                   var details = SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath)
                   // If it empty, then no need to do further computations because the
@@ -161,11 +168,22 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
                       // get the current load metadata details of the index table
                       details = SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath)
                     }
+
+                    // get updated main table segments and si table segments
+                    val mainTblLoadMetadataDetails: Array[LoadMetadataDetails] =
+                      SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+                    val siTblLoadMetadataDetails: Array[LoadMetadataDetails] =
+                      SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath)
+
+                    // check if main table has load in progress and SI table has no load
+                    // in progress entry, then no need to enable the SI table
                     // Only if the valid segments of maintable match the valid segments of SI
                     // table then we can enable the SI for query
                     if (CarbonInternalLoaderUtil
-                      .checkMainTableSegEqualToSISeg(carbonTable.getMetadataPath,
-                        indexTable.getMetadataPath)) {
+                          .checkMainTableSegEqualToSISeg(mainTblLoadMetadataDetails,
+                            siTblLoadMetadataDetails)
+                        && CarbonInternalLoaderUtil.checkInProgLoadInMainTableAndSI(carbonTable,
+                      mainTblLoadMetadataDetails, siTblLoadMetadataDetails)) {
                       // enable the SI table if it was disabled earlier due to failure during SI
                       // creation time
                       sparkSession.sql(
