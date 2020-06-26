@@ -23,8 +23,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -46,7 +49,9 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.FileFooter3;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.apache.carbondata.sdk.file.utils.SDKUtil.readObjects;
@@ -55,6 +60,17 @@ import static org.apache.carbondata.sdk.file.utils.SDKUtil.readObjects;
  * Test suite for {@link CSVCarbonWriter}
  */
 public class CSVCarbonWriterTest {
+  String path = "./testCsvFileLoad";
+
+  @Before
+  @After
+  public void cleanTestData() {
+    try {
+      FileUtils.deleteDirectory(new File(path));
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
 
   @Test
   public void testWriteFiles() throws IOException {
@@ -846,4 +862,160 @@ public class CSVCarbonWriterTest {
     }
   }
 
+  private void loadCsvFile(String filePath, Schema schema, Map<String, String> options)
+      throws IOException, InvalidLoadOptionException {
+    CarbonWriterBuilder carbonWriterBuilder = new CarbonWriterBuilder().withCsvInput(schema).
+        withCsvPath(filePath).outputPath(path).writtenBy("CSVCarbonWriter");
+    CarbonWriter carbonWriter = null;
+    if (options == null) {
+      carbonWriter = carbonWriterBuilder.build();
+    } else {
+      carbonWriter = carbonWriterBuilder.withLoadOptions(options).build();
+    }
+    carbonWriter.write();
+    carbonWriter.close();
+    File[] dataFiles = new File(path).listFiles();
+    assert (Objects.requireNonNull(dataFiles).length == 2);
+  }
+
+  @Test
+  public void testCsvLoadAndCarbonReadWithPrimitiveType() throws IOException, InvalidLoadOptionException, InterruptedException {
+    String filePath = "./src/test/resources/file/csv_files/primitive_data.csv";
+    Field fields[] = new Field[4];
+    fields[0] = new Field("id", "INT");
+    fields[1] = new Field("country", "STRING");
+    fields[2] = new Field("name", "STRING");
+    fields[3] = new Field("salary", "INT");
+    Schema schema = new Schema(fields);
+    loadCsvFile(filePath, schema, null);
+    CarbonReader reader = CarbonReader.builder("./testCsvFileLoad", "_temp")
+            .projection(new String[]{"id", "country", "name", "salary"}).build();
+    int rowCount = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      rowCount++;
+      Assert.assertEquals(row[0], rowCount);
+      Assert.assertEquals(row[1], "china");
+      Assert.assertEquals(row[2], "aaa" + rowCount);
+      Assert.assertEquals(row[3], 14999 + rowCount);
+    }
+    assert (rowCount == 10);
+    reader.close();
+  }
+
+  @Test
+  public void testCsvLoadAndCarbonReadWithComplexType() throws IOException, InterruptedException, InvalidLoadOptionException {
+    String filePath = "../../examples/spark/src/main/resources/data.csv";
+    Field fields[] = new Field[11];
+    fields[0] = new Field("shortField", "SHORT");
+    fields[1] = new Field("intField", "INT");
+    fields[2] = new Field("bigintField", "LONG");
+    fields[3] = new Field("doubleField", "DOUBLE");
+    fields[4] = new Field("stringField", "STRING");
+    fields[5] = new Field("timestampfield", "TIMESTAMP");
+    fields[6] = new Field("decimalField", "DECIMAL");
+    fields[7] = new Field("datefield", "DATE");
+    fields[8] = new Field("charField", "VARCHAR");
+    fields[9] = new Field("floatField", "FLOAT");
+
+    StructField[] structFields = new StructField[3];
+    structFields[0] = new StructField("fooField", DataTypes.STRING);
+    structFields[1] = new StructField("barField", DataTypes.STRING);
+    structFields[2] = new StructField("worldField", DataTypes.STRING);
+    Field structType = new Field("structField", "struct", Arrays.asList(structFields));
+
+    fields[10] = structType;
+    Map<String, String> options = new HashMap<>();
+    options.put("timestampformat", "yyyy/MM/dd HH:mm:ss");
+    options.put("dateformat", "yyyy/MM/dd");
+    options.put("complex_delimiter_level_1", "#");
+    Schema schema = new Schema(fields);
+    loadCsvFile(filePath, schema, options);
+
+    CarbonReader reader = CarbonReader.builder("./testCsvFileLoad", "_temp")
+            .projection(new String[]{"structfield"}).build();
+    int rowCount = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      Object[] structCol = (Object[]) row[0];
+      assert (structCol.length == 3);
+      Assert.assertEquals(structCol[0], "'foo'");
+      Assert.assertEquals(structCol[1], "'bar'");
+      Assert.assertEquals(structCol[2], "'world'");
+      rowCount++;
+    }
+    assert (rowCount == 10);
+    reader.close();
+  }
+
+  @Test
+  public void testMultipleCsvFileLoad() throws IOException, InvalidLoadOptionException, InterruptedException {
+    String filePath = "./src/test/resources/file/csv_files";
+    Field fields[] = new Field[4];
+    fields[0] = new Field("id", "INT");
+    fields[1] = new Field("country", "STRING");
+    fields[2] = new Field("name", "STRING");
+    fields[3] = new Field("salary", "INT");
+    Schema schema = new Schema(fields);
+    loadCsvFile(filePath, schema, null);
+
+    CarbonReader reader = CarbonReader.builder("./testCsvFileLoad", "_temp")
+            .projection(new String[]{"id", "country", "name", "salary"}).build();
+    int rowCount = 0;
+    List<Object[]> rowDatas = new ArrayList<>();
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      rowDatas.add(row);
+    }
+    rowDatas.sort((row1, row2) -> {
+      if((int)row1[0] == (int)row2[0]){
+        return 0;
+      }
+      return ((int)row1[0] < (int)row2[0]) ? -1 : 1;
+    });
+    for(Object[] row: rowDatas) {
+      rowCount++;
+      Assert.assertEquals(row[0], rowCount);
+      Assert.assertEquals(row[1], "china");
+      Assert.assertEquals(row[2], "aaa" + rowCount);
+      Assert.assertEquals(row[3], 14999 + rowCount);
+    }
+    assert (rowCount == 30);
+    reader.close();
+  }
+
+  @Test
+  public void testSelectedCsvFileLoadInDirectory() throws IOException,
+      InvalidLoadOptionException, InterruptedException {
+    String filePath = "./src/test/resources/file/csv_files";
+    CarbonWriterBuilder carbonWriterBuilder = new CarbonWriterBuilder();
+    Field fields[] = new Field[4];
+    fields[0] = new Field("id", "INT");
+    fields[1] = new Field("country", "STRING");
+    fields[2] = new Field("name", "STRING");
+    fields[3] = new Field("salary", "INT");
+    List<String> fileList = new ArrayList<>();
+    fileList.add("primitive_data_2.csv");
+    fileList.add("primitive_data_3.csv");
+    CarbonWriter carbonWriter = carbonWriterBuilder.withCsvInput(new Schema(fields)).
+        withCsvPath(filePath, fileList).outputPath(path).writtenBy("CSVCarbonWriter").build();
+    carbonWriter.write();
+    carbonWriter.close();
+    File[] dataFiles = new File(path).listFiles();
+    assert (Objects.requireNonNull(dataFiles).length == 2);
+
+    CarbonReader reader = CarbonReader.builder("./testCsvFileLoad", "_temp")
+            .projection(new String[]{"id", "country", "name", "salary"}).build();
+    int id = 10;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      id++;
+      Assert.assertEquals(row[0], id);
+      Assert.assertEquals(row[1], "china");
+      Assert.assertEquals(row[2], "aaa" + id);
+      Assert.assertEquals(row[3], 14999 + id);
+    }
+    assert (id == 30);
+    reader.close();
+  }
 }

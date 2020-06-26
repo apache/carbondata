@@ -1,0 +1,11 @@
+{
+	"stringField": "nihal\"ojha\"",
+	"intField": 26,
+	"shortField": 26,
+	"longField": 1234567,
+	"doubleField": 23.3333,
+	"boolField": false,
+	"dateField": "2019-03-02",
+	"timeField": "2019-02-12 03:03:34",
+	"decimalField" : 55.35
+}

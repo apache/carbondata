@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 
 /**
  * Writer to write row data to carbondata file. Call {@link #builder()} to get
@@ -48,5 +49,15 @@ public abstract class CarbonWriter {
   public static CarbonWriterBuilder builder() {
     return new CarbonWriterBuilder();
   }
+
+  /**
+   * Write the data of files iteratively, format of files depends on the implementation.
+   */
+  public abstract void write() throws IOException;
+
+  /**
+   * Set the list of carbon files.
+   */
+  public abstract void setDataFiles(CarbonFile[] dataFiles) throws IOException;
 
 }

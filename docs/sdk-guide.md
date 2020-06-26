@@ -454,6 +454,131 @@ public CarbonWriterBuilder withJsonInput(Schema carbonSchema);
 
 ```
 /**
+ * To build a {@link CarbonWriter}, which accepts CSV file or directory
+ * that has to be loaded.
+ *
+ * @param filePath absolute path under which files should be loaded.
+ * @return CarbonWriterBuilder
+ */
+public CarbonWriterBuilder withCsvPath(String filePath);
+```
+
+```
+/**
+ * To build a {@link CarbonWriter}, which accepts directory of CSV files and
+ * list of selected file that has to be loaded.
+ *
+ * @param filePath absolute path under which files should be loaded.
+ * @param fileList list of selected files which has to be loaded under given directory.
+ * @return CarbonWriterBuilder
+ */
+public CarbonWriterBuilder withCsvPath(String filePath, List<String> fileList) throws IOException;
+```
+
+Find example code at [CsvCarbonWriterTest](https://github.com/apache/carbondata/blob/master/sdk/sdk/src/test/java/org/apache/carbondata/sdk/file/CSVCarbonWriterTest.java) in the CarbonData repo.
+
+```
+/**
+ * To build a {@link CarbonWriter}, which accepts AVRO file or directory
+ * that has to be loaded.
+ *
+ * @param filePath absolute path under which files should be loaded.
+ * @return CarbonWriterBuilder
+ */
+public CarbonWriterBuilder withAvroPath(String filePath) throws IOException;
+```
+
+```
+/**
+ * To build a {@link CarbonWriter}, which accepts directory of AVRO files and
+ * list of selected file that has to be loaded.
+ *
+ * @param filePath absolute path under which files should be loaded.
+ * @param fileList list of selected files which has to be loaded under given directory.
+ * @return CarbonWriterBuilder
+ */
+public CarbonWriterBuilder withAvroPath(String filePath, List<String> fileList) throws IOException;
+```
+
+Find example code at [AvroCarbonWriterTest](https://github.com/apache/carbondata/blob/master/sdk/sdk/src/test/java/org/apache/carbondata/sdk/file/AvroCarbonWriterTest.java) in the CarbonData repo.
+
+```
+/**
+ * To build a {@link CarbonWriter}, which accepts JSON file or directory
+ * that has to be loaded.
+ *
+ * @param filePath absolute path under which files should be loaded.
+ * @return CarbonWriterBuilder
+ */
+public CarbonWriterBuilder withJsonPath(String filePath) throws IOException;
+```
+
+```
+/**
+ * To build a {@link CarbonWriter}, which accepts directory of JSON files and
+ * list of selected file that has to be loaded.
+ *
+ * @param filePath absolute path under which files should be loaded.
+ * @param fileList list of selected files which has to be loaded under given directory.
+ * @return CarbonWriterBuilder
+ */
+public CarbonWriterBuilder withJsonPath(String filePath, List<String> fileList) throws IOException;
+```
+
+Find example code at [JSONCarbonWriterTest](https://github.com/apache/carbondata/blob/master/sdk/sdk/src/test/java/org/apache/carbondata/sdk/file/JSONCarbonWriterTest.java) in the CarbonData repo.
+
+```
+/**
+ * To build a {@link CarbonWriter}, which accepts Parquet file or directory
+ * that has to be loaded.
+ *
+ * @param filePath absolute path under which files should be loaded.
+ * @return CarbonWriterBuilder
+ */
+public CarbonWriterBuilder withParquetPath(String filePath) throws IOException;
+```
+
+```
+/**
+ * To build a {@link CarbonWriter}, which accepts directory of Parquet files and
+ * list of selected files that has to be loaded.
+ *
+ * @param filePath absolute path under which files should be loaded.
+ * @param fileList list of selected files which has to be loaded under given directory.
+ * @return CarbonWriterBuilder
+ */
+public CarbonWriterBuilder withParquetPath(String filePath, List<String> fileList) throws IOException;
+```
+
+Find example code at [ParquetCarbonWriterTest](https://github.com/apache/carbondata/blob/master/sdk/sdk/src/test/java/org/apache/carbondata/sdk/file/ParquetCarbonWriterTest.java) in the CarbonData repo.
+
+```
+/**
+ * To build a {@link CarbonWriter}, which accepts ORC file or directory
+ * that has to be loaded.
+ *
+ * @param filePath absolute path under which files should be loaded.
+ * @return CarbonWriterBuilder
+ */
+public CarbonWriterBuilder withOrcPath(String filePath) throws IOException;
+```
+
+```
+/**
+ * To build a {@link CarbonWriter}, which accepts directory of Parquet files and
+ * list of selected files that has to be loaded.
+ *
+ * @param filePath absolute path under which files should be loaded.
+ * @param fileList list of selected files which has to be loaded under given directory.
+ * @return CarbonWriterBuilder
+ */
+public CarbonWriterBuilder withOrcPath(String filePath, List<String> fileList) throws IOException;
+```
+
+Find example code at [ORCCarbonWriterTest](https://github.com/apache/carbondata/blob/master/sdk/sdk/src/test/java/org/apache/carbondata/sdk/file/ORCCarbonWriterTest.java) in the CarbonData repo.
+
+```
+/**
  * To support writing the ApplicationName which is writing the carbondata file
  * This is a mandatory API to call, else the build() call will fail with error.
  * @param application name which is writing the carbondata files
@@ -518,6 +643,22 @@ public static CarbonWriterBuilder builder() {
  * @throws IOException
  */
 public abstract void write(Object object) throws IOException;
+```
+
+```
+/**
+ * Write the data of given files iteratively, format of files depends on the implementation.
+ *
+ * @throws IOException
+ */
+public abstract void write() throws IOException;
+```
+
+```
+/**
+ * Set the list of carbon files which has to be loaded.
+ */
+public abstract void setDataFiles(CarbonFile[] dataFiles) throws IOException;
 ```
 
 ```
