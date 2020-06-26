@@ -304,14 +304,13 @@ public class CarbonInternalLoaderUtil {
 
   /**
    * Method to check if main table and SI have same number of valid segments or not
-   *
    */
-  public static boolean checkMainTableSegEqualToSISeg(String carbonTablePath,
-      String indexTablePath) {
+  public static boolean checkMainTableSegEqualToSISeg(LoadMetadataDetails[] mainTableLoadMetadataDetails,
+                                                      LoadMetadataDetails[] siTableLoadMetadataDetails) {
     List<String> mainTableSegmentsList =
-        getListOfValidSlices(SegmentStatusManager.readCarbonMetaData(carbonTablePath));
+        getListOfValidSlices(mainTableLoadMetadataDetails);
     List<String> indexList =
-        getListOfValidSlices(SegmentStatusManager.readLoadMetadata(indexTablePath));
+        getListOfValidSlices(siTableLoadMetadataDetails);
     Collections.sort(mainTableSegmentsList);
     Collections.sort(indexList);
     if (indexList.size() != mainTableSegmentsList.size()) {
@@ -325,4 +324,27 @@ public class CarbonInternalLoaderUtil {
     return true;
   }
 
+  /**
+   * Method to check if main table has in progress load and same segment not present in SI
+   */
+  public static boolean checkInProgLoadInMainTableAndSI(CarbonTable carbonTable,
+                                                      LoadMetadataDetails[] mainTableLoadMetadataDetails,
+                                                      LoadMetadataDetails[] siTableLoadMetadataDetails) {
+    List<String> allSiSlices = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    for (LoadMetadataDetails oneLoad : siTableLoadMetadataDetails) {
+      allSiSlices.add(oneLoad.getLoadName());
+    }
+
+    if (mainTableLoadMetadataDetails.length != 0) {
+      for (LoadMetadataDetails loadDetail : mainTableLoadMetadataDetails) {
+        // if load in progress and check if same load is present in SI.
+        if (SegmentStatusManager.isLoadInProgress(carbonTable.getAbsoluteTableIdentifier(), loadDetail.getLoadName())) {
+          if (!allSiSlices.contains(loadDetail.getLoadName())) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  }
 }
