@@ -220,24 +220,32 @@ object SecondaryIndexUtil {
             segment
           }
 
-          val endTime = System.currentTimeMillis()
-          val loadMetadataDetails = SegmentStatusManager
-            .readLoadMetadata(indexCarbonTable.getMetadataPath)
-          loadMetadataDetails.foreach(loadMetadataDetail => {
-            if (rebuiltSegments.contains(loadMetadataDetail.getLoadName)) {
-              loadMetadataDetail.setLoadStartTime(carbonLoadModel.getFactTimeStamp)
-              loadMetadataDetail.setLoadEndTime(endTime)
-              CarbonLoaderUtil
-                .addDataIndexSizeIntoMetaEntry(loadMetadataDetail,
-                  loadMetadataDetail.getLoadName,
-                  indexCarbonTable)
+          val statusLock =
+            new SegmentStatusManager(indexCarbonTable.getAbsoluteTableIdentifier).getTableStatusLock
+          try {
+            val endTime = System.currentTimeMillis()
+            val loadMetadataDetails = SegmentStatusManager
+              .readLoadMetadata(indexCarbonTable.getMetadataPath)
+            loadMetadataDetails.foreach(loadMetadataDetail => {
+              if (rebuiltSegments.contains(loadMetadataDetail.getLoadName)) {
+                loadMetadataDetail.setLoadStartTime(carbonLoadModel.getFactTimeStamp)
+                loadMetadataDetail.setLoadEndTime(endTime)
+                CarbonLoaderUtil
+                  .addDataIndexSizeIntoMetaEntry(loadMetadataDetail,
+                    loadMetadataDetail.getLoadName,
+                    indexCarbonTable)
+              }
+            })
+            if (statusLock.lockWithRetries()) {
+              SegmentStatusManager
+                .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(tablePath),
+                  loadMetadataDetails)
             }
-          })
-
-          SegmentStatusManager
-            .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(tablePath),
-              loadMetadataDetails)
-
+          } finally {
+            if (statusLock != null) {
+              statusLock.unlock()
+            }
+          }
           // clear the indexSchema cache for the merged segments, as the index files and
           // data files are rewritten after compaction
           if (mergedSegments.size > 0) {
@@ -440,14 +448,22 @@ object SecondaryIndexUtil {
         val loadFolderDetailsArray = SegmentStatusManager.readLoadMetadata(indexTable
           .getMetadataPath);
         if (null != loadFolderDetailsArray && loadFolderDetailsArray.nonEmpty) {
+          val statusLock =
+            new SegmentStatusManager(indexTable.getAbsoluteTableIdentifier).getTableStatusLock
           try {
-            SegmentStatusManager.writeLoadDetailsIntoFile(
-              CarbonTablePath.getTableStatusFilePath(indexTable.getTablePath),
-              updateTimeStampForIndexTable(loadFolderDetailsArrayMainTable,
-                loadFolderDetailsArray))
+            if (statusLock.lockWithRetries()) {
+              SegmentStatusManager.writeLoadDetailsIntoFile(
+                CarbonTablePath.getTableStatusFilePath(indexTable.getTablePath),
+                updateTimeStampForIndexTable(loadFolderDetailsArrayMainTable,
+                  loadFolderDetailsArray))
+            }
           } catch {
             case ex: Exception =>
               LOGGER.error(ex.getMessage);
+          } finally {
+            if (statusLock != null) {
+              statusLock.unlock()
+            }
           }
         }
       } else {

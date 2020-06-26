@@ -85,7 +85,6 @@ object Compactor {
           indexCarbonTable,
           loadsToMerge,
           validSegments.head,
-          carbonLoadModel,
           segmentToSegmentTimestampMap,
           segmentIdToLoadStartTimeMapping(validSegments.head),
           SegmentStatus.INSERT_IN_PROGRESS, 0L, List.empty.asJava)
@@ -119,7 +118,6 @@ object Compactor {
           indexCarbonTable,
           loadsToMerge,
           validSegments.head,
-          carbonLoadModel,
           segmentToSegmentTimestampMap,
           segmentIdToLoadStartTimeMapping(validSegments.head),
           SegmentStatus.SUCCESS,
