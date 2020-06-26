@@ -49,4 +49,6 @@ public abstract class CarbonWriter {
     return new CarbonWriterBuilder();
   }
 
+  public void write() throws IOException { }
+
 }

@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -43,6 +44,7 @@ import org.apache.avro.Schema;
 
 public class AvroCarbonWriterTest {
   private String path = "./AvroCarbonWriterSuiteWriteFiles";
+  String DATA_PATH = "./src/test/resources/file/";
 
   @Test
   public void testWriteBasic() throws IOException {
@@ -603,4 +605,146 @@ public class AvroCarbonWriterTest {
     }
   }
 
+  @Test
+  public void testAvroFileLoadWithPrimitiveSchema() throws IOException {
+    String filePath = DATA_PATH + "avro_files/users.avro";
+    FileUtils.deleteDirectory(new File(path));
+    try {
+      CarbonWriterBuilder carbonWriterBuilder = new CarbonWriterBuilder();
+      CarbonWriter carbonWriter = carbonWriterBuilder.withAvroPath(filePath)
+          .outputPath(path).writtenBy("AvroCarbonWriterTest").build();
+      carbonWriter.write();
+      carbonWriter.close();
+      File[] dataFiles = new File(path).listFiles();
+      assert (Objects.requireNonNull(dataFiles).length == 2);
+      FileUtils.deleteDirectory(new File(path));
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+  }
+
+  @Test
+  public void testAvroFileLoadWithNestedSchema() throws IOException {
+    String filePath = DATA_PATH + "nested_schema.avro";
+    FileUtils.deleteDirectory(new File(path));
+    try {
+      CarbonWriterBuilder carbonWriterBuilder = new CarbonWriterBuilder();
+      CarbonWriter carbonWriter = carbonWriterBuilder.withAvroPath(filePath)
+          .outputPath(path).writtenBy("AvroCarbonWriterTest").build();
+      carbonWriter.write();
+      carbonWriter.close();
+      File[] dataFiles = new File(path).listFiles();
+      assert (Objects.requireNonNull(dataFiles).length == 2);
+      FileUtils.deleteDirectory(new File(path));
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+  }
+
+  @Test
+  public void testLoadingAvroFileAndReadingCarbonFile() throws IOException {
+    String filePath = DATA_PATH + "avro_files/users.avro";
+    FileUtils.deleteDirectory(new File(path));
+    try {
+      CarbonWriterBuilder carbonWriterBuilder = new CarbonWriterBuilder();
+      CarbonWriter carbonWriter = carbonWriterBuilder.withAvroPath(filePath)
+          .outputPath(path).writtenBy("AvroCarbonWriterTest").build();
+      carbonWriter.write();
+      carbonWriter.close();
+      File[] dataFiles = new File(path).listFiles();
+      assert (Objects.requireNonNull(dataFiles).length == 2);
+      CarbonReader carbonReader = CarbonReader.builder().withFolder(path).build();
+      int sum = 0;
+      while (carbonReader.hasNext()) {
+        sum++;
+        Object[] row = (Object[]) carbonReader.readNextRow();
+        Assert.assertTrue(row.length == 3);
+        if (sum == 1) {
+          Assert.assertEquals(row[0], "Alyssa");
+          Assert.assertNull(((Object[]) row[1])[0]);
+        } else {
+          Assert.assertEquals(row[0], "Ben");
+          Assert.assertEquals(((Object[]) row[1])[0], "red");
+        }
+      }
+      Assert.assertTrue(sum == 2);
+      FileUtils.deleteDirectory(new File(path));
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+  }
+
+  @Test
+  public void testMultipleAvroFileLoad() throws IOException {
+    String filePath = DATA_PATH + "avro_files";
+    FileUtils.deleteDirectory(new File(path));
+    try {
+      CarbonWriterBuilder carbonWriterBuilder = new CarbonWriterBuilder();
+      CarbonWriter carbonWriter = carbonWriterBuilder.withAvroPath(filePath)
+          .outputPath(path).writtenBy("AvroCarbonWriterTest").build();
+      carbonWriter.write();
+      carbonWriter.close();
+      File[] dataFiles = new File(path).listFiles();
+      assert (Objects.requireNonNull(dataFiles).length == 2);
+      CarbonReader carbonReader = CarbonReader.builder().withFolder(path).build();
+      int sum = 0;
+      while (carbonReader.hasNext()) {
+        sum++;
+        Object[] row = (Object[]) carbonReader.readNextRow();
+        Assert.assertTrue(row.length == 3);
+        if (sum % 2 != 0) {
+          Assert.assertEquals(row[0], "Alyssa");
+          Assert.assertNull(((Object[]) row[1])[0]);
+        } else {
+          Assert.assertEquals(row[0], "Ben");
+          Assert.assertEquals(((Object[]) row[1])[0], "red");
+        }
+      }
+      Assert.assertTrue(sum == 6);
+      FileUtils.deleteDirectory(new File(path));
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+  }
+
+  @Test
+  public void testSelectedAvroFileLoadInDirectory() throws IOException {
+    String filePath = DATA_PATH + "avro_files";
+    FileUtils.deleteDirectory(new File(path));
+    try {
+      CarbonWriterBuilder carbonWriterBuilder = new CarbonWriterBuilder();
+      List<String> fileList = new ArrayList<>();
+      fileList.add("users_2.avro");
+      fileList.add("users.avro");
+      CarbonWriter carbonWriter = carbonWriterBuilder.withAvroPath(filePath, fileList)
+          .outputPath(path).writtenBy("AvroCarbonWriterTest").build();
+      carbonWriter.write();
+      carbonWriter.close();
+      File[] dataFiles = new File(path).listFiles();
+      assert (Objects.requireNonNull(dataFiles).length == 2);
+      CarbonReader carbonReader = CarbonReader.builder().withFolder(path).build();
+      int sum = 0;
+      while (carbonReader.hasNext()) {
+        sum++;
+        Object[] row = (Object[]) carbonReader.readNextRow();
+        Assert.assertTrue(row.length == 3);
+        if (sum % 2 != 0) {
+          Assert.assertEquals(row[0], "Alyssa");
+          Assert.assertNull(((Object[]) row[1])[0]);
+        } else {
+          Assert.assertEquals(row[0], "Ben");
+          Assert.assertEquals(((Object[]) row[1])[0], "red");
+        }
+      }
+      Assert.assertTrue(sum == 4);
+      FileUtils.deleteDirectory(new File(path));
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+  }
 }

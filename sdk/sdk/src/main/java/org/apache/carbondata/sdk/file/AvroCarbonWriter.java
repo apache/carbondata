@@ -20,12 +20,14 @@ package org.apache.carbondata.sdk.file;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -53,6 +55,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.avro.LogicalType;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
+import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
@@ -80,8 +83,11 @@ import org.apache.log4j.Logger;
   private TaskAttemptContext context;
   private ObjectArrayWritable writable;
   private Schema avroSchema;
+  private String filePath = "";
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(AvroCarbonWriter.class.getName());
+  private boolean isDirectory = false;
+  private List<String> fileList;
 
   AvroCarbonWriter(CarbonLoadModel loadModel, Configuration hadoopConf) throws IOException {
     CarbonTableOutputFormat.setLoadModel(hadoopConf, loadModel);
@@ -100,6 +106,20 @@ import org.apache.log4j.Logger;
     throws IOException {
     this(loadModel, hadoopConf);
     this.avroSchema = avroSchema;
+  }
+
+  AvroCarbonWriter() { }
+
+  public void setFilePath(String filePath) {
+    this.filePath = filePath;
+  }
+
+  public void setIsDirectory(boolean isDirectory) {
+    this.isDirectory = isDirectory;
+  }
+
+  public void setFileList(List<String> fileList) {
+    this.fileList = fileList;
   }
 
   private Object[] avroToCsv(GenericData.Record avroRecord) {
@@ -820,6 +840,47 @@ import org.apache.log4j.Logger;
     } catch (Exception e) {
       close();
       throw new IOException(e);
+    }
+  }
+
+  /**
+   * Load data of all avro files at given location iteratively.
+   *
+   * @throws IOException
+   */
+  @Override
+  public void write() throws IOException {
+    if (this.filePath.length() == 0) {
+      throw new RuntimeException("'withAvroPath()' must be called to support load avro files");
+    }
+    if (!this.isDirectory) {
+      this.loadSingleFile(new File(this.filePath));
+    } else {
+      if (this.fileList == null || this.fileList.size() == 0) {
+        File[] dataFiles = new File(this.filePath).listFiles();
+        if (dataFiles == null || dataFiles.length == 0) {
+          throw new RuntimeException("No Avro file found at given location. Please provide" +
+              "the correct folder location.");
+        }
+        Arrays.sort(dataFiles);
+        for (File dataFile : dataFiles) {
+          this.loadSingleFile(dataFile);
+        }
+      } else {
+        for (String file : this.fileList) {
+          this.loadSingleFile(new File(this.filePath + "/" + file));
+        }
+      }
+    }
+  }
+
+  private void loadSingleFile(File file) throws IOException {
+    GenericDatumReader<GenericData.Record> genericDatumReader =
+        new GenericDatumReader<>();
+    DataFileReader<GenericData.Record> avroReader = new DataFileReader<>(file, genericDatumReader);
+    while (avroReader.hasNext()) {
+      GenericData.Record record = avroReader.next();
+      this.write(record);
     }
   }
 

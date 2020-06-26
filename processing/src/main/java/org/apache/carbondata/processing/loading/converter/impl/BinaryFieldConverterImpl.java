@@ -65,7 +65,7 @@ public class BinaryFieldConverterImpl implements FieldConverter {
       throws RuntimeException {
     if (value instanceof String) {
       return binaryDecoder.decode((String) value);
-    } else if (value instanceof byte[]) {
+    } else if (value instanceof byte[] || value == null) {
       return value;
     } else {
       throw new CarbonDataLoadingException("Binary only support String and byte[] data type," +
