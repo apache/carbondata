@@ -455,7 +455,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     try {
       listStatus = fileSystem.listStatus(path);
     } catch (IOException e) {
-      LOGGER.error("Exception occured: " + e.getMessage(), e);
+      LOGGER.warn("Exception occured: " + e.getMessage(), e);
       return new CarbonFile[0];
     }
     return getFiles(listStatus);
