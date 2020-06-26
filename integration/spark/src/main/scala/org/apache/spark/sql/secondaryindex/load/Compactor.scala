@@ -30,6 +30,7 @@ import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.index.IndexType
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
@@ -47,6 +48,8 @@ object Compactor {
       forceAccessSegment: Boolean = false): Unit = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val carbonMainTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    var siCompactionIndexList = scala.collection.immutable.List[CarbonTable]()
+    val sparkSession = sqlContext.sparkSession
     // get list from carbonTable.getIndexes method
     val indexProviderMap = carbonMainTable.getIndexesMap
     if (null == indexProviderMap) {
@@ -121,10 +124,19 @@ object Compactor {
           segmentIdToLoadStartTimeMapping(validSegments.head),
           SegmentStatus.SUCCESS,
           carbonLoadModelForMergeDataFiles.getFactTimeStamp, rebuiltSegments.toList.asJava)
-
+        siCompactionIndexList ::= indexCarbonTable
       } catch {
         case ex: Exception =>
           LOGGER.error(s"Compaction failed for SI table ${secondaryIndex.indexName}", ex)
+          // If any compaction is failed then make all SI disabled which are success.
+          // They will be enabled in next load
+          siCompactionIndexList.foreach { indexCarbonTable =>
+            sparkSession.sql(
+              s"""
+                 | ALTER TABLE ${carbonLoadModel.getDatabaseName}.${indexCarbonTable.getTableName}
+                 | SET SERDEPROPERTIES ('isSITableEnabled' = 'false')
+               """.stripMargin).collect()
+          }
           throw ex
       }
     }
