@@ -235,22 +235,20 @@ public class CarbonInternalLoaderUtil {
    *
    */
   public static boolean updateLoadMetadataWithMergeStatus(CarbonTable indexCarbonTable,
-      String[] loadsToMerge, String mergedLoadNumber, CarbonLoadModel carbonLoadModel,
-      Map<String, String> segmentToLoadStartTimeMap, long mergeLoadStartTime,
-      SegmentStatus segmentStatus, long newLoadStartTime, List<String> rebuiltSegments)
-      throws IOException {
+      String[] loadsToMerge, String mergedLoadNumber, Map<String, String> segmentToLoadStartTimeMap,
+      long mergeLoadStartTime, SegmentStatus segmentStatus, long newLoadStartTime,
+      List<String> rebuiltSegments) throws IOException {
     boolean tableStatusUpdationStatus = false;
     List<String> loadMergeList = new ArrayList<>(Arrays.asList(loadsToMerge));
-    AbsoluteTableIdentifier absoluteTableIdentifier =
-        carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
+    SegmentStatusManager segmentStatusManager =
+        new SegmentStatusManager(indexCarbonTable.getAbsoluteTableIdentifier());
 
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
 
     try {
       if (carbonLock.lockWithRetries()) {
-        LOGGER.info("Acquired lock for the table " + carbonLoadModel.getDatabaseName() + "."
-            + carbonLoadModel.getTableName() + " for table status updation ");
+        LOGGER.info("Acquired lock for the table " + indexCarbonTable.getDatabaseName() + "."
+            + indexCarbonTable.getTableName() + " for table status updation ");
         LoadMetadataDetails[] loadDetails =
             SegmentStatusManager.readLoadMetadata(indexCarbonTable.getMetadataPath());
 
@@ -305,17 +303,17 @@ public class CarbonInternalLoaderUtil {
         tableStatusUpdationStatus = true;
       } else {
         LOGGER.error(
-            "Could not able to obtain lock for table" + carbonLoadModel.getDatabaseName() + "."
-                + carbonLoadModel.getTableName() + "for table status updation");
+            "Could not able to obtain lock for table" + indexCarbonTable.getDatabaseName() + "."
+                + indexCarbonTable.getTableName() + "for table status updation");
       }
     } finally {
       if (carbonLock.unlock()) {
-        LOGGER.info("Table unlocked successfully after table status updation" + carbonLoadModel
-            .getDatabaseName() + "." + carbonLoadModel.getTableName());
+        LOGGER.info("Table unlocked successfully after table status updation" + indexCarbonTable
+            .getDatabaseName() + "." + indexCarbonTable.getTableName());
       } else {
         LOGGER.error(
-            "Unable to unlock Table lock for table" + carbonLoadModel.getDatabaseName() + "."
-                + carbonLoadModel.getTableName() + " during table status updation");
+            "Unable to unlock Table lock for table" + indexCarbonTable.getDatabaseName() + "."
+                + indexCarbonTable.getTableName() + " during table status updation");
       }
     }
     return tableStatusUpdationStatus;

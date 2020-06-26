@@ -220,24 +220,32 @@ object SecondaryIndexUtil {
             segment
           }
 
-          val endTime = System.currentTimeMillis()
-          val loadMetadataDetails = SegmentStatusManager
-            .readLoadMetadata(indexCarbonTable.getMetadataPath)
-          loadMetadataDetails.foreach(loadMetadataDetail => {
-            if (rebuiltSegments.contains(loadMetadataDetail.getLoadName)) {
-              loadMetadataDetail.setLoadStartTime(carbonLoadModel.getFactTimeStamp)
-              loadMetadataDetail.setLoadEndTime(endTime)
-              CarbonLoaderUtil
-                .addDataIndexSizeIntoMetaEntry(loadMetadataDetail,
-                  loadMetadataDetail.getLoadName,
-                  indexCarbonTable)
+          val statusLock =
+            new SegmentStatusManager(indexCarbonTable.getAbsoluteTableIdentifier).getTableStatusLock
+          try {
+            if (statusLock.lockWithRetries()) {
+              val endTime = System.currentTimeMillis()
+              val loadMetadataDetails = SegmentStatusManager
+                .readLoadMetadata(indexCarbonTable.getMetadataPath)
+              loadMetadataDetails.foreach(loadMetadataDetail => {
+                if (rebuiltSegments.contains(loadMetadataDetail.getLoadName)) {
+                  loadMetadataDetail.setLoadStartTime(carbonLoadModel.getFactTimeStamp)
+                  loadMetadataDetail.setLoadEndTime(endTime)
+                  CarbonLoaderUtil
+                    .addDataIndexSizeIntoMetaEntry(loadMetadataDetail,
+                      loadMetadataDetail.getLoadName,
+                      indexCarbonTable)
+                }
+              })
+              SegmentStatusManager
+                .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(tablePath),
+                  loadMetadataDetails)
             }
-          })
-
-          SegmentStatusManager
-            .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(tablePath),
-              loadMetadataDetails)
-
+          } finally {
+            if (statusLock != null) {
+              statusLock.unlock()
+            }
+          }
           // clear the indexSchema cache for the merged segments, as the index files and
           // data files are rewritten after compaction
           if (mergedSegments.size > 0) {
@@ -435,24 +443,32 @@ object SecondaryIndexUtil {
     val loadFolderDetailsArrayMainTable =
       SegmentStatusManager.readLoadMetadata(parentCarbonTable.getMetadataPath)
     indexTables.asScala.foreach { indexTable =>
-      val tableStatusFilePath = CarbonTablePath.getTableStatusFilePath(indexTable.getTablePath)
-      if (CarbonUtil.isFileExists(tableStatusFilePath)) {
-        val loadFolderDetailsArray = SegmentStatusManager.readLoadMetadata(indexTable
-          .getMetadataPath);
-        if (null != loadFolderDetailsArray && loadFolderDetailsArray.nonEmpty) {
-          try {
-            SegmentStatusManager.writeLoadDetailsIntoFile(
-              CarbonTablePath.getTableStatusFilePath(indexTable.getTablePath),
-              updateTimeStampForIndexTable(loadFolderDetailsArrayMainTable,
-                loadFolderDetailsArray))
-          } catch {
-            case ex: Exception =>
-              LOGGER.error(ex.getMessage);
+      val statusLock =
+        new SegmentStatusManager(indexTable.getAbsoluteTableIdentifier).getTableStatusLock
+      try {
+        if (statusLock.lockWithRetries()) {
+          val tableStatusFilePath = CarbonTablePath.getTableStatusFilePath(indexTable.getTablePath)
+          if (CarbonUtil.isFileExists(tableStatusFilePath)) {
+            val loadFolderDetailsArray = SegmentStatusManager.readLoadMetadata(indexTable
+              .getMetadataPath);
+            if (null != loadFolderDetailsArray && loadFolderDetailsArray.nonEmpty) {
+              SegmentStatusManager.writeLoadDetailsIntoFile(
+                CarbonTablePath.getTableStatusFilePath(indexTable.getTablePath),
+                updateTimeStampForIndexTable(loadFolderDetailsArrayMainTable,
+                  loadFolderDetailsArray))
+            }
+          } else {
+            LOGGER.info(
+              "Table status file does not exist for index table: " + indexTable.getTableUniqueName)
           }
         }
-      } else {
-        LOGGER.info(
-          "Table status file does not exist for index table: " + indexTable.getTableUniqueName)
+      } catch {
+        case ex: Exception =>
+          LOGGER.error(ex.getMessage);
+      } finally {
+        if (statusLock != null) {
+          statusLock.unlock()
+        }
       }
     }
   }

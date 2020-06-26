@@ -274,19 +274,21 @@ object CarbonIndexUtil {
     if (isLoadToFailedSISegments && null != failedLoadMetaDataDetils) {
       val metadata = CarbonInternalLoaderUtil
         .getListOfValidSlices(SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath))
+      segmentIdToLoadStartTimeMapping = CarbonInternalLoaderUtil
+        .getSegmentToLoadStartTimeMapping(carbonLoadModel.getLoadMetadataDetails.asScala.toArray)
+        .asScala
       failedLoadMetaDataDetils.asScala.foreach(loadMetaDetail => {
         // check whether this segment is valid or invalid, if it is present in the valid list
-        // then don't consider it for reloading
-        if (!metadata.contains(loadMetaDetail.getLoadName)) {
+        // then don't consider it for reloading.
+        // Also main table should have this as a valid segment for reloading.
+        if (!metadata.contains(loadMetaDetail.getLoadName) &&
+            segmentIdToLoadStartTimeMapping.contains(loadMetaDetail.getLoadName)) {
           segmentsToReload.append(loadMetaDetail.getLoadName)
         }
       })
       LOGGER.info(
         s"SI segments to be reloaded for index table: ${
           indexTable.getTableUniqueName} are: ${segmentsToReload}")
-      segmentIdToLoadStartTimeMapping = CarbonInternalLoaderUtil
-        .getSegmentToLoadStartTimeMapping(carbonLoadModel.getLoadMetadataDetails.asScala.toArray)
-        .asScala
     } else {
       segmentIdToLoadStartTimeMapping = scala.collection.mutable
         .Map((carbonLoadModel.getSegmentId, carbonLoadModel.getFactTimeStamp))
