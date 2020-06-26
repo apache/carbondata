@@ -20,6 +20,7 @@ package org.apache.carbondata.sdk.file;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -36,6 +37,8 @@ import java.util.UUID;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -53,6 +56,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.avro.LogicalType;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
+import org.apache.avro.file.DataFileStream;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
@@ -76,12 +80,14 @@ import org.apache.log4j.Logger;
  */
 @InterfaceAudience.Internal public class AvroCarbonWriter extends CarbonWriter {
 
+  private Configuration configuration;
   private RecordWriter<NullWritable, ObjectArrayWritable> recordWriter;
   private TaskAttemptContext context;
   private ObjectArrayWritable writable;
   private Schema avroSchema;
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(AvroCarbonWriter.class.getName());
+  private CarbonFile[] dataFiles;
 
   AvroCarbonWriter(CarbonLoadModel loadModel, Configuration hadoopConf) throws IOException {
     CarbonTableOutputFormat.setLoadModel(hadoopConf, loadModel);
@@ -94,12 +100,70 @@ import org.apache.log4j.Logger;
     this.recordWriter = format.getRecordWriter(context);
     this.context = context;
     this.writable = new ObjectArrayWritable();
+    this.configuration = hadoopConf;
   }
 
   AvroCarbonWriter(CarbonLoadModel loadModel, Configuration hadoopConf, Schema avroSchema)
     throws IOException {
     this(loadModel, hadoopConf);
     this.avroSchema = avroSchema;
+  }
+
+  @Override
+  public void setDataFiles(CarbonFile[] dataFiles) throws IOException {
+    if (dataFiles == null || dataFiles.length == 0) {
+      throw new RuntimeException("data files can't be empty.");
+    }
+    org.apache.avro.Schema avroSchema = null;
+    DataFileStream<GenericData.Record> avroReader = null;
+    for (CarbonFile dataFile : dataFiles) {
+      try {
+        avroReader = buildAvroReader(dataFile, this.configuration);
+        if (avroSchema == null) {
+          avroSchema = avroReader.getSchema();
+        } else {
+          if (!avroSchema.equals(avroReader.getSchema())) {
+            throw new RuntimeException("All the Avro files must be having the same schema.");
+          }
+        }
+      } finally {
+        if (avroReader != null) {
+          avroReader.close();
+        }
+      }
+    }
+    this.dataFiles = dataFiles;
+  }
+
+  /**
+   * TO extract the avro schema from the given avro file
+   */
+  public static org.apache.avro.Schema extractAvroSchema(CarbonFile dataFile, Configuration conf)
+      throws IOException {
+    DataFileStream<GenericData.Record> avroReader = null;
+    try {
+      avroReader = buildAvroReader(dataFile, conf);
+      return avroReader.getSchema();
+    } finally {
+      if (avroReader != null) {
+        avroReader.close();
+      }
+    }
+  }
+
+  private static DataFileStream<GenericData.Record> buildAvroReader(CarbonFile dataFile,
+       Configuration configuration) throws IOException {
+    try {
+      GenericDatumReader<GenericData.Record> genericDatumReader =
+          new GenericDatumReader<>();
+      DataFileStream<GenericData.Record> avroReader =
+          new DataFileStream<>(FileFactory.getDataInputStream(dataFile.getPath(),
+              -1, configuration), genericDatumReader);
+      return avroReader;
+    } catch (FileNotFoundException ex) {
+      throw new FileNotFoundException("File " + dataFile.getPath()
+          + " not found to build carbon writer.");
+    }
   }
 
   private Object[] avroToCsv(GenericData.Record avroRecord) {
@@ -820,6 +884,36 @@ import org.apache.log4j.Logger;
     } catch (Exception e) {
       close();
       throw new IOException(e);
+    }
+  }
+
+  /**
+   * Load data of all avro files at given location iteratively.
+   *
+   * @throws IOException
+   */
+  @Override
+  public void write() throws IOException {
+    if (this.dataFiles == null || this.dataFiles.length == 0) {
+      throw new RuntimeException("'withAvroPath()' must be called to support loading avro files");
+    }
+    for (CarbonFile dataFile : this.dataFiles) {
+      this.loadSingleFile(dataFile);
+    }
+  }
+
+  private void loadSingleFile(CarbonFile file) throws IOException {
+    DataFileStream<GenericData.Record> avroReader = null;
+    try {
+      avroReader = buildAvroReader(file, this.configuration);
+      while (avroReader.hasNext()) {
+        GenericData.Record record = avroReader.next();
+        this.write(record);
+      }
+    } finally {
+      if (avroReader != null) {
+        avroReader.close();
+      }
     }
   }
 

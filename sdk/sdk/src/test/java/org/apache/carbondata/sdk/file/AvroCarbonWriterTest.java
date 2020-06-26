@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -36,13 +37,26 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import org.apache.avro.Schema;
 
 public class AvroCarbonWriterTest {
   private String path = "./AvroCarbonWriterSuiteWriteFiles";
+  String DATA_PATH = "./src/test/resources/file/";
+
+  @Before
+  @After
+  public void cleanTestData() {
+    try {
+      FileUtils.deleteDirectory(new File(path));
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
 
   @Test
   public void testWriteBasic() throws IOException {
@@ -603,4 +617,116 @@ public class AvroCarbonWriterTest {
     }
   }
 
+  private void loadAvroFile(String filePath) throws IOException, InvalidLoadOptionException {
+    CarbonWriterBuilder carbonWriterBuilder = new CarbonWriterBuilder();
+    CarbonWriter carbonWriter = carbonWriterBuilder.withAvroPath(filePath)
+        .outputPath(path).writtenBy("AvroCarbonWriterTest").build();
+    carbonWriter.write();
+    carbonWriter.close();
+    File[] dataFiles = new File(path).listFiles();
+    assert (Objects.requireNonNull(dataFiles).length == 2);
+  }
+
+  @Test
+  public void testAvroFileLoadWithNestedSchema() {
+    String filePath = DATA_PATH + "nested_schema.avro";
+    try {
+      loadAvroFile(filePath);
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+  }
+
+  private void assertFetchedRow(Object[] row, int sum) {
+    Assert.assertTrue(row.length == 3);
+    if (sum % 2 != 0) {
+      Assert.assertEquals(row[0], "Alyssa");
+      Assert.assertNull(((Object[]) row[1])[0]);
+    } else {
+      Assert.assertEquals(row[0], "Ben");
+      Assert.assertEquals(((Object[]) row[1])[0], "red");
+    }
+  }
+
+  @Test
+  public void testLoadingAvroFileAndReadingCarbonFile() throws IOException {
+    String filePath = DATA_PATH + "avro_files/users.avro";
+    CarbonReader carbonReader = null;
+    try {
+      loadAvroFile(filePath);
+      carbonReader = CarbonReader.builder().withFolder(path).build();
+      int sum = 0;
+      while (carbonReader.hasNext()) {
+        sum++;
+        Object[] row = (Object[]) carbonReader.readNextRow();
+        assertFetchedRow(row, sum);
+      }
+      Assert.assertTrue(sum == 2);
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    } finally {
+      if (carbonReader != null) {
+        carbonReader.close();
+      }
+    }
+  }
+
+  @Test
+  public void testMultipleAvroFileLoad() throws IOException {
+    String filePath = DATA_PATH + "avro_files";
+    CarbonReader carbonReader = null;
+    try {
+      loadAvroFile(filePath);
+      carbonReader = CarbonReader.builder().withFolder(path).build();
+      int sum = 0;
+      while (carbonReader.hasNext()) {
+        sum++;
+        Object[] row = (Object[]) carbonReader.readNextRow();
+        assertFetchedRow(row, sum);
+      }
+      Assert.assertTrue(sum == 6);
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    } finally {
+      if (carbonReader != null) {
+        carbonReader.close();
+      }
+    }
+  }
+
+  @Test
+  public void testSelectedAvroFileLoadInDirectory() throws IOException {
+    String filePath = DATA_PATH + "avro_files";
+    CarbonReader carbonReader = null;
+    try {
+      CarbonWriterBuilder carbonWriterBuilder = new CarbonWriterBuilder();
+      List<String> fileList = new ArrayList<>();
+      fileList.add("users_2.avro");
+      fileList.add("users.avro");
+      CarbonWriter carbonWriter = carbonWriterBuilder.withAvroPath(filePath, fileList)
+          .outputPath(path).writtenBy("AvroCarbonWriterTest").build();
+      carbonWriter.write();
+      carbonWriter.close();
+      File[] dataFiles = new File(path).listFiles();
+      assert (Objects.requireNonNull(dataFiles).length == 2);
+      carbonReader = CarbonReader.builder().withFolder(path).build();
+      int sum = 0;
+      while (carbonReader.hasNext()) {
+        sum++;
+        Object[] row = (Object[]) carbonReader.readNextRow();
+        assertFetchedRow(row, sum);
+      }
+      Assert.assertTrue(sum == 4);
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    } finally {
+      if (carbonReader != null) {
+        carbonReader.close();
+      }
+    }
+  }
 }

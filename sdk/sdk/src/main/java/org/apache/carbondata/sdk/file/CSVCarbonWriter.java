@@ -17,15 +17,22 @@
 
 package org.apache.carbondata.sdk.file;
 
+import java.io.DataInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Random;
 import java.util.UUID;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
+import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
+import com.univocity.parsers.csv.CsvParser;
+import com.univocity.parsers.csv.CsvParserSettings;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.JobID;
@@ -42,9 +49,13 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 @InterfaceAudience.Internal
 class CSVCarbonWriter extends CarbonWriter {
 
+  private Configuration configuration;
   private RecordWriter<NullWritable, ObjectArrayWritable> recordWriter;
   private TaskAttemptContext context;
   private ObjectArrayWritable writable;
+  private CsvParser csvParser = null;
+  private boolean skipHeader = false;
+  private CarbonFile[] dataFiles;
 
   CSVCarbonWriter(CarbonLoadModel loadModel, Configuration hadoopConf) throws IOException {
     CarbonTableOutputFormat.setLoadModel(hadoopConf, loadModel);
@@ -57,6 +68,11 @@ class CSVCarbonWriter extends CarbonWriter {
     this.recordWriter = format.getRecordWriter(context);
     this.context = context;
     this.writable = new ObjectArrayWritable();
+    this.configuration = hadoopConf;
+  }
+
+  public void setSkipHeader(boolean skipHeader) {
+    this.skipHeader = skipHeader;
   }
 
   /**
@@ -69,6 +85,75 @@ class CSVCarbonWriter extends CarbonWriter {
       recordWriter.write(NullWritable.get(), writable);
     } catch (Exception e) {
       throw new IOException(e);
+    }
+  }
+
+  private CsvParser buildCsvParser(Configuration conf) {
+    CsvParserSettings settings = CSVInputFormat.extractCsvParserSettings(conf);
+    return new CsvParser(settings);
+  }
+
+  @Override
+  public void setDataFiles(CarbonFile[] dataFiles) throws IOException {
+    if (dataFiles == null || dataFiles.length == 0) {
+      throw new RuntimeException("data files can't be empty.");
+    }
+    DataInputStream csvInputStream = null;
+    CsvParser csvParser = this.buildCsvParser(this.configuration);
+    for (CarbonFile dataFile : dataFiles) {
+      try {
+        csvInputStream = FileFactory.getDataInputStream(dataFile.getPath(),
+            -1, this.configuration);
+        csvParser.beginParsing(csvInputStream);
+      } catch (IllegalArgumentException ex) {
+        if (ex.getCause() instanceof FileNotFoundException) {
+          throw new FileNotFoundException("File " + dataFile +
+              " not found to build carbon writer.");
+        }
+        throw ex;
+      } finally {
+        if (csvInputStream != null) {
+          csvInputStream.close();
+        }
+      }
+    }
+    this.dataFiles = dataFiles;
+  }
+
+  /**
+   * Load data of all or selected csv files at given location iteratively.
+   *
+   * @throws IOException
+   */
+  @Override
+  public void write() throws IOException {
+    if (this.dataFiles == null || this.dataFiles.length == 0) {
+      throw new RuntimeException("'withCsvPath()' must be called to support load files");
+    }
+    this.csvParser = this.buildCsvParser(this.configuration);
+    for (CarbonFile dataFile : this.dataFiles) {
+      this.loadSingleFile(dataFile);
+    }
+  }
+
+  private void loadSingleFile(CarbonFile file) throws IOException {
+    DataInputStream csvDataInputStream = FileFactory
+        .getDataInputStream(file.getPath(), -1, this.configuration);
+    this.csvParser.beginParsing(csvDataInputStream);
+    String[] row;
+    boolean skipFirstRow = this.skipHeader;
+    try {
+      while ((row = this.csvParser.parseNext()) != null) {
+        if (skipFirstRow) {
+          skipFirstRow = false;
+          continue;
+        }
+        this.write(row);
+      }
+    } finally {
+      if (csvDataInputStream != null) {
+        csvDataInputStream.close();
+      }
     }
   }
 

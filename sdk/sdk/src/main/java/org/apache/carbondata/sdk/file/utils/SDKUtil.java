@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.conf.Configuration;
 
 public class SDKUtil {
@@ -79,4 +80,17 @@ public class SDKUtil {
     return (Object[]) input[i];
   }
 
+  public static List<CarbonFile> extractFilesFromFolder(String path,
+      String suf, Configuration hadoopConf) {
+    List dataFiles = listFiles(path, suf, hadoopConf);
+    List<CarbonFile> carbonFiles = new ArrayList<>();
+    for (Object dataFile: dataFiles) {
+      carbonFiles.add(FileFactory.getCarbonFile(dataFile.toString(), hadoopConf));
+    }
+    if (CollectionUtils.isEmpty(dataFiles)) {
+      throw new RuntimeException("No file found at given location. Please provide" +
+          "the correct folder location.");
+    }
+    return carbonFiles;
+  }
 }
