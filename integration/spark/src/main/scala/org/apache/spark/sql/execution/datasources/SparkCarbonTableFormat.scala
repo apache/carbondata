@@ -159,13 +159,16 @@ with Serializable {
     if (currEntry != null) {
       val loadEntry =
         ObjectSerializationUtil.convertStringToObject(currEntry).asInstanceOf[LoadMetadataDetails]
-      val details =
-        SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(model.getTablePath))
       model.setSegmentId(loadEntry.getLoadName)
       model.setFactTimeStamp(loadEntry.getLoadStartTime)
-      val list = new util.ArrayList[LoadMetadataDetails](details.toList.asJava)
-      list.add(loadEntry)
-      model.setLoadMetadataDetails(list)
+      if (!isLoadDetailsContainTheCurrentEntry(
+        model.getLoadMetadataDetails.asScala.toArray, loadEntry)) {
+        val details =
+          SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(model.getTablePath))
+        val list = new util.ArrayList[LoadMetadataDetails](details.toList.asJava)
+        list.add(loadEntry)
+        model.setLoadMetadataDetails(list)
+      }
     }
     // Set the update timestamp if user sets in case of update query. It needs to be updated
     // in load status update time
@@ -224,6 +227,14 @@ with Serializable {
     }
   }
   override def equals(other: Any): Boolean = other.isInstanceOf[SparkCarbonTableFormat]
+
+  private def isLoadDetailsContainTheCurrentEntry(
+      loadDetails: Array[LoadMetadataDetails],
+      currentEntry: LoadMetadataDetails): Boolean = {
+    (loadDetails.length - 1 to 0).exists { index =>
+      loadDetails(index).getLoadName.equals(currentEntry.getLoadName)
+    }
+  }
 }
 
 case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, isAppend: Boolean)

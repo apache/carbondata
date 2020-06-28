@@ -126,7 +126,6 @@ object CommonLoadUtils {
             TableIdentifier(tableName, databaseNameOp))).collect {
           case l: LogicalRelation => l
         }.head
-      sizeInBytes = logicalPartitionRelation.relation.sizeInBytes
       finalPartition = getCompletePartitionValues(partition, table)
     }
     (sizeInBytes, table, dbName, logicalPartitionRelation, finalPartition)
@@ -843,8 +842,6 @@ object CommonLoadUtils {
   def loadDataWithPartition(loadParams: CarbonLoadParams): Seq[Row] = {
     val table = loadParams.carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val catalogTable: CatalogTable = loadParams.logicalPartitionRelation.catalogTable.get
-    // Clean up the already dropped partitioned data
-    SegmentFileStore.cleanSegments(table, null, false)
     CarbonUtils.threadSet("partition.operationcontext", loadParams.operationContext)
     val attributes = if (loadParams.scanResultRDD.isDefined) {
       // take the already re-arranged attributes
@@ -1102,7 +1099,7 @@ object CommonLoadUtils {
     val specs =
       SegmentFileStore.getPartitionSpecs(loadParams.carbonLoadModel.getSegmentId,
         loadParams.carbonLoadModel.getTablePath,
-        SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(table.getTablePath)))
+        loadParams.carbonLoadModel.getLoadMetadataDetails.asScala.toArray)
     if (specs != null) {
       specs.asScala.map { spec =>
         Row(spec.getPartitions.asScala.mkString("/"), spec.getLocation.toString, spec.getUuid)
