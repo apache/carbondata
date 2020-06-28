@@ -95,7 +95,9 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
   public SegmentRefreshInfo getCommittedSegmentRefreshInfo(Segment segment, UpdateVO updateVo) {
     SegmentRefreshInfo segmentRefreshInfo;
     long segmentFileTimeStamp = 0L;
-    if (null != segment.getSegmentFileName()) {
+    if (null != segment.getLoadMetadataDetails()) {
+      segmentFileTimeStamp = segment.getLoadMetadataDetails().getLastModifiedTime();
+    } else if (null != segment.getSegmentFileName()) {
       segmentFileTimeStamp = FileFactory.getCarbonFile(CarbonTablePath
           .getSegmentFilePath(identifier.getTablePath(), segment.getSegmentFileName()))
           .getLastModifiedTime();
