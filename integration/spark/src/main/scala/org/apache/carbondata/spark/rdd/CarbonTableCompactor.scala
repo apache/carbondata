@@ -424,6 +424,9 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       // generate LoadModel which can be used global_sort flow
       val outputModel = DataLoadProcessBuilderOnSpark.createLoadModelForGlobalSort(
         sparkSession, table)
+      // set fact time stamp, else the carbondata file will be created with fact timestamp as 0.
+      outputModel.setFactTimeStamp(carbonLoadModel.getFactTimeStamp)
+      outputModel.setLoadMetadataDetails(carbonLoadModel.getLoadMetadataDetails)
       outputModel.setSegmentId(carbonMergerMapping.mergedLoadName.split("_")(1))
       loadResult = DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(
         sparkSession,
