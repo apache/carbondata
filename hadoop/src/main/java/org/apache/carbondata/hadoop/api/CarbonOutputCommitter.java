@@ -232,10 +232,13 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     String segmentsToBeDeleted =
         context.getConfiguration().get(CarbonTableOutputFormat.SEGMENTS_TO_BE_DELETED, "");
     List<Segment> segmentDeleteList = Segment.toSegmentList(segmentsToBeDeleted.split(","), null);
-    Set<Segment> segmentSet = new HashSet<>(
-        new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(),
-            context.getConfiguration()).getValidAndInvalidSegments(carbonTable.isMV())
-            .getValidSegments());
+    Set<Segment> segmentSet = new HashSet<>();
+    if (updateTime != null || uniqueId != null) {
+      segmentSet = new HashSet<>(
+          new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(),
+              context.getConfiguration()).getValidAndInvalidSegments(carbonTable.isMV())
+                  .getValidSegments());
+    }
     if (updateTime != null) {
       CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, updateTime, true,
           segmentDeleteList);

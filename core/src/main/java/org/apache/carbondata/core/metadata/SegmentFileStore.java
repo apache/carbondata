@@ -1149,6 +1149,23 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public static List<PartitionSpec> getPartitionSpecs(String segmentId, String tablePath,
+      String segmentFilePath, String loadStartTime) throws IOException {
+    SegmentFileStore fileStore = new SegmentFileStore(tablePath, segmentFilePath);
+    List<PartitionSpec> partitionSpecs = fileStore.getPartitionSpecs();
+    for (PartitionSpec spec : partitionSpecs) {
+      spec.setUuid(segmentId + "_" + loadStartTime);
+    }
+    return partitionSpecs;
+  }
+
+  /**
+   * Get the partition specs of the segment
+   * @param segmentId
+   * @param tablePath
+   * @return
+   * @throws IOException
+   */
+  public static List<PartitionSpec> getPartitionSpecs(String segmentId, String tablePath,
       LoadMetadataDetails[] details)
       throws IOException {
     LoadMetadataDetails segEntry = null;

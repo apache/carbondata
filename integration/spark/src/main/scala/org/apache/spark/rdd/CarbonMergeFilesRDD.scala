@@ -229,14 +229,15 @@ class CarbonMergeFilesRDD(
 
   override def internalGetPartitions: Array[Partition] = {
     if (isHivePartitionedTable) {
-      val metadataDetails = SegmentStatusManager
-        .readLoadMetadata(CarbonTablePath.getMetadataPath(carbonTable.getTablePath))
       // in case of partition table make rdd partitions per partition of the carbon table
       val partitionPaths: java.util.Map[String, java.util.List[String]] = new java.util.HashMap()
       if (partitionInfo == null || partitionInfo.isEmpty) {
         segments.foreach(segment => {
+          val loadStartTime = segmentFileNameToSegmentIdMap.get(segment)
+          val segmentFileName = SegmentFileStore.genSegmentFileName(
+            segment, loadStartTime) + CarbonTablePath.SEGMENT_EXT
           val partitionSpecs = SegmentFileStore
-            .getPartitionSpecs(segment, carbonTable.getTablePath, metadataDetails)
+            .getPartitionSpecs(segment, carbonTable.getTablePath, segmentFileName, loadStartTime)
             .asScala.map(_.getLocation.toString)
           partitionPaths.put(segment, partitionSpecs.asJava)
         })

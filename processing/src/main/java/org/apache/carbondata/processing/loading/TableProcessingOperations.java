@@ -54,11 +54,10 @@ public class TableProcessingOperations {
   public static void deletePartialLoadDataIfExist(CarbonTable carbonTable,
       final boolean isCompactionFlow) throws IOException {
     String metaDataLocation = carbonTable.getMetadataPath();
-    final LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
-
     //delete folder which metadata no exist in tablestatus
     String partitionPath = CarbonTablePath.getPartitionDir(carbonTable.getTablePath());
     if (FileFactory.isFileExist(partitionPath)) {
+      final LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
       CarbonFile carbonFile = FileFactory.getCarbonFile(partitionPath);
       CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
         @Override

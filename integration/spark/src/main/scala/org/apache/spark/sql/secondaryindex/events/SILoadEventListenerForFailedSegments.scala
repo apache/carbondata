@@ -64,7 +64,6 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
           .lookupRelation(Some(carbonLoadModel.getDatabaseName),
             carbonLoadModel.getTableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
         val indexMetadata = carbonTable.getIndexMetadata
-        val mainTableDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
         val secondaryIndexProvider = IndexType.SI.getIndexProviderName
         if (null != indexMetadata && null != indexMetadata.getIndexesMap &&
             null != indexMetadata.getIndexesMap.get(secondaryIndexProvider)) {
@@ -72,6 +71,8 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
             .get(secondaryIndexProvider).keySet().asScala
           // if there are no index tables for a given fact table do not perform any action
           if (indexTables.nonEmpty) {
+            val mainTableDetails =
+              SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
             indexTables.foreach {
               indexTableName =>
                 val isLoadSIForFailedSegments = sparkSession.sessionState.catalog

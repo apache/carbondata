@@ -202,8 +202,6 @@ case class CarbonInsertIntoCommand(databaseNameOp: Option[String],
           updateModel = None,
           operationContext = operationContext)
 
-      // Clean up the old invalid segment data before creating a new entry for new load.
-      SegmentStatusManager.deleteLoadsAndUpdateMetadata(table, false, currPartitions)
       // add the start entry for the new load in the table status file
       if (!table.isHivePartitionTable) {
         CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(
