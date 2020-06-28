@@ -29,7 +29,7 @@ import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingExcep
  * by accessing member/method in PriorityQueue
  */
 public class CarbonPriorityQueue<E> extends PriorityQueue<E> {
-  private transient Object[] queue;
+  private transient Field queueField;
   private transient Method siftDownMethod;
   private static final long serialVersionUID = 1L;
 
@@ -37,9 +37,8 @@ public class CarbonPriorityQueue<E> extends PriorityQueue<E> {
     super(initialCapacity);
 
     try {
-      Field field = PriorityQueue.class.getDeclaredField("queue");
-      field.setAccessible(true);
-      queue = (Object[]) field.get(this);
+      queueField = PriorityQueue.class.getDeclaredField("queue");
+      queueField.setAccessible(true);
       siftDownMethod = PriorityQueue.class.getDeclaredMethod("siftDown", int.class, Object.class);
       siftDownMethod.setAccessible(true);
     } catch (ReflectiveOperationException e) {
@@ -49,7 +48,8 @@ public class CarbonPriorityQueue<E> extends PriorityQueue<E> {
 
   public void siftTopDown() {
     try {
-      siftDownMethod.invoke(this, 0, queue[0]);
+      Object topNode = ((Object[]) queueField.get(this))[0];
+      siftDownMethod.invoke(this, 0, topNode);
     } catch (ReflectiveOperationException e) {
       throw new CarbonDataLoadingException("Reflective operation failed", e);
     }
