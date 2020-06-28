@@ -515,11 +515,16 @@ public final class IndexStoreManager {
         UpdateVO updateVO =
             SegmentUpdateStatusManager.getInvalidTimestampRange(segment.getLoadMetadataDetails());
         SegmentRefreshInfo segmentRefreshInfo;
-        if (updateVO != null && updateVO.getLatestUpdateTimestamp() != null
+        if ((updateVO != null && updateVO.getLatestUpdateTimestamp() != null)
             || segment.getSegmentFileName() != null) {
-          long segmentFileTimeStamp = FileFactory.getCarbonFile(CarbonTablePath
-              .getSegmentFilePath(table.getTablePath(), segment.getSegmentFileName()))
-              .getLastModifiedTime();
+          long segmentFileTimeStamp;
+          if (null != segment.getLoadMetadataDetails()) {
+            segmentFileTimeStamp = segment.getLoadMetadataDetails().getLastModifiedTime();
+          } else {
+            segmentFileTimeStamp = FileFactory.getCarbonFile(CarbonTablePath
+                .getSegmentFilePath(table.getTablePath(), segment.getSegmentFileName()))
+                .getLastModifiedTime();
+          }
           segmentRefreshInfo =
               new SegmentRefreshInfo(updateVO.getLatestUpdateTimestamp(), 0, segmentFileTimeStamp);
         } else {

@@ -487,4 +487,11 @@ public class LoadMetadataDetails implements Serializable {
       fileFormat = null;
     }
   }
+
+  public long getLastModifiedTime() {
+    if (updateDeltaEndTimestamp != null) {
+      return convertTimeStampToLong(updateDeltaEndTimestamp);
+    }
+    return convertTimeStampToLong(timestamp);
+  }
 }
