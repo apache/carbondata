@@ -68,8 +68,8 @@ public class CarbonCliTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name"}, 3, 8);
-    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name"}, 3, 8);
+    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name", "age"}, 3, 8);
+    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name", "age"}, 3, 8);
   }
 
   public void buildBinaryData(int rows, Schema schema, String path, String[] sortColumns,
@@ -129,8 +129,8 @@ public class CarbonCliTest {
     String expectedOutput = buildLines(
             "Input Folder: ./CarbonCliTest" ,
             "## Summary",
-            "total: 6 blocks, 2 shards, 12 blocklets, 314 pages, 10,000,000 rows, 28.68MB",
-            "avg: 4.78MB/block, 2.39MB/blocklet, 1,666,666 rows/block, 833,333 rows/blocklet");
+            "total: 6 blocks, 2 shards, 10 blocklets, 314 pages, 10,000,000 rows, 24.91MB",
+            "avg: 4.15MB/block, 2.49MB/blocklet, 1,666,666 rows/block, 1,000,000 rows/blocklet");
     Assert.assertTrue(output.contains(expectedOutput));
 
     String[] args2 = {"-cmd", "summary", "-p", path, "-s"};
@@ -142,7 +142,7 @@ public class CarbonCliTest {
     expectedOutput = buildLines(
         "Column Name  Data Type  Column Type  SortColumn  Encoding  Ordinal  Id  ",
         "name         STRING     dimension    true        []        0        NA  ",
-        "age          INT        measure      false       []        1        NA  ");
+        "age          INT        dimension    true        []        1        NA  ");
     Assert.assertTrue(output.contains(expectedOutput));
 
     String[] args3 = {"-cmd", "summary", "-p", path, "-t"};
@@ -163,13 +163,12 @@ public class CarbonCliTest {
     output = new String(out.toByteArray());
 
     expectedOutput = buildLines(
-        "BLK  BLKLT  NumPages  NumRows  Size    " ,
-        "0    0      28        896,000  2.57MB  " ,
-        "0    1      28        896,000  2.57MB  " ,
-        "1    0      28        896,000  2.57MB  " ,
-        "1    1      28        896,000  2.57MB  " ,
-        "2    0      28        896,000  2.57MB  " ,
-        "2    1      17        520,000  1.49MB  ");
+        "BLK  BLKLT  NumPages  NumRows    Size    " ,
+        "0    0      32        1,024,000  2.55MB  " ,
+        "0    1      32        1,024,000  2.55MB  " ,
+        "1    0      32        1,024,000  2.55MB  " ,
+        "1    1      32        1,024,000  2.55MB  " ,
+        "2    0      29        904,000    2.26MB  ");
     Assert.assertTrue(output.contains(expectedOutput));
 
     String[] args5 = {"-cmd", "summary", "-p", path, "-c", "name"};
@@ -180,12 +179,11 @@ public class CarbonCliTest {
 
     expectedOutput = buildLines(
         "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%  Max%  Min     Max     " ,
-        "0    0      1.90KB     2.15KB     true       2            18.0B     9.0B         NA    NA    robot0  robot1  " ,
-        "0    1      1.90KB     2.16KB     true       3            22.0B     9.0B         NA    NA    robot1  robot3  " ,
-        "1    0      1.90KB     2.16KB     true       3            22.0B     9.0B         NA    NA    robot3  robot5  " ,
-        "1    1      1.90KB     2.16KB     true       3            22.0B     9.0B         NA    NA    robot5  robot7  " ,
-        "2    0      1.90KB     2.14KB     true       2            18.0B     9.0B         NA    NA    robot7  robot8  " ,
-        "2    1      1.18KB     1.33KB     true       2            18.0B     9.0B         NA    NA    robot8  robot9  ");
+        "0    0      2.16KB     2.46KB     true       3            22.0B     9.0B         NA    NA    robot0  robot2  " ,
+        "0    1      2.16KB     2.46KB     true       3            22.0B     9.0B         NA    NA    robot2  robot4  " ,
+        "1    0      2.16KB     2.46KB     true       3            22.0B     9.0B         NA    NA    robot4  robot6  " ,
+        "1    1      2.16KB     2.45KB     true       3            22.0B     9.0B         NA    NA    robot6  robot8  " ,
+        "2    0      1.96KB     2.22KB     true       2            18.0B     9.0B         NA    NA    robot8  robot9  ");
     Assert.assertTrue(output.contains(expectedOutput));
   }
 
@@ -198,7 +196,7 @@ public class CarbonCliTest {
     String output = new String(out.toByteArray());
     String expectedOutput = buildLines(
         "Input Folder: ./CarbonCliTest",
-        "sorted by name");
+        "sorted by name,age");
     Assert.assertTrue(output.contains(expectedOutput));
   }
 
@@ -213,15 +211,15 @@ public class CarbonCliTest {
     String expectedOutput = buildLines(
         "Input Folder: ./CarbonCliTest" ,
         "## Summary",
-        "total: 6 blocks, 2 shards, 12 blocklets, 314 pages, 10,000,000 rows, 28.68MB",
-        "avg: 4.78MB/block, 2.39MB/blocklet, 1,666,666 rows/block, 833,333 rows/blocklet");
+        "total: 6 blocks, 2 shards, 10 blocklets, 314 pages, 10,000,000 rows, 24.91MB",
+        "avg: 4.15MB/block, 2.49MB/blocklet, 1,666,666 rows/block, 1,000,000 rows/blocklet");
 
     Assert.assertTrue(output.contains(expectedOutput));
 
     expectedOutput = buildLines(
         "Column Name  Data Type  Column Type  SortColumn  Encoding  Ordinal  Id  ",
         "name         STRING     dimension    true        []        0        NA  ",
-        "age          INT        measure      false       []        1        NA  ");
+        "age          INT        dimension    true        []        1        NA  ");
     Assert.assertTrue(output.contains(expectedOutput));
 
     expectedOutput = buildLines(
@@ -230,21 +228,20 @@ public class CarbonCliTest {
     Assert.assertTrue(output.contains(expectedOutput));
 
     expectedOutput = buildLines(
-        "BLK  BLKLT  NumPages  NumRows  Size    ",
-        "0    0      28        896,000  2.57MB  ",
-        "0    1      28        896,000  2.57MB  ",
-        "1    0      28        896,000  2.57MB  ",
-        "1    1      28        896,000  2.57MB  ");
+        "BLK  BLKLT  NumPages  NumRows    Size    ",
+        "0    0      32        1,024,000  2.55MB  ",
+        "0    1      32        1,024,000  2.55MB  ",
+        "1    0      32        1,024,000  2.55MB  ",
+        "1    1      32        1,024,000  2.55MB  ");
     Assert.assertTrue(output.contains(expectedOutput));
 
     expectedOutput = buildLines(
         "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%  Max%   Min  Max      " ,
-        "0    0      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  0    2999990  " ,
-        "0    1      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  1    2999992  " ,
-        "1    0      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  3    2999994  " ,
-        "1    1      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  5    2999996  " ,
-        "2    0      3.36KB     2.57MB     false      0            0.0B      93.76KB      0.0   100.0  7    2999998  " ,
-        "2    1      2.04KB     1.49MB     false      0            0.0B      89.62KB      0.0   100.0  9    2999999  ");
+        "0    0      3.59KB     2.55MB     false      0            0.0B      81.39KB      0.0   100.0  0    2999991  " ,
+        "0    1      3.59KB     2.54MB     false      0            0.0B      81.30KB      0.0   100.0  3    2999993  " ,
+        "1    0      3.59KB     2.55MB     false      0            0.0B      81.54KB      0.0   100.0  5    2999995  " ,
+        "1    1      3.59KB     2.54MB     false      0            0.0B      81.30KB      0.0   100.0  7    2999997  " ,
+        "2    0      3.25KB     2.25MB     false      0            0.0B      79.48KB      0.0   100.0  9    2999999  ");
     Assert.assertTrue(output.contains(expectedOutput));
     Assert.assertTrue(output.contains("## version Details"));
     Assert.assertTrue(output.contains("written_by  Version"));
