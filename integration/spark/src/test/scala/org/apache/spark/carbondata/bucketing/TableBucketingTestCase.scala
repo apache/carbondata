@@ -232,6 +232,28 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("test create table with empty bucket number must fail") {
+    val ex = intercept[MalformedCarbonCommandException] {
+      sql(
+        "CREATE TABLE t11 (ID Int, date Timestamp, country String, name String, phonetype String," +
+        "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
+        "('BUCKET_NUMBER'='', 'BUCKET_COLUMNS'='name')"
+      )
+    }
+    assert(ex.getMessage.contains("INVALID NUMBER OF BUCKETS SPECIFIED"))
+  }
+
+  test("test create table with bucket number having non numeric value must fail") {
+    val ex = intercept[MalformedCarbonCommandException] {
+      sql(
+        "CREATE TABLE t11 (ID Int, date Timestamp, country String, name String, phonetype String," +
+        "serialname String, salary Int) STORED AS carbondata TBLPROPERTIES " +
+        "('BUCKET_NUMBER'='one', 'BUCKET_COLUMNS'='name')"
+      )
+    }
+    assert(ex.getMessage.contains("INVALID NUMBER OF BUCKETS SPECIFIED"))
+  }
+
   test("must be unable to create if number of buckets is in negative number") {
     try {
       sql(

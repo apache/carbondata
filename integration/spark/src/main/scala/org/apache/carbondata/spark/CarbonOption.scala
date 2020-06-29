@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark
 
+import scala.util.Try
 
 /**
  * Contains all options for Spark data source
@@ -58,7 +59,7 @@ class CarbonOption(options: Map[String, String]) {
 
   lazy val tablePageSizeInMb: Option[String] = options.get("table_page_size_inmb")
 
-  lazy val bucketNumber: Int = options.getOrElse("bucket_number", "0").toInt
+  lazy val bucketNumber: Option[Int] = Try(options.getOrElse("bucket_number", "0").toInt).toOption
 
   lazy val bucketColumns: String = options.getOrElse("bucket_columns", "")
 
