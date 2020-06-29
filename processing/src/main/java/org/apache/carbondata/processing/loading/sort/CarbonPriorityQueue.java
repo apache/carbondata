@@ -19,6 +19,7 @@ package org.apache.carbondata.processing.loading.sort;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Comparator;
 import java.util.PriorityQueue;
 
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
@@ -35,7 +36,15 @@ public class CarbonPriorityQueue<E> extends PriorityQueue<E> {
 
   public CarbonPriorityQueue(int initialCapacity) {
     super(initialCapacity);
+    init();
+  }
 
+  public CarbonPriorityQueue(int initialCapacity, Comparator<? super E> comparator) {
+    super(initialCapacity, comparator);
+    init();
+  }
+
+  private void init() {
     try {
       queueField = PriorityQueue.class.getDeclaredField("queue");
       queueField.setAccessible(true);
