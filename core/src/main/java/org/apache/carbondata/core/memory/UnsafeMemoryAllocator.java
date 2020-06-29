@@ -25,9 +25,11 @@ public class UnsafeMemoryAllocator implements MemoryAllocator {
 
   @Override
   public MemoryBlock allocate(long size) throws OutOfMemoryError {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     long address = CarbonUnsafe.getUnsafe().allocateMemory(size);
     // initializing memory with zero
     CarbonUnsafe.getUnsafe().setMemory(null, address, size, (byte) 0);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2990
     return new MemoryBlock(null, address, size, MemoryType.OFFHEAP);
   }
 
@@ -35,7 +37,9 @@ public class UnsafeMemoryAllocator implements MemoryAllocator {
   public void free(MemoryBlock memory) {
     assert (memory.obj == null) :
       "baseObject not null; are you trying to use the off-heap allocator to free on-heap memory?";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     CarbonUnsafe.getUnsafe().freeMemory(memory.offset);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1393
     memory.setFreedStatus(true);
   }
 }

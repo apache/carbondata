@@ -55,9 +55,11 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
     ColumnFilterInfo filterValues = dimColumnEvaluatorInfo.getFilterValues();
     CarbonDimension dimension = dimColumnEvaluatorInfo.getDimension();
     byte[] defaultValue = dimension.getDefaultValue();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     if (dimension.getDataType() != DataTypes.DATE) {
       // for no dictionary cases
       // 3 cases: is NUll, is Not Null and filter on default value of newly added column
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       if (null == defaultValue && dimension.getDataType() == DataTypes.STRING) {
         // default value for case where user gives is Null condition
         defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL
@@ -78,7 +80,9 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
       // 3 cases: is NUll, is Not Null and filter on default value of newly added column
       int defaultSurrogateValueToCompare = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
       if (null != defaultValue) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         if (dimension.getDataType() == DataTypes.DATE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2277
           DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
               .getDirectDictionaryGenerator(dimension.getDataType());
           if (directDictionaryGenerator != null) {
@@ -90,6 +94,7 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
           defaultSurrogateValueToCompare++;
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1704
       List<Integer> filterList = null;
       if (filterValues.isIncludeFilter() && !filterValues.isOptimized()) {
         filterList = filterValues.getFilterList();
@@ -108,7 +113,9 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
 
   @Override
   public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws FilterUnsupportedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3014
     throw new FilterUnsupportedException("Unsupported RestructureEvaluatorImpl on pune pages");
   }
 
@@ -129,6 +136,7 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
     Object defaultValue = null;
     if (null != measure.getDefaultValue()) {
       // default value for case where user gives is Null condition
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2277
       defaultValue = RestructureUtil
           .getMeasureDefaultValue(measure.getColumnSchema(), measure.getDefaultValue());
     }

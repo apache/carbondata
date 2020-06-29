@@ -53,6 +53,7 @@ public class CarbonCli {
         .withDescription("the path which contains carbondata files, nested folder is supported")
         .withLongOpt("path")
         .create("p");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2965
     Option file = OptionBuilder.withArgName("file")
         .hasArg()
         .withDescription("the carbondata file path")
@@ -70,6 +71,7 @@ public class CarbonCli {
     Option schema = new Option("s", "schema", false, "print the schema");
     Option segment = new Option("m", "showSegment", false, "print segment information");
     Option tblProperties = new Option("t", "tblProperties", false, "print table properties");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2976
     Option columnMeta = new Option("k", "columnChunkMeta", false, "print column chunk meta");
     Option columnName = OptionBuilder
         .withArgName("column name")
@@ -77,11 +79,13 @@ public class CarbonCli {
         .withDescription("column to print statistics")
         .withLongOpt("column")
         .create("c");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3544
     Option columns = OptionBuilder
         .withDescription("print statistics for all columns")
         .withLongOpt("columns")
         .create("C");
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
     Option blockletDetail = OptionBuilder.withArgName("limitSize").hasOptionalArg()
         .withDescription("print blocklet size detail").withLongOpt("limitSize")
         .create("b");
@@ -94,15 +98,19 @@ public class CarbonCli {
     Options options = new Options();
     options.addOption(help);
     options.addOption(path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2965
     options.addOption(file);
     options.addOption(command);
     options.addOption(all);
     options.addOption(schema);
     options.addOption(segment);
     options.addOption(tblProperties);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
     options.addOption(blockletDetail);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2976
     options.addOption(columnMeta);
     options.addOption(columnName);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3544
     options.addOption(columns);
     options.addOption(version);
     options.addOption(blockLevelDetail);
@@ -119,6 +127,7 @@ public class CarbonCli {
    * @param out output stream
    */
   public static void run(String[] args, PrintStream out) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3466
     ArrayList<String> outputs = new ArrayList<String>();
     run(args, outputs, true);
     for (String line: outputs) {
@@ -133,12 +142,15 @@ public class CarbonCli {
    * @param isPrintInConsole flag to decide whether to print error in console or return the list
    */
   public static void run(String[] args, ArrayList<String> outPuts, boolean isPrintInConsole) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3349
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3349
     Options options = OptionsHolder.instance;
     CommandLineParser parser = new PosixParser();
 
     CommandLine line = null;
     try {
       line = parser.parse(options, args);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
     } catch (ParseException ex) {
       if (isPrintInConsole) {
         outPuts.add("Parsing failed. Reason: " + ex.getMessage());
@@ -167,17 +179,20 @@ public class CarbonCli {
       command = new ScanBenchmark(path, outPuts);
     } else if (cmd.equalsIgnoreCase("sort_columns")) {
       if (line.hasOption("p")) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
         new FileCollector(outPuts).collectSortColumns(line.getOptionValue("p"));
       }
       return;
     } else {
       outPuts.add("command " + cmd + " is not supported");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3466
       outPuts.add(collectHelpInfo(options));
       return;
     }
 
     try {
       command.run(line);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     } catch (IOException e) {
       e.printStackTrace();
     }

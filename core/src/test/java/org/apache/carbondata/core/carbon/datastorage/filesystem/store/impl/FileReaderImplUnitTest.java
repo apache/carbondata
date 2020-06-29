@@ -49,6 +49,7 @@ public class FileReaderImplUnitTest {
   private static File fileWithEmptyContent;
 
   @BeforeClass public static void setup() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     fileHolder = new FileReaderImpl();
     fileHolderWithCapacity = new FileReaderImpl(50);
     file = new File("Test.carbondata");

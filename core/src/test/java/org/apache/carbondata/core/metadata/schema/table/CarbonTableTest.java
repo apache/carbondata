@@ -37,6 +37,7 @@ public class CarbonTableTest extends TestCase {
   private CarbonTable carbonTable;
 
   @BeforeClass public void setUp() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1286
     carbonTable = CarbonTable.buildFromTableInfo(getTableInfo(1000L));
   }
 
@@ -57,6 +58,7 @@ public class CarbonTableTest extends TestCase {
   }
 
   @Test public void testFactTableNameReturnsProperFactTableName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3480
     assertEquals("carbontesttable", carbonTable.getTableName());
   }
 
@@ -65,6 +67,7 @@ public class CarbonTableTest extends TestCase {
   }
 
   @Test public void testDimensionPresentInTableIsProper() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     CarbonDimension dimension = new CarbonDimension(getColumnarDimensionColumn(), 0, -1, -1);
     assertTrue(carbonTable.getDimensionByName("IMEI").equals(dimension));
   }
@@ -73,6 +76,7 @@ public class CarbonTableTest extends TestCase {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
@@ -87,6 +91,7 @@ public class CarbonTableTest extends TestCase {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI_COUNT");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     dimColumn.setDataType(DataTypes.STRING);
     return dimColumn;
   }
@@ -98,6 +103,7 @@ public class CarbonTableTest extends TestCase {
     columnSchemaList.add(getColumnarMeasureColumn());
     tableSchema.setListOfColumns(columnSchemaList);
     tableSchema.setTableId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1997
     tableSchema.setTableName(tableName);
     return tableSchema;
   }
@@ -108,6 +114,7 @@ public class CarbonTableTest extends TestCase {
     info.setLastUpdatedTime(timeStamp);
     info.setTableUniqueName("carbonTestDatabase_carbonTestTable");
     info.setFactTable(getTableSchema("carbonTestTable"));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
     info.setTablePath("testore");
     return info;
   }

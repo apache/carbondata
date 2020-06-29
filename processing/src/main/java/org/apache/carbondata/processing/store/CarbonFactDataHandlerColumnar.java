@@ -148,6 +148,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Columns considered as NoInverted Index are " + noInvertedIdxCol.toString());
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     this.complexIndexMapCopy = new HashMap<>();
     for (Map.Entry<Integer, GenericDataType> entry: model.getComplexIndexMap().entrySet()) {
       this.complexIndexMapCopy.put(entry.getKey(), entry.getValue().deepCopy());
@@ -176,6 +177,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     consumerExecutorServiceTaskList = new ArrayList<>(1);
     semaphore = new Semaphore(numberOfCores);
     tablePageList = new TablePageList();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1363
 
     // Start the consumer which will take each blocklet/page in order and write to a file
     Consumer consumer = new Consumer(tablePageList);
@@ -190,6 +192,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         List<GenericDataType> primitiveTypes = new ArrayList<GenericDataType>();
         complexDataType.getAllPrimitiveChildren(primitiveTypes);
         for (GenericDataType eachPrimitive : primitiveTypes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
           if (eachPrimitive.getIsColumnDictionary()) {
             eachPrimitive.setSurrogateIndex(surrIndex++);
           }
@@ -218,6 +221,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   public void addDataToStore(CarbonRow row) throws CarbonDataWriterException {
     int totalComplexColumnDepth = setFlatCarbonRowForComplex(row);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     if (noDictColumnPageSize == null) {
       // initialization using first row.
       model.setNoDictAllComplexColumnDepth(totalComplexColumnDepth);
@@ -235,6 +239,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       try {
         semaphore.acquire();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1015
         producerExecutorServiceTaskList.add(
             producerExecutorService.submit(
                 new Producer(tablePageList, dataRows, ++writerTaskSequenceCounter, false)
@@ -250,6 +255,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         dataRows = new ArrayList<>(this.pageSize);
         this.entryCount = 0;
         // re-init the complexIndexMap
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
         this.complexIndexMapCopy = new HashMap<>();
         for (Map.Entry<Integer, GenericDataType> entry : model.getComplexIndexMap().entrySet()) {
           this.complexIndexMapCopy.put(entry.getKey(), entry.getValue().deepCopy());
@@ -274,6 +280,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * true if next rows cannot be added to same page
    */
   private boolean needToCutThePage(CarbonRow row) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     List<DataType> noDictDataTypesList = model.getNoDictDataTypesList();
     int totalNoDictPageCount = noDictDataTypesList.size() + model.getNoDictAllComplexColumnDepth();
     if (totalNoDictPageCount > 0) {
@@ -289,6 +296,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       Object[] nonDictArray = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       for (int i = 0; i < noDictDataTypesList.size(); i++) {
         DataType columnType = noDictDataTypesList.get(i);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
         if ((columnType == DataTypes.STRING) || (columnType == DataTypes.VARCHAR) || (columnType
             == DataTypes.BINARY)) {
           currentElementLength = ((byte[]) nonDictArray[i]).length;
@@ -308,6 +316,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         } else if (columnType.isComplexType()) {
           // this is for depth of each complex column, model is having only total depth.
           GenericDataType genericDataType = complexIndexMapCopy
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
               .get(i - model.getNoDictionaryCount() +
                   model.getSegmentProperties().getNumberOfPrimitiveDimensions());
           int depth = genericDataType.getDepth();
@@ -345,6 +354,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       if (i >= model.getNoDictionaryCount() && (model.getTableSpec().getNoDictionaryDimensionSpec()
           .get(i).getSchemaDataType().isComplexType())) {
         // this is for depth of each complex column, model is having only total depth.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         GenericDataType genericDataType = complexIndexMapCopy.get(
             i - model.getNoDictionaryCount() +
                 model.getSegmentProperties().getNumberOfPrimitiveDimensions());
@@ -359,6 +369,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           ByteBuffer byteArrayInput = ByteBuffer.wrap((byte[])noDictAndComplexDimension[i]);
           ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
           DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutput);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
           genericDataType.parseComplexValue(byteArrayInput, dataOutputStream);
           genericDataType.getColumnarDataForComplexType(flatComplexColumnList,
               ByteBuffer.wrap(byteArrayOutput.toByteArray()));
@@ -385,8 +396,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * generate the EncodedTablePage from the input rows (one page in case of V3 format)
    */
   private TablePage processDataRows(List<CarbonRow> dataRows)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws CarbonDataWriterException, IOException {
     if (dataRows.size() == 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1363
       return new TablePage(model, 0);
     }
     TablePage tablePage = new TablePage(model, dataRows.size());
@@ -398,6 +411,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
 
     tablePage.encode();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1363
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Number Of records processed: " + dataRows.size());
@@ -425,6 +439,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     try {
       semaphore.acquire();
       producerExecutorServiceTaskList.add(producerExecutorService
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1363
           .submit(new Producer(tablePageList, dataRows, ++writerTaskSequenceCounter, true)));
       blockletProcessingCount.incrementAndGet();
       processedDataCount += entryCount;
@@ -471,6 +486,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       try {
         taskList.get(i).get();
       } catch (InterruptedException | ExecutionException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
         LOGGER.error(e.getMessage(), e);
         throw new CarbonDataWriterException(e);
       }
@@ -487,11 +506,17 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         try {
           Thread.sleep(50);
         } catch (InterruptedException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
           throw new CarbonDataWriterException(e);
         }
       }
       consumerExecutorService.shutdownNow();
       processWriteTaskSubmitList(consumerExecutorServiceTaskList);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2935
       this.dataWriter.writeFooter();
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("All blocklets have been finished writing");
@@ -515,6 +540,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     // support less than 32000 rows in one page, because we support super long string,
     // if it is long enough, a column page with 32000 rows will exceed 2GB
     if (version == ColumnarFormatVersion.V3) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2615
       this.pageSize =
           pageSize < CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT ?
               pageSize :
@@ -524,7 +550,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       LOGGER.debug("Number of rows per column page is configured as pageSize = " + pageSize);
     }
     dataRows = new ArrayList<>(this.pageSize);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     setComplexMapSurrogateIndex(model.getDictDimensionCount());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1363
     this.dataWriter = getFactDataWriter();
     // initialize the channel;
     this.dataWriter.initializeWriter();
@@ -536,6 +564,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @return data writer instance
    */
   private CarbonFactDataWriter getFactDataWriter() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1983
     return CarbonDataWriterFactory.getInstance().getFactDataWriter(version, model);
   }
 
@@ -565,6 +594,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     private int currentIndex;
 
     private TablePageList() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1363
       tablePages = new TablePage[numberOfCores];
       available = new AtomicBoolean(false);
     }
@@ -574,6 +604,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
      * @throws InterruptedException if consumer thread is interrupted
      */
     public synchronized TablePage get() throws InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1363
       TablePage tablePage = tablePages[currentIndex];
       // if node holder is null means producer thread processing the data which has to
       // be inserted at this current index has not completed yet
@@ -620,6 +651,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     private Producer(TablePageList tablePageList, List<CarbonRow> dataRows,
         int pageId, boolean isLastPage) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1363
       this.tablePageList = tablePageList;
       this.dataRows = dataRows;
       this.pageId = pageId;
@@ -634,7 +666,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     @Override
     public Void call() {
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1363
         TablePage tablePage = processDataRows(dataRows);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2168
         dataRows = null;
         tablePage.setIsLastPage(isLastPage);
         // insert the object in array according to sequence number
@@ -642,6 +676,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         tablePageList.put(tablePage, indexInNodeHolderArray);
         return null;
       } catch (Throwable throwable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
         LOGGER.error("Error in producer", throwable);
         consumerExecutorService.shutdownNow();
         resetBlockletProcessingCount();
@@ -658,6 +693,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     private TablePageList tablePageList;
 
     private Consumer(TablePageList tablePageList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1363
       this.tablePageList = tablePageList;
     }
 
@@ -669,6 +705,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     @Override
     public Void call() {
       while (!processingComplete || blockletProcessingCount.get() > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1363
         TablePage tablePage = null;
         try {
           tablePage = tablePageList.get();
@@ -681,7 +718,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           if (!processingComplete || blockletProcessingCount.get() > 0) {
             producerExecutorService.shutdownNow();
             resetBlockletProcessingCount();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
             LOGGER.error("Problem while writing the carbon data file", throwable);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
             throw new CarbonDataWriterException(throwable);
           }
         } finally {

@@ -78,6 +78,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
   private static final String OVERWRITE_SET = "mapreduce.carbontable.set.overwrite";
   public static final String COMPLEX_DELIMITERS = "mapreduce.carbontable.complex_delimiters";
   private static final String CARBON_TRANSACTIONAL_TABLE =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
       "mapreduce.input.carboninputformat.transactional";
   public static final String SERIALIZATION_NULL_FORMAT =
       "mapreduce.carbontable.serialization.null.format";
@@ -107,6 +108,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
    */
   public static final String SEGMENTS_TO_BE_DELETED =
       "mapreduce.carbontable.segments.to.be.removed";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1972
 
   /**
    * It is used only to fire events in case of any child tables to be loaded.
@@ -224,6 +226,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       return (String[]) ObjectSerializationUtil.convertStringToObject(encodedString);
     }
     return new String[] {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3452
         System.getProperty("java.io.tmpdir") + "/" + UUID.randomUUID().toString().replace("-", "")
             + "_" + taskAttemptContext.getTaskAttemptID().toString() };
   }
@@ -240,9 +243,13 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
   @Override
   public RecordWriter<NullWritable, ObjectArrayWritable> getRecordWriter(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
       final TaskAttemptContext taskAttemptContext) throws IOException {
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     loadModel.setMetrics(new DataLoadMetrics());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
     String appName =
         taskAttemptContext.getConfiguration().get(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME);
     if (null != appName) {
@@ -256,32 +263,45 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     for (int i = 0; i < itrSize; i++) {
       iterators[i] = new CarbonOutputIteratorWrapper();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2393
     if (null == loadModel.getTaskNo() || loadModel.getTaskNo().isEmpty()) {
       loadModel.setTaskNo(taskAttemptContext.getConfiguration()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
           .get("carbon.outputformat.taskno", String.valueOf(DEFAULT_TASK_NO.getAndIncrement())));
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     loadModel.setDataWritePath(
         taskAttemptContext.getConfiguration().get("carbon.outputformat.writepath"));
     final String[] tempStoreLocations = getTempStoreLocations(taskAttemptContext);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3162
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3164
     DataTypeUtil.clearFormatter();
     final DataLoadExecutor dataLoadExecutor = new DataLoadExecutor();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2417
     final ExecutorService executorService = Executors.newFixedThreadPool(1,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3304
         new CarbonThreadFactory("CarbonRecordWriter:" + loadModel.getTableName(),
                 true));
     // It should be started in new thread as the underlying iterator uses blocking queue.
     Future future = executorService.submit(new Thread() {
       @Override
       public void run() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
         ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo()
             .put("carbonConf", taskAttemptContext.getConfiguration());
         try {
           dataLoadExecutor
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2874
               .execute(loadModel, tempStoreLocations, iterators);
         } catch (Exception e) {
           executorService.shutdownNow();
           for (CarbonOutputIteratorWrapper iterator : iterators) {
             iterator.closeWriter(true);
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3162
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3164
           try {
             dataLoadExecutor.close();
           } catch (Exception ex) {
@@ -289,6 +309,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
             throw new RuntimeException(e);
           }
           throw new RuntimeException(e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
         } finally {
           ThreadLocalSessionInfo.unsetAll();
         }
@@ -297,6 +318,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
     if (sdkWriterCores > 0) {
       // CarbonMultiRecordWriter handles the load balancing of the write rows in round robin.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2874
       return new CarbonMultiRecordWriter(iterators, dataLoadExecutor, loadModel, future,
           executorService);
     } else {
@@ -316,16 +338,22 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     CarbonProperties carbonProperty = CarbonProperties.getInstance();
     model.setDatabaseName(CarbonTableOutputFormat.getDatabaseName(conf));
     model.setTableName(CarbonTableOutputFormat.getTableName(conf));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     model.setCarbonTransactionalTable(true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     model.setMetrics(new DataLoadMetrics());
     CarbonTable carbonTable = getCarbonTable(conf);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2666
 
     // global dictionary is not supported since 2.0
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     if (carbonTable.getTableInfo().getFactTable().getTableProperties().containsKey(
         CarbonCommonConstants.DICTIONARY_INCLUDE)) {
       DeprecatedFeatureException.globalDictNotSupported();
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     String columnCompressor = carbonTable.getTableInfo().getFactTable().getTableProperties().get(
         CarbonCommonConstants.COMPRESSOR);
     if (null == columnCompressor) {
@@ -361,6 +389,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
             SKIP_EMPTY_LINE,
             carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SKIP_EMPTY_LINE)));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3017
     String complexDelim = conf.get(COMPLEX_DELIMITERS);
     if (null == complexDelim) {
       complexDelim = ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_1.value() + ","
@@ -382,6 +411,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
                 CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
                 CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3740
     model.setTimestampFormat(
         conf.get(
             TIMESTAMP_FORMAT,
@@ -396,9 +426,11 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
                 CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS,
                 null)));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2666
     String badRecordsPath = conf.get(BAD_RECORD_PATH);
     if (StringUtils.isEmpty(badRecordsPath)) {
       badRecordsPath =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2994
           carbonTable.getTableInfo().getFactTable().getTableProperties().get("bad_record_path");
       if (StringUtils.isEmpty(badRecordsPath)) {
         badRecordsPath = carbonProperty
@@ -446,6 +478,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     private boolean isClosed;
 
     public CarbonRecordWriter(CarbonOutputIteratorWrapper iteratorWrapper,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1856
         DataLoadExecutor dataLoadExecutor, CarbonLoadModel loadModel, Future future,
         ExecutorService executorService) {
       this.iteratorWrapper = iteratorWrapper;
@@ -458,6 +491,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     @Override
     public void write(NullWritable aVoid, ObjectArrayWritable objects)
         throws InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2874
       if (iteratorWrapper != null) {
         iteratorWrapper.write(objects.get());
       }
@@ -465,9 +499,11 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
     @Override
     public void close(TaskAttemptContext taskAttemptContext) throws InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2978
       if (!isClosed) {
         isClosed = true;
         if (iteratorWrapper != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2417
           iteratorWrapper.closeWriter(false);
         }
         try {
@@ -478,10 +514,14 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
         } finally {
           executorService.shutdownNow();
           dataLoadExecutor.close();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
           ThreadLocalSessionInfo.unsetAll();
           // clean up the folders and files created locally for data load operation
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2047
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2047
           TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
         DataLoadMetrics metrics = loadModel.getMetrics();
         if (null != metrics) {
           taskAttemptContext.getConfiguration()

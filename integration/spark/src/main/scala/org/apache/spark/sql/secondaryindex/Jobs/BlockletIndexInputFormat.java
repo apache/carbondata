@@ -60,6 +60,7 @@ import org.apache.log4j.Logger;
  * class to load blocklet index
  */
 public class BlockletIndexInputFormat
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     extends FileInputFormat<TableBlockIndexUniqueIdentifier, BlockletIndexDetailsWithSchema>
     implements Serializable {
 
@@ -82,6 +83,7 @@ public class BlockletIndexInputFormat
   private ReadCommittedScope readCommittedScope;
 
   public BlockletIndexInputFormat(CarbonTable table, IndexExprWrapper indexExprWrapper,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       List<Segment> validSegments) {
     this.table = table;
     this.indexExprWrapper = indexExprWrapper;
@@ -90,6 +92,7 @@ public class BlockletIndexInputFormat
 
   @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
     IndexFactory indexFactory =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         IndexStoreManager.getInstance().getDefaultIndex(table).getIndexFactory();
     CacheableIndex factory = (CacheableIndex) indexFactory;
     List<IndexInputSplit> validDistributables =
@@ -101,6 +104,7 @@ public class BlockletIndexInputFormat
     int distributableSize = validDistributables.size();
     List<InputSplit> inputSplits = new ArrayList<>(distributableSize);
     keys = new HashSet<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     Iterator<IndexInputSplit> iterator = validDistributables.iterator();
     while (iterator.hasNext()) {
       BlockletIndexInputSplit next = (BlockletIndexInputSplit) iterator.next();
@@ -120,11 +124,13 @@ public class BlockletIndexInputFormat
   public RecordReader<TableBlockIndexUniqueIdentifier, BlockletIndexDetailsWithSchema>
   createRecordReader(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
       throws IOException, InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     return new RecordReader<TableBlockIndexUniqueIdentifier, BlockletIndexDetailsWithSchema>() {
       private BlockletIndexWrapper wrapper = null;
       private TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier = null;
       private TableBlockIndexUniqueIdentifierWrapper tableBlockIndexUniqueIdentifierWrapper;
       Cache<TableBlockIndexUniqueIdentifierWrapper, BlockletIndexWrapper> cache =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_INDEX);
       private Iterator<TableBlockIndexUniqueIdentifier> iterator;
       // Cache to avoid multiple times listing of files
@@ -151,6 +157,7 @@ public class BlockletIndexInputFormat
               new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier, table,
                   false, true, true);
           this.tableBlockIndexUniqueIdentifierWrapper = tableBlockIndexUniqueIdentifierWrapper;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3779
           wrapper = ((BlockletIndexStore) cache)
               .get(tableBlockIndexUniqueIdentifierWrapper, segInfoCache);
           return true;
@@ -163,6 +170,7 @@ public class BlockletIndexInputFormat
       }
 
       @Override public BlockletIndexDetailsWithSchema getCurrentValue() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         BlockletIndexDetailsWithSchema blockletIndexDetailsWithSchema =
             new BlockletIndexDetailsWithSchema(wrapper, table.getTableInfo().isSchemaModified());
         return blockletIndexDetailsWithSchema;
@@ -174,6 +182,7 @@ public class BlockletIndexInputFormat
 
       @Override public void close() {
         if (null != tableBlockIndexUniqueIdentifierWrapper) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           if (null != wrapper && null != wrapper.getIndexes() && !wrapper.getIndexes()
               .isEmpty()) {
             String segmentId =
@@ -182,6 +191,7 @@ public class BlockletIndexInputFormat
             // as segmentId will be same for all the indexes and segmentProperties cache is
             // maintained at segment level so it need to be called only once for clearing
             SegmentPropertiesAndSchemaHolder.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
                 .invalidate(segmentId, wrapper.getIndexes().get(0).getSegmentPropertiesWrapper(),
                     tableBlockIndexUniqueIdentifierWrapper.isAddTableBlockToUnsafeAndLRUCache());
           }

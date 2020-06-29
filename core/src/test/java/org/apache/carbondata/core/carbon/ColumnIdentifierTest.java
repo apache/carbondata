@@ -37,6 +37,7 @@ public class ColumnIdentifierTest {
   @BeforeClass public static void setup() {
     columnProperties = new HashMap<String, String>();
     columnProperties.put("key", "value");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     columnIdentifier = new ColumnIdentifier("columnId", columnProperties, DataTypes.INT);
   }
 
@@ -48,11 +49,13 @@ public class ColumnIdentifierTest {
 
   @Test public void equalsTestwithSameObject() {
     Boolean res = columnIdentifier.equals(columnIdentifier);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(res);
   }
 
   @Test public void equalsTestwithSimilarObject() {
     ColumnIdentifier columnIdentifierTest =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         new ColumnIdentifier("columnId", columnProperties, DataTypes.INT);
     Boolean res = columnIdentifier.equals(columnIdentifierTest);
     Assert.assertTrue(res);
@@ -70,6 +73,7 @@ public class ColumnIdentifierTest {
 
   @Test public void equalsTestwithNullColumnId() {
     ColumnIdentifier columnIdentifierTest =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         new ColumnIdentifier(null, columnProperties, DataTypes.INT);
     Boolean res = columnIdentifierTest.equals(columnIdentifier);
     Assert.assertTrue(!res);
@@ -89,12 +93,14 @@ public class ColumnIdentifierTest {
 
   @Test public void getColumnPropertyTest() {
     ColumnIdentifier columnIdentifierTest =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         new ColumnIdentifier("diffColumnId", null, DataTypes.INT);
     String res = columnIdentifierTest.getColumnProperty("key");
     assertEquals(res, null);
   }
 
   @Test public void getColumnPropertyTestwithNull() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(columnIdentifier.getColumnProperty("key").equals("value"));
   }
 }

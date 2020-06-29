@@ -47,6 +47,7 @@ public class CarbonDataFileAttributes {
    */
   public CarbonDataFileAttributes(long taskId, long factTimeStamp) {
     this.taskId = String.valueOf(taskId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-842
     this.factTimeStamp = factTimeStamp;
   }
 

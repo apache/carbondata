@@ -47,17 +47,22 @@ public class BlockletDataRefNode implements DataRefNode {
 
   private BlockletSerializer blockletSerializer;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
   BlockletDataRefNode(List<TableBlockInfo> blockInfos, int index) {
     this.blockInfos = blockInfos;
     // Update row count and page count to blocklet info
     for (TableBlockInfo blockInfo : blockInfos) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1537
       BlockletDetailInfo detailInfo = blockInfo.getDetailInfo();
       detailInfo.getBlockletInfo().setNumberOfRows(detailInfo.getRowCount());
       detailInfo.getBlockletInfo().setNumberOfPages(detailInfo.getPagesCount());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1731
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1728
       detailInfo.setBlockletId(blockInfo.getDetailInfo().getBlockletId());
       int[] pageRowCount = new int[detailInfo.getPagesCount()];
       int numberOfPagesCompletelyFilled = detailInfo.getRowCount() /
           CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3650
 
       // no. of rows to a page is 120000 in V2 and 32000 in V3, same is handled to get the number
       // of pages filled
@@ -73,17 +78,20 @@ public class BlockletDataRefNode implements DataRefNode {
       }
       // V3 old store to V3 new store compatibility. V3 new store will get this info in thrift.
       // so don't overwrite it with hardcoded values.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
       if (detailInfo.getBlockletInfo().getNumberOfRowsPerPage() == null) {
         detailInfo.getBlockletInfo().setNumberOfRowsPerPage(pageRowCount);
       }
     }
     this.index = index;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1544
     this.blockletSerializer = new BlockletSerializer();
   }
 
   @Override
   public DataRefNode getNextDataRefNode() {
     if (index + 1 < blockInfos.size()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       return new BlockletDataRefNode(blockInfos, index + 1);
     }
     return null;
@@ -101,6 +109,7 @@ public class BlockletDataRefNode implements DataRefNode {
 
   @Override
   public byte[][] getColumnsMaxValue() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2020
     BlockletIndex blockletIndex =
         blockInfos.get(index).getDetailInfo().getBlockletInfo().getBlockletIndex();
     // In case of blocklet distribution this will be null
@@ -123,6 +132,7 @@ public class BlockletDataRefNode implements DataRefNode {
 
   @Override
   public boolean[] minMaxFlagArray() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     BlockletIndex blockletIndex =
         blockInfos.get(index).getDetailInfo().getBlockletInfo().getBlockletIndex();
     boolean[] isMinMaxSet = null;
@@ -135,6 +145,7 @@ public class BlockletDataRefNode implements DataRefNode {
   @Override
   public DimensionRawColumnChunk[] readDimensionChunks(FileReader fileReader, int[][] blockIndexes)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
     DimensionColumnChunkReader dimensionChunksReader = getDimensionColumnChunkReader(fileReader);
     return dimensionChunksReader.readRawDimensionChunks(fileReader, blockIndexes);
   }
@@ -143,6 +154,7 @@ public class BlockletDataRefNode implements DataRefNode {
   public DimensionRawColumnChunk readDimensionChunk(FileReader fileReader, int columnIndex)
       throws IOException {
     DimensionColumnChunkReader dimensionChunksReader = getDimensionColumnChunkReader(fileReader);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     return dimensionChunksReader.readRawDimensionChunk(fileReader, columnIndex);
   }
 
@@ -169,6 +181,7 @@ public class BlockletDataRefNode implements DataRefNode {
         ColumnarFormatVersion.valueOf(blockInfos.get(index).getDetailInfo().getVersionNumber());
     if (fileReader.isReadPageByPage()) {
       return CarbonDataReaderFactory.getInstance().getDimensionColumnChunkReader(version,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
           blockInfos.get(index).getDetailInfo().getBlockletInfo(),
           blockInfos.get(index).getFilePath(), true);
     } else {
@@ -199,8 +212,10 @@ public class BlockletDataRefNode implements DataRefNode {
 
   @Override
   public BitSetGroup getIndexedData() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     String indexWriterPath = blockInfos.get(index).getIndexWriterPath();
     if (indexWriterPath != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1544
       try {
         FineGrainBlocklet blocklet = blockletSerializer.deserializeBlocklet(indexWriterPath);
         return blocklet.getBitSetGroup(numberOfPages());
@@ -214,6 +229,7 @@ public class BlockletDataRefNode implements DataRefNode {
 
   @Override
   public int getPageRowCount(int pageNumber) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1854
     return blockInfos.get(index).getDetailInfo().getBlockletInfo()
         .getNumberOfRowsPerPage()[pageNumber];
   }
@@ -223,6 +239,7 @@ public class BlockletDataRefNode implements DataRefNode {
   }
 
   public List<TableBlockInfo> getBlockInfos() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1934
     return blockInfos;
   }
 }

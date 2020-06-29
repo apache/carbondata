@@ -46,6 +46,7 @@ public class CarbonHeaderReader {
   }
 
   public CarbonHeaderReader(String filePath, Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     this.filePath = filePath;
     this.configuration = configuration;
   }
@@ -72,6 +73,7 @@ public class CarbonHeaderReader {
    * @throws IOException
    */
   private ThriftReader openThriftReader(String filePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     Configuration conf = configuration != null ? configuration : FileFactory.getConfiguration();
     return new ThriftReader(filePath, new ThriftReader.TBaseCreator() {
       @Override
@@ -85,10 +87,12 @@ public class CarbonHeaderReader {
    * Read and return the schema in the header
    */
   public List<ColumnSchema> readSchema() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2276
     FileHeader fileHeader = readHeader();
     List<ColumnSchema> columnSchemaList = new ArrayList<>();
     List<org.apache.carbondata.format.ColumnSchema> table_columns = fileHeader.getColumn_schema();
     for (org.apache.carbondata.format.ColumnSchema table_column : table_columns) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
       ColumnSchema col = thriftColumnSchemaToWrapperColumnSchema(table_column);
       col.setColumnReferenceId(col.getColumnUniqueId());
       columnSchemaList.add(col);

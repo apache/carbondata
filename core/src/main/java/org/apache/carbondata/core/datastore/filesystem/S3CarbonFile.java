@@ -42,6 +42,7 @@ public class S3CarbonFile extends HDFSCarbonFile {
   }
 
   public S3CarbonFile(FileStatus fileStatus) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     super(fileStatus);
   }
 
@@ -62,11 +63,13 @@ public class S3CarbonFile extends HDFSCarbonFile {
   public boolean renameForce(String changetoName) {
     try {
       // check if any file with the new name exists and delete it.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       CarbonFile newCarbonFile = FileFactory.getCarbonFile(changetoName);
       newCarbonFile.delete();
       // rename the old file to the new name.
       return fileSystem.rename(path, new Path(changetoName));
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Exception occured: " + e.getMessage(), e);
       return false;
     }
@@ -79,6 +82,7 @@ public class S3CarbonFile extends HDFSCarbonFile {
     }
     CarbonFile[] files = new CarbonFile[listStatus.length];
     for (int i = 0; i < files.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       files[i] = new S3CarbonFile(listStatus[i]);
     }
     return files;

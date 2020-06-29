@@ -46,6 +46,7 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
   public static final String READ_BUFFER_SIZE = "carbon.stream.read.buffer.size";
   public static final String READ_BUFFER_SIZE_DEFAULT = "65536";
   public static final String STREAM_RECORD_READER_INSTANCE =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2532
       "org.apache.carbondata.stream.CarbonStreamRecordReader";
   // return raw row for handoff
   private boolean useRawRow = false;
@@ -74,6 +75,7 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
 
   @Override
   public RecordReader<Void, Object> createRecordReader(InputSplit split, TaskAttemptContext context)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
       throws IOException {
     try {
       Constructor cons = CarbonStreamUtils
@@ -91,6 +93,7 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
     GenericQueryType[] queryTypes = new GenericQueryType[carbonColumns.length];
     for (int i = 0; i < carbonColumns.length; i++) {
       if (carbonColumns[i].isComplex()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
         if (DataTypes.isArrayType(carbonColumns[i].getDataType())) {
           queryTypes[i] = new ArrayQueryType(carbonColumns[i].getColName(),
               carbonColumns[i].getColName(), i);
@@ -115,9 +118,11 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
       CarbonDimension child = dimension.getListOfChildDimensions().get(i);
       DataType dataType = child.getDataType();
       GenericQueryType queryType = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
       if (DataTypes.isArrayType(dataType)) {
         queryType =
             new ArrayQueryType(child.getColName(), dimension.getColName(), ++parentColumnIndex);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
 
       } else if (DataTypes.isStructType(dataType)) {
         queryType =

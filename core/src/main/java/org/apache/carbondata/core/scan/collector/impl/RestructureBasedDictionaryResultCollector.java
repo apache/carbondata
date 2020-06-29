@@ -38,6 +38,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
 
   public RestructureBasedDictionaryResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     queryDimensions = executionInfo.getActualQueryDimensions();
     queryMeasures = executionInfo.getActualQueryMeasures();
     measureDefaultValues = new Object[queryMeasures.length];
@@ -69,11 +70,14 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     int rowCounter = 0;
     int[] surrogateResult;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
     byte[][] noDictionaryKeys;
     byte[][] complexTypeKeyArray;
     Map<Integer, GenericQueryType> comlexDimensionInfoMap =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         executionInfo.getComlexDimensionInfoMap();
     while (scannedResult.hasNext() && rowCounter < batchSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
       scannedResult.incrementCounter();
       if (scannedResult.containsDeletedRow(scannedResult.getCurrentRowId())) {
         continue;
@@ -81,6 +85,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
       Object[] row = new Object[queryDimensions.length + queryMeasures.length];
       if (isDimensionExists) {
         surrogateResult = scannedResult.getDictionaryKeyIntegerArray();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
         noDictionaryKeys = scannedResult.getNoDictionaryKeyArray();
         complexTypeKeyArray = scannedResult.getComplexTypeKeyArray();
         dictionaryColumnIndex = 0;
@@ -90,9 +95,12 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
         for (int i = 0; i < queryDimensions.length; i++) {
           // fill default value in case the dimension does not exist in the current block
           if (!dimensionInfo.getDimensionExists()[i]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
             if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
               row[order[i]] = dimensionInfo.getDefaultValues()[i];
               dictionaryColumnIndex++;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
             } else if (queryDimensions[i].getDimension().getDataType() == DataTypes.STRING) {
               row[order[i]] = DataTypeUtil.getDataTypeConverter().convertFromByteToUTF8String(
                   (byte[])dimensionInfo.getDefaultValues()[i]);
@@ -102,6 +110,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
             continue;
           }
           fillDimensionData(scannedResult, surrogateResult, noDictionaryKeys, complexTypeKeyArray,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3596
               comlexDimensionInfoMap, row, i, executionInfo
                   .getProjectionDimensions()[segmentDimensionsIdx++].getDimension().getOrdinal());
         }
@@ -114,6 +123,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
   }
 
   protected void fillMeasureData(Object[] msrValues, int offset,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       BlockletScannedResult scannedResult) {
     int measureExistIndex = 0;
     for (short i = 0; i < measureInfo.getMeasureDataTypes().length; i++) {
@@ -125,6 +135,8 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
             scannedResult.getMeasureChunk(measureInfo.getMeasureOrdinals()[measureExistIndex]),
             scannedResult.getCurrentRowId(), queryMeasure.getMeasure());
         measureExistIndex++;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
       } else if (DataTypes.isDecimal(measureInfo.getMeasureDataTypes()[i])) {
         // if not then get the default value
         msrValues[i + offset] = DataTypeUtil.getDataTypeConverter()

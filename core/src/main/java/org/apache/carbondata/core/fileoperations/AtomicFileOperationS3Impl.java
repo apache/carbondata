@@ -47,6 +47,7 @@ class AtomicFileOperationS3Impl implements AtomicFileOperations {
 
   @Override
   public DataInputStream openForRead() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     return FileFactory.getDataInputStream(filePath);
   }
 
@@ -60,6 +61,7 @@ class AtomicFileOperationS3Impl implements AtomicFileOperations {
   @Override
   public DataOutputStream openForWrite(FileWriteOperation operation) throws IOException {
     filePath = filePath.replace("\\", "/");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     dataOutStream = FileFactory.getDataOutputStream(filePath);
     return dataOutStream;
   }

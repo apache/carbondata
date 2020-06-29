@@ -25,6 +25,7 @@ import org.apache.carbondata.processing.store.writer.v3.CarbonFactDataWriterImpl
  * Factory class to get the writer instance
  */
 class CarbonDataWriterFactory {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1530
 
   /**
    * static instance
@@ -61,6 +62,7 @@ class CarbonDataWriterFactory {
       case V3:
         return new CarbonFactDataWriterImplV3(model);
       default:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3650
         throw new UnsupportedOperationException("V1 and V2 CarbonData Writer is not supported");
     }
   }

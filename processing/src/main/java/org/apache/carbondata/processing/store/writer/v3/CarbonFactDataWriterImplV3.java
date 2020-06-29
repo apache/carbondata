@@ -78,7 +78,9 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
   private boolean isSorted;
 
   public CarbonFactDataWriterImplV3(CarbonFactDataHandlerModel model) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1983
     super(model);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2907
     String blockletSize =
         model.getTableSpec().getCarbonTable().getTableInfo().getFactTable().getTableProperties()
             .get(TABLE_BLOCKLET_SIZE);
@@ -87,12 +89,16 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
           BLOCKLET_SIZE_IN_MB, BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE);
     }
     blockletSizeThreshold = Long.parseLong(blockletSize) << 20;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1363
     if (blockletSizeThreshold > fileSizeInBytes) {
       blockletSizeThreshold = fileSizeInBytes;
       LOGGER.info("Blocklet size configure for table is: " + blockletSizeThreshold);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
     blockletDataHolder = new BlockletDataHolder(fallbackExecutorService, model);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
     if (model.getSortScope() != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2935
       isSorted = model.getSortScope() != NO_SORT;
     }
     LOGGER.info("Sort Scope : " + model.getSortScope());
@@ -102,12 +108,16 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
   protected void writeFooterToFile() throws CarbonDataWriterException {
     try {
       // get the current file position
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3523
       long footerOffset = currentOffsetInFile;
       // get thrift file footer instance
       FileFooter3 convertFileMeta = CarbonMetadataUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
           .convertFileFooterVersion3(blockletMetadata, blockletIndex,
               thriftColumnSchemaList.size());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2935
       convertFileMeta.setIs_sort(isSorted);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3106
       String appName = CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME);
       if (appName == null) {
@@ -122,13 +132,16 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       ByteBuffer buffer =
           ByteBuffer.allocate(byteArray.length + CarbonCommonConstants.LONG_SIZE_IN_BYTE);
       buffer.put(byteArray);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3523
       buffer.putLong(footerOffset);
       buffer.flip();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2032
       currentOffsetInFile += fileChannel.write(buffer);
       // fill the carbon index details
       fillBlockIndexInfoDetails(
           convertFileMeta.getNum_rows(), carbonDataFileName, footerOffset, currentOffsetInFile);
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error("Problem while writing the carbon file", e);
       throw new CarbonDataWriterException("Problem while writing the carbon file: ", e);
     }
@@ -146,6 +159,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     if (!tablePage.isLastPage()) {
       boolean isAdded = false;
       // check if size more than blocklet size then write the page to file
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
       if (blockletDataHolder.getSize() + tablePage.getEncodedTablePage().getEncodedSize()
           >= blockletSizeThreshold) {
         // if blocklet size exceeds threshold, write blocklet data
@@ -184,6 +199,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
 
   private void addPageData(TablePage tablePage) throws IOException {
     blockletDataHolder.addPage(tablePage);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2716
     if (listener != null &&
         model.getDatabaseName().equalsIgnoreCase(listener.getTblIdentifier().getDatabaseName()) &&
         model.getTableName().equalsIgnoreCase(listener.getTblIdentifier().getTableName())) {
@@ -199,6 +215,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    */
   private void writeBlockletToFile() {
     // get the list of all encoded table page
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     EncodedBlocklet encodedBlocklet = blockletDataHolder.getEncodedBlocklet();
     int numDimensions = encodedBlocklet.getNumberOfDimension();
     int numMeasures = encodedBlocklet.getNumberOfMeasure();
@@ -213,11 +231,13 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
 
     // write data to file
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2032
       if (currentOffsetInFile == 0) {
         // write the header if file is empty
         writeHeaderToFile();
       }
       writeBlockletToFile(dataChunkBytes);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2716
       if (listener != null &&
           model.getDatabaseName().equalsIgnoreCase(listener.getTblIdentifier().getDatabaseName()) &&
           model.getTableName().equalsIgnoreCase(listener.getTblIdentifier().getTableName())) {
@@ -225,8 +245,10 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       }
       pageId = 0;
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error("Problem while writing file", e);
       throw new CarbonDataWriterException("Problem while writing file", e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2265
     } finally {
       // clear the data holder
       blockletDataHolder.clear();
@@ -243,6 +265,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     int numMeasures = encodedBlocklet.getNumberOfMeasure();
     int measureStartIndex = numDimensions;
     // calculate the size of data chunks
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     for (int i = 0; i < numDimensions; i++) {
       dataChunkBytes[i] =
           CarbonUtil.getByteArray(CarbonMetadataUtil.getDimensionDataChunk3(encodedBlocklet, i));
@@ -263,6 +287,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
   private void writeHeaderToFile() throws IOException {
     byte[] fileHeader = CarbonUtil.getByteArray(
         CarbonMetadataUtil.getFileHeader(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1983
             true, thriftColumnSchemaList, model.getSchemaUpdatedTimeStamp()));
     ByteBuffer buffer = ByteBuffer.wrap(fileHeader);
     currentOffsetInFile += fileChannel.write(buffer);
@@ -278,11 +303,14 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    */
   private void writeBlockletToFile(byte[][] dataChunkBytes)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2032
     long offset = currentOffsetInFile;
     // to maintain the offset of each data chunk in blocklet
     List<Long> currentDataChunksOffset = new ArrayList<>();
     // to maintain the length of each data chunk in blocklet
     List<Integer> currentDataChunksLength = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     EncodedBlocklet encodedBlocklet = blockletDataHolder.getEncodedBlocklet();
     int numberOfDimension = encodedBlocklet.getNumberOfDimension();
     int numberOfMeasures = encodedBlocklet.getNumberOfMeasure();
@@ -293,6 +321,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       currentDataChunksOffset.add(offset);
       currentDataChunksLength.add(dataChunkBytes[i].length);
       buffer = ByteBuffer.wrap(dataChunkBytes[i]);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2032
       currentOffsetInFile += fileChannel.write(buffer);
       offset += dataChunkBytes[i].length;
       BlockletEncodedColumnPage blockletEncodedColumnPage =
@@ -311,15 +340,19 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       currentDataChunksOffset.add(offset);
       currentDataChunksLength.add(dataChunkBytes[dataChunkStartIndex].length);
       buffer = ByteBuffer.wrap(dataChunkBytes[dataChunkStartIndex]);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2032
       currentOffsetInFile += fileChannel.write(buffer);
       offset += dataChunkBytes[dataChunkStartIndex].length;
       dataChunkStartIndex++;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
       BlockletEncodedColumnPage blockletEncodedColumnPage =
           encodedBlocklet.getEncodedMeasureColumnPages().get(i);
       for (EncodedColumnPage measurePage : blockletEncodedColumnPage
           .getEncodedColumnPageList()) {
         buffer = measurePage.getEncodedData();
         int bufferSize = buffer.limit();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2032
         currentOffsetInFile += fileChannel.write(buffer);
         offset += bufferSize;
       }
@@ -327,6 +360,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     measureOffset = offset;
     blockletIndex.add(
         CarbonMetadataUtil.getBlockletIndex(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
             encodedBlocklet, model.getSegmentProperties().getMeasures()));
     BlockletInfo3 blockletInfo3 =
         new BlockletInfo3(encodedBlocklet.getBlockletSize(), currentDataChunksOffset,
@@ -334,6 +369,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
             encodedBlocklet.getNumberOfPages());
     // Avoid storing as integer in encodedBocklet,
     // but in thrift store as int for large number of rows future support
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     List<Integer> rowList = new ArrayList<>(encodedBlocklet.getRowCountInPage().size());
     for (int rows : encodedBlocklet.getRowCountInPage()) {
       rowList.add(rows);
@@ -352,15 +388,18 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    */
   @Override
   protected void fillBlockIndexInfoDetails(long numberOfRows, String carbonDataFileName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3523
       long footerOffset, long fileSize) {
     int i = 0;
     DataFileFooterConverterV3 converterV3 = new DataFileFooterConverterV3();
     for (org.apache.carbondata.format.BlockletIndex index : blockletIndex) {
       BlockletInfo3 blockletInfo3 = blockletMetadata.get(i);
       BlockletInfo blockletInfo = converterV3.getBlockletInfo(blockletInfo3,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1983
           model.getSegmentProperties().getDimensions().size());
       BlockletBTreeIndex bTreeIndex = new BlockletBTreeIndex(index.b_tree_index.getStart_key(),
           index.b_tree_index.getEnd_key());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
       BlockletMinMaxIndex minMaxIndex =
           new BlockletMinMaxIndex(index.getMin_max_index().getMin_values(),
               index.getMin_max_index().getMax_values(),
@@ -369,6 +408,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
           new org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex(bTreeIndex,
               minMaxIndex);
       BlockIndexInfo biInfo =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3523
           new BlockIndexInfo(numberOfRows, carbonDataFileName, footerOffset, bIndex,
               blockletInfo, fileSize);
       blockIndexInfoList.add(biInfo);
@@ -382,11 +422,14 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    * @throws CarbonDataWriterException
    */
   public void closeWriter() throws CarbonDataWriterException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2817
     CarbonDataWriterException exception = null;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1363
       commitCurrentFile(true);
       writeIndexFile();
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error("Problem while writing the index file", e);
       exception = new CarbonDataWriterException("Problem while writing the index file", e);
     } finally {
@@ -406,6 +449,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
   @Override
   public void writeFooter() throws CarbonDataWriterException {
     if (this.blockletMetadata.size() > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2935
       writeFooterToFile();
     }
   }

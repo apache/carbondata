@@ -29,6 +29,7 @@ public class SafeVariableShortLengthDimensionDataChunkStore
     extends SafeVariableLengthDimensionDataChunkStore {
   public SafeVariableShortLengthDimensionDataChunkStore(boolean isInvertedIndex, int numberOfRows,
       int dataLength) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     super(isInvertedIndex, numberOfRows, dataLength);
   }
 

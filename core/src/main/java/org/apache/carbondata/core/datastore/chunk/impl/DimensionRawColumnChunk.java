@@ -73,6 +73,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     for (int i = 0; i < pagesCount; i++) {
       try {
         if (dataChunks[i] == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
           dataChunks[i] = chunkReader.decodeColumnPage(this, i, null);
         }
       } catch (IOException e) {
@@ -88,12 +89,14 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
    * @return
    */
   public DimensionColumnPage decodeColumnPage(int pageNumber) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     assert pageNumber < pagesCount;
     if (dataChunks == null) {
       dataChunks = new DimensionColumnPage[pagesCount];
     }
     if (dataChunks[pageNumber] == null) {
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
         dataChunks[pageNumber] = chunkReader.decodeColumnPage(this, pageNumber, null);
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -110,14 +113,18 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
    * @return
    */
   public DimensionColumnPage convertToDimColDataChunkWithOutCache(int index,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       ReusableDataBuffer reusableDataBuffer) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
     assert index < pagesCount;
     // in case of filter query filter column if filter column is decoded and stored.
     // then return the same
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2325
     if (dataChunks != null && null != dataChunks[index]) {
       return dataChunks[index];
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       return chunkReader.decodeColumnPage(this, index, reusableDataBuffer);
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -132,7 +139,9 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
    * @param vectorInfo vector to be filled with column page
    */
   public void convertToDimColDataChunkAndFillVector(int pageNumber, ColumnVectorInfo vectorInfo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       ReusableDataBuffer reusableDataBuffer) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     assert pageNumber < pagesCount;
     try {
       chunkReader.decodeColumnPageAndFillVector(this, pageNumber, vectorInfo, reusableDataBuffer);
@@ -143,6 +152,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
 
   @Override
   public void freeMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2307
     super.freeMemory();
     if (null != dataChunks) {
       for (int i = 0; i < dataChunks.length; i++) {
@@ -152,10 +162,12 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2325
     rawData = null;
   }
 
   public void setFileReader(FileReader fileReader) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     this.fileReader = fileReader;
   }
 
@@ -164,14 +176,20 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
   }
 
   public CarbonDictionary getLocalDictionary() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2751
     if (null != getDataChunkV3() && null != getDataChunkV3().local_dictionary
         && null == localDictionary) {
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
         String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
             getDataChunkV3().data_chunk_list.get(0).chunk_meta);
 
         Compressor compressor = CompressorFactory.getInstance().getCompressor(compressorName);
         localDictionary = getDictionary(getDataChunkV3().local_dictionary, compressor);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -187,6 +205,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
    * @throws IOException
    */
   public static CarbonDictionary getDictionary(LocalDictionaryChunk localDictionaryChunk,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       Compressor compressor) throws IOException {
     if (null != localDictionaryChunk) {
       List<Encoding> encodings = localDictionaryChunk.getDictionary_meta().getEncoders();
@@ -208,6 +227,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
         }
       }
       decode.freeMemory();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3205
       if (!usedDictionary.isEmpty()) {
         // as dictionary values starts from 1 setting null default value
         dictionary[1] = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;

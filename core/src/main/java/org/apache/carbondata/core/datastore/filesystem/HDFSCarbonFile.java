@@ -40,6 +40,7 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
   }
 
   public HDFSCarbonFile(String filePath, Configuration hadoopConf) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1780
     super(filePath, hadoopConf);
   }
 
@@ -74,10 +75,12 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
   @Override
   public boolean renameForce(String changetoName) {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (fileSystem instanceof DistributedFileSystem) {
         ((DistributedFileSystem) fileSystem).rename(path, new Path(changetoName),
             org.apache.hadoop.fs.Options.Rename.OVERWRITE);
         return true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3839
       } else if ((fileSystem instanceof FilterFileSystem) && (((FilterFileSystem) fileSystem)
           .getRawFileSystem() instanceof DistributedFileSystem)) {
         ((DistributedFileSystem) ((FilterFileSystem) fileSystem).getRawFileSystem())
@@ -87,6 +90,7 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
         return fileSystem.rename(path, new Path(changetoName));
       }
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Exception occured: " + e.getMessage(), e);
       return false;
     }

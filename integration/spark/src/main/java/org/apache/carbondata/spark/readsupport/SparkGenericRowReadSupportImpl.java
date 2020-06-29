@@ -36,7 +36,9 @@ public class SparkGenericRowReadSupportImpl implements CarbonReadSupport<Row> {
 
   @Override
   public void initialize(CarbonColumn[] carbonColumns,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       CarbonTable carbonTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     this.carbonColumns = carbonColumns;
   }
 

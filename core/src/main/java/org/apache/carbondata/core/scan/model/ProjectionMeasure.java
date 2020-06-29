@@ -32,6 +32,7 @@ public class ProjectionMeasure extends ProjectionColumn {
   private CarbonMeasure measure;
 
   public ProjectionMeasure(CarbonMeasure measure) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     super(measure.getColName());
     this.measure = measure;
   }

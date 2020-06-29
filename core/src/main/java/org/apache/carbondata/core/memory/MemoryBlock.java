@@ -40,7 +40,9 @@ public class MemoryBlock extends MemoryLocation {
   public MemoryBlock(@Nullable Object obj, long offset, long length, MemoryType memoryType) {
     super(obj, offset);
     this.length = length;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1393
     this.isFreed = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2990
     this.memoryType = memoryType;
   }
 
@@ -52,6 +54,7 @@ public class MemoryBlock extends MemoryLocation {
   }
 
   public boolean isFreedStatus() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1393
     return this.isFreed;
   }
 
@@ -60,6 +63,7 @@ public class MemoryBlock extends MemoryLocation {
   }
 
   public MemoryType getMemoryType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2990
     return memoryType;
   }
 }

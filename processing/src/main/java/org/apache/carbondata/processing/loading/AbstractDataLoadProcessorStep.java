@@ -63,6 +63,7 @@ public abstract class AbstractDataLoadProcessorStep {
    *
    */
   public DataField[] getOutput() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     return child.getOutput();
   }
 
@@ -83,6 +84,7 @@ public abstract class AbstractDataLoadProcessorStep {
               Thread.sleep(10000);
             } catch (InterruptedException e) {
               //ignore
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
               LOGGER.error(e.getMessage(), e);
             }
           }
@@ -108,6 +110,7 @@ public abstract class AbstractDataLoadProcessorStep {
   protected CarbonRowBatch processRowBatch(CarbonRowBatch rowBatch) {
     CarbonRowBatch newBatch = new CarbonRowBatch(rowBatch.getSize());
     while (rowBatch.hasNext()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       newBatch.addRow(null);
     }
     return newBatch;
@@ -126,6 +129,7 @@ public abstract class AbstractDataLoadProcessorStep {
    */
   protected IndexWriterListener getIndexWriterListener(int bucketId) {
     // todo: this method is useless, will remove it later
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
     return null;
   }
 
@@ -136,6 +140,7 @@ public abstract class AbstractDataLoadProcessorStep {
   public void close() {
     if (!closed) {
       closed = true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-740
       LOGGER.info("Total rows processed in step " + this.getStepName() + ": " + rowCounter.get());
       if (child != null) {
         child.close();

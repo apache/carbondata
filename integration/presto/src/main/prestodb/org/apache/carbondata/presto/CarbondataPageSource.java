@@ -106,6 +106,7 @@ class CarbondataPageSource implements ConnectorPageSource {
   private DataType[] dataTypes;
   private boolean isFrstPage = true;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
   CarbondataPageSource(CarbonTable carbonTable, String queryId, HiveSplit split,
       List<ColumnHandle> columnHandles, Configuration hadoopConf, boolean isDirectVectorFill) {
     this.carbonTable = carbonTable;
@@ -129,6 +130,7 @@ class CarbondataPageSource implements ConnectorPageSource {
   }
 
   private void initializeForColumnar() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     readSupport = new CarbonPrestoDecodeReadSupport();
     vectorReader = createReaderForColumnar(split, columnHandles, readSupport, hadoopConf);
   }
@@ -141,6 +143,7 @@ class CarbondataPageSource implements ConnectorPageSource {
     fields = new StructField[queryDimension.size() + queryMeasures.size()];
     for (int i = 0; i < queryDimension.size(); i++) {
       ProjectionDimension dim = queryDimension.get(i);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (dim.getDimension().isComplex()) {
         fields[dim.getOrdinal()] =
             new StructField(dim.getColumnName(), dim.getDimension().getDataType());
@@ -169,6 +172,7 @@ class CarbondataPageSource implements ConnectorPageSource {
     }
 
     this.columnCount = columnHandles.size();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     readSupport = new CarbonPrestoDecodeReadSupport();
     readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getTable());
     this.dataTypes = readSupport.getDataTypes();
@@ -186,11 +190,13 @@ class CarbondataPageSource implements ConnectorPageSource {
 
   @Override
   public boolean isFinished() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2656
     return closed;
   }
 
   @Override
   public Page getNextPage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
     if (fileFormat.ordinal() == FileFormat.ROW_V1.ordinal()) {
       return getNextPageForRow();
     } else {
@@ -206,6 +212,7 @@ class CarbondataPageSource implements ConnectorPageSource {
     int batchSize = 0;
     try {
       batchId++;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2656
       if (vectorReader.nextKeyValue()) {
         Object vectorBatch = vectorReader.getCurrentValue();
         if (vectorBatch instanceof CarbonVectorBatch) {
@@ -220,6 +227,7 @@ class CarbondataPageSource implements ConnectorPageSource {
         close();
         return null;
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1458
       if (columnarBatch == null) {
         return null;
       }
@@ -233,6 +241,7 @@ class CarbondataPageSource implements ConnectorPageSource {
     } catch (PrestoException e) {
       closeWithSuppression(e);
       throw e;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     } catch (RuntimeException e) {
       closeWithSuppression(e);
       throw new CarbonDataLoadingException("Exception when creating the Carbon data Block", e);
@@ -240,6 +249,7 @@ class CarbondataPageSource implements ConnectorPageSource {
   }
 
   private Page getNextPageForRow() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
     if (isFrstPage) {
       isFrstPage = false;
       initialReaderForRow();
@@ -254,6 +264,7 @@ class CarbondataPageSource implements ConnectorPageSource {
       CarbonColumnVectorImpl[] columns = new CarbonColumnVectorImpl[columnCount];
       for (int i = 0; i < columnCount; ++i) {
         columns[i] = CarbonVectorBatch
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
             .createDirectStreamReader(batchSize, dataTypes[i], fields[i]);
       }
 
@@ -280,6 +291,7 @@ class CarbondataPageSource implements ConnectorPageSource {
     } catch (PrestoException e) {
       closeWithSuppression(e);
       throw e;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     } catch (RuntimeException | IOException e) {
       closeWithSuppression(e);
       throw new CarbonDataLoadingException("Exception when creating the Carbon data Block", e);
@@ -314,6 +326,7 @@ class CarbondataPageSource implements ConnectorPageSource {
     }
     closed = true;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
       if (vectorReader != null) {
         vectorReader.close();
       }
@@ -328,9 +341,11 @@ class CarbondataPageSource implements ConnectorPageSource {
   }
 
   private void closeWithSuppression(Throwable throwable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
     Objects.requireNonNull(throwable, "throwable is null");
     try {
       close();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2656
     } catch (RuntimeException e) {
       // Self-suppression not permitted
       LOGGER.error(e.getMessage(), e);
@@ -344,7 +359,9 @@ class CarbondataPageSource implements ConnectorPageSource {
    * Create vector reader using the split.
    */
   private PrestoCarbonVectorizedRecordReader createReaderForColumnar(HiveSplit carbonSplit,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
       List<? extends ColumnHandle> columns, CarbonPrestoDecodeReadSupport readSupport,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
       Configuration conf) {
     QueryModel queryModel = createQueryModel(carbonSplit, columns, conf);
     if (isDirectVectorFill) {
@@ -384,6 +401,7 @@ class CarbondataPageSource implements ConnectorPageSource {
       conf.set("query.id", queryId);
       JobConf jobConf = new JobConf(conf);
       CarbonTableInputFormat carbonTableInputFormat = createInputFormat(jobConf, carbonTable,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           new IndexFilter(carbonTable,
               PrestoFilterUtil.parseFilterExpression(carbondataSplit.getEffectivePredicate())),
           carbonProjection);
@@ -416,6 +434,7 @@ class CarbondataPageSource implements ConnectorPageSource {
    */
   private CarbonTableInputFormat<Object> createInputFormat(Configuration conf,
       CarbonTable carbonTable, IndexFilter indexFilter, CarbonProjection projection) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     CarbonTableInputFormat format = new CarbonTableInputFormat<Object>();
@@ -429,6 +448,7 @@ class CarbondataPageSource implements ConnectorPageSource {
     } catch (Exception e) {
       throw new RuntimeException("Unable to create the CarbonTableInputFormat", e);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     CarbonTableInputFormat.setFilterPredicates(conf, indexFilter);
     CarbonTableInputFormat.setColumnProjection(conf, projection);
 
@@ -458,6 +478,7 @@ class CarbondataPageSource implements ConnectorPageSource {
     private final int columnIndex;
     private boolean loaded;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2656
     CarbondataBlockLoader(int columnIndex) {
       this.columnIndex = columnIndex;
     }
@@ -469,6 +490,7 @@ class CarbondataPageSource implements ConnectorPageSource {
       }
       checkState(batchId == expectedBatchId);
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
         vectorReader.getColumnarBatch().column(columnIndex).loadPage();
         PrestoVectorBlockBuilder blockBuilder =
             (PrestoVectorBlockBuilder) vectorReader.getColumnarBatch().column(columnIndex);

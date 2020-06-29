@@ -88,16 +88,21 @@ public class TablePage {
   // currently all the columns share the same compressor.
   private String columnCompressor;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
   TablePage(CarbonFactDataHandlerModel model, int pageSize) {
     this.model = model;
     this.pageSize = pageSize;
     TableSpec tableSpec = model.getTableSpec();
     this.columnCompressor = model.getColumnCompressor();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     dictDimensionPages = new ColumnPage[model.getDictDimensionCount()];
     noDictDimensionPages = new ColumnPage[model.getNoDictionaryCount()];
     int tmpNumDictDimIdx = 0;
     int tmpNumNoDictDimIdx = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
     for (int i = 0; i < tableSpec.getNumDimensions(); i++) {
       TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i);
       if (spec.getSchemaDataType().isComplexType()) {
@@ -106,7 +111,10 @@ public class TablePage {
         continue;
       }
       ColumnPage page;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (spec.getSchemaDataType() == DataTypes.DATE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
         page = ColumnPage.newPage(
             new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor), pageSize);
         page.setStatsCollector(KeyPageStatsCollector.newInstance(DataTypes.BYTE_ARRAY));
@@ -118,16 +126,21 @@ public class TablePage {
         DataType dataType = DataTypes.STRING;
         if (DataTypes.VARCHAR == spec.getSchemaDataType()) {
           dataType = DataTypes.VARCHAR;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
         } else if (DataTypes.BINARY == spec.getSchemaDataType()) {
           dataType = DataTypes.BINARY;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
         ColumnPageEncoderMeta columnPageEncoderMeta =
             new ColumnPageEncoderMeta(spec, dataType, columnCompressor);
         if (null != localDictionaryGenerator) {
           page = ColumnPage.newLocalDictPage(
               columnPageEncoderMeta, pageSize, localDictionaryGenerator, false);
         } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
           if (DataTypeUtil.isPrimitiveColumn(spec.getSchemaDataType())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
             if (spec.getSchemaDataType() == DataTypes.TIMESTAMP) {
               columnPageEncoderMeta =
                   new ColumnPageEncoderMeta(spec, DataTypes.LONG, columnCompressor);
@@ -146,9 +159,12 @@ public class TablePage {
           }
         }
         // set the stats collector according to the data type of the columns
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
         if (DataTypes.VARCHAR == dataType || DataTypes.BINARY == dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
           page.setStatsCollector(StringStatsCollector.newInstance());
         } else if (DataTypeUtil.isPrimitiveColumn(spec.getSchemaDataType())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
           if (spec.getSchemaDataType() == DataTypes.TIMESTAMP) {
             page.setStatsCollector(PrimitivePageStatsCollector.newInstance(DataTypes.LONG));
           } else {
@@ -156,6 +172,7 @@ public class TablePage {
                 PrimitivePageStatsCollector.newInstance(spec.getSchemaDataType()));
           }
         } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
           page.setStatsCollector(StringStatsCollector.newInstance());
         }
         noDictDimensionPages[tmpNumNoDictDimIdx++] = page;
@@ -170,6 +187,8 @@ public class TablePage {
     measurePages = new ColumnPage[model.getMeasureCount()];
     DataType[] dataTypes = model.getMeasureDataType();
     for (int i = 0; i < measurePages.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       ColumnPageEncoderMeta columnPageEncoderMeta = new ColumnPageEncoderMeta(
           model.getTableSpec().getMeasureSpec(i), dataTypes[i], columnCompressor);
       ColumnPage page;
@@ -184,6 +203,7 @@ public class TablePage {
 
     // for complex type, `complexIndexMap` is used in multithread (in multiple Producer),
     // we need to clone the index map to make it thread safe
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
     this.complexIndexMap = new HashMap<>();
     for (Map.Entry<Integer, GenericDataType> entry: model.getComplexIndexMap().entrySet()) {
       this.complexIndexMap.put(entry.getKey(), entry.getValue().deepCopy());
@@ -198,6 +218,7 @@ public class TablePage {
    */
   public void addRow(int rowId, CarbonRow row) {
     // convert each column category, update key and stats
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     convertToColumnarAndAddToPages(rowId, row);
   }
 
@@ -209,6 +230,7 @@ public class TablePage {
     for (int i = 0; i < dictDimensions.length; i++) {
       keys[i] = ByteUtil.toBytes(dictDimensions[i]);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1268
     for (int i = 0; i < dictDimensionPages.length; i++) {
       dictDimensionPages[i].putData(rowId, keys[i]);
     }
@@ -222,8 +244,10 @@ public class TablePage {
           tableSpec.getNoDictionaryDimensionSpec();
       Object[] noDictAndComplex = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       for (int i = 0; i < noDictAndComplex.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
         if (noDictionaryDimensionSpec.get(i).getSchemaDataType() == DataTypes.VARCHAR
             || noDictionaryDimensionSpec.get(i).getSchemaDataType() == DataTypes.BINARY) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
           noDictDimensionPages[i].putData(rowId, noDictAndComplex[i]);
         } else if (i < noDictionaryCount) {
           if (DataTypeUtil
@@ -238,10 +262,12 @@ public class TablePage {
             }
             noDictDimensionPages[i].putData(rowId, value);
           } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
             noDictDimensionPages[i].putData(rowId, noDictAndComplex[i]);
           }
         } else {
           // complex columns
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
           addComplexColumn(i - noDictionaryCount, rowId,
               (List<ArrayList<byte[]>>) noDictAndComplex[i]);
         }
@@ -254,9 +280,12 @@ public class TablePage {
 
       // in compaction flow the measure with decimal type will come as Spark decimal.
       // need to convert it to byte array.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       if (DataTypes.isDecimal(measurePages[i].getDataType()) &&
           model.isCompactionFlow() &&
           value != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
         value = DataTypeUtil.getDataTypeConverter().convertFromDecimalToBigDecimal(value);
       }
       measurePages[i].putData(rowId, value);
@@ -273,19 +302,27 @@ public class TablePage {
   // TODO: this function should be refactoried, ColumnPage should support complex type encoding
   // directly instead of doing it here
   private void addComplexColumn(int index, int rowId,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
       List<ArrayList<byte[]>> encodedComplexColumnar) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
     GenericDataType complexDataType = complexIndexMap.get(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         index + model.getSegmentProperties().getNumberOfPrimitiveDimensions());
     // initialize the page if first row
     if (rowId == 0) {
       List<ComplexColumnInfo> complexColumnInfoList = new ArrayList<>();
       complexDataType.getComplexColumnInfo(complexColumnInfoList);
       complexDimensionPages[index] = new ComplexColumnPage(complexColumnInfoList);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       complexDimensionPages[index].initialize(
           model.getColumnLocalDictGenMap(), pageSize, columnCompressor);
     }
     int depthInComplexColumn = complexDimensionPages[index].getComplexColumnIndex();
     for (int depth = 0; depth < depthInComplexColumn; depth++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
       complexDimensionPages[index].putComplexData(depth, encodedComplexColumnar.get(depth));
     }
   }
@@ -297,9 +334,12 @@ public class TablePage {
     for (ColumnPage page : noDictDimensionPages) {
       page.freeMemory();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
     for (ColumnPage page : measurePages) {
       page.freeMemory();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     for (ComplexColumnPage page : complexDimensionPages) {
       if (null != page) {
         page.freeMemory();
@@ -320,10 +360,13 @@ public class TablePage {
     return output;
   }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
   void encode() throws IOException {
     // encode dimensions and measure
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
     EncodedColumnPage[] dimensions = encodeAndCompressDimensions();
     EncodedColumnPage[] measures = encodeAndCompressMeasures();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     this.encodedTablePage = EncodedTablePage.newInstance(pageSize, dimensions, measures);
   }
 
@@ -335,6 +378,7 @@ public class TablePage {
   private EncodedColumnPage[] encodeAndCompressMeasures() throws IOException {
     EncodedColumnPage[] encodedMeasures = new EncodedColumnPage[measurePages.length];
     for (int i = 0; i < measurePages.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
       ColumnPageEncoder encoder = encodingFactory.createEncoder(
           model.getTableSpec().getMeasureSpec(i), measurePages[i]);
       encodedMeasures[i] = encoder.encode(measurePages[i]);
@@ -345,6 +389,8 @@ public class TablePage {
   // apply and compress each dimension, set encoded data in `encodedData`
   private EncodedColumnPage[] encodeAndCompressDimensions() throws IOException {
     List<EncodedColumnPage> encodedDimensions = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3208
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
     List<EncodedColumnPage> encodedComplexDimensions = new ArrayList<>();
     TableSpec tableSpec = model.getTableSpec();
     int dictIndex = 0;
@@ -355,6 +401,7 @@ public class TablePage {
       ColumnPageEncoder columnPageEncoder;
       EncodedColumnPage encodedPage;
       TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
       switch (spec.getColumnType()) {
         case DIRECT_DICTIONARY:
           columnPageEncoder = encodingFactory.createEncoder(
@@ -367,6 +414,7 @@ public class TablePage {
           columnPageEncoder = encodingFactory.createEncoder(
               spec,
               noDictDimensionPages[noDictIndex]);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
           encodedPage = columnPageEncoder.encode(noDictDimensionPages[noDictIndex]);
           if (LOGGER.isDebugEnabled()) {
             DataType targetDataType =
@@ -376,6 +424,7 @@ public class TablePage {
                   "Encoder result ---> Source data type: " + noDictDimensionPages[noDictIndex]
                       .getDataType().getName() + " Destination data type: " + targetDataType
                       .getName() + " for the column: " + noDictDimensionPages[noDictIndex]
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2972
                       .getColumnSpec().getFieldName() + " having encoding type: "
                       + columnPageEncoder.getEncodingType());
             }
@@ -385,15 +434,19 @@ public class TablePage {
           break;
         case COMPLEX:
           EncodedColumnPage[] encodedPages = ColumnPageEncoder.encodeComplexColumn(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
               complexDimensionPages[complexDimIndex++]);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3208
           encodedComplexDimensions.addAll(Arrays.asList(encodedPages));
           break;
         default:
           throw new IllegalArgumentException("unsupported dimension type:" + spec
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
               .getColumnType());
       }
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3208
     encodedDimensions.addAll(encodedComplexDimensions);
     return encodedDimensions.toArray(new EncodedColumnPage[encodedDimensions.size()]);
   }
@@ -404,11 +457,13 @@ public class TablePage {
   public ColumnPage getColumnPage(String columnName) {
     int dictDimensionIndex = -1;
     int noDictDimensionIndex = -1;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1363
     ColumnPage page = null;
     TableSpec spec = model.getTableSpec();
     int numDimensions = spec.getNumDimensions();
     for (int i = 0; i < numDimensions; i++) {
       ColumnType type = spec.getDimensionSpec(i).getColumnType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (spec.getDimensionSpec(i).getSchemaDataType() == DataTypes.DATE) {
         page = dictDimensionPages[++dictDimensionIndex];
       } else if (type == ColumnType.PLAIN_VALUE) {
@@ -426,9 +481,11 @@ public class TablePage {
     for (int i = 0; i < numMeasures; i++) {
       String fieldName = spec.getMeasureSpec(i).getFieldName();
       if (fieldName.equalsIgnoreCase(columnName)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
         return measurePages[i];
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     throw new IllegalArgumentException("Index: must have '" + columnName + "' column in schema");
   }
 

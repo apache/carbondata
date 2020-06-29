@@ -65,6 +65,7 @@ public class Auditor {
    * @param opId operation unique id
    */
   public static void logOperationStart(String opName, String opId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3726
     if (CarbonProperties.isAuditEnabled()) {
       Objects.requireNonNull(opName);
       Objects.requireNonNull(opId);
@@ -86,6 +87,7 @@ public class Auditor {
    */
   public static void logOperationEnd(String opName, String opId, boolean success, String table,
       String opTime, Map<String, String> extraInfo) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3726
     if (CarbonProperties.isAuditEnabled()) {
       Objects.requireNonNull(opName);
       Objects.requireNonNull(opId);

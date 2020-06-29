@@ -31,6 +31,7 @@ public interface ScannedResultCollector {
    * Return the aggregated scanned result in list of rows
    */
   List<Object[]> collectResultInRow(BlockletScannedResult scannedResult, int batchSize);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
 
   /**
    * Collects result and set it in the specified columnar batch

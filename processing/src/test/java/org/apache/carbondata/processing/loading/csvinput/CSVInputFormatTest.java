@@ -129,7 +129,9 @@ public class CSVInputFormatTest extends TestCase {
   @Test public void testReadCSVFiles() throws Exception{
     Configuration conf = new Configuration();
     prepareConf(conf);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2234
     conf.setBoolean(CSVInputFormat.HEADER_PRESENT, true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1767
     File output = new File("target/output_CSVInputFormatTest");
     conf.set("mapreduce.cluster.local.dir", output.getCanonicalPath());
     Job job = Job.getInstance(conf, "CSVInputFormat_normal");
@@ -157,6 +159,7 @@ public class CSVInputFormatTest extends TestCase {
    */
   @Test public void testReadCSVFilesWithBOM() throws Exception{
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2234
     Configuration conf = new Configuration();
     prepareConf(conf);
     conf.setBoolean(CSVInputFormat.HEADER_PRESENT, false);
@@ -177,6 +180,7 @@ public class CSVInputFormatTest extends TestCase {
     FileOutputFormat.setOutputPath(job, new Path(output.getCanonicalPath()));
 
     Assert.assertTrue(job.waitForCompletion(true));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
     deleteOutput(output);
   }
 

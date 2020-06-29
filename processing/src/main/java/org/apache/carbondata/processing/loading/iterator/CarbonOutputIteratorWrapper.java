@@ -49,6 +49,7 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
   private ArrayBlockingQueue<RowBatch> queue = new ArrayBlockingQueue<>(10);
 
   public void write(Object[] row) throws InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2417
     if (close) {
       // already might be closed forcefully
       return;
@@ -62,6 +63,7 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
 
   @Override
   public boolean hasNext() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1908
     if (readBatch == null || !readBatch.hasNext()) {
       try {
         if (!close) {
@@ -89,6 +91,7 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
   }
 
   public void closeWriter(boolean isForceClose) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2417
     if (close) {
       // already might be closed forcefully
       return;
@@ -101,11 +104,15 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
         // once write() method stops taking input rows, clear the queue.
         // If queue is cleared before close is set to true, then queue will be again filled
         // by .write() and it can go to blocking put() forever as consumer is dead.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2784
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2786
         queue.clear();
         return;
       }
       // below code will ensure that the last RowBatch is consumed properly
       loadBatch.readyRead();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1859
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1861
       if (loadBatch.size > 0) {
         queue.put(loadBatch);
       }
@@ -130,6 +137,7 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
     private int size;
 
     private RowBatch(int size) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2168
       batch = new Object[size][];
       this.size = size;
     }

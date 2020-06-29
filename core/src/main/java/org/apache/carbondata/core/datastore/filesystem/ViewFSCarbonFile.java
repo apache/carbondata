@@ -64,6 +64,7 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
     CarbonFile[] files = listFiles();
     if (files != null && files.length >= 1) {
       List<CarbonFile> fileList = new ArrayList<CarbonFile>(files.length);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       for (CarbonFile file : files) {
         if (fileFilter.accept(file)) {
           fileList.add(file);
@@ -81,6 +82,7 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
   @Override
   public boolean renameForce(String changeToName) {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (fileSystem instanceof ViewFileSystem) {
         fileSystem.delete(new Path(changeToName), true);
         fileSystem.rename(path, new Path(changeToName));
@@ -90,6 +92,7 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
         return false;
       }
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Exception occured" + e.getMessage(), e);
       return false;
     }

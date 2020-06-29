@@ -57,9 +57,11 @@ public class CarbonReader<T> {
    * Call {@link #builder(String)} to construct an instance
    */
   CarbonReader(List<RecordReader<Void, T>> readers) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2491
     this.initialise = true;
     this.readers = readers;
     this.index = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3342
     if (0 == readers.size()) {
       this.currentReader = null;
     } else {
@@ -74,6 +76,7 @@ public class CarbonReader<T> {
     if (0 == readers.size() || currentReader == null) {
       return false;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2491
     validateReader();
     if (currentReader.nextKeyValue()) {
       return true;
@@ -83,15 +86,19 @@ public class CarbonReader<T> {
         return false;
       } else {
         // current reader is closed
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2578
         currentReader.close();
         // no need to keep a reference to CarbonVectorizedRecordReader,
         // until all the readers are processed.
         // If readers count is very high,
         // we get OOM as GC not happened for any of the content in CarbonVectorizedRecordReader
         readers.set(index, null);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3367
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3368
         index++;
         currentReader = readers.get(index);
         boolean hasNext = currentReader.nextKeyValue();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3342
         if (hasNext) {
           return true;
         }
@@ -104,6 +111,7 @@ public class CarbonReader<T> {
    * Read and return next row object
    */
   public T readNextRow() throws IOException, InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2491
     validateReader();
     return currentReader.getCurrentValue();
   }
@@ -112,6 +120,7 @@ public class CarbonReader<T> {
    * Read and return next batch row objects
    */
   public Object[] readNextBatchRow() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-300
     validateReader();
     if (currentReader instanceof CarbonRecordReader) {
       List<Object> batchValue = ((CarbonRecordReader) currentReader).getBatchValue();
@@ -153,6 +162,7 @@ public class CarbonReader<T> {
    * @return CarbonReaderBuilder object
    */
   public static CarbonReaderBuilder builder(String tablePath, String tableName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2313
     return new CarbonReaderBuilder(tablePath, tableName);
   }
 
@@ -163,6 +173,7 @@ public class CarbonReader<T> {
    * @return CarbonReaderBuilder object
    */
   public static CarbonReaderBuilder builder(InputSplit inputSplit) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3366
     return new CarbonReaderBuilder(inputSplit);
   }
 
@@ -173,8 +184,10 @@ public class CarbonReader<T> {
    * @return CarbonReaderBuilder object
    */
   public static CarbonReaderBuilder builder(String tablePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
     UUID uuid = UUID.randomUUID();
     String tableName = "UnknownTable" + uuid;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2521
     return builder(tablePath, tableName);
   }
 
@@ -184,6 +197,7 @@ public class CarbonReader<T> {
    * @return CarbonReaderBuilder object
    */
   public static CarbonReaderBuilder builder() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3363
     UUID uuid = UUID.randomUUID();
     String tableName = "UnknownTable" + uuid;
     return new CarbonReaderBuilder(tableName);
@@ -206,6 +220,7 @@ public class CarbonReader<T> {
    * @return list of {@link CarbonReader} objects
    */
   public List<CarbonReader> split(int maxSplits) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3056
     validateReader();
     if (maxSplits < 1) {
       throw new RuntimeException(
@@ -246,11 +261,15 @@ public class CarbonReader<T> {
    * @throws IOException
    */
   public void close() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2491
     validateReader();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-300
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE,
             String.valueOf(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3342
     if (null != this.currentReader) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2392
       this.currentReader.close();
     }
     this.initialise = false;

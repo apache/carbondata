@@ -63,6 +63,7 @@ public class IndexFilter implements Serializable {
   private SegmentProperties properties;
 
   public IndexFilter(CarbonTable table, Expression expression) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3555
     this(table, expression, false);
   }
 
@@ -70,9 +71,11 @@ public class IndexFilter implements Serializable {
     this.expression = expression;
     this.table = table;
     resolve(lazyResolve);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3480
     if (expression != null) {
       checkIfFilterColumnExistsInTable();
       initializeExternalSegmentFilter();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3551
       try {
         this.serializedExpression = ObjectSerializationUtil.convertObjectToString(expression);
       } catch (IOException e) {
@@ -82,6 +85,7 @@ public class IndexFilter implements Serializable {
   }
 
   public IndexFilter(FilterResolverIntf resolver) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3555
     this.resolver = resolver;
   }
 
@@ -105,6 +109,7 @@ public class IndexFilter implements Serializable {
   }
 
   public void setTable(CarbonTable table) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3555
     this.table = table;
   }
 
@@ -170,6 +175,7 @@ public class IndexFilter implements Serializable {
    */
   public void resolve(boolean lazyResolve) {
     if (expression != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3555
       processFilterExpression();
       if (!lazyResolve) {
         resolver = resolveFilter();
@@ -187,6 +193,7 @@ public class IndexFilter implements Serializable {
   }
 
   public FilterResolverIntf getResolver() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3555
     if (resolver == null) {
       resolver = resolveFilter();
     }
@@ -204,6 +211,7 @@ public class IndexFilter implements Serializable {
     if (!table.isTransactionalTable()) {
       return false;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3555
     return !(table.hasColumnDrift() && RestructureUtil
         .hasColumnDriftOnSegment(table, segmentProperties));
   }
@@ -259,6 +267,8 @@ public class IndexFilter implements Serializable {
    */
   private FilterResolverIntf resolveFilter() {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3646
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3647
       AbsoluteTableIdentifier absoluteTableIdentifier =
               table != null ? table.getAbsoluteTableIdentifier() : null;
       FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();

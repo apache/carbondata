@@ -65,6 +65,7 @@ import org.apache.log4j.Logger;
 @InterfaceAudience.Internal
 public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex> {
   private static final Logger LOGGER = LogServiceFactory.getLogService(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       BloomCoarseGrainIndexFactory.class.getName());
   /**
    * property for size of bloom filter
@@ -74,6 +75,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
    * default size for bloom filter, cardinality of the column.
    */
   private static final int DEFAULT_BLOOM_FILTER_SIZE =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2790
       CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT * 20;
   /**
    * property for fpp(false-positive-probability) of bloom filter
@@ -104,6 +106,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
 
   public BloomCoarseGrainIndexFactory(CarbonTable carbonTable, IndexSchema indexSchema)
       throws MalformedIndexCommandException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     super(carbonTable, indexSchema);
     Objects.requireNonNull(carbonTable);
     Objects.requireNonNull(indexSchema);
@@ -118,6 +121,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     List<ExpressionType> optimizedOperations = new ArrayList<ExpressionType>();
     // todo: support more optimize operations
     optimizedOperations.add(ExpressionType.EQUALS);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2655
     optimizedOperations.add(ExpressionType.IN);
     this.indexMeta = new IndexMeta(this.indexName, indexedColumns, optimizedOperations);
     LOGGER.info(String.format("Index %s works for %s with bloom size %d",
@@ -126,6 +130,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
       this.cache = CacheProvider.getInstance()
           .createCache(new CacheType("bloom_cache"), BloomIndexCache.class.getName());
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error(e.getMessage(), e);
       throw new MalformedIndexCommandException(e.getMessage());
     }
@@ -141,6 +146,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     String bloomFilterSizeStr = dmSchema.getProperties().get(BLOOM_SIZE);
     if (StringUtils.isBlank(bloomFilterSizeStr)) {
       LOGGER.warn(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           String.format("Bloom filter size is not configured for index %s, use default value %d",
               indexName, DEFAULT_BLOOM_FILTER_SIZE));
       return DEFAULT_BLOOM_FILTER_SIZE;
@@ -149,6 +155,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     try {
       bloomFilterSize = Integer.parseInt(bloomFilterSizeStr);
     } catch (NumberFormatException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       throw new MalformedIndexCommandException(
           String.format("Invalid value of bloom filter size '%s', it should be an integer",
               bloomFilterSizeStr));
@@ -168,10 +175,12 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
    * 2. BLOOM_FPP should be (0, 1)
    */
   private double validateAndGetBloomFilterFpp(IndexSchema dmSchema)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       throws MalformedIndexCommandException {
     String bloomFilterFppStr = dmSchema.getProperties().get(BLOOM_FPP);
     if (StringUtils.isBlank(bloomFilterFppStr)) {
       LOGGER.warn(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           String.format("Bloom filter FPP is not configured for index %s, use default value %f",
               indexName, DEFAULT_BLOOM_FILTER_FPP));
       return DEFAULT_BLOOM_FILTER_FPP;
@@ -180,6 +189,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     try {
       bloomFilterFpp = Double.parseDouble(bloomFilterFppStr);
     } catch (NumberFormatException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       throw new MalformedIndexCommandException(
           String.format("Invalid value of bloom filter fpp '%s', it should be an numeric",
               bloomFilterFppStr));
@@ -200,6 +210,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     String bloomCompress = dmSchema.getProperties().get(COMPRESS_BLOOM);
     if (StringUtils.isBlank(bloomCompress)) {
       LOGGER.warn(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           String.format("Bloom compress is not configured for index %s, use default value %b",
               indexName, DEFAULT_BLOOM_COMPRESS));
       return DEFAULT_BLOOM_COMPRESS;
@@ -211,6 +222,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
   public IndexWriter createWriter(Segment segment, String shardName,
       SegmentProperties segmentProperties) throws IOException {
     LOGGER.info(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         String.format("Data of BloomCoarseGrainIndex %s for table %s will be written to %s",
             this.indexName, getCarbonTable().getTableName() , shardName));
     return new BloomIndexWriter(getCarbonTable().getTablePath(), this.indexName,
@@ -243,6 +255,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
       } else if (carbonFile.getName().equals(BloomIndexFileStore.MERGE_INPROGRESS_FILE)) {
         mergeShardInProgress = true;
       } else if (carbonFile.isDirectory()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2980
         shardPaths.add(FileFactory.getPath(carbonFile.getAbsolutePath()).toString());
       }
     }
@@ -256,6 +269,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
 
   @Override
   public List<CoarseGrainIndex> getIndexes(Segment segment) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     List<CoarseGrainIndex> indexes = new ArrayList<>();
     try {
       Set<String> shardPaths = segmentMap.get(segment.getSegmentNo());
@@ -270,6 +284,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
             filteredShards.contains(new File(shard).getName())) {
           // Filter out the tasks which are filtered through Main index.
           // for merge shard, shard pruning delay to be done before pruning blocklet
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           BloomCoarseGrainIndex bloomDM = new BloomCoarseGrainIndex();
           bloomDM.init(new BloomIndexModel(shard, cache, segment.getConfiguration()));
           bloomDM.initIndexColumnConverters(getCarbonTable(), indexMeta.getIndexedColumns());
@@ -291,6 +306,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
 
   @Override
   public List<CoarseGrainIndex> getIndexes(IndexInputSplit distributable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     List<CoarseGrainIndex> indexes = new ArrayList<>();
     String indexPath = ((BloomIndexInputSplit) distributable).getIndexPath();
     Set<String> filteredShards = ((BloomIndexInputSplit) distributable).getFilteredShards();
@@ -308,6 +324,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
     Set<String> shardPaths = segmentMap.get(segment.getSegmentNo());
     if (shardPaths == null) {
       shardPaths =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           getAllShardPaths(getCarbonTable().getTablePath(), segment.getSegmentNo(), indexName);
       segmentMap.put(segment.getSegmentNo(), shardPaths);
     }
@@ -317,6 +334,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
       // for merge shard, shard pruning delay to be done before pruning blocklet
       if (shardPath.endsWith(BloomIndexFileStore.MERGE_BLOOM_INDEX_SHARD_NAME) ||
           filteredShards.contains(new File(shardPath).getName())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         IndexInputSplit bloomIndexInputSplit =
             new BloomIndexInputSplit(shardPath, filteredShards);
         bloomIndexInputSplit.setSegment(segment);
@@ -334,9 +352,12 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
 
   @Override
   public void clear(String segment) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     Set<String> shards = segmentMap.remove(segment);
     if (shards != null) {
       for (String shard : shards) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         for (CarbonColumn carbonColumn : indexMeta.getIndexedColumns()) {
           cache.invalidate(new BloomCacheKeyValue.CacheKey(shard, carbonColumn.getColName()));
         }
@@ -347,6 +368,8 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
   @Override
   public synchronized void clear() {
     if (segmentMap.size() > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2702
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2496
       List<String> segments = new ArrayList<>(segmentMap.keySet());
       for (String segmentId : segments) {
         clear(segmentId);
@@ -356,12 +379,14 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
 
   @Override
   public void deleteIndexData(Segment segment) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     deleteSegmentIndexData(segment.getSegmentNo());
   }
 
   @Override
   public void deleteSegmentIndexData(String segmentId) throws IOException {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       String indexPath = CarbonTablePath
           .getIndexesStorePath(getCarbonTable().getTablePath(), segmentId, indexName);
       if (FileFactory.isFileExist(indexPath)) {
@@ -380,29 +405,35 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
         new SegmentStatusManager(getCarbonTable().getAbsoluteTableIdentifier());
     try {
       List<Segment> validSegments =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           ssm.getValidAndInvalidSegments(getCarbonTable().isMV()).getValidSegments();
       for (Segment segment : validSegments) {
         deleteIndexData(segment);
       }
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       LOGGER.error("drop index failed, failed to delete index directory");
     }
   }
 
   @Override
   public boolean willBecomeStale(TableOperation operation) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2693
     switch (operation) {
       case ALTER_RENAME:
         return false;
       case ALTER_DROP:
         return true;
       case ALTER_ADD_COLUMN:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2727
         return false;
       case ALTER_CHANGE_DATATYPE:
         return true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3149
       case ALTER_COLUMN_RENAME:
         return true;
       case STREAMING:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2823
         return false;
       case DELETE:
         return true;
@@ -417,11 +448,15 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
 
   @Override
   public boolean isOperationBlocked(TableOperation operation, Object... targets) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2698
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2700
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2732
     switch (operation) {
       case ALTER_DROP: {
         // alter table drop columns
         // will be blocked if the columns in bloomfilter index
         List<String> columnsToDrop = (List<String>) targets[0];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         List<String> indexedColumnNames = indexMeta.getIndexedColumnNames();
         for (String indexedcolumn : indexedColumnNames) {
           for (String column : columnsToDrop) {
@@ -432,11 +467,13 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
         }
         return false;
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3149
       case ALTER_CHANGE_DATATYPE:
       case ALTER_COLUMN_RENAME: {
         // alter table change one column datatype, or rename
         // will be blocked if the column in bloomfilter index
         String columnToChangeDatatype = (String) targets[0];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         List<String> indexedColumnNames = indexMeta.getIndexedColumnNames();
         for (String indexedcolumn : indexedColumnNames) {
           if (indexedcolumn.equalsIgnoreCase(columnToChangeDatatype)) {
@@ -446,6 +483,7 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
         return false;
       }
       default:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2347
         return false;
     }
   }
@@ -462,9 +500,11 @@ public class BloomCoarseGrainIndexFactory extends IndexFactory<CoarseGrainIndex>
 
   @Override
   public String getCacheSize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3398
     long sum = 0L;
     for (Map.Entry<String, Set<String>> entry : segmentMap.entrySet()) {
       for (String shardName : entry.getValue()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         for (CarbonColumn carbonColumn : indexMeta.getIndexedColumns()) {
           BloomCacheKeyValue.CacheValue cacheValue = cache
               .getIfPresent(new BloomCacheKeyValue.CacheKey(shardName, carbonColumn.getColName()));

@@ -96,6 +96,7 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
       // for every iteration of available rows filling newly created list of Object[] and add it to
       // the final list so there is no mismatch in the counter while filling dimension and
       // measure data
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2604
       List<Object[]> collectedData = new ArrayList<>(availableBatchRowCount);
       // fill dimension data
       fillDimensionData(scannedResult, collectedData, queryMeasures, availableBatchRowCount);

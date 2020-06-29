@@ -59,6 +59,7 @@ public class AlluxioCarbonFile extends HDFSCarbonFile {
 
   @Override
   public String getAbsolutePath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3659
     String absolutePath = super.getAbsolutePath();
     return getFormattedPath(absolutePath);
   }
@@ -73,6 +74,7 @@ public class AlluxioCarbonFile extends HDFSCarbonFile {
   @Override
   public boolean renameForce(String changetoName) {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (fileSystem instanceof DistributedFileSystem) {
         ((DistributedFileSystem) fileSystem).rename(path, new Path(changetoName),
             org.apache.hadoop.fs.Options.Rename.OVERWRITE);
@@ -80,6 +82,7 @@ public class AlluxioCarbonFile extends HDFSCarbonFile {
       }
       return false;
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Exception occured: " + e.getMessage(), e);
       return false;
     }

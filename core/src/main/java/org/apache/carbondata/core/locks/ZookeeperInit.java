@@ -47,6 +47,7 @@ public class ZookeeperInit {
       zk = new ZooKeeper(zooKeeperUrl, sessionTimeOut, new DummyWatcher());
 
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error(e.getMessage(), e);
     }
 
@@ -54,6 +55,7 @@ public class ZookeeperInit {
 
   public static ZookeeperInit getInstance(String zooKeeperUrl) {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     synchronized (ZookeeperInit.class) {
       if (null == zooKeeperInit) {
         LOGGER.info("Initiating Zookeeper client.");

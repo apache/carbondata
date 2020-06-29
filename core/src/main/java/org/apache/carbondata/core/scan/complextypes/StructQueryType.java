@@ -38,6 +38,7 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
   private String parentName;
 
   public StructQueryType(String name, String parentName, int columnIndex) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     super(name, parentName, columnIndex);
     this.name = name;
     this.parentName = parentName;
@@ -87,6 +88,7 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
 
   @Override
   public void parseBlocksAndReturnComplexColumnByteArray(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3145
       DimensionRawColumnChunk[] dimensionColumnDataChunks,
       DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber,
       DataOutputStream dataOutputStream) throws IOException {
@@ -94,6 +96,7 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
         copyBlockDataChunk(dimensionColumnDataChunks, dimensionColumnPages, rowNumber, pageNumber);
     ByteBuffer byteArray = ByteBuffer.wrap(input);
     int childElement = byteArray.getShort();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
     dataOutputStream.writeShort(childElement);
     if (childElement > 0) {
       for (int i = 0; i < childElement; i++) {
@@ -125,6 +128,7 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
 
   @Override
   public Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
       CarbonDimension child) {
     int childLength;
     if (parent.getOrdinal() < child.getOrdinal()) {
@@ -169,6 +173,8 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
         fields[i] = children.get(i)
             .getDataBasedOnColumnList(childBuffer, presentColumn.getListOfChildDimensions().get(i));
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
       return DataTypeUtil.getDataTypeConverter().wrapWithGenericRow(fields);
     }
   }

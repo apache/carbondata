@@ -45,6 +45,7 @@ public class ImplicitColumnVisitor implements ResolvedFilterInfoVisitorIntf {
 
   @Override
   public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3217
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
     if (visitableObj instanceof DimColumnResolvedFilterInfo) {
       ColumnFilterInfo resolvedFilterObject = null;

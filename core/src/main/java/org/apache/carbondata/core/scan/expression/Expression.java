@@ -59,6 +59,7 @@ public abstract class Expression implements Serializable {
   public abstract String getStatement();
 
   public boolean isAlreadyResolved() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3343
     return isAlreadyResolved;
   }
 

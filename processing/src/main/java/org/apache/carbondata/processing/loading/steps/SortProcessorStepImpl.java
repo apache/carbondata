@@ -43,6 +43,7 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   @Override
   public void initialize() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
     super.initialize();
     child.initialize();
     SortParameters sortParameters = SortParameters.createSortParameters(configuration);
@@ -53,6 +54,7 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
   @Override
   public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
     final Iterator<CarbonRowBatch>[] iterators = child.execute();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
     return sorter.sort(iterators);
   }
 

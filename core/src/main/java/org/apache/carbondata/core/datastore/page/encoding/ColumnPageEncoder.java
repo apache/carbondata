@@ -56,6 +56,7 @@ public abstract class ColumnPageEncoder {
    */
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(ColumnPageEncoder.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
 
   protected abstract ByteBuffer encodeData(ColumnPage input) throws IOException;
 
@@ -70,6 +71,7 @@ public abstract class ColumnPageEncoder {
    * @return
    */
   public DataType getTargetDataType(ColumnPage inputPage) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     ColumnPageEncoderMeta encoderMeta = getEncoderMeta(inputPage);
     if (null != encoderMeta) {
       return encoderMeta.getStoreDataType();
@@ -79,6 +81,7 @@ public abstract class ColumnPageEncoder {
   }
 
   public Encoding getEncodingType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2972
     List<Encoding> currEncodingList = getEncodingList();
     if (CarbonUtil.isEncodedWithMeta(currEncodingList)) {
       return currEncodingList.get(0);
@@ -91,8 +94,11 @@ public abstract class ColumnPageEncoder {
    * The encoded binary data and metadata are wrapped in encoding column page
    */
   public EncodedColumnPage encode(ColumnPage inputPage) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     ByteBuffer encodedBytes = encodeData(inputPage);
     DataChunk2 pageMetadata = buildPageMetadata(inputPage, encodedBytes);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     return new EncodedColumnPage(pageMetadata, encodedBytes, inputPage);
   }
 
@@ -109,6 +115,7 @@ public abstract class ColumnPageEncoder {
   }
 
   private void fillBasicFields(ColumnPage inputPage, DataChunk2 dataChunk)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2977
       throws IOException {
     dataChunk.setChunk_meta(CarbonMetadataUtil.getChunkCompressorMeta(inputPage,
         dataChunk.getData_page_length()));
@@ -119,6 +126,8 @@ public abstract class ColumnPageEncoder {
   private void fillNullBitSet(ColumnPage inputPage, DataChunk2 dataChunk) {
     PresenceMeta presenceMeta = new PresenceMeta();
     presenceMeta.setPresent_bit_streamIsSet(true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     Compressor compressor = CompressorFactory.getInstance().getCompressor(
         inputPage.getColumnCompressorName());
     presenceMeta.setPresent_bit_stream(
@@ -144,6 +153,7 @@ public abstract class ColumnPageEncoder {
   }
 
   private void fillMinMaxIndex(ColumnPage inputPage, DataChunk2 dataChunk) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     dataChunk.setMin_max(buildMinMaxIndex(inputPage, dataChunk.encoders));
   }
 
@@ -168,6 +178,7 @@ public abstract class ColumnPageEncoder {
     }
     index.addToMax_values(max);
     index.addToMin_values(min);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     index.addToMin_max_presence(inputPage.getStatistics().writeMinMax());
     return index;
   }
@@ -186,15 +197,20 @@ public abstract class ColumnPageEncoder {
    * TODO: remove this interface after complex column page is unified with column page
    */
   public static EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     EncodedColumnPage[] encodedPages = new EncodedColumnPage[input.getComplexColumnIndex()];
     int index = 0;
     while (index < input.getComplexColumnIndex()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
       ColumnPage subColumnPage = input.getColumnPage(index);
       encodedPages[index] = encodedColumn(subColumnPage);
       // by default add this encoding,
       // it is used for checking length of
       // complex child byte array columns (short and int)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
       encodedPages[index].getPageMetadata().getEncoders()
           .add(Encoding.INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY);
       index++;
@@ -203,6 +219,7 @@ public abstract class ColumnPageEncoder {
   }
 
   public static EncodedColumnPage encodedColumn(ColumnPage page) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     ColumnPageEncoder pageEncoder = createCodecForDimension(page);
     if (pageEncoder == null) {
       ColumnPageEncoder encoder = new DirectCompressCodec(DataTypes.BYTE_ARRAY).createEncoder(null);
@@ -227,6 +244,7 @@ public abstract class ColumnPageEncoder {
       } else if ((inputPage.getDataType() == DataTypes.BYTE) || (inputPage.getDataType()
           == DataTypes.SHORT) || (inputPage.getDataType() == DataTypes.INT) || (
           inputPage.getDataType() == DataTypes.LONG)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
         return selectCodecByAlgorithmForIntegral(inputPage.getStatistics(), true, columnSpec)
             .createEncoder(null);
       } else if ((inputPage.getDataType() == DataTypes.FLOAT) || (inputPage.getDataType()
@@ -248,6 +266,7 @@ public abstract class ColumnPageEncoder {
    * Problem in encoding
    */
   public LocalDictionaryChunk encodeDictionary(ColumnPage dictionaryPage)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
     LocalDictionaryChunk localDictionaryChunk = new LocalDictionaryChunk();
     localDictionaryChunk.setDictionary_data(encodeData(dictionaryPage));

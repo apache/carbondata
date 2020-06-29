@@ -73,6 +73,7 @@ public class BlockDetails extends FileSplit implements Serializable {
   /** The file containing this split's data. */
   @Override
   public Path getPath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
     return new Path(filePath);
   }
 

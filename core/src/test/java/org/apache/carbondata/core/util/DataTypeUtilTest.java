@@ -37,7 +37,9 @@ import static org.apache.carbondata.core.util.DataTypeUtil.normalizeIntAndLongVa
 public class DataTypeUtilTest {
 
   @Test public void testGetColumnDataTypeDisplayName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     String expected = DataTypes.INT.getName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     String result = "INT";
     assertEquals(expected, result);
 
@@ -61,6 +63,7 @@ public class DataTypeUtilTest {
   @Test public void testGetMeasureValueBasedOnDataType() {
     ColumnSchema columnSchema = new ColumnSchema();
     CarbonMeasure carbonMeasure = new CarbonMeasure(columnSchema, 1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     Object resultInt = getMeasureValueBasedOnDataType("1", DataTypes.INT, carbonMeasure.getScale(), carbonMeasure.getPrecision());
     Object expectedInt = Double.valueOf(1).intValue();
     assertEquals(expectedInt, resultInt);
@@ -82,6 +85,7 @@ public class DataTypeUtilTest {
   @Test public void testGetDataBasedOnDataTypeForNoDictionaryColumn() {
     Object result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
         DataTypes.INT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(result == null);
     result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
         DataTypes.SHORT);

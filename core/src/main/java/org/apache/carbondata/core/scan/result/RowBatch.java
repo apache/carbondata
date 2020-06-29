@@ -109,6 +109,7 @@ public class RowBatch extends CarbonIterator<Object[]> {
    * @return rows
    */
   public List<Object[]> nextBatch() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-300
     if (!hasNext()) {
       throw new NoSuchElementException();
     }

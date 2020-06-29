@@ -66,8 +66,10 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
     // Configure Buffer based on our requirement
     char[] buffer = new char[DEFAULT_BUFFER_SIZE];
     StringWriter sw = new StringWriter();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     dataInputStream = FileFactory.getDataInputStream(filePath);
     inputStream = new InputStreamReader(dataInputStream,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
         CarbonCommonConstants.DEFAULT_CHARSET);
     int n = 0;
     while (-1 != (n = inputStream.read(buffer))) {
@@ -88,13 +90,16 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
     InputStreamReader inStream = null;
     DeleteDeltaBlockDetails deleteDeltaBlockDetails;
     AtomicFileOperations fileOperation =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2745
         AtomicFileOperationFactory.getAtomicFileOperations(filePath);
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (!FileFactory.isFileExist(filePath)) {
         return new DeleteDeltaBlockDetails("");
       }
       dataInputStream = fileOperation.openForRead();
       inStream = new InputStreamReader(dataInputStream,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
           CarbonCommonConstants.DEFAULT_CHARSET);
       buffReader = new BufferedReader(inStream);
       deleteDeltaBlockDetails =

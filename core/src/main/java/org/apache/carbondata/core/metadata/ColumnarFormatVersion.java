@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata;
 
 public enum ColumnarFormatVersion {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3650
   V1((short)1),  // deprecated
   V2((short)2),  // deprecated
   V3((short)3);
@@ -49,6 +50,7 @@ public enum ColumnarFormatVersion {
       case 3:
         return V3;
       default:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3061
         throw new UnsupportedOperationException("Unsupported columnar format version: " + version);
     }
   }

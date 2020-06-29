@@ -55,6 +55,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
   private CarbonLoadModel loadModel;
   private PartitionSpec partitionSpec;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
   CarbonColumn[] noDicAndComplexColumns;
   /**
    * record holder heap
@@ -65,7 +66,9 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
       LogServiceFactory.getLogService(RowResultMergerProcessor.class.getName());
 
   public RowResultMergerProcessor(String databaseName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
       String tableName, SegmentProperties segProp, String[] tempStoreLocation,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
       CarbonLoadModel loadModel, CompactionType compactionType, PartitionSpec partitionSpec)
       throws IOException {
     this.segprop = segProp;
@@ -79,18 +82,25 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
           partitionSpec.getLocation().toString() + CarbonCommonConstants.FILE_SEPARATOR + loadModel
               .getFactTimeStamp() + ".tmp";
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
       carbonStoreLocation = CarbonDataProcessorUtil
           .createCarbonStoreLocation(loadModel.getCarbonDataLoadSchema().getCarbonTable(),
               loadModel.getSegmentId());
     }
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3062
         .getCarbonFactDataHandlerModel(loadModel,
             loadModel.getCarbonDataLoadSchema().getCarbonTable(), segProp, tableName,
             tempStoreLocation, carbonStoreLocation);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     setDataFileAttributesInModel(loadModel, compactionType, carbonFactDataHandlerModel);
     carbonFactDataHandlerModel.setCompactionFlow(true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     carbonFactDataHandlerModel.setSegmentId(loadModel.getSegmentId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
     carbonFactDataHandlerModel.setBucketId(loadModel.getBucketId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     this.noDicAndComplexColumns = carbonFactDataHandlerModel.getNoDictAndComplexColumns();
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
   }
@@ -106,6 +116,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
    *
    */
   public boolean execute(List<RawResultIterator> unsortedResultIteratorList,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
       List<RawResultIterator> sortedResultIteratorList) throws Exception {
     List<RawResultIterator> finalIteratorList = new ArrayList<>(unsortedResultIteratorList);
     finalIteratorList.addAll(sortedResultIteratorList);
@@ -118,6 +129,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
 
       // add all iterators to the queue
       for (RawResultIterator leaftTupleIterator : finalIteratorList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3343
         if (leaftTupleIterator.hasNext()) {
           this.recordHolderHeap.add(leaftTupleIterator);
           index++;
@@ -143,6 +155,8 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         // index
         if (!iterator.hasNext()) {
           index--;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2304
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2391
           iterator.close();
           continue;
         }
@@ -152,10 +166,12 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
       // if record holder is not empty then iterator the slice holder from
       // heap
       iterator = this.recordHolderHeap.poll();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       if (null != iterator) {
         while (true) {
           Object[] convertedRow = iterator.next();
           if (null == convertedRow) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2391
             iterator.close();
             break;
           }
@@ -171,19 +187,23 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
           }
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
       if (isDataPresent) {
         this.dataHandler.finish();
       }
       mergeStatus = true;
     } catch (Exception e) {
       mergeStatus = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3019
       LOGGER.error(e.getLocalizedMessage(), e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2316
       throw e;
     } finally {
       try {
         if (isDataPresent) {
           this.dataHandler.closeHandler();
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
         if (partitionSpec != null) {
           SegmentFileStore.writeSegmentFile(loadModel.getTablePath(), loadModel.getTaskNo(),
               partitionSpec.getLocation().toString(), loadModel.getFactTimeStamp() + "",
@@ -191,6 +211,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         }
       } catch (CarbonDataWriterException | IOException e) {
         mergeStatus = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2316
         throw e;
       }
     }
@@ -201,6 +222,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
   @Override
   public void close() {
     // close data handler
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2181
     if (null != dataHandler) {
       dataHandler.closeHandler();
     }
@@ -212,6 +234,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
    * @throws SliceMergerException
    */
   private void addRow(Object[] carbonTuple) throws SliceMergerException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     CarbonRow row = WriteStepRowUtil.fromMergerRow(carbonTuple, segprop, noDicAndComplexColumns);
     try {
       this.dataHandler.addDataToStore(row);
@@ -226,6 +249,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
   private class CarbonMdkeyComparator implements Comparator<RawResultIterator> {
     int[] columnValueSizes = segprop.createDimColumnValueLength();
     public CarbonMdkeyComparator() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
       initSortColumns();
     }
 
@@ -240,6 +264,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
 
     @Override
     public int compare(RawResultIterator o1, RawResultIterator o2) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       Object[] row1 = o1.fetchConverted();
       Object[] row2 = o2.fetchConverted();
       if (null == row1 || null == row2) {

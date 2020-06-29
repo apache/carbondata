@@ -36,6 +36,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1158
 class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     implements org.apache.hadoop.mapred.RecordReader<Void, ArrayWritable> {
 
@@ -45,6 +46,8 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
 
   public CarbonHiveRecordReader(QueryModel queryModel, CarbonReadSupport<ArrayWritable> readSupport,
       InputSplit inputSplit, JobConf jobConf) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
     super(queryModel, readSupport, jobConf);
     initialize(inputSplit, jobConf);
   }
@@ -61,6 +64,7 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     }
     List<TableBlockInfo> tableBlockInfoList = CarbonHiveInputSplit.createBlocks(splitList);
     queryModel.setTableBlockInfos(tableBlockInfoList);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getTable());
     carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
     final TypeInfo rowTypeInfo;
@@ -80,10 +84,12 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
       valueObj = new ArrayWritable(Writable.class, new Writable[columnTypes.size()]);
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3441
     if (null != colIds && !colIds.equals("")) {
       String[] arraySelectedColId = colIds.split(",");
       columnIds = new int[arraySelectedColId.length];
       for (int j = 0; j < arraySelectedColId.length; j++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
         columnIds[j] = Integer.parseInt(arraySelectedColId[j]);
       }
     }
@@ -106,6 +112,7 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
       }
       return true;
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
       try {
         queryExecutor.finish();
       } catch (Exception e) {
@@ -127,6 +134,7 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
 
   @Override
   public long getPos() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1271
     return recordReaderCounter;
   }
 

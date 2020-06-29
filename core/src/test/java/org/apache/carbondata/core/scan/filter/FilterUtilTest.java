@@ -49,6 +49,8 @@ public class FilterUtilTest {
     columnSchema = new ColumnSchema();
     columnSchema.setColumnName("IMEI");
     columnSchema.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     columnSchema.setDataType(DataTypes.STRING);
     columnSchema.setDimensionColumn(true);
   }
@@ -62,6 +64,7 @@ public class FilterUtilTest {
 
   @Test
   public void testCheckIfLeftExpressionRequireEvaluationWithExpressionNotInstanceOfColumnExpression() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression expression = new ColumnExpression("test", DataTypes.STRING);
     boolean result = FilterUtil.checkIfLeftExpressionRequireEvaluation(expression);
     assertFalse(result);
@@ -85,6 +88,7 @@ public class FilterUtilTest {
     String dictionaryVal = "1";
     String memberVal = "1";
     int actualResult =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.SHORT);
     int expectedResult = 0;
     assertEquals(expectedResult, actualResult);
@@ -94,6 +98,7 @@ public class FilterUtilTest {
     String dictionaryVal = "1000";
     String memberVal = "1001";
     int actualResult =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.INT);
     int expectedResult = -1;
     assertEquals(expectedResult, actualResult);
@@ -103,6 +108,7 @@ public class FilterUtilTest {
     String dictionaryVal = "1.90";
     String memberVal = "1.89";
     int actualResult =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.DOUBLE);
     int expectedResult = 1;
     assertEquals(expectedResult, actualResult);
@@ -112,6 +118,7 @@ public class FilterUtilTest {
     String dictionaryVal = "111111111111111";
     String memberVal = "1111111111111111";
     int actualResult =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.LONG);
     int expectedResult = -1;
     assertEquals(expectedResult, actualResult);
@@ -121,6 +128,7 @@ public class FilterUtilTest {
     String dictionaryVal = "true";
     String memberVal = "false";
     int actualResult =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.BOOLEAN);
     int expectedResult = 1;
     assertEquals(expectedResult, actualResult);
@@ -130,6 +138,7 @@ public class FilterUtilTest {
     String dictionaryVal = "1111111";
     String memberVal = "1111";
     int actualResult =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.createDefaultDecimalType());
     int expectedResult = 1;
     assertEquals(expectedResult, actualResult);
@@ -139,6 +148,7 @@ public class FilterUtilTest {
     String dictionaryVal = "11.78";
     String memberVal = "1111.90";
     int actualResult =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.FLOAT);
     int expectedResult = -1;
     assertEquals(expectedResult, actualResult);
@@ -148,6 +158,7 @@ public class FilterUtilTest {
     String dictionaryVal = "2008-01-01 00:00:01";
     String memberVal = "2008-01-01 00:00:01";
     int actualValue =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.TIMESTAMP);
     int expectedValue = 0;
     assertEquals(expectedValue, actualValue);
@@ -157,6 +168,7 @@ public class FilterUtilTest {
     String dictionaryVal = "test";
     String memberVal = "1";
     int actualValue =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.INT);
     int expectedValue = -1;
     assertEquals(expectedValue, actualValue);
@@ -164,6 +176,7 @@ public class FilterUtilTest {
 
   @Test public void testCheckIfExpressionContainsColumn() {
     String columnName = "IMEI";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     Expression expression = new ColumnExpression(columnName, DataTypes.STRING);
     boolean result = FilterUtil.checkIfExpressionContainsColumn(expression);
     assertTrue(result);
@@ -172,6 +185,7 @@ public class FilterUtilTest {
   @Test
   public void testCheckIfExpressionContainsColumnWithExpressionNotInstanceOfColumnExpression() {
     String columnName = "IMEI";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     Expression expression = new LiteralExpression(columnName, DataTypes.STRING);
     boolean result = FilterUtil.checkIfExpressionContainsColumn(expression);
     assertFalse(result);
@@ -180,6 +194,7 @@ public class FilterUtilTest {
   @Test public void testIsExpressionNeedsToResolved() {
     boolean isIncludeFilter = true;
     Object obj = "test";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     LiteralExpression literalExpression = new LiteralExpression(obj, DataTypes.STRING);
     boolean result = FilterUtil.isExpressionNeedsToResolved(literalExpression, isIncludeFilter);
     assertFalse(result);
@@ -188,18 +203,21 @@ public class FilterUtilTest {
   @Test public void testIsExpressionNeedsToResolvedWithDataTypeNullAndIsIncludeFilterFalse() {
     boolean isIncludeFilter = false;
     Object obj = "test";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     LiteralExpression literalExpression = new LiteralExpression(obj, DataTypes.NULL);
     boolean result = FilterUtil.isExpressionNeedsToResolved(literalExpression, isIncludeFilter);
     assertTrue(result);
   }
 
   @Test public void testCheckIfDataTypeNotTimeStamp() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     Expression expression = new ColumnExpression("test", DataTypes.STRING);
     boolean result = FilterUtil.checkIfDataTypeNotTimeStamp(expression);
     assertFalse(result);
   }
 
   @Test public void testCheckIfRightExpressionRequireEvaluation() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     Expression expression = new ColumnExpression("test", DataTypes.STRING);
     boolean result = FilterUtil.checkIfRightExpressionRequireEvaluation(expression);
     assertTrue(result);
@@ -214,6 +232,7 @@ public class FilterUtilTest {
 
   @Test public void testGetNoDictionaryValKeyMemberForFilter() throws FilterUnsupportedException {
     boolean isIncludeFilter = true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression expression = new ColumnExpression("test", DataTypes.STRING);
     List<String> evaluateResultListFinal = new ArrayList<>();
     evaluateResultListFinal.add("test1");
@@ -235,6 +254,7 @@ public class FilterUtilTest {
   }
 
   @Test public void testRemoveInExpressionNodeWithPositionIdColumn() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2134
     List<Expression> children = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // create literal expression
     LiteralExpression literalExpression =

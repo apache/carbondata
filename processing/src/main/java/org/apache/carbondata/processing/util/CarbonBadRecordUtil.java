@@ -53,6 +53,7 @@ public class CarbonBadRecordUtil {
     String storeLocation = "";
     if (configuration.isCarbonTransactionalTable()) {
       storeLocation =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2666
           configuration.getSegmentId() + CarbonCommonConstants.FILE_SEPARATOR + configuration
               .getTaskNo();
     } else {
@@ -78,6 +79,7 @@ public class CarbonBadRecordUtil {
     badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
 
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (!FileFactory.isFileExist(badLogStoreLocation)) {
         return;
       }
@@ -128,8 +130,10 @@ public class CarbonBadRecordUtil {
   }
 
   public static String getBadRecordsPath(Map<String, String> loadOptions, CarbonTable table) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2666
     String badRecordsFromLoad = loadOptions.get("bad_record_path");
     String badRecordsFromCreate =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2994
         table.getTableInfo().getFactTable().getTableProperties().get("bad_record_path");
     String badRecordsPath;
     if (StringUtils.isNotEmpty(badRecordsFromLoad)) {

@@ -59,6 +59,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector {
 
   @Override
   public void putBoolean(int rowId, boolean value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
     sparkColumnVectorProxy.putBoolean(rowId, value);
   }
 
@@ -128,6 +129,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector {
 
   @Override
   public void putByteArray(int rowId, byte[] value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3048
     sparkColumnVectorProxy.putByteArray(rowId, value, 0, value.length);
   }
 
@@ -190,6 +192,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector {
   @Override
   public DataType getType() {
     return CarbonSparkDataSourceUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
         .convertSparkToCarbonDataType(sparkColumnVectorProxy.dataType());
   }
 
@@ -205,6 +208,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector {
 
   @Override
   public void setDictionary(CarbonDictionary dictionary) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
     sparkColumnVectorProxy.setDictionary(dictionary);
   }
 
@@ -226,6 +230,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector {
 
   @Override
   public void putByte(int rowId, byte value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
     sparkColumnVectorProxy.putByte(rowId, value);
   }
 

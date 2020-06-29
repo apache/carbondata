@@ -60,6 +60,7 @@ public class DeleteDeltaVo {
   }
 
   public BitSet getBitSet() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     return bitSet;
   }
 }

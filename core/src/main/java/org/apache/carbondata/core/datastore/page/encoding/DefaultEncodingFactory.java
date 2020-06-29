@@ -52,6 +52,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
 
   public static EncodingFactory getInstance() {
     // TODO: make it configurable after added new encodingFactory
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
     return encodingFactory;
   }
 
@@ -59,6 +60,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
   public ColumnPageEncoder createEncoder(TableSpec.ColumnSpec columnSpec, ColumnPage inputPage) {
     // TODO: add log
     // choose the encoding type for measure type and no dictionary primitive type columns
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     if (columnSpec instanceof TableSpec.MeasureSpec || (
         DataTypeUtil.isPrimitiveColumn(columnSpec.getSchemaDataType())
             && columnSpec.getColumnType() == ColumnType.PLAIN_VALUE)) {
@@ -75,6 +77,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
 
   private ColumnPageEncoder createEncoderForDimension(TableSpec.DimensionSpec columnSpec,
       ColumnPage inputPage) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
     switch (columnSpec.getColumnType()) {
       case DIRECT_DICTIONARY:
       case PLAIN_VALUE:
@@ -94,31 +97,39 @@ public class DefaultEncodingFactory extends EncodingFactory {
             dimensionSpec.isInSortColumns() && dimensionSpec.isDoInvertedIndex())
             .createEncoder(null);
       case PLAIN_VALUE:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
         return new PlainDimensionIndexCodec(dimensionSpec.isInSortColumns(),
             dimensionSpec.isInSortColumns() && dimensionSpec.isDoInvertedIndex(),
             dimensionSpec.getSchemaDataType() == DataTypes.VARCHAR
                 || dimensionSpec.getSchemaDataType() == DataTypes.BINARY).createEncoder(null);
       default:
         throw new RuntimeException("unsupported dimension type: " +
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
             dimensionSpec.getColumnType());
     }
   }
 
   private ColumnPageEncoder createEncoderForMeasureOrNoDictionaryPrimitive(ColumnPage columnPage,
       TableSpec.ColumnSpec columnSpec) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
 
     SimpleStatsResult stats = columnPage.getStatistics();
     DataType dataType = stats.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     if (dataType == DataTypes.BOOLEAN
         || dataType == DataTypes.BYTE_ARRAY
         || columnPage.getDataType() == DataTypes.BINARY) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1756
       return new DirectCompressCodec(columnPage.getDataType()).createEncoder(null);
     } else if (dataType == DataTypes.BYTE ||
         dataType == DataTypes.SHORT ||
         dataType == DataTypes.INT ||
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
         dataType == DataTypes.LONG ||
         dataType == DataTypes.TIMESTAMP) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       return selectCodecByAlgorithmForIntegral(stats, false, columnSpec).createEncoder(null);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       return createEncoderForDecimalDataTypeMeasure(columnPage, columnSpec);
     } else if (dataType == DataTypes.FLOAT || dataType == DataTypes.DOUBLE) {
@@ -129,7 +140,9 @@ public class DefaultEncodingFactory extends EncodingFactory {
   }
 
   private ColumnPageEncoder createEncoderForDecimalDataTypeMeasure(ColumnPage columnPage,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       TableSpec.ColumnSpec columnSpec) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1429
     DecimalConverterFactory.DecimalConverterType decimalConverterType =
         ((DecimalColumnPage) columnPage).getDecimalConverter().getDecimalConverterType();
     switch (decimalConverterType) {
@@ -145,6 +158,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
 
   private static DataType fitLongMinMax(long max, long min) {
     if (max <= Byte.MAX_VALUE && min >= Byte.MIN_VALUE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       return DataTypes.BYTE;
     } else if (max <= Short.MAX_VALUE && min >= Short.MIN_VALUE) {
       return DataTypes.SHORT;
@@ -158,6 +172,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
   }
 
   private static DataType fitMinMax(DataType dataType, Object max, Object min) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     if (dataType == DataTypes.BYTE || dataType == DataTypes.BOOLEAN) {
       return fitLongMinMax((byte) max, (byte) min);
     } else if (dataType == DataTypes.SHORT) {
@@ -167,6 +182,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
     } else if ((dataType == DataTypes.LONG) || (dataType == DataTypes.TIMESTAMP)) {
       return fitLongMinMax((long) max, (long) min);
     } else if (dataType == DataTypes.DOUBLE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1419
       return fitLongMinMax((long) (double) max, (long) (double) min);
     } else {
       throw new RuntimeException("internal error: " + dataType);
@@ -174,6 +190,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
   }
 
   private static DataType fitMinMaxForDecimalType(DataType dataType, Object max, Object min,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1429
       DecimalConverterFactory.DecimalConverterType decimalConverterType) {
     long maxValue = ((BigDecimal) max).unscaledValue().longValue();
     long minValue = ((BigDecimal) min).unscaledValue().longValue();
@@ -196,6 +213,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
         long value = maxValue - minValue;
         return compareMinMaxAndSelectDataType(value);
       case DECIMAL_LONG:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         return DataTypes.LONG;
       default:
         throw new RuntimeException("internal error: " + dataType);
@@ -206,13 +224,16 @@ public class DefaultEncodingFactory extends EncodingFactory {
   private static DataType fitDelta(DataType dataType, Object max, Object min) {
     // use long data type to calculate delta to avoid overflow
     long value;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     if (dataType == DataTypes.BYTE || dataType == DataTypes.BOOLEAN) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       value = (long) (byte) max - (long) (byte) min;
     } else if (dataType == DataTypes.SHORT) {
       value = (long) (short) max - (long) (short) min;
     } else if (dataType == DataTypes.INT) {
       value = (long) (int) max - (long) (int) min;
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1955
       value = (long) max - (long) min;
       // The subtraction overflowed iff the operands have opposing signs
       // and the result's sign differs from the minuend.
@@ -225,6 +246,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
     } else {
       throw new RuntimeException("internal error: " + dataType);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1429
     return compareMinMaxAndSelectDataType(value);
   }
 
@@ -251,8 +273,10 @@ public class DefaultEncodingFactory extends EncodingFactory {
     DataType srcDataType = stats.getDataType();
     DataType adaptiveDataType = fitMinMax(stats.getDataType(), stats.getMax(), stats.getMin());
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     DataType deltaDataType = fitDelta(stats.getDataType(), stats.getMax(), stats.getMin());
     // for complex primitive, if source and destination data type is same, use adaptive encoding.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     if (!isComplexPrimitive) {
       // in case of decimal datatype, check if the decimal converter type is Int or Long and based
       // on that get size in bytes
@@ -265,6 +289,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
     boolean isInvertedIndex = isInvertedIndex(isComplexPrimitive, columnSpec);
     if (adaptiveDataType.getSizeInBytes() <= deltaDataType.getSizeInBytes()) {
       // choose adaptive encoding
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       return new AdaptiveIntegralCodec(stats.getDataType(), adaptiveDataType, stats,
           isInvertedIndex);
     } else {
@@ -299,6 +324,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
     DataType srcDataType = stats.getDataType();
     double maxValue;
     double minValue;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     if (srcDataType == DataTypes.FLOAT) {
       maxValue = (float) stats.getMax();
       minValue = (float) stats.getMin();
@@ -311,6 +337,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
     // For Complex Type primitive we should always choose adaptive path
     // as LV format will be reduced to only V format. Therefore inorder
     // to do that decimal count should be actual count instead of -1.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     if (isComplexPrimitive && decimalCount == -1 && stats instanceof PrimitivePageStatsCollector) {
       decimalCount = ((PrimitivePageStatsCollector)stats).getDecimalForComplexPrimitive();
     }
@@ -318,11 +345,13 @@ public class DefaultEncodingFactory extends EncodingFactory {
     //Here we should use the Max abs as max to getDatatype, let's say -1 and -10000000, -1 is max,
     //but we can't use -1 to getDatatype, we should use -10000000.
     double absMaxValue = Math.max(Math.abs(maxValue), Math.abs(minValue));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3084
     if (srcDataType == DataTypes.FLOAT && decimalCount == 0) {
       return getColumnPageCodec(stats, isComplexPrimitive, columnSpec, srcDataType, maxValue,
           minValue, decimalCount, absMaxValue);
     } else if (decimalCount == 0) {
       // short, int, long
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       return selectCodecByAlgorithmForIntegral(stats, false, columnSpec);
     } else if (decimalCount < 0 && !isComplexPrimitive) {
       return new DirectCompressCodec(DataTypes.DOUBLE);
@@ -337,6 +366,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
       double maxValue, double minValue, int decimalCount, double absMaxValue) {
     // double
     // If absMaxValue exceeds LONG.MAX_VALUE, then go for direct compression
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2791
     if ((Math.pow(10, decimalCount) * absMaxValue) > Long.MAX_VALUE) {
       return new DirectCompressCodec(DataTypes.DOUBLE);
     } else {
@@ -345,8 +375,10 @@ public class DefaultEncodingFactory extends EncodingFactory {
       DataType deltaDataType = compareMinMaxAndSelectDataType(
           (long) (Math.pow(10, decimalCount) * (maxValue - minValue)));
       if (adaptiveDataType.getSizeInBytes() > deltaDataType.getSizeInBytes()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
         return new AdaptiveDeltaFloatingCodec(srcDataType, deltaDataType, stats,
             isInvertedIndex(isComplexPrimitive, columnSpec));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
       } else if (adaptiveDataType.getSizeInBytes() < DataTypes.DOUBLE.getSizeInBytes() || (
           (isComplexPrimitive) && (adaptiveDataType.getSizeInBytes() == DataTypes.DOUBLE
               .getSizeInBytes()))) {
@@ -363,14 +395,18 @@ public class DefaultEncodingFactory extends EncodingFactory {
    * size is smaller for decimal data type
    */
   static ColumnPageCodec selectCodecByAlgorithmForDecimal(SimpleStatsResult stats,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       DecimalConverterFactory.DecimalConverterType decimalConverterType,
       TableSpec.ColumnSpec columnSpec) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1429
     DataType srcDataType = stats.getDataType();
     DataType adaptiveDataType =
         fitMinMaxForDecimalType(stats.getDataType(), stats.getMax(), stats.getMin(),
             decimalConverterType);
     DataType deltaDataType;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     if (adaptiveDataType == DataTypes.LONG) {
       deltaDataType = DataTypes.LONG;
     } else {
@@ -379,6 +415,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
     }
     // in case of decimal data type check if the decimal converter type is Int or Long and based on
     // that get size in bytes
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1429
     if (Math.min(adaptiveDataType.getSizeInBytes(), deltaDataType.getSizeInBytes()) == srcDataType
         .getSizeInBytes()) {
       // no effect to use adaptive or delta, use compression only
@@ -386,6 +423,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
     }
     if (adaptiveDataType.getSizeInBytes() <= deltaDataType.getSizeInBytes()) {
       // choose adaptive encoding
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       return new AdaptiveIntegralCodec(stats.getDataType(), adaptiveDataType, stats,
           isInvertedIndex(columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE, columnSpec));
     } else {

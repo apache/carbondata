@@ -56,7 +56,9 @@ public class SortIntermediateFileMerger {
     this.parameters = parameters;
     // processed file list
     this.procFiles = new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1410
     this.executorService = Executors.newFixedThreadPool(parameters.getNumberOfCores(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3304
         new CarbonThreadFactory("SafeIntermediateMergerPool:" + parameters.getTableName(),
                 true));
     mergerTask = new ArrayList<>();
@@ -67,6 +69,7 @@ public class SortIntermediateFileMerger {
     // intermediate merging of sort temp files will be triggered
     synchronized (lockObject) {
       procFiles.add(sortTempFile);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
       if (procFiles.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
         File[] fileList = procFiles.toArray(new File[procFiles.size()]);
         this.procFiles = new ArrayList<>();
@@ -83,14 +86,17 @@ public class SortIntermediateFileMerger {
   private void startIntermediateMerging(File[] intermediateFiles) {
     int index = new Random().nextInt(parameters.getTempFileLocation().length);
     String chosenTempDir = parameters.getTempFileLocation()[index];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     File file = new File(chosenTempDir + File.separator + parameters.getTableName()
         + '_' + parameters.getRangeId() + '_' + System.nanoTime()
         + CarbonCommonConstants.MERGERD_EXTENSION);
     IntermediateFileMerger merger = new IntermediateFileMerger(parameters, intermediateFiles, file);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Submitting request for intermediate merging number of files: "
               + intermediateFiles.length);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1410
     mergerTask.add(executorService.submit(merger));
   }
 
@@ -103,6 +109,7 @@ public class SortIntermediateFileMerger {
     }
     procFiles.clear();
     procFiles = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1410
     checkForFailure();
   }
 
@@ -111,6 +118,7 @@ public class SortIntermediateFileMerger {
       try {
         mergerTask.get(i).get();
       } catch (InterruptedException | ExecutionException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
         LOGGER.error(e.getMessage(), e);
         throw new CarbonSortKeyAndGroupByException(e);
       }

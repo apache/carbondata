@@ -43,6 +43,7 @@ import org.apache.log4j.Logger;
 public class GeoHashIndex extends CustomIndex<List<Long[]>> {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(GeoHashIndex.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
 
   // conversion factor of angle to radian
   private static final double CONVERT_FACTOR = 180.0;
@@ -103,6 +104,7 @@ public class GeoHashIndex extends CustomIndex<List<Long[]>> {
    */
   @Override
   public void init(String indexName, Map<String, String> properties) throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     String options = properties.get(CarbonCommonConstants.SPATIAL_INDEX);
     if (StringUtils.isEmpty(options)) {
       throw new MalformedCarbonCommandException(
@@ -142,6 +144,7 @@ public class GeoHashIndex extends CustomIndex<List<Long[]>> {
       if (!"bigint".equalsIgnoreCase(srcdataType)) {
         throw new MalformedCarbonCommandException(
                 String.format("%s property is invalid. %s datatypes must be long.",
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
                         CarbonCommonConstants.SPATIAL_INDEX, SOURCE_COLUMNS));
       }
     }
@@ -153,6 +156,7 @@ public class GeoHashIndex extends CustomIndex<List<Long[]>> {
     if (StringUtils.isEmpty(originLatitude)) {
       throw new MalformedCarbonCommandException(
               String.format("%s property is invalid. Must specify %s property.",
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
                       CarbonCommonConstants.SPATIAL_INDEX, ORIGIN_LATITUDE));
     }
     String MIN_LONGITUDE = commonKey + "minlongitude";
@@ -166,6 +170,7 @@ public class GeoHashIndex extends CustomIndex<List<Long[]>> {
     if (StringUtils.isEmpty(minLongitude)) {
       throw new MalformedCarbonCommandException(
           String.format("%s property is invalid. Must specify %s property.",
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
               CarbonCommonConstants.SPATIAL_INDEX, MIN_LONGITUDE));
     }
     if (StringUtils.isEmpty(minLatitude)) {
@@ -199,6 +204,7 @@ public class GeoHashIndex extends CustomIndex<List<Long[]>> {
     }
 
     // Fill the values to the instance fields
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     this.oriLatitude = Double.valueOf(originLatitude);
     this.userDefineMaxLongitude = Double.valueOf(maxLongitude);
     this.userDefineMaxLatitude = Double.valueOf(maxLatitude);
@@ -227,6 +233,7 @@ public class GeoHashIndex extends CustomIndex<List<Long[]>> {
     if (!(sources.get(0) instanceof Long) || !(sources.get(1) instanceof Long)) {
       throw new RuntimeException("Source columns must be of Long type.");
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     Long longitude = (Long) sources.get(0);
     Long latitude  = (Long) sources.get(1);
     // generate the hash code
@@ -310,10 +317,10 @@ public class GeoHashIndex extends CustomIndex<List<Long[]>> {
     // Angular to radian, radians = (Math.PI / 180) * degrees
     // Cosine value of latitude angle of origin
     this.mCos = Math.cos(this.oriLatitude / this.conversionRatio * Math.PI / CONVERT_FACTOR);
-    // get δx=L∗360/(2πR∗cos(lat))
+    // get δx=L�?360/(2πR∗cos(lat))
     this.deltaX = (this.gridSize * 360) / (2 * Math.PI * EARTH_RADIUS * this.mCos);
     this.deltaXByRatio = this.deltaX * this.conversionRatio;
-    // get δy=L∗360/2πR
+    // get δy=L�?360/2πR
     this.deltaY = (this.gridSize * 360) / (2 * Math.PI * EARTH_RADIUS);
     this.deltaYByRatio = this.deltaY * this.conversionRatio;
     LOGGER.info("after spatial calculate delta X is: " + String.format("%f", this.deltaX)
@@ -322,11 +329,11 @@ public class GeoHashIndex extends CustomIndex<List<Long[]>> {
                     + "the Y ByRatio is: " + String.format("%f", this.deltaYByRatio));
     // Calculate the complement area and grid i,j for grid number
     // Xmax = x0+(2^n∗δx) Ymax = y0+(2^n∗δx) Where n is the number of cut
-    // Where x0, Y0 are the minimum x, y coordinates of a given region，
+    // Where x0, Y0 are the minimum x, y coordinates of a given region�?
     // Xmax >= maxLongitude Ymax >= maxLatitude
     // In the calculation process, first substitute maxlongitude and maxlatitude to calculate n.
     // if n is not an integer, then take the next integer of N, and then substitute to find
-    // xmax and ymax。
+    // xmax and ymax�?
     this.calculateArea();
   }
 
@@ -339,7 +346,7 @@ public class GeoHashIndex extends CustomIndex<List<Long[]>> {
     // substitution formula
     // Here, the user's given area is mostly rectangle, which needs to be extended to
     // square processing to find the maximum value of XN and yn
-    // n=log_2 （Xmax−X0)/δx， log_2 （Ymax−Y0)/δy
+    // n=log_2 （Xmax−X0)/δx�? log_2 （Ymax−Y0)/δy
     userDefineMinLongitude = userDefineMinLongitude - deltaX / 2;
     userDefineMaxLongitude = userDefineMaxLongitude + deltaX / 2;
     userDefineMinLatitude = userDefineMinLatitude - deltaY / 2;

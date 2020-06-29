@@ -50,6 +50,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
   public List<Object[]> collectResultInRow(BlockletScannedResult scannedResult, int batchSize) {
     long startTime = System.currentTimeMillis();
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     ProjectionMeasure[] queryMeasures = executionInfo.getActualQueryMeasures();
     // scan the record and add to list
     scanAndFillData(scannedResult, batchSize, listBasedResult, queryMeasures);
@@ -77,9 +78,11 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
     for (Object[] row : rows) {
       ByteArrayWrapper byteArrayWrapper = (ByteArrayWrapper) row[0];
       byte[] dictKeyArray = byteArrayWrapper.getDictionaryKey();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       ProjectionDimension[] actualQueryDimensions = executionInfo.getActualQueryDimensions();
       int newKeyArrayLength = dimensionInfo.getNewDictionaryColumnCount();
       long[] keyArray = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       if (executionInfo.getDataBlock().getSegmentProperties().getNumberOfDictDimensions() > 0) {
         keyArray = ByteUtil.convertBytesToLongArray(dictKeyArray);
         newKeyArrayLength += keyArray.length;
@@ -88,8 +91,10 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
       int existingColumnKeyArrayIndex = 0;
       int newKeyArrayIndex = 0;
       for (int i = 0; i < dimensionInfo.getDimensionExists().length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         if (actualQueryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
           // if dimension exists then add the key array value else add the default value
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
           if (dimensionInfo.getDimensionExists()[i] && null != keyArray && 0 != keyArray.length) {
             keyArrayWithNewAddedColumns[newKeyArrayIndex++] =
                 keyArray[existingColumnKeyArrayIndex++];
@@ -105,6 +110,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
           }
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       dictKeyArray = ByteUtil.convertLongArrayToBytes(keyArrayWithNewAddedColumns);
       byteArrayWrapper.setDictionaryKey(dictKeyArray);
     }
@@ -120,12 +126,14 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
     for (Object[] row : rows) {
       ByteArrayWrapper byteArrayWrapper = (ByteArrayWrapper) row[0];
       byte[][] noDictKeyArray = byteArrayWrapper.getNoDictionaryKeys();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       ProjectionDimension[] actualQueryDimensions = executionInfo.getActualQueryDimensions();
       byte[][] noDictionaryKeyArrayWithNewlyAddedColumns =
           new byte[noDictKeyArray.length + dimensionInfo.getNewNoDictionaryColumnCount()][];
       int existingColumnValueIndex = 0;
       int newKeyArrayIndex = 0;
       for (int i = 0; i < dimensionInfo.getDimensionExists().length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         if (actualQueryDimensions[i].getDimension().getDataType() != DataTypes.DATE
             && !actualQueryDimensions[i].getDimension().hasEncoding(Encoding.IMPLICIT)) {
           // if dimension exists then add the byte array value else add the default value
@@ -136,7 +144,10 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
             byte[] newColumnDefaultValue = null;
             Object defaultValue = dimensionInfo.getDefaultValues()[i];
             if (null != defaultValue) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
               newColumnDefaultValue = (byte[]) defaultValue;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
             } else if (actualQueryDimensions[i].getDimension().getDataType() == DataTypes.STRING) {
               newColumnDefaultValue =
                   DataTypeUtil.getDataTypeConverter().convertFromByteToUTF8Bytes(

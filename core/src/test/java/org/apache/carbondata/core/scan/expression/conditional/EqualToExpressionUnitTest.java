@@ -46,6 +46,7 @@ public class EqualToExpressionUnitTest {
   static int i = 0;
 
   @Test public void testForEqualToExpressionWithGetString() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("name", DataTypes.STRING);
     right.setColIndex(0);
     equalToExpression = new EqualToExpression(right, right);
@@ -77,6 +78,7 @@ public class EqualToExpressionUnitTest {
 
   @Test public void testEvaluateForEqualToExpressionWithStringDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("name", DataTypes.STRING);
     right.setColIndex(0);
     equalToExpression = new EqualToExpression(right, right);
@@ -118,6 +120,7 @@ public class EqualToExpressionUnitTest {
 
   @Test public void testEvaluateForEqualToExpressionWithDoubleDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("contact", DataTypes.DOUBLE);
     right.setColIndex(0);
     equalToExpression = new EqualToExpression(right, right);
@@ -138,6 +141,7 @@ public class EqualToExpressionUnitTest {
 
   @Test public void testEvaluateForEqualToExpressionWithLongDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("contact", DataTypes.LONG);
     right.setColIndex(0);
     equalToExpression = new EqualToExpression(right, right);
@@ -159,6 +163,7 @@ public class EqualToExpressionUnitTest {
   @Test public void testEvaluateForEqualToExpressionWithTimestampDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       ColumnExpression right = new ColumnExpression("timestamp", DataTypes.TIMESTAMP);
       right.setColIndex(0);
       equalToExpression = new EqualToExpression(right, right);
@@ -185,6 +190,7 @@ public class EqualToExpressionUnitTest {
 
   @Test public void testForEqualToExpressionForDefaultCase()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("contact", DataTypes.BOOLEAN);
     right.setColIndex(0);
     equalToExpression = new EqualToExpression(right, right);
@@ -218,8 +224,10 @@ public class EqualToExpressionUnitTest {
 
   @Test public void testEvaluateForEqualToExpressionWithLeftAndRightDifferentDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression left = new ColumnExpression("name", DataTypes.STRING);
     left.setColIndex(0);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("number", DataTypes.INT);
     right.setColIndex(0);
     equalToExpression = new EqualToExpression(left, right);
@@ -240,6 +248,7 @@ public class EqualToExpressionUnitTest {
   }
 
   @Test public void testEvaluateForEqualToExpressionWithLeftAndRightDifferentDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression left = new ColumnExpression("name", DataTypes.INT);
     left.setColIndex(0);
@@ -291,6 +300,10 @@ public class EqualToExpressionUnitTest {
 
   @Test public void testEvaluateForEqualToExpressionWithNullWhileCreatingObject()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("id", DataTypes.SHORT);
     right.setColIndex(0);
     equalToExpression = new EqualToExpression(right, right, true);
@@ -322,6 +335,8 @@ public class EqualToExpressionUnitTest {
     right.setColIndex(0);
     equalToExpression = new EqualToExpression(right, right);
     RowImpl value = new RowImpl();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
     BigDecimal[] row = new BigDecimal[] { new BigDecimal(12345.0) };
     Object objectRow[] = { row };
     value.setValues(objectRow);
@@ -337,7 +352,9 @@ public class EqualToExpressionUnitTest {
   }
 
   @Test public void testEvaluateForEqualToExpressionWithDecimalDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     ColumnExpression right = new ColumnExpression("contact", DataTypes.createDefaultDecimalType());
     right.setColIndex(0);
     equalToExpression = new EqualToExpression(right, right);

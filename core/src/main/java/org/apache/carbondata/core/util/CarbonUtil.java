@@ -175,6 +175,7 @@ public final class CarbonUtil {
         try {
           closeStream(stream);
         } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
           LOGGER.error("Error while closing stream:" + e, e);
         }
       }
@@ -312,6 +313,7 @@ public final class CarbonUtil {
       @Override
       public Void run() throws Exception {
         for (int i = 0; i < path.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3052
           CarbonFile carbonFile = FileFactory.getCarbonFile(path[i].getAbsolutePath());
           boolean delete = carbonFile.delete();
           if (!delete) {
@@ -330,6 +332,7 @@ public final class CarbonUtil {
       @Override
       public Void run() throws Exception {
         for (int i = 0; i < file.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
           if (file[i].exists()) {
             boolean delete = file[i].delete();
             if (!delete) {
@@ -349,8 +352,10 @@ public final class CarbonUtil {
       @Override
       public Void run() {
         for (int i = 0; i < file.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
           if (file[i].exists()) {
             boolean delete = file[i].delete();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3052
             if (!delete) {
               LOGGER.warn("Unable to delete file: " + file[i].getCanonicalPath());
             }
@@ -364,6 +369,7 @@ public final class CarbonUtil {
   public static void deleteFiles(File[] intermediateFiles) throws IOException {
     for (int i = 0; i < intermediateFiles.length; i++) {
       // ignore deleting for index file since it is inside merged file.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1617
       if (!intermediateFiles[i].delete() && !intermediateFiles[i].getName()
           .endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
         throw new IOException("Problem while deleting intermediate file");
@@ -411,6 +417,7 @@ public final class CarbonUtil {
    */
   public static int[] getRangeIndexUsingBinarySearch(
       DimensionColumnPage dimColumnDataChunk, int low, int high, byte[] compareValue) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
 
     int[] rangeIndex = new int[2];
     int cmpResult = 0;
@@ -469,6 +476,9 @@ public final class CarbonUtil {
    * @return the compareValue's index in the filterValues
    */
   public static int binarySearch(byte[][] filterValues, int low, int high,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
       DimensionColumnPage dimensionColumnPage, int rowId) {
     rangeCheck(low, high);
     while (low <= high) {
@@ -497,6 +507,7 @@ public final class CarbonUtil {
    * @return index value
    */
   public static int nextLesserValueToTarget(int currentIndex,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       DimensionColumnPage dimColumnDataChunk, byte[] compareValue) {
     while (currentIndex - 1 >= 0
         && dimColumnDataChunk.compareTo(currentIndex - 1, compareValue) >= 0) {
@@ -517,6 +528,7 @@ public final class CarbonUtil {
    * @return index value
    */
   public static int nextGreaterValueToTarget(int currentIndex,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       DimensionColumnPage dimColumnDataChunk, byte[] compareValue, int numerOfRows) {
     while (currentIndex + 1 < numerOfRows
         && dimColumnDataChunk.compareTo(currentIndex + 1, compareValue) <= 0) {
@@ -580,6 +592,7 @@ public final class CarbonUtil {
    * @return
    */
   public static String unquoteChar(String parseStr) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
     if (parseStr == null) {
       return null;
     }
@@ -600,6 +613,7 @@ public final class CarbonUtil {
    */
   public static String delimiterConverter(String delimiter) {
     switch (delimiter) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3017
       case "\\001":
       case "\\002":
       case "\\003":
@@ -632,9 +646,12 @@ public final class CarbonUtil {
    */
   public static String checkAndAppendHDFSUrl(String filePath) {
     String currentPath = filePath;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
     String defaultFsUrl = FileFactory.getConfiguration().get(CarbonCommonConstants.FS_DEFAULT_FS);
     String baseDFSUrl = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL, "");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
     if (FileFactory.checkIfPrefixExists(filePath)) {
       return currentPath;
     }
@@ -645,6 +662,7 @@ public final class CarbonUtil {
       filePath = "/" + filePath;
     }
     currentPath = baseDFSUrl + filePath;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
     if (FileFactory.checkIfPrefixExists(currentPath)) {
       return currentPath;
     }
@@ -661,14 +679,19 @@ public final class CarbonUtil {
    */
   public static String checkAndAppendFileSystemURIScheme(String filePath) {
     String currentPath = filePath;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
     if (FileFactory.checkIfPrefixExists(filePath)) {
       return currentPath;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1236
     if (!filePath.startsWith("/")) {
       filePath = "/" + filePath;
     }
     currentPath = filePath;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
     String defaultFsUrl = FileFactory.getConfiguration().get(CarbonCommonConstants.FS_DEFAULT_FS);
     if (defaultFsUrl == null) {
       return currentPath;
@@ -682,6 +705,7 @@ public final class CarbonUtil {
    * @return compressor name
    */
   public static String inferCompressorFromFileName(String path) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1839
     if (path.endsWith(".gz")) {
       return "GZIP";
     } else if (path.endsWith("bz2")) {
@@ -693,6 +717,7 @@ public final class CarbonUtil {
 
   public static String removeAKSK(String filePath) {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1741
     if (null == filePath) {
       return "";
     }
@@ -714,10 +739,12 @@ public final class CarbonUtil {
    */
   public static boolean isFileExists(String fileName) {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (FileFactory.isFileExist(fileName)) {
         return true;
       }
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1741
       LOGGER.error("@@@@@@  File not found at a given location @@@@@@ : " + removeAKSK(fileName));
     }
     return false;
@@ -729,6 +756,7 @@ public final class CarbonUtil {
   public static boolean checkAndCreateFolder(String path) {
     boolean created = false;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (FileFactory.isFileExist(path)) {
         created = true;
       } else {
@@ -746,7 +774,9 @@ public final class CarbonUtil {
    */
   public static boolean checkAndCreateFolderWithPermission(String path) {
     boolean created = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (FileFactory.isFileExist(path)) {
         created = true;
       } else {
@@ -755,6 +785,8 @@ public final class CarbonUtil {
         created = true;
       }
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error(e.getMessage(), e);
     }
     return created;
@@ -764,6 +796,7 @@ public final class CarbonUtil {
    * This method will return the size of a given file
    */
   public static long getFileSize(String filePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     CarbonFile carbonFile = FileFactory.getCarbonFile(filePath);
     return carbonFile.getSize();
   }
@@ -860,6 +893,7 @@ public final class CarbonUtil {
     boolean[] dictionaryEncodingArray = new boolean[queryDimensions.length];
     for (int i = 0; i < queryDimensions.length; i++) {
       dictionaryEncodingArray[i] =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
           queryDimensions[i].getDimension().getDataType().isComplexType();
     }
     return dictionaryEncodingArray;
@@ -869,6 +903,7 @@ public final class CarbonUtil {
    * Below method will be used to read the data file matadata
    */
   public static DataFileFooter readMetadataFile(TableBlockInfo tableBlockInfo) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2092
     return getDataFileFooter(tableBlockInfo, false);
   }
 
@@ -902,9 +937,11 @@ public final class CarbonUtil {
     } else {
       DataFileFooter fileFooter = new DataFileFooter();
       fileFooter.setSchemaUpdatedTimeStamp(detailInfo.getSchemaUpdatedTimeStamp());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2092
       ColumnarFormatVersion version = ColumnarFormatVersion.valueOf(detailInfo.getVersionNumber());
       AbstractDataFileFooterConverter dataFileFooterConverter =
           DataFileFooterConverterFactory.getInstance().getDataFileFooterConverter(version);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1537
       List<ColumnSchema> schema = dataFileFooterConverter.getSchema(tableBlockInfo);
       fileFooter.setColumnInTable(schema);
       return fileFooter;
@@ -927,6 +964,7 @@ public final class CarbonUtil {
     AbstractDataFileFooterConverter footerConverter =
         DataFileFooterConverterFactory.getInstance().getDataFileFooterConverter(version);
     List<DataFileFooter> footers = footerConverter.getIndexInfo(indexFilePath, null, true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3756
     DataFileFooter blockFooter = null;
     // find the footer of the input data file (tableBlockInfo)
     for (DataFileFooter blockletFooter : footers) {
@@ -957,6 +995,7 @@ public final class CarbonUtil {
     ColumnSchema columnSchema = null;
     for (int i = 0; i < columnSchemaList.size(); i++) {
       columnSchema = columnSchemaList.get(i);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       if (columnSchema.isDimensionColumn()) {
         numberOfDimensionColumns++;
       } else {
@@ -1013,12 +1052,14 @@ public final class CarbonUtil {
       if (null != childs && childs.size() > 0) {
         break;
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (carbonDimension.getDataType() == DataTypes.DATE) {
         isDictionaryDimensions.add(true);
       } else {
         isDictionaryDimensions.add(false);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
     return ArrayUtils
         .toPrimitive(isDictionaryDimensions.toArray(new Boolean[isDictionaryDimensions.size()]));
   }
@@ -1196,6 +1237,7 @@ public final class CarbonUtil {
 
     try {
       fileReader =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
           FileFactory.getDataInputStream(csvFilePath);
       bufferedReader = new BufferedReader(new InputStreamReader(fileReader,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
@@ -1208,6 +1250,7 @@ public final class CarbonUtil {
 
   public static String readHeader(String csvFilePath,
       Configuration hadoopConf) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1780
 
     DataInputStream fileReader = null;
     BufferedReader bufferedReader = null;
@@ -1215,6 +1258,7 @@ public final class CarbonUtil {
 
     try {
       fileReader = FileFactory.getDataInputStream(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
           csvFilePath, -1, hadoopConf);
       bufferedReader = new BufferedReader(new InputStreamReader(fileReader,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
@@ -1243,6 +1287,7 @@ public final class CarbonUtil {
    * append a string with left pad to the string builder
    */
   public static void leftPad(StringBuilder builder, String a, int length, char pad) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     if (builder == null || a == null) {
       return;
     }
@@ -1353,6 +1398,7 @@ public final class CarbonUtil {
     }
     StringBuilder segmentStringbuilder = new StringBuilder();
     for (int i = 0; i < values.size() - 1; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
       segmentStringbuilder.append(values.get(i));
       segmentStringbuilder.append(",");
     }
@@ -1372,6 +1418,7 @@ public final class CarbonUtil {
       stream.flush();
       thriftByteArray = stream.toByteArray();
     } catch (TException | IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Error while converting to byte array from thrift object: " + e.getMessage(), e);
       closeStreams(stream);
     } finally {
@@ -1381,6 +1428,7 @@ public final class CarbonUtil {
   }
 
   public static BlockletHeader readBlockletHeader(byte[] data) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     return (BlockletHeader) read(data, new ThriftReader.TBaseCreator() {
       @Override
       public TBase create() {
@@ -1401,6 +1449,7 @@ public final class CarbonUtil {
   }
 
   public static DataChunk3 readDataChunk3(InputStream stream) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
     TBaseCreator creator = new ThriftReader.TBaseCreator() {
       @Override
       public TBase create() {
@@ -1455,10 +1504,12 @@ public final class CarbonUtil {
     ValueEncoderMeta meta = null;
     try {
       aos = new ByteArrayInputStream(encoderMeta);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3300
       objStream =
           new ClassLoaderObjectInputStream(Thread.currentThread().getContextClassLoader(), aos);
       meta = (ValueEncoderMeta) objStream.readObject();
     } catch (ClassNotFoundException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error(e.getMessage(), e);
     } catch (IOException e) {
       CarbonUtil.closeStreams(objStream);
@@ -1472,12 +1523,14 @@ public final class CarbonUtil {
     ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
     valueEncoderMeta.setType(measureType);
     switch (measureType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1537
       case DataType.DOUBLE_MEASURE_CHAR:
         valueEncoderMeta.setMaxValue(buffer.getDouble());
         valueEncoderMeta.setMinValue(buffer.getDouble());
         valueEncoderMeta.setUniqueValue(buffer.getDouble());
         break;
       case DataType.BIG_DECIMAL_MEASURE_CHAR:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1458
         valueEncoderMeta.setMaxValue(BigDecimal.valueOf(Long.MAX_VALUE));
         valueEncoderMeta.setMinValue(BigDecimal.valueOf(Long.MIN_VALUE));
         valueEncoderMeta.setUniqueValue(BigDecimal.valueOf(Long.MIN_VALUE));
@@ -1488,6 +1541,7 @@ public final class CarbonUtil {
         valueEncoderMeta.setUniqueValue(buffer.getLong());
         break;
       default:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1419
         throw new IllegalArgumentException("invalid measure type: " + measureType);
     }
     valueEncoderMeta.setDecimal(buffer.getInt());
@@ -1600,6 +1654,7 @@ public final class CarbonUtil {
     }
     // in case of compaction over si table the factTimeStamp will be null for the
     // main table's compacted segments in that case no need to validate the block
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     if (null != invalidBlockVOForSegmentId &&
         null != invalidBlockVOForSegmentId.getFactTimestamp()) {
       long blockTimeStamp =
@@ -1610,6 +1665,7 @@ public final class CarbonUtil {
         return true;
       }
       // aborted files case.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2021
       if (invalidBlockVOForSegmentId.getLatestUpdateTimestamp() != null
           && blockTimeStamp > invalidBlockVOForSegmentId.getLatestUpdateTimestamp()) {
         return true;
@@ -1632,7 +1688,9 @@ public final class CarbonUtil {
    * @return format
    */
   public static String getFormatFromProperty(DataType dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     if (dataType.equals(DataTypes.DATE)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-603
       return CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
           CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
     } else if (dataType.equals(DataTypes.TIMESTAMP)) {
@@ -1686,6 +1744,7 @@ public final class CarbonUtil {
         surrogate ^= data[startOffsetOfData + 3] & 0xFF;
         return surrogate;
       default:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         throw new IllegalArgumentException("Int cannot be more than 4 bytes: " +
             eachColumnValueSize);
     }
@@ -1731,6 +1790,7 @@ public final class CarbonUtil {
    * @return boolean
    */
   public static boolean isValidStorageLevel(String storageLevel) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1366
     if (null == storageLevel || storageLevel.trim().equals("")) {
       return false;
     }
@@ -1777,6 +1837,7 @@ public final class CarbonUtil {
    * @return
    */
   public static boolean isValidBadStorePath(String badRecordsLocation) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2122
     if (StringUtils.isEmpty(badRecordsLocation)) {
       return false;
     } else {
@@ -1793,9 +1854,11 @@ public final class CarbonUtil {
    * @return
    */
   public static String convertToMultiGsonStrings(TableInfo tableInfo, String seperator,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1284
       String quote, String prefix) {
     Gson gson = new Gson();
     String schemaString = gson.toJson(tableInfo);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1443
     return splitSchemaStringToMultiString(seperator, quote, prefix, schemaString);
   }
 
@@ -1822,6 +1885,7 @@ public final class CarbonUtil {
     int endLen = schemaLen > splitLen ? splitLen : schemaLen;
     for (int i = 0; i < parts; i++) {
       if (i == parts - 1) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1443
         if (schemaLen % splitLen > 0) {
           endLen = schemaLen % splitLen;
         }
@@ -1845,6 +1909,7 @@ public final class CarbonUtil {
   public static Map<String, String> convertToMultiStringMap(TableInfo tableInfo) {
     Gson gson = new Gson();
     String schemaString = gson.toJson(tableInfo);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1443
     return splitSchemaStringToMap(schemaString);
   }
 
@@ -1867,6 +1932,7 @@ public final class CarbonUtil {
     int endLen = schemaLen > splitLen ? splitLen : schemaLen;
     for (int i = 0; i < parts; i++) {
       if (i == parts - 1) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1443
         if (schemaLen % splitLen > 0) {
           endLen = schemaLen % splitLen;
         }
@@ -1895,6 +1961,7 @@ public final class CarbonUtil {
 
     // Datatype GSON adapter is added to support backward compatibility for tableInfo
     // deserialization
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1935
     GsonBuilder gsonBuilder = new GsonBuilder();
     gsonBuilder.registerTypeAdapter(DataType.class, new DataTypeAdapter());
 
@@ -1925,7 +1992,9 @@ public final class CarbonUtil {
    * @return
    */
   public static Map<String, String> removeSchemaFromMap(Map<String, String> properties) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1903
     Map<String, String> newMap = new HashMap<>(properties);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1311
     String partsNo = newMap.get("carbonSchemaPartsNo");
     if (partsNo == null) {
       return newMap;
@@ -1945,6 +2014,7 @@ public final class CarbonUtil {
    */
   public static org.apache.carbondata.format.TableInfo readSchemaFile(String schemaFilePath)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     return readSchemaFile(schemaFilePath, FileFactory.getConfiguration());
   }
 
@@ -1969,8 +2039,10 @@ public final class CarbonUtil {
       org.apache.carbondata.format.ColumnSchema externalColumnSchema) {
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
     wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2591
     wrapperColumnSchema.setColumnReferenceId(externalColumnSchema.getColumnReferenceId());
     wrapperColumnSchema.setColumnName(externalColumnSchema.getColumn_name());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2933
     DataType dataType = thriftDataTypeToWrapperDataType(externalColumnSchema.data_type);
     if (DataTypes.isDecimal(dataType)) {
       DecimalType decimalType = (DecimalType) dataType;
@@ -1989,6 +2061,7 @@ public final class CarbonUtil {
     wrapperColumnSchema.setScale(externalColumnSchema.getScale());
     wrapperColumnSchema.setDefaultValue(externalColumnSchema.getDefault_value());
     wrapperColumnSchema.setSchemaOrdinal(externalColumnSchema.getSchemaOrdinal());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     wrapperColumnSchema.setSpatialColumn(externalColumnSchema.isSpatialColumn());
     Map<String, String> properties = externalColumnSchema.getColumnProperties();
     if (properties != null) {
@@ -1996,6 +2069,7 @@ public final class CarbonUtil {
         wrapperColumnSchema.setSortColumn(true);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2916
     wrapperColumnSchema.setColumnProperties(properties);
     wrapperColumnSchema.setFunction(externalColumnSchema.getAggregate_function());
     List<org.apache.carbondata.format.ParentColumnTableRelation> parentColumnTableRelation =
@@ -2069,14 +2143,18 @@ public final class CarbonUtil {
         return DataTypes.createDefaultArrayType();
       case STRUCT:
         return DataTypes.createDefaultStructType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
       case MAP:
         return DataTypes.createDefaultMapType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
       case VARCHAR:
         return DataTypes.VARCHAR;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
       case FLOAT:
         return DataTypes.FLOAT;
       case BYTE:
         return DataTypes.BYTE;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
       case BINARY:
         return DataTypes.BINARY;
       default:
@@ -2090,8 +2168,10 @@ public final class CarbonUtil {
 
     // return the list of carbondata files in the given path.
     CarbonFile segment = FileFactory.getCarbonFile(path, configuration);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
 
     CarbonFile[] dataFiles = segment.listFiles();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3287
     CarbonFile latestCarbonFile = null;
     long latestDatafileTimestamp = 0L;
     // get the latest carbondatafile to get the latest schema in the folder
@@ -2103,6 +2183,7 @@ public final class CarbonUtil {
       } else if (dataFile.isDirectory()) {
         // if the list has directories that doesn't contain data files,
         // continue checking other files/directories in the list.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2954
         if (getFilePathExternalFilePath(dataFile.getAbsolutePath(), configuration) == null) {
           continue;
         } else {
@@ -2111,6 +2192,7 @@ public final class CarbonUtil {
       }
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3287
     if (latestCarbonFile != null) {
       return latestCarbonFile.getAbsolutePath();
     } else {
@@ -2125,6 +2207,7 @@ public final class CarbonUtil {
    * @return table info containing the schema
    */
   public static org.apache.carbondata.format.TableInfo inferSchema(String carbonDataFilePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
       String tableName, boolean isCarbonFileProvider, Configuration configuration)
       throws IOException {
     String fistFilePath = null;
@@ -2137,8 +2220,10 @@ public final class CarbonUtil {
     if (fistFilePath == null) {
       // Check if we can infer the schema from the hive metastore.
       LOGGER.error("CarbonData file is not present in the table location");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2359
       throw new IOException("CarbonData file is not present in the table location");
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(fistFilePath, configuration);
     List<ColumnSchema> columnSchemaList = carbonHeaderReader.readSchema();
     // only columnSchema is the valid entry, reset all dummy entries.
@@ -2162,6 +2247,9 @@ public final class CarbonUtil {
    * @return
    */
   public static TableInfo buildDummyTableInfo(String carbonDataFilePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2472
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2570
       String tableName, String dbName) {
     // During SDK carbon Reader, This method will be called.
     // This API will avoid IO operation to get the columnSchema list.
@@ -2190,8 +2278,11 @@ public final class CarbonUtil {
    * @throws IOException
    */
   public static org.apache.carbondata.format.TableInfo inferSchemaFromIndexFile(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2442
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2469
       String indexFilePath, String tableName) throws IOException {
     CarbonIndexFileReader indexFileReader = new CarbonIndexFileReader();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2514
     try {
       indexFileReader.openThriftReader(indexFilePath);
       org.apache.carbondata.format.IndexHeader readIndexHeader = indexFileReader.readIndexHeader();
@@ -2199,6 +2290,7 @@ public final class CarbonUtil {
       List<org.apache.carbondata.format.ColumnSchema> table_columns =
           readIndexHeader.getTable_columns();
       for (int i = 0; i < table_columns.size(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
         columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
       }
       // only columnSchema is the valid entry, reset all dummy entries.
@@ -2223,6 +2315,7 @@ public final class CarbonUtil {
     TableSchema tableSchema = new TableSchema();
     tableSchema.setTableName(tableName);
     tableSchema.setBucketingInfo(null);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
     tableSchema.setSchemaEvolution(null);
     tableSchema.setTableId(UUID.randomUUID().toString());
     tableSchema.setListOfColumns(columnSchemaList);
@@ -2233,12 +2326,14 @@ public final class CarbonUtil {
     List<SchemaEvolutionEntry> schEntryList = new ArrayList<>();
     schEntryList.add(schemaEvolutionEntry);
     schemaEvol.setSchemaEvolutionEntryList(schEntryList);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
     tableSchema.setSchemaEvolution(schemaEvol);
     return tableSchema;
   }
 
   public static void dropDatabaseDirectory(String databasePath)
       throws IOException, InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     if (FileFactory.isFileExist(databasePath)) {
       CarbonFile dbPath = FileFactory.getCarbonFile(databasePath);
       CarbonUtil.deleteFoldersAndFiles(dbPath);
@@ -2250,6 +2345,7 @@ public final class CarbonUtil {
    */
   public static byte[] getValueAsBytes(DataType dataType, Object value) {
     ByteBuffer b;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BYTE || dataType == DataTypes.BOOLEAN) {
       byte[] bytes = new byte[1];
       bytes[0] = (byte) value;
@@ -2264,6 +2360,7 @@ public final class CarbonUtil {
       b.putLong((int) value);
       b.flip();
       return b.array();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       b = ByteBuffer.allocate(8);
       b.putLong((long) value);
@@ -2274,13 +2371,16 @@ public final class CarbonUtil {
       b.putDouble((double) value);
       b.flip();
       return b.array();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType == DataTypes.FLOAT) {
       b = ByteBuffer.allocate(8);
       b.putFloat((float) value);
       b.flip();
       return b.array();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       return DataTypeUtil.bigDecimalToByte((BigDecimal) value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     } else if (dataType == DataTypes.BYTE_ARRAY || dataType == DataTypes.BINARY
         || dataType == DataTypes.STRING
         || dataType == DataTypes.DATE
@@ -2292,6 +2392,7 @@ public final class CarbonUtil {
   }
 
   public static boolean validateRangeOfSegmentList(String segmentId)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1398
       throws InvalidConfigurationException {
     String[] values = segmentId.split(",");
     try {
@@ -2301,6 +2402,7 @@ public final class CarbonUtil {
       }
       for (String value : values) {
         if (!value.equalsIgnoreCase("*")) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
           Segment segment = Segment.toSegment(value, null);
           Float aFloatValue = Float.parseFloat(segment.getSegmentNo());
           if (aFloatValue < 0 || aFloatValue > Float.MAX_VALUE) {
@@ -2327,6 +2429,7 @@ public final class CarbonUtil {
    * @return
    */
   public static boolean usePreviousFilterBitsetGroup(boolean usePrvBitSetGroup,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1538
       BitSetGroup prvBitsetGroup, int pageNumber, int numberOfFilterValues) {
     if (!usePrvBitSetGroup || null == prvBitsetGroup || null == prvBitsetGroup.getBitSet(pageNumber)
         || prvBitsetGroup.getBitSet(pageNumber).isEmpty()) {
@@ -2346,6 +2449,7 @@ public final class CarbonUtil {
    * @return
    */
   public static int isFilterPresent(byte[][] filterValues,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       DimensionColumnPage dimensionColumnPage, int low, int high, int chunkRowIndex) {
     int compareResult = 0;
     int mid = 0;
@@ -2367,6 +2471,7 @@ public final class CarbonUtil {
    * This method will calculate the data size and index size for carbon table
    */
   public static Map<String, Long> calculateDataIndexSize(CarbonTable carbonTable,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2538
       Boolean updateSize)
       throws IOException {
     Map<String, Long> dataIndexSizeMap = new HashMap<String, Long>();
@@ -2374,6 +2479,7 @@ public final class CarbonUtil {
     long indexSize = 0L;
     long lastUpdateTime = 0L;
     boolean needUpdate = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     String isCalculated = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_CALCULATE_SIZE,
@@ -2383,6 +2489,7 @@ public final class CarbonUtil {
       ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
       try {
         boolean lockAcquired = true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2538
         if (updateSize) {
           lockAcquired = carbonLock.lockWithRetries();
         }
@@ -2402,6 +2509,7 @@ public final class CarbonUtil {
               if (null == dsize || null == isize) {
                 needUpdate = true;
                 LOGGER.debug("It is an old segment, need calculate data size and index size again");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
                 HashMap<String, Long> map = CarbonUtil.getDataSizeAndIndexSize(
                     identifier.getTablePath(), loadMetadataDetail.getLoadName());
                 dsize = String.valueOf(map.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE));
@@ -2414,17 +2522,21 @@ public final class CarbonUtil {
             }
           }
           // If it contains old segment, write new load details
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2538
           if (needUpdate && updateSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
             SegmentStatusManager.writeLoadDetailsIntoFile(
                 CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()),
                 loadMetadataDetails);
           }
           String tableStatusPath =
               CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
           if (FileFactory.isFileExist(tableStatusPath)) {
             lastUpdateTime =
                 FileFactory.getCarbonFile(tableStatusPath).getLastModifiedTime();
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3087
           if (!FileFactory.isFileExist(metadataPath)) {
             dataSize = FileFactory.getDirectorySize(carbonTable.getTablePath());
           }
@@ -2450,6 +2562,7 @@ public final class CarbonUtil {
 
   // Get the total size of carbon data and the total size of carbon index
   public static HashMap<String, Long> getDataSizeAndIndexSize(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
       String segmentPath) throws IOException {
     if (segmentPath == null) {
       throw new IllegalArgumentException("Argument [segmentPath] is null.");
@@ -2463,9 +2576,11 @@ public final class CarbonUtil {
       case ALLUXIO:
       case VIEWFS:
       case S3:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
       case CUSTOM:
         Path path = new Path(segmentPath);
         FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2060
         if (fs.exists(path)) {
           FileStatus[] fileStatuses = fs.listStatus(path);
           if (null != fileStatuses) {
@@ -2483,6 +2598,7 @@ public final class CarbonUtil {
         break;
       case LOCAL:
       default:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         segmentPath = FileFactory.getUpdatedFilePath(segmentPath);
         File file = new File(segmentPath);
         File[] segmentFiles = file.listFiles();
@@ -2506,6 +2622,7 @@ public final class CarbonUtil {
 
   // Get the total size of carbon data and the total size of carbon index
   private static HashMap<String, Long> getDataSizeAndIndexSize(String tablePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
       String segmentId) throws IOException {
     return getDataSizeAndIndexSize(CarbonTablePath.getSegmentPath(tablePath, segmentId));
   }
@@ -2517,11 +2634,14 @@ public final class CarbonUtil {
     long carbonDataSize = 0L;
     long carbonIndexSize = 0L;
     HashMap<String, Long> dataAndIndexSize = new HashMap<String, Long>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2571
     Map<String, SegmentFileStore.FolderDetails> locationMap = fileStore.getLocationMap();
     if (locationMap != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
       fileStore.readIndexFiles(FileFactory.getConfiguration());
       Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
       // get the size of carbonindex file
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2704
       carbonIndexSize = getCarbonIndexSize(fileStore, locationMap);
       for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
         // get the size of carbondata files
@@ -2530,6 +2650,7 @@ public final class CarbonUtil {
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3766
     if (isCarbonSegment) {
       dataAndIndexSize.put(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE, carbonDataSize);
       dataAndIndexSize.put(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE, carbonIndexSize);
@@ -2550,6 +2671,7 @@ public final class CarbonUtil {
    * @return
    */
   public static long getCarbonIndexSize(SegmentFileStore fileStore,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2704
       Map<String, SegmentFileStore.FolderDetails> locationMap) {
     long carbonIndexSize = 0L;
     for (Map.Entry<String, SegmentFileStore.FolderDetails> entry : locationMap.entrySet()) {
@@ -2557,6 +2679,7 @@ public final class CarbonUtil {
       Set<String> carbonindexFiles = folderDetails.getFiles();
       String mergeFileName = folderDetails.getMergeFileName();
       if (null != mergeFileName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
         String mergeIndexPath;
         if (entry.getValue().isRelative()) {
           mergeIndexPath =
@@ -2586,7 +2709,9 @@ public final class CarbonUtil {
   public static HashMap<String, Long> getDataSizeAndIndexSize(String tablePath,
       Segment segment) throws IOException {
     if (segment.getSegmentFileName() != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
       SegmentFileStore fileStore = new SegmentFileStore(tablePath, segment.getSegmentFileName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3766
       return getDataSizeAndIndexSize(fileStore, segment.isCarbonSegment());
     } else {
       return getDataSizeAndIndexSize(tablePath, segment.getSegmentNo());
@@ -2610,6 +2735,7 @@ public final class CarbonUtil {
    * @throws UnsupportedEncodingException
    */
   public static String encodeToString(byte[] bytes) throws UnsupportedEncodingException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2026
     return new String(Base64.encodeBase64(bytes),
         CarbonCommonConstants.DEFAULT_CHARSET);
   }
@@ -2626,8 +2752,10 @@ public final class CarbonUtil {
   }
 
   public static void copyCarbonDataFileToCarbonStorePath(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
       String localFilePath,
       String targetPath, long fileSizeInBytes,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
       DataLoadMetrics metrics) throws CarbonDataWriterException {
     if (targetPath.endsWith(".tmp") && localFilePath
         .endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
@@ -2659,6 +2787,7 @@ public final class CarbonUtil {
    * @return the file size
    */
   public static long copyCarbonDataFileToCarbonStorePath(String localFilePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1544
       String carbonDataDirectoryPath, long fileSizeInBytes)
       throws CarbonDataWriterException {
     long copyStartTime = System.currentTimeMillis();
@@ -2677,6 +2806,7 @@ public final class CarbonUtil {
           .substring(localFilePath.lastIndexOf(File.separator));
       copyLocalFileToCarbonStore(carbonFilePath, localFilePath,
           CarbonCommonConstants.BYTEBUFFER_SIZE,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
           getMaxOfBlockAndFileSize(fileSizeInBytes, localFileSize));
       CarbonFile targetCarbonFile = FileFactory.getCarbonFile(carbonFilePath);
       // the size of carbon file must be greater than 0
@@ -2696,6 +2826,7 @@ public final class CarbonUtil {
     }
     LOGGER.info(String.format("Total copy time is %d ms, operation id %d",
         System.currentTimeMillis() - copyStartTime, copyStartTime));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
     return targetSize;
   }
 
@@ -2718,12 +2849,14 @@ public final class CarbonUtil {
             + " (bytes");
       }
       dataOutputStream = FileFactory
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
           .getDataOutputStream(carbonStoreFilePath,
               bufferSize, blockSize);
       dataInputStream = FileFactory
           .getDataInputStream(localFilePath, bufferSize);
       IOUtils.copyBytes(dataInputStream, dataOutputStream, bufferSize);
     } finally {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
       try {
         CarbonUtil.closeStream(dataInputStream);
         CarbonUtil.closeStream(dataOutputStream);
@@ -2775,7 +2908,9 @@ public final class CarbonUtil {
    * @return
    */
   public static String getBlockId(AbsoluteTableIdentifier identifier, String filePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2734
       String segmentId, boolean isTransactionalTable, boolean isStandardTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
     return getBlockId(identifier, filePath, segmentId, isTransactionalTable, isStandardTable,
         false);
   }
@@ -2806,6 +2941,7 @@ public final class CarbonUtil {
         } else {
           partitionDir = "";
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
         if (isPartitionTable) {
           blockId =
               partitionDir.replace(CarbonCommonConstants.FILE_SEPARATOR, "#")
@@ -2875,6 +3011,8 @@ public final class CarbonUtil {
     if (null != isLocalDictEnabledForMainTable && Boolean
         .parseBoolean(isLocalDictEnabledForMainTable)) {
       int ordinal = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2585
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2586
       for (int i = 0; i < columns.size(); i++) {
         ColumnSchema column = columns.get(i);
         if (null == localDictIncludeColumns) {
@@ -2896,6 +3034,7 @@ public final class CarbonUtil {
               continue;
             }
             // column should be no dictionary string datatype column or varchar datatype column
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
             if (column.isDimensionColumn() &&
                 (column.getDataType().equals(DataTypes.STRING) ||
                     column.getDataType().equals(DataTypes.VARCHAR))) {
@@ -2904,6 +3043,8 @@ public final class CarbonUtil {
             // if local dictionary exclude columns is defined, then set for all no dictionary string
             // datatype columns and varchar datatype columns except excluded columns
           } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2585
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2586
             if (!Arrays.asList(listOfDictionaryExcludeColumns).contains(column.getColumnName())
                 && column.getDataType().isComplexType()) {
               ordinal = i + 1;
@@ -2930,6 +3071,7 @@ public final class CarbonUtil {
             }
             //if column is primitive string or varchar and no dictionary column,then set local
             // dictionary if not specified as local dictionary exclude
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
             if (column.isDimensionColumn() &&
                 (column.getDataType().equals(DataTypes.STRING) ||
                     column.getDataType().equals(DataTypes.VARCHAR))) {
@@ -2942,6 +3084,8 @@ public final class CarbonUtil {
           // if column is complex type, call the setLocalDictForComplexColumns to set local
           // dictionary for all string and varchar child columns which are defined in
           // local dictionary include
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2585
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2586
           if (localDictIncludeColumns.contains(column.getColumnName()) && column.getDataType()
               .isComplexType()) {
             ordinal = i + 1;
@@ -2957,6 +3101,7 @@ public final class CarbonUtil {
           } else {
             continue;
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
           if (column.isDimensionColumn() &&
               (column.getDataType().equals(DataTypes.STRING) ||
                   column.getDataType().equals(DataTypes.VARCHAR)) &&
@@ -2983,12 +3128,15 @@ public final class CarbonUtil {
    */
   private static int setLocalDictForComplexColumns(List<ColumnSchema> allColumns,
       int dimensionOrdinal, int childColumnCount) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2585
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2586
     for (int i = 0; i < childColumnCount; i++) {
       ColumnSchema column = allColumns.get(dimensionOrdinal);
       if (column.getNumberOfChild() > 0) {
         dimensionOrdinal++;
         setLocalDictForComplexColumns(allColumns, dimensionOrdinal, column.getNumberOfChild());
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         if (column.isDimensionColumn() &&
             (column.getDataType().equals(DataTypes.STRING) ||
                 column.getDataType().equals(DataTypes.VARCHAR))) {
@@ -3015,6 +3163,7 @@ public final class CarbonUtil {
         dimensionOrdinal++;
         // Dimension ordinal will take value from recursive functions so as to skip the
         // child columns of the complex column.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2712
         dimensionOrdinal = unsetLocalDictForComplexColumns(allColumns, dimensionOrdinal,
             column.getNumberOfChild());
       } else {
@@ -3032,6 +3181,7 @@ public final class CarbonUtil {
    * carbon Table
    */
   public static Map<String, LocalDictionaryGenerator> getLocalDictionaryModel(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2669
       CarbonTable carbonTable) {
     List<ColumnSchema> wrapperColumnSchema = CarbonUtil
         .getColumnSchemaList(carbonTable.getVisibleDimensions(), carbonTable.getVisibleMeasures());
@@ -3080,6 +3230,7 @@ public final class CarbonUtil {
    * carbon Table
    */
   public static ColumnarFormatVersion getFormatVersion(CarbonTable carbonTable) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2804
     String segmentPath = null;
     boolean supportFlatFolder = carbonTable.isSupportFlatFolder();
     CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
@@ -3111,14 +3262,18 @@ public final class CarbonUtil {
       SegmentStatusManager segmentStatusManager =
           new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier());
       SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           segmentStatusManager.getValidAndInvalidSegments(carbonTable.isMV());
       List<Segment> validSegments = validAndInvalidSegmentsInfo.getValidSegments();
       if (validSegments.isEmpty()) {
         return carbonProperties.getFormatVersion();
       }
       // get the carbon index file header from a valid segment
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2804
       for (Segment segment : validSegments) {
         segmentPath = carbonTable.getSegmentPath(segment.getSegmentNo());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         if (FileFactory.isFileExist(segmentPath)) {
           fileStore.readAllIIndexOfSegment(segmentPath);
           Map<String, byte[]> carbonIndexMap = fileStore.getCarbonIndexMap();
@@ -3159,6 +3314,7 @@ public final class CarbonUtil {
    * @return
    */
   public static boolean isEncodedWithMeta(List<org.apache.carbondata.format.Encoding> encodings) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     if (encodings != null && !encodings.isEmpty()) {
       org.apache.carbondata.format.Encoding encoding = encodings.get(0);
       switch (encoding) {
@@ -3168,6 +3324,7 @@ public final class CarbonUtil {
         case ADAPTIVE_DELTA_INTEGRAL:
         case ADAPTIVE_FLOATING:
         case ADAPTIVE_DELTA_FLOATING:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
         case INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY:
           return true;
       }
@@ -3185,6 +3342,7 @@ public final class CarbonUtil {
    * @return
    */
   public static boolean isStandardCarbonTable(CarbonTable table) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2734
     return !(table.isSupportFlatFolder() || table.isHivePartitionTable());
   }
 
@@ -3202,6 +3360,7 @@ public final class CarbonUtil {
       int pageIndex, TableSpec.ColumnSpec columnSpec) throws IOException {
     // new encoded column page
     EncodedColumnPage newEncodedColumnPage;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
 
     switch (columnSpec.getColumnType()) {
       case COMPLEX_ARRAY:
@@ -3259,6 +3418,7 @@ public final class CarbonUtil {
    * @return UUID as String
    */
   public static String generateUUID() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2991
     return UUID.randomUUID().toString();
   }
 
@@ -3267,6 +3427,8 @@ public final class CarbonUtil {
         .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_TEMP_PATH);
     if (null == tempFolderPath) {
       tempFolderPath =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3646
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3647
           "/tmp/" + CarbonCommonConstants.INDEX_SERVER_TEMP_FOLDER_NAME;
     } else {
       tempFolderPath =
@@ -3291,6 +3453,7 @@ public final class CarbonUtil {
     }
     CarbonFile file = FileFactory.getCarbonFile(path + CarbonCommonConstants.FILE_SEPARATOR
             + queryId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     if (!file.mkdirs()) {
       LOGGER.info("Unable to create table directory: " + path + CarbonCommonConstants.FILE_SEPARATOR
               + queryId);
@@ -3319,6 +3482,7 @@ public final class CarbonUtil {
    * @return updated columnSchema list
    */
   public static List<org.apache.carbondata.format.ColumnSchema> reorderColumnsForLongString(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3614
       List<org.apache.carbondata.format.ColumnSchema> columns, String longStringColumnsString) {
     // schema will be like
     // sortColumns-otherDimensions-varchar-[complexColumns + complex_child - measures]
@@ -3403,6 +3567,7 @@ public final class CarbonUtil {
    * get cache expiration time from carbonTable table properties
    */
   public static long getExpiration_time(CarbonTable carbonTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
     String cacheExpirationTime = carbonTable.getTableInfo().getFactTable().getTableProperties()
         .get(CarbonCommonConstants.INDEX_CACHE_EXPIRATION_TIME_IN_SECONDS);
     if (null == cacheExpirationTime) {

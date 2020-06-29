@@ -37,6 +37,7 @@ public class DefaultFileTypeProvider implements FileTypeInterface {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(DefaultFileTypeProvider.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
 
   /**
    * Custom file type provider for supporting non default file systems.
@@ -57,6 +58,7 @@ public class DefaultFileTypeProvider implements FileTypeInterface {
   private void initializeCustomFileProvider() {
     if (!customFileTypeProviderInitialized) {
       // This initialization can happen in concurrent threads.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3499
       synchronized (lock) {
         if (!customFileTypeProviderInitialized) {
           String customFileProvider = CarbonProperties.getInstance()
@@ -85,6 +87,7 @@ public class DefaultFileTypeProvider implements FileTypeInterface {
    */
   @Override
   public boolean isPathSupported(String path) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3499
     initializeCustomFileProvider();
     if (customFileTypeProvider != null) {
       return customFileTypeProvider.isPathSupported(path);
@@ -101,10 +104,13 @@ public class DefaultFileTypeProvider implements FileTypeInterface {
     FileFactory.FileType fileType = FileFactory.getFileType(path);
     switch (fileType) {
       case LOCAL:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         return new LocalCarbonFile(FileFactory.getUpdatedFilePath(path));
       case HDFS:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3777
       case HDFS_LOCAL:
         return new HDFSCarbonFile(path, conf);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2642
       case S3:
         return new S3CarbonFile(path, conf);
       case ALLUXIO:
@@ -112,6 +118,7 @@ public class DefaultFileTypeProvider implements FileTypeInterface {
       case VIEWFS:
         return new ViewFSCarbonFile(path);
       default:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         return new LocalCarbonFile(FileFactory.getUpdatedFilePath(path));
     }
   }

@@ -72,7 +72,10 @@ public class SessionParams implements Serializable, Cloneable {
   private Map<String, Object> extraInfo;
   public SessionParams() {
     sProps = new HashMap<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
     addedProps = new ConcurrentHashMap<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2076
     extraInfo = new HashMap<>();
   }
 
@@ -95,6 +98,7 @@ public class SessionParams implements Serializable, Cloneable {
   }
 
   public String getProperty(String key, String defaultValue) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1520
     if (!sProps.containsKey(key)) {
       return defaultValue;
     }
@@ -109,10 +113,13 @@ public class SessionParams implements Serializable, Cloneable {
    */
   public SessionParams addProperty(String key, String value) throws InvalidConfigurationException {
     boolean isValidConf = validateKeyValue(key, value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1701
     if (isValidConf) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1964
       if (key.equals(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION)) {
         value = value.toUpperCase();
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3064
       LOGGER.info(
           "The key " + key + " with value " + value + " added in the session param");
       sProps.put(key, value);
@@ -125,6 +132,7 @@ public class SessionParams implements Serializable, Cloneable {
   }
 
   public SessionParams addProps(Map<String, String> addedProps) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1361
     this.addedProps.putAll(addedProps);
     return this;
   }
@@ -143,18 +151,27 @@ public class SessionParams implements Serializable, Cloneable {
   private boolean validateKeyValue(String key, String value) throws InvalidConfigurationException {
     boolean isValid = false;
     switch (key) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
       case ENABLE_SI_LOOKUP_PARTIALSTRING:
       case ENABLE_UNSAFE_SORT:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2507
       case ENABLE_OFFHEAP_SORT:
       case CARBON_CUSTOM_BLOCK_DISTRIBUTION:
       case CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE:
       case CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2900
       case ENABLE_VECTOR_READER:
       case ENABLE_UNSAFE_IN_QUERY_EXECUTION:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2919
       case ENABLE_AUTO_LOAD_MERGE:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3038
       case CARBON_PUSH_ROW_FILTERS_FOR_VECTOR:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
       case CARBON_ENABLE_INDEX_SERVER:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3710
       case CARBON_QUERY_STAGE_INPUT:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       case DISABLE_SQL_REWRITE:
         isValid = CarbonUtil.validateBoolean(value);
         if (!isValid) {
@@ -167,6 +184,7 @@ public class SessionParams implements Serializable, Cloneable {
           isValid = true;
         } catch (IllegalArgumentException iae) {
           throw new InvalidConfigurationException(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2194
               "The key " + key + " can have only either FORCE or IGNORE or REDIRECT or FAIL.");
         }
         break;
@@ -174,10 +192,12 @@ public class SessionParams implements Serializable, Cloneable {
         isValid = CarbonUtil.isValidSortOption(value);
         if (!isValid) {
           throw new InvalidConfigurationException("The sort scope " + key
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3607
               + " can have only either NO_SORT, LOCAL_SORT or GLOBAL_SORT.");
         }
         break;
       case CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2900
       case NUM_CORES_LOADING:
       case NUM_CORES_COMPACTING:
       case BLOCKLET_SIZE_IN_MB:
@@ -199,6 +219,7 @@ public class SessionParams implements Serializable, Cloneable {
         isValid = true;
         break;
       // no validation needed while set for CARBON_OPTIONS_TIMESTAMPFORMAT
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1936
       case CARBON_OPTIONS_TIMESTAMPFORMAT:
         isValid = true;
         break;
@@ -206,6 +227,7 @@ public class SessionParams implements Serializable, Cloneable {
       case CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT:
         isValid = true;
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2900
       case COMPACTION_SEGMENT_LEVEL_THRESHOLD:
         int[] values = CarbonProperties.getInstance().getIntArray(value);
         if (values.length != 2) {
@@ -215,24 +237,32 @@ public class SessionParams implements Serializable, Cloneable {
         isValid = true;
         break;
       default:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3440
         if (key.startsWith(CARBON_ENABLE_INDEX_SERVER) && key.split("\\.").length == 6) {
           isValid = true;
         } else if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1398
           isValid = CarbonUtil.validateRangeOfSegmentList(value);
           if (!isValid) {
             throw new InvalidConfigurationException("Invalid CARBON_INPUT_SEGMENT_IDs");
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         } else if (key.startsWith(CarbonCommonConstants.CARBON_INDEX_VISIBLE)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3496
           isValid = true;
         } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_INDEXES_PARALLEL)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
           isValid = CarbonUtil.validateBoolean(value);
           if (!isValid) {
             throw new InvalidConfigurationException("Invalid value " + value + " for key " + key);
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3201
         } else if (key.startsWith(CarbonLoadOptionConstants.CARBON_TABLE_LOAD_SORT_SCOPE)) {
           isValid = CarbonUtil.isValidSortOption(value);
           if (!isValid) {
             throw new InvalidConfigurationException("The sort scope " + key
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3607
                 + " can have only either NO_SORT, LOCAL_SORT or GLOBAL_SORT.");
           }
         } else {
@@ -244,10 +274,12 @@ public class SessionParams implements Serializable, Cloneable {
   }
 
   public void removeProperty(String property) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1520
     sProps.remove(property);
   }
 
   public void removeExtraInfo(String key) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2076
     extraInfo.remove(key);
   }
 
@@ -259,6 +291,7 @@ public class SessionParams implements Serializable, Cloneable {
   }
 
   public SessionParams clone() throws CloneNotSupportedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2294
     super.clone();
     SessionParams newObj = new SessionParams();
     newObj.addedProps.putAll(this.addedProps);

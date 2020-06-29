@@ -37,6 +37,7 @@ public class IntegerStreamReader extends CarbonColumnVectorImpl
   public IntegerStreamReader(int batchSize, DataType dataType) {
     super(batchSize, dataType);
     this.batchSize = batchSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2818
     this.builder = type.createBlockBuilder(null, batchSize);
   }
 
@@ -52,11 +53,13 @@ public class IntegerStreamReader extends CarbonColumnVectorImpl
 
   @Override
   public void putInt(int rowId, int value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     type.writeLong(builder, value);
   }
 
   @Override
   public void putInts(int rowId, int count, int value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     for (int i = 0; i < count; i++) {
       putInt(rowId++, value);
     }
@@ -76,11 +79,13 @@ public class IntegerStreamReader extends CarbonColumnVectorImpl
 
   @Override
   public void reset() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2818
     builder = type.createBlockBuilder(null, batchSize);
   }
 
   @Override
   public void putObject(int rowId, Object value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
     if (value == null) {
       putNull(rowId);
     } else {

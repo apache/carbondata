@@ -60,6 +60,7 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
   protected ColumnPage encodedPage;
 
   protected AdaptiveCodec(DataType srcDataType, DataType targetDataType,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       SimpleStatsResult stats, boolean isInvertedIndex) {
     this.stats = stats;
     this.srcDataType = srcDataType;
@@ -68,6 +69,7 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
   }
 
   public DataType getTargetDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1435
     return targetDataType;
   }
 
@@ -145,6 +147,7 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
       for (int i = 0; i < dataPage.length; i++) {
         page.putDouble(i, (double) dataPage[i]);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (srcDataType == DataTypes.FLOAT) {
       for (int i = 0; i < dataPage.length; i++) {
         page.putFloat(i, (float) dataPage[i]);
@@ -162,6 +165,7 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream out = new DataOutputStream(stream);
     if (null != indexStorage) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3799
       if (result.isDirect()) {
         // cannot apply result.array() on direct buffers
         for (int i = result.position(); i < result.limit(); i++) {
@@ -186,6 +190,7 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
     }
     byte[] bytes = stream.toByteArray();
     stream.close();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     return ByteBuffer.wrap(bytes);
   }
 
@@ -211,6 +216,7 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
       dataChunk.setRowid_page_length(0);
     }
     if (null != result) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
       dataChunk.setData_page_length(result.limit() - result.position());
     }
   }
@@ -236,17 +242,20 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
   }
 
   public ByteBuffer encodeAndCompressPage(ColumnPage input, ColumnPageValueConverter converter,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       Compressor compressor) throws IOException {
     encodedPage = ColumnPage.newPage(
         new ColumnPageEncoderMeta(input.getColumnPageEncoderMeta().getColumnSpec(), targetDataType,
             input.getColumnPageEncoderMeta().getCompressorName()), input.getPageSize());
     if (isInvertedIndex) {
       indexStorage =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3730
           new ObjectArrayBlockIndexerStorage(getPageBasedOnDataType(input), input.getDataType(),
               isInvertedIndex);
     }
     ColumnPage columnPage = getSortedColumnPageIfRequired(input);
     columnPage.convertValue(converter);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     return encodedPage.compress(compressor);
   }
 

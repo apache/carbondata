@@ -150,6 +150,7 @@ public final class ByteUtil {
        * 32-bit. On the other hand, it is substantially faster on 64-bit.
        */
       for (int i = 0; i < minWords * SIZEOF_LONG; i += SIZEOF_LONG) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
         long lw = CarbonUnsafe.getUnsafe().getLong(buffer1, offset1Adj + (long) i);
         long rw = CarbonUnsafe.getUnsafe().getLong(buffer2, offset2Adj + (long) i);
         long diff = lw ^ rw;
@@ -223,6 +224,7 @@ public final class ByteUtil {
       if (minLength > 7) {
         minWords = minLength / SIZEOF_LONG;
         for (int i = 0; i < minWords * SIZEOF_LONG; i += SIZEOF_LONG) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
           long lw =
               CarbonUnsafe.getUnsafe().getLong(buffer1, CarbonUnsafe.BYTE_ARRAY_OFFSET + (long) i);
           long rw =
@@ -276,6 +278,7 @@ public final class ByteUtil {
       int len = buffer1.length / 8;
       long currentOffset = CarbonUnsafe.BYTE_ARRAY_OFFSET;
       for (int i = 0; i < len; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
         long lw = CarbonUnsafe.getUnsafe().getLong(buffer1, currentOffset);
         long rw = CarbonUnsafe.getUnsafe().getLong(buffer2, currentOffset);
         if (lw != rw) {
@@ -286,6 +289,7 @@ public final class ByteUtil {
       len = buffer1.length % 8;
       if (len > 0) {
         for (int i = 0; i < len; i += 1) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
           long lw = CarbonUnsafe.getUnsafe().getByte(buffer1, currentOffset);
           long rw = CarbonUnsafe.getUnsafe().getByte(buffer2, currentOffset);
           if (lw != rw) {
@@ -305,6 +309,7 @@ public final class ByteUtil {
       int len = length1 / 8;
       long currentOffset = CarbonUnsafe.BYTE_ARRAY_OFFSET;
       for (int i = 0; i < len; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
         long lw = CarbonUnsafe.getUnsafe().getLong(buffer1, currentOffset + offset1);
         long rw = CarbonUnsafe.getUnsafe().getLong(buffer2, currentOffset + offset2);
         if (lw != rw) {
@@ -315,6 +320,7 @@ public final class ByteUtil {
       len = buffer1.length % 8;
       if (len > 0) {
         for (int i = 0; i < len; i += 1) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
           long lw = CarbonUnsafe.getUnsafe().getByte(buffer1, currentOffset + offset1);
           long rw = CarbonUnsafe.getUnsafe().getByte(buffer2, currentOffset + offset2);
           if (lw != rw) {
@@ -442,6 +448,7 @@ public final class ByteUtil {
       throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_SHORT);
     }
     short n = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     if (CarbonUnsafe.getUnsafe() != null) {
       if (CarbonUnsafe.ISLITTLEENDIAN) {
         n = Short.reverseBytes(
@@ -512,6 +519,7 @@ public final class ByteUtil {
       throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_INT);
     }
     int n = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     if (CarbonUnsafe.getUnsafe() != null) {
       if (CarbonUnsafe.ISLITTLEENDIAN) {
         n = Integer.reverseBytes(
@@ -525,15 +533,19 @@ public final class ByteUtil {
         n ^= bytes[i] & 0xFF;
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
     return n;
   }
 
   public static int toInt(byte[] bytes, int offset) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2464
     return (((int)bytes[offset] & 0xff) << 24) + (((int)bytes[offset + 1] & 0xff) << 16) +
         (((int)bytes[offset + 2] & 0xff) << 8) + ((int)bytes[offset + 3] & 0xff);
   }
 
   public static int toShort(byte[] bytes, int offset) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
     return (((int)bytes[offset] & 0xff) << 8) + ((int)bytes[offset + 1] & 0xff);
   }
 
@@ -545,6 +557,7 @@ public final class ByteUtil {
   }
 
   public static void setShort(byte[] data, int offset, int value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
     data[offset] = (byte) (value >> 8);
     data[offset + 1] = (byte) value;
   }
@@ -566,6 +579,7 @@ public final class ByteUtil {
   }
 
   public static byte[] toBytes(double val) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2471
     return toBytes(Double.doubleToLongBits(val));
   }
 
@@ -581,6 +595,7 @@ public final class ByteUtil {
       throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_LONG);
     }
     long l = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     if (CarbonUnsafe.getUnsafe() != null) {
       if (CarbonUnsafe.ISLITTLEENDIAN) {
         l = Long.reverseBytes(
@@ -594,6 +609,7 @@ public final class ByteUtil {
         l ^= bytes[i] & 0xFF;
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
     return l;
   }
 
@@ -625,6 +641,7 @@ public final class ByteUtil {
           "Not enough room to put an int at" + " offset " + offset + " in a " + bytes.length
               + " byte array");
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     if (CarbonUnsafe.getUnsafe() != null) {
       if (CarbonUnsafe.ISLITTLEENDIAN) {
         val = Integer.reverseBytes(val);
@@ -688,6 +705,7 @@ public final class ByteUtil {
    * After the transform, the compare method of byte arrays will return a right result.(1 > -1)
    */
   public static byte[] toXorBytes(short val) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
     val = (short) (val ^ Short.MIN_VALUE);
     return toBytes(val);
   }
@@ -707,6 +725,7 @@ public final class ByteUtil {
   }
 
   public static byte[] toXorBytes(float val) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     return toXorBytes(Float.floatToIntBits(val));
   }
 
@@ -730,10 +749,12 @@ public final class ByteUtil {
   }
 
   public static float toXorFloat(byte[] value, int offset, int length) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     return Float.intBitsToFloat(toXorInt(value, offset, length));
   }
 
   public static int toIntLittleEndian(byte[] bytes, int offset) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
     return (((int) bytes[offset + 3] & 0xff) << 24) + (((int) bytes[offset + 2] & 0xff) << 16) + (
         ((int) bytes[offset + 1] & 0xff) << 8) + ((int) bytes[offset] & 0xff);
   }
@@ -758,6 +779,7 @@ public final class ByteUtil {
   }
 
   public static byte[] convertIntToBytes(int date) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     return ByteUtil.toBytes(date);
   }
 

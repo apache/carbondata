@@ -41,6 +41,7 @@ public class CarbonRow implements Serializable {
    * @param rawData contains complete row of the rawData
    */
   public CarbonRow(Object[] data, Object[] rawData) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1249
     this.data = data;
     this.rawData = rawData;
   }
@@ -54,6 +55,7 @@ public class CarbonRow implements Serializable {
   }
 
   public String getString(int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     if (null == data[ordinal]) {
       return null;
     } else {
@@ -75,6 +77,7 @@ public class CarbonRow implements Serializable {
   }
 
   public Object[] getRawData() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1249
     return rawData;
   }
 
@@ -83,6 +86,7 @@ public class CarbonRow implements Serializable {
   }
 
   public short getRangeId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     return rangeId;
   }
 
@@ -91,6 +95,7 @@ public class CarbonRow implements Serializable {
   }
 
   public void clearData() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2198
     this.data = null;
   }
 }

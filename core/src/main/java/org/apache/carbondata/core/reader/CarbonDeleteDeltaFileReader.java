@@ -38,5 +38,6 @@ public interface CarbonDeleteDeltaFileReader {
   String read() throws IOException;
 
   DeleteDeltaBlockDetails readJson();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
 }

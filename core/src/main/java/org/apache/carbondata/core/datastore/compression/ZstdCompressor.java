@@ -34,6 +34,7 @@ public class ZstdCompressor extends AbstractCompressor {
 
   @Override
   public ByteBuffer compressByte(ByteBuffer compInput) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     compInput.flip();
     if (compInput.isDirect()) {
       return Zstd.compress(compInput, COMPRESS_LEVEL);

@@ -61,6 +61,7 @@ class DataSummary implements Command {
   // file path mapping to file object
   private LinkedHashMap<String, DataFile> dataFiles;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
   DataSummary(String dataFolder, List<String> outPuts) {
     this.dataFolder = dataFolder;
     this.outPuts = outPuts;
@@ -81,12 +82,14 @@ class DataSummary implements Command {
     }
     if (line.hasOption("s") || printAll) {
       if (dataFiles.size() > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3060
         List<String> dataFilesSet = new ArrayList<>(dataFiles.keySet());
         Collections.reverse(dataFilesSet);
         collectSchemaDetails(dataFiles.get(dataFilesSet.get(0)));
       }
     }
     if (line.hasOption("m") || printAll) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
       collectSegmentsDetails(collector.getTableStatusFile());
     }
     if (line.hasOption("t") || printAll) {
@@ -114,9 +117,11 @@ class DataSummary implements Command {
         collectColumnChunkMeta(columName);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3544
     if (line.hasOption("C")) {
       printAllColumnStats();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3053
     collector.close();
     for (DataFile file : dataFiles.values()) {
       file.close();
@@ -152,6 +157,7 @@ class DataSummary implements Command {
           shortColumnId
       });
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
     tableFormatter.printFormatted();
   }
 
@@ -177,9 +183,11 @@ class DataSummary implements Command {
         } else {
           indexSize = Strings.formatSize(Long.parseLong(segment.getIndexSize()));
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
         tableFormatter.addRow(new String[]{
             segment.getLoadName(),
             segment.getSegmentStatus().toString(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3060
             new java.sql.Timestamp(segment.getLoadStartTime()).toString(),
             new java.sql.Timestamp(segment.getLoadEndTime()).toString(),
             segment.getMergedLoadName() == null ? "NA" : segment.getMergedLoadName(),
@@ -188,6 +196,7 @@ class DataSummary implements Command {
             indexSize}
         );
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
       tableFormatter.printFormatted();
     } else {
       outPuts.add("table status file not found");
@@ -234,6 +243,7 @@ class DataSummary implements Command {
             Strings.formatSize(file.getBlockletSizeInBytes(blockletId))
         });
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
       limitSize--;
       if (limitSize == 0) {
         break;
@@ -294,6 +304,7 @@ class DataSummary implements Command {
     outPuts.add("");
     outPuts.add("## Column Statistics for '" + columnName + "'");
     collectStats(columnName);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2976
 
     int columnIndex = getColumnIndex(columnName);
     String[] header = new String[]{"BLK", "BLKLT", "Meta Size", "Data Size",
@@ -311,6 +322,7 @@ class DataSummary implements Command {
           maxPercent = "NA";
           // for complex types min max can be given as NA and for varchar where min max is not
           // written, can give NA
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
           if (blocklet.getColumnChunk().column.getDataType() == DataTypes.DATE ||
               blocklet.getColumnChunk().column.isComplexColumn() ||
               !blocklet.getColumnChunk().isMinMaxPresent) {
@@ -323,7 +335,9 @@ class DataSummary implements Command {
         } else {
           // for column has global dictionary and for complex columns,min and max percentage can be
           // NA
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
           if (blocklet.getColumnChunk().column.getDataType() == DataTypes.DATE ||
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3060
               blocklet.getColumnChunk().column.isComplexColumn() ||
               blocklet.getColumnChunk().column.getDataType().isComplexType()) {
             minPercent = "NA";
@@ -336,6 +350,7 @@ class DataSummary implements Command {
           }
           DataFile.ColumnChunk columnChunk = blocklet.columnChunk;
           // need to consider dictionary and complex columns
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
           if (columnChunk.column.getDataType() == DataTypes.DATE ||
               blocklet.getColumnChunk().column.isComplexColumn() ||
               blocklet.getColumnChunk().column.getDataType().isComplexType()) {
@@ -369,6 +384,7 @@ class DataSummary implements Command {
                 String.valueOf(blocklet.getColumnChunk().blockletDictionaryEntries),
                 Strings.formatSize(blocklet.getColumnChunk().blocketletDictionarySize),
                 Strings.formatSize(blocklet.getColumnChunk().avgPageLengthInBytes),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
                 minPercent,
                 maxPercent,
                 min,
@@ -380,6 +396,7 @@ class DataSummary implements Command {
   }
 
   private void printAllColumnStats() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3544
     if (!dataFiles.isEmpty()) {
       outPuts.add("");
       outPuts.add("## Statistics for All Columns");
@@ -416,6 +433,7 @@ class DataSummary implements Command {
   }
 
   private void collectColumnChunkMeta(String columnName) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3060
     for (Map.Entry<String, DataFile> entry : dataFiles.entrySet()) {
       DataFile file = entry.getValue();
       outPuts.add("");

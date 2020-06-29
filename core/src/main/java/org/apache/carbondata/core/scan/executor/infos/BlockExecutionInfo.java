@@ -238,6 +238,7 @@ public class BlockExecutionInfo {
    * @return the totalNumberDimensionToRead
    */
   public int getTotalNumberDimensionToRead() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     return totalNumberDimensionToRead;
   }
 
@@ -273,6 +274,7 @@ public class BlockExecutionInfo {
    * @param allSelectedDimensionColumnIndexRange the allSelectedDimensionColumnIndexRange to set
    */
   public void setAllSelectedDimensionColumnIndexRange(int[][] selectedDimensionColumnIndexRange) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
     this.allSelectedDimensionColumnIndexRange = selectedDimensionColumnIndexRange;
   }
 
@@ -350,6 +352,7 @@ public class BlockExecutionInfo {
    * @return the dictionaryColumnChunkIndex
    */
   public int[] getDictionaryColumnChunkIndex() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     return dictionaryColumnChunkIndex;
   }
 
@@ -411,6 +414,7 @@ public class BlockExecutionInfo {
   }
 
   public ProjectionDimension[] getProjectionDimensions() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     return projectionDimensions;
   }
 
@@ -557,6 +561,7 @@ public class BlockExecutionInfo {
   }
 
   public boolean isPrefetchBlocklet() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
     return prefetchBlocklet;
   }
 
@@ -565,6 +570,7 @@ public class BlockExecutionInfo {
   }
 
   public boolean isRequiredRowId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2390
     return requiredRowId;
   }
 
@@ -581,6 +587,7 @@ public class BlockExecutionInfo {
   }
 
   public boolean isDirectVectorFill() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     return isDirectVectorFill && !isRestructuredBlock;
   }
 
@@ -589,6 +596,7 @@ public class BlockExecutionInfo {
   }
 
   public ReusableDataBuffer[] getDimensionReusableDataBuffer() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3764
     return dimensionReusableDataBuffer;
   }
 
@@ -605,6 +613,7 @@ public class BlockExecutionInfo {
   }
 
   public boolean isReadOnlyDelta() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
     return readOnlyDelta;
   }
 

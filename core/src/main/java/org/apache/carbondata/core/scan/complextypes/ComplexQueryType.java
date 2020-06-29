@@ -33,6 +33,7 @@ public class ComplexQueryType {
   public ComplexQueryType(String name, String parentName, int columnIndex) {
     this.name = name;
     this.parentName = parentName;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     this.columnIndex = columnIndex;
   }
 
@@ -43,8 +44,10 @@ public class ComplexQueryType {
   protected byte[] copyBlockDataChunk(DimensionRawColumnChunk[] rawColumnChunks,
       DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber) {
     byte[] data =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         getDecodedDimensionPage(dimensionColumnPages, rawColumnChunks[columnIndex], pageNumber)
             .getChunkData(rowNumber);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
     byte[] output = new byte[data.length];
     System.arraycopy(data, 0, output, 0, output.length);
     return output;
@@ -54,6 +57,7 @@ public class ComplexQueryType {
    * This method will read the block data chunk from the respective block
    */
   protected void readBlockDataChunk(RawBlockletColumnChunks blockChunkHolder) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     if (null == blockChunkHolder.getDimensionRawColumnChunks()[columnIndex]) {
       blockChunkHolder.getDimensionRawColumnChunks()[columnIndex] = blockChunkHolder.getDataBlock()
           .readDimensionChunk(blockChunkHolder.getFileReader(), columnIndex);

@@ -46,6 +46,7 @@ public class MeasureColumnVisitor implements ResolvedFilterInfoVisitorIntf {
    */
   public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     if (visitableObj instanceof MeasureColumnResolvedFilterInfo) {
       MeasureColumnResolvedFilterInfo resolveDimension =
           (MeasureColumnResolvedFilterInfo) visitableObj;

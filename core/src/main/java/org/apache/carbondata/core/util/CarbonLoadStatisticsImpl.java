@@ -347,6 +347,7 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
 
   //Print the speed information
   private void printLoadSpeedInfo(String partitionID) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2220
     LOGGER.info("===============Load_Speed_Info===============");
     LOGGER.info("Total Num of Records Processed: " + getTotalRecords());
     LOGGER.info("Total Time Cost: " + getTotalTime(partitionID) + "(s)");
@@ -369,6 +370,7 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
       printHostBlockMapInfo();
       printLoadSpeedInfo(partitionID);
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2220
       LOGGER.error("Can't print Statistics Information");
     } finally {
       resetLoadStatistics();

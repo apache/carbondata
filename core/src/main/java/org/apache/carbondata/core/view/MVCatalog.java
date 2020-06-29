@@ -30,6 +30,7 @@ public interface MVCatalog<T> {
    * List all registered valid schema catalogs
    */
   T[] getValidSchemas();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
   /**
    * Register schema to the catalog.

@@ -55,5 +55,6 @@ public interface ICarbonLock {
    * Return the path to the lock file
    * @return lock file path
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2919
   String getLockFilePath();
 }

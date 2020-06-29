@@ -69,6 +69,7 @@ public class QueryUtil {
    */
   public static int[] getDimensionChunkIndexes(List<ProjectionDimension> queryDimensions,
       Map<Integer, Integer> dimensionOrdinalToChunkMapping,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       Set<CarbonDimension> filterDimensions,
       Set<Integer> allProjectionListDimensionIndexes) {
     // using set as in row group columns will point to same block
@@ -127,6 +128,7 @@ public class QueryUtil {
   public static int[] getMeasureChunkIndexes(List<ProjectionMeasure> queryMeasures,
       List<CarbonMeasure> expressionMeasure, Map<Integer, Integer> ordinalToBlockIndexMapping,
       Set<CarbonMeasure> filterMeasures, List<Integer> allProjectionListMeasureIdexes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     Set<Integer> measureChunkIndex = new HashSet<Integer>();
     Set<Integer> filterMeasureOrdinal = getFilterMeasureOrdinal(filterMeasures);
     for (int i = 0; i < queryMeasures.size(); i++) {
@@ -154,6 +156,7 @@ public class QueryUtil {
    * @return sort dimension indexes
    */
   public static byte[] getSortDimensionIndexes(List<ProjectionDimension> sortedDimensions,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       List<ProjectionDimension> queryDimensions) {
     byte[] sortedDims = new byte[queryDimensions.size()];
     int indexOf = 0;
@@ -218,11 +221,14 @@ public class QueryUtil {
    * @param noDictionaryDimensionChunkIndex  list to store no dictionary block indexes
    */
   public static void fillQueryDimensionChunkIndexes(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       List<ProjectionDimension> projectDimensions,
       Map<Integer, Integer> columnOrdinalToChunkIndexMapping,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3371
       List<Integer> dictionaryDimensionChunkIndex,
       List<Integer> noDictionaryDimensionChunkIndex) {
     for (ProjectionDimension queryDimension : projectDimensions) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (queryDimension.getDimension().getDataType() == DataTypes.DATE) {
         dictionaryDimensionChunkIndex
             .add(columnOrdinalToChunkIndexMapping.get(queryDimension.getDimension().getOrdinal()));
@@ -244,10 +250,13 @@ public class QueryUtil {
    * @return complex dimension and query type
    */
   public static Map<Integer, GenericQueryType> getComplexDimensionsMap(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       List<ProjectionDimension> queryDimensions, Map<Integer, Integer> dimensionToBlockIndexMap,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       Set<CarbonDimension> filterDimensions) {
     Map<Integer, GenericQueryType> complexTypeMap = new HashMap<Integer, GenericQueryType>();
     for (ProjectionDimension dimension : queryDimensions) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
       CarbonDimension actualDimension;
       CarbonDimension complexDimension = null;
       if (null != dimension.getDimension().getComplexParentDimension()) {
@@ -263,6 +272,7 @@ public class QueryUtil {
         continue;
       }
       if (complexDimension != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         fillParentDetails(dimensionToBlockIndexMap, complexDimension, complexTypeMap);
       }
       fillParentDetails(dimensionToBlockIndexMap, actualDimension, complexTypeMap);
@@ -274,6 +284,7 @@ public class QueryUtil {
             || filterDimension.getNumberOfChild() == 0) {
           continue;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         fillParentDetails(dimensionToBlockIndexMap, filterDimension, complexTypeMap);
       }
     }
@@ -283,7 +294,9 @@ public class QueryUtil {
   private static void fillParentDetails(Map<Integer, Integer> dimensionToBlockIndexMap,
       CarbonDimension dimension, Map<Integer, GenericQueryType> complexTypeMap) {
     int parentBlockIndex = dimensionToBlockIndexMap.get(dimension.getOrdinal());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     GenericQueryType parentQueryType;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     if (DataTypes.isArrayType(dimension.getDataType())) {
       parentQueryType =
           new ArrayQueryType(dimension.getColName(), dimension.getColName(), parentBlockIndex);
@@ -291,6 +304,7 @@ public class QueryUtil {
       parentQueryType =
           new StructQueryType(dimension.getColName(), dimension.getColName(),
               dimensionToBlockIndexMap.get(dimension.getOrdinal()));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
     } else if (DataTypes.isMapType(dimension.getDataType())) {
       parentQueryType =
           new MapQueryType(dimension.getColName(), dimension.getColName(), parentBlockIndex);
@@ -299,6 +313,7 @@ public class QueryUtil {
           " is not supported");
     }
     complexTypeMap.put(dimension.getOrdinal(), parentQueryType);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     fillChildrenDetails(parentBlockIndex, dimension, parentQueryType);
   }
 
@@ -306,6 +321,7 @@ public class QueryUtil {
       GenericQueryType parentQueryType) {
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
       DataType dataType = dimension.getListOfChildDimensions().get(i).getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
       if (DataTypes.isArrayType(dataType)) {
         parentQueryType.addChildren(
             new ArrayQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
@@ -325,6 +341,7 @@ public class QueryUtil {
 
         parentQueryType.addChildren(
             new PrimitiveQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
                 dimension.getColName(), ++parentColumnIndex,
                 dimension.getListOfChildDimensions().get(i).getDataType(), isDirectDictionary));
       }
@@ -395,6 +412,7 @@ public class QueryUtil {
   private static void getChildDimensionOrdinal(CarbonDimension queryDimensions,
       Set<Integer> filterDimensionsOrdinal) {
     for (int j = 0; j < queryDimensions.getNumberOfChild(); j++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       CarbonDimension dimension = queryDimensions.getListOfChildDimensions().get(j);
       if (dimension.getNumberOfChild() > 0) {
         getChildDimensionOrdinal(queryDimensions.getListOfChildDimensions().get(j),
@@ -412,6 +430,8 @@ public class QueryUtil {
    * @return wrapper presence meta
    */
   public static BitSet getNullBitSet(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       org.apache.carbondata.format.PresenceMeta presentMetadataThrift, Compressor compressor) {
     final byte[] present_bit_stream = presentMetadataThrift.getPresent_bit_stream();
     if (null != present_bit_stream) {
@@ -427,6 +447,7 @@ public class QueryUtil {
    * columnname
    */
   public static void updateColumnUniqueIdForNonTransactionTable(List<ColumnSchema> columnSchemas) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     for (ColumnSchema columnSchema : columnSchemas) {
       // In case of complex types only add the name after removing parent names.
       int index = columnSchema.getColumnName().lastIndexOf(".");
@@ -449,6 +470,7 @@ public class QueryUtil {
    */
   public static void putDataToVector(CarbonColumnVector vector, byte[] value, int vectorRow,
       int length) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     DataType dt = vector.getType();
     if ((!(dt == DataTypes.STRING) && length == 0) || ByteUtil.UnsafeComparer.INSTANCE
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
@@ -456,6 +478,7 @@ public class QueryUtil {
       vector.putNull(vectorRow);
     } else {
       if (dt == DataTypes.STRING) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
         vector.putByteArray(vectorRow, 0, length, value);
       } else if (dt == DataTypes.BOOLEAN) {
         vector.putBoolean(vectorRow, ByteUtil.toBoolean(value[0]));
@@ -482,6 +505,7 @@ public class QueryUtil {
    * @return
    */
   public static BlockletDetailInfo getBlockletDetailInfo(DataFileFooter fileFooter,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
       TableBlockInfo blockInfo) {
     BlockletDetailInfo detailInfo = new BlockletDetailInfo();
     detailInfo.setBlockletInfoBinary(new byte[0]);

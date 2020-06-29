@@ -65,6 +65,8 @@ public class StageInput {
   }
 
   public StageInput(String base, List<PartitionLocation> locations) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     this.base = base;
     this.locations = locations;
   }
@@ -86,6 +88,8 @@ public class StageInput {
   }
 
   public List<PartitionLocation> getLocations() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     return this.locations;
   }
 
@@ -102,6 +106,7 @@ public class StageInput {
   }
 
   public List<InputSplit> createSplits() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3599
     return
         files.entrySet().stream().filter(
             entry -> entry.getKey().endsWith(CarbonCommonConstants.FACT_FILE_EXT)
@@ -127,6 +132,8 @@ public class StageInput {
     }
 
     public PartitionLocation(final Map<String, String> partitions, final Map<String, Long> files) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
       this.partitions = partitions;
       this.files = files;
     }

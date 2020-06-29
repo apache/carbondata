@@ -68,6 +68,7 @@ public interface DimensionColumnPage {
    * @return chunk
    */
   byte[] getChunkData(int rowId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
 
   /**
    * @return inverted index
@@ -114,5 +115,6 @@ public interface DimensionColumnPage {
    * to get the null bit sets in case of adaptive encoded page
    */
   BitSet getNullBits();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
 
 }

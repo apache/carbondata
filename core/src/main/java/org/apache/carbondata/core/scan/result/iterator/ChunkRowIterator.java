@@ -50,9 +50,11 @@ public class ChunkRowIterator extends CarbonIterator<Object[]> {
    */
   @Override
   public boolean hasNext() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3121
     if (currentChunk != null && currentChunk.hasNext()) {
       return true;
     } else if (iterator != null && iterator.hasNext()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2491
       currentChunk = iterator.next();
       return hasNext();
     }
@@ -66,6 +68,7 @@ public class ChunkRowIterator extends CarbonIterator<Object[]> {
    */
   @Override
   public Object[] next() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2491
     return currentChunk.next();
   }
 
@@ -75,6 +78,7 @@ public class ChunkRowIterator extends CarbonIterator<Object[]> {
    * @return list of batch result
    */
   public List<Object[]> nextBatch() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-300
     return currentChunk.nextBatch();
   }
 

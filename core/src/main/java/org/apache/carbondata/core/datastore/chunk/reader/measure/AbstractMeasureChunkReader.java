@@ -56,6 +56,7 @@ public abstract class AbstractMeasureChunkReader implements MeasureColumnChunkRe
    */
   public AbstractMeasureChunkReader(final BlockletInfo blockletInfo, String filePath) {
     this.filePath = filePath;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3650
     this.measureColumnChunkOffsets = blockletInfo.getMeasureChunkOffsets();
     this.measureColumnChunkLength = blockletInfo.getMeasureChunksLength();
   }

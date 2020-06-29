@@ -30,6 +30,8 @@ public interface SortTempChunkHolder extends Comparable<SortTempChunkHolder> {
   void readRow()  throws CarbonSortKeyAndGroupByException;
 
   IntermediateSortTempRow getRow();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
 
   int numberOfRows();
 

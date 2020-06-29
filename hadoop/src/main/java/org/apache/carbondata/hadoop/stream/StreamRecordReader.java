@@ -141,6 +141,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
       model = format.createQueryModel(split, context);
     }
     carbonTable = model.getTable();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     List<CarbonDimension> dimensions = carbonTable.getVisibleDimensions();
     dimensionCount = dimensions.size();
     List<CarbonMeasure> measures = carbonTable.getVisibleMeasures();
@@ -150,11 +151,13 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     isNoDictColumn = CarbonDataProcessorUtil.getNoDictionaryMapping(storageColumns);
     directDictionaryGenerators = new DirectDictionaryGenerator[storageColumns.length];
     for (int i = 0; i < storageColumns.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (storageColumns[i].getDataType() == DataTypes.DATE) {
         directDictionaryGenerators[i] = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(storageColumns[i].getDataType());
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3497
     dimensionsIsVarcharTypeMap = new boolean[dimensionCount];
     for (int i = 0; i < dimensionCount; i++) {
       dimensionsIsVarcharTypeMap[i] = storageColumns[i].getDataType() == DataTypes.VARCHAR;
@@ -203,6 +206,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     }
 
     // initialize filter
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     if (null != model.getIndexFilter()) {
       initializeFilter();
     } else if (projection.length == 0) {
@@ -215,10 +219,13 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     List<ColumnSchema> wrapperColumnSchemaList = CarbonUtil
         .getColumnSchemaList(carbonTable.getVisibleDimensions(), carbonTable.getVisibleMeasures());
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     SegmentProperties segmentProperties = new SegmentProperties(wrapperColumnSchemaList);
     Map<Integer, GenericQueryType> complexDimensionInfoMap = new HashMap<>();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     FilterResolverIntf resolverIntf = model.getIndexFilter().getResolver();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3611
     filter = FilterUtil.getFilterExecuterTree(
         resolverIntf, segmentProperties, complexDimensionInfoMap, true);
     // for row filter, we need update column index
@@ -260,6 +267,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     input = new StreamBlockletReader(syncMarker, fileIn, fileSplit.getLength(),
         fileSplit.getStart() == 0, compressorName);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     queryTypes = CarbonStreamInputFormat.getComplexDimensions(storageColumns);
   }
 
@@ -376,6 +384,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
       } else {
         if (isNoDictColumn[colCount]) {
           int v = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3497
           if (dimensionsIsVarcharTypeMap[colCount]) {
             v = input.readInt();
           } else {
@@ -555,6 +564,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
       } else {
         if (isNoDictColumn[colCount]) {
           int v = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3497
           if (dimensionsIsVarcharTypeMap[colCount]) {
             v = input.readInt();
           } else {

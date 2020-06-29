@@ -70,6 +70,7 @@ public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorde
   }
 
   public TaskStatistics statisticsForTask(long taskId, long startTime) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     return null;
   }
 
@@ -83,6 +84,7 @@ public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorde
    * @param statistic
    */
   public void recordStatisticsForDriver(QueryStatistic statistic, String queryId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     if (null != queryId) {
       synchronized (lock) {
         // refresh query Statistics Map
@@ -121,6 +123,7 @@ public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorde
             if (entry.getValue().size() >= 2) {
               String tableInfo = collectDriverStatistics(entry.getValue(), queryId);
               if (null != tableInfo) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
                 LOGGER.log(StatisticLevel.STATISTIC, tableInfo);
                 // clear the statistics that has been printed
                 entries.remove();

@@ -45,8 +45,11 @@ public class CarbonInputFormatUtil {
    */
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonProperties.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
 
   public static <V> CarbonFileInputFormat<V> createCarbonFileInputFormat(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
       AbsoluteTableIdentifier identifier, Job job) throws IOException {
     CarbonFileInputFormat<V> carbonInputFormat = new CarbonFileInputFormat<V>();
     CarbonTableInputFormat.setDatabaseName(job.getConfiguration(),
@@ -59,14 +62,18 @@ public class CarbonInputFormatUtil {
   }
 
   public static <V> CarbonTableInputFormat<V> createCarbonInputFormat(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1232
       AbsoluteTableIdentifier identifier,
       Job job) throws IOException {
     CarbonTableInputFormat<V> carbonInputFormat = new CarbonTableInputFormat<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     CarbonTableInputFormat.setDatabaseName(
         job.getConfiguration(), identifier.getCarbonTableIdentifier().getDatabaseName());
     CarbonTableInputFormat.setTableName(
         job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     setIndexJobIfConfigured(job.getConfiguration());
     return carbonInputFormat;
   }
@@ -79,10 +86,12 @@ public class CarbonInputFormatUtil {
    */
   public static void setIndexJobIfConfigured(Configuration conf) throws IOException {
     String className = "org.apache.carbondata.indexserver.EmbeddedIndexJob";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     IndexUtil.setIndexJob(conf, IndexUtil.createIndexJob(className));
   }
 
   public static String createJobTrackerID(java.util.Date date) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1552
     return new SimpleDateFormat("yyyyMMddHHmmss", Locale.US).format(date);
   }
 

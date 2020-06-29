@@ -75,6 +75,7 @@ public class PrestoFilterUtil {
    * @return
    */
   private static DataType spi2CarbondataTypeMapper(HiveColumnHandle columnHandle) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3194
     HiveType colType = columnHandle.getHiveType();
     if (colType.equals(HiveType.HIVE_BOOLEAN)) {
       return DataTypes.BOOLEAN;
@@ -107,6 +108,7 @@ public class PrestoFilterUtil {
    * @return
    */
   public static List<String> getPartitionFilters(CarbonTable carbonTable,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3194
       TupleDomain<HiveColumnHandle> originalConstraint) {
     List<ColumnSchema> columnSchemas = carbonTable.getPartitionInfo().getColumnSchemaList();
     List<String> filter = new ArrayList<>();
@@ -126,6 +128,7 @@ public class PrestoFilterUtil {
    * @param columnHandle
    */
   private static List<String> createPartitionFilters(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3194
       TupleDomain<HiveColumnHandle> originalConstraint, HiveColumnHandle columnHandle) {
     List<String> filter = new ArrayList<>();
     if (!originalConstraint.getDomains().isPresent()) {
@@ -184,6 +187,7 @@ public class PrestoFilterUtil {
 
     Domain domain;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3194
     if (originalConstraint.isNone()) {
       return null;
     }
@@ -191,6 +195,8 @@ public class PrestoFilterUtil {
     // final expression for the table,
     // returned by the method after combining all the column filters (colValueExpression).
     Expression finalFilters = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2515
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2516
 
     for (HiveColumnHandle cdch : originalConstraint.getDomains().get().keySet()) {
 
@@ -235,6 +241,8 @@ public class PrestoFilterUtil {
           }
 
           if (!range.getHigh().isUpperUnbounded()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2515
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2516
             Expression lessThanExpression;
             Object value = convertDataByType(range.getHigh().getValue(), type);
             switch (range.getHigh().getBound()) {
@@ -280,7 +288,9 @@ public class PrestoFilterUtil {
   }
 
   private static Object convertDataByType(Object rawData, HiveType type) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3194
     if (type.equals(HiveType.HIVE_INT) || type.equals(HiveType.HIVE_SHORT)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3737
       return Integer.valueOf(rawData.toString());
     } else if (type.equals(HiveType.HIVE_LONG)) {
       return rawData;

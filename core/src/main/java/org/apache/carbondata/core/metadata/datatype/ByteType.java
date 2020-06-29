@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata.datatype;
 
 class ByteType extends DataType {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
 
   static final DataType BYTE = new ByteType(DataTypes.BYTE_TYPE_ID, 12, "BYTE", 1);
 

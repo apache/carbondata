@@ -49,6 +49,7 @@ public class ArrayParserImpl implements ComplexParser<ArrayObject> {
   public ArrayObject parse(Object data) {
     if (data != null) {
       String value = data.toString();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3631
       if (!value.isEmpty() && !value.equals(nullFormat)
           && !value.equals(CarbonCommonConstants.SIZE_ZERO_DATA_RETURN)) {
         String[] split = pattern.split(value, -1);
@@ -59,10 +60,12 @@ public class ArrayParserImpl implements ComplexParser<ArrayObject> {
           }
           return new ArrayObject(array);
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3119
       } else if (value.isEmpty()) {
         Object[] array = new Object[1];
         array[0] = child.parse(value);
         return new ArrayObject(array);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3631
       } else if (value.equals(CarbonCommonConstants.SIZE_ZERO_DATA_RETURN)) {
         // When the data is not array('') but array(), an array with zero size should be returned.
         Object[] array = new Object[0];
@@ -74,6 +77,7 @@ public class ArrayParserImpl implements ComplexParser<ArrayObject> {
 
   @Override
   public ArrayObject parseRaw(Object data) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     return new ArrayObject((Object[]) data);
   }
 

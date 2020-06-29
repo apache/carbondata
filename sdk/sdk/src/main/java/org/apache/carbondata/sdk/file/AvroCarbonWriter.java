@@ -82,7 +82,9 @@ import org.apache.log4j.Logger;
   private Schema avroSchema;
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(AvroCarbonWriter.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
   AvroCarbonWriter(CarbonLoadModel loadModel, Configuration hadoopConf) throws IOException {
     CarbonTableOutputFormat.setLoadModel(hadoopConf, loadModel);
     CarbonTableOutputFormat format = new CarbonTableOutputFormat();
@@ -96,6 +98,7 @@ import org.apache.log4j.Logger;
     this.writable = new ObjectArrayWritable();
   }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3461
   AvroCarbonWriter(CarbonLoadModel loadModel, Configuration hadoopConf, Schema avroSchema)
     throws IOException {
     this(loadModel, hadoopConf);
@@ -107,6 +110,9 @@ import org.apache.log4j.Logger;
       avroSchema = avroRecord.getSchema();
     }
     List<Schema.Field> fields = avroSchema.getFields();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2460
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2461
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2462
     List<Object> csvFields = new ArrayList<>();
     for (int i = 0; i < fields.size(); i++) {
       Object field = avroFieldToObject(fields.get(i), avroRecord.get(i));
@@ -118,10 +124,13 @@ import org.apache.log4j.Logger;
   }
 
   private Object avroFieldToObject(Schema.Field avroField, Object fieldValue) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
     Object out = null;
     Schema.Type type = avroField.schema().getType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2554
     LogicalType logicalType = avroField.schema().getLogicalType();
     switch (type) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
       case MAP:
         // Note: Avro object takes care of removing the duplicates so we should not handle it again
         // Map will be internally stored as Array<Struct<Key,Value>>
@@ -133,6 +142,7 @@ import org.apache.log4j.Logger;
           while (iterator.hasNext()) {
             // size is 2 because map will have key and value
             Object[] mapChildObjects = new Object[2];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
             Map.Entry mapEntry = (Map.Entry) iterator.next();
             // evaluate key
             Object keyObject = avroFieldToObject(
@@ -159,6 +169,9 @@ import org.apache.log4j.Logger;
 
         Object[] structChildObjects = new Object[fields.size()];
         for (int i = 0; i < fields.size(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2460
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2461
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2462
           Object childObject =
               avroFieldToObject(fields.get(i), ((GenericData.Record) fieldValue).get(i));
           if (childObject != null) {
@@ -175,6 +188,7 @@ import org.apache.log4j.Logger;
           arrayChildObjects = new Object[size];
           for (int i = 0; i < size; i++) {
             Object childObject = avroFieldToObject(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2479
                 new Schema.Field(avroField.name(), avroField.schema().getElementType(),
                     avroField.doc(), avroField.defaultVal()),
                 ((GenericData.Array) fieldValue).get(i));
@@ -187,6 +201,7 @@ import org.apache.log4j.Logger;
           arrayChildObjects = new Object[size];
           for (int i = 0; i < size; i++) {
             Object childObject = avroFieldToObject(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2479
                 new Schema.Field(avroField.name(), avroField.schema().getElementType(),
                     avroField.doc(), avroField.defaultVal()), ((ArrayList) fieldValue).get(i));
             if (childObject != null) {
@@ -196,6 +211,7 @@ import org.apache.log4j.Logger;
         }
         out = new ArrayObject(arrayChildObjects);
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
       case UNION:
         // Union type will be internally stored as Struct<col:type>
         // Fill data object only if fieldvalue is instance of datatype
@@ -216,6 +232,7 @@ import org.apache.log4j.Logger;
           // Union may not contain more than one schema with the same type,
           // except for the named types record,fixed and enum
           // hence check for schema also in case of union of multiple record or enum or fixed type
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
           if (validateUnionFieldValue(unionField.getType(), fieldValue, unionField)) {
             values[j] = avroFieldToObjectForUnionType(unionField, fieldValue, avroField);
             break;
@@ -224,6 +241,7 @@ import org.apache.log4j.Logger;
         }
         out = new StructObject(values);
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
       case BYTES:
         // DECIMAL type is defined in Avro as a BYTE type with the logicalType property
         // set to "decimal" and a specified precision and scale
@@ -263,6 +281,7 @@ import org.apache.log4j.Logger;
       case FLOAT:
         return (fieldValue instanceof Float);
       case RECORD:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
         return (fieldValue instanceof GenericData.Record && unionField
             .equals(((GenericData.Record) fieldValue).getSchema()));
       case ARRAY:
@@ -272,6 +291,7 @@ import org.apache.log4j.Logger;
       case MAP:
         return (fieldValue instanceof HashMap);
       case ENUM:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
         return (fieldValue instanceof GenericData.EnumSymbol && unionField
             .equals(((GenericData.EnumSymbol) fieldValue).getSchema()));
       default:
@@ -281,6 +301,7 @@ import org.apache.log4j.Logger;
 
   private Object avroPrimitiveFieldToObject(Schema.Type type, LogicalType logicalType,
       Object fieldValue) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
     Object out;
     switch (type) {
       case INT:
@@ -315,9 +336,11 @@ import org.apache.log4j.Logger;
       case ENUM:
         out = fieldValue;
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2313
       case FLOAT:
         // direct conversion will change precision. So parse from string.
         // also carbon internally needs float as double
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
         out = Float.parseFloat(fieldValue.toString());
         break;
       case NULL:
@@ -339,7 +362,9 @@ import org.apache.log4j.Logger;
    * @return
    */
   private Object avroFieldToObjectForUnionType(Schema avroField, Object fieldValue,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
       Schema.Field avroFields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
     Object out = null;
     Schema.Type type = avroField.getType();
     LogicalType logicalType = avroField.getLogicalType();
@@ -404,6 +429,7 @@ import org.apache.log4j.Logger;
             while (iterator.hasNext()) {
               // size is 2 because map will have key and value
               Object[] mapChildObjects = new Object[2];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
               Map.Entry mapEntry = (Map.Entry) iterator.next();
               // evaluate key
               Object keyObject = avroFieldToObject(
@@ -428,6 +454,7 @@ import org.apache.log4j.Logger;
           out = null;
         }
         break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
       case BYTES:
         // DECIMAL type is defined in Avro as a BYTE type with the logicalType property
         // set to "decimal" and a specified precision and scale
@@ -461,10 +488,14 @@ import org.apache.log4j.Logger;
    * @return carbon sdk schema
    */
   public static org.apache.carbondata.sdk.file.Schema getCarbonSchemaFromAvroSchema(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2498
       Schema avroSchema) {
     Field[] carbonField = new Field[avroSchema.getFields().size()];
     int i = 0;
     for (Schema.Field avroField : avroSchema.getFields()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2460
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2461
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2462
       Field field = prepareFields(avroField);
       if (field != null) {
         carbonField[i] = field;
@@ -475,6 +506,7 @@ import org.apache.log4j.Logger;
   }
 
   private static Field prepareFields(Schema.Field avroField) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
     String fieldName = avroField.name();
     Schema childSchema = avroField.schema();
     Schema.Type type = childSchema.getType();
@@ -501,14 +533,17 @@ import org.apache.log4j.Logger;
         }
       case DOUBLE:
         return new Field(fieldName, DataTypes.DOUBLE);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
       case ENUM:
       case STRING:
         return new Field(fieldName, DataTypes.STRING);
       case FLOAT:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
         return new Field(fieldName, DataTypes.FLOAT);
       case MAP:
         // recursively get the sub fields
         ArrayList<StructField> mapSubFields = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2894
         StructField mapField = prepareSubFields(fieldName, childSchema);
         if (null != mapField) {
           // key value field will be wrapped inside a map struct field
@@ -525,23 +560,30 @@ import org.apache.log4j.Logger;
         // recursively get the sub fields
         ArrayList<StructField> structSubFields = new ArrayList<>();
         for (Schema.Field avroSubField : childSchema.getFields()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2460
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2461
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2462
           StructField structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
           if (structField != null) {
             structSubFields.add(structField);
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
         return new Field(fieldName, "struct", structSubFields);
       case ARRAY:
         // recursively get the sub fields
         ArrayList<StructField> arraySubField = new ArrayList<>();
         // array will have only one sub field.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2993
         StructField structField = prepareSubFields(fieldName, childSchema.getElementType());
         if (structField != null) {
           arraySubField.add(structField);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
           return new Field(fieldName, "array", arraySubField);
         } else {
           return null;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
       case UNION:
         int i = 0;
         // Get union types and store as Struct<type>
@@ -583,6 +625,7 @@ import org.apache.log4j.Logger;
     LogicalType logicalType = childSchema.getLogicalType();
     switch (type) {
       case BOOLEAN:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
         return new StructField(fieldName, DataTypes.BOOLEAN);
       case INT:
         if (logicalType instanceof LogicalTypes.Date) {
@@ -603,10 +646,12 @@ import org.apache.log4j.Logger;
         }
       case DOUBLE:
         return new StructField(fieldName, DataTypes.DOUBLE);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
       case ENUM:
       case STRING:
         return new StructField(fieldName, DataTypes.STRING);
       case FLOAT:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
         return new StructField(fieldName, DataTypes.FLOAT);
       case MAP:
         // recursively get the sub fields
@@ -618,6 +663,7 @@ import org.apache.log4j.Logger;
           keyValueFields.add(keyField);
           keyValueFields.add(valueField);
           StructField mapKeyValueField =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
               new StructField(fieldName + ".val", DataTypes.createStructType(keyValueFields),
                   keyValueFields);
           // value dataType will be at position 1 in the fields
@@ -632,11 +678,15 @@ import org.apache.log4j.Logger;
         // recursively get the sub fields
         ArrayList<StructField> structSubFields = new ArrayList<>();
         for (Schema.Field avroSubField : childSchema.getFields()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2460
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2461
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2462
           StructField structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
           if (structField != null) {
             structSubFields.add(structField);
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
         return (new StructField(fieldName, DataTypes.createStructType(structSubFields),
             structSubFields));
       case ARRAY:
@@ -651,6 +701,7 @@ import org.apache.log4j.Logger;
         } else {
           return null;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
       case UNION:
         // recursively get the union types
         int i = 0;
@@ -661,6 +712,7 @@ import org.apache.log4j.Logger;
             structSubTypes.add(structField);
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
         return (new StructField(fieldName, DataTypes.createStructType(structSubTypes),
             structSubTypes));
       case BYTES:
@@ -670,6 +722,8 @@ import org.apache.log4j.Logger;
           int precision = ((LogicalTypes.Decimal) childSchema.getLogicalType()).getPrecision();
           int scale = ((LogicalTypes.Decimal) childSchema.getLogicalType()).getScale();
           return new StructField(fieldName, DataTypes.createDecimalType(precision, scale));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
         } else {
           throw new UnsupportedOperationException(
               "carbon not support " + type.toString() + " avro type yet");
@@ -683,7 +737,10 @@ import org.apache.log4j.Logger;
   }
 
   private static DataType getMappingDataTypeForCollectionRecord(String fieldName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2979
       Schema childSchema) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2577
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2579
     LogicalType logicalType = childSchema.getLogicalType();
     switch (childSchema.getType()) {
       case BOOLEAN:
@@ -715,15 +772,19 @@ import org.apache.log4j.Logger;
         }
       case DOUBLE:
         return DataTypes.DOUBLE;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
       case ENUM:
       case STRING:
         return DataTypes.STRING;
       case FLOAT:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
         return DataTypes.FLOAT;
       case MAP:
         // recursively get the sub fields
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2979
         StructField mapField = prepareSubFields(fieldName, childSchema);
         if (mapField != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2924
           return mapField.getDataType();
         }
         return null;
@@ -731,6 +792,9 @@ import org.apache.log4j.Logger;
         // recursively get the sub fields
         ArrayList<StructField> structSubFields = new ArrayList<>();
         for (Schema.Field avroSubField : childSchema.getFields()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2460
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2461
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2462
           StructField structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
           if (structField != null) {
             structSubFields.add(structField);
@@ -739,6 +803,8 @@ import org.apache.log4j.Logger;
         return DataTypes.createStructType(structSubFields);
       case ARRAY:
         // array will have only one sub field.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2979
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2979
         DataType subType =
             getMappingDataTypeForCollectionRecord(fieldName, childSchema.getElementType());
         if (subType != null) {
@@ -746,6 +812,7 @@ import org.apache.log4j.Logger;
         } else {
           return null;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
       case UNION:
         int i = 0;
         // recursively get the union types and create struct type
@@ -764,6 +831,7 @@ import org.apache.log4j.Logger;
           int precision = ((LogicalTypes.Decimal) childSchema.getLogicalType()).getPrecision();
           int scale = ((LogicalTypes.Decimal) childSchema.getLogicalType()).getScale();
           return DataTypes.createDecimalType(precision, scale);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2876
         } else {
           throw new UnsupportedOperationException(
               "carbon not support " + childSchema.getType().toString() + " avro type yet");
@@ -782,6 +850,7 @@ import org.apache.log4j.Logger;
   @Override
   public void write(Object object) throws IOException {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3461
       GenericData.Record record = null;
       if (object instanceof GenericData.Record) {
         record = (GenericData.Record) object;
@@ -814,6 +883,7 @@ import org.apache.log4j.Logger;
       }
 
       // convert Avro record to CSV String[]
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
       Object[] csvRecord = avroToCsv(record);
       writable.set(csvRecord);
       recordWriter.write(NullWritable.get(), writable);

@@ -40,10 +40,12 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
 
   @Override
   public RowBatch next() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
     return getBatchResult();
   }
 
   private RowBatch getBatchResult() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     RowBatch rowBatch = new RowBatch();
     synchronized (lock) {
       updateDataBlockIterator();

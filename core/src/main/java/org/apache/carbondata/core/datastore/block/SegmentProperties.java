@@ -49,6 +49,7 @@ public class SegmentProperties {
 
   private static final Logger LOG =
         LogServiceFactory.getLogService(SegmentProperties.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3700
 
   // When calcuting the fingerpinter of all columns. In order to
   // identify dimension columns with other column. The fingerprinter
@@ -136,7 +137,9 @@ public class SegmentProperties {
     complexDimensions =
         new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     measures = new ArrayList<CarbonMeasure>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     fillDimensionAndMeasureDetails(columnsInTable);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     dimensionOrdinalToChunkMapping =
         new HashMap<Integer, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     blockTodimensionOrdinalMapping =
@@ -157,6 +160,7 @@ public class SegmentProperties {
     int index = 0;
     while (index < dimensions.size()) {
       dimension = dimensions.get(index);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       blockOrdinal++;
       dimensionOrdinalToChunkMapping.put(dimension.getOrdinal(), blockOrdinal);
       index++;
@@ -165,6 +169,7 @@ public class SegmentProperties {
     // complex dimension will be stored at last
     while (index < complexDimensions.size()) {
       dimension = complexDimensions.get(index);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       dimensionOrdinalToChunkMapping.put(dimension.getOrdinal(), ++blockOrdinal);
       blockOrdinal = fillComplexDimensionChildBlockIndex(blockOrdinal, dimension);
       index++;
@@ -173,6 +178,7 @@ public class SegmentProperties {
   }
 
   private void fillBlockToDimensionOrdinalMapping() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     Set<Entry<Integer, Integer>> blocks = dimensionOrdinalToChunkMapping.entrySet();
     Iterator<Entry<Integer, Integer>> blockItr = blocks.iterator();
     while (blockItr.hasNext()) {
@@ -191,6 +197,7 @@ public class SegmentProperties {
    */
   @Override
   public boolean equals(Object obj) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3700
     if (!(obj instanceof SegmentProperties)) {
       return false;
     }
@@ -222,6 +229,7 @@ public class SegmentProperties {
    */
   private int fillComplexDimensionChildBlockIndex(int blockOrdinal, CarbonDimension dimension) {
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       dimensionOrdinalToChunkMapping
           .put(dimension.getListOfChildDimensions().get(i).getOrdinal(), ++blockOrdinal);
       if (dimension.getListOfChildDimensions().get(i).getNumberOfChild() > 0) {
@@ -241,6 +249,7 @@ public class SegmentProperties {
     int blockOrdinal = 0;
     int index = 0;
     while (index < measures.size()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       measuresOrdinalToChunkMapping.put(measures.get(index).getOrdinal(), blockOrdinal);
       blockOrdinal++;
       index++;
@@ -255,6 +264,7 @@ public class SegmentProperties {
    * complexfingerprinter = complex1 ^ complex2 ^ complex3 ...
    */
   protected long getFingerprinter() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3700
     if (this.fingerprinter == Long.MAX_VALUE) {
       long dimensionsFingerPrinter = getFingerprinter(this.dimensions.stream()
               .map(t -> t.getColumnSchema()).collect(Collectors.toList()));
@@ -315,8 +325,10 @@ public class SegmentProperties {
         // column as it was not the part of mdkey
         if (CarbonUtil.hasEncoding(columnSchema.getEncodingList(), Encoding.DICTIONARY)
             && !isComplexDimensionStarted && columnSchema.getNumberOfChild() == 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
           this.numberOfDictDimensions++;
           this.numberOfColumnsAfterFlatten++;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
           if (columnSchema.isSortColumn()) {
             this.numberOfSortColumns++;
           }
@@ -327,6 +339,7 @@ public class SegmentProperties {
         }
         // as complex type will be stored at last so once complex type started all the dimension
         // will be added to complex type
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
         else if (isComplexDimensionStarted || columnSchema.getDataType().isComplexType()) {
           carbonDimension =
               new CarbonDimension(columnSchema, dimensionOrdinal++, -1, ++complexTypeOrdinal);
@@ -338,6 +351,7 @@ public class SegmentProperties {
                   columnsInTable, carbonDimension, complexTypeOrdinal);
           counter = dimensionOrdinal;
           complexTypeOrdinal = assignComplexOrdinal(carbonDimension, complexTypeOrdinal);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
           this.numberOfColumnsAfterFlatten += getNumColumnsAfterFlatten(carbonDimension);
           continue;
         } else {
@@ -356,6 +370,7 @@ public class SegmentProperties {
       }
       counter++;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3208
     lastDimensionColOrdinal = dimensionOrdinal;
   }
 
@@ -377,6 +392,7 @@ public class SegmentProperties {
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
               new CarbonDimension(columnSchema, dimensionOrdinal++, -1, complexDimensionOrdinal++);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           parentDimension.getListOfChildDimensions().add(complexDimension);
@@ -385,6 +401,7 @@ public class SegmentProperties {
                   listOfColumns, complexDimension, complexDimensionOrdinal);
         } else {
           parentDimension.getListOfChildDimensions().add(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
               new CarbonDimension(columnSchema, dimensionOrdinal++, -1, complexDimensionOrdinal++));
         }
       }
@@ -435,6 +452,7 @@ public class SegmentProperties {
    * @return the dimensionOrdinalToChunkMapping
    */
   public Map<Integer, Integer> getDimensionOrdinalToChunkMapping() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     return dimensionOrdinalToChunkMapping;
   }
 
@@ -488,6 +506,7 @@ public class SegmentProperties {
   }
 
   public int getNumberOfColumns() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     return numberOfColumnsAfterFlatten;
   }
 
@@ -551,6 +570,7 @@ public class SegmentProperties {
     }
     for (CarbonMeasure measure : measures) {
       DataType dataType = measure.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       if (DataTypes.isDecimal(dataType)) {
         length[index++] = -1;
       } else {

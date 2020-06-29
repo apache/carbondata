@@ -32,6 +32,7 @@ public class ByteArrayWrapperTest {
   byte[] dictionaryKey = new byte[] { 1 };
   byte[][] complexTypesKeys = { { 1 }, { 1 } };
   byte[][] noDictionaryKeys = new byte[][] { { 1 }, { 1 } };
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
   byte[] dictionaryKey1 = new byte[] { 2 };
   byte[][] complexTypesKeys1 = { { 2 }, { 1 } };
   byte[][] noDictionaryKeys1 = new byte[][] { { 2 }, { 1 } };
@@ -52,6 +53,7 @@ public class ByteArrayWrapperTest {
     byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
 
     int result = byteArrayWrapper.hashCode();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(29583456 == result);
   }
 
@@ -99,6 +101,7 @@ public class ByteArrayWrapperTest {
   @Test
 
   public void testEqualsForFirstElementComplexTypesKeysAndOther1() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     ByteArrayWrapper other = new ByteArrayWrapper();
     other.setComplexTypesKeys(complexTypesKeys);
     other.setDictionaryKey(dictionaryKey);
@@ -137,6 +140,7 @@ public class ByteArrayWrapperTest {
   }
 
   @Test public void testCompareTo1() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     byteArrayWrapper.setDictionaryKey(dictionaryKey1);
     ByteArrayWrapper other = new ByteArrayWrapper();
     other.setDictionaryKey(dictionaryKey1);

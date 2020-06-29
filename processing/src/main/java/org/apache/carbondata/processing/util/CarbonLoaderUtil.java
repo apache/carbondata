@@ -75,8 +75,10 @@ public final class CarbonLoaderUtil {
    * strategy for assign blocks to nodes/executors
    */
   public enum BlockAssignmentStrategy {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2023
     BLOCK_NUM_FIRST("Assign blocks to node base on number of blocks"),
     BLOCK_SIZE_FIRST("Assign blocks to node base on data size of blocks"),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3041
     NODE_MIN_SIZE_FIRST("Assign blocks to node base on minimum size of inputs");
     private String name;
     BlockAssignmentStrategy(String name) {
@@ -90,6 +92,7 @@ public final class CarbonLoaderUtil {
   }
 
   public static void deleteSegment(CarbonLoadModel loadModel, int currentLoad) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     String segmentPath = CarbonTablePath.getSegmentPath(
         loadModel.getTablePath(), currentLoad + "");
     deleteStorePath(segmentPath);
@@ -106,8 +109,10 @@ public final class CarbonLoaderUtil {
       int currentLoad) {
 
     int fileCount = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     String segmentPath = CarbonTablePath.getSegmentPath(
         loadModel.getTablePath(), currentLoad + "");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
     CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
 
@@ -132,11 +137,13 @@ public final class CarbonLoaderUtil {
 
   public static void deleteStorePath(String path) {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (FileFactory.isFileExist(path)) {
         CarbonFile carbonFile = FileFactory.getCarbonFile(path);
         CarbonUtil.deleteFoldersAndFiles(carbonFile);
       }
     } catch (IOException | InterruptedException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Unable to delete the given path :: " + e.getMessage(), e);
     }
   }
@@ -151,8 +158,10 @@ public final class CarbonLoaderUtil {
    * @throws IOException
    */
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1322
       CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2012
     return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, "");
   }
 
@@ -164,6 +173,7 @@ public final class CarbonLoaderUtil {
    * @throws IOException
    */
   public static boolean recordNewLoadMetadata(CarbonLoadModel loadModel) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3599
     LoadMetadataDetails newLoadMetaEntry = new LoadMetadataDetails();
     loadModel.setFactTimeStamp(System.currentTimeMillis());
     CarbonLoaderUtil.populateNewLoadMetaEntry(
@@ -181,6 +191,7 @@ public final class CarbonLoaderUtil {
    * @throws IOException
    */
   public static void deleteNonTransactionalTableForInsertOverwrite(final CarbonLoadModel loadModel)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
       throws IOException {
     // We need to delete the content of the Table Path Folder except the
     // Newly added file.
@@ -210,13 +221,16 @@ public final class CarbonLoaderUtil {
    * @throws IOException
    */
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
       final CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1855
       throws IOException {
     // For Non Transactional tables no need to update the the Table Status file.
     if (!loadModel.isCarbonTransactionalTable()) {
       return true;
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, uuid,
         new ArrayList<Segment>(), new ArrayList<Segment>());
   }
@@ -239,20 +253,25 @@ public final class CarbonLoaderUtil {
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
     if (loadModel.isCarbonTransactionalTable()) {
       String metadataPath = CarbonTablePath.getMetadataPath(identifier.getTablePath());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (!FileFactory.isFileExist(metadataPath)) {
         FileFactory.mkdirs(metadataPath);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3609
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3610
     String tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     int retryCount = CarbonLockUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1928
         .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
             CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT);
     int maxTimeout = CarbonLockUtil
         .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
             CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
     // TODO only for overwrite scene
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
     final List<LoadMetadataDetails> staleLoadMetadataDetails = new ArrayList<>();
     try {
       if (carbonLock.lockWithRetries(retryCount, maxTimeout)) {
@@ -260,18 +279,24 @@ public final class CarbonLoaderUtil {
             "Acquired lock for table" + loadModel.getDatabaseName() + "." + loadModel.getTableName()
                 + " for table status updation");
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
             SegmentStatusManager.readLoadMetadata(
                 CarbonTablePath.getMetadataPath(identifier.getTablePath()));
         List<LoadMetadataDetails> listOfLoadFolderDetails =
             new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1356
         List<CarbonFile> staleFolders = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1319
         Collections.addAll(listOfLoadFolderDetails, listOfLoadFolderDetailsArray);
         // create a new segment Id if load has just begun else add the already generated Id
         if (loadStartEntry) {
           String segmentId =
               String.valueOf(SegmentStatusManager.createNewSegmentId(listOfLoadFolderDetailsArray));
           loadModel.setLoadMetadataDetails(listOfLoadFolderDetails);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3338
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3296
           LoadMetadataDetails entryTobeRemoved = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isMV()
               && !loadModel.getSegmentId().isEmpty()) {
             for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
@@ -291,9 +316,12 @@ public final class CarbonLoaderUtil {
           // is triggered
           // 2. If load or insert into operation is in progress and insert overwrite operation
           // is triggered
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1322
           for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
             if (entry.getSegmentStatus() == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2104
                 && SegmentStatusManager.isLoadInProgress(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
                     identifier, entry.getLoadName())) {
               throw new RuntimeException("Already insert overwrite is in progress");
             } else if (newMetaEntry.getSegmentStatus() == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS
@@ -313,7 +341,10 @@ public final class CarbonLoaderUtil {
           for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
             if (entry.getLoadName().equals(newMetaEntry.getLoadName())
                 && entry.getLoadStartTime() == newMetaEntry.getLoadStartTime()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3338
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3296
               newMetaEntry.setExtraInfo(entry.getExtraInfo());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
               found = true;
               break;
             }
@@ -325,14 +356,18 @@ public final class CarbonLoaderUtil {
                 entry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
                 // For insert overwrite, we will delete the old segment folder immediately
                 // So collect the old segments here
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
                 addToStaleFolders(identifier, staleFolders, entry);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
                 staleLoadMetadataDetails.add(entry);
               }
             }
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
           if (!found) {
             LOGGER.error("Entry not found to update " + newMetaEntry + " From list :: "
                 + listOfLoadFolderDetails);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2251
             throw new IOException("Entry not found to update in the table status file");
           }
           listOfLoadFolderDetails.set(indexToOverwriteNewMetaEntry, newMetaEntry);
@@ -340,13 +375,17 @@ public final class CarbonLoaderUtil {
         // when no records are inserted then newSegmentEntry will be SegmentStatus.MARKED_FOR_DELETE
         // so empty segment folder should be deleted
         if (newMetaEntry.getSegmentStatus() == SegmentStatus.MARKED_FOR_DELETE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
           addToStaleFolders(identifier, staleFolders, newMetaEntry);
         }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
         for (LoadMetadataDetails detail: listOfLoadFolderDetails) {
           // if the segments is in the list of marked for delete then update the status.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
           if (segmentsToBeDeleted.contains(new Segment(detail.getLoadName()))) {
             detail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
           } else if (segmentFilesTobeUpdated
               .contains(Segment.toSegment(detail.getLoadName(), null))) {
             detail.setSegmentFile(
@@ -355,6 +394,8 @@ public final class CarbonLoaderUtil {
           }
         }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3609
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3610
         SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
             .toArray(new LoadMetadataDetails[0]));
 
@@ -362,12 +403,15 @@ public final class CarbonLoaderUtil {
         for (CarbonFile staleFolder : staleFolders) {
           // try block is inside for loop because even if there is failure in deletion of 1 stale
           // folder still remaining stale folders should be deleted
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1486
           try {
             CarbonUtil.deleteFoldersAndFiles(staleFolder);
           } catch (IOException | InterruptedException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
             LOGGER.error("Failed to delete stale folder: " + e.getMessage(), e);
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
         if (!staleLoadMetadataDetails.isEmpty()) {
           final String segmentFileLocation =
               CarbonTablePath.getSegmentFilesLocation(identifier.getTablePath())
@@ -416,11 +460,14 @@ public final class CarbonLoaderUtil {
 
   private static void addToStaleFolders(AbsoluteTableIdentifier identifier,
       List<CarbonFile> staleFolders, LoadMetadataDetails entry) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     String path = CarbonTablePath.getSegmentPath(
         identifier.getTablePath(), entry.getLoadName());
     // add to the deletion list only if file exist else HDFS file system will throw
     // exception while deleting the file if file path does not exist
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     if (FileFactory.isFileExist(path)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1486
       staleFolders.add(FileFactory.getCarbonFile(path));
     }
   }
@@ -434,7 +481,9 @@ public final class CarbonLoaderUtil {
    * @param addLoadEndTime
    */
   public static void populateNewLoadMetaEntry(LoadMetadataDetails loadMetadataDetails,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
       SegmentStatus loadStatus, long loadStartTime, boolean addLoadEndTime) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1319
     if (addLoadEndTime) {
       long loadEndDate = CarbonUpdateUtil.readCurrentTime();
       loadMetadataDetails.setLoadEndTime(loadEndDate);
@@ -444,6 +493,7 @@ public final class CarbonLoaderUtil {
   }
 
   public static boolean isValidEscapeSequence(String escapeChar) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1893
     return escapeChar.equalsIgnoreCase(NEW_LINE.getName()) ||
         escapeChar.equalsIgnoreCase(CARRIAGE_RETURN.getName()) ||
         escapeChar.equalsIgnoreCase(TAB.getName()) ||
@@ -451,6 +501,7 @@ public final class CarbonLoaderUtil {
   }
 
   public static boolean isValidBinaryDecoder(String binaryDecoderChar) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3408
     return CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_BASE64.equalsIgnoreCase(
         binaryDecoderChar) ||
         CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_HEX.equalsIgnoreCase(
@@ -473,6 +524,7 @@ public final class CarbonLoaderUtil {
 
   public static void readAndUpdateLoadProgressInTableMeta(CarbonLoadModel model,
       boolean insertOverwrite, String uuid) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1855
     LoadMetadataDetails newLoadMetaEntry = new LoadMetadataDetails();
     SegmentStatus status = SegmentStatus.INSERT_IN_PROGRESS;
     if (insertOverwrite) {
@@ -480,6 +532,7 @@ public final class CarbonLoaderUtil {
     }
 
     // reading the start time of data load.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2021
     if (model.getFactTimeStamp() == 0) {
       long loadStartTime = CarbonUpdateUtil.readCurrentTime();
       model.setFactTimeStamp(loadStartTime);
@@ -488,8 +541,10 @@ public final class CarbonLoaderUtil {
         .populateNewLoadMetaEntry(newLoadMetaEntry, status, model.getFactTimeStamp(), false);
 
     boolean entryAdded = CarbonLoaderUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2012
         .recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite, uuid);
     if (!entryAdded) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1928
       throw new IOException("Dataload failed due to failure in table status updation for "
           + model.getTableName());
     }
@@ -510,12 +565,14 @@ public final class CarbonLoaderUtil {
     SegmentStatus loadStatus = SegmentStatus.MARKED_FOR_DELETE;
     // always the last entry in the load metadata details will be the current load entry
     LoadMetadataDetails loadMetaEntry = model.getCurrentLoadMetadataDetail();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1863
     if (loadMetaEntry == null) {
       return;
     }
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(loadMetaEntry, loadStatus, model.getFactTimeStamp(), true);
     boolean entryAdded = CarbonLoaderUtil.recordNewLoadMetadata(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2012
         loadMetaEntry, model, false, false, uuid);
     if (!entryAdded) {
       throw new IOException(
@@ -545,6 +602,7 @@ public final class CarbonLoaderUtil {
       List<String> activeNode) {
     Map<String, List<Distributable>> mapOfNodes =
         CarbonLoaderUtil.nodeBlockMapping(blockInfos, noOfNodesInput, activeNode,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2309
             BlockAssignmentStrategy.BLOCK_NUM_FIRST, null);
     int taskPerNode = parallelism / mapOfNodes.size();
     //assigning non zero value to noOfTasksPerNode
@@ -562,6 +620,7 @@ public final class CarbonLoaderUtil {
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos,
       int noOfNodesInput, List<String> activeNodes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3132
     return nodeBlockMapping(blockInfos, noOfNodesInput, activeNodes,
         BlockAssignmentStrategy.BLOCK_NUM_FIRST, null);
   }
@@ -589,6 +648,7 @@ public final class CarbonLoaderUtil {
    * @return a map that maps node to blocks
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
       List<Distributable> blockInfos, int numOfNodesInput, List<String> activeNodes,
       BlockAssignmentStrategy blockAssignmentStrategy, String expectedMinSizePerNode) {
     ArrayList<NodeMultiBlockRelation> rtnNode2Blocks = new ArrayList<>();
@@ -602,14 +662,17 @@ public final class CarbonLoaderUtil {
 
     int numOfNodes = (-1 == numOfNodesInput) ? nodes.size() : numOfNodesInput;
     if (null != activeNodes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
       numOfNodes = activeNodes.size();
     }
 
     // calculate the average expected size for each node
     long sizePerNode = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2309
     long totalFileSize = 0;
     if (BlockAssignmentStrategy.BLOCK_NUM_FIRST == blockAssignmentStrategy) {
       if (blockInfos.size() > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
         sizePerNode = blockInfos.size() / numOfNodes;
       }
       sizePerNode = sizePerNode <= 0 ? 1 : sizePerNode;
@@ -618,11 +681,13 @@ public final class CarbonLoaderUtil {
       for (Distributable blockInfo : uniqueBlocks) {
         totalFileSize += ((TableBlockInfo) blockInfo).getBlockLength();
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
       sizePerNode = totalFileSize / numOfNodes;
     }
 
     // if enable to control the minimum amount of input data for each node
     if (BlockAssignmentStrategy.NODE_MIN_SIZE_FIRST == blockAssignmentStrategy) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
       long expectedMinSizePerNodeInt = 0;
       // validate the property load_min_size_inmb specified by the user
       if (CarbonUtil.validateValidIntType(expectedMinSizePerNode)) {
@@ -652,6 +717,7 @@ public final class CarbonLoaderUtil {
         LOGGER.info("Specified minimum data size to load is less than the average size "
             + "for each node, fallback to default strategy" + blockAssignmentStrategy);
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
         sizePerNode = expectedMinSizePerNodeInt;
       }
     }
@@ -754,6 +820,7 @@ public final class CarbonLoaderUtil {
    * will not obey the data locality.
    */
   private static void assignLeftOverBlocks(ArrayList<NodeMultiBlockRelation> outputMap,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2023
       Set<Distributable> leftOverBlocks, long expectedSizePerNode, List<String> activeNodes,
       BlockAssignmentStrategy blockAssignmentStrategy) {
     Map<String, Integer> node2Idx = new HashMap<>(outputMap.size());
@@ -811,6 +878,7 @@ public final class CarbonLoaderUtil {
         populateBlocksByNum(remainingBlocks, expectedSizePerNode, blockLst);
         break;
       case BLOCK_SIZE_FIRST:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2309
       case NODE_MIN_SIZE_FIRST:
         populateBlocksBySize(remainingBlocks, expectedSizePerNode, blockLst);
         break;
@@ -891,6 +959,7 @@ public final class CarbonLoaderUtil {
         roundRobinAssignBlocksByNum(node2Blocks, remainingBlocks);
         break;
       case BLOCK_SIZE_FIRST:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2309
       case NODE_MIN_SIZE_FIRST:
         roundRobinAssignBlocksBySize(node2Blocks, remainingBlocks);
         break;
@@ -961,6 +1030,7 @@ public final class CarbonLoaderUtil {
           continue;
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2023
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("First Assignment iteration: assign for executor: " + activeExecutor);
       }
@@ -994,11 +1064,13 @@ public final class CarbonLoaderUtil {
             infos.add(block);
             nodeCapacity++;
             if (LOGGER.isDebugEnabled()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2032
               try {
                 LOGGER.debug("First Assignment iteration: block("
                     + StringUtils.join(block.getLocations(), ", ")
                     + ")-->" + activeExecutor);
               } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
                 LOGGER.error(e.getMessage(), e);
               }
             }
@@ -1043,6 +1115,7 @@ public final class CarbonLoaderUtil {
    * allocate distributable blocks to nodes based on ignore data locality
    */
   private static void assignBlocksIgnoreDataLocality(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2309
           ArrayList<NodeMultiBlockRelation> outputNode2Blocks,
           long expectedSizePerNode, Set<Distributable> remainingBlocks,
           List<String> activeNodes) {
@@ -1130,6 +1203,7 @@ public final class CarbonLoaderUtil {
    * @param blockInfos input block info
    */
   private static ArrayList<NodeMultiBlockRelation> createNode2BlocksMapping(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2023
       List<Distributable> blockInfos) {
     Map<String, Integer> node2Idx = new HashMap<>();
     ArrayList<NodeMultiBlockRelation> node2Blocks = new ArrayList<>();
@@ -1162,6 +1236,7 @@ public final class CarbonLoaderUtil {
    * This method will get the store location for the given path, segment id and partition id
    */
   public static void checkAndCreateCarbonDataLocation(String segmentId, CarbonTable carbonTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     String segmentFolder = CarbonTablePath.getSegmentPath(
         carbonTable.getTablePath(), segmentId);
     CarbonUtil.checkAndCreateFolder(segmentFolder);
@@ -1173,9 +1248,11 @@ public final class CarbonLoaderUtil {
    */
   public static Long addDataIndexSizeIntoMetaEntry(LoadMetadataDetails loadMetadataDetails,
       String segmentId, CarbonTable carbonTable) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     Map<String, Long> dataIndexSize = CarbonUtil.getDataSizeAndIndexSize(
         carbonTable.getTablePath(),
         new Segment(segmentId, loadMetadataDetails.getSegmentFile()));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1908
     Long dataSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE);
     loadMetadataDetails.setDataSize(String.valueOf(dataSize));
     Long indexSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE);
@@ -1184,6 +1261,7 @@ public final class CarbonLoaderUtil {
   }
 
   public static void addIndexSizeIntoMetaEntry(LoadMetadataDetails loadMetadataDetails,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3601
       String segmentId, CarbonTable carbonTable) throws IOException {
     Segment segment = new Segment(segmentId, loadMetadataDetails.getSegmentFile());
     if (segment.getSegmentFileName() != null) {
@@ -1206,6 +1284,7 @@ public final class CarbonLoaderUtil {
    * @return
    */
   public static String mergeIndexFilesInPartitionedSegment(CarbonTable table, String segmentId,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       String uuid, String partitionPath) {
     String tablePath = table.getTablePath();
     return new CarbonIndexFileMergeWriter(table)
@@ -1213,6 +1292,7 @@ public final class CarbonLoaderUtil {
   }
 
   public static SegmentFileStore.FolderDetails mergeIndexFilesInPartitionedTempSegment(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
       CarbonTable table, String segmentId, String partitionPath, List<String> partitionInfo,
       String uuid, String tempFolderPath, String currPartitionSpec) throws IOException {
     String tablePath = table.getTablePath();
@@ -1223,6 +1303,7 @@ public final class CarbonLoaderUtil {
 
   private static void deleteFiles(List<String> filesToBeDeleted) throws IOException {
     for (String filePath : filesToBeDeleted) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       FileFactory.deleteFile(filePath);
     }
   }
@@ -1231,6 +1312,7 @@ public final class CarbonLoaderUtil {
    * Update specified segment status for load to MarkedForDelete in case of failure
    */
   public static void updateTableStatusInCaseOfFailure(String loadName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3387
       AbsoluteTableIdentifier absoluteTableIdentifier, String tableName, String databaseName,
       String tablePath, String metaDataPath) throws IOException {
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);

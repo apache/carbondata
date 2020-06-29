@@ -32,12 +32,15 @@ public enum ColumnType {
 
   // measure column, numerical data type
   MEASURE,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
 
   COMPLEX_STRUCT,
 
   COMPLEX_ARRAY,
 
   COMPLEX_PRIMITIVE,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
 
   PLAIN_LONG_VALUE;
 
@@ -52,12 +55,15 @@ public enum ColumnType {
       return COMPLEX;
     } else if (ordinal == MEASURE.ordinal()) {
       return MEASURE;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
     } else if (ordinal == COMPLEX_STRUCT.ordinal()) {
       return COMPLEX_STRUCT;
     } else if (ordinal == COMPLEX_ARRAY.ordinal()) {
       return COMPLEX_ARRAY;
     } else if (ordinal == COMPLEX_PRIMITIVE.ordinal()) {
       return COMPLEX_PRIMITIVE;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     } else if (ordinal == PLAIN_LONG_VALUE.ordinal()) {
       return PLAIN_LONG_VALUE;
     } else {

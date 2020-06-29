@@ -86,10 +86,12 @@ public class CarbonSchemaReader {
    * @return CarbonFile array
    */
   private static CarbonFile[] getCarbonFile(String path, final String extension, Configuration conf)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2996
       throws IOException {
     String dataFilePath = path;
     if (!(dataFilePath.endsWith(extension))) {
       CarbonFile[] carbonFiles = FileFactory
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2999
           .getCarbonFile(path, conf)
           .listFiles(new CarbonFileFilter() {
             @Override
@@ -120,6 +122,7 @@ public class CarbonSchemaReader {
    * @throws IOException
    */
   public static Schema readSchema(String path) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2999
     Configuration conf = new Configuration();
     return readSchema(path, false, conf);
   }
@@ -133,6 +136,7 @@ public class CarbonSchemaReader {
    * @throws IOException
    */
   public static byte[] getArrowSchemaAsBytes(String path) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3365
     Schema schema = CarbonSchemaReader.readSchema(path).asOriginOrder();
     ArrowConverter arrowConverter = new ArrowConverter(schema, 0);
     final byte[] bytes = arrowConverter.toSerializeArray();
@@ -166,8 +170,10 @@ public class CarbonSchemaReader {
    * @throws IOException
    */
   public static Schema readSchema(String path, boolean validateSchema, Configuration conf)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2999
       throws IOException {
     // Check whether it is transational table reads the schema
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     String schemaFilePath = CarbonTablePath.getSchemaFilePath(path);
     if (FileFactory.getCarbonFile(schemaFilePath, conf).exists()) {
       return readSchemaInSchemaFile(schemaFilePath, conf);
@@ -199,11 +205,13 @@ public class CarbonSchemaReader {
         throw new CarbonDataLoadingException("No carbonindex file in this path.");
       }
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3446
       return readSchemaFromFolder(path, conf);
     }
   }
 
   private static Schema readSchemaInSchemaFile(String schemaFilePath, Configuration conf)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
       throws IOException {
     org.apache.carbondata.format.TableInfo tableInfo =
         CarbonUtil.readSchemaFile(schemaFilePath, conf);
@@ -225,6 +233,7 @@ public class CarbonSchemaReader {
    * @throws IOException
    */
   public static Schema readSchema(String path, boolean validateSchema) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2999
     Configuration conf = new Configuration();
     return readSchema(path, validateSchema, conf);
   }
@@ -253,12 +262,15 @@ public class CarbonSchemaReader {
    * @throws IOException
    */
   private static Schema readSchemaFromDataFile(String dataFilePath, Configuration conf)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2999
       throws IOException {
     CarbonHeaderReader reader = new CarbonHeaderReader(dataFilePath, conf);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2982
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     List<ColumnSchema> schemaList = reader.readSchema();
     for (int i = 0; i < schemaList.size(); i++) {
       ColumnSchema columnSchema = schemaList.get(i);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3815
       if (!(columnSchema.isComplexColumn())) {
         columnSchemaList.add(columnSchema);
       }
@@ -277,10 +289,12 @@ public class CarbonSchemaReader {
    */
   @Deprecated
   public static Schema readSchemaInIndexFile(String indexFilePath) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2996
     return readSchema(indexFilePath, false);
   }
 
   public static List<StructField> getChildrenCommon(CarbonTable table, String columnName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3446
     List<CarbonDimension> list = table.getChildren(columnName);
     List<StructField> structFields = new ArrayList<StructField>();
     for (int i = 0; i < list.size(); i++) {
@@ -373,11 +387,13 @@ public class CarbonSchemaReader {
    * @throws IOException
    */
   private static Schema readSchemaFromIndexFile(String indexFilePath, Configuration conf) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3555
     IndexHeader readIndexHeader = SegmentIndexFileStore.readIndexHeader(indexFilePath, conf);
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     List<org.apache.carbondata.format.ColumnSchema> table_columns =
         readIndexHeader.getTable_columns();
     for (org.apache.carbondata.format.ColumnSchema columnSchema : table_columns) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2982
       if (!(columnSchema.column_name.contains("."))) {
         columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(columnSchema));
       }
@@ -393,11 +409,15 @@ public class CarbonSchemaReader {
    * @throws IOException
    */
   public static String getVersionDetails(String dataFilePath) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2996
     long fileSize =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         FileFactory.getCarbonFile(dataFilePath).getSize();
     FileReader fileReader = FileFactory.getFileHolder(FileFactory.getFileType(dataFilePath));
     ByteBuffer buffer =
         fileReader.readByteBuffer(FileFactory.getUpdatedFilePath(dataFilePath), fileSize - 8, 8);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3051
     fileReader.finish();
     CarbonFooterReaderV3 footerReader =
         new CarbonFooterReaderV3(dataFilePath, buffer.getLong());

@@ -90,6 +90,7 @@ public class CarbondataConnectorFactory extends HiveConnectorFactory {
   private final ClassLoader classLoader;
 
   public CarbondataConnectorFactory(String connectorName, ClassLoader classLoader) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3311
     super(connectorName, classLoader, Optional.empty());
     this.classLoader = requireNonNull(classLoader, "classLoader is null");
   }
@@ -137,6 +138,7 @@ public class CarbondataConnectorFactory extends HiveConnectorFactory {
       HiveSessionProperties hiveSessionProperties =
           injector.getInstance(HiveSessionProperties.class);
       HiveTableProperties hiveTableProperties = injector.getInstance(HiveTableProperties.class);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3311
       HiveAnalyzeProperties hiveAnalyzeProperties =
           injector.getInstance(HiveAnalyzeProperties.class);
       ConnectorAccessControl accessControl =
@@ -145,12 +147,14 @@ public class CarbondataConnectorFactory extends HiveConnectorFactory {
       }));
 
       return new HiveConnector(lifeCycleManager, metadataFactory, transactionManager,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2140
           new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader),
           new ClassLoaderSafeConnectorPageSourceProvider(connectorPageSource, classLoader),
           new ClassLoaderSafeConnectorPageSinkProvider(pageSinkProvider, classLoader),
           new ClassLoaderSafeNodePartitioningProvider(connectorDistributionProvider, classLoader),
           ImmutableSet.of(), procedures, hiveSessionProperties.getSessionProperties(),
           HiveSchemaProperties.SCHEMA_PROPERTIES, hiveTableProperties.getTableProperties(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3311
           hiveAnalyzeProperties.getAnalyzeProperties(), accessControl, classLoader);
     } catch (Exception e) {
       throwIfUnchecked(e);

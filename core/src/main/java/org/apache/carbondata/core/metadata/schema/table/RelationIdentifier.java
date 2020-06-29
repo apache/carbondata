@@ -65,6 +65,7 @@ public class RelationIdentifier implements Serializable, Writable {
   }
 
   public String getProvider() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3705
     return provider;
   }
 
@@ -91,6 +92,7 @@ public class RelationIdentifier implements Serializable, Writable {
     this.tableName = in.readUTF();
     this.tableId = in.readUTF();
     this.tablePath = in.readUTF();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3705
     this.provider = in.readUTF();
   }
 
@@ -101,6 +103,7 @@ public class RelationIdentifier implements Serializable, Writable {
 
     RelationIdentifier that = (RelationIdentifier) o;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3705
     if (!Objects.equals(databaseName, that.databaseName)) {
       return false;
     }
@@ -118,6 +121,7 @@ public class RelationIdentifier implements Serializable, Writable {
     int result = databaseName != null ? databaseName.hashCode() : 0;
     result = 31 * result + (tableName != null ? tableName.hashCode() : 0);
     result = 31 * result + (tableId != null ? tableId.hashCode() : 0);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3705
     result = 31 * result + (provider != null ? provider.hashCode() : 0);
     return result;
   }

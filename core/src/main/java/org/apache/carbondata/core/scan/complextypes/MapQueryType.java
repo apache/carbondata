@@ -27,6 +27,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 public class MapQueryType extends ArrayQueryType {
 
   public MapQueryType(String name, String parentName, int columnIndex) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     super(name, parentName, columnIndex);
   }
 

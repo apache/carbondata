@@ -29,6 +29,7 @@ public class Maps {
    * This is added to avoid JDK 8 dependency
    */
   public static <K, V> V getOrDefault(Map<K, V> map, K key, V defaultValue) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2159
     V value = map.get(key);
     if (value != null) {
       return value;

@@ -52,6 +52,7 @@ public class BlockletMinMaxIndex implements Serializable {
   }
 
   public BlockletMinMaxIndex(List<ByteBuffer> minValues, List<ByteBuffer> maxValues,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
       List<Boolean> isMinMaxSet) {
     this.minValues = new byte[minValues.size()][];
     this.maxValues = new byte[maxValues.size()][];
@@ -91,6 +92,7 @@ public class BlockletMinMaxIndex implements Serializable {
   }
 
   public boolean[] getIsMinMaxSet() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     return isMinMaxSet;
   }
 

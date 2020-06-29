@@ -47,6 +47,7 @@ public class IndexWriterListener {
 
   private static final Logger LOG = LogServiceFactory.getLogService(
       IndexWriterListener.class.getCanonicalName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
   // list indexed column -> list of index writer
   private Map<List<CarbonColumn>, List<IndexWriter>> registry = new ConcurrentHashMap<>();
@@ -54,6 +55,7 @@ public class IndexWriterListener {
   private CarbonTableIdentifier tblIdentifier;
 
   public CarbonTableIdentifier getTblIdentifier() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2716
     return tblIdentifier;
   }
 
@@ -63,6 +65,7 @@ public class IndexWriterListener {
   public void registerAllWriter(CarbonTable carbonTable, String segmentId,
       String taskNo, SegmentProperties segmentProperties) {
     // clear cache in executor side
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     IndexStoreManager.getInstance().clearIndex(carbonTable.getTableId());
     List<TableIndex> tableIndices;
     try {
@@ -71,12 +74,14 @@ public class IndexWriterListener {
       LOG.error("Error while retrieving indexes", e);
       throw new RuntimeException(e);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2716
     tblIdentifier = carbonTable.getCarbonTableIdentifier();
     for (TableIndex tableIndex : tableIndices) {
       // register it only if it is not lazy index, for lazy index, user
       // will rebuild the index manually
       if (!tableIndex.getIndexSchema().isLazy()) {
         IndexFactory factory = tableIndex.getIndexFactory();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
         register(factory, segmentId, taskNo, segmentProperties);
       }
     }
@@ -86,6 +91,7 @@ public class IndexWriterListener {
    * Register a IndexWriter
    */
   private void register(IndexFactory factory, String segmentId,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
       String taskNo, SegmentProperties segmentProperties) {
     assert (factory != null);
     assert (segmentId != null);
@@ -98,6 +104,7 @@ public class IndexWriterListener {
     List<IndexWriter> writers = registry.get(columns);
     IndexWriter writer = null;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
       writer = factory.createWriter(new Segment(segmentId), taskNo, segmentProperties);
     } catch (IOException e) {
       LOG.error("Failed to create IndexWriter: " + e.getMessage(), e);
@@ -114,8 +121,10 @@ public class IndexWriterListener {
   }
 
   public void onBlockStart(String blockId) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     for (List<IndexWriter> writers : registry.values()) {
       for (IndexWriter writer : writers) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
         writer.onBlockStart(blockId);
       }
     }
@@ -152,6 +161,7 @@ public class IndexWriterListener {
    * @param tablePage  page data
    */
   public void onPageAdded(int blockletId, int pageId, TablePage tablePage) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     Set<Map.Entry<List<CarbonColumn>, List<IndexWriter>>> entries = registry.entrySet();
     for (Map.Entry<List<CarbonColumn>, List<IndexWriter>> entry : entries) {
       List<CarbonColumn> indexedColumns = entry.getKey();
@@ -172,11 +182,13 @@ public class IndexWriterListener {
    * Finish all index writers
    */
   public void finish() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     for (List<IndexWriter> writers : registry.values()) {
       for (IndexWriter writer : writers) {
         writer.finish();
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     registry.clear();
   }
 

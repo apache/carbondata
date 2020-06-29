@@ -65,5 +65,6 @@ public interface CarbonV3DataFormatConstants {
    * number of rows per blocklet column page default value
    */
   short NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT = 32000;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1451
 
 }

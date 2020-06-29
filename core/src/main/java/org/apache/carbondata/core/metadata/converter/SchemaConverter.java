@@ -102,10 +102,12 @@ public interface SchemaConverter {
    * @param tablePath table path
    * @return TableInfo
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
   TableInfo fromExternalToWrapperTableInfo(
       org.apache.carbondata.format.TableInfo externalTableInfo,
       String dbName,
       String tableName,
       String tablePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
 
 }

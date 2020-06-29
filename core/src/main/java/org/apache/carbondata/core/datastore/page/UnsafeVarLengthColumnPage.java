@@ -32,8 +32,10 @@ public class UnsafeVarLengthColumnPage extends UnsafeVarLengthColumnPageBase {
   /**
    * create a page
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
   UnsafeVarLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     super(columnPageEncoderMeta, pageSize);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BINARY) {
       capacity = (int) (pageSize * DEFAULT_BINARY_SIZE * FACTOR);
     } else {
@@ -47,10 +49,12 @@ public class UnsafeVarLengthColumnPage extends UnsafeVarLengthColumnPageBase {
   @Override
   public void freeMemory() {
     if (memoryBlock != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1318
       UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
       memoryBlock = null;
       baseAddress = null;
       baseOffset = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
       super.freeMemory();
     }
   }
@@ -62,13 +66,17 @@ public class UnsafeVarLengthColumnPage extends UnsafeVarLengthColumnPageBase {
 
   @Override
   public void putBytes(int rowId, byte[] bytes, int offset, int length) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     ensureMemory(length);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     CarbonUnsafe.getUnsafe().copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET + offset,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
         baseAddress, baseOffset + rowOffset.getInt(rowId), length);
   }
 
   @Override
   public void setByteArrayPage(byte[][] byteArray) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
     if (totalLength != 0) {
       throw new IllegalStateException("page is not empty");
     }
@@ -84,6 +92,8 @@ public class UnsafeVarLengthColumnPage extends UnsafeVarLengthColumnPageBase {
 
   @Override
   public BigDecimal getDecimal(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
@@ -92,6 +102,7 @@ public class UnsafeVarLengthColumnPage extends UnsafeVarLengthColumnPageBase {
   public byte[] getBytes(int rowId) {
     int length = rowOffset.getInt(rowId + 1) - rowOffset.getInt(rowId);
     byte[] bytes = new byte[length];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.getInt(rowId),
         bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
     return bytes;
@@ -112,6 +123,7 @@ public class UnsafeVarLengthColumnPage extends UnsafeVarLengthColumnPageBase {
 
   @Override
   void copyBytes(int rowId, byte[] dest, int destOffset, int length) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.getInt(rowId),
         dest, CarbonUnsafe.BYTE_ARRAY_OFFSET + destOffset, length);
   }

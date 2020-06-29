@@ -46,6 +46,7 @@ public class CarbonLoadModel implements Serializable {
   private String tablePath;
 
   /*
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
      This points if the carbonTable is a Non Transactional Table or not.
      The path will be pointed by the tablePath. And there will be
      no Metadata folder present for the Non Transactional Table.
@@ -231,6 +232,7 @@ public class CarbonLoadModel implements Serializable {
   private boolean skipParsers = false;
 
   public void setSkipParsers() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     skipParsers = true;
   }
 
@@ -239,6 +241,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public boolean isAggLoadRequest() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1520
     return isAggLoadRequest;
   }
 
@@ -273,6 +276,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public void setComplexDelimiter(String delimiter) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3017
     checkAndInitializeComplexDelimiterList();
     this.complexDelimiters.add(delimiter);
   }
@@ -355,6 +359,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public String getSortColumnsBoundsStr() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     return sortColumnsBoundsStr;
   }
 
@@ -363,6 +368,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public String getLoadMinSize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2309
     return loadMinSize;
   }
 
@@ -371,6 +377,8 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public int getBucketId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
     return bucketId;
   }
 
@@ -394,41 +402,61 @@ public class CarbonLoadModel implements Serializable {
     copy.csvHeader = csvHeader;
     copy.csvHeaderColumns = csvHeaderColumns;
     copy.csvDelimiter = csvDelimiter;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3017
     copy.complexDelimiters = complexDelimiters;
     copy.carbonDataLoadSchema = carbonDataLoadSchema;
     copy.blocksID = blocksID;
     copy.taskNo = taskNo;
     copy.factTimeStamp = factTimeStamp;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     copy.segment = segment;
     copy.serializationNullFormat = serializationNullFormat;
     copy.badRecordsLoggerEnable = badRecordsLoggerEnable;
     copy.badRecordsAction = badRecordsAction;
     copy.escapeChar = escapeChar;
     copy.quoteChar = quoteChar;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3740
     copy.lineSeparator = lineSeparator;
     copy.commentChar = commentChar;
     copy.timestampFormat = timestampFormat;
     copy.dateFormat = dateFormat;
     copy.defaultTimestampFormat = defaultTimestampFormat;
     copy.maxColumns = maxColumns;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
     copy.tablePath = tablePath;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     copy.carbonTransactionalTable = carbonTransactionalTable;
     copy.preFetch = preFetch;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-784
     copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1734
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1734
     copy.skipEmptyLine = skipEmptyLine;
     copy.sortScope = sortScope;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1520
     copy.isAggLoadRequest = isAggLoadRequest;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1249
     copy.badRecordsLocation = badRecordsLocation;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2413
     copy.isLoadWithoutConverterStep = isLoadWithoutConverterStep;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     copy.sortColumnsBoundsStr = sortColumnsBoundsStr;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2309
     copy.loadMinSize = loadMinSize;
     copy.sdkWriterCores = sdkWriterCores;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     copy.columnCompressor = columnCompressor;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
     copy.binaryDecoder = binaryDecoder;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3262
     copy.rangePartitionColumn = rangePartitionColumn;
     copy.scaleFactor = scaleFactor;
     copy.totalSize = totalSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     copy.metrics = metrics;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
     copy.isLoadWithoutConverterWithoutReArrangeStep = isLoadWithoutConverterWithoutReArrangeStep;
     return copy;
   }
@@ -450,39 +478,55 @@ public class CarbonLoadModel implements Serializable {
     copyObj.csvHeader = header;
     copyObj.csvHeaderColumns = csvHeaderColumns;
     copyObj.csvDelimiter = delimiter;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3017
     copyObj.complexDelimiters = complexDelimiters;
     copyObj.blocksID = blocksID;
     copyObj.taskNo = taskNo;
     copyObj.factTimeStamp = factTimeStamp;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     copyObj.segment = segment;
     copyObj.serializationNullFormat = serializationNullFormat;
     copyObj.badRecordsLoggerEnable = badRecordsLoggerEnable;
     copyObj.badRecordsAction = badRecordsAction;
     copyObj.escapeChar = escapeChar;
     copyObj.quoteChar = quoteChar;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3740
     copyObj.lineSeparator = lineSeparator;
     copyObj.commentChar = commentChar;
     copyObj.timestampFormat = timestampFormat;
     copyObj.dateFormat = dateFormat;
     copyObj.defaultTimestampFormat = defaultTimestampFormat;
     copyObj.maxColumns = maxColumns;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
     copyObj.tablePath = tablePath;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     copyObj.carbonTransactionalTable = carbonTransactionalTable;
     copyObj.preFetch = preFetch;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-784
     copyObj.isEmptyDataBadRecord = isEmptyDataBadRecord;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1734
     copyObj.skipEmptyLine = skipEmptyLine;
     copyObj.sortScope = sortScope;
     copyObj.badRecordsLocation = badRecordsLocation;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1520
     copyObj.isAggLoadRequest = isAggLoadRequest;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     copyObj.sortColumnsBoundsStr = sortColumnsBoundsStr;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2309
     copyObj.loadMinSize = loadMinSize;
     copyObj.sdkWriterCores = sdkWriterCores;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     copyObj.columnCompressor = columnCompressor;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
     copyObj.binaryDecoder = binaryDecoder;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3262
     copyObj.rangePartitionColumn = rangePartitionColumn;
     copyObj.scaleFactor = scaleFactor;
     copyObj.totalSize = totalSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     copyObj.metrics = metrics;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
     copyObj.isLoadWithoutConverterStep = isLoadWithoutConverterStep;
     copyObj.isLoadWithoutConverterWithoutReArrangeStep = isLoadWithoutConverterWithoutReArrangeStep;
     return copyObj;
@@ -492,6 +536,7 @@ public class CarbonLoadModel implements Serializable {
    * @param tablePath The tablePath to set.
    */
   public void setTablePath(String tablePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
     this.tablePath = tablePath;
   }
 
@@ -517,7 +562,9 @@ public class CarbonLoadModel implements Serializable {
    * @return
    */
   public LoadMetadataDetails getCurrentLoadMetadataDetail() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1863
     if (loadMetadataDetails != null && loadMetadataDetails.size() > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1855
       return loadMetadataDetails.get(loadMetadataDetails.size() - 1);
     } else {
       return null;
@@ -576,6 +623,7 @@ public class CarbonLoadModel implements Serializable {
    * @param factTimeStamp
    */
   public void setFactTimeStamp(long factTimeStamp) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-842
     this.factTimeStamp = factTimeStamp;
   }
 
@@ -589,6 +637,7 @@ public class CarbonLoadModel implements Serializable {
    * @return load Id
    */
   public String getSegmentId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     if (segment != null) {
       return segment.getSegmentNo();
     } else {
@@ -654,6 +703,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public String getLineSeparator() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3740
     return lineSeparator;
   }
 
@@ -670,6 +720,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public String getDateFormat() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-603
     return dateFormat;
   }
 
@@ -726,6 +777,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public String getDefaultDateFormat() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-603
     return defaultDateFormat;
   }
 
@@ -734,6 +786,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public String getIsEmptyDataBadRecord() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-784
     return isEmptyDataBadRecord;
   }
 
@@ -766,6 +819,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public String getTimestampFormat() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3740
     return timestampFormat;
   }
 
@@ -774,6 +828,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public String getSkipEmptyLine() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1734
     return skipEmptyLine;
   }
 
@@ -782,6 +837,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public boolean isLoadWithoutConverterStep() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2413
     return isLoadWithoutConverterStep;
   }
 
@@ -790,6 +846,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public boolean isJsonFileLoad() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2608
     return isJsonFileLoad;
   }
 
@@ -798,6 +855,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public String getDataWritePath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     return dataWritePath;
   }
 
@@ -809,12 +867,14 @@ public class CarbonLoadModel implements Serializable {
    * Read segments metadata from table status file and set it to this load model object
    */
   public void readAndSetLoadMetadataDetails() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2159
     String metadataPath = CarbonTablePath.getMetadataPath(tablePath);
     LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metadataPath);
     setLoadMetadataDetails(Arrays.asList(details));
   }
 
   public boolean isCarbonTransactionalTable() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     return carbonTransactionalTable;
   }
 
@@ -823,6 +883,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public void setMergedSegmentIds(List<String> mergedSegmentIds) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2448
     this.mergedSegmentIds = mergedSegmentIds;
   }
 
@@ -842,6 +903,8 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public String getColumnCompressor() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     return columnCompressor;
   }
 
@@ -850,6 +913,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public String getBinaryDecoder() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
     return binaryDecoder;
   }
 
@@ -858,6 +922,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public CarbonColumn getRangePartitionColumn() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3219
     return rangePartitionColumn;
   }
 
@@ -882,6 +947,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public DataLoadMetrics getMetrics() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     return metrics;
   }
 
@@ -890,6 +956,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public boolean isLoadWithoutConverterWithoutReArrangeStep() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
     return isLoadWithoutConverterWithoutReArrangeStep;
   }
 
@@ -899,6 +966,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   public boolean isNonSchemaColumnsPresent() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     return nonSchemaColumnsPresent;
   }
 

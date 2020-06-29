@@ -65,7 +65,10 @@ public abstract class EncodingFactory {
    * Return new decoder based on encoder metadata read from file
    */
   public ColumnPageDecoder createDecoder(List<Encoding> encodings, List<ByteBuffer> encoderMetas,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       String compressor) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     return createDecoder(encodings, encoderMetas, compressor, false);
   }
 
@@ -81,18 +84,24 @@ public abstract class EncodingFactory {
    */
   public ColumnPageDecoder createDecoder(List<Encoding> encodings, List<ByteBuffer> encoderMetas,
       String compressor, boolean fullVectorFill) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     assert (encodings.size() >= 1);
     assert (encoderMetas.size() == 1);
     boolean isComplexPrimitiveIntLengthEncoding =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
         encodings.contains(Encoding.INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY);
     Encoding encoding = encodings.get(0);
     byte[] encoderMeta = encoderMetas.get(0).array();
     ByteArrayInputStream stream = new ByteArrayInputStream(encoderMeta);
     DataInputStream in = new DataInputStream(stream);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     if (encoding == DIRECT_COMPRESS || encoding == DIRECT_COMPRESS_VARCHAR) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
       metadata.setFillCompleteVector(fullVectorFill);
       metadata.readFields(in);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
       DirectCompressCodec directCompressCodec =
           new DirectCompressCodec(metadata.getStoreDataType());
       directCompressCodec.setComplexPrimitiveIntLengthEncoding(isComplexPrimitiveIntLengthEncoding);
@@ -103,6 +112,7 @@ public abstract class EncodingFactory {
       metadata.readFields(in);
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
       return new AdaptiveIntegralCodec(metadata.getSchemaDataType(), metadata.getStoreDataType(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
           stats, encodings.contains(Encoding.INVERTED_INDEX)).createDecoder(metadata);
     } else if (encoding == ADAPTIVE_DELTA_INTEGRAL) {
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
@@ -114,11 +124,13 @@ public abstract class EncodingFactory {
           .createDecoder(metadata);
     } else if (encoding == ADAPTIVE_FLOATING) {
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
       metadata.setFillCompleteVector(fullVectorFill);
       metadata.readFields(in);
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
       return new AdaptiveFloatingCodec(metadata.getSchemaDataType(), metadata.getStoreDataType(),
           stats, encodings.contains(Encoding.INVERTED_INDEX)).createDecoder(metadata);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1537
     } else if (encoding == ADAPTIVE_DELTA_FLOATING) {
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
       metadata.setFillCompleteVector(fullVectorFill);
@@ -132,7 +144,9 @@ public abstract class EncodingFactory {
       metadata.readFields(in);
       return new RLECodec().createDecoder(metadata);
     } else if (encoding == BOOL_BYTE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1756
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
       metadata.setFillCompleteVector(fullVectorFill);
       metadata.readFields(in);
       return new DirectCompressCodec(metadata.getStoreDataType()).createDecoder(metadata);
@@ -147,6 +161,7 @@ public abstract class EncodingFactory {
    * Old way of creating decoder, based on algorithm
    */
   public ColumnPageDecoder createDecoderLegacy(ValueEncoderMeta metadata, String compressor) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     return createDecoderLegacy(metadata, compressor, false);
   }
 
@@ -155,10 +170,12 @@ public abstract class EncodingFactory {
    */
   private ColumnPageDecoder createDecoderLegacy(ValueEncoderMeta metadata, String compressor,
       boolean fullVectorFill) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     if (null == metadata) {
       throw new RuntimeException("internal error");
     }
     SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     TableSpec.ColumnSpec spec =
         TableSpec.ColumnSpec.newInstanceLegacy("legacy", stats.getDataType(), ColumnType.MEASURE);
     DataType dataType = DataType.getDataType(metadata.getType());
@@ -168,11 +185,13 @@ public abstract class EncodingFactory {
         dataType == DataTypes.LONG) {
       // create the codec based on algorithm and create decoder by recovering the metadata
       ColumnPageCodec codec =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
           DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(stats, false, spec);
       if (codec instanceof AdaptiveIntegralCodec) {
         AdaptiveIntegralCodec adaptiveCodec = (AdaptiveIntegralCodec) codec;
         ColumnPageEncoderMeta meta =
             new ColumnPageEncoderMeta(spec, adaptiveCodec.getTargetDataType(), stats, compressor);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
         meta.setFillCompleteVector(fullVectorFill);
         return codec.createDecoder(meta);
       } else if (codec instanceof AdaptiveDeltaIntegralCodec) {
@@ -193,11 +212,13 @@ public abstract class EncodingFactory {
     } else if (dataType == DataTypes.FLOAT || dataType == DataTypes.DOUBLE) {
       // create the codec based on algorithm and create decoder by recovering the metadata
       ColumnPageCodec codec =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
           DefaultEncodingFactory.selectCodecByAlgorithmForFloating(stats, false, spec);
       if (codec instanceof AdaptiveFloatingCodec) {
         AdaptiveFloatingCodec adaptiveCodec = (AdaptiveFloatingCodec) codec;
         ColumnPageEncoderMeta meta =
             new ColumnPageEncoderMeta(spec, adaptiveCodec.getTargetDataType(), stats, compressor);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
         meta.setFillCompleteVector(fullVectorFill);
         return codec.createDecoder(meta);
       } else if (codec instanceof DirectCompressCodec) {
@@ -206,6 +227,7 @@ public abstract class EncodingFactory {
                 compressor);
         meta.setFillCompleteVector(fullVectorFill);
         return codec.createDecoder(meta);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1537
       } else if (codec instanceof AdaptiveDeltaFloatingCodec) {
         AdaptiveDeltaFloatingCodec adaptiveCodec = (AdaptiveDeltaFloatingCodec) codec;
         ColumnPageEncoderMeta meta =
@@ -215,6 +237,7 @@ public abstract class EncodingFactory {
       } else {
         throw new RuntimeException("internal error");
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType) || dataType == DataTypes.BYTE_ARRAY) {
       // no dictionary dimension
       ColumnPageEncoderMeta meta =

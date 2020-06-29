@@ -29,6 +29,7 @@ public class CarbonDictionaryWrapper implements Dictionary {
   private byte[][] binaries;
 
   CarbonDictionaryWrapper(CarbonDictionary dictionary) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     binaries = dictionary.getAllDictionaryValues();
   }
 

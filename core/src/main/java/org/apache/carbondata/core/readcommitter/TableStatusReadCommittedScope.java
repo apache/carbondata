@@ -50,6 +50,7 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
   private transient Configuration configuration;
 
   public TableStatusReadCommittedScope(AbsoluteTableIdentifier identifier,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
       Configuration configuration) throws IOException {
     this.identifier = identifier;
     this.configuration = configuration;
@@ -57,7 +58,9 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
   }
 
   public TableStatusReadCommittedScope(AbsoluteTableIdentifier identifier,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3350
       LoadMetadataDetails[] loadMetadataDetails, Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
     this.identifier = identifier;
     this.configuration = configuration;
     this.loadMetadataDetails = loadMetadataDetails;
@@ -82,11 +85,14 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
     if (segment.getSegmentFileName() == null) {
       String path =
           CarbonTablePath.getSegmentPath(identifier.getTablePath(), segment.getSegmentNo());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
       indexFiles = new SegmentIndexFileStore().getMergeOrIndexFilesFromSegment(path);
     } else {
       SegmentFileStore fileStore =
           new SegmentFileStore(identifier.getTablePath(), segment.getSegmentFileName());
       indexFiles = fileStore.getIndexOrMergeFiles();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
       segment.setSegmentMetaDataInfo(fileStore.getSegmentFile().getSegmentMetaDataInfo());
     }
     return indexFiles;
@@ -94,6 +100,7 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
 
   public SegmentRefreshInfo getCommittedSegmentRefreshInfo(Segment segment, UpdateVO updateVo) {
     SegmentRefreshInfo segmentRefreshInfo;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3759
     long segmentFileTimeStamp = 0L;
     if (null != segment.getLoadMetadataDetails()) {
       segmentFileTimeStamp = segment.getLoadMetadataDetails().getLastModifiedTime();

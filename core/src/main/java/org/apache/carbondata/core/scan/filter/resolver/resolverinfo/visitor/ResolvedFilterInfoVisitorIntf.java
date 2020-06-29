@@ -35,5 +35,6 @@ public interface ResolvedFilterInfoVisitorIntf {
    * @throws FilterUnsupportedException
    */
   void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       FilterResolverMetadata metadata) throws FilterUnsupportedException;
 }

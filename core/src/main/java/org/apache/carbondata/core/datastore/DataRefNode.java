@@ -43,6 +43,7 @@ public interface DataRefNode {
    * Return the blocklet index in the node
    */
   short blockletIndex();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
 
   /**
    * Return the number of pages
@@ -78,6 +79,7 @@ public interface DataRefNode {
    *                     data in one IO operation
    * @return dimension data chunks
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   DimensionRawColumnChunk[] readDimensionChunks(FileReader fileReader, int[][] columnIndexRange)
       throws IOException;
 
@@ -87,6 +89,7 @@ public interface DataRefNode {
    * @param fileReader file reader to read the chunk from file
    * @return dimension data chunk
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   DimensionRawColumnChunk readDimensionChunk(FileReader fileReader, int columnIndex)
       throws IOException;
 
@@ -119,6 +122,7 @@ public interface DataRefNode {
    * @return
    */
   BitSetGroup getIndexedData();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1544
 
   /**
    * Return the array which contains the flag for each column whether the min max for that column

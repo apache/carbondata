@@ -58,15 +58,18 @@ public class TableProcessingOperations {
 
     //delete folder which metadata no exist in tablestatus
     String partitionPath = CarbonTablePath.getPartitionDir(carbonTable.getTablePath());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     if (FileFactory.isFileExist(partitionPath)) {
       CarbonFile carbonFile = FileFactory.getCarbonFile(partitionPath);
       CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
         @Override
         public boolean accept(CarbonFile path) {
           String segmentId =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
               CarbonTablePath.DataFileUtil.getSegmentIdFromPath(path.getAbsolutePath() + "/dummy");
           boolean found = false;
           for (int j = 0; j < details.length; j++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1886
             if (details[j].getLoadName().equals(segmentId)) {
               found = true;
               break;
@@ -76,6 +79,7 @@ public class TableProcessingOperations {
         }
       });
       for (int k = 0; k < listFiles.length; k++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
         String segmentId = CarbonTablePath.DataFileUtil
             .getSegmentIdFromPath(listFiles[k].getAbsolutePath() + "/dummy");
         if (isCompactionFlow) {
@@ -126,6 +130,7 @@ public class TableProcessingOperations {
     }
     // submit local folder clean up in another thread so that main thread execution is not blocked
     ExecutorService localFolderDeletionService = Executors
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3304
         .newFixedThreadPool(1, new CarbonThreadFactory("LocalFolderDeletionPool:" + tableName,
                 true));
     try {
@@ -138,6 +143,7 @@ public class TableProcessingOperations {
             try {
               CarbonUtil.deleteFoldersAndFiles(new File(loc));
             } catch (IOException | InterruptedException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
               LOGGER.error("Failed to delete local data load folder location: " + loc, e);
             }
           }
@@ -148,6 +154,7 @@ public class TableProcessingOperations {
         }
       });
     } finally {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3026
       CarbonProperties.getInstance().removeProperty(tempLocationKey);
       if (null != localFolderDeletionService) {
         localFolderDeletionService.shutdown();

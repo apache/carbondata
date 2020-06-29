@@ -49,12 +49,15 @@ public class StreamBlockletReader {
   public StreamBlockletReader(byte[] syncMarker, InputStream in, long limit,
       boolean isHeaderPresent, String compressorName) {
     this.syncMarker = syncMarker;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1781
     syncLen = syncMarker.length;
     syncBuffer = new byte[syncLen];
     this.in = in;
     limitStart = limit;
     limitEnd = limitStart + syncLen;
     this.isHeaderPresent = isHeaderPresent;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
   }
 
@@ -68,6 +71,7 @@ public class StreamBlockletReader {
    * find the first position of sync_marker in input stream
    */
   private boolean sync() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1781
     if (!readBytesFromStream(syncBuffer, 0, syncLen)) {
       return false;
     }
@@ -101,6 +105,7 @@ public class StreamBlockletReader {
   public BlockletHeader readBlockletHeader() throws IOException {
     int len = readIntFromStream();
     byte[] b = new byte[len];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1781
     if (!readBytesFromStream(b, 0, len)) {
       throw new EOFException("Failed to read blocklet header");
     }
@@ -115,6 +120,7 @@ public class StreamBlockletReader {
     offset = 0;
     int len = readIntFromStream();
     byte[] b = new byte[len];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1781
     if (!readBytesFromStream(b, 0, len)) {
       throw new EOFException("Failed to read blocklet data");
     }
@@ -147,6 +153,7 @@ public class StreamBlockletReader {
       return false;
     }
     if (isAlreadySync) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1781
       if (!readBytesFromStream(syncBuffer, 0, syncLen)) {
         return false;
       }
@@ -186,6 +193,7 @@ public class StreamBlockletReader {
    */
   public boolean readBytesFromStream(byte[] b, int offset, int len) throws IOException {
     int readLen = in.read(b, offset, len);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1781
     if (readLen < 0) {
       return false;
     }

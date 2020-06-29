@@ -38,6 +38,7 @@ public class FixedLengthDimensionDataChunkTest {
 
     int invertedIndexReverse[] = { 1, 0, 5, 7, 8 };
     fixedLengthDimensionDataChunk =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
         new FixedLengthDimensionColumnPage(data, invertedIndex, invertedIndexReverse, 5, 4,
             data.length);
   }
@@ -52,6 +53,7 @@ public class FixedLengthDimensionDataChunkTest {
   @Test public void getChunkDataTest() {
     byte expected[] = { 121, 32, 115, 116 };
     byte res[] = fixedLengthDimensionDataChunk.getChunkData(0);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(Arrays.equals(res, expected));
   }
 

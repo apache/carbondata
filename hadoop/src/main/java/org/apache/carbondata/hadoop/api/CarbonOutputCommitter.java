@@ -82,6 +82,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     super.setupJob(context);
     boolean overwriteSet = CarbonTableOutputFormat.isOverwriteSet(context.getConfiguration());
     CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     if (loadModel.getSegmentId() == null) {
       CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, overwriteSet);
     }
@@ -109,8 +110,10 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
   @Override
   public void commitJob(JobContext context) throws IOException {
     // comma separated partitions
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
     String partitionPath = context.getConfiguration().get("carbon.output.partitions.name");
     long t1 = System.currentTimeMillis();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1976
     try {
       super.commitJob(context);
     } catch (IOException e) {
@@ -118,6 +121,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       // cause file not found exception. This will not impact carbon load,
       LOGGER.warn(e.getMessage());
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
     LOGGER.info(
         "$$$ Time taken for the super.commitJob in ms: " + (System.currentTimeMillis() - t1));
 
@@ -142,12 +146,14 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
         + CarbonCommonConstants.FILE_SEPARATOR
         + loadModel.getSegmentId() + "_" + loadModel.getFactTimeStamp() + ".tmp";
     // Merge all partition files into a single file.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
     String segmentFileName = SegmentFileStore.genSegmentFileName(
         loadModel.getSegmentId(), String.valueOf(loadModel.getFactTimeStamp()));
     SegmentFileStore.SegmentFile segmentFile = SegmentFileStore
         .mergeSegmentFiles(readPath, segmentFileName,
             CarbonTablePath.getSegmentFilesLocation(loadModel.getTablePath()));
     if (segmentFile != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       if (null == newMetaEntry) {
         throw new RuntimeException("Internal Error");
       }
@@ -160,6 +166,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     OperationContext operationContext = (OperationContext) getOperationContext();
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     String uuid = "";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3566
     SegmentFileStore.updateTableStatusFile(carbonTable, loadModel.getSegmentId(),
         segmentFileName + CarbonTablePath.SEGMENT_EXT,
         carbonTable.getCarbonTableIdentifier().getTableId(),
@@ -171,9 +178,11 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
             true);
     long segmentSize = CarbonLoaderUtil
         .addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId(), carbonTable);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2060
     if (segmentSize > 0 || overwriteSet) {
       if (operationContext != null) {
         operationContext
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
             .setProperty(CarbonCommonConstants.CURRENT_SEGMENTFILE, newMetaEntry.getSegmentFile());
         LoadEvents.LoadTablePreStatusUpdateEvent event =
             new LoadEvents.LoadTablePreStatusUpdateEvent(carbonTable.getCarbonTableIdentifier(),
@@ -186,6 +195,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       }
       // After merging index, update newMetaEntry with updated merge index size
       boolean isMergeIndexEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3601
           .getProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
               CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT));
       if (isMergeIndexEnabled) {
@@ -194,6 +204,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       }
       String uniqueId = null;
       if (overwriteSet) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
         if (!loadModel.isCarbonTransactionalTable()) {
           CarbonLoaderUtil.deleteNonTransactionalTableForInsertOverwrite(loadModel);
         } else {
@@ -205,6 +216,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       } else {
         CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
       commitJobFinal(context, loadModel, operationContext, carbonTable, uniqueId);
     } else {
       CarbonLoaderUtil.updateTableStatusForFailure(loadModel);
@@ -215,6 +227,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
   }
 
   private void commitJobFinal(JobContext context, CarbonLoadModel loadModel,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3641
       OperationContext operationContext, CarbonTable carbonTable, String uniqueId)
       throws IOException {
     if (operationContext != null) {
@@ -222,6 +235,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
           new LoadEvents.LoadTablePostStatusUpdateEvent(loadModel);
       try {
         OperationListenerBus.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2294
             .fireEvent(postStatusUpdateEvent, operationContext);
       } catch (Exception e) {
         throw new IOException(e);
@@ -231,9 +245,12 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
         context.getConfiguration().get(CarbonTableOutputFormat.UPADTE_TIMESTAMP, null);
     String segmentsToBeDeleted =
         context.getConfiguration().get(CarbonTableOutputFormat.SEGMENTS_TO_BE_DELETED, "");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
     List<Segment> segmentDeleteList = Segment.toSegmentList(segmentsToBeDeleted.split(","), null);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     Set<Segment> segmentSet = new HashSet<>(
         new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
             context.getConfiguration()).getValidAndInvalidSegments(carbonTable.isMV())
             .getValidSegments());
     if (updateTime != null) {
@@ -262,6 +279,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     OperationContext operationContext = (OperationContext) getOperationContext();
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     String uuid = "";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isMV()
         && operationContext != null) {
       uuid = operationContext.getProperty("uuid").toString();
@@ -285,17 +303,20 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     String segmentFileName = SegmentFileStore.genSegmentFileName(
         loadModel.getSegmentId(), String.valueOf(loadModel.getFactTimeStamp()));
     newMetaEntry.setSegmentFile(segmentFileName + CarbonTablePath.SEGMENT_EXT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     newMetaEntry.setIndexSize("" + loadModel.getMetrics().getMergeIndexSize());
     if (!StringUtils.isEmpty(size)) {
       newMetaEntry.setDataSize(size);
     }
     String uniqueId = null;
     if (overwriteSet) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2294
       uniqueId = overwritePartitions(loadModel, newMetaEntry, uuid);
     } else {
       CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid);
     }
     if (operationContext != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
       operationContext
           .setProperty(CarbonCommonConstants.CURRENT_SEGMENTFILE, newMetaEntry.getSegmentFile());
     }
@@ -311,6 +332,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
    * @throws IOException
    */
   private String overwritePartitions(CarbonLoadModel loadModel, LoadMetadataDetails newMetaEntry,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2294
       String uuid) throws IOException {
     CarbonTable table = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     SegmentFileStore fileStore = new SegmentFileStore(loadModel.getTablePath(),
@@ -321,6 +343,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     if (partitionSpecs != null && partitionSpecs.size() > 0) {
       List<Segment> validSegments =
           new SegmentStatusManager(table.getAbsoluteTableIdentifier())
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
               .getValidAndInvalidSegments(table.isMV()).getValidSegments();
       String uniqueId = String.valueOf(System.currentTimeMillis());
       List<String> tobeUpdatedSegs = new ArrayList<>();
@@ -333,7 +356,9 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       }
       newMetaEntry.setUpdateStatusFileName(uniqueId);
       // Commit the removed partitions in carbon store.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2294
       CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
           Segment.toSegmentList(tobeDeletedSegs, null),
           Segment.toSegmentList(tobeUpdatedSegs, null));
       return uniqueId;
@@ -343,6 +368,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
 
   private Object getOperationContext() {
     // when validate segments is disabled in thread local update it to CarbonTableInputFormat
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2076
     CarbonSessionInfo carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo();
     if (carbonSessionInfo != null) {
       return carbonSessionInfo.getThreadParams().getExtraInfo("partition.operationcontext");
@@ -360,6 +386,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
    */
   @Override
   public void abortJob(JobContext context, JobStatus.State state) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     try {
       super.abortJob(context, state);
       CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());

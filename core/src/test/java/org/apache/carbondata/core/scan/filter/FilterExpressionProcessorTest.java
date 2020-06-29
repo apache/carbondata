@@ -69,6 +69,7 @@ public class FilterExpressionProcessorTest {
     Object result = method
         .invoke(filterExpressionProcessor, ExpressionType.EQUALS, false, equalToExpression, null,
             null);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(result.getClass().getName()
         .equals("org.apache.carbondata.core.scan.filter.resolver.ConditionalFilterResolverImpl"));
   }

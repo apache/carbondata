@@ -79,11 +79,13 @@ public class ImplicitIncludeFilterExecutorImpl
 
   @Override
   public BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
       String uniqueBlockPath, boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     boolean isScanRequired = false;
     String shortBlockId = CarbonTablePath.getShortBlockId(uniqueBlockPath);
     if (uniqueBlockPath.endsWith(".carbondata")) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3217
       if (dimColumnEvaluatorInfo.getFilterValues().getImplicitColumnFilterBlockToBlockletsMap()
           .containsKey(shortBlockId)) {
         isScanRequired = true;

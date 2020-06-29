@@ -100,6 +100,7 @@ public class CarbonCompactionExecutor {
     this.carbonTable = carbonTable;
     this.dataFileMetadataSegMapping = dataFileMetadataSegMapping;
     this.restructuredBlockExists = restructuredBlockExists;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     this.queryExecutorList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     this.dataTypeConverter = dataTypeConverter;
   }
@@ -115,14 +116,18 @@ public class CarbonCompactionExecutor {
    */
   public Map<String, List<RawResultIterator>> processTableBlocks(Configuration configuration,
       Expression filterExpr) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
     Map<String, List<RawResultIterator>> resultList = new HashMap<>(2);
     resultList.put(CarbonCompactionUtil.UNSORTED_IDX,
         new ArrayList<RawResultIterator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE));
     resultList.put(CarbonCompactionUtil.SORTED_IDX,
         new ArrayList<RawResultIterator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3272
     List<TableBlockInfo> tableBlockInfos = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3343
     QueryModelBuilder builder = null;
     if (null == filterExpr) {
       builder =
@@ -130,6 +135,7 @@ public class CarbonCompactionExecutor {
               .enableForcedDetailRawQuery();
     } else {
       builder = new QueryModelBuilder(carbonTable).projectAllColumns()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           .filterExpression(new IndexFilter(carbonTable, filterExpr))
           .dataConverter(dataTypeConverter).enableForcedDetailRawQuery()
           .convertToRangeFilter(false);
@@ -149,6 +155,7 @@ public class CarbonCompactionExecutor {
       boolean sortingRequired =
           !CarbonCompactionUtil.isSortedByCurrentSortColumns(carbonTable, listMetadata.get(0));
       for (String task : taskBlockListMapping) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3272
         tableBlockInfos = taskBlockInfo.getTableBlockInfoList(task);
         // during update there may be a chance that the cardinality may change within the segment
         // which may lead to failure while converting the row, so get all the blocks present in a
@@ -177,16 +184,20 @@ public class CarbonCompactionExecutor {
 
   private RawResultIterator getRawResultIterator(Configuration configuration, String segmentId,
       String task, List<TableBlockInfo> tableBlockInfoList)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
     SegmentProperties sourceSegmentProperties =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         new SegmentProperties(tableBlockInfoList.get(0).getDataFileFooter().getColumnInTable());
     boolean hasColumnDrift = carbonTable.hasColumnDrift() &&
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3371
         RestructureUtil.hasColumnDriftOnSegment(carbonTable, sourceSegmentProperties);
     if (hasColumnDrift) {
       return new ColumnDriftRawResultIterator(
           executeBlockList(tableBlockInfoList, segmentId, task, configuration),
           sourceSegmentProperties, destinationSegProperties);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3478
       if (restructuredBlockExists) {
         sourceSegmentProperties = getSourceSegmentProperties(
             Collections.singletonList(tableBlockInfoList.get(0).getDataFileFooter()));
@@ -210,6 +221,7 @@ public class CarbonCompactionExecutor {
       // get the columnValueSize for the dataFileFooter
       IntArrayWrapper columnValueSize = new IntArrayWrapper(
           getSourceSegmentProperties(Collections.singletonList(tableBlock.getDataFileFooter()))
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
               .createColumnValueLength());
       List<TableBlockInfo> tempBlockInfoList =
           columnvalueSizeToTableBlockInfoMap.get(columnValueSize);
@@ -237,6 +249,7 @@ public class CarbonCompactionExecutor {
     if (restructuredBlockExists) {
       List<ColumnSchema> updatedColumnSchemaList =
           new ArrayList<>(listMetadata.get(0).getColumnInTable().size());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       sourceSegProperties = new SegmentProperties(updatedColumnSchemaList);
     } else {
       sourceSegProperties = new SegmentProperties(listMetadata.get(0).getColumnInTable());
@@ -251,7 +264,10 @@ public class CarbonCompactionExecutor {
    * @return
    */
   private CarbonIterator<RowBatch> executeBlockList(List<TableBlockInfo> blockList,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
       String segmentId, String taskId, Configuration configuration)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
     queryModel.setTableBlockInfos(blockList);
     QueryStatisticsRecorder executorRecorder = CarbonTimeStatisticsFactory
@@ -281,6 +297,7 @@ public class CarbonCompactionExecutor {
       }
       logStatistics(queryStartTime);
     } catch (QueryExecutionException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error("Problem while close. Ignoring the exception", e);
     }
   }
@@ -302,6 +319,7 @@ public class CarbonCompactionExecutor {
    * Whether to enable page level reader for compaction or not.
    */
   private boolean enablePageLevelReaderForCompaction() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
     String enablePageReaderProperty = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION,
             CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION_DEFAULT);

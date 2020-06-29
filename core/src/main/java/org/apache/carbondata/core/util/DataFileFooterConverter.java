@@ -41,6 +41,7 @@ import org.apache.hadoop.conf.Configuration;
 public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
 
   public DataFileFooterConverter(Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     super(configuration);
   }
 
@@ -69,6 +70,7 @@ public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
       List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
       List<org.apache.carbondata.format.ColumnSchema> table_columns = footer.getTable_columns();
       for (int i = 0; i < table_columns.size(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
         columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
       }
       dataFileFooter.setColumnInTable(columnSchemaList);
@@ -115,7 +117,10 @@ public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
 
   @Override
   public List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     FileReader fileReader = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1537
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     try {
       long completeBlockLength = tableBlockInfo.getBlockLength();
@@ -127,6 +132,7 @@ public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
       FileFooter footer = reader.readFooter();
       List<org.apache.carbondata.format.ColumnSchema> table_columns = footer.getTable_columns();
       for (int i = 0; i < table_columns.size(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
         columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
       }
     } finally {

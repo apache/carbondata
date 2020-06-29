@@ -45,6 +45,7 @@ public class CarbonDimension extends CarbonColumn {
   private CarbonDimension complexParentDimension = null;
 
   public CarbonDimension(ColumnSchema columnSchema, int ordinal, int keyOrdinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
        this(columnSchema, ordinal, keyOrdinal, 0);
   }
 
@@ -133,6 +134,7 @@ public class CarbonDimension extends CarbonColumn {
   }
 
   public CarbonDimension getComplexParentDimension() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
     return complexParentDimension;
   }
 

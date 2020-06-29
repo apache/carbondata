@@ -44,6 +44,7 @@ public class LessThanExpression extends BinaryConditionalExpression {
     boolean result = false;
 
     if (elRes.isNull() || erRes.isNull()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       elRes.set(DataTypes.BOOLEAN, false);
       return elRes;
     }
@@ -53,7 +54,9 @@ public class LessThanExpression extends BinaryConditionalExpression {
       }
 
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     DataType dataType = val1.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BOOLEAN) {
       result = elRes.getBoolean().compareTo(erRes.getBoolean()) < 0;
     } else if (dataType == DataTypes.STRING) {
@@ -64,12 +67,14 @@ public class LessThanExpression extends BinaryConditionalExpression {
       result = elRes.getInt() < (erRes.getInt());
     } else if (dataType == DataTypes.DOUBLE) {
       result = elRes.getDouble() < (erRes.getDouble());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     } else if (dataType == DataTypes.DATE) {
       result = elRes.getTime() < (erRes.getTime());
     } else if (dataType == DataTypes.TIMESTAMP) {
       result = elRes.getTimeAsMillisecond() < (erRes.getTimeAsMillisecond());
     } else if (dataType == DataTypes.LONG) {
       result = elRes.getLong() < (erRes.getLong());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       result = elRes.getDecimal().compareTo(erRes.getDecimal()) < 0;
     } else {
@@ -92,6 +97,7 @@ public class LessThanExpression extends BinaryConditionalExpression {
 
   @Override
   public String getStatement() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     return left.getStatement() + " < " + right.getStatement();
   }
 }

@@ -55,10 +55,12 @@ public class CarbonMultiBlockSplit extends InputSplit implements Serializable, W
   public CarbonMultiBlockSplit() {
     splitList = null;
     locations = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1880
     length = 0;
   }
 
   public CarbonMultiBlockSplit(List<Distributable> blocks, String hostname) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2323
     this.splitList = new ArrayList<>(blocks.size());
     for (Distributable block : blocks) {
       this.splitList.add((CarbonInputSplit)block);
@@ -67,6 +69,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Serializable, W
   }
 
   public CarbonMultiBlockSplit(List<CarbonInputSplit> splitList,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2071
       String[] locations) {
     this.splitList = splitList;
     this.locations = locations;
@@ -78,6 +81,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Serializable, W
     this.splitList = splitList;
     this.locations = locations;
     this.fileFormat = fileFormat;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1880
     calculateLength();
   }
 
@@ -91,6 +95,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Serializable, W
 
   @Override
   public long getLength() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1880
     return length;
   }
 
@@ -100,6 +105,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Serializable, W
 
   public void calculateLength() {
     long total = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     if (splitList.size() > 1) {
       Map<String, Long> blockSizes = new HashMap<>();
       for (CarbonInputSplit split : splitList) {
@@ -108,6 +114,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Serializable, W
       for (Map.Entry<String, Long> entry : blockSizes.entrySet()) {
         total += entry.getValue();
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     } else if (splitList.size() == 1) {
       total += splitList.get(0).getLength();
     }
@@ -116,6 +123,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Serializable, W
 
   @Override
   public String[] getLocations() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     getLocationIfNull();
     return locations;
   }
@@ -137,11 +145,13 @@ public class CarbonMultiBlockSplit extends InputSplit implements Serializable, W
     for (CarbonInputSplit split: splitList) {
       split.write(out);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     getLocationIfNull();
     out.writeInt(locations.length);
     for (int i = 0; i < locations.length; i++) {
       out.writeUTF(locations[i]);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     out.writeInt(fileFormat.ordinal());
   }
 
@@ -160,6 +170,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Serializable, W
     for (int i = 0; i < len; i++) {
       locations[i] = in.readUTF();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     fileFormat = FileFormat.getByOrdinal(in.readInt());
   }
 

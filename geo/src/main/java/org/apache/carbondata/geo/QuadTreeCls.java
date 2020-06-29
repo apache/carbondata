@@ -402,6 +402,7 @@ class GridData {
  */
 class QuadNode {
   private static final Logger LOGGER =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
       LogServiceFactory.getLogService(QuadNode.class.getName());
   // The range Z order of region hashid represented by quadtree is a continuous range
   private QuadRect rect;
@@ -417,7 +418,7 @@ class QuadNode {
   private QuadNode southWest = null;
   private QuadNode southEast = null;
 
-  /* Quadrant division of a rectangular regionï¼š:
+  /* Quadrant division of a rectangular regionï¼?:
 
      TL(1)   |    TR(0)
    ----------|-----------

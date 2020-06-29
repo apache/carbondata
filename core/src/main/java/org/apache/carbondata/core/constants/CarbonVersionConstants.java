@@ -59,6 +59,7 @@ public final class CarbonVersionConstants {
       // read CARBONDATA_VERSION_INFO_FILE into props
       props.load(resourceStream);
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error("Error loading properties from " + CARBONDATA_VERSION_INFO_FILE, e);
     } finally {
       if (resourceStream != null) {

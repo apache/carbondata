@@ -42,6 +42,8 @@ public class DFSFileReaderImpl implements FileReader {
   private Configuration configuration;
 
   public DFSFileReaderImpl(Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
     this.configuration = configuration;
     this.fileNameAndStreamCache =
         new HashMap<String, FSDataInputStream>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -66,6 +68,8 @@ public class DFSFileReaderImpl implements FileReader {
     FSDataInputStream fileChannel = fileNameAndStreamCache.get(filePath);
     if (null == fileChannel) {
       Path pt = new Path(filePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
       FileSystem fs = pt.getFileSystem(configuration);
       fileChannel = fs.open(pt);
       fileNameAndStreamCache.put(filePath, fileChannel);
@@ -82,6 +86,7 @@ public class DFSFileReaderImpl implements FileReader {
    * @return byte buffer
    */
   private byte[] read(FSDataInputStream channel, int size, long offset) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
     byte[] byteBuffer = new byte[size];
     channel.seek(offset);
     channel.readFully(byteBuffer);
@@ -96,6 +101,7 @@ public class DFSFileReaderImpl implements FileReader {
    * @return byte buffer
    */
   private byte[] read(FSDataInputStream channel, int size) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
     byte[] byteBuffer = new byte[size];
     channel.readFully(byteBuffer);
     return byteBuffer;
@@ -164,6 +170,7 @@ public class DFSFileReaderImpl implements FileReader {
   }
 
   public Map<String, FSDataInputStream> getFileNameAndStreamCache() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1804
     return fileNameAndStreamCache;
   }
 

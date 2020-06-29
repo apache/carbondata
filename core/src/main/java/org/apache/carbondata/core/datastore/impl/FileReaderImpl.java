@@ -63,6 +63,7 @@ public class FileReaderImpl implements FileReader {
   public byte[] readByteArray(String filePath, long offset, int length)
       throws IOException {
     FileChannel fileChannel = updateCache(filePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
     ByteBuffer byteBuffer = read(fileChannel, length, offset);
     return byteBuffer.array();
   }
@@ -78,6 +79,7 @@ public class FileReaderImpl implements FileReader {
         channel.close();
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     fileNameAndStreamCache.clear();
   }
 
@@ -92,6 +94,7 @@ public class FileReaderImpl implements FileReader {
   @Override
   public int readInt(String filePath, long offset) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
     ByteBuffer byteBuffer = read(fileChannel, CarbonCommonConstants.INT_SIZE_IN_BYTE, offset);
     return byteBuffer.getInt();
   }
@@ -106,6 +109,7 @@ public class FileReaderImpl implements FileReader {
   @Override
   public int readInt(String filePath) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
     ByteBuffer byteBuffer = read(fileChannel, CarbonCommonConstants.INT_SIZE_IN_BYTE);
     return byteBuffer.getInt();
   }
@@ -121,6 +125,7 @@ public class FileReaderImpl implements FileReader {
   @Override
   public long readDouble(String filePath, long offset) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
     ByteBuffer byteBuffer = read(fileChannel, CarbonCommonConstants.LONG_SIZE_IN_BYTE, offset);
     return byteBuffer.getLong();
   }
@@ -152,6 +157,7 @@ public class FileReaderImpl implements FileReader {
    * @return byte buffer
    */
   private ByteBuffer read(FileChannel channel, int size, long offset) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
     ByteBuffer byteBuffer = ByteBuffer.allocate(size);
     channel.position(offset);
     channel.read(byteBuffer);
@@ -167,6 +173,7 @@ public class FileReaderImpl implements FileReader {
    * @return byte buffer
    */
   private ByteBuffer read(FileChannel channel, int size) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
     ByteBuffer byteBuffer = ByteBuffer.allocate(size);
     channel.read(byteBuffer);
     byteBuffer.rewind();
@@ -184,6 +191,7 @@ public class FileReaderImpl implements FileReader {
   @Override
   public byte[] readByteArray(String filePath, int length) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
     ByteBuffer byteBuffer = read(fileChannel, length);
     return byteBuffer.array();
   }
@@ -199,6 +207,7 @@ public class FileReaderImpl implements FileReader {
   @Override
   public long readLong(String filePath, long offset) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
     ByteBuffer byteBuffer = read(fileChannel, CarbonCommonConstants.LONG_SIZE_IN_BYTE, offset);
     return byteBuffer.getLong();
   }

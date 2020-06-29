@@ -38,12 +38,14 @@ public class ComplexFieldConverterImpl implements FieldConverter {
       int index) {
     this.genericDataType = genericDataType;
     this.index = index;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     this.dataField = dataField;
   }
 
   @Override
   public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
     Object object = row.getObject(index);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
     row.update(convert(object, logHolder), index);
   }
 
@@ -53,6 +55,7 @@ public class ComplexFieldConverterImpl implements FieldConverter {
     ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
     DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3761
       genericDataType.writeByteArray(value, dataOutputStream, logHolder, false);
       dataOutputStream.close();
       return byteArray.toByteArray();
@@ -63,6 +66,7 @@ public class ComplexFieldConverterImpl implements FieldConverter {
 
   @Override
   public DataField getDataField() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     return dataField;
   }
 

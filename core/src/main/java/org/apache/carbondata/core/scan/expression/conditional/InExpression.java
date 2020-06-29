@@ -54,7 +54,9 @@ public class InExpression extends BinaryConditionalExpression {
         } else {
           val = expressionResVal;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         DataType dataType = val.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
         if (dataType == DataTypes.BOOLEAN) {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getBoolean());
         } else if (dataType == DataTypes.STRING) {
@@ -67,10 +69,12 @@ public class InExpression extends BinaryConditionalExpression {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getDouble());
         } else if (dataType == DataTypes.LONG) {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getLong());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
         } else if (dataType == DataTypes.DATE) {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getTime());
         } else if (dataType == DataTypes.TIMESTAMP) {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getTimeAsMillisecond());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         } else if (DataTypes.isDecimal(dataType)) {
           val = new ExpressionResult(val.getDataType(), expressionResVal.getDecimal());
         } else {
@@ -89,6 +93,7 @@ public class InExpression extends BinaryConditionalExpression {
     // for a check on the right result.
     // Example: (null==null) -> Left null return false, (1==null) would automatically be false.
     if (leftRsult.isNull()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       leftRsult.set(DataTypes.BOOLEAN, false);
     } else {
       leftRsult.set(DataTypes.BOOLEAN, setOfExprResult.contains(leftRsult));
@@ -108,6 +113,7 @@ public class InExpression extends BinaryConditionalExpression {
 
   @Override
   public String getStatement() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     return left.getStatement() + " in " + right.getStatement();
   }
 }

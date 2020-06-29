@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 
 public class CompressorFactory {
   private static final Logger LOGGER = LogServiceFactory.getLogService(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2930
       CompressorFactory.class.getName());
   private static final CompressorFactory COMPRESSOR_FACTORY = new CompressorFactory();
 
@@ -36,6 +37,7 @@ public class CompressorFactory {
 
   public enum NativeSupportedCompressor {
     SNAPPY("snappy", SnappyCompressor.class),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3005
     ZSTD("zstd", ZstdCompressor.class),
     GZIP("gzip", GzipCompressor.class);
 
@@ -43,6 +45,7 @@ public class CompressorFactory {
     private Class<Compressor> compressorClass;
     private transient Compressor compressor;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2930
     NativeSupportedCompressor(String name, Class compressorCls) {
       this.name = name;
       this.compressorClass = compressorCls;
@@ -60,6 +63,7 @@ public class CompressorFactory {
         try {
           this.compressor = compressorClass.newInstance();
         } catch (InstantiationException | IllegalAccessException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2930
           throw new RuntimeException("Exception occurs while getting compressor for " + name, e);
         }
       }
@@ -68,6 +72,7 @@ public class CompressorFactory {
   }
 
   private CompressorFactory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2930
     for (NativeSupportedCompressor nativeSupportedCompressor : NativeSupportedCompressor.values()) {
       allSupportedCompressors.put(nativeSupportedCompressor.getName(),
           nativeSupportedCompressor.getCompressor());
@@ -88,6 +93,7 @@ public class CompressorFactory {
    * @return true if register successfully, false if failed.
    */
   private Compressor registerColumnCompressor(String compressorClassName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2930
     if (allSupportedCompressors.containsKey(compressorClassName)) {
       return allSupportedCompressors.get(compressorClassName);
     }
@@ -132,6 +138,7 @@ public class CompressorFactory {
   }
 
   public Compressor getCompressor(String name) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2930
     String internalCompressorName = getInternalCompressorName(name);
     if (null == internalCompressorName) {
       // maybe this is a new compressor, we will try to register it

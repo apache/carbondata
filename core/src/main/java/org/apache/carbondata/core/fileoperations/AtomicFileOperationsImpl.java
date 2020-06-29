@@ -30,11 +30,13 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.log4j.Logger;
 
 class AtomicFileOperationsImpl implements AtomicFileOperations {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2745
 
   /**
    * Logger instance
    */
   private static final Logger LOGGER =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2749
       LogServiceFactory.getLogService(AtomicFileOperationsImpl.class.getName());
   private String filePath;
 
@@ -43,6 +45,7 @@ class AtomicFileOperationsImpl implements AtomicFileOperations {
   private DataOutputStream dataOutStream;
   private boolean setFailed;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
   AtomicFileOperationsImpl(String filePath) {
     this.filePath = filePath;
   }
@@ -59,6 +62,7 @@ class AtomicFileOperationsImpl implements AtomicFileOperations {
 
     tempWriteFilePath = filePath + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     if (FileFactory.isFileExist(tempWriteFilePath)) {
       FileFactory.getCarbonFile(tempWriteFilePath).delete();
     }
@@ -74,8 +78,11 @@ class AtomicFileOperationsImpl implements AtomicFileOperations {
   @Override
   public void close() throws IOException {
     if (null != dataOutStream) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1277
       CarbonUtil.closeStream(dataOutStream);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       CarbonFile tempFile = FileFactory.getCarbonFile(tempWriteFilePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2749
       if (!this.setFailed) {
         if (!tempFile.renameForce(filePath)) {
           throw new IOException(

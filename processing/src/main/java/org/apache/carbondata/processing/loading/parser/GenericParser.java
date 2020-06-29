@@ -40,5 +40,6 @@ public interface GenericParser<E> {
    * @return rawData
    */
   E parseRaw(Object data);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
 
 }

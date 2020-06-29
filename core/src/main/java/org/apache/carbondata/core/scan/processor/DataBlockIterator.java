@@ -264,6 +264,7 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
         if (blockletScannedResult != null) {
           blockletScannedResult.freeMemory();
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3122
         future = null;
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);

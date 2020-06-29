@@ -34,11 +34,14 @@ import org.apache.hadoop.conf.Configuration;
 public class VectorDetailQueryExecutor extends AbstractQueryExecutor<Object> {
 
   public VectorDetailQueryExecutor(Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
     super(configuration);
   }
 
   @Override
   public CarbonIterator<Object> execute(QueryModel queryModel) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2297
     this.setExecutorService(Executors.newCachedThreadPool());
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
     this.queryIterator = new VectorDetailQueryResultIterator(

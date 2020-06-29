@@ -39,6 +39,7 @@ public interface DimensionColumnChunkReader {
    * @param columnIndexRange blocklets to be read
    * @return dimension column chunks
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   DimensionRawColumnChunk[] readRawDimensionChunks(FileReader fileReader, int[][] columnIndexRange)
       throws IOException;
 
@@ -59,13 +60,16 @@ public interface DimensionColumnChunkReader {
    * @param pageNumber page number to be processed
    * @return
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   DimensionColumnPage decodeColumnPage(DimensionRawColumnChunk dimensionRawColumnChunk,
       int pageNumber, ReusableDataBuffer reusableDataBuffer) throws IOException;
 
   /**
    * Decodes the raw data chunk of given page number and fill the vector with decoded data.
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
   void decodeColumnPageAndFillVector(DimensionRawColumnChunk dimensionRawColumnChunk,
       int pageNumber, ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException;
 }

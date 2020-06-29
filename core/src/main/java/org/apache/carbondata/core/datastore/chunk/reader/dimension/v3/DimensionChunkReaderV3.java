@@ -72,6 +72,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
   private long lastDimensionOffsets;
 
   public DimensionChunkReaderV3(BlockletInfo blockletInfo, String filePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     super(blockletInfo, filePath);
     lastDimensionOffsets = blockletInfo.getDimensionOffset();
   }
@@ -92,6 +93,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
   public DimensionRawColumnChunk readRawDimensionChunk(FileReader fileReader,
       int columnIndex) throws IOException {
     // get the current dimension offset
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     long currentDimensionOffset = dimensionChunksOffset.get(columnIndex);
     int length = 0;
     // to calculate the length of the data to be read
@@ -111,6 +113,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
     }
     // get the data chunk which will have all the details about the data pages
     DataChunk3 dataChunk = CarbonUtil.readDataChunk3(buffer, 0, length);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     return getDimensionRawColumnChunk(fileReader, columnIndex, 0, length, buffer,
         dataChunk);
   }
@@ -124,6 +127,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
     byte[][] maxValueOfEachPage = new byte[numberOfPages][];
     byte[][] minValueOfEachPage = new byte[numberOfPages][];
     boolean[] minMaxFlag = new boolean[minValueOfEachPage.length];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     Arrays.fill(minMaxFlag, true);
     int[] eachPageLength = new int[numberOfPages];
     for (int i = 0; i < minValueOfEachPage.length; i++) {
@@ -133,6 +137,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
           dataChunk.getData_chunk_list().get(i).getMin_max().getMin_values().get(0).array();
       eachPageLength[i] = dataChunk.getData_chunk_list().get(i).getNumberOfRowsInpage();
       boolean isMinMaxFlagSet =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
           dataChunk.getData_chunk_list().get(i).getMin_max().isSetMin_max_presence();
       if (isMinMaxFlagSet) {
         minMaxFlag[i] =
@@ -140,6 +145,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
       }
     }
     rawColumnChunk.setDataChunkV3(dataChunk);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     rawColumnChunk.setFileReader(fileReader);
     rawColumnChunk.setPagesCount(dataChunk.getPage_length().size());
     rawColumnChunk.setMaxValues(maxValueOfEachPage);
@@ -191,6 +197,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
       int currentLength = (int) (dimensionChunksOffset.get(i + 1) - dimensionChunksOffset.get(i));
       DataChunk3 dataChunk =
           CarbonUtil.readDataChunk3(buffer, runningLength, dimensionChunksLength.get(i));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
       dimensionDataChunks[index] =
           getDimensionRawColumnChunk(fileReader, i, runningLength, currentLength, buffer,
               dataChunk);
@@ -215,12 +222,15 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
 
   private DimensionColumnPage decodeColumnPage(
       DimensionRawColumnChunk rawColumnPage, int pageNumber, ColumnVectorInfo vectorInfo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       ReusableDataBuffer reusableDataBuffer) throws IOException {
     // data chunk of blocklet column
     DataChunk3 dataChunk3 = rawColumnPage.getDataChunkV3();
     // get the data buffer
     ByteBuffer rawData = rawColumnPage.getRawData();
     DataChunk2 pageMetadata = dataChunk3.getData_chunk_list().get(pageNumber);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
         pageMetadata.getChunk_meta());
     this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
@@ -237,6 +247,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
   @Override
   public void decodeColumnPageAndFillVector(DimensionRawColumnChunk dimensionRawColumnChunk,
       int pageNumber, ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
     DimensionColumnPage columnPage =
         decodeColumnPage(dimensionRawColumnChunk, pageNumber, vectorInfo, reusableDataBuffer);
@@ -245,6 +256,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
 
   private ColumnPage decodeDimensionByMeta(DataChunk2 pageMetadata, ByteBuffer pageData, int offset,
       boolean isLocalDictEncodedPage, ColumnVectorInfo vectorInfo, BitSet nullBitSet,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       ReusableDataBuffer reusableDataBuffer) throws IOException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
@@ -255,6 +267,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
     if (vectorInfo != null) {
       decoder
           .decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
               nullBitSet, isLocalDictEncodedPage, pageMetadata.numberOfRowsInpage,
               reusableDataBuffer);
       return null;
@@ -266,8 +279,11 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
 
   protected DimensionColumnPage decodeDimension(DimensionRawColumnChunk rawColumnPage,
       ByteBuffer pageData, DataChunk2 pageMetadata, int offset, ColumnVectorInfo vectorInfo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       ReusableDataBuffer reusableDataBuffer) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     List<Encoding> encodings = pageMetadata.getEncoders();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3061
     org.apache.carbondata.core.metadata.encoder.Encoding.validateEncodingTypes(encodings);
     if (CarbonUtil.isEncodedWithMeta(encodings)) {
       int[] invertedIndexes = new int[0];
@@ -281,6 +297,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
         offset += pageMetadata.data_page_length;
         invertedIndexes = CarbonUtil
             .getUnCompressColumnIndex(pageMetadata.rowid_page_length, pageData, offset);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3014
         if (vectorInfo == null) {
           // get the reverse index
           invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
@@ -290,6 +307,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
       }
       BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor);
       ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, dataOffset,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
           null != rawColumnPage.getLocalDictionary(), vectorInfo, nullBitSet, reusableDataBuffer);
       if (decodedPage != null) {
         decodedPage.setNullBits(nullBitSet);
@@ -298,6 +316,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
           invertedIndexesReverse, isEncodedWithAdaptiveMeta(pageMetadata), isExplicitSorted);
     } else {
       // following code is for backward compatibility
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       return decodeDimensionLegacy(rawColumnPage, pageData, pageMetadata, offset, vectorInfo,
           reusableDataBuffer);
     }
@@ -308,6 +327,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
     if (encodings != null && !encodings.isEmpty()) {
       Encoding encoding = encodings.get(0);
       switch (encoding) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
         case ADAPTIVE_INTEGRAL:
         case ADAPTIVE_DELTA_INTEGRAL:
         case ADAPTIVE_FLOATING:
@@ -319,11 +339,14 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
   }
 
   private int getColumnValueSize(List<Encoding> encodings) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     return encodings.contains(Encoding.DICTIONARY) ? 4 : -1;
   }
 
   private DimensionColumnPage decodeDimensionLegacy(DimensionRawColumnChunk rawColumnPage,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       ByteBuffer pageData, DataChunk2 pageMetadata, int offset, ColumnVectorInfo vectorInfo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       ReusableDataBuffer reusableDataBuffer) {
     byte[] dataPage;
     int[] rlePage;
@@ -336,15 +359,19 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
       dataPage = reusableDataBuffer.getDataBuffer(uncompressedSize);
       compressor.rawUncompress(pageData.array(), offset, pageMetadata.data_page_length, dataPage);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       dataPage = compressor.unCompressByte(pageData.array(), offset, pageMetadata.data_page_length);
       uncompressedSize = dataPage.length;
     }
     offset += pageMetadata.data_page_length;
     // if row id block is present then read the row id chunk and uncompress it
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
     if (CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX)) {
       invertedIndexes = CarbonUtil
           .getUnCompressColumnIndex(pageMetadata.rowid_page_length, pageData, offset);
       offset += pageMetadata.rowid_page_length;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
       if (vectorInfo == null) {
         // get the reverse index
         invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
@@ -358,14 +385,18 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
       // uncompress the data with rle indexes
       dataPage = UnBlockIndexer.uncompressData(dataPage, rlePage,
           null == rawColumnPage.getLocalDictionary() ?
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
               getColumnValueSize(pageMetadata.encoders) :
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
               CarbonCommonConstants.LOCAL_DICT_ENCODED_BYTEARRAY_SIZE, uncompressedSize);
       uncompressedSize = dataPage.length;
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     DimensionColumnPage columnDataChunk = null;
     // if no dictionary column then first create a no dictionary column chunk
     // and set to data chunk instance
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
     if (!CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.DICTIONARY)) {
       DimensionChunkStoreFactory.DimensionStoreType dimStoreType =
           null != rawColumnPage.getLocalDictionary() ?
@@ -382,6 +413,7 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
       columnDataChunk =
           new FixedLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
               pageMetadata.getNumberOfRowsInpage(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
               getColumnValueSize(pageMetadata.encoders), vectorInfo, uncompressedSize);
     }
     return columnDataChunk;

@@ -66,6 +66,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonHiveSerDe.class.getCanonicalName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
 
   private final SerDeStats stats;
   private ObjectInspector objInspector;
@@ -84,6 +85,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
 
   @Override
   public void initialize(@Nullable Configuration configuration, Properties tbl)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
       throws SerDeException {
     final TypeInfo rowTypeInfo;
     final List<String> columnNames;
@@ -103,9 +105,11 @@ public class CarbonHiveSerDe extends AbstractSerDe {
       columnTypes = TypeInfoUtils.getTypeInfosFromTypeString(columnTypeProperty);
     }
     inferSchema(tbl, columnNames, columnTypes);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
 
     // Create row related objects
     rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     this.objInspector = new ArrayWritableObjectInspector((StructTypeInfo) rowTypeInfo);
     // Stats part
     serializedSize = 0;
@@ -114,8 +118,10 @@ public class CarbonHiveSerDe extends AbstractSerDe {
   }
 
   private void inferSchema(Properties tbl, List<String> columnNames, List<TypeInfo> columnTypes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     if (columnNames.size() == 0 && columnTypes.size() == 0) {
       String external = tbl.getProperty("EXTERNAL");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3817
       String location = CarbonUtil.checkAndAppendFileSystemURIScheme(
           tbl.getProperty(hive_metastoreConstants.META_TABLE_LOCATION));
       if (external != null && "TRUE".equals(external) && location != null) {
@@ -157,11 +163,13 @@ public class CarbonHiveSerDe extends AbstractSerDe {
   public Writable serialize(Object obj, ObjectInspector objectInspector)
       throws SerDeException {
     if (!objInspector.getCategory().equals(ObjectInspector.Category.STRUCT)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1098
       throw new SerDeException("Cannot serializeStartKey " + objInspector.getCategory()
           + ". Can only serializeStartKey a struct");
     }
     serializedSize += ((StructObjectInspector) objInspector).getAllStructFieldRefs().size();
     status = LAST_OPERATION.SERIALIZE;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     return createCarbonRow(obj, (StructObjectInspector) objectInspector);
   }
 
@@ -200,6 +208,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     if (sourceArray != null) {
       for (iterator = sourceArray.iterator(); iterator.hasNext(); ) {
         Object curObj = iterator.next();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
         Object newObj = createObject(curObj, subInspector);
         if (newObj != null) {
           array.add(newObj);
@@ -225,6 +234,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
         return createArray(obj, (ListObjectInspector) inspector);
       case PRIMITIVE:
         return createPrimitive(obj, (PrimitiveObjectInspector) inspector);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
       case MAP:
         return createMap(obj, (MapObjectInspector) inspector);
     }

@@ -46,6 +46,7 @@ public class RestructureUtilTest {
     encodingList.add(Encoding.DICTIONARY);
     ColumnSchema columnSchema1 = new ColumnSchema();
     columnSchema1.setColumnName("Id");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     columnSchema1.setDataType(DataTypes.STRING);
     columnSchema1.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema1.setEncodingList(encodingList);
@@ -70,6 +71,7 @@ public class RestructureUtilTest {
     columnSchema5.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema5.setEncodingList(encodingList);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     CarbonDimension tableBlockDimension1 = new CarbonDimension(columnSchema1, 1, 1, 1);
     CarbonDimension tableBlockDimension2 = new CarbonDimension(columnSchema2, 5, 5, 5);
     List<CarbonDimension> tableBlockDimensions =
@@ -87,12 +89,14 @@ public class RestructureUtilTest {
     ProjectionMeasure queryMeasure2 = new ProjectionMeasure(new CarbonMeasure(columnSchema4, 4));
     List<ProjectionMeasure> queryMeasures = Arrays.asList(queryMeasure1, queryMeasure2);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
     ProjectionDimension[] queryDimensions =
         new ProjectionDimension[] { queryDimension1, queryDimension2, queryDimension3 };
 
     List<ProjectionDimension> result = null;
     result = RestructureUtil
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo, queryDimensions,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2359
             tableBlockDimensions, tableComplexDimensions, queryMeasures.size(), true);
     List<CarbonDimension> resultDimension = new ArrayList<>(result.size());
     for (ProjectionDimension queryDimension : result) {
@@ -105,6 +109,7 @@ public class RestructureUtilTest {
   @Test public void testToGetAggregatorInfos() {
     ColumnSchema columnSchema1 = new ColumnSchema();
     columnSchema1.setColumnName("Id");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     columnSchema1.setDataType(DataTypes.STRING);
     columnSchema1.setColumnUniqueId(UUID.randomUUID().toString());
     ColumnSchema columnSchema2 = new ColumnSchema();
@@ -125,6 +130,7 @@ public class RestructureUtilTest {
     ProjectionMeasure queryMeasure1 = new ProjectionMeasure(carbonMeasure1);
     ProjectionMeasure queryMeasure2 = new ProjectionMeasure(carbonMeasure2);
     ProjectionMeasure queryMeasure3 = new ProjectionMeasure(carbonMeasure3);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3348
     ProjectionMeasure[] queryMeasures =
         new ProjectionMeasure[] { queryMeasure1, queryMeasure2, queryMeasure3 };
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();

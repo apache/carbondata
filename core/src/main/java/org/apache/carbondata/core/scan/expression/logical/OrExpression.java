@@ -38,6 +38,7 @@ public class OrExpression extends BinaryLogicalExpression {
       throws FilterIllegalMemberException, FilterUnsupportedException {
     ExpressionResult resultLeft = left.evaluate(value);
     ExpressionResult resultRight = right.evaluate(value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     if (resultLeft.getDataType() == DataTypes.BOOLEAN) {
       resultLeft.set(DataTypes.BOOLEAN, (resultLeft.getBoolean() || resultRight.getBoolean()));
     } else {
@@ -59,6 +60,7 @@ public class OrExpression extends BinaryLogicalExpression {
 
   @Override
   public String getStatement() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     return "(" + left.getString() + " or " + right.getString() + ")";
   }
 }

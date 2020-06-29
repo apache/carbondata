@@ -27,6 +27,7 @@ public class BloomIndexModel extends IndexModel {
   private Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache;
 
   public BloomIndexModel(String filePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
       Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache,
       Configuration configuration) {
     super(filePath, configuration);

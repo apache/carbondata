@@ -46,6 +46,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
 
   public PrimitiveQueryType(String name, String parentName, int columnIndex, DataType dataType,
       boolean isDirectDictionary) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     super(name, parentName, columnIndex);
     this.dataType = dataType;
     this.name = name;
@@ -86,14 +87,18 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
 
   @Override
   public void parseBlocksAndReturnComplexColumnByteArray(DimensionRawColumnChunk[] rawColumnChunks,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3145
       DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber,
       DataOutputStream dataOutputStream) throws IOException {
     byte[] currentVal =
         copyBlockDataChunk(rawColumnChunks, dimensionColumnPages, rowNumber, pageNumber);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     if (!this.isDirectDictionary) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
       if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
         dataOutputStream.writeInt(currentVal.length);
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
         dataOutputStream.writeShort(currentVal.length);
       }
     }
@@ -108,6 +113,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
 
   @Override
   public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
     return getDataObject(dataBuffer, -1);
   }
 
@@ -137,11 +143,15 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     Object actualData;
     if (isDirectDictionary) {
       // Direct Dictionary Column, only for DATE type
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       byte[] data = new byte[4];
       dataBuffer.get(data);
       actualData = ByteUtil.convertBytesToInt(data);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
       if (size == -1) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
         if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
           size = dataBuffer.getInt();
         } else {
@@ -150,13 +160,16 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       }
       byte[] value = new byte[size];
       dataBuffer.get(value, 0, size);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2471
       if (dataType == DataTypes.DATE) {
         if (value.length == 0) {
           actualData = null;
         } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
           DirectDictionaryGenerator directDictGenForDate =
               DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.DATE);
           actualData = directDictGenForDate.getValueFromSurrogate(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
               ByteUtil.toXorInt(value, 0, CarbonCommonConstants.INT_SIZE_IN_BYTE));
         }
       } else {

@@ -25,6 +25,8 @@ public final class ProxyRecoverable
   public ProxyRecoverable(
       final String writerType,
       final ProxyFileWriterFactory.Configuration writerConfiguration,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
       final String writerIdentifier,
       final String writePath
   ) {
@@ -51,6 +53,8 @@ public final class ProxyRecoverable
   }
 
   public String getWriterIdentifier() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     return this.writerIdentifier;
   }
 

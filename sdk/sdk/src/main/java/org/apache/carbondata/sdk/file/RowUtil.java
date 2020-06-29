@@ -70,6 +70,8 @@ public class RowUtil implements Serializable {
    * @return array data type data
    */
   public static Object[] getArray(Object[] data, int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3108
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3044
     Object object = data[ordinal];
     if (object instanceof Object[]) {
       return (Object[]) data[ordinal];
@@ -156,6 +158,7 @@ public class RowUtil implements Serializable {
    * @return byte data type data
    */
   public static byte[] getBinary(Object[] data, int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     return (byte[]) data[ordinal];
   }
 

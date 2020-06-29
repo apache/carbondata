@@ -32,6 +32,7 @@ public class CarbonTableCacheModel {
   private CarbonTable carbonTable;
 
   public CarbonTableCacheModel(long lastUpdatedTime, CarbonTable carbonTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     this.lastUpdatedTime = lastUpdatedTime;
     this.carbonTable = carbonTable;
     this.isValid = true;

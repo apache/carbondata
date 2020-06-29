@@ -41,6 +41,7 @@ public class CarbonTableConfig {
   private String pushRowFilter;
 
   public String getUnsafeMemoryInMb() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2295
     return unsafeMemoryInMb;
   }
 
@@ -51,6 +52,7 @@ public class CarbonTableConfig {
   }
 
   public String getEnableUnsafeInQueryExecution() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2300
     return enableUnsafeInQueryExecution;
   }
 
@@ -61,6 +63,7 @@ public class CarbonTableConfig {
   }
 
   public String getEnableUnsafeColumnPage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
     return enableUnsafeColumnPage;
   }
 
@@ -71,6 +74,7 @@ public class CarbonTableConfig {
   }
 
   public String getEnableUnsafeSort() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
     return enableUnsafeSort;
   }
 
@@ -81,6 +85,7 @@ public class CarbonTableConfig {
   }
 
   public String getEnableQueryStatistics() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
     return enableQueryStatistics;
   }
 
@@ -91,6 +96,7 @@ public class CarbonTableConfig {
   }
 
   public String getBatchSize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
     return batchSize;
   }
 
@@ -101,6 +107,7 @@ public class CarbonTableConfig {
   }
 
   public String getS3A_AcesssKey() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2418
     return s3A_acesssKey;
   }
 
@@ -171,6 +178,7 @@ public class CarbonTableConfig {
   }
 
   public String getPushRowFilter() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
     return pushRowFilter;
   }
 

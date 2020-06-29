@@ -99,17 +99,20 @@ import org.apache.log4j.Logger;
 public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private static final Logger LOG =
       LogServiceFactory.getLogService(CarbonInputFormat.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
 
   // comma separated list of input segment numbers
   public static final String INPUT_SEGMENT_NUMBERS =
       "mapreduce.input.carboninputformat.segmentnumbers";
   private static final String VALIDATE_INPUT_SEGMENT_IDs =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
       "mapreduce.input.carboninputformat.validsegments";
   private static final String FILTER_PREDICATE =
       "mapreduce.input.carboninputformat.filter.predicate";
   private static final String COLUMN_PROJECTION = "mapreduce.input.carboninputformat.projection";
   private static final String TABLE_INFO = "mapreduce.input.carboninputformat.tableinfo";
   private static final String CARBON_TRANSACTIONAL_TABLE =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
       "mapreduce.input.carboninputformat.transactional";
   private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
   private static final String CARBON_CONVERTER = "mapreduce.input.carboninputformat.converter";
@@ -119,6 +122,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       "mapreduce.input.carboninputformat.partitions.to.prune";
   private static final String FG_INDEX_PRUNING = "mapreduce.input.carboninputformat.fgindex";
   private static final String READ_COMMITTED_SCOPE =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2872
       "mapreduce.input.carboninputformat.read.committed.scope";
   private static final String READ_ONLY_DELTA = "readDeltaOnly";
 
@@ -133,6 +137,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private CarbonTable carbonTable;
 
   public int getNumSegments() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     return numSegments;
   }
 
@@ -141,6 +146,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   public int getNumStreamFiles() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2923
     return numStreamFiles;
   }
 
@@ -153,6 +159,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   public void setFileLists(List fileLists) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3365
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3363
     this.fileLists = fileLists;
   }
 
@@ -185,6 +193,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * Get the cached CarbonTable or create it by TableInfo in `configuration`
    */
   public CarbonTable getOrCreateCarbonTable(Configuration configuration)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
       throws IOException {
     if (carbonTable == null) {
       // carbon table should be created either from deserialized table info (schema saved in
@@ -210,6 +220,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
   public static void setTransactionalTable(Configuration configuration,
       boolean isTransactionalTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     configuration.set(CARBON_TRANSACTIONAL_TABLE, String.valueOf(isTransactionalTable));
   }
 
@@ -236,6 +247,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @param projectionColumns projection columns name
    */
   public static void setColumnProjection(Configuration configuration, String[] projectionColumns) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2546
     Objects.requireNonNull(projectionColumns);
     if (projectionColumns.length < 1) {
       throw new RuntimeException("Projection can't be empty");
@@ -274,6 +286,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   public static void setFgIndexPruning(Configuration configuration, boolean enable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     configuration.set(FG_INDEX_PRUNING, String.valueOf(enable));
   }
 
@@ -297,6 +310,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   public static void setQuerySegment(Configuration conf, AbsoluteTableIdentifier identifier) {
     String dbName = identifier.getCarbonTableIdentifier().getDatabaseName().toLowerCase();
     String tbName = identifier.getCarbonTableIdentifier().getTableName().toLowerCase();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     setQuerySegmentToAccess(conf, dbName, tbName);
   }
 
@@ -304,8 +318,10 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * Set `CARBON_INPUT_SEGMENTS` from property to configuration
    */
   public static void setQuerySegment(Configuration conf, String segmentList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2269
     if (!segmentList.trim().equals("*")) {
       CarbonInputFormat
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
           .setSegmentsToAccess(conf, Segment.toSegmentList(segmentList.split(","), null));
     }
   }
@@ -323,6 +339,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
           ObjectSerializationUtil.convertObjectToString(new ArrayList<>(partitions));
       configuration.set(PARTITIONS_TO_PRUNE, partitionString);
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3208
       throw new RuntimeException(
           "Error while setting partition information to Job" + partitions, e);
     }
@@ -344,6 +361,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * set list of segment to access
    */
   public static void setValidateSegmentsToAccess(Configuration configuration, Boolean validate) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     configuration.set(CarbonInputFormat.VALIDATE_INPUT_SEGMENT_IDs, validate.toString());
   }
 
@@ -367,6 +385,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   public static void setReadCommittedScope(Configuration configuration,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2872
       ReadCommittedScope committedScope) {
     if (committedScope == null) {
       return;
@@ -407,9 +426,12 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * get the count.
    */
   Long getDistributedCount(CarbonTable table,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       List<PartitionSpec> partitionNames, List<Segment> validSegments) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     IndexInputFormat indexInputFormat =
         new IndexInputFormat(table, null, validSegments, new ArrayList<String>(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3492
             partitionNames, false, null, false, false);
     indexInputFormat.setIsWriteToFile(false);
     try {
@@ -427,6 +449,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
   List<ExtendedBlocklet> getDistributedBlockRowCount(CarbonTable table,
       List<PartitionSpec> partitionNames, List<Segment> validSegments,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       List<Segment> invalidSegments, List<String> segmentsToBeRefreshed) {
     return getDistributedSplit(table, null, partitionNames, validSegments, invalidSegments,
         segmentsToBeRefreshed, true);
@@ -435,14 +458,17 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private List<ExtendedBlocklet> getDistributedSplit(CarbonTable table,
       FilterResolverIntf filterResolverIntf, List<PartitionSpec> partitionNames,
       List<Segment> validSegments, List<Segment> invalidSegments,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       List<String> segmentsToBeRefreshed, boolean isCountJob) {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       IndexJob indexJob = (IndexJob) IndexUtil.createIndexJob(IndexUtil.DISTRIBUTED_JOB_NAME);
       if (indexJob == null) {
         throw new ExceptionInInitializerError("Unable to create index job");
       }
       return IndexUtil
           .executeIndexJob(table, filterResolverIntf, indexJob, partitionNames, validSegments,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
               invalidSegments, null, false, segmentsToBeRefreshed, isCountJob);
     } catch (Exception e) {
       // Check if fallback is disabled for testing purposes then directly throw exception.
@@ -451,7 +477,9 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       }
       LOG.error("Exception occurred while getting splits using index server. Initiating Fall "
           + "back to embedded mode", e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       return IndexUtil.executeIndexJob(table, filterResolverIntf,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           IndexUtil.getEmbeddedJob(), partitionNames, validSegments,
           invalidSegments, null, true, segmentsToBeRefreshed, isCountJob);
     }
@@ -479,6 +507,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * get data blocks of given segment
    */
   protected List<CarbonInputSplit> getDataBlocksOfSegment(JobContext job, CarbonTable carbonTable,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       IndexFilter expression, List<Segment> segmentIds,
       List<Segment> invalidSegments, List<String> segmentsToBeRefreshed)
       throws IOException {
@@ -488,8 +517,11 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
     // get tokens for all the required FileSystem for table path
     TokenCache.obtainTokensForNamenodes(job.getCredentials(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
         new Path[] { new Path(carbonTable.getTablePath()) }, job.getConfiguration());
     List<ExtendedBlocklet> prunedBlocklets =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
         getPrunedBlocklets(job, carbonTable, expression, segmentIds, invalidSegments,
             segmentsToBeRefreshed);
     List<CarbonInputSplit> resultFilteredBlocks = new ArrayList<>();
@@ -499,6 +531,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       // 2. the table is a partition table, and all partitions are matched by query
       // for partition table, the task id of carbaondata file name is the partition id.
       // if this partition is not required, here will skip it.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3606
       resultFilteredBlocks.add(blocklet.getInputSplit());
     }
     statistic
@@ -512,6 +545,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * get number of block by counting distinct file path of blocklets
    */
   private int getBlockCount(List<ExtendedBlocklet> blocklets) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2929
     Set<String> filepaths = new HashSet<>();
     for (ExtendedBlocklet blocklet: blocklets) {
       filepaths.add(blocklet.getPath());
@@ -531,6 +565,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     ExplainCollector.setFilterStatement(
         filter.getExpression() == null ? "none" : filter.getExpression().getStatement());
     boolean distributedCG = Boolean.parseBoolean(CarbonProperties.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_INDEX,
             CarbonCommonConstants.USE_DISTRIBUTED_INDEX_DEFAULT));
     IndexJob indexJob = IndexUtil.getIndexJob(job.getConfiguration());
@@ -546,6 +581,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       try {
         prunedBlocklets =
             getDistributedSplit(carbonTable, filter.getResolver(), partitionsToPrune, segmentIds,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
                 invalidSegments, segmentsToBeRefreshed, false);
       } catch (Exception e) {
         // Check if fallback is disabled then directly throw exception otherwise try driver
@@ -553,12 +589,14 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         if (CarbonProperties.getInstance().isFallBackDisabled()) {
           throw e;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         prunedBlocklets = defaultIndex.prune(segmentIds, filter, partitionsToPrune);
       }
     } else {
       if (carbonTable.isTransactionalTable()) {
         IndexExprWrapper indexExprWrapper =
             IndexChooser.getDefaultIndex(getOrCreateCarbonTable(job.getConfiguration()), null);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
         IndexUtil.loadIndexes(carbonTable, indexExprWrapper, segmentIds);
       }
       prunedBlocklets = defaultIndex.prune(segmentIds, filter, partitionsToPrune);
@@ -575,6 +613,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
       // Get the available CG indexs and prune further.
       IndexExprWrapper cgIndexExprWrapper = chooser.chooseCGIndex(filter.getResolver());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
 
       if (cgIndexExprWrapper != null) {
         // Prune segments from already pruned blocklets
@@ -605,6 +644,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         if (ExplainCollector.enabled()) {
           ExplainCollector.recordCGIndexPruning(
               IndexWrapperSimpleInfo.fromIndexWrapper(cgIndexExprWrapper),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2929
               prunedBlocklets.size(), getBlockCount(prunedBlocklets));
         }
       }
@@ -613,6 +653,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         return prunedBlocklets;
       }
       // Now try to prune with FG Index.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       if (isFgIndexPruningEnable(job.getConfiguration()) && indexJob != null) {
         IndexExprWrapper fgIndexExprWrapper = chooser.chooseFGIndex(filter.getResolver());
         List<ExtendedBlocklet> fgPrunedBlocklets;
@@ -630,6 +671,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
               intersectFilteredBlocklets(carbonTable, prunedBlocklets, fgPrunedBlocklets);
           ExplainCollector.recordFGIndexPruning(
               IndexWrapperSimpleInfo.fromIndexWrapper(fgIndexExprWrapper),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2929
               prunedBlocklets.size(), getBlockCount(prunedBlocklets));
         }
       }
@@ -639,9 +681,11 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   private List<ExtendedBlocklet> intersectFilteredBlocklets(CarbonTable carbonTable,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       List<ExtendedBlocklet> previousIndexPrunedBlocklets,
       List<ExtendedBlocklet> otherIndexPrunedBlocklets) {
     List<ExtendedBlocklet> prunedBlocklets = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     if (BlockletIndexUtil.isCacheLevelBlock(carbonTable)) {
       prunedBlocklets = new ArrayList<>();
       for (ExtendedBlocklet otherBlocklet : otherIndexPrunedBlocklets) {
@@ -657,48 +701,61 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   static List<InputSplit> convertToCarbonInputSplit(List<ExtendedBlocklet> extendedBlocklets) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     List<InputSplit> resultFilteredBlocks = new ArrayList<>();
     for (ExtendedBlocklet blocklet : extendedBlocklets) {
       if (blocklet != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
         resultFilteredBlocks.add(blocklet.getInputSplit());
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2389
     return resultFilteredBlocks;
   }
 
   @Override
   public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       TaskAttemptContext taskAttemptContext) throws IOException {
     Configuration configuration = taskAttemptContext.getConfiguration();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3217
     QueryModel queryModel = createQueryModel(inputSplit, taskAttemptContext,
         getFilterPredicates(taskAttemptContext.getConfiguration()));
     CarbonReadSupport<T> readSupport = getReadSupportClass(configuration);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
     return new CarbonRecordReader<T>(queryModel, readSupport,
         taskAttemptContext.getConfiguration());
   }
 
   public QueryModel createQueryModel(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3217
     return createQueryModel(inputSplit, taskAttemptContext,
         getFilterPredicates(taskAttemptContext.getConfiguration()));
   }
 
   public QueryModel createQueryModel(InputSplit inputSplit, TaskAttemptContext taskAttemptContext,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       IndexFilter indexFilter) throws IOException {
     Configuration configuration = taskAttemptContext.getConfiguration();
     CarbonTable carbonTable = getOrCreateCarbonTable(configuration);
 
     // set projection column in the query model
     String projectionString = getColumnProjection(configuration);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2323
     String[] projectColumns;
     if (projectionString != null) {
       projectColumns = projectionString.split(",");
     } else {
       projectColumns = new String[]{};
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     if (indexFilter != null) {
       checkAndAddImplicitExpression(indexFilter.getExpression(), inputSplit);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
     QueryModel queryModel = new QueryModelBuilder(carbonTable)
         .projectColumns(projectColumns)
         .filterExpression(indexFilter)
@@ -719,6 +776,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @param inputSplit
    */
   private void checkAndAddImplicitExpression(Expression expression, InputSplit inputSplit) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3217
     if (inputSplit instanceof CarbonMultiBlockSplit) {
       CarbonMultiBlockSplit split = (CarbonMultiBlockSplit) inputSplit;
       List<CarbonInputSplit> splits = split.getAllSplits();
@@ -727,6 +785,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       for (CarbonInputSplit carbonInputSplit : splits) {
         Set<Integer> validBlockletIds = carbonInputSplit.getValidBlockletIds();
         if (null != validBlockletIds && !validBlockletIds.isEmpty()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
           String uniqueBlockPath = carbonInputSplit.getFilePath();
           String shortBlockPath = CarbonTablePath
               .getShortBlockId(uniqueBlockPath.substring(uniqueBlockPath.lastIndexOf("/Part") + 1));
@@ -759,6 +818,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         LOG.error("Error while creating " + readSupportClass, ex);
       }
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
       readSupport = new CarbonReadSupport<T>() {
         @Override
         public T readRow(Object[] data) {
@@ -797,6 +857,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @param converterClass is the Data type converter for different computing engine
    */
   public static void setDataTypeConverter(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2301
       Configuration configuration, Class<? extends DataTypeConverter> converterClass) {
     if (null != converterClass) {
       configuration.set(CARBON_CONVERTER, converterClass.getCanonicalName());
@@ -858,6 +919,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     List<String> projectColumns = new ArrayList<>();
     // complex type and add just the parent column name while skipping the child columns.
     for (ColumnSchema col : colList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3815
       if (!col.isComplexColumn()) {
         projectColumns.add(col.getColumnName());
       }
@@ -866,9 +928,11 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   private static void setQuerySegmentToAccess(Configuration conf, String dbName, String tableName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3223
     String segmentNumbersFromProperty = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS + dbName + "." + tableName, "*");
     if (!segmentNumbersFromProperty.trim().equals("*")) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
       CarbonInputFormat.setSegmentsToAccess(conf,
           Segment.toSegmentList(segmentNumbersFromProperty.split(","), null));
     }
@@ -881,10 +945,12 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     String tableName = carbonTable.getTableName();
     // The below change is for Secondary Index table. If CARBON_INPUT_SEGMENTS is set to main table,
     // then the same has to be reflected for index tables.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     String parentTableName = carbonTable.getParentTableName();
     if (!parentTableName.isEmpty()) {
       tableName = parentTableName;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     setQuerySegmentToAccess(conf, carbonTable.getDatabaseName(), tableName);
   }
 

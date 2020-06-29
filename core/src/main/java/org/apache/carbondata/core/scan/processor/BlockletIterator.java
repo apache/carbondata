@@ -23,6 +23,7 @@ import org.apache.carbondata.core.datastore.DataRefNode;
 /**
  * Below class will be used to iterate over data block
  */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
 class BlockletIterator extends CarbonIterator<DataRefNode> {
   /**
    * data store block
@@ -49,6 +50,7 @@ class BlockletIterator extends CarbonIterator<DataRefNode> {
    * @param datablock                 first data block
    * @param totalNumberOfBlockletToScan total number of blocklets to be scanned
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   BlockletIterator(DataRefNode datablock, long totalNumberOfBlockletToScan) {
     this.datablock = datablock;
     this.totalNumberOfBlocksToScan = totalNumberOfBlockletToScan;

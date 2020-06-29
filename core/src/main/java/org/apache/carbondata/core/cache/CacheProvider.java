@@ -58,6 +58,7 @@ public class CacheProvider {
    */
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CacheProvider.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-484
 
   /**
    * private constructor to follow singleton design pattern for this class
@@ -91,6 +92,7 @@ public class CacheProvider {
           if (null == carbonLRUCache) {
             createLRULevelCacheInstance();
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           createBlockletIndexCache(cacheType);
         }
       }
@@ -103,13 +105,16 @@ public class CacheProvider {
    * if it is not present in the map
    */
   public <K, V> Cache<K, V> createCache(CacheType cacheType, String cacheClassName)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2549
       throws Exception {
     //check if lru cache is null, if null create one
     //check if cache is null for given cache type, if null create one
     if (!isCacheExists(cacheType)) {
       synchronized (lock) {
         if (!isCacheExists(cacheType)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-484
           if (null == carbonLRUCache) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2549
             createLRULevelCacheInstance();
           }
           Class<?> clazz = Class.forName(cacheClassName);
@@ -130,7 +135,9 @@ public class CacheProvider {
    */
   private void createBlockletIndexCache(CacheType cacheType) {
     Cache cacheObject = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     if (cacheType.equals(cacheType.DRIVER_BLOCKLET_INDEX)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       cacheObject = new BlockletIndexStore(carbonLRUCache);
     }
     cacheTypeToCacheMap.put(cacheType, cacheObject);
@@ -142,8 +149,10 @@ public class CacheProvider {
    */
   private void createLRULevelCacheInstance() {
     boolean isDriver = Boolean.parseBoolean(CarbonProperties.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3038
         .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE,
             CarbonCommonConstants.IS_DRIVER_INSTANCE_DEFAULT));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-484
     if (isDriver) {
       carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE,
           CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
@@ -176,6 +185,7 @@ public class CacheProvider {
   }
 
   public CarbonLRUCache getCarbonCache() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3305
     return carbonLRUCache;
   }
 }

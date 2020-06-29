@@ -43,6 +43,7 @@ public class IndexRowImpl extends IndexRow {
   public int getLengthInBytes(int ordinal) {
     // if the segment data is written in tablepath
     // then the data[BlockletIndexRowIndexes.SUMMARY_INDEX_PATH] will be null.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     if (data[ordinal] == null) {
       return 0;
     }
@@ -62,11 +63,13 @@ public class IndexRowImpl extends IndexRow {
 
   @Override
   public IndexRow getRow(int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     return (IndexRow) data[ordinal];
   }
 
   @Override
   public void setByteArray(byte[] byteArray, int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     assert (schemas[ordinal].getDataType() == DataTypes.BYTE_ARRAY);
     data[ordinal] = byteArray;
   }
@@ -78,6 +81,7 @@ public class IndexRowImpl extends IndexRow {
 
   @Override
   public void setInt(int value, int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     assert (schemas[ordinal].getDataType() == DataTypes.INT);
     data[ordinal] = value;
   }
@@ -95,6 +99,7 @@ public class IndexRowImpl extends IndexRow {
 
   @Override
   public void setShort(short value, int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     assert (schemas[ordinal].getDataType() == DataTypes.SHORT);
     data[ordinal] = value;
   }
@@ -106,6 +111,7 @@ public class IndexRowImpl extends IndexRow {
 
   @Override
   public void setLong(long value, int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     assert (schemas[ordinal].getDataType() == DataTypes.LONG);
     data[ordinal] = value;
   }
@@ -117,6 +123,7 @@ public class IndexRowImpl extends IndexRow {
 
   @Override
   public void setFloat(float value, int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     assert (schemas[ordinal].getDataType() == DataTypes.FLOAT);
     data[ordinal] = value;
   }
@@ -134,6 +141,7 @@ public class IndexRowImpl extends IndexRow {
 
   @Override
   public void setRow(IndexRow row, int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     assert (DataTypes.isStructType(schemas[ordinal].getDataType()));
     data[ordinal] = row;
   }
@@ -144,6 +152,7 @@ public class IndexRowImpl extends IndexRow {
   }
 
   public void setTotalLengthInBytes(int totalLengthInBytes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2037
     this.totalLengthInBytes = totalLengthInBytes;
   }
 

@@ -51,6 +51,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
  * carbondata column APIs and fills the data directly into columns.
  */
 class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
 
   private int batchIdx = 0;
 
@@ -78,6 +79,7 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   private CarbonPrestoDecodeReadSupport readSupport;
 
   public PrestoCarbonVectorizedRecordReader(QueryExecutor queryExecutor, QueryModel queryModel,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
       AbstractDetailQueryResultIterator iterator, CarbonPrestoDecodeReadSupport readSupport) {
     this.queryModel = queryModel;
     this.iterator = iterator;
@@ -92,6 +94,7 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
    */
   @Override
   public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException, UnsupportedOperationException {
     // The input split can contain single HDFS block or multiple blocks, so firstly get all the
     // blocks and then set them in the query model.
@@ -109,6 +112,9 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
     queryModel.setTableBlockInfos(tableBlockInfoList);
     queryModel.setVectorReader(true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     queryExecutor =
         QueryExecutorFactory.getQueryExecutor(queryModel, taskAttemptContext.getConfiguration());
     iterator = (AbstractDetailQueryResultIterator) queryExecutor.execute(queryModel);
@@ -147,6 +153,7 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     if (returnColumnarBatch) {
       rowCount += columnarBatch.numValidRows();
       return columnarBatch;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1779
     } else {
       return null;
     }
@@ -175,6 +182,7 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     StructField[] fields = new StructField[queryDimension.size() + queryMeasures.size()];
     for (int i = 0; i < queryDimension.size(); i++) {
       ProjectionDimension dim = queryDimension.get(i);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (dim.getDimension().isComplex()) {
         fields[dim.getOrdinal()] =
             new StructField(dim.getColumnName(), dim.getDimension().getDataType());
@@ -189,10 +197,12 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     }
 
     for (ProjectionMeasure msr : queryMeasures) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3261
       fields[msr.getOrdinal()] =
           new StructField(msr.getColumnName(), msr.getMeasure().getDataType());
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
     columnarBatch =
         CarbonVectorBatch.allocate(fields, readSupport, queryModel.isDirectVectorFill());
     CarbonColumnVector[] vectors = new CarbonColumnVector[fields.length];
@@ -237,6 +247,7 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   }
 
   public CarbonVectorBatch getColumnarBatch() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2656
     return columnarBatch;
   }
 

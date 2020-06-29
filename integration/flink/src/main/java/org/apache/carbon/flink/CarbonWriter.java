@@ -42,6 +42,8 @@ public abstract class CarbonWriter extends ProxyFileWriter<Object[]> {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonS3Writer.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
 
   public CarbonWriter(final CarbonWriterFactory factory,
       final String identifier, final CarbonTable table) {

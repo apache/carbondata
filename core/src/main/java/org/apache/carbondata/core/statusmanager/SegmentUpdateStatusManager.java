@@ -69,6 +69,7 @@ public class SegmentUpdateStatusManager {
 
   public SegmentUpdateStatusManager(CarbonTable table,
       LoadMetadataDetails[] segmentDetails) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
     this(table, segmentDetails, null);
   }
 
@@ -80,6 +81,7 @@ public class SegmentUpdateStatusManager {
   public SegmentUpdateStatusManager(CarbonTable table,
       LoadMetadataDetails[] segmentDetails, String updateVersion) {
     this.identifier = table.getAbsoluteTableIdentifier();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
     this.isPartitionTable = table.isHivePartitionTable();
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
@@ -97,6 +99,9 @@ public class SegmentUpdateStatusManager {
     this.identifier = table.getAbsoluteTableIdentifier();
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2472
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2570
     if (!table.getTableInfo().isTransactionalTable()) {
       // fileExist is costly operation, so check based on table Type
       segmentDetails = new LoadMetadataDetails[0];
@@ -104,12 +109,14 @@ public class SegmentUpdateStatusManager {
       segmentDetails = SegmentStatusManager.readLoadMetadata(
           CarbonTablePath.getMetadataPath(identifier.getTablePath()));
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
     this.isPartitionTable = table.isHivePartitionTable();
     if (segmentDetails.length != 0) {
       updateDetails = readLoadMetadata();
     } else {
       updateDetails = new SegmentUpdateDetails[0];
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
     updateUpdateDetails(updateVersion);
     populateMap();
   }
@@ -127,6 +134,7 @@ public class SegmentUpdateStatusManager {
             HashSet<String> set = new HashSet<>();
             set.add(updateVersion);
             updateDetail.setDeltaFileStamps(set);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
             updateDetail.setSegmentStatus(SegmentStatus.SUCCESS);
             newupdateDetails.add(updateDetail);
           }
@@ -146,6 +154,7 @@ public class SegmentUpdateStatusManager {
     blockAndDetailsMap = new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (SegmentUpdateDetails blockDetails : updateDetails) {
       String blockIdentifier = CarbonUpdateUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
           .getSegmentBlockNameKey(blockDetails.getSegmentName(), blockDetails.getActualBlockName(),
               isPartitionTable);
       blockAndDetailsMap.put(blockIdentifier, blockDetails);
@@ -162,6 +171,7 @@ public class SegmentUpdateStatusManager {
 
     String blockIdentifier = CarbonUpdateUtil
         .getSegmentBlockNameKey(segID, actualBlockName, isPartitionTable);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
 
     return blockAndDetailsMap.get(blockIdentifier);
 
@@ -208,6 +218,7 @@ public class SegmentUpdateStatusManager {
    * @return
    */
   public ICarbonLock getTableUpdateStatusLock() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     return CarbonLockFactory.getCarbonLockObj(identifier,
         LockUsage.TABLE_UPDATE_STATUS_LOCK);
   }
@@ -224,6 +235,7 @@ public class SegmentUpdateStatusManager {
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     String endTimeStamp = "";
     String startTimeStamp = "";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     String segmentPath = CarbonTablePath.getSegmentPath(
         identifier.getTablePath(), segmentId);
     CarbonFile segDir =
@@ -293,6 +305,7 @@ public class SegmentUpdateStatusManager {
   private List<String> getDeltaFiles(String blockPath, String segment, String extension) {
     Path path = new Path(blockPath);
     String completeBlockName = path.getName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
     String blockNameWithoutExtn =
         completeBlockName.substring(0, completeBlockName.lastIndexOf('.'));
     //blockName without timestamp
@@ -311,6 +324,7 @@ public class SegmentUpdateStatusManager {
     List<String> blockNames = new ArrayList<String>();
     for (SegmentUpdateDetails block : updateDetails) {
       if (block.getSegmentName().equalsIgnoreCase(segmentName) && !CarbonUpdateUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
           .isBlockInvalid(block.getSegmentStatus())) {
         blockNames.add(block.getBlockName());
       }
@@ -330,6 +344,7 @@ public class SegmentUpdateStatusManager {
     SegmentUpdateDetails details = getDetailsForABlock(segName, blockName);
 
     return details == null || !CarbonUpdateUtil.isBlockInvalid(details.getSegmentStatus());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
 
   }
 
@@ -343,6 +358,7 @@ public class SegmentUpdateStatusManager {
    * @return the list of delete file
    */
   private List<String> getDeltaFiles(String blockDir, final String blockNameFromTuple,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       final String extension, String segment) {
     List<String> deleteFileList = new ArrayList<>();
     for (SegmentUpdateDetails block : updateDetails) {
@@ -383,6 +399,7 @@ public class SegmentUpdateStatusManager {
 
   private List<String> getFilePaths(String blockDir, final String blockNameFromTuple,
       final String extension, List<String> deleteFileList, final long deltaStartTimestamp,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       final long deltaEndTimeStamp) {
     List<String> deltaList = segmentDeleteDeltaListMap.get(blockDir);
     if (deltaList == null) {
@@ -390,6 +407,7 @@ public class SegmentUpdateStatusManager {
         @Override
         public boolean accept(CarbonFile pathName) {
           String fileName = pathName.getName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2275
           if (fileName.endsWith(extension) && pathName.getSize() > 0) {
             return true;
           }
@@ -430,13 +448,17 @@ public class SegmentUpdateStatusManager {
    * @return
    */
   public CarbonFile[] getDeleteDeltaFilesList(final Segment segmentId, final String blockName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     String segmentPath = CarbonTablePath.getSegmentPath(
         identifier.getTablePath(), segmentId.getSegmentNo());
     CarbonFile segDir =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         FileFactory.getCarbonFile(segmentPath);
     for (SegmentUpdateDetails block : updateDetails) {
       if ((block.getBlockName().equalsIgnoreCase(blockName)) &&
           (block.getSegmentName().equalsIgnoreCase(segmentId.getSegmentNo()))
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
           && !CarbonUpdateUtil.isBlockInvalid((block.getSegmentStatus()))) {
         final long deltaStartTimestamp =
             getStartTimeOfDeltaFile(CarbonCommonConstants.DELETE_DELTA_FILE_EXT, block);
@@ -444,10 +466,12 @@ public class SegmentUpdateStatusManager {
             getEndTimeOfDeltaFile(CarbonCommonConstants.DELETE_DELTA_FILE_EXT, block);
 
         return segDir.listFiles(new CarbonFileFilter() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
 
           @Override
           public boolean accept(CarbonFile pathName) {
             String fileName = pathName.getName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2275
             if (fileName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
                 && pathName.getSize() > 0) {
               String firstPart = fileName.substring(0, fileName.indexOf('.'));
@@ -475,8 +499,10 @@ public class SegmentUpdateStatusManager {
    * @return
    */
   public CarbonFile[] getUpdateDeltaFilesList(LoadMetadataDetails loadMetadataDetail,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3394
       final boolean validUpdateFiles, final String fileExtension, final boolean excludeOriginalFact,
       CarbonFile[] allFilesOfSegment, boolean isAbortedFile) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2021
 
     String endTimeStamp = "";
     String startTimeStamp = "";
@@ -521,6 +547,7 @@ public class SegmentUpdateStatusManager {
           }
         } else {
           // invalid cases.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2021
           if (isAbortedFile) {
             if (Long.compare(timestamp, endTimeStampFinal) > 0) {
               listOfCarbonFiles.add(eachFile);
@@ -601,6 +628,7 @@ public class SegmentUpdateStatusManager {
 
             for (SegmentUpdateDetails blockDetails : getUpdateStatusDetails()) {
               if (blockDetails.getActualBlockName().equalsIgnoreCase(eachFile.getName())
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
                   && CarbonUpdateUtil.isBlockInvalid(blockDetails.getSegmentStatus())) {
                 validBlock = false;
               }
@@ -665,6 +693,7 @@ public class SegmentUpdateStatusManager {
    */
   public SegmentUpdateDetails[] readLoadMetadata() {
     // get the updated status file identifier from the table status.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
     String tableUpdateStatusIdentifier = getUpdatedStatusIdentifier();
     return readLoadMetadata(tableUpdateStatusIdentifier, identifier.getTablePath());
   }
@@ -689,16 +718,19 @@ public class SegmentUpdateStatusManager {
     String tableUpdateStatusPath =
         CarbonTablePath.getMetadataPath(tablePath) +
             CarbonCommonConstants.FILE_SEPARATOR + tableUpdateStatusIdentifier;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2745
     AtomicFileOperations fileOperation =
         AtomicFileOperationFactory.getAtomicFileOperations(tableUpdateStatusPath);
 
     try {
       if (!FileFactory
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
           .isFileExist(tableUpdateStatusPath)) {
         return new SegmentUpdateDetails[0];
       }
       dataInputStream = fileOperation.openForRead();
       inStream = new InputStreamReader(dataInputStream,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
           CarbonCommonConstants.DEFAULT_CHARSET);
       buffReader = new BufferedReader(inStream);
       listOfSegmentUpdateDetailsArray =
@@ -716,6 +748,7 @@ public class SegmentUpdateStatusManager {
    * @return updateStatusFileName
    */
   private String getUpdatedStatusIdentifier() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2204
     if (segmentDetails.length == 0) {
       return null;
     }
@@ -731,11 +764,13 @@ public class SegmentUpdateStatusManager {
   public void writeLoadDetailsIntoFile(List<SegmentUpdateDetails> listOfSegmentUpdateDetailsArray,
       String updateStatusFileIdentifier) throws IOException {
     String fileLocation =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
         CarbonTablePath.getMetadataPath(identifier.getTablePath())
             + CarbonCommonConstants.FILE_SEPARATOR
             + CarbonUpdateUtil.getUpdateStatusFileName(updateStatusFileIdentifier);
 
     AtomicFileOperations fileWrite =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2745
         AtomicFileOperationFactory.getAtomicFileOperations(fileLocation);
     BufferedWriter brWriter = null;
     DataOutputStream dataOutputStream = null;
@@ -746,11 +781,13 @@ public class SegmentUpdateStatusManager {
       dataOutputStream = fileWrite.openForWrite(FileWriteOperation.OVERWRITE);
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
           CarbonCommonConstants.DEFAULT_CHARSET));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
 
       String metadataInstance = gsonObjectToWrite.toJson(listOfSegmentUpdateDetailsArray);
       brWriter.write(metadataInstance);
     } catch (IOException ioe) {
       LOG.error("Error message: " + ioe.getLocalizedMessage());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2749
       fileWrite.setFailed();
       throw ioe;
     } finally {
@@ -788,6 +825,7 @@ public class SegmentUpdateStatusManager {
    */
   public static UpdateVO getInvalidTimestampRange(LoadMetadataDetails loadMetadataDetails) {
     UpdateVO range = new UpdateVO();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3759
     if (loadMetadataDetails != null) {
       range.setSegmentId(loadMetadataDetails.getLoadName());
       range.setFactTimestamp(loadMetadataDetails.getLoadStartTime());
@@ -811,6 +849,7 @@ public class SegmentUpdateStatusManager {
   public CarbonFile[] getDeleteDeltaInvalidFilesList(
       final SegmentUpdateDetails block, final boolean needCompleteList,
       CarbonFile[] allSegmentFiles, boolean isAbortedFile) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2021
 
     final long deltaStartTimestamp =
         getStartTimeOfDeltaFile(CarbonCommonConstants.DELETE_DELTA_FILE_EXT, block);
@@ -818,6 +857,7 @@ public class SegmentUpdateStatusManager {
     final long deltaEndTimestamp =
         getEndTimeOfDeltaFile(CarbonCommonConstants.DELETE_DELTA_FILE_EXT, block);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3508
     Set<CarbonFile> files =
         new HashSet<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
@@ -836,6 +876,7 @@ public class SegmentUpdateStatusManager {
             CarbonTablePath.DataFileUtil.getTimeStampFromDeleteDeltaFile(fileName));
 
         if (block.getBlockName().equalsIgnoreCase(blkName)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2021
 
           if (isAbortedFile) {
             if (Long.compare(timestamp, deltaEndTimestamp) > 0) {

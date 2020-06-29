@@ -31,6 +31,7 @@ public class StringStatsCollector implements ColumnPageStatsCollector {
    * allowed character limit for to be considered for storing min max
    */
   protected static final int allowedMinMaxByteLimit = Integer.parseInt(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
       CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT));
   /**
@@ -45,6 +46,7 @@ public class StringStatsCollector implements ColumnPageStatsCollector {
   private boolean ignoreWritingMinMax;
 
   public static StringStatsCollector newInstance() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     return new StringStatsCollector();
   }
 
@@ -91,10 +93,12 @@ public class StringStatsCollector implements ColumnPageStatsCollector {
   @Override
   public void update(byte[] value) {
     // return if min/max need not be written
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     if (isIgnoreMinMaxFlagSet(value)) {
       return;
     }
     if (min == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
       min = value;
     }
     if (null == max) {
@@ -144,6 +148,7 @@ public class StringStatsCollector implements ColumnPageStatsCollector {
 
       @Override
       public DataType getDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         return DataTypes.STRING;
       }
 

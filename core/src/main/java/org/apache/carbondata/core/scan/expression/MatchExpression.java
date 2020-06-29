@@ -63,6 +63,7 @@ public class MatchExpression extends Expression {
 
   @Override
   public String getStatement() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2371
     return "TEXT_MATCH('" + queryString + "')";
   }
 }

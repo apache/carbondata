@@ -92,6 +92,7 @@ public class StoreCreator {
   private List<String> sortColumns = new ArrayList<>();
 
   public StoreCreator(String storePath, String csvPath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     this.storePath = storePath;
     this.csvPath = csvPath;
     String dbName = "testdb";
@@ -110,9 +111,13 @@ public class StoreCreator {
   }
 
   public static CarbonLoadModel buildCarbonLoadModel(CarbonTable table, String factFilePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
       AbsoluteTableIdentifier absoluteTableIdentifier) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     CarbonDataLoadSchema schema = new CarbonDataLoadSchema(table);
     CarbonLoadModel loadModel = new CarbonLoadModel();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     String columnCompressor = table.getTableInfo().getFactTable().getTableProperties().get(
         CarbonCommonConstants.COMPRESSOR);
     if (columnCompressor == null) {
@@ -125,11 +130,14 @@ public class StoreCreator {
     loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
     loadModel.setFactFilePath(factFilePath);
     loadModel.setLoadMetadataDetails(new ArrayList<LoadMetadataDetails>());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
     loadModel.setTablePath(absoluteTableIdentifier.getTablePath());
     loadModel.setDateFormat(null);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     loadModel.setCarbonTransactionalTable(table.isTransactionalTable());
     loadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
         CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1412
         CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS));
     loadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
         CarbonCommonConstants.CARBON_DATE_FORMAT,
@@ -161,6 +169,7 @@ public class StoreCreator {
   public CarbonLoadModel createCarbonStore() throws Exception {
     CarbonLoadModel loadModel = createTableAndLoadModel();
     loadData(loadModel, storePath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3555
     return loadModel;
   }
 
@@ -168,6 +177,7 @@ public class StoreCreator {
    * Create store without any restructure
    */
   public void createCarbonStore(CarbonLoadModel loadModel) throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     loadData(loadModel, storePath);
   }
 
@@ -175,6 +185,7 @@ public class StoreCreator {
    * Method to clear the index
    */
   public void clearIndexes() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     IndexStoreManager.getInstance().clearIndex(absoluteTableIdentifier);
   }
 
@@ -193,6 +204,7 @@ public class StoreCreator {
   }
 
   public CarbonTable createTable(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
       AbsoluteTableIdentifier identifier) throws IOException {
     TableInfo tableInfo = new TableInfo();
     tableInfo.setDatabaseName(identifier.getCarbonTableIdentifier().getDatabaseName());
@@ -203,9 +215,11 @@ public class StoreCreator {
     int schemaOrdinal = 0;
     ColumnSchema id = new ColumnSchema();
     id.setColumnName("id");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     id.setDataType(DataTypes.INT);
     id.setEncodingList(encodings);
     id.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1855
     id.setColumnReferenceId(id.getColumnUniqueId());
     id.setDimensionColumn(true);
     id.setSchemaOrdinal(schemaOrdinal++);
@@ -216,76 +230,99 @@ public class StoreCreator {
 
     ColumnSchema date = new ColumnSchema();
     date.setColumnName("date");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     date.setDataType(DataTypes.STRING);
     date.setEncodingList(encodings);
     date.setColumnUniqueId(UUID.randomUUID().toString());
     date.setDimensionColumn(true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     date.setColumnReferenceId(date.getColumnUniqueId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     date.setSchemaOrdinal(schemaOrdinal++);
     if (sortColumns.contains(date.getColumnName())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
       date.setSortColumn(true);
     }
     columnSchemas.add(date);
 
     ColumnSchema country = new ColumnSchema();
     country.setColumnName("country");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     country.setDataType(DataTypes.STRING);
     country.setEncodingList(encodings);
     country.setColumnUniqueId(UUID.randomUUID().toString());
     country.setDimensionColumn(true);
     country.setSortColumn(true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     country.setSchemaOrdinal(schemaOrdinal++);
     if (sortColumns.contains(country.getColumnName())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
       country.setSortColumn(true);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     country.setColumnReferenceId(country.getColumnUniqueId());
     columnSchemas.add(country);
 
     ColumnSchema name = new ColumnSchema();
     name.setColumnName("name");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     name.setDataType(DataTypes.STRING);
     name.setEncodingList(encodings);
     name.setColumnUniqueId(UUID.randomUUID().toString());
     name.setDimensionColumn(true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     name.setSchemaOrdinal(schemaOrdinal++);
     if (sortColumns.contains(name.getColumnName())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
       name.setSortColumn(true);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     name.setColumnReferenceId(name.getColumnUniqueId());
     columnSchemas.add(name);
 
     ColumnSchema phonetype = new ColumnSchema();
     phonetype.setColumnName("phonetype");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     phonetype.setDataType(DataTypes.STRING);
     phonetype.setEncodingList(encodings);
     phonetype.setColumnUniqueId(UUID.randomUUID().toString());
     phonetype.setDimensionColumn(true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     phonetype.setSchemaOrdinal(schemaOrdinal++);
     if (sortColumns.contains(phonetype.getColumnName())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
       phonetype.setSortColumn(true);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     phonetype.setColumnReferenceId(phonetype.getColumnUniqueId());
     columnSchemas.add(phonetype);
 
     ColumnSchema serialname = new ColumnSchema();
     serialname.setColumnName("serialname");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     serialname.setDataType(DataTypes.STRING);
     serialname.setEncodingList(encodings);
     serialname.setColumnUniqueId(UUID.randomUUID().toString());
     serialname.setDimensionColumn(true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     serialname.setSchemaOrdinal(schemaOrdinal++);
     if (sortColumns.contains(serialname.getColumnName())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
       serialname.setSortColumn(true);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     serialname.setColumnReferenceId(serialname.getColumnUniqueId());
     columnSchemas.add(serialname);
     ColumnSchema salary = new ColumnSchema();
     salary.setColumnName("salary");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     salary.setDataType(DataTypes.INT);
     salary.setEncodingList(new ArrayList<Encoding>());
     salary.setColumnUniqueId(UUID.randomUUID().toString());
     salary.setDimensionColumn(false);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     salary.setColumnReferenceId(salary.getColumnUniqueId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     salary.setSchemaOrdinal(schemaOrdinal++);
     columnSchemas.add(salary);
 
@@ -294,9 +331,11 @@ public class StoreCreator {
     tableSchema.setListOfColumns(columnSchemas1);
     SchemaEvolution schemaEvol = new SchemaEvolution();
     schemaEvol.setSchemaEvolutionEntryList(new ArrayList<SchemaEvolutionEntry>());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2500
     tableSchema.setSchemaEvolution(schemaEvol);
     tableSchema.setTableId(UUID.randomUUID().toString());
     tableInfo.setTableUniqueName(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
         identifier.getCarbonTableIdentifier().getTableUniqueName()
     );
     tableInfo.setLastUpdatedTime(System.currentTimeMillis());
@@ -307,6 +346,7 @@ public class StoreCreator {
     CarbonMetadata.getInstance().loadTableMetadata(tableInfo);
 
     SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
     org.apache.carbondata.format.TableInfo thriftTableInfo =
         schemaConverter.fromWrapperToExternalTableInfo(
             tableInfo,
@@ -317,6 +357,7 @@ public class StoreCreator {
     thriftTableInfo.getFact_table().getSchema_evolution().getSchema_evolution_history()
         .add(schemaEvolutionEntry);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     if (!FileFactory.isFileExist(schemaMetadataPath)) {
       FileFactory.mkdirs(schemaMetadataPath);
     }
@@ -329,6 +370,7 @@ public class StoreCreator {
   }
 
   private List<ColumnSchema> reArrangeColumnSchema(List<ColumnSchema> columnSchemas) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     List<ColumnSchema> newColumnSchema = new ArrayList<>(columnSchemas.size());
     // add sort columns first
     for (ColumnSchema columnSchema : columnSchemas) {
@@ -352,6 +394,7 @@ public class StoreCreator {
   }
 
   public void setSortColumns(List<String> sortColumns) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     this.sortColumns = sortColumns;
   }
 
@@ -364,6 +407,7 @@ public class StoreCreator {
    */
   public static void loadData(CarbonLoadModel loadModel, String storeLocation)
       throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2165
     if (new File(storeLocation).mkdirs()) {
       LOG.warn("mkdir is failed");
     }
@@ -387,6 +431,7 @@ public class StoreCreator {
             + File.separator + 0 + File.separator + 1 + File.separator + tableName + ".ktr";
     File path = new File(graphPath);
     if (path.exists()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2165
       if (!path.delete()) {
         LOG.warn("delete " + path + " failed");
       }
@@ -400,6 +445,7 @@ public class StoreCreator {
     CSVInputFormat.setEscapeCharacter(configuration, loadModel.getEscapeChar());
     CSVInputFormat.setHeaderExtractionEnabled(configuration, true);
     CSVInputFormat.setQuoteCharacter(configuration, loadModel.getQuoteChar());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2165
     CSVInputFormat.setReadBufferSize(configuration,
         CarbonProperties.getInstance().getProperty(
             CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
@@ -408,6 +454,7 @@ public class StoreCreator {
         configuration, String.valueOf(loadModel.getCsvHeaderColumns().length));
     CSVInputFormat.setMaxColumns(configuration, "10");
     CSVInputFormat.setLineSeparator(configuration, loadModel.getLineSeparator());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3740
 
     TaskAttemptContextImpl hadoopAttemptContext =
         new TaskAttemptContextImpl(configuration, new TaskAttemptID("", 1, TaskType.MAP, 0, 0));
@@ -418,8 +465,12 @@ public class StoreCreator {
 
     CSVRecordReaderIterator readerIterator =
         new CSVRecordReaderIterator(recordReader, blockDetails, hadoopAttemptContext);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3162
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3164
     DataTypeUtil.clearFormatter();
     new DataLoadExecutor().execute(loadModel,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
         new String[] {storeLocation + "/" + databaseName + "/" + tableName},
         new CarbonIterator[]{readerIterator});
 
@@ -432,13 +483,16 @@ public class StoreCreator {
       String tableName, List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
     LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
     loadMetadataDetails.setLoadEndTime(System.currentTimeMillis());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
     loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS);
     loadMetadataDetails.setLoadName(String.valueOf(0));
     loadMetadataDetails.setLoadStartTime(loadMetadataDetails.getTimeStamp(readCurrentTime()));
     listOfLoadFolderDetails.add(loadMetadataDetails);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     String dataLoadLocation = schema.getCarbonTable().getMetadataPath() + File.separator
         + CarbonTablePath.TABLE_STATUS_FILE;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2204
 
     DataOutputStream dataOutputStream;
     Gson gsonObjectToWrite = new Gson();
@@ -446,6 +500,7 @@ public class StoreCreator {
 
     AtomicFileOperations writeOperation =
         AtomicFileOperationFactory.getAtomicFileOperations(dataLoadLocation);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2745
 
     try {
 
@@ -455,6 +510,7 @@ public class StoreCreator {
 
       String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetails.toArray());
       brWriter.write(metadataInstance);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2749
     } catch (IOException ioe) {
       LOG.error("Error message: " + ioe.getLocalizedMessage());
       writeOperation.setFailed();
@@ -476,6 +532,7 @@ public class StoreCreator {
   }
 
   public static String readCurrentTime() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1412
     SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
     String date = null;
 
@@ -485,6 +542,7 @@ public class StoreCreator {
   }
 
   public static void main(String[] args) throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     new StoreCreator(new File("target/store").getAbsolutePath(),
         new File("../hadoop/src/test/resources/data.csv").getCanonicalPath()).createCarbonStore();
   }

@@ -39,6 +39,7 @@ public class TestEncodingFactory extends TestCase {
     // for Byte
     primitivePageStatsCollector.update((long) Byte.MAX_VALUE);
     ColumnPageCodec columnPageCodec =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
         DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false, null);
     assert (columnPageCodec instanceof AdaptiveIntegralCodec);
     assert (DataTypes.BYTE == ((AdaptiveIntegralCodec) columnPageCodec).getTargetDataType());
@@ -68,6 +69,7 @@ public class TestEncodingFactory extends TestCase {
     // for Byte
     primitivePageStatsCollector.update((long) 200);
     ColumnPageCodec columnPageCodec =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
         DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false, null);
     assert (columnPageCodec instanceof AdaptiveDeltaIntegralCodec);
     assert (DataTypes.BYTE == ((AdaptiveDeltaIntegralCodec) columnPageCodec).getTargetDataType());

@@ -33,6 +33,7 @@ public interface CarbonReadSupport<T> {
    * @param carbonColumns column list
    * @param carbonTable table identifier
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
   default void initialize(CarbonColumn[] carbonColumns, CarbonTable carbonTable)
       throws IOException {
   }

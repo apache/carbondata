@@ -71,6 +71,7 @@ public class ObjectSerializationUtil {
       }
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2026
     return CarbonUtil.encodeToString(baos.toByteArray());
   }
 
@@ -87,6 +88,7 @@ public class ObjectSerializationUtil {
     }
 
     byte[] bytes = CarbonUtil.decodeStringToBytes(objectString);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2026
 
     ByteArrayInputStream bais = null;
     GZIPInputStream gis = null;
@@ -95,6 +97,7 @@ public class ObjectSerializationUtil {
     try {
       bais = new ByteArrayInputStream(bytes);
       gis = new GZIPInputStream(bais);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3300
       ois = new ClassLoaderObjectInputStream(Thread.currentThread().getContextClassLoader(), gis);
       return ois.readObject();
     } catch (ClassNotFoundException e) {

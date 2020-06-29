@@ -58,6 +58,7 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(
           UnsafeParallelReadMergeSorterWithColumnRangeImpl.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
 
   private SortParameters originSortParameters;
   private UnsafeIntermediateMerger[] intermediateFileMergers;
@@ -88,6 +89,7 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
       insideRowCounterList.add(new AtomicLong(0));
     }
     // Delete if any older file exists in sort temp folder
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
     CarbonDataProcessorUtil.deleteSortLocationIfExists(sortParameters.getTempFileLocation());
     // create new sort temp directory
     CarbonDataProcessorUtil.createLocations(sortParameters.getTempFileLocation());
@@ -111,6 +113,7 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
             new UnsafeSortDataRows(parameters, intermediateFileMergers[i], inMemoryChunkSizeInMB);
         sortDataRows[i].initialize();
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2238
     } catch (Exception e) {
       throw new CarbonDataLoadingException(e);
     }
@@ -119,6 +122,7 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
     final int batchSize = CarbonProperties.getInstance().getBatchSize();
     try {
       for (int i = 0; i < iterators.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
         executorService.execute(new SortIteratorThread(iterators[i], sortDataRows, rowCounter,
             this.insideRowCounterList, this.threadStatusObserver));
       }
@@ -148,7 +152,9 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
   }
 
   private UnsafeSingleThreadFinalSortFilesMerger getFinalMerger(SortParameters sortParameters) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
     String[] storeLocation = CarbonDataProcessorUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
         .getLocalDataFolderLocation(sortParameters.getCarbonTable(),
             String.valueOf(sortParameters.getTaskNo()), sortParameters.getSegmentId() + "", false,
             false);
@@ -160,6 +166,7 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
 
   @Override
   public void close() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     for (int i = 0; i < intermediateFileMergers.length; i++) {
       intermediateFileMergers[i].close();
     }
@@ -188,11 +195,14 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
   }
 
   private void setTempLocation(SortParameters parameters) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
     String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
         .getLocalDataFolderLocation(parameters.getCarbonTable(), parameters.getTaskNo(),
             parameters.getSegmentId(), false, false);
     String[] tmpLoc = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath, File.separator,
         CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2646
     LOGGER.warn("set temp location: " + StringUtils.join(tmpLoc, ", "));
     parameters.setTempFileLocation(tmpLoc);
   }
@@ -210,6 +220,7 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
     private ThreadStatusObserver threadStatusObserver;
 
     public SortIteratorThread(Iterator<CarbonRowBatch> iterator,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
         UnsafeSortDataRows[] sortDataRows, AtomicLong rowCounter,
         List<AtomicLong> insideRowCounterList,
         ThreadStatusObserver threadStatusObserver) {
@@ -228,6 +239,7 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
           while (batch.hasNext()) {
             CarbonRow row = batch.next();
             if (row != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
               UnsafeSortDataRows sortDataRow = sortDataRows[row.getRangeId()];
               synchronized (sortDataRow) {
                 rowCounter.getAndIncrement();
@@ -239,6 +251,7 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
         }
         LOGGER.info("Rows processed by each range: " + insideRowCounterList);
       } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
         LOGGER.error(e.getMessage(), e);
         this.threadStatusObserver.notifyFailed(e);
       }
@@ -257,6 +270,7 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
 
     public MergedDataIterator(SortParameters sortParameters, int batchSize,
         UnsafeIntermediateMerger intermediateMerger) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
       this.sortParameters = sortParameters;
       this.batchSize = batchSize;
       this.intermediateMerger = intermediateMerger;
@@ -269,6 +283,7 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
     public boolean hasNext() {
       if (firstRow) {
         firstRow = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
         finalMerger = getFinalMerger(sortParameters);
         List<UnsafeCarbonRowPage> rowPages = intermediateMerger.getRowPages();
         finalMerger.startFinalMerge(rowPages.toArray(new UnsafeCarbonRowPage[rowPages.size()]),

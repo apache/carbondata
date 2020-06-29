@@ -31,6 +31,8 @@ public class UnsafeRowComparatorForNormalDims implements Comparator<UnsafeCarbon
 
   public UnsafeRowComparatorForNormalDims(UnsafeCarbonRowPage rowPage) {
     this.baseObject = rowPage.getDataBlock().getBaseObject();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
     this.numberOfSortColumns = rowPage.getTableFieldStat().getIsSortColNoDictFlags().length;
   }
 
@@ -43,6 +45,7 @@ public class UnsafeRowComparatorForNormalDims implements Comparator<UnsafeCarbon
     long rowB = rowR.address;
     int sizeA = 0;
     int sizeB = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
     for (int i = 0; i < numberOfSortColumns; i++) {
       int dimFieldA = CarbonUnsafe.getUnsafe().getInt(baseObject, rowA + sizeA);
       sizeA += 4;

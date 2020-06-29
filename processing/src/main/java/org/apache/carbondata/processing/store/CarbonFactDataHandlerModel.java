@@ -61,6 +61,8 @@ public class CarbonFactDataHandlerModel {
    */
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonFactDataHandlerModel.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
 
   /**
    * dbName
@@ -166,6 +168,7 @@ public class CarbonFactDataHandlerModel {
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
       CarbonDataLoadConfiguration configuration, String[] storeLocation, int bucketId,
       int taskExtension, IndexWriterListener listener) {
     CarbonTableIdentifier identifier =
@@ -177,11 +180,13 @@ public class CarbonFactDataHandlerModel {
         .getColumnSchemaList(carbonTable.getVisibleDimensions(), carbonTable.getVisibleMeasures());
 
     SegmentProperties segmentProperties = new SegmentProperties(wrapperColumnSchema);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
 
     int complexDimensionCount = segmentProperties.getNumberOfComplexDimensions();
 
     int simpleDimsCount = segmentProperties.getNumberOfPrimitiveDimensions();
     int surrIndex = simpleDimsCount;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     Iterator<Map.Entry<String, GenericDataType>> complexMap = CarbonDataProcessorUtil
         .getComplexTypesMap(configuration.getDataFields(),
             configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
@@ -202,24 +207,29 @@ public class CarbonFactDataHandlerModel {
     }
     List<DataType> noDictDataTypesList = new ArrayList<>();
     for (DataField dataField : configuration.getDataFields()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (!dataField.isDateDataType() && dataField.getColumn().isDimension()) {
         noDictDataTypesList.add(dataField.getColumn().getDataType());
       }
     }
     CarbonDataFileAttributes carbonDataFileAttributes =
         new CarbonDataFileAttributes(configuration.getTaskNo(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-842
             (Long) configuration.getDataLoadProperty(DataLoadProcessorConstants.FACT_TIME_STAMP));
     String carbonDataDirectoryPath = getCarbonDataFolderLocation(configuration);
 
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setSchemaUpdatedTimeStamp(configuration.getSchemaUpdatedTimeStamp());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
     carbonFactDataHandlerModel.setDatabaseName(identifier.getDatabaseName());
     carbonFactDataHandlerModel.setTableName(identifier.getTableName());
     carbonFactDataHandlerModel.setStoreLocation(storeLocation);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     carbonFactDataHandlerModel.setNoDictDataTypesList(noDictDataTypesList);
     carbonFactDataHandlerModel.setComplexIndexMap(complexIndexMap);
     carbonFactDataHandlerModel.setSegmentProperties(segmentProperties);
     carbonFactDataHandlerModel.setMeasureDataType(configuration.getMeasureDataType());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     carbonFactDataHandlerModel
         .setNoDictAndComplexColumns(configuration.getNoDictAndComplexDimensions());
     carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
@@ -227,13 +237,17 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
     carbonFactDataHandlerModel.bucketId = bucketId;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-784
     carbonFactDataHandlerModel.segmentId = configuration.getSegmentId();
     carbonFactDataHandlerModel.taskExtension = taskExtension;
     carbonFactDataHandlerModel.tableSpec = configuration.getTableSpec();
     carbonFactDataHandlerModel.sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     carbonFactDataHandlerModel.columnCompressor = configuration.getColumnCompressor();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
 
     if (listener == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       listener = new IndexWriterListener();
       listener.registerAllWriter(
           configuration.getTableSpec().getCarbonTable(),
@@ -243,12 +257,15 @@ public class CarbonFactDataHandlerModel {
               bucketId,
               taskExtension,
               String.valueOf(carbonDataFileAttributes.getFactTimeStamp()),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
               configuration.getSegmentId()),
           segmentProperties);
     }
     carbonFactDataHandlerModel.indexWriterlistener = listener;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1908
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
     carbonFactDataHandlerModel.initNumberOfCores();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     carbonFactDataHandlerModel.setMetrics(configuration.getMetrics());
     return carbonFactDataHandlerModel;
   }
@@ -262,15 +279,18 @@ public class CarbonFactDataHandlerModel {
   public static CarbonFactDataHandlerModel getCarbonFactDataHandlerModel(CarbonLoadModel loadModel,
       CarbonTable carbonTable, SegmentProperties segmentProperties, String tableName,
       String[] tempStoreLocation, String carbonDataDirectoryPath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
 
     // for dynamic page size in write step if varchar columns exist
     List<CarbonDimension> allDimensions = carbonTable.getVisibleDimensions();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     CarbonColumn[] noDicAndComplexColumns =
         new CarbonColumn[segmentProperties.getNumberOfNoDictionaryDimension() + segmentProperties
             .getComplexDimensions().size()];
     int noDicAndComp = 0;
     List<DataType> noDictDataTypesList = new ArrayList<>();
     for (CarbonDimension dim : allDimensions) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (dim.getDataType() != DataTypes.DATE) {
         noDicAndComplexColumns[noDicAndComp++] =
             new CarbonColumn(dim.getColumnSchema(), dim.getOrdinal(), dim.getSchemaOrdinal());
@@ -283,43 +303,62 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setTableName(tableName);
     carbonFactDataHandlerModel.setStoreLocation(tempStoreLocation);
     carbonFactDataHandlerModel.setSegmentProperties(segmentProperties);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2740
     carbonFactDataHandlerModel.setSegmentId(loadModel.getSegmentId());
     List<ColumnSchema> wrapperColumnSchema = CarbonUtil
         .getColumnSchemaList(carbonTable.getVisibleDimensions(), carbonTable.getVisibleMeasures());
     carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
     carbonFactDataHandlerModel.setComplexIndexMap(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3160
         convertComplexDimensionToComplexIndexMap(segmentProperties,
             loadModel.getSerializationNullFormat()));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1653
     DataType[] measureDataTypes = new DataType[segmentProperties.getMeasures().size()];
     int i = 0;
     for (CarbonMeasure msr : segmentProperties.getMeasures()) {
       measureDataTypes[i++] = msr.getDataType();
     }
     carbonFactDataHandlerModel.setMeasureDataType(measureDataTypes);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     carbonFactDataHandlerModel.setNoDictAndComplexColumns(noDicAndComplexColumns);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     carbonFactDataHandlerModel.setNoDictDataTypesList(noDictDataTypesList);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
     CarbonUtil.checkAndCreateFolderWithPermission(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
     carbonFactDataHandlerModel.setColumnCompressor(loadModel.getColumnCompressor());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3728
     carbonFactDataHandlerModel.tableSpec = new TableSpec(carbonTable, false);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     IndexWriterListener listener = new IndexWriterListener();
     listener.registerAllWriter(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2716
         carbonTable,
         loadModel.getSegmentId(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
         CarbonTablePath.getShardName(
             CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(loadModel.getTaskNo()),
             carbonFactDataHandlerModel.getBucketId(),
             carbonFactDataHandlerModel.getTaskExtension(),
             String.valueOf(loadModel.getFactTimeStamp()),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
             loadModel.getSegmentId()),
         segmentProperties);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     carbonFactDataHandlerModel.indexWriterlistener = listener;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3069
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3069
     carbonFactDataHandlerModel.initNumberOfCores();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2669
     carbonFactDataHandlerModel
         .setColumnLocalDictGenMap(CarbonUtil.getLocalDictionaryModel(carbonTable));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
     carbonFactDataHandlerModel.sortScope = carbonTable.getSortScope();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     carbonFactDataHandlerModel.setMetrics(loadModel.getMetrics());
     return carbonFactDataHandlerModel;
   }
@@ -332,6 +371,7 @@ public class CarbonFactDataHandlerModel {
    * @return
    */
   private static Map<Integer, GenericDataType> convertComplexDimensionToComplexIndexMap(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
       SegmentProperties segmentProperties, String nullFormat) {
     List<CarbonDimension> complexDimensions = segmentProperties.getComplexDimensions();
     int simpleDimsCount = segmentProperties.getNumberOfPrimitiveDimensions();
@@ -340,6 +380,7 @@ public class CarbonFactDataHandlerModel {
     for (CarbonColumn complexDimension : complexDimensions) {
       dataFields[i++] = new DataField(complexDimension);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     return getComplexMap(nullFormat, simpleDimsCount, dataFields);
   }
 
@@ -357,6 +398,7 @@ public class CarbonFactDataHandlerModel {
       List<GenericDataType> primitiveTypes = new ArrayList<GenericDataType>();
       complexDataType.getValue().getAllPrimitiveChildren(primitiveTypes);
       for (GenericDataType eachPrimitive : primitiveTypes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
         if (eachPrimitive.getIsColumnDictionary()) {
           eachPrimitive.setSurrogateIndex(surrIndex++);
         }
@@ -373,6 +415,7 @@ public class CarbonFactDataHandlerModel {
   private static String getCarbonDataFolderLocation(CarbonDataLoadConfiguration configuration) {
     // configuration.getDataWritePath will not be null only in case of partition
     if (configuration.getDataWritePath() != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2287
       String paths = configuration.getDataWritePath();
       AbsoluteTableIdentifier absoluteTableIdentifier = configuration.getTableIdentifier();
       String partPath = absoluteTableIdentifier.getTablePath();
@@ -399,10 +442,13 @@ public class CarbonFactDataHandlerModel {
       return paths;
     }
     AbsoluteTableIdentifier absoluteTableIdentifier = configuration.getTableIdentifier();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2313
     String carbonDataDirectoryPath;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     if (!configuration.isCarbonTransactionalTable()) {
       carbonDataDirectoryPath = absoluteTableIdentifier.getTablePath();
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
       if (configuration.getSegmentPath() != null) {
         carbonDataDirectoryPath = configuration.getSegmentPath();
       } else {
@@ -411,6 +457,7 @@ public class CarbonFactDataHandlerModel {
                 configuration.getSegmentId() + "");
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
     return carbonDataDirectoryPath;
   }
@@ -440,6 +487,7 @@ public class CarbonFactDataHandlerModel {
   }
 
   public int getMeasureCount() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     return segmentProperties.getNumberOfMeasures();
   }
 
@@ -452,6 +500,7 @@ public class CarbonFactDataHandlerModel {
   }
 
   public int getNoDictionaryCount() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     return segmentProperties.getNumberOfNoDictionaryDimension();
   }
 
@@ -468,6 +517,7 @@ public class CarbonFactDataHandlerModel {
   }
 
   public DataType[] getMeasureDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1015
     return measureDataType;
   }
 
@@ -497,6 +547,7 @@ public class CarbonFactDataHandlerModel {
    */
   public void setCompactionFlow(boolean compactionFlow) {
     isCompactionFlow = compactionFlow;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3069
     initNumberOfCores();
   }
 
@@ -547,6 +598,7 @@ public class CarbonFactDataHandlerModel {
   }
 
   public String getSegmentId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-784
     return segmentId;
   }
 
@@ -559,6 +611,7 @@ public class CarbonFactDataHandlerModel {
   }
 
   public int getComplexColumnCount() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     return segmentProperties.getNumberOfComplexDimensions();
   }
 
@@ -584,10 +637,12 @@ public class CarbonFactDataHandlerModel {
   }
 
   public short getWritingCoresCount() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1908
     return writingCoresCount;
   }
 
   public IndexWriterListener getIndexWriterlistener() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     return indexWriterlistener;
   }
 
@@ -604,11 +659,13 @@ public class CarbonFactDataHandlerModel {
     // in compaction flow the measure with decimal type will come as spark decimal.
     // need to convert it to byte array.
     if (this.isCompactionFlow()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3031
       this.numberOfCores = CarbonProperties.getInstance().getNumberOfCompactingCores();
     } else {
       this.numberOfCores = CarbonProperties.getInstance().getNumberOfLoadingCores();
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3417
     if (this.sortScope != null && this.sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT) && (
         tableSpec.getCarbonTable().getRangeColumn() == null || (
             tableSpec.getCarbonTable().getRangeColumn() != null && !this.isCompactionFlow))) {
@@ -625,6 +682,8 @@ public class CarbonFactDataHandlerModel {
   }
 
   public String getColumnCompressor() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     return columnCompressor;
   }
 
@@ -633,6 +692,7 @@ public class CarbonFactDataHandlerModel {
   }
 
   public CarbonColumn[] getNoDictAndComplexColumns() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     return noDictAndComplexColumns;
   }
 
@@ -641,6 +701,7 @@ public class CarbonFactDataHandlerModel {
   }
 
   public List<DataType> getNoDictDataTypesList() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     return this.noDictDataTypesList;
   }
 
@@ -657,6 +718,7 @@ public class CarbonFactDataHandlerModel {
   }
 
   public DataLoadMetrics getMetrics() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
     return metrics;
   }
 

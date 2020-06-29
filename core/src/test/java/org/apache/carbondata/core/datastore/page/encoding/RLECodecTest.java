@@ -46,7 +46,10 @@ public class RLECodecTest {
     TestData(byte[] inputByteData, byte[] expectedEncodedByteData) throws IOException, MemoryException {
       this.inputByteData = inputByteData;
       inputBytePage = ColumnPage.newPage(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
           new ColumnPageEncoderMeta(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
               TableSpec.ColumnSpec.newInstance("test", DataTypes.BYTE, ColumnType.MEASURE),
               DataTypes.BYTE, "snappy"),
           inputByteData.length);
@@ -120,6 +123,7 @@ public class RLECodecTest {
 
   private void testBytePageEncode(ColumnPage inputPage, byte[] expectedEncodedBytes)
       throws IOException, MemoryException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
     RLECodec codec = new RLECodec();
     ColumnPageEncoder encoder = codec.createEncoder(null);
     EncodedColumnPage result = encoder.encode(inputPage);
@@ -133,7 +137,10 @@ public class RLECodecTest {
   private void testBytePageDecode(byte[] inputBytes, byte[] expectedDecodedBytes) throws IOException, MemoryException {
     RLECodec codec = new RLECodec();
     RLEEncoderMeta meta = new RLEEncoderMeta(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         TableSpec.ColumnSpec.newInstance("test", DataTypes.BYTE, ColumnType.MEASURE),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
         DataTypes.BYTE, expectedDecodedBytes.length, null, "snappy");
     ColumnPageDecoder decoder = codec.createDecoder(meta);
     ColumnPage page = decoder.decode(inputBytes, 0, inputBytes.length);

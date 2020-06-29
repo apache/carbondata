@@ -30,6 +30,7 @@ public class Strings {
    */
   public static String mkString(String[] strings, String delimiter) {
     Objects.requireNonNull(strings);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3126
     Objects.requireNonNull(delimiter);
     StringBuilder builder = new StringBuilder();
     for (int i = 0; i < strings.length; i++) {
@@ -51,6 +52,7 @@ public class Strings {
     long MB = KB << 10;
     long GB = MB << 10;
     long TB = GB << 10;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3736
     if (sizeInBytes < 0) {
       return "NA";
     } else if (sizeInBytes >= 0 && sizeInBytes < KB) {

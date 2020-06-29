@@ -51,16 +51,20 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
   private DataType[] noDictDataType;
 
   public UnsafeFinalMergePageHolder(UnsafeInMemoryIntermediateDataMerger merger,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
       TableFieldStat tableFieldStat) {
     this.actualSize = merger.getEntryCount();
     this.mergedAddresses = merger.getMergedAddresses();
     this.rowPageIndexes = merger.getRowPageIndexes();
     this.rowPages = merger.getUnsafeCarbonRowPages();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2836
     for (UnsafeCarbonRowPage rowPage: rowPages) {
       rowPage.setReadConvertedNoSortField();
     }
     this.noDictDataType = rowPages[0].getTableFieldStat().getNoDictDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2220
     LOGGER.info("Processing unsafe inmemory rows page with size : " + actualSize);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
     this.comparator = new FileMergeSortComparator(tableFieldStat.getIsSortColNoDictFlags(),
         tableFieldStat.getNoDictDataType(), tableFieldStat.getNoDictSortColumnSchemaOrderMapping());
   }
@@ -73,6 +77,8 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
   }
 
   public void readRow() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
     currentRow = rowPages[rowPageIndexes[counter]].getRow(mergedAddresses[counter]);
     counter++;
   }

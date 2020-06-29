@@ -47,8 +47,10 @@ public class LocalCarbonStoreTest {
     fields[1] = new Field("age", DataTypes.INT);
 
     TestUtil.writeFilesAndVerify(100, new Schema(fields), path);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
 
     CarbonStore store = new LocalCarbonStore();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2754
     Iterator<CarbonRow> rows =
         store.scan(AbsoluteTableIdentifier.from(path, "", ""), new String[] { "name, age" }, null);
 

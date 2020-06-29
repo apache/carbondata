@@ -33,6 +33,7 @@ public class CarbonRowReadSupport implements CarbonReadSupport<CarbonRow> {
   private CarbonReadSupport<Object[]> delegate;
 
   public CarbonRowReadSupport() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     this.delegate = new CarbonReadSupport<Object[]>() {
       @Override
       public Object[] readRow(Object[] data) {

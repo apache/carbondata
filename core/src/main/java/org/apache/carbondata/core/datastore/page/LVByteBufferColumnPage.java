@@ -122,6 +122,7 @@ public class LVByteBufferColumnPage extends ColumnPage {
       CarbonUnsafe.getUnsafe().copyMemory(((DirectBuffer)byteBuffer).address(),
           ((DirectBuffer)newBuffer).address(), capacity);
       newBuffer.position(byteBuffer.position());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3787
       UnsafeMemoryManager.destroyDirectByteBuffer(byteBuffer);
       byteBuffer = newBuffer;
     }
@@ -375,6 +376,7 @@ public class LVByteBufferColumnPage extends ColumnPage {
 
   @Override
   public void freeMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3787
     if (null != rowOffset) {
       rowOffset.freeMemory();
       rowOffset = null;

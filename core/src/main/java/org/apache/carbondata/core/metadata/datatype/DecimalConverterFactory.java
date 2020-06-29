@@ -59,6 +59,7 @@ public final class DecimalConverterFactory {
 
   public enum DecimalConverterType {
     DECIMAL_LV(-1), DECIMAL_INT(4), DECIMAL_LONG(8), DECIMAL_UNSCALED(-1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1429
 
     private int sizeInBytes;
 
@@ -78,6 +79,7 @@ public final class DecimalConverterFactory {
 
     BigDecimal getDecimal(Object valueToBeConverted);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
     void fillVector(Object valuesToBeConverted, int size, ColumnVectorInfo info, BitSet nullBitset,
         DataType pageType);
 
@@ -108,12 +110,14 @@ public final class DecimalConverterFactory {
 
     @Override
     public void fillVector(Object valuesToBeConverted, int size,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3359
         ColumnVectorInfo vectorInfo, BitSet nullBitSet, DataType pageType) {
       // TODO we need to find way to directly set to vector with out conversion. This way is very
       // inefficient.
       CarbonColumnVector vector = getCarbonColumnVector(vectorInfo, nullBitSet);
       int precision = vectorInfo.measure.getMeasure().getPrecision();
       int newMeasureScale = vectorInfo.measure.getMeasure().getScale();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
       if (!(valuesToBeConverted instanceof byte[])) {
         throw new UnsupportedOperationException("This object type " + valuesToBeConverted.getClass()
             + " is not supported in this method");
@@ -121,9 +125,14 @@ public final class DecimalConverterFactory {
       byte[] data = (byte[]) valuesToBeConverted;
       if (pageType == DataTypes.BYTE) {
         for (int i = 0; i < size; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3359
           if (nullBitSet.get(i)) {
             vector.putNull(i);
           } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3014
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3014
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3014
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3014
             BigDecimal value = BigDecimal.valueOf(data[i], scale);
             if (value.scale() < newMeasureScale) {
               value = value.setScale(newMeasureScale);
@@ -131,6 +140,7 @@ public final class DecimalConverterFactory {
             vector.putDecimal(i, value, precision);
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
       } else if (pageType == DataTypes.SHORT) {
         for (int i = 0; i < size; i++) {
           if (nullBitSet.get(i)) {
@@ -175,6 +185,10 @@ public final class DecimalConverterFactory {
         }
       } else if (pageType == DataTypes.LONG) {
         for (int i = 0; i < size; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3359
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3359
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3359
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3359
           if (nullBitSet.get(i)) {
             vector.putNull(i);
           } else {
@@ -204,6 +218,7 @@ public final class DecimalConverterFactory {
   public static class DecimalLongConverter extends DecimalIntConverter {
 
     DecimalLongConverter(int scale) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
       super(scale);
     }
 
@@ -236,6 +251,7 @@ public final class DecimalConverterFactory {
 
     private byte[] decimalBuffer = new byte[minBytesForPrecision[38]];
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     DecimalUnscaledConverter(int precision, int scale) {
       this.scale = scale;
       this.numBytes = minBytesForPrecision[precision];
@@ -276,6 +292,7 @@ public final class DecimalConverterFactory {
 
     @Override
     public void fillVector(Object valuesToBeConverted, int size,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3359
         ColumnVectorInfo vectorInfo, BitSet nullBitSet, DataType pageType) {
       CarbonColumnVector vector = getCarbonColumnVector(vectorInfo, nullBitSet);
       int precision = vectorInfo.measure.getMeasure().getPrecision();
@@ -290,6 +307,7 @@ public final class DecimalConverterFactory {
             vector.putNull(i);
           } else {
             BigInteger bigInteger = new BigInteger(data[i]);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3014
             BigDecimal value = new BigDecimal(bigInteger, scale);
             if (value.scale() < newMeasureScale) {
               value = value.setScale(newMeasureScale);
@@ -327,6 +345,7 @@ public final class DecimalConverterFactory {
 
     @Override
     public void fillVector(Object valuesToBeConverted, int size,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3359
         ColumnVectorInfo vectorInfo, BitSet nullBitSet, DataType pageType) {
       CarbonColumnVector vector = getCarbonColumnVector(vectorInfo, nullBitSet);
       int precision = vectorInfo.measure.getMeasure().getPrecision();
@@ -337,6 +356,7 @@ public final class DecimalConverterFactory {
           if (nullBitSet.get(i)) {
             vector.putNull(i);
           } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3014
             BigDecimal value = DataTypeUtil.byteToBigDecimal(data[i]);
             if (value.scale() < newMeasureScale) {
               value = value.setScale(newMeasureScale);
@@ -359,6 +379,7 @@ public final class DecimalConverterFactory {
   }
 
   private static CarbonColumnVector getCarbonColumnVector(ColumnVectorInfo vectorInfo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3359
       BitSet nullBitSet) {
     CarbonColumnVector vector = vectorInfo.vector;
     BitSet deletedRows = vectorInfo.deletedRows;
@@ -372,6 +393,7 @@ public final class DecimalConverterFactory {
     if (precision < 0) {
       return new LVBytesDecimalConverter();
     } else if (precision <= 9) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       return new DecimalIntConverter(scale);
     } else if (precision <= 18) {
       return new DecimalLongConverter(scale);

@@ -21,5 +21,6 @@ package org.apache.carbondata.core.view;
  * MV status
  */
 public enum MVStatus {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
   ENABLED, DISABLED, DROPPED
 }

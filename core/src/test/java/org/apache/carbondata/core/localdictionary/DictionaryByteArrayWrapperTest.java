@@ -40,6 +40,7 @@ public class DictionaryByteArrayWrapperTest {
 
   @Test public void equalsTestWithSameObject() {
     Boolean res = dictionaryByteArrayWrapper.equals(dictionaryByteArrayWrapper);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(res);
   }
 

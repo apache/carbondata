@@ -67,6 +67,7 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
   }
 
   public ExtendedBlockletWrapper(List<ExtendedBlocklet> extendedBlockletList, String tablePath,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
       String queryId, boolean isWriteToFile, boolean isCountJob) {
     Map<String, Short> uniqueLocations = new HashMap<>();
     byte[] bytes = convertToBytes(tablePath, uniqueLocations, extendedBlockletList, isCountJob);
@@ -78,11 +79,14 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
     // executor to driver, in case of any failure data will send through network
     if (bytes.length > serializeAllowedSize && isWriteToFile) {
       final String fileName = UUID.randomUUID().toString();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3646
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3647
       String folderPath = CarbonUtil.getIndexServerTempPath()
               + CarbonCommonConstants.FILE_SEPARATOR + queryId;
       try {
         final CarbonFile carbonFile = FileFactory.getCarbonFile(folderPath);
         boolean isFolderExists = true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         if (!carbonFile.isFileExist()) {
           LOGGER.warn("Folder:" + folderPath + "doesn't exists, data will be send through netwrok");
           isFolderExists = false;
@@ -117,6 +121,7 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
   }
 
   private byte[] convertToBytes(String tablePath, Map<String, Short> uniqueLocations,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
       List<ExtendedBlocklet> extendedBlockletList, boolean isCountJob) {
     ByteArrayOutputStream bos = new ExtendedByteArrayOutputStream();
     DataOutputStream stream = new DataOutputStream(bos);
@@ -125,6 +130,7 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
         extendedBlocklet.setFilePath(extendedBlocklet.getFilePath().replace(tablePath, ""));
         extendedBlocklet.serializeData(stream, uniqueLocations, isCountJob);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
       byte[] input = bos.toByteArray();
       return new SnappyCompressor().compressByte(input, input.length);
     } catch (IOException e) {
@@ -155,6 +161,7 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
       final Map.Entry<String, Short> next = iterator.next();
       uniqueLoc[next.getValue()] = next.getKey();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
     stream.writeShort((short) uniqueLoc.length);
     for (String loc : uniqueLoc) {
       stream.writeUTF(loc);
@@ -174,16 +181,20 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
    * @throws IOException
    */
   public List<ExtendedBlocklet> readBlocklet(String tablePath, String queryId, boolean isCountJob)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
       throws IOException {
     byte[] data;
     if (bytes != null) {
       if (isWrittenToFile) {
         DataInputStream stream = null;
         try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3646
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3647
           final String folderPath = CarbonUtil.getIndexServerTempPath()
                   + CarbonCommonConstants.FILE_SEPARATOR + queryId;
           String fileName = new String(bytes, CarbonCommonConstants.DEFAULT_CHARSET);
           stream = FileFactory
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
               .getDataInputStream(folderPath + "/" + fileName);
           data = new byte[dataSize];
           stream.readFully(data);
@@ -211,6 +222,7 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
       }
 
       final byte[] unCompressByte =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3440
           new SnappyCompressor().unCompressByte(data, this.dataSize - actualDataLen, actualDataLen);
       ExtendedByteArrayInputStream ebis = new ExtendedByteArrayInputStream(unCompressByte);
       ExtendedDataInputStream eDIS = new ExtendedDataInputStream(ebis);
@@ -218,6 +230,7 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
       try {
         for (int i = 0; i < numberOfBlocklet; i++) {
           ExtendedBlocklet extendedBlocklet = new ExtendedBlocklet();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
           extendedBlocklet.deserializeFields(eDIS, locations, tablePath, isCountJob);
           extendedBlockletList.add(extendedBlocklet);
         }

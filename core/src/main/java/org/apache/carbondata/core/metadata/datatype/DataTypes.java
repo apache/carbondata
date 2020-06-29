@@ -97,10 +97,13 @@ public class DataTypes {
       return DOUBLE;
     } else if (id == NULL.getId()) {
       return NULL;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (id == DECIMAL_TYPE_ID) {
       return createDefaultDecimalType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     } else if (id == BINARY.getId()) {
       return BINARY;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     } else if (id == ARRAY_TYPE_ID) {
       return createDefaultArrayType();
     } else if (id == STRUCT_TYPE_ID) {
@@ -109,6 +112,7 @@ public class DataTypes {
       return createDefaultMapType();
     } else if (id == BYTE_ARRAY.getId()) {
       return BYTE_ARRAY;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     } else if (id == VARCHAR.getId()) {
       return VARCHAR;
     } else {
@@ -120,6 +124,7 @@ public class DataTypes {
    * create a decimal type object with specified precision and scale
    */
   public static DecimalType createDecimalType(int precision, int scale) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     return new DecimalType(precision, scale);
   }
 
@@ -138,6 +143,7 @@ public class DataTypes {
    * create array type with specified element type
    */
   public static ArrayType createArrayType(DataType elementType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     return new ArrayType(elementType);
   }
 
@@ -145,6 +151,7 @@ public class DataTypes {
    * create array type with specified element type and name
    */
   public static ArrayType createArrayType(DataType elementType, String elementName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3446
     return new ArrayType(elementType, elementName);
   }
 

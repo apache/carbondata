@@ -47,6 +47,9 @@ public class IncludeFilterExecuterImplTest extends TestCase {
       if (filterValues.length > 1) {
         for (int i = 0; i < numerOfRows; i++) {
           int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
               dimensionColumnPage, i);
           if (index >= 0) {
             bitSet.set(i);
@@ -66,6 +69,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
   public BitSet setFilterdIndexToBitSet(DimensionColumnPage dimensionColumnPage, int numerOfRows,
       byte[][] filterValues) {
     BitSet bitSet = new BitSet(numerOfRows);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     if (dimensionColumnPage instanceof FixedLengthDimensionColumnPage) {
       // byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
       for (int k = 0; k < filterValues.length; k++) {
@@ -184,8 +188,10 @@ public class IncludeFilterExecuterImplTest extends TestCase {
     }
     dim.setFilterKeys(filterKeys);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     dimensionColumnDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
         dataChunkSize, dimColumnSize, dataChunk.length);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
 
     // repeat query and compare 2 result between old code and new optimized code
     for (int j = 0; j < queryTimes; j++) {
@@ -195,6 +201,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
       oldTime = oldTime + System.currentTimeMillis() - start;
 
       start = System.currentTimeMillis();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       BitSet bitNew = this.setFilterdIndexToBitSetNew(dimensionColumnDataChunk, dataChunkSize,
           filterKeys);
       newTime = newTime + System.currentTimeMillis() - start;
@@ -203,6 +210,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
     }
 
     if (filteredValueCnt >= 100) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
       Assert.assertTrue(newTime <= oldTime);
     }
 
@@ -282,6 +290,8 @@ public class IncludeFilterExecuterImplTest extends TestCase {
     int filteredValueCnt = 800;
     // column dictionary size
     int dimColumnSize = 2;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     FixedLengthDimensionColumnPage dimensionColumnDataChunk;
     DimColumnExecuterFilterInfo dim = new DimColumnExecuterFilterInfo();
 
@@ -304,8 +314,10 @@ public class IncludeFilterExecuterImplTest extends TestCase {
     }
     dim.setFilterKeys(filterKeys);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     dimensionColumnDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
         dataChunk.length / dimColumnSize, dimColumnSize, dataChunk.length);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
 
     // initial to run
     BitSet bitOld = this.setFilterdIndexToBitSetWithColumnIndexOld(dimensionColumnDataChunk, dataChunkSize, filterKeys);

@@ -33,6 +33,7 @@ public interface ColumnPageCodec {
    * This will be called for every column page
    */
   ColumnPageEncoder createEncoder(Map<String, String> parameter);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
 
   /**
    * Return a new Decoder with specified metadata.

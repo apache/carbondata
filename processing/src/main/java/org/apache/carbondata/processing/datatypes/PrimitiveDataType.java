@@ -100,6 +100,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   private transient BinaryDecoder binaryDecoder;
 
   private PrimitiveDataType(int outputArrayIndex, int dataCounter) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
     this.outputArrayIndex = outputArrayIndex;
     this.dataCounter = dataCounter;
   }
@@ -115,6 +116,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   public PrimitiveDataType(String name, DataType dataType, String parentName, String columnId,
       boolean isDictionary, String nullFormat) {
     this.name = name;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     this.parentName = parentName;
     this.columnId = columnId;
     this.isDictionary = isDictionary;
@@ -131,8 +133,10 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * @param nullFormat
    */
   public PrimitiveDataType(CarbonColumn carbonColumn, String parentName, String columnId,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3655
       CarbonDimension carbonDimension, String nullFormat, BinaryDecoder binaryDecoder) {
     this.name = carbonColumn.getColName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     this.parentName = parentName;
     this.columnId = columnId;
     this.carbonDimension = carbonDimension;
@@ -141,9 +145,11 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     this.binaryDecoder = binaryDecoder;
     this.dataType = carbonColumn.getDataType();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2471
     if (carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
         || carbonColumn.getDataType() == DataTypes.DATE) {
       dictionaryGenerator = new DirectDictionary(DirectDictionaryKeyGeneratorFactory
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
           .getDirectDictionaryGenerator(carbonDimension.getDataType(),
               getDateFormat(carbonDimension)));
       isDirectDictionary = true;
@@ -156,6 +162,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * @return
    */
   private String getDateFormat(CarbonDimension carbonDimension) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
     String format;
     String dateFormat = null;
     if (this.carbonDimension.getDataType() == DataTypes.DATE) {
@@ -170,6 +177,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   }
 
   private boolean isDictionaryDimension(CarbonDimension carbonDimension) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
     if (carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
       return true;
     } else {
@@ -198,6 +206,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    */
   @Override
   public String getParentName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     return parentName;
   }
 
@@ -238,6 +247,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   @Override
   public void writeByteArray(Object input, DataOutputStream dataOutputStream,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3761
       BadRecordLogHolder logHolder, Boolean isWithoutConverter) throws IOException {
     String parsedValue = null;
     // write null value
@@ -251,6 +261,10 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       parsedValue = DataTypeUtil.parseValue(input.toString(), carbonDimension);
       if (null == parsedValue || (this.carbonDimension.getDataType() == DataTypes.STRING
           && parsedValue.equals(nullFormat))) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2452
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2451
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2450
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2453
         updateNullValue(dataOutputStream, logHolder);
         return;
       }
@@ -268,6 +282,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
               || this.carbonDimension.getDataType().equals(DataTypes.TIMESTAMP)
               && input instanceof Long) {
             if (dictionaryGenerator != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
               value = ByteUtil.toXorBytes(((DirectDictionary) dictionaryGenerator)
                   .generateKey((long) input));
             } else {
@@ -277,8 +292,10 @@ public class PrimitiveDataType implements GenericDataType<Object> {
                 value = ByteUtil.toXorBytes(Long.parseLong(parsedValue));
               }
             }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3495
           } else if (this.carbonDimension.getDataType().equals(DataTypes.BINARY)) {
             // write binary data type
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3655
             if (binaryDecoder == null) {
               value = DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(input,
                   this.carbonDimension.getDataType());
@@ -310,6 +327,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
         byte[] value;
         if (dictionaryGenerator instanceof DirectDictionary
             && input instanceof Long) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
           value = ByteUtil.toXorBytes(
               ((DirectDictionary) dictionaryGenerator).generateKey((long) input));
         } else {
@@ -375,6 +393,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     // the user using AvroCarbonWriter. In this case directly generate surrogate key
     // using dictionaryGenerator.
     if (input instanceof Long) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2554
       surrogateKey = ((DirectDictionary) dictionaryGenerator).generateKey((long) input);
     } else if (input instanceof Integer) {
       // In case of file format, for complex type date or time type, input data comes as a
@@ -391,6 +410,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     if (surrogateKey == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
       value = new byte[0];
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
       value = ByteUtil.toXorBytes(surrogateKey);
     }
     return value;
@@ -398,18 +418,25 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   private void updateValueToByteStream(DataOutputStream dataOutputStream, byte[] value)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
     if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
       dataOutputStream.writeInt(value.length);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
       dataOutputStream.writeShort(value.length);
     }
     dataOutputStream.write(value);
   }
 
   private void updateNullValue(DataOutputStream dataOutputStream, BadRecordLogHolder logHolder)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2452
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2451
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2450
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2453
       throws IOException {
     if (this.carbonDimension.getDataType() == DataTypes.STRING) {
       if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2437
         dataOutputStream.writeInt(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
       } else {
         dataOutputStream.writeShort(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
@@ -423,20 +450,27 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       }
       dataOutputStream.write(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2452
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2451
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2450
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2453
     String message = logHolder.getColumnMessageMap().get(carbonDimension.getColName());
     if (null == message) {
       message = CarbonDataProcessorUtil
           .prepareFailureReason(carbonDimension.getColName(), carbonDimension.getDataType());
       logHolder.getColumnMessageMap().put(carbonDimension.getColName(), message);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3645
     logHolder.setReason(message);
   }
 
   @Override
   public void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
     if (!this.isDictionary) {
       int sizeOfData;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
       if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
         sizeOfData = byteArrayInput.getInt();
         dataOutputStream.writeInt(sizeOfData);
@@ -449,6 +483,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       dataOutputStream.write(bb);
     } else {
       int data = byteArrayInput.getInt();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       byte[] v = ByteUtil.convertIntToBytes(data);
       dataOutputStream.write(v);
     }
@@ -484,8 +519,10 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   @Override
   public void getColumnarDataForComplexType(List<ArrayList<byte[]>> columnsArray,
       ByteBuffer inputArray) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2437
     if (!isDictionary) {
       int length;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
       if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
         length = inputArray.getInt();
       } else {
@@ -520,9 +557,11 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   @Override
   public GenericDataType<Object> deepCopy() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
     PrimitiveDataType dataType = new PrimitiveDataType(this.outputArrayIndex, 0);
     dataType.carbonDimension = this.carbonDimension;
     dataType.isDictionary = this.isDictionary;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     dataType.parentName = this.parentName;
     dataType.columnId = this.columnId;
     dataType.dictionaryGenerator = this.dictionaryGenerator;
@@ -530,6 +569,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     dataType.setKeySize(this.keySize);
     dataType.setSurrogateIndex(this.index);
     dataType.name = this.name;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     dataType.dataType = this.dataType;
     return dataType;
   }
@@ -544,6 +584,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   @Override
   public int getDepth() {
     // primitive type has no children
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     return 1;
   }
 

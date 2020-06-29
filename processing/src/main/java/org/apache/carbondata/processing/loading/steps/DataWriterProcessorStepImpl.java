@@ -73,6 +73,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
   public DataWriterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     super(configuration, child);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2669
     this.localDictionaryGeneratorMap =
         CarbonUtil.getLocalDictionaryModel(configuration.getTableSpec().getCarbonTable());
   }
@@ -85,13 +86,16 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   @Override
   public void initialize() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
     super.initialize();
     child.initialize();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2751
     this.carbonFactHandlers = new CopyOnWriteArrayList<>();
   }
 
   private String[] getStoreLocation() {
     String[] storeLocation = CarbonDataProcessorUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
         .getLocalDataFolderLocation(configuration.getTableSpec().getCarbonTable(),
             String.valueOf(configuration.getTaskNo()), configuration.getSegmentId(), false, false);
     CarbonDataProcessorUtil.createLocations(storeLocation);
@@ -100,7 +104,9 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   public CarbonFactDataHandlerModel getDataHandlerModel() {
     String[] storeLocation = getStoreLocation();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     listener = getIndexWriterListener(0);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2669
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
         .createCarbonFactDataHandlerModel(configuration, storeLocation, 0, 0, listener);
     carbonFactDataHandlerModel.setColumnLocalDictGenMap(localDictionaryGeneratorMap);
@@ -115,14 +121,18 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     String tableName = tableIdentifier.getTableName();
     try {
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3208
           .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PARTITION_ID,
               System.currentTimeMillis());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2751
       rangeExecutorService = Executors.newFixedThreadPool(iterators.length,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3304
           new CarbonThreadFactory("WriterForwardPool: " + tableName, true));
       List<Future<Void>> rangeExecutorServiceSubmitList = new ArrayList<>(iterators.length);
       int i = 0;
       // do this concurrently
       for (Iterator<CarbonRowBatch> iterator : iterators) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
         rangeExecutorServiceSubmitList.add(
             rangeExecutorService.submit(new WriterForwarder(iterator, i)));
         i++;
@@ -139,6 +149,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
         throw new CarbonDataWriterException(e.getCause());
       }
     } catch (CarbonDataWriterException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
       LOGGER.error(e);
       throw new CarbonDataLoadingException("Error while initializing writer: " + e.getMessage(), e);
     } catch (Exception e) {
@@ -166,6 +178,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
     @Override
     public Void call() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
       processRange(insideRangeIterator, rangeId);
       return null;
     }
@@ -174,9 +187,11 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
   private void processRange(Iterator<CarbonRowBatch> insideRangeIterator, int rangeId) {
     String[] storeLocation = getStoreLocation();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     listener = getIndexWriterListener(rangeId);
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
         .createCarbonFactDataHandlerModel(configuration, storeLocation, rangeId, 0, listener);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2669
     model.setColumnLocalDictGenMap(localDictionaryGeneratorMap);
     CarbonFactHandler dataHandler = null;
     boolean rowsNotExist = true;
@@ -184,6 +199,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       if (rowsNotExist) {
         rowsNotExist = false;
         dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(model);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2751
         carbonFactHandlers.add(dataHandler);
         dataHandler.initialise();
       }
@@ -192,6 +208,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     if (!rowsNotExist) {
       finish(dataHandler);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2751
     carbonFactHandlers.remove(dataHandler);
   }
 
@@ -208,6 +225,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordTotalRecords(rowCounter.get());
     processingComplete(dataHandler);
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3208
         .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PARTITION_ID,
             System.currentTimeMillis());
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
@@ -242,6 +260,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       super.close();
       if (listener != null) {
         try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           LOGGER.debug("closing all the Index writers registered to index writer listener");
           listener.finish();
         } catch (IOException e) {
@@ -249,6 +268,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
           // ignoring the exception
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2751
       if (null != rangeExecutorService) {
         rangeExecutorService.shutdownNow();
       }
@@ -258,6 +278,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
           carbonFactHandler.closeHandler();
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3812
       if (configuration.getMetrics() != null) {
         configuration.getMetrics().addOutputRows(rowCounter.get());
       }

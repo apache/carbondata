@@ -51,6 +51,7 @@ public class BinaryFieldConverterImpl implements FieldConverter {
     this.index = index;
     this.isEmptyBadRecord = isEmptyBadRecord;
     this.dataField = dataField;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
     this.binaryDecoder = binaryDecoder;
   }
 
@@ -75,6 +76,7 @@ public class BinaryFieldConverterImpl implements FieldConverter {
 
   @Override
   public DataField getDataField() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     return dataField;
   }
 

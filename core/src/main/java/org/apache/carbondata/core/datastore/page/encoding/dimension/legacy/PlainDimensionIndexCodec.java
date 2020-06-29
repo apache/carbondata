@@ -41,12 +41,15 @@ public class PlainDimensionIndexCodec extends IndexStorageCodec {
 
   public PlainDimensionIndexCodec(boolean isSort, boolean isInvertedIndex,
       boolean isVarcharType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     super(isSort, isInvertedIndex);
     this.isVarcharType = isVarcharType;
   }
 
   @Override
   public String getName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     return "PlainDimensionIndexCodec";
   }
 
@@ -56,13 +59,18 @@ public class PlainDimensionIndexCodec extends IndexStorageCodec {
 
       @Override
       protected void encodeIndexStorage(ColumnPage input) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
         BlockIndexerStorage<byte[][]> indexStorage;
         boolean isDictionary = input.isLocalDictGeneratedPage();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
         Compressor compressor = CompressorFactory.getInstance().getCompressor(
             input.getColumnCompressorName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
         if (isInvertedIndex || isDictionary) {
           byte[][] byteArray = input.getByteArrayPage();
           indexStorage = isInvertedIndex ?
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3730
             new ByteArrayBlockIndexerStorage(byteArray, isDictionary, !isDictionary, isSort) :
             new ByteArrayBlockIndexerStorageWithoutRowId(byteArray, true);
           byte[] compressInput = ByteUtil.flatten(indexStorage.getDataPage());
@@ -78,11 +86,13 @@ public class PlainDimensionIndexCodec extends IndexStorageCodec {
       @Override
       protected List<Encoding> getEncodingList() {
         List<Encoding> encodings = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
         if (isVarcharType) {
           encodings.add(Encoding.DIRECT_COMPRESS_VARCHAR);
         } else if (indexStorage.getRowIdPageLengthInBytes() > 0) {
           encodings.add(Encoding.INVERTED_INDEX);
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2669
         if (indexStorage.getDataRlePageLengthInBytes() > 0) {
           encodings.add(Encoding.RLE);
         }

@@ -28,6 +28,7 @@ public final class CarbonFactHandlerFactory {
    * @return
    */
   public static CarbonFactHandler createCarbonFactHandler(CarbonFactDataHandlerModel model) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     return new CarbonFactDataHandlerColumnar(model);
   }
 }

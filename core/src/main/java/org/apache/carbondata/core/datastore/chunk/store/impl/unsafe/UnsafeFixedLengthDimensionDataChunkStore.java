@@ -41,6 +41,7 @@ public class UnsafeFixedLengthDimensionDataChunkStore
    */
   public UnsafeFixedLengthDimensionDataChunkStore(long totalDataSize, int columnValueSize,
       boolean isInvertedIdex, int numberOfRows, int dataLength) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     super(totalDataSize, isInvertedIdex, numberOfRows, dataLength);
     this.columnValueSize = columnValueSize;
   }
@@ -54,6 +55,7 @@ public class UnsafeFixedLengthDimensionDataChunkStore
   public byte[] getRow(int rowId) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplicitSorted) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
       rowId = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)rowId
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
@@ -79,6 +81,7 @@ public class UnsafeFixedLengthDimensionDataChunkStore
   public int getSurrogate(int index) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplicitSorted) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
       index = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)index
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
@@ -88,6 +91,7 @@ public class UnsafeFixedLengthDimensionDataChunkStore
     int surrogate = 0;
     for (int i = 0; i < columnValueSize; i++) {
       surrogate <<= 8;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
       surrogate ^= CarbonUnsafe.getUnsafe().getByte(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + startOffsetOfData) & 0xFF;
       startOffsetOfData++;
@@ -106,6 +110,7 @@ public class UnsafeFixedLengthDimensionDataChunkStore
   public void fillRow(int rowId, byte[] buffer, int offset) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplicitSorted) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
       rowId = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)rowId
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
@@ -135,9 +140,11 @@ public class UnsafeFixedLengthDimensionDataChunkStore
   @Override
   public int compareTo(int rowId, byte[] compareValue) {
     // based on index we need to calculate the actual position in memory block
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     rowId = rowId * columnValueSize;
     int compareResult = 0;
     for (int i = 0; i < compareValue.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
       compareResult = (CarbonUnsafe.getUnsafe()
           .getByte(dataPageMemoryBlock.getBaseObject(), dataPageMemoryBlock.getBaseOffset() + rowId)
           & 0xff) - (compareValue[i] & 0xff);

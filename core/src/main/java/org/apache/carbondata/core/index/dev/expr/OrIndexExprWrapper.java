@@ -50,6 +50,7 @@ public class OrIndexExprWrapper extends IndexExprWrapper {
 
   @Override
   public List<ExtendedBlocklet> prune(List<Segment> segments, List<PartitionSpec> partitionsToPrune)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
       throws IOException {
     List<ExtendedBlocklet> leftPrune = left.prune(segments, partitionsToPrune);
     List<ExtendedBlocklet> rightPrune = right.prune(segments, partitionsToPrune);
@@ -61,6 +62,7 @@ public class OrIndexExprWrapper extends IndexExprWrapper {
 
   @Override
   public List<ExtendedBlocklet> prune(IndexInputSplit distributable,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2389
       List<PartitionSpec> partitionsToPrune)
           throws IOException {
     List<ExtendedBlocklet> leftPrune = left.prune(distributable, partitionsToPrune);
@@ -85,6 +87,7 @@ public class OrIndexExprWrapper extends IndexExprWrapper {
   @Override
   public List<IndexInputSplitWrapper> toDistributable(List<Segment> segments)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     List<IndexInputSplitWrapper> wrappers = new ArrayList<>();
     wrappers.addAll(left.toDistributable(segments));
     wrappers.addAll(right.toDistributable(segments));
@@ -110,6 +113,7 @@ public class OrIndexExprWrapper extends IndexExprWrapper {
 
   @Override
   public IndexLevel getIndexLevel() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return left.getIndexLevel();
   }
 

@@ -28,6 +28,7 @@ public class FalseConditionalResolverImpl extends ConditionalFilterResolverImpl 
 
   public FalseConditionalResolverImpl(Expression exp, boolean isExpressionResolve,
       boolean isIncludeFilter) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     super(exp, isExpressionResolve, isIncludeFilter, false);
   }
 

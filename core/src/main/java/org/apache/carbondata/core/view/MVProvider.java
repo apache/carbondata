@@ -87,6 +87,7 @@ public class MVProvider {
       synchronized (this.schemaProviders) {
         schemaProvider = this.schemaProviders.get(databaseNameUpper);
         if (schemaProvider == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3778
           String databaseLocation = viewManager.getDatabaseLocation(databaseName);
           CarbonFile databasePath = FileFactory.getCarbonFile(databaseLocation);
           if (!databasePath.exists()) {
@@ -101,6 +102,7 @@ public class MVProvider {
   }
 
   public MVSchema getSchema(MVManager viewManager, String databaseName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3778
                             String viewName) throws IOException {
     SchemaProvider schemaProvider = this.getSchemaProvider(viewManager, databaseName);
     if (schemaProvider == null) {
@@ -119,6 +121,7 @@ public class MVProvider {
     }
   }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3778
   List<MVSchema> getSchemas(MVManager viewManager, String databaseName) throws IOException {
     SchemaProvider schemaProvider = this.getSchemaProvider(viewManager, databaseName);
     if (schemaProvider == null) {
@@ -130,6 +133,7 @@ public class MVProvider {
 
   void saveSchema(MVManager viewManager, String databaseName,
                   MVSchema viewSchema) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3778
     SchemaProvider schemaProvider = this.getSchemaProvider(viewManager, databaseName);
     if (schemaProvider == null) {
       throw new IOException("Database [" + databaseName + "] is not found.");
@@ -149,6 +153,7 @@ public class MVProvider {
 
   private String getStatusFileName(MVManager viewManager, String databaseName) {
     String databaseLocation = viewManager.getDatabaseLocation(databaseName);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3837
     try {
       if (FileFactory.isFileExist(databaseLocation)) {
         return FileFactory.getCarbonFile(databaseLocation).getCanonicalPath()
@@ -200,6 +205,7 @@ public class MVProvider {
   }
 
   private static ICarbonLock getStatusLock(String databaseLocation) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3792
     return CarbonLockFactory.getSystemLevelCarbonLockObj(
         CarbonProperties.getInstance().getSystemFolderLocationPerDatabase(databaseLocation),
         LockUsage.MATERIALIZED_VIEW_STATUS_LOCK);
@@ -230,12 +236,14 @@ public class MVProvider {
       schemas.add(schema);
     }
     for (Map.Entry<String, List<MVSchema>> entry : schemasMapByDatabase.entrySet()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3778
       this.updateStatus(viewManager, entry.getKey(), entry.getValue(), status);
     }
   }
 
   private void updateStatus(MVManager viewManager, String databaseName, List<MVSchema> schemaList,
       MVStatus status) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3792
     String databaseLocation =
         FileFactory.getCarbonFile(viewManager.getDatabaseLocation(databaseName)).getCanonicalPath();
     ICarbonLock carbonTableStatusLock = getStatusLock(databaseLocation);
@@ -251,6 +259,7 @@ public class MVProvider {
           }
         }
         List<MVStatusDetail> statusDetailList =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3778
             new ArrayList<>(getStatusDetails(viewManager, databaseName));
         List<MVStatusDetail> changedStatusDetails = new ArrayList<>();
         List<MVStatusDetail> newStatusDetails = new ArrayList<>();
@@ -279,10 +288,12 @@ public class MVProvider {
           statusDetailList.removeAll(changedStatusDetails);
         }
         writeLoadDetailsIntoFile(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3778
             this.getStatusFileName(viewManager, databaseName),
             statusDetailList.toArray(
                     new MVStatusDetail[statusDetailList.size()]));
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         String errorMsg = "Updating MV status is failed due to another process taken the lock"
             + " for updating it";
         LOG.error(errorMsg);
@@ -394,6 +405,7 @@ public class MVProvider {
 
     SchemaProvider(String databaseLocation) {
       final String systemDirectory =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3792
           CarbonProperties.getInstance().getSystemFolderLocationPerDatabase(databaseLocation);
       this.systemDirectory = systemDirectory;
       this.schemaIndexFilePath =

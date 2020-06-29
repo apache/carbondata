@@ -77,6 +77,7 @@ public class UnsafeSortMemoryManager {
   static {
     long size;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3035
       size = Long.parseLong(CarbonProperties.getInstance().getProperty(
           CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB));
     } catch (Exception e) {
@@ -117,10 +118,12 @@ public class UnsafeSortMemoryManager {
    * @return size in bytes
    */
   public long getUsableMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2238
     return totalMemory;
   }
 
   public synchronized void freeMemory(String taskId, MemoryBlock memoryBlock) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1393
     if (taskIdToMemoryBlockMap.containsKey(taskId)) {
       taskIdToMemoryBlockMap.get(taskId).remove(memoryBlock);
     }
@@ -129,6 +132,7 @@ public class UnsafeSortMemoryManager {
       memoryUsed -= memoryBlock.size();
       memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
       if (LOGGER.isDebugEnabled()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3035
         LOGGER.debug(String.format(
             "Freeing sort memory block (%s) with size: %d, current available memory is: %d",
             memoryBlock.toString(), memoryBlock.size(), totalMemory - memoryUsed));
@@ -151,16 +155,19 @@ public class UnsafeSortMemoryManager {
       MemoryBlock memoryBlock = null;
       while (iterator.hasNext()) {
         memoryBlock = iterator.next();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1393
         if (!memoryBlock.isFreedStatus()) {
           occuppiedMemory += memoryBlock.size();
           allocator.free(memoryBlock);
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     memoryUsed -= occuppiedMemory;
     memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3035
           String.format("Freeing sort memory of size: %d, current available memory is: %d",
               occuppiedMemory, totalMemory - memoryUsed));
     }
@@ -177,6 +184,7 @@ public class UnsafeSortMemoryManager {
    * @return if memory available
    */
   public synchronized boolean isMemoryAvailable(long required) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3267
     return memoryUsed + required < totalMemory;
   }
 
@@ -185,6 +193,7 @@ public class UnsafeSortMemoryManager {
       MemoryBlock allocate = allocator.allocate(memoryRequested);
       memoryUsed += allocate.size();
       if (LOGGER.isDebugEnabled()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3035
         LOGGER.debug(String.format(
             "Sort Memory block is created with size %d. Total memory used %d Bytes, left %d Bytes",
             allocate.size(), memoryUsed, totalMemory - memoryUsed));

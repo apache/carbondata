@@ -62,6 +62,7 @@ public class CarbonVectorBatch {
     DataType[] dataTypes = readSupport.getDataTypes();
 
     for (int i = 0; i < schema.length; ++i) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
       columns[i] = createDirectStreamReader(maxRows, dataTypes[i], schema[i]);
     }
   }
@@ -77,6 +78,7 @@ public class CarbonVectorBatch {
   }
 
   public static CarbonColumnVectorImpl createDirectStreamReader(int batchSize, DataType dataType,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
       StructField field) {
     if (dataType == DataTypes.BOOLEAN) {
       return new BooleanStreamReader(batchSize, field.getDataType());
@@ -94,6 +96,7 @@ public class CarbonVectorBatch {
       return new FloatStreamReader(batchSize, field.getDataType());
     } else if (dataType == DataTypes.BYTE) {
       return new ByteStreamReader(batchSize, field.getDataType());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3268
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.VARCHAR) {
       return new SliceStreamReader(batchSize, field.getDataType());
     } else if (DataTypes.isDecimal(dataType)) {
@@ -125,6 +128,7 @@ public class CarbonVectorBatch {
    * Returns the number of columns that make up this batch.
    */
   public int numCols() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2656
     return columns.length;
   }
 
@@ -150,6 +154,7 @@ public class CarbonVectorBatch {
    * Returns the number of rows for read, including filtered rows.
    */
   public int numRows() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2656
     return numRows;
   }
 

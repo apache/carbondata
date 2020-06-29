@@ -18,9 +18,11 @@
 package org.apache.carbondata.core.metadata.datatype;
 
 class ByteArrayType extends DataType {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
 
   static final DataType BYTE_ARRAY =
       new ByteArrayType(DataTypes.BYTE_ARRAY_TYPE_ID, 13, "BYTE_ARRAY", -1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
 
   private ByteArrayType(int id, int precedenceOrder, String name, int sizeInBytes) {
     super(id, precedenceOrder, name, sizeInBytes);

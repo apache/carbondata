@@ -69,15 +69,18 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
 
   @Override
   public void initialize() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
     super.initialize();
     child.initialize();
     converters = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1218
     badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
     RowConverter converter =
         new RowConverterImpl(child.getOutput(), configuration, badRecordLogger);
     converters.add(converter);
     converter.initialize();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     if (null != configuration.getBucketingInfo()) {
       this.isBucketColumnEnabled = true;
       initializeBucketColumnPartitioner();
@@ -107,6 +110,8 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     }
 
     // hash partitioner to dispatch rows by bucket column
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3721
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3590
     if (CarbonCommonConstants.BUCKET_HASH_METHOD_DEFAULT.equals(
         configuration.getBucketHashMethod())) {
       // keep consistent with both carbon and spark tables.
@@ -153,6 +158,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
         new RawRowComparator(sortColumnRangeInfo.getSortColumnIndex(),
             sortColumnRangeInfo.getIsSortColumnNoDict(), CarbonDataProcessorUtil
             .getNoDictDataTypes(configuration.getTableSpec().getCarbonTable())));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
 
     // range partitioner to dispatch rows by sort columns
     this.partitioner = new RangePartitionerImpl(convertedSortColumnRanges,
@@ -173,6 +179,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
 
   @Override
   public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     Iterator<CarbonRowBatch>[] childIters = child.execute();
     Iterator<CarbonRowBatch>[] iterators = new Iterator[childIters.length];
     for (int i = 0; i < childIters.length; i++) {
@@ -197,6 +204,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
         if (first) {
           first = false;
           localConverter = converters.get(0).createCopyForNewThread();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1515
           synchronized (converters) {
             converters.add(localConverter);
           }
@@ -219,10 +227,13 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
    */
   protected CarbonRowBatch processRowBatch(CarbonRowBatch rowBatch, RowConverter localConverter) {
     while (rowBatch.hasNext()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1837
       CarbonRow convertRow = localConverter.convert(rowBatch.next());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2136
       if (convertRow == null) {
         rowBatch.remove();
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
         if (isSortColumnRangeEnabled || isBucketColumnEnabled) {
           short rangeNumber = (short) partitioner.getPartition(convertRow);
           convertRow.setRangeId(rangeNumber);
@@ -239,13 +250,16 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
   @Override
   public void close() {
     if (!closed) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-784
       if (null != badRecordLogger) {
         badRecordLogger.closeStreams();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1218
         CarbonBadRecordUtil.renameBadRecord(configuration);
       }
       super.close();
       if (converters != null) {
         for (RowConverter converter : converters) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1515
           if (null != converter) {
             converter.finish();
           }
@@ -256,6 +270,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
 
   @Override
   protected String getStepName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     if (isBucketColumnEnabled) {
       return "Data Converter with Bucketing";
     } else if (isSortColumnRangeEnabled) {

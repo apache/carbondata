@@ -86,6 +86,7 @@ public class FloatStreamReader extends CarbonColumnVectorImpl implements PrestoV
     if (value == null) {
       putNull(rowId);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
       putFloat(rowId, (float) value);
     }
   }

@@ -38,9 +38,12 @@ public class ColumnLocalDictionaryGenerator implements LocalDictionaryGenerator 
     // adding 1 to threshold for null value
     int newThreshold = threshold + 1;
     this.dictionaryHolder = new MapBasedDictionaryStore(newThreshold);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2669
     ByteBuffer byteBuffer = ByteBuffer.allocate(
         lvLength + CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2585
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2586
     if (lvLength == CarbonCommonConstants.SHORT_SIZE_IN_BYTE) {
       byteBuffer.putShort((short) CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
     } else {

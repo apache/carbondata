@@ -36,6 +36,7 @@ public class BlockletDataHolder {
   private EncodedBlocklet encodedBlocklet;
 
   public BlockletDataHolder(ExecutorService fallbackpool, CarbonFactDataHandlerModel model) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2889
     encodedBlocklet = new EncodedBlocklet(fallbackpool, Boolean.parseBoolean(
         CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
@@ -45,6 +46,8 @@ public class BlockletDataHolder {
 
   public void clear() {
     currentSize = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     encodedBlocklet.clear();
   }
 
@@ -60,6 +63,8 @@ public class BlockletDataHolder {
   }
 
   public int getNumberOfPagesAdded() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     return encodedBlocklet.getNumberOfPages();
   }
 

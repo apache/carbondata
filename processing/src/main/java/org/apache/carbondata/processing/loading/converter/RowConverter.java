@@ -26,12 +26,14 @@ import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingExcep
 public interface RowConverter {
 
   void initialize();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
   CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException;
 
   RowConverter createCopyForNewThread();
 
   FieldConverter[] getFieldConverters();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
 
   void finish();
 }

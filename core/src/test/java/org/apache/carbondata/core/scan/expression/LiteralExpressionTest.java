@@ -31,6 +31,7 @@ public class LiteralExpressionTest {
 
   @Before public void setUp() {
     String value = "testing";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     literalExpression = new LiteralExpression(value, DataTypes.STRING);
   }
 
@@ -45,6 +46,7 @@ public class LiteralExpressionTest {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new String[] { "testing" });
     literalExpression.evaluate(rowImpl);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ExpressionResult expectedResult = new ExpressionResult(DataTypes.STRING, "testing");
     assertEquals(expectedResult, literalExpression.evaluate(rowImpl));
   }

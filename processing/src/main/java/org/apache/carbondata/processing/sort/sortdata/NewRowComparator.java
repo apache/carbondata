@@ -65,6 +65,7 @@ public class NewRowComparator implements Comparator<Object[]>, Serializable {
             return difference;
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2953
         dataTypeIdx++;
       } else {
         int dimFieldA = (int) rowA[index];

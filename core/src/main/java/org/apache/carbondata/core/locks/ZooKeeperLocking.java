@@ -70,12 +70,14 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   private String lockTypeFolder;
 
   public ZooKeeperLocking(AbsoluteTableIdentifier absoluteTableIdentifier, String lockFile) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
     this(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName()
         + CarbonCommonConstants.FILE_SEPARATOR + absoluteTableIdentifier.getCarbonTableIdentifier()
         .getTableName(), lockFile);
   }
 
   public static void initialize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     String zooKeeperUrl =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.ZOOKEEPER_URL);
     if (null == zk) {
@@ -89,10 +91,12 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
    */
   public ZooKeeperLocking(String lockLocation, String lockFile) {
     this.lockName = lockFile;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2230
     this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonTablePath.getLockFilesDirPath(lockLocation);
 
     initialize();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
 
     this.lockTypeFolder = tableIdFolder + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
     try {
@@ -106,6 +110,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
         zk.create(this.lockTypeFolder, new byte[1], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
       }
     } catch (KeeperException | InterruptedException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error(e.getMessage(), e);
     }
     initRetry();
@@ -128,7 +133,9 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
    * @throws InterruptedException
    */
   private void createRecursivly(String path) throws KeeperException, InterruptedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1903
     if (zk.exists(path, true) == null && path.length() > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1342
       String temp = path.substring(0, path.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
       createRecursivly(temp);
       zk.create(path, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -181,11 +188,14 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   public boolean unlock() {
     try {
       // exists will return null if the path doesn't exists.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
       if (lockPath != null && null != zk.exists(lockPath, true)) {
         zk.delete(lockPath, -1);
         lockPath = null;
       }
     } catch (KeeperException | InterruptedException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error(e.getMessage(), e);
       return false;
     }

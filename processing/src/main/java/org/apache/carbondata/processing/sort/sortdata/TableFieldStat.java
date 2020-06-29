@@ -83,11 +83,14 @@ public class TableFieldStat implements Serializable {
   public TableFieldStat(SortParameters sortParameters) {
     int noDictDimCnt = sortParameters.getNoDictionaryCount();
     int dictDimCnt = sortParameters.getDimColCount() - noDictDimCnt;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2796
     this.complexDimCnt = sortParameters.getComplexDimColCount();
     this.isSortColNoDictFlags = sortParameters.getNoDictionarySortColumn();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     this.isVarcharDimFlags = sortParameters.getIsVarcharDimensionColumn();
     boolean[] isDimNoDictFlags = sortParameters.getNoDictionaryDimnesionColumn();
     boolean[] sortColumn = sortParameters.getSortColumn();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     for (int i = 0; i < isDimNoDictFlags.length; i++) {
       if (isDimNoDictFlags[i] && sortColumn[i]) {
         noDictSortDimCnt++;
@@ -110,10 +113,12 @@ public class TableFieldStat implements Serializable {
     this.dictSortDimIdx = new int[dictSortDimCnt];
     this.dictNoSortDimIdx = new int[dictDimCnt - dictSortDimCnt];
     this.noDictSortDimIdx = new int[noDictSortDimCnt];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2796
     this.noDictNoSortDimIdx = new int[noDictDimCnt - noDictSortDimCnt - varcharDimCnt];
     this.complexDimIdx = new int[complexDimCnt];
     this.varcharDimIdx = new int[varcharDimCnt];
     this.measureIdx = new int[measureCnt];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
     this.noDictSortColumnSchemaOrderMapping =
         sortParameters.getNoDictSortColumnSchemaOrderMapping();
 
@@ -125,6 +130,7 @@ public class TableFieldStat implements Serializable {
     int tmpComplexcount = 0;
     int tmpMeasureIndex = 0;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3728
     if (sortParameters.isInsertWithoutReArrangeFlow()
         && sortParameters.getCarbonTable().getPartitionInfo() != null) {
       List<ColumnSchema> reArrangedColumnSchema =
@@ -156,9 +162,11 @@ public class TableFieldStat implements Serializable {
       }
     } else {
       List<CarbonDimension> allDimensions = sortParameters.getCarbonTable().getVisibleDimensions();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
       List<CarbonDimension> updatedDimensions = updateDimensionsBasedOnSortColumns(allDimensions);
       for (int i = 0; i < updatedDimensions.size(); i++) {
         CarbonDimension carbonDimension = updatedDimensions.get(i);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         if (carbonDimension.getDataType() == DataTypes.DATE && !carbonDimension.isComplex()) {
           if (carbonDimension.isSortColumn()) {
             dictSortDimIdx[tmpDictSortCnt++] = i;
@@ -185,6 +193,7 @@ public class TableFieldStat implements Serializable {
     }
     dictNoSortDimCnt = tmpDictNoSortCnt;
     noDictNoSortDimCnt = tmpNoDictNoSortCnt;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
     if (sortParameters.isUpdateDictDims() || sortParameters.isUpdateNonDictDims()) {
       this.sortTempRowUpdater = new SchemaBasedRowUpdater(sortParameters.getDictDimActualPosition(),
           sortParameters.getNoDictActualPosition(), sortParameters.isUpdateDictDims(),
@@ -211,10 +220,12 @@ public class TableFieldStat implements Serializable {
   }
 
   public int getComplexDimCnt() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2796
     return complexDimCnt;
   }
 
   public int getVarcharDimCnt() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     return varcharDimCnt;
   }
 
@@ -251,10 +262,12 @@ public class TableFieldStat implements Serializable {
   }
 
   public int[] getComplexDimIdx() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2796
     return complexDimIdx;
   }
 
   public int[] getVarcharDimIdx() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     return varcharDimIdx;
   }
 
@@ -263,6 +276,7 @@ public class TableFieldStat implements Serializable {
   }
 
   public int[] getNoDictSortColumnSchemaOrderMapping() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
     return noDictSortColumnSchemaOrderMapping;
   }
 
@@ -275,6 +289,7 @@ public class TableFieldStat implements Serializable {
         && dictNoSortDimCnt == that.dictNoSortDimCnt
         && noDictSortDimCnt == that.noDictSortDimCnt
         && noDictNoSortDimCnt == that.noDictNoSortDimCnt
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2796
         && complexDimCnt == that.complexDimCnt
         && varcharDimCnt == that.varcharDimCnt
         && measureCnt == that.measureCnt;
@@ -287,6 +302,7 @@ public class TableFieldStat implements Serializable {
   }
 
   public DataType[] getNoDictSortDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     return noDictSortDataType;
   }
 
@@ -299,10 +315,12 @@ public class TableFieldStat implements Serializable {
   }
 
   public SortTempRowUpdater getSortTempRowUpdater() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
     return sortTempRowUpdater;
   }
 
   private static List<CarbonDimension> updateDimensionsBasedOnSortColumns(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
       List<CarbonDimension> carbonDimensions) {
     return getCarbonDimensions(carbonDimensions);
   }
@@ -329,6 +347,7 @@ public class TableFieldStat implements Serializable {
   }
 
   private static List<ColumnSchema> getReArrangedColumnSchema(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3728
       CarbonTable carbonTable) {
     // handle 1.1 compatibility for sort columns
     List<CarbonDimension> visibleDimensions =

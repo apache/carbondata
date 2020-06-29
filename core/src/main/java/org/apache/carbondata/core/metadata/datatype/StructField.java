@@ -33,6 +33,7 @@ public class StructField implements Serializable {
   public StructField(String fieldName, DataType dataType) {
     this.fieldName = fieldName;
     this.dataType = dataType;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2430
     this.children = null;
   }
 
@@ -51,15 +52,18 @@ public class StructField implements Serializable {
   }
 
   public List<StructField> getChildren() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2430
     return children;
   }
 
   public void setFieldName(String fieldName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     this.fieldName = fieldName;
   }
 
   @Override
   public int hashCode() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2493
     final int prime = 31;
     int result = 1;
     result = prime * result + fieldName.hashCode();

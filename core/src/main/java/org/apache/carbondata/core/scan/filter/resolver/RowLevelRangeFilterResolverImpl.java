@@ -58,6 +58,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
 
   public RowLevelRangeFilterResolverImpl(Expression exp, boolean isExpressionResolve,
       boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     super(exp, isExpressionResolve, isIncludeFilter, false);
     dimColEvaluatorInfoList =
         new ArrayList<DimColumnResolvedFilterInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -74,6 +75,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    */
   public byte[][] getFilterRangeValues(SegmentProperties segmentProperties) {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     if (dimColEvaluatorInfoList.size() > 0 &&
         null != dimColEvaluatorInfoList.get(0).getFilterValues() &&
         dimColEvaluatorInfoList.get(0).getDimension().getDataType() != DataTypes.DATE) {
@@ -91,6 +93,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
       } else {
         return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(), false);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     } else if (dimColEvaluatorInfoList.size() > 0 &&
         null != dimColEvaluatorInfoList.get(0).getFilterValues() &&
         dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.DATE) {
@@ -99,6 +102,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
       if (null != dimensionFromCurrentBlock) {
         return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(),
             dimensionFromCurrentBlock, segmentProperties, false, true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2277
       } else {
         return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(), false);
       }
@@ -124,13 +128,16 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
     }
     List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
     boolean invalidRowsPresent = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1450
     String timeFormat = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
             CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
     for (ExpressionResult result : listOfExpressionResults) {
       try {
         if (result.getString() == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
           if (result.getDataType() == DataTypes.STRING) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
             filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
           } else {
             filterValuesList.add(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
@@ -173,6 +180,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           continue;
         }
         filterValuesList.add(DataTypeUtil.getMeasureValueBasedOnDataType(result.getString(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
             result.getDataType(), carbonMeasure.getScale(), carbonMeasure.getPrecision()));
       } catch (FilterIllegalMemberException e) {
         // Any invalid member while evaluation shall be ignored, system will log the
@@ -206,7 +214,9 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           dimColumnEvaluatorInfo.setRowIndex(index++);
           dimColumnEvaluatorInfo.setDimension(columnExpression.getDimension());
           dimColumnEvaluatorInfo.setDimensionExistsInCurrentSilce(false);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
           if (columnExpression.getDimension().getDataType() == DataTypes.DATE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1704
             if (!isIncludeFilter) {
               filterInfo.setExcludeFilterList(getDirectSurrogateValues(columnExpression));
             } else {
@@ -268,6 +278,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
 
   private List<Integer> getSurrogateValues() throws FilterUnsupportedException {
     List<ExpressionResult> listOfExpressionResults = new ArrayList<ExpressionResult>(20);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3343
 
     if (this.getFilterExpression() instanceof BinaryConditionalExpression) {
       listOfExpressionResults =

@@ -43,6 +43,7 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
       int[] invertedIndexReverse, int numberOfRows, int columnValueSize, int dataLength) {
     boolean isExplicitSorted = isExplicitSorted(invertedIndex);
     long totalSize = isExplicitSorted ?
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
         dataLength + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) :
         dataLength;
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE
@@ -63,8 +64,11 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
    */
   public FixedLengthDimensionColumnPage(byte[] dataChunk, int[] invertedIndex,
       int[] invertedIndexReverse, int numberOfRows, int columnValueSize,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       ColumnVectorInfo vectorInfo, int dataLength) {
     boolean isExplicitSorted = isExplicitSorted(invertedIndex);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     long totalSize = isExplicitSorted ?
         dataLength + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) :
         dataLength;
@@ -171,6 +175,8 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
         if (valueFromSurrogate == null) {
           vector.putNull(vectorOffset++);
         } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
           DataType dataType = columnVectorInfo.directDictionaryGenerator.getReturnType();
           if (dataType == DataTypes.INT) {
             vector.putInt(vectorOffset++, (int) valueFromSurrogate);
@@ -183,6 +189,7 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     return chunkIndex + 1;
   }
 }

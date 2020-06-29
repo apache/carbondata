@@ -62,6 +62,7 @@ public class RLECodec implements ColumnPageCodec {
 
   @Override
   public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
     return new RLEEncoder();
   }
 
@@ -69,11 +70,14 @@ public class RLECodec implements ColumnPageCodec {
   public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
     assert meta instanceof RLEEncoderMeta;
     RLEEncoderMeta codecMeta = (RLEEncoderMeta) meta;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     return new RLEDecoder(meta.getColumnSpec(), codecMeta.getPageSize(), meta.getCompressorName());
   }
 
   // This codec supports integral type only
   private void validateDataType(DataType dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3591
     if (!(dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE ||
         dataType == DataTypes.SHORT || dataType == DataTypes.INT ||
         dataType == DataTypes.LONG)) {
@@ -117,6 +121,7 @@ public class RLECodec implements ColumnPageCodec {
     protected ByteBuffer encodeData(ColumnPage input) throws IOException {
       validateDataType(input.getDataType());
       this.dataType = input.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       if (dataType == DataTypes.BYTE) {
         byte[] bytePage = input.getBytePage();
         for (int i = 0; i < bytePage.length; i++) {
@@ -141,6 +146,7 @@ public class RLECodec implements ColumnPageCodec {
         throw new UnsupportedOperationException(input.getDataType() +
             " does not support RLE encoding");
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
       return ByteBuffer.wrap(collectResult());
     }
 
@@ -153,7 +159,10 @@ public class RLECodec implements ColumnPageCodec {
 
     @Override
     protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
       return new RLEEncoderMeta(inputPage.getColumnSpec(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
           inputPage.getDataType(),
           inputPage.getPageSize(),
           inputPage.getStatistics(),
@@ -198,6 +207,7 @@ public class RLECodec implements ColumnPageCodec {
     }
 
     private void writeRunValue(Object value) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       if (dataType == DataTypes.BYTE) {
         stream.writeByte((byte) value);
       } else if (dataType == DataTypes.SHORT) {
@@ -268,6 +278,7 @@ public class RLECodec implements ColumnPageCodec {
           encodeRepeatedRun();
           startNewRun(value);
           break;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
         default:
           assert (runState == RUN_STATE.START);
           // enter non-repeated run
@@ -293,6 +304,8 @@ public class RLECodec implements ColumnPageCodec {
       validateDataType(columnSpec.getSchemaDataType());
       this.columnSpec = columnSpec;
       this.pageSize = pageSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       this.compressorName = compressorName;
     }
 
@@ -300,9 +313,13 @@ public class RLECodec implements ColumnPageCodec {
     public ColumnPage decode(byte[] input, int offset, int length) throws IOException {
       DataType dataType = columnSpec.getSchemaDataType();
       DataInputStream in = new DataInputStream(new ByteArrayInputStream(input, offset, length));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       ColumnPage resultPage = ColumnPage.newPage(
           new ColumnPageEncoderMeta(columnSpec, dataType, compressorName), pageSize);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
       if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         decodeBytePage(in, resultPage);
       } else if (dataType == DataTypes.SHORT) {
         decodeShortPage(in, resultPage);
@@ -319,6 +336,7 @@ public class RLECodec implements ColumnPageCodec {
     @Override
     public void decodeAndFillVector(byte[] input, int offset, int length,
         ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
         ReusableDataBuffer reusableDataBuffer) {
       throw new UnsupportedOperationException("Not supposed to be called here");
     }

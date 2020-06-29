@@ -83,6 +83,7 @@ public class ThriftWrapperSchemaConverterImplTest {
         new org.apache.carbondata.format.ColumnSchema(org.apache.carbondata.format.DataType.STRING,
             "columnName", "1", true, encoders, true);
     thriftColumnSchema.setSchemaOrdinal(1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1517
     thriftColumnSchema.setAggregate_function("");
     thriftColumnSchemas = new ArrayList<org.apache.carbondata.format.ColumnSchema>();
     thriftColumnSchemas.add(thriftColumnSchema);
@@ -108,6 +109,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public long getTime_stamp() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
         return 1112745600000L;
       }
 
@@ -624,6 +626,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         return DataTypes.SHORT;
       }
 
@@ -690,6 +693,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         return DataTypes.LONG;
       }
 
@@ -757,6 +761,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         return DataTypes.DOUBLE;
       }
 
@@ -823,6 +828,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         return DataTypes.createDefaultDecimalType();
       }
 
@@ -867,6 +873,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public String getAggFunction() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1517
         return "";
       }
     };
@@ -895,6 +902,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         return DataTypes.TIMESTAMP;
       }
 
@@ -961,6 +969,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
         return DataTypes.createDefaultArrayType();
       }
 
@@ -1028,6 +1037,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
         return DataTypes.createDefaultStructType();
       }
 
@@ -1080,7 +1090,9 @@ public class ThriftWrapperSchemaConverterImplTest {
 
   @Test public void testFromWrapperToExternalColumnSchemaForDatatypeNullCase() {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     org.apache.carbondata.format.ColumnSchema thriftColumnSchema =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         new org.apache.carbondata.format.ColumnSchema(
             org.apache.carbondata.format.DataType.INT,
             "columnName",
@@ -1101,6 +1113,8 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         return DataTypes.INT;
       }
 
@@ -1167,6 +1181,12 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         return DataTypes.BOOLEAN;
       }
 
@@ -1221,9 +1241,22 @@ public class ThriftWrapperSchemaConverterImplTest {
     encoders.add(null);
     org.apache.carbondata.format.ColumnSchema thriftColumnSchema = null;
     thriftColumnSchema =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
         new org.apache.carbondata.format.ColumnSchema(org.apache.carbondata.format.DataType.BOOLEAN,
             "columnName", "1", true, encoders, true);
     thriftColumnSchema.setSchemaOrdinal(1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1517
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1517
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1517
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1517
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1517
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1517
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1517
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1517
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1517
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1517
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1517
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1517
     thriftColumnSchema.setAggregate_function("");
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
     org.apache.carbondata.format.ColumnSchema actualResult =
@@ -1354,6 +1387,9 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
         return DataTypes.STRING;
       }
 
@@ -1432,16 +1468,19 @@ public class ThriftWrapperSchemaConverterImplTest {
     org.apache.carbondata.format.TableInfo actualResult = thriftWrapperSchemaConverter
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName);
     org.apache.carbondata.format.TableInfo expectedResult =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1286
         new org.apache.carbondata.format.TableInfo(thriftFactTable, new ArrayList<org.apache
             .carbondata.format.TableSchema>());
     assertEquals(expectedResult, actualResult);
   }
 
   @Test public void testFromExternalToWrapperSchemaEvolutionEntry() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     long time =1112745600000L;
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
     wrapperColumnSchema.setColumnUniqueId("1");
     wrapperColumnSchema.setColumnName("columnName");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     wrapperColumnSchema.setDataType(DataTypes.STRING);
     wrapperColumnSchema.setDimensionColumn(true);
     wrapperColumnSchema.setEncodingList(encodings);
@@ -1581,6 +1620,7 @@ public class ThriftWrapperSchemaConverterImplTest {
   @Test public void testFromExternalToWrapperColumnSchemaForDatatypeNullCase() {
 
     org.apache.carbondata.format.ColumnSchema thriftColumnSchema =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         new org.apache.carbondata.format.ColumnSchema(
             org.apache.carbondata.format.DataType.STRING,
             "columnName", "1", true, encoders, true);
@@ -1708,6 +1748,7 @@ public class ThriftWrapperSchemaConverterImplTest {
 
   @Test public void testFromExternalToWrapperTableSchema() {
     String tableId = "1";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3480
     String tableName = "tablename";
     TableSchema actualResult =
         thriftWrapperSchemaConverter.fromExternalToWrapperTableSchema(tabSchema, "tableName");
@@ -1733,6 +1774,7 @@ public class ThriftWrapperSchemaConverterImplTest {
     TableInfo actualResult = thriftWrapperSchemaConverter
         .fromExternalToWrapperTableInfo(externalTableInfo, "dbName", "tableName", "/path");
     assertEquals(time, actualResult.getLastUpdatedTime());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3480
     assertEquals("dbname_tablename", actualResult.getTableUniqueName());
   }
 

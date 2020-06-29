@@ -47,6 +47,7 @@ public class TestUtil {
     ByteArrayOutputStream output = null;
     try {
       org.apache.avro.Schema schema = new org.apache.avro.Schema.Parser().parse(avroSchema);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2916
       GenericDatumReader reader = new GenericDatumReader(schema);
       input = new ByteArrayInputStream(json.getBytes(CarbonCommonConstants.DEFAULT_CHARSET));
       output = new ByteArrayOutputStream();
@@ -84,6 +85,7 @@ public class TestUtil {
    */
   public static void writeFilesAndVerify(
       int rows, Schema schema, String path) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
     writeFilesAndVerify(rows, schema, path, null, -1, -1);
   }
 
@@ -112,6 +114,7 @@ public class TestUtil {
       }
 
       CarbonWriter writer = builder.withCsvInput(schema).writtenBy("TestUtil").build();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
 
       for (int i = 0; i < rows; i++) {
         writer.write(new String[]{
@@ -123,12 +126,14 @@ public class TestUtil {
       throw new RuntimeException(e);
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
     File[] dataFiles = new File(path).listFiles(new FileFilter() {
       @Override
       public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }
     });
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2916
     if (dataFiles == null) {
       throw new RuntimeException("Test failed: dataFiles is null");
     }

@@ -47,6 +47,7 @@ public class RangeNoDictionaryTypeVisitor extends NoDictionaryTypeVisitor
    */
   public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     if (visitableObj instanceof DimColumnResolvedFilterInfo) {
       DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
       ColumnFilterInfo resolvedFilterObject = null;
@@ -75,6 +76,7 @@ public class RangeNoDictionaryTypeVisitor extends NoDictionaryTypeVisitor
         throw new FilterUnsupportedException(e);
       }
       resolvedFilterObject = FilterUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
           .getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal, metadata.isIncludeFilter(),
               metadata.getColumnExpression().getDataType());
       resolveDimension.setFilterValues(resolvedFilterObject);

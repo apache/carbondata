@@ -25,10 +25,12 @@ import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 public interface CarbonColumnVector {
 
   void putBoolean(int rowId, boolean value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
 
   void putFloat(int rowId, float value);
 
   void putFloats(int rowId, int count, float[] src, int srcIndex);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
 
   void putShort(int rowId, short value);
 
@@ -49,6 +51,7 @@ public interface CarbonColumnVector {
   void putLongs(int rowId, int count, long[] src, int srcIndex);
 
   void putDecimal(int rowId, BigDecimal value, int precision);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1779
 
   void putDecimals(int rowId, int count, BigDecimal value, int precision);
 
@@ -57,18 +60,22 @@ public interface CarbonColumnVector {
   void putDoubles(int rowId, int count, double value);
 
   void putDoubles(int rowId, int count, double[] src, int srcIndex);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
 
   void putByteArray(int rowId, byte[] value);
 
   void putByteArray(int rowId, int offset, int length, byte[] value);
 
   void putArray(int rowId, int offset, int length);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
 
   void putAllByteArray(byte[] data, int offset, int length);
 
   void putByte(int rowId, byte value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
 
   void putByteArray(int rowId, int count, byte[] value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
 
   void putBytes(int rowId, int count, byte[] src, int srcIndex);
 
@@ -77,6 +84,9 @@ public interface CarbonColumnVector {
   void putNulls(int rowId, int count);
 
   void putNotNull(int rowId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
 
   void putNotNull(int rowId, int count);
 
@@ -89,6 +99,7 @@ public interface CarbonColumnVector {
   void reset();
 
   DataType getType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
 
   /**
    * Method to be used for getting the restructured data type. This method will used for
@@ -97,6 +108,7 @@ public interface CarbonColumnVector {
    * @return
    */
   DataType getBlockDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1946
 
   /**
    * Method to be used for setting the restructured data type. This method will used for
@@ -107,11 +119,15 @@ public interface CarbonColumnVector {
   void setFilteredRowsExist(boolean filteredRowsExist);
 
   void setDictionary(CarbonDictionary dictionary);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
 
   boolean hasDictionary();
 
   CarbonColumnVector getDictionaryVector();
 
   void setLazyPage(LazyPageLoader lazyPage);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
 
 }

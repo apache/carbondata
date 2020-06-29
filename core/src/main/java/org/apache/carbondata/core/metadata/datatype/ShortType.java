@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata.datatype;
 
 class ShortType extends DataType {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
 
   static final DataType SHORT = new ShortType(DataTypes.SHORT_TYPE_ID, 2, "SHORT", 2);
 

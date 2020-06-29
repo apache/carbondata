@@ -45,6 +45,7 @@ public interface BlockletScanner {
    * @return scannerResult
    * result after processing
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   BlockletScannedResult scanBlocklet(RawBlockletColumnChunks rawBlockletColumnChunks)
       throws IOException, FilterUnsupportedException;
 

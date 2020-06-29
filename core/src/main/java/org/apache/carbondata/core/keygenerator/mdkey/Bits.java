@@ -157,6 +157,8 @@ public class Bits implements Serializable {
     int ll = 0;
     int minLength = Math.min(lens.length, keys.length);
     for (int i = minLength - 1; i >= 0; i--) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
 
       long val = keys[i];
 
@@ -177,6 +179,8 @@ public class Bits implements Serializable {
       if (nextIndex != index) {
         int consideredBits = lens[i] - ll & 0x3f;
         //Check for spill over only if all the bits are not considered
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
         if (consideredBits < lens[i]) {
           // Check for spill over
           mask = (val >> (lens[i] - ll & 0x3f));
@@ -208,6 +212,7 @@ public class Bits implements Serializable {
       if (nextIndex != index) {
         pos = ll & 0x3f;
         // Number of bits pending for current key is zero, no spill over
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
         if (pos != 0) {
           mask = (LONG_MAX >>> (MAX_LENGTH - pos));
           val = words[nextIndex];

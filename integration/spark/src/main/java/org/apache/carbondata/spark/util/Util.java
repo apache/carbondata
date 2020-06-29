@@ -41,6 +41,7 @@ public class Util {
    * return the Array of available local-dirs
    */
   public static String[] getConfiguredLocalDirs(SparkConf conf) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1530
     return Utils.getConfiguredLocalDirs(conf);
   }
 
@@ -51,7 +52,9 @@ public class Util {
    * @return
    */
   public static boolean isBlockWithoutBlockletInfoExists(List<CarbonInputSplit> splitList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2134
     for (CarbonInputSplit inputSplit : splitList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
       if (inputSplit.isBlockCache()) {
         return true;
       }
@@ -60,7 +63,9 @@ public class Util {
   }
 
   public static org.apache.spark.sql.types.DataType convertCarbonToSparkDataType(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
       DataType carbonDataType, boolean forGlobalSort) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2872
     if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.STRING) {
       return DataTypes.StringType;
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT) {
@@ -76,6 +81,7 @@ public class Util {
     } else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isDecimal(carbonDataType)) {
       return DataTypes.createDecimalType();
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.TIMESTAMP) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
       if (forGlobalSort) {
         // data is already converted, so need to change data type also
         return DataTypes.LongType;
@@ -98,11 +104,13 @@ public class Util {
 
   public static StructType convertToSparkSchema(CarbonTable table) {
     List<CarbonColumn> columns = table.getCreateOrderColumn();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2919
     ColumnSchema[] schema = new ColumnSchema[columns.size()];
     int i = 0;
     for (CarbonColumn column : columns) {
       schema[i++] = column.getColumnSchema();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
     return convertToSparkSchema(table, schema, false);
   }
 
@@ -111,6 +119,7 @@ public class Util {
     List<ColumnSchema> columns = table.getTableInfo().getFactTable().getListOfColumns();
     List<ColumnSchema> validColumnSchema = new ArrayList<>();
     for (ColumnSchema column : columns) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
       if (!column.isInvisible() && !column.isSpatialColumn() && !column.isComplexColumn()) {
         validColumnSchema.add(column);
       }
@@ -149,6 +158,7 @@ public class Util {
                             carbonColumn.getColumnName()))),
                 true,
                 Metadata.empty()));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3637
       } else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isMapType(dataType)) {
         fields.add(
             new StructField(

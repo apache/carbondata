@@ -40,6 +40,7 @@ public class DataLoadExecutor {
   private boolean isClosed;
 
   public void execute(CarbonLoadModel loadModel, String[] storeLocation,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       CarbonIterator<Object[]>[] inputIterators) {
     try {
       loadProcessorStep =
@@ -50,16 +51,20 @@ public class DataLoadExecutor {
       // 2. execute the step
       loadProcessorStep.execute();
       // check and remove any bad record key from bad record entry logger static map
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1218
       if (CarbonBadRecordUtil.hasBadRecord(loadModel)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-341
         LOGGER.error("Data Load is partially success for table " + loadModel.getTableName());
       }
     } catch (CarbonDataLoadingException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1305
       if (e instanceof BadRecordFoundException) {
         throw new NoRetryException(e.getMessage());
       } else {
         throw e;
       }
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error("Data Loading failed for table " + loadModel.getTableName(), e);
       throw new CarbonDataLoadingException(
           "Data Loading failed for table " + loadModel.getTableName(), e);
@@ -70,6 +75,7 @@ public class DataLoadExecutor {
    * Method to clean all the resource
    */
   public void close() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1318
     if (!isClosed && loadProcessorStep != null) {
       loadProcessorStep.close();
     }

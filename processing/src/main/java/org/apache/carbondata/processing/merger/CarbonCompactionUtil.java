@@ -110,6 +110,7 @@ public class CarbonCompactionUtil {
         groupCorrespodingInfoBasedOnTask(info, taskBlockInfoMapping, taskNo);
         // put the taskBlockInfo with respective segment id
         segmentBlockInfoMapping.put(segId, taskBlockInfoMapping);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
       } else {
         groupCorrespodingInfoBasedOnTask(info, taskBlockInfoMapping, taskNo);
       }
@@ -144,6 +145,7 @@ public class CarbonCompactionUtil {
    * @return
    */
   public static Map<String, List<DataFileFooter>> createDataFileFooterMappingForSegments(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
       List<TableBlockInfo> tableBlockInfoList, boolean isSortedTable) throws IOException {
     Map<String, List<DataFileFooter>> segmentBlockInfoMapping = new HashMap<>();
     for (TableBlockInfo blockInfo : tableBlockInfoList) {
@@ -156,11 +158,13 @@ public class CarbonCompactionUtil {
       // in getting the schema last updated time based on which compaction flow is decided that
       // whether it will go to restructure compaction flow or normal compaction flow.
       // This decision will impact the compaction performance so it needs to be decided carefully
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
       BlockletDetailInfo blockletDetailInfo = blockInfo.getDetailInfo();
       if (null == blockletDetailInfo || blockletDetailInfo.getBlockletInfo() == null ||
           blockInfo.getDetailInfo().getSchemaUpdatedTimeStamp() == 0L
               || null == blockletDetailInfo.getBlockletInfo().isSorted() || !blockletDetailInfo
               .getBlockletInfo().isSorted()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
         dataFileMatadata = CarbonUtil.readMetadataFile(blockInfo, true);
         if (blockletDetailInfo == null) {
           blockletDetailInfo = QueryUtil.getBlockletDetailInfo(dataFileMatadata, blockInfo);
@@ -172,6 +176,7 @@ public class CarbonCompactionUtil {
       } else {
         dataFileMatadata = CarbonUtil.readMetadataFile(blockInfo);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3272
       blockInfo.setDataFileFooter(dataFileMatadata);
       if (null == metadataList) {
         // if it is not present
@@ -197,11 +202,13 @@ public class CarbonCompactionUtil {
     String majorCompactionStatusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonCommonConstants.majorCompactionRequiredFile;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (FileFactory.isFileExist(minorCompactionStatusFile) || FileFactory
           .isFileExist(majorCompactionStatusFile)) {
         return true;
       }
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Exception in isFileExist compaction request file " + e.getMessage(), e);
     }
     return false;
@@ -219,7 +226,9 @@ public class CarbonCompactionUtil {
     String majorCompactionStatusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonCommonConstants.majorCompactionRequiredFile;
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (FileFactory.isFileExist(minorCompactionStatusFile)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1586
         return CompactionType.MINOR;
       }
       if (FileFactory.isFileExist(majorCompactionStatusFile)) {
@@ -227,6 +236,7 @@ public class CarbonCompactionUtil {
       }
 
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Exception in determining the compaction request file " + e.getMessage(), e);
     }
     return CompactionType.MINOR;
@@ -241,6 +251,7 @@ public class CarbonCompactionUtil {
   public static boolean deleteCompactionRequiredFile(String metaFolderPath,
       CompactionType compactionType) {
     String compactionRequiredFile;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1586
     if (compactionType.equals(CompactionType.MINOR)) {
       compactionRequiredFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
           + CarbonCommonConstants.minorCompactionRequiredFile;
@@ -250,6 +261,7 @@ public class CarbonCompactionUtil {
     }
     try {
       if (FileFactory
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
           .isFileExist(compactionRequiredFile)) {
         if (FileFactory
             .getCarbonFile(compactionRequiredFile)
@@ -263,6 +275,7 @@ public class CarbonCompactionUtil {
         LOGGER.info("Compaction request file is not present. file is : " + compactionRequiredFile);
       }
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Exception in deleting the compaction request file " + e.getMessage(), e);
     }
     return false;
@@ -277,6 +290,7 @@ public class CarbonCompactionUtil {
   public static boolean createCompactionRequiredFile(String metaFolderPath,
       CompactionType compactionType) {
     String statusFile;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1586
     if (CompactionType.MINOR == compactionType) {
       statusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
           + CarbonCommonConstants.minorCompactionRequiredFile;
@@ -285,6 +299,7 @@ public class CarbonCompactionUtil {
           + CarbonCommonConstants.majorCompactionRequiredFile;
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (!FileFactory.isFileExist(statusFile)) {
         if (FileFactory.createNewFile(statusFile)) {
           LOGGER.info("successfully created a compaction required file - " + statusFile);
@@ -297,6 +312,7 @@ public class CarbonCompactionUtil {
         LOGGER.info("Compaction request file : " + statusFile + " already exist.");
       }
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Exception in creating the compaction request file " + e.getMessage(), e);
     }
     return false;
@@ -310,7 +326,9 @@ public class CarbonCompactionUtil {
    */
   public static CarbonTable getNextTableToCompact(CarbonTable[] carbonTables,
       List<CarbonTableIdentifier> skipList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1284
     for (CarbonTable ctable : carbonTables) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
       String metadataPath = ctable.getMetadataPath();
       // check for the compaction required file and at the same time exclude the tables which are
       // present in the skip list.
@@ -331,8 +349,10 @@ public class CarbonCompactionUtil {
     for (CarbonDimension dimension : masterDimensions) {
       updatedColumnSchemaList.add(dimension.getColumnSchema());
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2755
       if (dimension.getNumberOfChild() > 0) {
         fillColumnSchemaListForComplexDims(dimension.getListOfChildDimensions(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
             updatedColumnSchemaList);
       }
     }
@@ -348,6 +368,7 @@ public class CarbonCompactionUtil {
    * update the cardinality for all complex dimensions
    */
   private static void fillColumnSchemaListForComplexDims(List<CarbonDimension> carbonDimensionsList,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       List<ColumnSchema> updatedColumnSchemaList) {
     for (CarbonDimension carbonDimension : carbonDimensionsList) {
       updatedColumnSchemaList.add(carbonDimension.getColumnSchema());
@@ -367,6 +388,7 @@ public class CarbonCompactionUtil {
    * @return
    */
   public static boolean checkIfAnyRestructuredBlockExists(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3200
       Map<String, TaskBlockInfo> segmentMapping,
       Map<String, List<DataFileFooter>> dataFileMetadataSegMapping,
       long tableLastUpdatedTime) {
@@ -409,6 +431,7 @@ public class CarbonCompactionUtil {
   // This method will return an Expression(And/Or) for each range based on the datatype
   // This Expression will be passed to each task as a Filter Query to get the data
   public static Expression getFilterExpressionForRange(CarbonColumn rangeColumn, Object minVal,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3343
       Object maxVal, DataType dataType) {
     Expression finalExpr;
     Expression exp1, exp2;
@@ -427,6 +450,7 @@ public class CarbonCompactionUtil {
       } else {
         exp2 = new LessThanEqualToExpression(new ColumnExpression(colName, dataType),
             new LiteralExpression(maxVal, dataType));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         if (rangeColumn.getDataType() == DataTypes.DATE) {
           exp2.setAlreadyResolved(true);
         }
@@ -436,6 +460,7 @@ public class CarbonCompactionUtil {
       // Last task
       finalExpr = new GreaterThanExpression(new ColumnExpression(colName, dataType),
           new LiteralExpression(minVal, dataType));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (rangeColumn.getDataType() == DataTypes.DATE) {
         finalExpr.setAlreadyResolved(true);
       }
@@ -445,6 +470,7 @@ public class CarbonCompactionUtil {
           new LiteralExpression(minVal, dataType));
       exp2 = new LessThanEqualToExpression(new ColumnExpression(colName, dataType),
           new LiteralExpression(maxVal, dataType));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (rangeColumn.getDataType() == DataTypes.DATE) {
         exp2.setAlreadyResolved(true);
         exp1.setAlreadyResolved(true);
@@ -533,6 +559,7 @@ public class CarbonCompactionUtil {
   }
 
   public static int getTaskCountForSegment(CarbonInputSplit[] splits) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3396
     Set<String> taskIdSet = new HashSet<>();
     for (CarbonInputSplit split : splits) {
       String taskId = split.taskId;
@@ -543,6 +570,7 @@ public class CarbonCompactionUtil {
 
   private static boolean compareSortColumns(CarbonTable table, List<ColumnSchema> fileColumns) {
     // When sort_columns is modified, it will be consider as no_sort also.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3350
     List<CarbonDimension> sortColumnsOfSegment = new ArrayList<>();
     for (ColumnSchema column : fileColumns) {
       if (column.isDimensionColumn() && column.isSortColumn()) {
@@ -582,6 +610,7 @@ public class CarbonCompactionUtil {
    */
   public static boolean isSortedByCurrentSortColumns(CarbonTable table, DataFileFooter footer) {
     if (footer.isSorted()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3350
       return compareSortColumns(table, footer.getColumnInTable());
     } else {
       return false;

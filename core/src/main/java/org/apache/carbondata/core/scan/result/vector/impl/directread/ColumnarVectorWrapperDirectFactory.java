@@ -42,6 +42,7 @@ public final class ColumnarVectorWrapperDirectFactory {
       int[] invertedIndex, BitSet nullBitset, BitSet deletedRows, boolean isnullBitsExists,
       boolean isDictVector) {
     // If it is sequential data filler then add the null bitset.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
     if (columnVector instanceof SequentialFill) {
       // If it has inverted index then create a dummy delete rows bitset so that it goes to
       // ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex, here it does the sequential
@@ -61,6 +62,7 @@ public final class ColumnarVectorWrapperDirectFactory {
       return new ColumnarVectorWrapperDirectWithDeleteDelta(columnVector, deletedRows, nullBitset);
     } else if ((invertedIndex != null && invertedIndex.length > 0) && deletedRows != null) {
       return new ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex(columnVector,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3048
           deletedRows, invertedIndex, nullBitset, isnullBitsExists, isDictVector);
     } else {
       return columnVector;

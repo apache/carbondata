@@ -45,6 +45,7 @@ import org.apache.carbondata.core.util.comparator.SerializableComparator;
 public class IncludeFilterExecuterImpl implements FilterExecuter {
 
   protected DimColumnResolvedFilterInfo dimColumnEvaluatorInfo;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   DimColumnExecuterFilterInfo dimColumnExecuterInfo;
   private MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo;
   private MeasureColumnExecuterFilterInfo msrColumnExecutorInfo;
@@ -62,8 +63,12 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   private FilterBitSetUpdater filterBitSetUpdater;
 
   public IncludeFilterExecuterImpl(byte[][] filterValues, boolean isNaturalSorted) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
     this.filterValues = filterValues;
     this.isNaturalSorted = isNaturalSorted;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3373
     this.filterBitSetUpdater =
         BitSetUpdaterFactory.INSTANCE.getBitSetUpdater(FilterExecuterType.INCLUDE);
   }
@@ -89,6 +94,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       this.msrColumnEvaluatorInfo = msrColumnEvaluatorInfo;
       msrColumnExecutorInfo = new MeasureColumnExecuterFilterInfo();
       comparator =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
           Comparator.getComparatorByDataTypeForMeasure(
               FilterUtil.getMeasureDataType(msrColumnEvaluatorInfo));
       FilterUtil
@@ -102,6 +108,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   @Override
   public BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
       boolean useBitsetPipeLine) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     if (isDimensionPresentInCurrentBlock) {
       int chunkIndex = segmentProperties.getDimensionOrdinalToChunkMapping()
           .get(dimColumnEvaluatorInfo.getColumnIndex());
@@ -113,11 +120,16 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       DimensionRawColumnChunk dimensionRawColumnChunk =
           rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex];
       BitSetGroup bitSetGroup = new BitSetGroup(dimensionRawColumnChunk.getPagesCount());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2760
       filterValues = dimColumnExecuterInfo.getFilterKeys();
       boolean isDecoded = false;
       for (int i = 0; i < dimensionRawColumnChunk.getPagesCount(); i++) {
         if (dimensionRawColumnChunk.getMaxValues() != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3013
           if (isScanRequired(dimensionRawColumnChunk, i)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
             DimensionColumnPage dimensionColumnPage = dimensionRawColumnChunk.decodeColumnPage(i);
             if (!isDecoded) {
               filterValues =  FilterUtil
@@ -149,6 +161,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       MeasureRawColumnChunk measureRawColumnChunk =
           rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex];
       BitSetGroup bitSetGroup = new BitSetGroup(measureRawColumnChunk.getPagesCount());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
       DataType msrType = FilterUtil.getMeasureDataType(msrColumnEvaluatorInfo);
       for (int i = 0; i < measureRawColumnChunk.getPagesCount(); i++) {
         if (measureRawColumnChunk.getMaxValues() != null) {
@@ -156,6 +169,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
               measureRawColumnChunk.getMinValues()[i], msrColumnExecutorInfo.getFilterKeys(),
               msrColumnEvaluatorInfo.getType())) {
             BitSet bitSet =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
                 getFilteredIndexesForMeasure(measureRawColumnChunk.decodeColumnPage(i),
                     measureRawColumnChunk.getRowCount()[i], useBitsetPipeLine,
                     rawBlockletColumnChunks.getBitSetGroup(), i, msrType);
@@ -178,7 +192,9 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     boolean scanRequired;
     // for no dictionary measure column comparison can be done
     // on the original data as like measure column
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3013
     if (DataTypeUtil.isPrimitiveColumn(dimColumnEvaluatorInfo.getDimension().getDataType())
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         && dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.DATE) {
       scanRequired = isScanRequired(dimensionRawColumnChunk.getMaxValues()[columnIndex],
           dimensionRawColumnChunk.getMinValues()[columnIndex],
@@ -195,6 +211,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
 
   @Override
   public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
     if (isDimensionPresentInCurrentBlock) {
       int chunkIndex = segmentProperties.getDimensionOrdinalToChunkMapping()
@@ -247,6 +264,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
 
   @Override
   public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     if (isDimensionPresentInCurrentBlock) {
       byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
       byte[] col = (byte[])value.getVal(dimColumnEvaluatorInfo.getDimension().getOrdinal());
@@ -298,6 +316,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   private BitSet getFilteredIndexesForMeasure(ColumnPage measureColumnPage, int numberOfRows,
       boolean useBitsetPipeLine, BitSetGroup prvBitSetGroup, int pageNumber, DataType msrDataType) {
     // check whether previous indexes can be optimal to apply filter on measure column
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1538
     if (CarbonUtil.usePreviousFilterBitsetGroup(useBitsetPipeLine, prvBitSetGroup, pageNumber,
         msrColumnExecutorInfo.getFilterKeys().length)) {
       return getFilteredIndexesForMsrUsingPrvBitSet(measureColumnPage, prvBitSetGroup, pageNumber,
@@ -360,9 +379,16 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   protected BitSet getFilteredIndexes(DimensionColumnPage dimensionColumnPage,
       int numberOfRows, boolean useBitsetPipeLine, BitSetGroup prvBitSetGroup, int pageNumber) {
     // check whether previous indexes can be optimal to apply filter on dimension column
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
     if (filterValues.length > 0 && CarbonUtil
         .usePreviousFilterBitsetGroup(useBitsetPipeLine, prvBitSetGroup, pageNumber,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
             filterValues.length)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       return getFilteredIndexesUisngPrvBitset(dimensionColumnPage, prvBitSetGroup, pageNumber,
           numberOfRows);
     } else {
@@ -390,6 +416,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   private BitSet getFilteredIndexesUisngPrvBitset(DimensionColumnPage dimensionColumnPage,
       BitSetGroup prvBitSetGroup, int pageNumber, int numberOfRows) {
     BitSet prvPageBitSet = prvBitSetGroup.getBitSet(pageNumber);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1544
     if (prvPageBitSet == null || prvPageBitSet.isEmpty()) {
       return prvPageBitSet;
     }
@@ -401,6 +428,9 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       for (int index = prvPageBitSet.nextSetBit(0);
            index >= 0; index = prvPageBitSet.nextSetBit(index + 1)) {
         compareResult = CarbonUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
             .isFilterPresent(filterValues, dimensionColumnPage, 0, filterValues.length - 1, index);
         if (compareResult == 0) {
           bitSet.set(index);
@@ -410,6 +440,9 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       for (int index = prvPageBitSet.nextSetBit(0);
            index >= 0; index = prvPageBitSet.nextSetBit(index + 1)) {
         compareResult = CarbonUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
             .isFilterPresent(filterValues, dimensionColumnPage, 0, filterValues.length - 1,
                 dimensionColumnPage.getInvertedReverseIndex(index));
         if (compareResult == 0) {
@@ -421,6 +454,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   }
 
   private BitSet setFilterdIndexToBitSetWithColumnIndex(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       DimensionColumnPage dimensionColumnPage, int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
     if (filterValues.length == 0) {
@@ -432,6 +466,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
         break;
       }
       int[] rangeIndex = CarbonUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
           .getRangeIndexUsingBinarySearch(dimensionColumnPage, startIndex, numerOfRows - 1,
               filterValues[i]);
       for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
@@ -447,11 +482,18 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   private BitSet setFilterdIndexToBitSet(DimensionColumnPage dimensionColumnPage,
       int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
     if (filterValues.length == 0) {
       return bitSet;
     }
     // binary search can only be applied if column is sorted and
     // inverted index exists for that column
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     if (isNaturalSorted && dimensionColumnPage.isExplicitSorted()) {
       int startIndex = 0;
       for (int i = 0; i < filterValues.length; i++) {
@@ -459,6 +501,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
           break;
         }
         int[] rangeIndex = CarbonUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
             .getRangeIndexUsingBinarySearch(dimensionColumnPage, startIndex, numerOfRows - 1,
                 filterValues[i]);
         for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
@@ -472,6 +515,9 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       if (filterValues.length > 1) {
         for (int i = 0; i < numerOfRows; i++) {
           int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
               dimensionColumnPage, i);
           if (index >= 0) {
             bitSet.set(i);
@@ -491,25 +537,34 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   @Override
   public BitSet isScanRequired(byte[][] blkMaxVal, byte[][] blkMinVal, boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
     byte[][] filterValues;
     int chunkIndex = 0;
     boolean isScanRequired = false;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1353
     if (isDimensionPresentInCurrentBlock) {
       filterValues = dimColumnExecuterInfo.getFilterKeys();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
       chunkIndex = dimColumnEvaluatorInfo.getColumnIndexInMinMaxByteArray();
       // for no dictionary measure column comparison can be done
       // on the original data as like measure column
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (DataTypeUtil.isPrimitiveColumn(dimColumnEvaluatorInfo.getDimension().getDataType()) &&
           dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.DATE) {
         isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex], filterValues,
             dimColumnEvaluatorInfo.getDimension().getDataType());
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
         isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex], filterValues,
           isMinMaxSet[chunkIndex]);
       }
     } else if (isMeasurePresentInCurrentBlock) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3353
       chunkIndex = msrColumnEvaluatorInfo.getColumnIndexInMinMaxByteArray();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3353
       if (isMinMaxSet[chunkIndex]) {
         isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex],
             msrColumnExecutorInfo.getFilterKeys(), msrColumnEvaluatorInfo.getType());
@@ -526,6 +581,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
 
   private boolean isScanRequired(byte[] blkMaxVal, byte[] blkMinVal, byte[][] filterValues,
       boolean isMinMaxSet) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     if (!isMinMaxSet) {
       // scan complete data if min max is not written for a given column
       return true;
@@ -552,6 +608,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   }
 
   private boolean isScanRequired(byte[] blkMaxVal, byte[] blkMinVal, byte[][] filterValues,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       DataType dataType) {
     boolean isScanRequired = false;
     Object minValue = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(blkMinVal, dataType);
@@ -598,6 +655,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
 
   @Override
   public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     if (isDimensionPresentInCurrentBlock) {
       int chunkIndex = segmentProperties.getDimensionOrdinalToChunkMapping()
           .get(dimColumnEvaluatorInfo.getColumnIndex());
@@ -606,6 +664,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
             rawBlockletColumnChunks.getDataBlock().readDimensionChunk(
                 rawBlockletColumnChunks.getFileReader(), chunkIndex);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1353
     } else if (isMeasurePresentInCurrentBlock) {
       int chunkIndex = segmentProperties.getMeasuresOrdinalToChunkMapping()
           .get(msrColumnEvaluatorInfo.getColumnIndex());

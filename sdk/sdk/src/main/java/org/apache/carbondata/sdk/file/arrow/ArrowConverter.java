@@ -44,6 +44,7 @@ public class ArrowConverter {
   public ArrowConverter(Schema schema, int initialSize) {
     this.arrowSchema = ArrowUtils.toArrowSchema(schema, TimeZone.getDefault().getID());
     this.allocator =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3365
         ArrowUtils.rootAllocator.newChildAllocator("toArrowBuffer", initialSize, Long.MAX_VALUE);
     this.root = VectorSchemaRoot.create(arrowSchema, allocator);
     this.arrowWriter = ArrowWriter.create(root);
@@ -75,6 +76,7 @@ public class ArrowConverter {
     arrowWriter.finish();
     writer.writeBatch();
     writer.close();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3413
     arrowWriter.reset();
     root.close();
     byte[] bytes = out.toByteArray();
@@ -93,6 +95,7 @@ public class ArrowConverter {
     arrowWriter.finish();
     writer.writeBatch();
     writer.close();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3413
     arrowWriter.reset();
     root.close();
     long address = out.copyToAddress();

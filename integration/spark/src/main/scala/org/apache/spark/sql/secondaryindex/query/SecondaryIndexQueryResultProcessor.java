@@ -419,6 +419,7 @@ public class SecondaryIndexQueryResultProcessor {
     }
     dimensionColumnCount = dimensions.size();
     sortParameters = createSortParameters();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
     CarbonDataProcessorUtil.deleteSortLocationIfExists(sortParameters.getTempFileLocation());
     CarbonDataProcessorUtil.createLocations(sortParameters.getTempFileLocation());
     intermediateFileMerger = new SortIntermediateFileMerger(sortParameters);

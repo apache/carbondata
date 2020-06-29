@@ -39,15 +39,18 @@ public interface FieldConverter {
    * It convert the literal value to carbon internal value
    */
   Object convert(Object value, BadRecordLogHolder logHolder) throws RuntimeException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
 
   /**
    * This method gets data field for the field.
    * @return
    */
   DataField getDataField();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
 
   /**
    * This method clears all the dictionary caches being acquired.
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1914
   void clear();
 }

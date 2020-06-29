@@ -55,6 +55,7 @@ public class CarbonTableIdentifier implements Serializable {
     this.databaseName = databaseName;
     this.tableName = tableName;
     this.tableId = tableId;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     tableUniqueName = CarbonTable.buildUniqueName(databaseName, tableName);
   }
 

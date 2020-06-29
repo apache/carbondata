@@ -113,6 +113,7 @@ public class DimColumnResolvedFilterInfo extends ColumnResolvedFilterInfo implem
   }
 
   public void populateFilterInfoBasedOnColumnType(ResolvedFilterInfoVisitorIntf visitor,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
     if (null != visitor) {
       visitor.populateFilterResolvedInfo(this, metadata);
@@ -135,6 +136,7 @@ public class DimColumnResolvedFilterInfo extends ColumnResolvedFilterInfo implem
     dimColumnResolvedFilterInfo.rowIndex = this.rowIndex;
     dimColumnResolvedFilterInfo.dimensionResolvedFilter = this.dimensionResolvedFilter;
     dimColumnResolvedFilterInfo.isDimensionExistsInCurrentSilce = isDimensionExistsInCurrentSilce;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
     dimColumnResolvedFilterInfo.columnIndexInMinMaxByteArray = columnIndexInMinMaxByteArray;
     return dimColumnResolvedFilterInfo;
   }

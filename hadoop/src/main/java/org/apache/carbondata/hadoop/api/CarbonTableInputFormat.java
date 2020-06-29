@@ -109,17 +109,21 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    */
   @Override
   public List<InputSplit> getSplits(JobContext job) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     carbonTable = getOrCreateCarbonTable(job.getConfiguration());
     if (null == carbonTable) {
       throw new IOException("Missing/Corrupt schema file for table.");
     }
     // global dictionary is not supported since 2.0
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     if (carbonTable.getTableInfo().getFactTable().getTableProperties().containsKey(
         CarbonCommonConstants.DICTIONARY_INCLUDE)) {
       DeprecatedFeatureException.globalDictNotSupported();
     }
 
     List<InputSplit> splits = new LinkedList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3710
 
     if (CarbonProperties.isQueryStageInputEnabled()) {
       // If there are stage files, collect them and create splits so that they are
@@ -133,8 +137,10 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         throw new IOException(e);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     this.readCommittedScope = getReadCommitted(job, carbonTable.getAbsoluteTableIdentifier());
     LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
     String updateDeltaVersion = job.getConfiguration().get(UPDATE_DELTA_VERSION);
     SegmentUpdateStatusManager updateStatusManager;
     if (updateDeltaVersion != null) {
@@ -144,21 +150,28 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       updateStatusManager =
           new SegmentUpdateStatusManager(carbonTable, loadMetadataDetails);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     List<String> invalidSegmentIds = new ArrayList<>();
     List<Segment> streamSegments = null;
     // get all valid segments and set them into the configuration
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     SegmentStatusManager segmentStatusManager =
         new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(),
             readCommittedScope.getConfiguration());
     SegmentStatusManager.ValidAndInvalidSegmentsInfo segments = segmentStatusManager
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         .getValidAndInvalidSegments(carbonTable.isMV(), loadMetadataDetails,
             this.readCommittedScope);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     if (getValidateSegmentsToAccess(job.getConfiguration())) {
       List<Segment> validSegments = segments.getValidSegments();
       streamSegments = segments.getStreamSegments();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
       streamSegments = getFilteredSegment(job, streamSegments, true, readCommittedScope);
       if (validSegments.size() == 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3710
         splits.addAll(getSplitsOfStreaming(job, streamSegments, carbonTable));
         return splits;
       }
@@ -172,16 +185,20 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       }
 
       // remove entry in the segment index if there are invalid segments
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
       for (Segment segment : segments.getInvalidSegments()) {
         invalidSegmentIds.add(segment.getSegmentNo());
       }
       if (invalidSegmentIds.size() > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         IndexStoreManager.getInstance()
             .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()),
                 invalidSegmentIds);
       }
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2269
     List<Segment> validAndInProgressSegments = new ArrayList<>(segments.getValidSegments());
     // Add in progress segments also to filter it as in case of Secondary Index table load it loads
     // data from in progress table.
@@ -189,6 +206,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
     List<Segment> segmentToAccess =
         getFilteredSegment(job, validAndInProgressSegments, false, readCommittedScope);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
     String segmentFileName = job.getConfiguration().get(CarbonCommonConstants.CURRENT_SEGMENTFILE);
     if (segmentFileName != null) {
       //per segment it has only one file("current.segment")
@@ -196,18 +214,21 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
     // process and resolve the expression
     IndexFilter indexFilter = getFilterPredicates(job.getConfiguration());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
     if (indexFilter != null) {
       indexFilter.resolve(false);
     }
 
     // do block filtering and get split
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3710
     List<InputSplit> batchSplits = getSplits(
         job, indexFilter, segmentToAccess,
         updateStatusManager, segments.getInvalidSegments());
     splits.addAll(batchSplits);
 
     // add all splits of streaming
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     List<InputSplit> splitsOfStreaming = getSplitsOfStreaming(job, streamSegments, carbonTable);
     if (!splitsOfStreaming.isEmpty()) {
       splits.addAll(splitsOfStreaming);
@@ -231,7 +252,9 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    */
   private List<Segment> getFilteredSegment(JobContext job, List<Segment> validSegments,
       boolean validationRequired, ReadCommittedScope readCommittedScope) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
     Segment[] segmentsToAccess = getSegmentsToAccess(job, readCommittedScope);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
     List<Segment> segmentToAccessSet =
         new ArrayList<>(new HashSet<>(Arrays.asList(segmentsToAccess)));
     List<Segment> filteredSegmentToAccess = new ArrayList<>();
@@ -250,6 +273,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           }
         }
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
       if (filteredSegmentToAccess.size() != segmentToAccessSet.size() && !validationRequired) {
         for (Segment segment : segmentToAccessSet) {
           if (!filteredSegmentToAccess.contains(segment)) {
@@ -258,6 +282,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         }
       }
       // TODO: add validation for set segments access based on valid segments in table status
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2285
       if (filteredSegmentToAccess.size() != segmentToAccessSet.size() && !validationRequired) {
         for (Segment segment : segmentToAccessSet) {
           if (!filteredSegmentToAccess.contains(segment)) {
@@ -276,6 +301,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
   }
 
   public List<InputSplit> getSplitsOfStreaming(JobContext job, List<Segment> streamSegments,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2853
       CarbonTable carbonTable) throws IOException {
     return getSplitsOfStreaming(job, streamSegments, carbonTable, null);
   }
@@ -287,11 +313,13 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       CarbonTable carbonTable, FilterResolverIntf filterResolverIntf) throws IOException {
     List<InputSplit> splits = new ArrayList<InputSplit>();
     if (streamSegments != null && !streamSegments.isEmpty()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
       numStreamSegments = streamSegments.size();
       long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
       long maxSize = getMaxSplitSize(job);
       if (filterResolverIntf == null) {
         if (carbonTable != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           IndexFilter filter = getFilterPredicates(job.getConfiguration());
           if (filter != null) {
             filter.processFilterExpression();
@@ -303,6 +331,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       streamPruner.init(filterResolverIntf);
       List<StreamFile> streamFiles = streamPruner.prune(streamSegments);
       // record the hit information of the streaming files
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2923
       this.hitedStreamFiles = streamFiles.size();
       this.numStreamFiles = streamPruner.getTotalFileNums();
       for (StreamFile streamFile : streamFiles) {
@@ -320,6 +349,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           // there is 10% slop to avoid to generate very small split in the end
           while (((double) bytesRemaining) / splitSize > 1.1) {
             int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
             splits.add(makeSplit(streamFile.getSegmentNo(), streamFile.getFilePath(),
                 length - bytesRemaining, splitSize, blkLocations[blkIndex].getHosts(),
                     blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
@@ -339,6 +369,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
   protected FileSplit makeSplit(String segmentId, String filePath, long start, long length,
       String[] hosts, String[] inMemoryHosts, FileFormat fileFormat) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     return new CarbonInputSplit(segmentId, filePath, start, length, hosts, inMemoryHosts,
         fileFormat);
   }
@@ -352,20 +383,24 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    * @throws IOException
    */
   private List<InputSplit> getSplits(JobContext job, IndexFilter expression,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3606
       List<Segment> validSegments, SegmentUpdateStatusManager updateStatusManager,
       List<Segment> invalidSegments) throws IOException {
     List<String> segmentsToBeRefreshed = new ArrayList<>();
     if (!CarbonProperties.getInstance()
         .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName())) {
       // Clean the updated segments from memory if the update happens on segments
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       IndexStoreManager.getInstance().refreshSegmentCacheIfRequired(carbonTable,
           updateStatusManager,
           validSegments);
     } else {
       segmentsToBeRefreshed = IndexStoreManager.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3759
           .getSegmentsToBeRefreshed(carbonTable, validSegments);
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     numSegments = validSegments.size();
     List<InputSplit> result = new LinkedList<InputSplit>();
     UpdateVO invalidBlockVOForSegmentId = null;
@@ -377,11 +412,13 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     List<org.apache.carbondata.hadoop.CarbonInputSplit> dataBlocksOfSegment =
         getDataBlocksOfSegment(job, carbonTable, expression, validSegments,
             invalidSegments, segmentsToBeRefreshed);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     numBlocks = dataBlocksOfSegment.size();
     for (org.apache.carbondata.hadoop.CarbonInputSplit inputSplit : dataBlocksOfSegment) {
 
       // Get the UpdateVO for those tables on which IUD operations being performed.
       if (isIUDTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3759
         invalidBlockVOForSegmentId = SegmentUpdateStatusManager
             .getInvalidTimestampRange(inputSplit.getSegment().getLoadMetadataDetails());
       }
@@ -390,12 +427,14 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         // In case IUD is not performed in this table avoid searching for
         // invalidated blocks.
         if (CarbonUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
             .isInvalidTableBlock(inputSplit.getSegmentId(), inputSplit.getFilePath(),
                 invalidBlockVOForSegmentId, updateStatusManager)) {
           continue;
         }
         // When iud is done then only get delete delta files for a block
         try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
           deleteDeltaFilePath = updateStatusManager
               .getDeleteDeltaFilePath(inputSplit.getPath().toString(), inputSplit.getSegmentId());
         } catch (Exception e) {
@@ -416,6 +455,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     if (segmentString.trim().isEmpty()) {
       return new Segment[0];
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
     List<Segment> segments = Segment.toSegmentList(segmentString.split(","), readCommittedScope);
     return segments.toArray(new Segment[segments.size()]);
   }
@@ -424,6 +464,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    * Get the row count of the Block and mapping of segment and Block count.
    */
   public BlockMappingVO getBlockRowCount(Job job, CarbonTable table,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3293
       List<PartitionSpec> partitions, boolean isUpdateFlow) throws IOException {
     // Normal query flow goes to CarbonInputFormat#getPrunedBlocklets and initialize the
     // pruning info for table we queried. But here count star query without filter uses a different
@@ -432,24 +473,30 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     // Considering no useful information about block/blocklet pruning for such query
     // (actually no pruning), so we disable explain collector here
     ExplainCollector.remove();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3078
 
     AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2313
     ReadCommittedScope readCommittedScope = getReadCommitted(job, identifier);
     LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
 
     SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(
         table, loadMetadataDetails);
     SegmentStatusManager.ValidAndInvalidSegmentsInfo allSegments =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
         new SegmentStatusManager(identifier, readCommittedScope.getConfiguration())
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
             .getValidAndInvalidSegments(table.isMV(), loadMetadataDetails,
                 readCommittedScope);
     Map<String, Long> blockRowCountMapping = new HashMap<>();
     Map<String, Long> segmentAndBlockCountMapping = new HashMap<>();
     Map<String, String> blockToSegmentMapping = new HashMap<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
 
     // TODO: currently only batch segment is supported, add support for streaming table
     List<Segment> filteredSegment =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
         getFilteredSegment(job, allSegments.getValidSegments(), false, readCommittedScope);
     boolean isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
     /* In the select * flow, getSplits() method was clearing the segmentMap if,
@@ -458,6 +505,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     SDK is written one set of files with UUID, with same UUID it can write again.
     So, latest files content should reflect the new count by refreshing the segment */
     List<String> toBeCleanedSegments = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3759
     for (Segment segment : filteredSegment) {
       boolean refreshNeeded = IndexStoreManager.getInstance()
           .getTableSegmentRefresher(getOrCreateCarbonTable(job.getConfiguration()))
@@ -471,6 +519,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       // remove entry in the segment index if there are invalid segments
       toBeCleanedSegments.add(segment.getSegmentNo());
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1543
     if (toBeCleanedSegments.size() > 0) {
       IndexStoreManager.getInstance()
           .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()),
@@ -478,16 +527,20 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
     IndexExprWrapper indexExprWrapper =
         IndexChooser.getDefaultIndex(getOrCreateCarbonTable(job.getConfiguration()), null);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
     IndexUtil.loadIndexes(table, indexExprWrapper, filteredSegment);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3293
     if (isIUDTable || isUpdateFlow) {
       Map<String, Long> blockletToRowCountMap = new HashMap<>();
       if (CarbonProperties.getInstance()
           .isDistributedPruningEnabled(table.getDatabaseName(), table.getTableName())) {
         try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
           List<ExtendedBlocklet> extendedBlocklets =
               getDistributedBlockRowCount(table, partitions, filteredSegment,
                   allSegments.getInvalidSegments(), toBeCleanedSegments);
           for (ExtendedBlocklet blocklet : extendedBlocklets) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3398
             String filePath = blocklet.getFilePath().replace("\\", "/");
             String blockName = filePath.substring(filePath.lastIndexOf("/") + 1);
             blockletToRowCountMap.put(blocklet.getSegmentId() + "," + blockName,
@@ -499,6 +552,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           if (CarbonProperties.getInstance().isFallBackDisabled()) {
             throw e;
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           TableIndex defaultIndex = IndexStoreManager.getInstance().getDefaultIndex(table);
           blockletToRowCountMap
               .putAll(defaultIndex.getBlockRowCount(filteredSegment, partitions, defaultIndex));
@@ -516,39 +570,47 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
         long rowCount = eachBlocklet.getValue();
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
         String key = CarbonUpdateUtil
             .getSegmentBlockNameKey(segmentId, blockName, table.isHivePartitionTable());
 
         // if block is invalid then don't add the count
         SegmentUpdateDetails details = updateStatusManager.getDetailsForABlock(key);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
         if (null == details || !CarbonUpdateUtil.isBlockInvalid(details.getSegmentStatus())) {
           Long blockCount = blockRowCountMapping.get(key);
           if (blockCount == null) {
             blockCount = 0L;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
             Long count = segmentAndBlockCountMapping.get(segmentId);
             if (count == null) {
               count = 0L;
             }
             segmentAndBlockCountMapping.put(segmentId, count + 1);
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
           blockToSegmentMapping.put(key, segmentId);
           blockCount += rowCount;
           blockRowCountMapping.put(key, blockCount);
         }
       }
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
       long totalRowCount;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3392
       if (CarbonProperties.getInstance()
           .isDistributedPruningEnabled(table.getDatabaseName(), table.getTableName())) {
         totalRowCount =
             getDistributedCount(table, partitions, filteredSegment);
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         TableIndex defaultIndex = IndexStoreManager.getInstance().getDefaultIndex(table);
         totalRowCount = defaultIndex.getRowCount(filteredSegment, partitions, defaultIndex);
       }
       blockRowCountMapping.put(CarbonCommonConstantsInternal.ROW_COUNT, totalRowCount);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
     BlockMappingVO blockMappingVO =
         new BlockMappingVO(blockRowCountMapping, segmentAndBlockCountMapping);
     blockMappingVO.setBlockToSegmentMapping(blockToSegmentMapping);
@@ -556,10 +618,12 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
   }
 
   public ReadCommittedScope getReadCommitted(JobContext job, AbsoluteTableIdentifier identifier)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2313
       throws IOException {
     if (readCommittedScope == null) {
       ReadCommittedScope readCommittedScope;
       if (job.getConfiguration().getBoolean(CARBON_TRANSACTIONAL_TABLE, true)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
         readCommittedScope = new TableStatusReadCommittedScope(identifier, job.getConfiguration());
       } else {
         readCommittedScope = getReadCommittedScope(job.getConfiguration());

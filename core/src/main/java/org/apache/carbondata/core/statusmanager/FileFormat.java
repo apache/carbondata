@@ -38,6 +38,7 @@ public class FileFormat implements Serializable {
 
   public FileFormat(String format, int ordinal) {
     this.format = format.toLowerCase();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
     this.ordinal = ordinal;
   }
 
@@ -46,6 +47,7 @@ public class FileFormat implements Serializable {
   }
 
   public static FileFormat getByOrdinal(int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     if (ordinal < 0) {
       throw new IllegalArgumentException("Argument [ordinal] is less than 0.");
     }
@@ -66,6 +68,7 @@ public class FileFormat implements Serializable {
 
   @Override
   public boolean equals(Object o) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     FileFormat that = (FileFormat) o;

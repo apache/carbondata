@@ -47,6 +47,7 @@ public class DirectDictionary implements BiDictionary<Integer, Object> {
   }
 
   public Integer generateKey(long value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2554
     return dictionaryGenerator.generateKey(value);
   }
 

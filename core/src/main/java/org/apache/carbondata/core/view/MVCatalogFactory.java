@@ -26,5 +26,6 @@ public interface MVCatalogFactory<T> {
    * Create a mv catalog object.
    */
   MVCatalog<T> newCatalog();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
 }

@@ -47,6 +47,7 @@ public class HdfsFileLock extends AbstractCarbonLock {
    * @param lockFile
    */
   public HdfsFileLock(String lockFileLocation, String lockFile) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2230
     this.lockFileDir = CarbonTablePath.getLockFilesDirPath(lockFileLocation);
     this.lockFilePath = CarbonTablePath.getLockFilePath(lockFileLocation, lockFile);
     LOGGER.info("HDFS lock path:" + this.lockFilePath);
@@ -61,6 +62,7 @@ public class HdfsFileLock extends AbstractCarbonLock {
     try {
       if (null != this.lockFileDir &&
           !FileFactory.isFileExist(lockFileDir)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         FileFactory.mkdirs(lockFileDir);
       }
       if (!FileFactory.isFileExist(lockFilePath)) {
@@ -71,6 +73,7 @@ public class HdfsFileLock extends AbstractCarbonLock {
       return true;
 
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2137
       LOGGER.info(e.getMessage());
       return false;
     }

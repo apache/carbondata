@@ -101,6 +101,7 @@ public class QueryStasticsRecorderImplTest {
   }
 
   @Test public void testcollectExecutorStatistics() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     assertNotNull(queryStasticsRecorderImpl.statisticsForTask(1, 1));
   }
 

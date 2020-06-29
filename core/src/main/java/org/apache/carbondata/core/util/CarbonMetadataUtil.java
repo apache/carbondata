@@ -75,6 +75,7 @@ public class CarbonMetadataUtil {
   private static final byte[] DEPRECATED_MDK;
 
   static  {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     ByteBuffer buffer = ByteBuffer.allocate(
         CarbonCommonConstants.INT_SIZE_IN_BYTE + CarbonCommonConstants.INT_SIZE_IN_BYTE
             + startKey.length + noDictStartKey.length);
@@ -98,6 +99,7 @@ public class CarbonMetadataUtil {
    * @return FileFooter
    */
   public static FileFooter3 convertFileFooterVersion3(List<BlockletInfo3> infoList,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       List<BlockletIndex> blockletIndexs, int numberOfColumns) {
     FileFooter3 footer = getFileFooter3(infoList, blockletIndexs, numberOfColumns);
     for (BlockletInfo3 info : infoList) {
@@ -115,6 +117,7 @@ public class CarbonMetadataUtil {
    * @return file footer
    */
   private static FileFooter3 getFileFooter3(List<BlockletInfo3> infoList,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       List<BlockletIndex> blockletIndexs, int numberOfColumns) {
     SegmentInfo segmentInfo = new SegmentInfo();
     segmentInfo.setNum_cols(numberOfColumns);
@@ -132,10 +135,12 @@ public class CarbonMetadataUtil {
    * convert external thrift BlockletMinMaxIndex to BlockletMinMaxIndex of carbon metadata
    */
   public static org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2853
       convertExternalMinMaxIndex(BlockletMinMaxIndex minMaxIndex) {
     if (minMaxIndex == null) {
       return null;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     List<Boolean> isMinMaxSet = null;
     if (minMaxIndex.isSetMin_max_presence()) {
       isMinMaxSet = minMaxIndex.getMin_max_presence();
@@ -162,6 +167,7 @@ public class CarbonMetadataUtil {
     for (int i = 0; i < minMaxIndex.getMaxValues().length; i++) {
       blockletMinMaxIndex.addToMax_values(ByteBuffer.wrap(minMaxIndex.getMaxValues()[i]));
       blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(minMaxIndex.getMinValues()[i]));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
       blockletMinMaxIndex.addToMin_max_presence(minMaxIndex.getIsMinMaxSet()[i]);
     }
 
@@ -197,6 +203,8 @@ public class CarbonMetadataUtil {
   private static EncodedColumnPage[] getEncodedColumnPages(EncodedBlocklet encodedBlocklet,
       boolean isDimension, int pageIndex) {
     int size =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
         isDimension ? encodedBlocklet.getNumberOfDimension() : encodedBlocklet.getNumberOfMeasure();
     EncodedColumnPage [] encodedPages = new EncodedColumnPage[size];
 
@@ -218,6 +226,7 @@ public class CarbonMetadataUtil {
       List<CarbonMeasure> carbonMeasureList) {
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
     // merge writeMinMax flag for all the dimensions
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     List<Boolean> writeMinMaxFlag =
         mergeWriteMinMaxFlagForAllPages(blockletMinMaxIndex, encodedBlocklet);
     // Calculating min/max for every each column.
@@ -255,6 +264,8 @@ public class CarbonMetadataUtil {
       blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(min));
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     stats = new TablePageStatistics(getEncodedColumnPages(encodedBlocklet, true, 0),
         getEncodedColumnPages(encodedBlocklet, false, 0));
     byte[][] measureMaxValue = stats.getMeasureMaxValue().clone();
@@ -285,6 +296,7 @@ public class CarbonMetadataUtil {
       blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(min));
     }
     BlockletBTreeIndex blockletBTreeIndex = new BlockletBTreeIndex();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     blockletBTreeIndex.setStart_key(DEPRECATED_MDK);
     blockletBTreeIndex.setEnd_key(DEPRECATED_MDK);
     BlockletIndex blockletIndex = new BlockletIndex();
@@ -302,6 +314,7 @@ public class CarbonMetadataUtil {
    * @param encodedBlocklet
    */
   private static List<Boolean> mergeWriteMinMaxFlagForAllPages(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
       BlockletMinMaxIndex blockletMinMaxIndex, EncodedBlocklet encodedBlocklet) {
     Boolean[] mergedWriteMinMaxFlag =
         new Boolean[encodedBlocklet.getNumberOfDimension() + encodedBlocklet.getNumberOfMeasure()];
@@ -334,11 +347,14 @@ public class CarbonMetadataUtil {
    * after 1.5.0, we use string 'compressor_name' instead
    */
   public static ChunkCompressionMeta getChunkCompressorMeta(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2977
       ColumnPage inputPage, long encodedDataLength) throws IOException {
     ChunkCompressionMeta chunkCompressionMeta = new ChunkCompressionMeta();
     // we will not use this field any longer and will use compressor_name instead,
     // but in thrift definition, this field is required so we cannot set it to null, otherwise
     // it will cause deserialization error in runtime (required field cannot be null).
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     chunkCompressionMeta.setCompression_codec(CompressionCodec.DEPRECATED);
     chunkCompressionMeta.setCompressor_name(inputPage.getColumnCompressorName());
     chunkCompressionMeta.setTotal_compressed_size(encodedDataLength);
@@ -356,6 +372,7 @@ public class CarbonMetadataUtil {
       return chunkCompressionMeta.getCompressor_name();
     } else {
       // this is for legacy store before 1.5.0
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2930
       return CompressorFactory.NativeSupportedCompressor.SNAPPY.getName();
     }
   }
@@ -369,12 +386,14 @@ public class CarbonMetadataUtil {
    * @return Index header object
    */
   public static IndexHeader getIndexHeader(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2092
       List<ColumnSchema> columnSchemaList, int bucketNumber, long schemaTimeStamp) {
     // create segment info object
     SegmentInfo segmentInfo = new SegmentInfo();
     // set the number of columns
     segmentInfo.setNum_cols(columnSchemaList.size());
     // setting the column cardinality, deprecated
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     segmentInfo.setColumn_cardinalities(dummyCardinality);
     // create index header object
     IndexHeader indexHeader = new IndexHeader();
@@ -387,6 +406,7 @@ public class CarbonMetadataUtil {
     // set the bucket number
     indexHeader.setBucket_id(bucketNumber);
     // set the current schema time stamp which will used for deciding the restructured block
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2092
     indexHeader.setSchema_time_stamp(schemaTimeStamp);
     return indexHeader;
   }
@@ -411,6 +431,7 @@ public class CarbonMetadataUtil {
       if (blockIndexInfo.getBlockletInfo() != null) {
         blockIndex.setBlocklet_info(getBlocletInfo3(blockIndexInfo.getBlockletInfo()));
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3523
       blockIndex.setFile_size(blockIndexInfo.getFileSize());
       thriftBlockIndexList.add(blockIndex);
     }
@@ -423,6 +444,7 @@ public class CarbonMetadataUtil {
     dimensionChunkOffsets.addAll(blockletInfo.getMeasureChunkOffsets());
     List<Integer> dimensionChunksLength = blockletInfo.getDimensionChunksLength();
     dimensionChunksLength.addAll(blockletInfo.getMeasureChunksLength());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     BlockletInfo3 blockletInfo3 =
         new BlockletInfo3(blockletInfo.getNumberOfRows(), dimensionChunkOffsets,
             dimensionChunksLength, blockletInfo.getDimensionOffset(),
@@ -441,12 +463,15 @@ public class CarbonMetadataUtil {
    * return DataChunk3 that contains the input DataChunk2 list
    */
   public static DataChunk3 getDataChunk3(List<DataChunk2> dataChunksList,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
       LocalDictionaryChunk encodedDictionary) {
     int offset = 0;
     DataChunk3 dataChunk = new DataChunk3();
     List<Integer> pageOffsets = new ArrayList<>();
     List<Integer> pageLengths = new ArrayList<>();
     int length = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1098
     for (DataChunk2 dataChunk2 : dataChunksList) {
       pageOffsets.add(offset);
       length = dataChunk2.getData_page_length() + dataChunk2.getRle_page_length() +
@@ -454,6 +479,8 @@ public class CarbonMetadataUtil {
       pageLengths.add(length);
       offset += length;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     dataChunk.setLocal_dictionary(encodedDictionary);
     dataChunk.setData_chunk_list(dataChunksList);
     dataChunk.setPage_length(pageLengths);
@@ -467,6 +494,8 @@ public class CarbonMetadataUtil {
    */
   public static DataChunk3 getDimensionDataChunk3(EncodedBlocklet encodedBlocklet,
       int columnIndex) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     List<DataChunk2> dataChunksList = new ArrayList<>();
     BlockletEncodedColumnPage blockletEncodedColumnPage =
         encodedBlocklet.getEncodedDimensionColumnPages().get(columnIndex);
@@ -496,6 +525,7 @@ public class CarbonMetadataUtil {
   private static int compareMeasureData(byte[] first, byte[] second, DataType dataType) {
     ByteBuffer firstBuffer = null;
     ByteBuffer secondBuffer = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2964
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       if (first[0] > second[0]) {
         return 1;
@@ -531,9 +561,11 @@ public class CarbonMetadataUtil {
         return -1;
       }
       return 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       return DataTypeUtil.byteToBigDecimal(first).compareTo(DataTypeUtil.byteToBigDecimal(second));
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       throw new IllegalArgumentException("Invalid data type:" + dataType);
     }
   }

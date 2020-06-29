@@ -48,6 +48,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     this.exp = exp;
     this.isExpressionResolve = isExpressionResolve;
     this.isIncludeFilter = isIncludeFilter;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     if (!isMeasure) {
       this.dimColResolvedFilterInfo = new DimColumnResolvedFilterInfo();
     } else {
@@ -65,6 +66,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    */
   @Override
   public void resolve()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws FilterUnsupportedException {
     FilterResolverMetadata metadata = new FilterResolverMetadata();
     if ((!isExpressionResolve) && exp instanceof BinaryConditionalExpression) {
@@ -82,6 +84,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
         // column expression.
         // we need to check if the other expression contains column
         // expression or not in depth.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         if (FilterUtil.checkIfExpressionContainsColumn(rightExp)) {
           isExpressionResolve = true;
         } else {
@@ -98,6 +101,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
                 metadata);
           } else {
             dimColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-792
                 FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnExpression, exp),
                 metadata);
           }
@@ -107,6 +111,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
         metadata.setColumnExpression(columnExpression);
         metadata.setExpression(leftExp);
         metadata.setIncludeFilter(isIncludeFilter);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         if (columnExpression.getDataType().equals(DataTypes.TIMESTAMP) ||
             columnExpression.getDataType().equals(DataTypes.DATE)) {
           isExpressionResolve = true;
@@ -127,6 +132,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
                   metadata);
             } else {
               dimColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-792
                   FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnExpression, exp),
                   metadata);
             }
@@ -142,6 +148,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
       metadata.setColumnExpression(columnList.get(0));
       metadata.setExpression(exp);
       metadata.setIncludeFilter(isIncludeFilter);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if ((null != columnList.get(0).getDimension()) || (exp instanceof RangeExpression)) {
         dimColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
             FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnList.get(0), exp),
@@ -215,6 +222,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
       case NOT_IN:
         return FilterExecuterType.EXCLUDE;
       case RANGE:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         return FilterExecuterType.RANGE;
       default:
         return FilterExecuterType.INCLUDE;
@@ -230,6 +238,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    */
   public byte[][]  getFilterRangeValues(SegmentProperties segmentProperties) {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     if (null != dimColResolvedFilterInfo.getFilterValues() &&
         dimColResolvedFilterInfo.getDimension().getDataType() != DataTypes.DATE) {
       List<byte[]> noDictFilterValuesList =
@@ -238,6 +247,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     } else if (null != dimColResolvedFilterInfo.getFilterValues() &&
         dimColResolvedFilterInfo.getDimension().getDataType() == DataTypes.DATE) {
       return FilterUtil.getKeyArray(this.dimColResolvedFilterInfo.getFilterValues(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3343
           this.dimColResolvedFilterInfo.getDimension(), segmentProperties, false, false);
     }
     return null;

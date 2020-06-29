@@ -59,13 +59,18 @@ public class JsonRowParser implements RowParser {
       Map<String, Object> jsonNodeMap =
           objectMapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {
           });
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2722
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2721
       if (jsonNodeMap == null) {
         return null;
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2879
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2918
       Map<String, Object> jsonNodeMapCaseInsensitive = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
       jsonNodeMapCaseInsensitive.putAll(jsonNodeMap);
       return jsonToCarbonRecord(jsonNodeMapCaseInsensitive, dataFields);
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       throw new IOException("Failed to parse Json String: " + e.getMessage(), e);
     }
   }
@@ -74,6 +79,8 @@ public class JsonRowParser implements RowParser {
     List<Object> fields = new ArrayList<>();
     for (DataField dataField : dataFields) {
       Object field = jsonToCarbonObject(jsonNodeMap, dataField.getColumn());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2722
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2721
       fields.add(field);
     }
     // use this array object to form carbonRow
@@ -85,6 +92,8 @@ public class JsonRowParser implements RowParser {
     if (DataTypes.isArrayType(type)) {
       CarbonDimension carbonDimension = (CarbonDimension) column;
       ArrayList array = (ArrayList) jsonNodeMap.get(extractChildColumnName(column));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2722
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2721
       if ((array == null) || (array.size() == 0)) {
         return null;
       }
@@ -102,6 +111,8 @@ public class JsonRowParser implements RowParser {
       int size = carbonDimension.getNumberOfChild();
       Map<String, Object> jsonMap =
           (Map<String, Object>) jsonNodeMap.get(extractChildColumnName(column));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2722
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2721
       if (jsonMap == null) {
         return null;
       }
@@ -152,6 +163,8 @@ public class JsonRowParser implements RowParser {
         CarbonDimension childCol = column.getListOfChildDimensions().get(i);
         Object child = jsonChildElementToCarbonChildElement(
             childFieldsMap.get(extractChildColumnName(childCol)), childCol);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2722
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2721
         structChildObjects[i] = child;
       }
       return new StructObject(structChildObjects);
@@ -163,6 +176,7 @@ public class JsonRowParser implements RowParser {
 
   private static String extractChildColumnName(CarbonColumn column) {
     String columnName = column.getColName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3815
     if (column.getColumnSchema().isComplexColumn()) {
       // complex type child column names can be like following
       // a) struct type --> parent.child

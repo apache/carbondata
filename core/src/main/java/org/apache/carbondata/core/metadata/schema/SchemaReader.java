@@ -39,17 +39,22 @@ public class SchemaReader {
 
   public static CarbonTable readCarbonTableFromStore(AbsoluteTableIdentifier identifier)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     String schemaFilePath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3404
     if (FileFactory.isFileExist(schemaFilePath)) {
       String tableName = identifier.getCarbonTableIdentifier().getTableName();
 
       org.apache.carbondata.format.TableInfo tableInfo =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
           CarbonUtil.readSchemaFile(CarbonTablePath.getSchemaFilePath(identifier.getTablePath()));
       SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
       TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
           tableInfo,
           identifier.getCarbonTableIdentifier().getDatabaseName(),
           tableName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
           identifier.getTablePath());
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
       return CarbonMetadata.getInstance().getCarbonTable(
@@ -67,6 +72,7 @@ public class SchemaReader {
    * @throws IOException if IO error occurs
    */
   public static CarbonTable readCarbonTableFromSchema(String schemaFilePath, Configuration conf)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
       throws IOException {
     TableInfo tableInfo = readTableInfoFromSchema(schemaFilePath, conf);
     return CarbonTable.buildFromTableInfo(tableInfo);
@@ -106,11 +112,13 @@ public class SchemaReader {
   public static TableInfo getTableInfo(AbsoluteTableIdentifier identifier)
       throws IOException {
     org.apache.carbondata.format.TableInfo thriftTableInfo =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
         CarbonUtil.readSchemaFile(CarbonTablePath.getSchemaFilePath(identifier.getTablePath()));
     ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
         new ThriftWrapperSchemaConverterImpl();
     CarbonTableIdentifier carbonTableIdentifier =
         identifier.getCarbonTableIdentifier();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1903
     return thriftWrapperSchemaConverter.fromExternalToWrapperTableInfo(
         thriftTableInfo,
         carbonTableIdentifier.getDatabaseName(),
@@ -121,6 +129,7 @@ public class SchemaReader {
   public static TableInfo inferSchema(AbsoluteTableIdentifier identifier,
       boolean isCarbonFileProvider, Configuration configuration) throws IOException {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil
         .inferSchema(identifier.getTablePath(), identifier.getTableName(), isCarbonFileProvider,
             configuration);
@@ -142,6 +151,7 @@ public class SchemaReader {
     TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
         tableInfo, identifier.getDatabaseName(), identifier.getTableName(),
         identifier.getTablePath());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2360
     wrapperTableInfo.setTransactionalTable(false);
     return wrapperTableInfo;
   }

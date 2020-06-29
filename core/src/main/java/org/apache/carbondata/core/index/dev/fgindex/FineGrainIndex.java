@@ -39,12 +39,15 @@ public abstract class FineGrainIndex implements Index<FineGrainBlocklet> {
 
   @Override
   public List<FineGrainBlocklet> prune(Expression filter, SegmentProperties segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
       CarbonTable carbonTable, FilterExecuter filterExecuter) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     throw new UnsupportedOperationException("Filter expression not supported");
   }
 
   @Override
   public long getRowCount(Segment segment, List<PartitionSpec> partitions) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3293
     throw new UnsupportedOperationException("Operation not supported");
   }
 
@@ -56,6 +59,7 @@ public abstract class FineGrainIndex implements Index<FineGrainBlocklet> {
 
   @Override
   public boolean validatePartitionInfo(List<PartitionSpec> partitions) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3773
     throw new UnsupportedOperationException("Operation not supported");
   }
 

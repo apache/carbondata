@@ -37,5 +37,6 @@ public interface InputMetricsStats extends Serializable {
   /**
    * update metric by `value`, it can be ColumnarBatch or InternalRow
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1847
   void updateByValue(Object value);
 }

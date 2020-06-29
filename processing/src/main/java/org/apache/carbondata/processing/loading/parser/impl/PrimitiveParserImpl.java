@@ -28,6 +28,7 @@ public class PrimitiveParserImpl implements GenericParser<Object> {
 
   @Override
   public Object parseRaw(Object data) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     return parse(data);
   }
 

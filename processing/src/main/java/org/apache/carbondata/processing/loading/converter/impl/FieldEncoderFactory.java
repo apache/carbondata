@@ -72,9 +72,11 @@ public class FieldEncoderFactory {
       boolean isConvertToBinary, String binaryDecoder, CarbonDataLoadConfiguration configuration) {
     // Converters are only needed for dimensions and measures it return null.
     if (dataField.getColumn().isDimension()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
       if (dataField.getColumn().isSpatialColumn()) {
         return new SpatialIndexFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord,
             configuration);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       } else if (dataField.getColumn().getDataType() == DataTypes.DATE &&
           !dataField.getColumn().isComplex()) {
         return new DirectDictionaryFieldConverterImpl(dataField, nullFormat, index,
@@ -90,10 +92,12 @@ public class FieldEncoderFactory {
         // if the no dictionary column is a numeric column and no need to convert to binary
         // then treat it is as measure col
         // so that the adaptive encoding can be applied on it easily
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
         if (DataTypeUtil.isPrimitiveColumn(dataField.getColumn().getDataType())
             && !isConvertToBinary) {
           return new MeasureFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-784
         return new NonDictionaryFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
       }
     } else {
@@ -102,10 +106,12 @@ public class FieldEncoderFactory {
   }
 
   private BinaryDecoder getBinaryDecoder(String binaryDecoder) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3655
     BinaryDecoder binaryDecoderObject;
     if (binaryDecoder == null) {
       return null;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3336
     if (binaryDecoder.equalsIgnoreCase(
         CarbonLoadOptionConstants.CARBON_OPTIONS_BINARY_DECODER_BASE64)) {
       binaryDecoderObject = new Base64BinaryDecoder();
@@ -137,29 +143,36 @@ public class FieldEncoderFactory {
    */
 
   private static GenericDataType createComplexType(CarbonColumn carbonColumn, String parentName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3655
       String nullFormat, BinaryDecoder binaryDecoder) {
     DataType dataType = carbonColumn.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
     if (DataTypes.isArrayType(dataType) || DataTypes.isMapType(dataType)) {
       List<CarbonDimension> listOfChildDimensions =
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // Create array parser with complex delimiter
       ArrayDataType arrayDataType =
           new ArrayDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
               carbonColumn.getDataType() == DataTypes.DATE);
       for (CarbonDimension dimension : listOfChildDimensions) {
         arrayDataType.addChildren(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3655
             createComplexType(dimension, carbonColumn.getColName(), nullFormat, binaryDecoder));
       }
       return arrayDataType;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     } else if (DataTypes.isStructType(dataType)) {
       List<CarbonDimension> dimensions =
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // Create struct parser with complex delimiter
       StructDataType structDataType =
           new StructDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
               carbonColumn.getDataType() == DataTypes.DATE);
       for (CarbonDimension dimension : dimensions) {
         structDataType.addChildren(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3655
             createComplexType(dimension, carbonColumn.getColName(), nullFormat, binaryDecoder));
       }
       return structDataType;

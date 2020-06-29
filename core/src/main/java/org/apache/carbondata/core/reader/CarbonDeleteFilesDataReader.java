@@ -59,6 +59,7 @@ public class CarbonDeleteFilesDataReader {
   }
 
   public CarbonDeleteFilesDataReader(int thread_pool_size) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3031
     this.thread_pool_size = thread_pool_size;
   }
 
@@ -89,6 +90,7 @@ public class CarbonDeleteFilesDataReader {
       executorService.shutdown();
       executorService.awaitTermination(30, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Error while reading the delete delta files : " + e.getMessage(), e);
     }
 
@@ -107,6 +109,7 @@ public class CarbonDeleteFilesDataReader {
         }
 
       } catch (Throwable e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
         LOGGER.error(e.getMessage(), e);
         throw new Exception(e);
       }
@@ -132,6 +135,7 @@ public class CarbonDeleteFilesDataReader {
       executorService.shutdown();
       executorService.awaitTermination(30, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Error while reading the delete delta files : " + e.getMessage(), e);
     }
     Map<String, DeleteDeltaVo> pageIdToBlockLetVo = new HashMap<>();
@@ -167,12 +171,16 @@ public class CarbonDeleteFilesDataReader {
     List<Future<DeleteDeltaBlockDetails>> taskSubmitList = new ArrayList<>(deltaFiles.size());
     ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
     for (final String deltaFile : deltaFiles) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
       taskSubmitList.add(executorService.submit(new DeleteDeltaFileReaderCallable(deltaFile)));
     }
     try {
       executorService.shutdown();
       executorService.awaitTermination(30, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Error while reading the delete delta files : " + e.getMessage(), e);
     }
 
@@ -188,6 +196,7 @@ public class CarbonDeleteFilesDataReader {
           deleteDeltaResultSet.addBlockletDetails(blocklet);
         }
       } catch (Throwable e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
         LOGGER.error(e.getMessage(), e);
         throw new Exception(e);
       }
@@ -198,6 +207,7 @@ public class CarbonDeleteFilesDataReader {
   private static class DeleteDeltaFileReaderCallable implements Callable<DeleteDeltaBlockDetails> {
     private String deltaFile;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
     DeleteDeltaFileReaderCallable(String deltaFile) {
       this.deltaFile = deltaFile;
     }
@@ -205,6 +215,7 @@ public class CarbonDeleteFilesDataReader {
     @Override
     public DeleteDeltaBlockDetails call() {
       CarbonDeleteDeltaFileReaderImpl deltaFileReader =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
           new CarbonDeleteDeltaFileReaderImpl(deltaFile);
       return deltaFileReader.readJson();
     }

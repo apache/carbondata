@@ -228,6 +228,7 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
    * Set the scale if it is decimal type
    */
   public void setScale(int scale) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     this.scale = scale;
     if (DataTypes.isDecimal(dataType)) {
       ((DecimalType) dataType).setScale(scale);
@@ -245,6 +246,7 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
    * Set the precision if it is decimal type
    */
   public void setPrecision(int precision) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     this.precision = precision;
     if (DataTypes.isDecimal(dataType)) {
       ((DecimalType) dataType).setPrecision(precision);
@@ -287,6 +289,7 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
   }
 
   public List<ParentColumnTableRelation> getParentColumnTableRelations() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1609
     return parentColumnTableRelations;
   }
 
@@ -304,11 +307,13 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((columnName == null) ? 0 : columnName.hashCode()) +
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1609
         ((dataType == null) ? 0 : dataType.hashCode());
     return result;
   }
 
   public int strictHashCode() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3134
     return hashCode() + columnUniqueId.hashCode() + encodingList.hashCode();
   }
 
@@ -351,10 +356,13 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
    * @return
    */
   public boolean equalsWithStrictCheck(Object obj) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2442
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2469
     if (!this.equals(obj)) {
       return false;
     }
     ColumnSchema other = (ColumnSchema) obj;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     if (!columnUniqueId.equals(other.columnUniqueId) ||
         (isDimensionColumn != other.isDimensionColumn) ||
         (isSortColumn != other.isSortColumn)) {
@@ -464,6 +472,7 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
   }
 
   public boolean isSortColumn() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-782
     return isSortColumn;
   }
 
@@ -476,6 +485,7 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
   }
 
   public void setFunction(String function) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1888
     if (null == function) {
       return;
     }
@@ -492,7 +502,9 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
 
   @Override
   public void write(DataOutput out) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     out.writeShort(dataType.getId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1286
     out.writeUTF(columnName);
     out.writeUTF(columnUniqueId);
     out.writeUTF(columnReferenceId);
@@ -505,6 +517,7 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
       }
     }
     out.writeBoolean(isDimensionColumn);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     if (DataTypes.isDecimal(dataType)) {
       out.writeInt(((DecimalType) dataType).getScale());
       out.writeInt(((DecimalType) dataType).getPrecision());
@@ -526,7 +539,9 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
     }
     out.writeBoolean(invisible);
     out.writeBoolean(isSortColumn);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1609
     out.writeUTF(null != aggFunction ? aggFunction : "");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1518
     out.writeUTF(timeSeriesFunction);
     boolean isParentTableColumnRelationExists =
         null != parentColumnTableRelations && parentColumnTableRelations.size() > 0;
@@ -537,13 +552,17 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
         parentColumnTableRelations.get(i).write(out);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2585
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2586
     out.writeBoolean(isLocalDictColumn);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     out.writeBoolean(spatialColumn);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
     int id = in.readShort();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     this.dataType = DataTypes.valueOf(id);
     this.columnName = in.readUTF();
     this.columnUniqueId = in.readUTF();
@@ -557,6 +576,7 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
     this.isDimensionColumn = in.readBoolean();
     this.scale = in.readInt();
     this.precision = in.readInt();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     if (DataTypes.isDecimal(dataType)) {
       DecimalType decimalType = (DecimalType) dataType;
       decimalType.setPrecision(precision);
@@ -574,7 +594,9 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
     }
     this.invisible = in.readBoolean();
     this.isSortColumn = in.readBoolean();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1609
     this.aggFunction = in.readUTF();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1518
     this.timeSeriesFunction = in.readUTF();
     boolean isParentTableColumnRelationExists = in.readBoolean();
     if (isParentTableColumnRelationExists) {
@@ -587,7 +609,10 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
         parentColumnTableRelations.add(parentColumnTableRelation);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2585
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2586
     this.isLocalDictColumn = in.readBoolean();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     this.spatialColumn = in.readBoolean();
   }
 
@@ -596,11 +621,13 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
    * @return
    */
   public boolean isComplexColumn() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3060
     return this.getColumnName()
         .contains(".val") || this.getColumnName().contains(".");
   }
 
   public ColumnSchema clone() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3718
     try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(bos)) {
       this.write(dos);
@@ -618,6 +645,7 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
    * @return Returns True if the column is a spatial index column. Otherwise returns False.
    */
   public boolean isSpatialColumn() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     return spatialColumn;
   }
 

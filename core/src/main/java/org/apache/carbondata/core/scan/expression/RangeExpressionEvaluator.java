@@ -110,6 +110,7 @@ public class RangeExpressionEvaluator {
       Map<String, List<FilterModificationNode>> filterExpressionMap) {
 
     List<FilterModificationNode> deleteExp = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     Iterator<Map.Entry<String, List<FilterModificationNode>>> iterator =
         filterExpressionMap.entrySet().iterator();
     Map.Entry<String, List<FilterModificationNode>> nextEntry = null;
@@ -124,6 +125,7 @@ public class RangeExpressionEvaluator {
 
         for (FilterModificationNode exp : filterExp) {
           if ((exp.getExpType() == GREATERTHAN) || (exp.getExpType() == GREATERTHAN_EQUALTO)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
             if ((null == endMax) || ((checkLiteralValue(exp.getCurrentExp(),
                 endMax.getCurrentExp())))) {
               if (null == startMin) {
@@ -145,6 +147,7 @@ public class RangeExpressionEvaluator {
             }
           }
           if ((exp.getExpType() == LESSTHAN) || (exp.getExpType() == LESSTHAN_EQUALTO)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
             if ((null == startMin) || ((checkLiteralValue(exp.getCurrentExp(),
                 startMin.getCurrentExp())))) {
               if (null == endMax) {
@@ -170,6 +173,7 @@ public class RangeExpressionEvaluator {
         if ((null != startMin) && (null != endMax)) {
           LOG.info(
               "GreaterThan and LessThan Filter Expression changed to Range Expression for column "
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
                   + nextEntry.getKey());
           // the node can be converted to RANGE.
           Expression n1 = startMin.getCurrentExp();
@@ -208,6 +212,7 @@ public class RangeExpressionEvaluator {
   }
 
   private void evaluateOrExpression(Expression currentNode, Expression orExpChild) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3315
     Map<String, List<FilterModificationNode>> filterExpressionMapNew =
         new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     fillExpressionMap(filterExpressionMapNew, orExpChild, currentNode);
@@ -231,6 +236,7 @@ public class RangeExpressionEvaluator {
     // In case of Or Exp we have to evaluate both the subtrees of expression separately
     // else it will combine the results of both the subtrees into one expression
     // which wont give us correct result
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3315
     if (currentNode instanceof OrExpression) {
       Expression leftChild = ((OrExpression) currentNode).left;
       Expression rightChild = ((OrExpression) currentNode).right;
@@ -256,6 +262,7 @@ public class RangeExpressionEvaluator {
 
     FilterModificationNode filterExpression =
         new FilterModificationNode(currentNode, parentNode, expType);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
 
     if (null == filterExpressionMap.get(colName)) {
       filterExpressionMap.put(colName, new ArrayList<FilterModificationNode>());
@@ -271,6 +278,7 @@ public class RangeExpressionEvaluator {
    * @return
    */
   private boolean isLessThanGreaterThanExp(Expression expr) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     return (expr instanceof LessThanEqualToExpression) || (expr instanceof LessThanExpression)
         || (expr instanceof GreaterThanEqualToExpression)
         || (expr instanceof GreaterThanExpression);
@@ -286,6 +294,7 @@ public class RangeExpressionEvaluator {
     for (Expression exp : expChild.getChildren()) {
       if (exp instanceof ColumnExpression) {
         return ((ColumnExpression) exp).isDimension() &&
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3591
             !(((ColumnExpression) exp).getDimension().getDataType().isComplexType());
       }
     }
@@ -385,6 +394,7 @@ public class RangeExpressionEvaluator {
    * @return
    */
   private boolean matchExpType(ExpressionType src, ExpressionType tar) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     return (((src == LESSTHAN) || (src == LESSTHAN_EQUALTO)) && ((tar == GREATERTHAN) || (tar
         == GREATERTHAN_EQUALTO))) || (((src == GREATERTHAN) || (src == GREATERTHAN_EQUALTO)) && (
         (tar == LESSTHAN) || (tar == LESSTHAN_EQUALTO)));
@@ -413,6 +423,7 @@ public class RangeExpressionEvaluator {
       ExpressionType srcExpType = getExpressionType(this.getSrcNode());
       ExpressionType tarExpType = getExpressionType(currentNode);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
       if ((null != srcColumnName) && (null != tarColumnName) && (srcColumnName
           .equals(tarColumnName)) && (srcExpType != ExpressionType.FALSE) && (tarExpType
           != ExpressionType.FALSE) && ((matchExpType(srcExpType, tarExpType)) && checkLiteralValue(

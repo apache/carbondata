@@ -43,6 +43,7 @@ public interface GenericDataType<T> extends Serializable {
    * @return - columns parent name
    */
   String getParentName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
 
   /**
    * @param children - To add children dimension for parent complex type
@@ -60,9 +61,11 @@ public interface GenericDataType<T> extends Serializable {
    * @param isWithoutConverter
    * @throws IOException
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3761
   void writeByteArray(T input, DataOutputStream dataOutputStream, BadRecordLogHolder logHolder,
       Boolean isWithoutConverter)
       throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
 
   /**
    * @param surrIndex - surrogate index of primitive column in complex type
@@ -83,8 +86,10 @@ public interface GenericDataType<T> extends Serializable {
    * @throws IOException
    * @throws KeyGenException
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
   void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream)
       throws IOException, KeyGenException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2388
 
   /**
    * @return columns count of each complex type
@@ -95,6 +100,8 @@ public interface GenericDataType<T> extends Serializable {
    * @return column uuid string
    */
   String getColumnNames();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
 
   /**
    * set array index to be referred while creating metadata column
@@ -123,8 +130,10 @@ public interface GenericDataType<T> extends Serializable {
    * clone self for multithread access (for complex type processing in table page)
    */
   GenericDataType<T> deepCopy();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
 
   void getComplexColumnInfo(List<ComplexColumnInfo> columnInfoList);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
 
   /**
    * @return depth of the complex columns , this is the length of flattened complex data.

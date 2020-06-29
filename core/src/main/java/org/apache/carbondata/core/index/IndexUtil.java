@@ -54,6 +54,7 @@ public class IndexUtil {
 
   public static final String EMBEDDED_JOB_NAME =
       "org.apache.carbondata.indexserver.EmbeddedIndexJob";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
   public static final String DISTRIBUTED_JOB_NAME =
       "org.apache.carbondata.indexserver.DistributedIndexJob";
@@ -71,6 +72,7 @@ public class IndexUtil {
     try {
       return Class.forName(className).getDeclaredConstructors()[0].newInstance();
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error(e.getMessage(), e);
       return null;
     }
@@ -84,6 +86,7 @@ public class IndexUtil {
    */
   public static void setIndexJob(Configuration configuration, Object IndexJob)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     if (IndexJob != null) {
       String toString = ObjectSerializationUtil.convertObjectToString(IndexJob);
       configuration.set(INDEX_DSTR, toString);
@@ -112,15 +115,19 @@ public class IndexUtil {
    * @throws IOException
    */
   private static void executeClearIndexJob(IndexJob indexJob,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       CarbonTable carbonTable, String indexToClear) throws IOException {
     SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
             getValidAndInvalidSegments(carbonTable, FileFactory.getConfiguration());
     List<String> invalidSegment = new ArrayList<>();
     for (Segment segment : validAndInvalidSegmentsInfo.getInvalidSegments()) {
       invalidSegment.add(segment.getSegmentNo());
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     IndexInputFormat indexInputFormat =
         new IndexInputFormat(carbonTable, validAndInvalidSegmentsInfo.getValidSegments(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
             invalidSegment, true, indexToClear);
     try {
       indexJob.execute(indexInputFormat);
@@ -138,6 +145,7 @@ public class IndexUtil {
   }
 
   static void executeClearIndexJob(CarbonTable carbonTable, String jobClassName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       String indexToClear) throws IOException {
     IndexJob indexJob = (IndexJob) createIndexJob(jobClassName);
     if (indexJob == null) {
@@ -158,6 +166,7 @@ public class IndexUtil {
    * Prune the segments from the already pruned blocklets.
    */
   public static void pruneSegments(List<Segment> segments, List<ExtendedBlocklet> prunedBlocklets) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3592
     Map<Segment, Set<String>> validSegments = new HashMap<>();
     for (ExtendedBlocklet blocklet : prunedBlocklets) {
       // Set the pruned index file to the segment
@@ -182,6 +191,7 @@ public class IndexUtil {
 
   /**
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
    Loads the indexes in parallel by utilizing executor
    *
    @param carbonTable
@@ -190,6 +200,7 @@ public class IndexUtil {
    @throws IOException
    */
   public static void loadIndexes(CarbonTable carbonTable, IndexExprWrapper indexExprWrapper,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
       List<Segment> validSegments) throws IOException {
     if (!CarbonProperties.getInstance()
         .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName())
@@ -222,6 +233,7 @@ public class IndexUtil {
       return blocklets;
     }
     pruneSegments(segmentsToLoad, blocklets);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     List<ExtendedBlocklet> cgIndexes = pruneIndexes(table, filterResolverIntf, segmentsToLoad,
         partitions, blocklets,
         IndexLevel.CG, indexChooser);
@@ -262,6 +274,7 @@ public class IndexUtil {
         }
         extendedBlocklets.addAll(prunnedBlocklet);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       return indexExprWrapper.pruneBlocklets(extendedBlocklets);
     }
     return blocklets;
@@ -275,8 +288,11 @@ public class IndexUtil {
   public static List<ExtendedBlocklet> executeIndexJob(CarbonTable carbonTable,
       FilterResolverIntf resolver, IndexJob indexJob, List<PartitionSpec> partitionsToPrune,
       List<Segment> validSegments, List<Segment> invalidSegments, IndexLevel level,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       List<String> segmentsToBeRefreshed) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return executeIndexJob(carbonTable, resolver, indexJob, partitionsToPrune, validSegments,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3454
         invalidSegments, level, false, segmentsToBeRefreshed, false);
   }
 
@@ -288,14 +304,17 @@ public class IndexUtil {
   public static List<ExtendedBlocklet> executeIndexJob(CarbonTable carbonTable,
       FilterResolverIntf resolver, IndexJob indexJob, List<PartitionSpec> partitionsToPrune,
       List<Segment> validSegments, List<Segment> invalidSegments, IndexLevel level,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       Boolean isFallbackJob, List<String> segmentsToBeRefreshed, boolean isCountJob) {
     List<String> invalidSegmentNo = new ArrayList<>();
     for (Segment segment : invalidSegments) {
       invalidSegmentNo.add(segment.getSegmentNo());
     }
     invalidSegmentNo.addAll(segmentsToBeRefreshed);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     IndexInputFormat indexInputFormat =
         new IndexInputFormat(carbonTable, resolver, validSegments, invalidSegmentNo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3492
             partitionsToPrune, false, level, isFallbackJob, false);
     if (isCountJob) {
       indexInputFormat.setCountStarJob();
@@ -305,6 +324,7 @@ public class IndexUtil {
   }
 
   public static SegmentStatusManager.ValidAndInvalidSegmentsInfo getValidAndInvalidSegments(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
       CarbonTable carbonTable, Configuration configuration) throws IOException {
     SegmentStatusManager ssm =
         new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(), configuration);
@@ -319,6 +339,8 @@ public class IndexUtil {
    * @throws IOException
    */
   public static List<String> getMainTableValidSegmentList(RelationIdentifier relationIdentifier)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3338
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3296
       throws IOException {
     List<String> segmentList = new ArrayList<>();
     List<Segment> validSegments = new SegmentStatusManager(AbsoluteTableIdentifier
@@ -333,6 +355,7 @@ public class IndexUtil {
   public static String getMaxSegmentID(List<String> segmentList) {
     double[] segment = new double[segmentList.size()];
     int i = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3456
     for (String id : segmentList) {
       segment[i] = Double.parseDouble(id);
       i++;

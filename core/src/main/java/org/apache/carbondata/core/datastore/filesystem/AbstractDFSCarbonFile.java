@@ -65,6 +65,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   protected Path path;
   protected FileStatus fileStatus;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
   AbstractDFSCarbonFile(String filePath) {
     this(filePath, FileFactory.getConfiguration());
   }
@@ -152,6 +153,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
 
   @Override
   public long getSize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     try {
       return fileSystem.getFileStatus(path).getLen();
     } catch (IOException e) {
@@ -215,6 +217,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     try {
       CarbonFile tempFile;
       // delete temporary file if it already exists at a given path
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       if (FileFactory.isFileExist(tempWriteFilePath)) {
         tempFile = FileFactory.getCarbonFile(tempWriteFilePath);
         tempFile.delete();
@@ -245,6 +248,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
       tempFile.renameForce(fileName);
       fileTruncatedSuccessfully = true;
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Exception occurred while truncating the file " + e.getMessage(), e);
     } finally {
       CarbonUtil.closeStreams(dataOutputStream, dataInputStream);
@@ -270,6 +274,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
 
   @Override
   public DataOutputStream getDataOutputStream(int bufferSize, boolean append)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       throws IOException {
     FSDataOutputStream stream = null;
     if (append) {
@@ -352,6 +357,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
 
   @Override
   public DataOutputStream getDataOutputStream() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     return fileSystem.create(path, true);
   }
 
@@ -455,6 +461,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     try {
       listStatus = fileSystem.listStatus(path);
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error("Exception occured: " + e.getMessage(), e);
       return new CarbonFile[0];
     }
@@ -468,6 +475,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
 
   @Override
   public List<CarbonFile> listFiles(Boolean recursive) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     RemoteIterator<LocatedFileStatus> listStatus = fileSystem.listFiles(path, recursive);
     return getFiles(listStatus);
   }
@@ -478,6 +486,8 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     RemoteIterator<LocatedFileStatus> iter = fileSystem.listLocatedStatus(path);
     while (iter.hasNext()) {
       LocatedFileStatus fileStatus = iter.next();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2310
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2362
       if (pathFilter.accept(fileStatus.getPath()) && fileStatus.getLen() > 0) {
         listStatus.add(fileStatus);
       }
@@ -486,6 +496,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   }
 
   protected List<CarbonFile> getFiles(RemoteIterator<LocatedFileStatus> listStatus)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2642
       throws IOException {
     List<CarbonFile> carbonFiles = new ArrayList<>();
     while (listStatus.hasNext()) {
@@ -501,8 +512,10 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
    */
   @Override
   public List<CarbonFile> listFiles(boolean recursive, CarbonFileFilter fileFilter)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3057
       throws IOException {
     List<CarbonFile> carbonFiles = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     FileStatus fileStatus = fileSystem.getFileStatus(path);
     if (null != fileStatus && fileStatus.isDirectory()) {
       RemoteIterator<LocatedFileStatus> listStatus = fileSystem.listFiles(fileStatus.getPath(),
@@ -520,6 +533,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
 
   @Override
   public CarbonFile[] listFiles(boolean recursive, int maxCount)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3678
       throws IOException {
     List<CarbonFile> carbonFiles = new ArrayList<>();
     FileStatus fileStatus = fileSystem.getFileStatus(path);
@@ -539,6 +553,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   @Override
   public String[] getLocations() throws IOException {
     BlockLocation[] blkLocations;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     FileStatus fileStatus = fileSystem.getFileStatus(path);
     if (fileStatus instanceof LocatedFileStatus) {
       blkLocations = ((LocatedFileStatus) fileStatus).getBlockLocations();
@@ -580,6 +595,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
 
   @Override
   public boolean equals(Object o) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3659
     if (this == o) {
       return true;
     }

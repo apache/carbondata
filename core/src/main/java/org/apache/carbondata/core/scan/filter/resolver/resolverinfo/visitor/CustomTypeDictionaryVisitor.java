@@ -50,6 +50,7 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
   public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
     ColumnFilterInfo resolvedFilterObject = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     if (visitableObj instanceof DimColumnResolvedFilterInfo) {
       DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
       List<String> evaluateResultListFinal;
@@ -60,9 +61,11 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
       }
       resolvedFilterObject =
           getDirectDictionaryValKeyMemberForFilter(metadata.getColumnExpression(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-603
               evaluateResultListFinal, metadata.isIncludeFilter(),
               metadata.getColumnExpression().getDimension().getDataType());
       if (!metadata.isIncludeFilter() && null != resolvedFilterObject && !resolvedFilterObject
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1704
           .getExcludeFilterList()
           .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
         // Adding default surrogate key of null member inorder to not display the same while
@@ -82,6 +85,7 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
     DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
         .getDirectDictionaryGenerator(columnExpression.getDimension().getDataType());
     // Reading the dictionary value direct
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-603
     getSurrogateValuesForDictionary(evaluateResultListFinal, surrogates, directDictionaryGenerator,
         dataType);
 
@@ -90,6 +94,7 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
     if (surrogates.size() > 0) {
       columnFilterInfo = new ColumnFilterInfo();
       columnFilterInfo.setIncludeFilter(isIncludeFilter);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1704
       if (!isIncludeFilter) {
         columnFilterInfo.setExcludeFilterList(surrogates);
       } else {
@@ -100,9 +105,11 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
   }
 
   private void getSurrogateValuesForDictionary(List<String> evaluateResultListFinal,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-603
       List<Integer> surrogates, DirectDictionaryGenerator directDictionaryGenerator,
       DataType dataType) {
     String timeFormat = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     if (dataType == DataTypes.DATE) {
       timeFormat = CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,

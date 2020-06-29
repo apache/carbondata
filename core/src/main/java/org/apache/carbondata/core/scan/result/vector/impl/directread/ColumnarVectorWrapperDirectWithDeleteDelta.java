@@ -36,6 +36,7 @@ class ColumnarVectorWrapperDirectWithDeleteDelta extends AbstractCarbonColumnarV
 
   public ColumnarVectorWrapperDirectWithDeleteDelta(CarbonColumnVector vectorWrapper,
       BitSet deletedRows, BitSet nullBits) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
     super(vectorWrapper);
     this.deletedRows = deletedRows;
     this.nullBits = nullBits;
@@ -160,6 +161,7 @@ class ColumnarVectorWrapperDirectWithDeleteDelta extends AbstractCarbonColumnarV
 
   @Override
   public void putNotNull(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3561
     if (!deletedRows.get(rowId)) {
       counter++;
     }
@@ -221,6 +223,7 @@ class ColumnarVectorWrapperDirectWithDeleteDelta extends AbstractCarbonColumnarV
 
   @Override
   public void putArray(int rowId, int offset, int length) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
     if (!deletedRows.get(rowId)) {
       columnVector.putArray(counter++, offset, length);
     }

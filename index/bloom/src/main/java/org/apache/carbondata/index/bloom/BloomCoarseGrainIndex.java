@@ -69,6 +69,7 @@ import org.apache.log4j.Logger;
 @InterfaceAudience.Internal
 public class BloomCoarseGrainIndex extends CoarseGrainIndex {
   private static final Logger LOGGER =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       LogServiceFactory.getLogService(BloomCoarseGrainIndex.class.getName());
   private Map<String, CarbonColumn> name2Col;
   private Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache;
@@ -84,6 +85,7 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
 
   @Override
   public void init(IndexModel indexModel) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     this.indexPath = FileFactory.getPath(indexModel.getFilePath());
     this.shardName = indexPath.getName();
     if (indexModel instanceof BloomIndexModel) {
@@ -93,6 +95,7 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
   }
 
   public void setFilteredShard(Set<String> filteredShard) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2845
     this.filteredShard = filteredShard;
     // do shard prune when pruning only if bloom index files are merged
     this.needShardPrune = filteredShard != null &&
@@ -132,24 +135,31 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
 
   @Override
   public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3781
       FilterExecuter filterExecuter, CarbonTable carbonTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2983
     Set<Blocklet> hitBlocklets = null;
     if (filterExp == null) {
       // null is different from empty here. Empty means after pruning, no blocklet need to scan.
       return null;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3165
     if (filteredShard.isEmpty()) {
       LOGGER.info("Bloom filtered shards is empty");
       return new ArrayList<>();
     }
 
     List<BloomQueryModel> bloomQueryModels;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     bloomQueryModels = createQueryModel(filterExp.getFilterExpression());
     for (BloomQueryModel bloomQueryModel : bloomQueryModels) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2983
       Set<Blocklet> tempHitBlockletsResult = new HashSet<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3067
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("prune blocklet for query: " + bloomQueryModel);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
       Long expiration_time = CarbonUtil.getExpiration_time(carbonTable);
       BloomCacheKeyValue.CacheKey cacheKey =
           new BloomCacheKeyValue.CacheKey(this.indexPath.toString(), bloomQueryModel.columnName,
@@ -157,11 +167,13 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
       BloomCacheKeyValue.CacheValue cacheValue = cache.get(cacheKey);
       List<CarbonBloomFilter> bloomIndexList = cacheValue.getBloomFilters();
       for (CarbonBloomFilter bloomFilter : bloomIndexList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2845
         if (needShardPrune && !filteredShard.contains(bloomFilter.getShardName())) {
           // skip shard which has been pruned in Main index
           continue;
         }
         boolean scanRequired = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2983
         for (byte[] value: bloomQueryModel.filterValues) {
           scanRequired = bloomFilter.membershipTest(new Key(value));
           if (scanRequired) {
@@ -171,7 +183,9 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
           }
         }
         if (scanRequired) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3067
           if (LOGGER.isDebugEnabled()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
             LOGGER.debug(String.format("BloomCoarseGrainIndex: Need to scan -> blocklet#%s",
                 String.valueOf(bloomFilter.getBlockletNo())));
           }
@@ -191,12 +205,15 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3165
     if (hitBlocklets == null) {
       LOGGER.warn(String.format("HitBlocklets is empty in bloom filter prune method. " +
               "bloomQueryModels size is %d, filterShards size if %d",
               bloomQueryModels.size(), filteredShard.size()));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3508
       return new ArrayList<>();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2616
     return new ArrayList<>(hitBlocklets);
   }
 
@@ -211,6 +228,7 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
         column = ((ColumnExpression) left).getColumnName();
         if (this.name2Col.containsKey(column)) {
           BloomQueryModel bloomQueryModel =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2655
               buildQueryModelForEqual((ColumnExpression) left, (LiteralExpression) right);
           queryModels.add(bloomQueryModel);
         }
@@ -224,6 +242,7 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
         }
         return queryModels;
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2774
         String errorMsg = "BloomFilter can only support the 'equal' filter like 'Col = PlainValue'";
         LOGGER.warn(errorMsg);
         throw new RuntimeException(errorMsg);
@@ -235,6 +254,7 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
       if (left instanceof ColumnExpression && right instanceof ListExpression) {
         column = ((ColumnExpression) left).getColumnName();
         if (this.name2Col.containsKey(column)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2983
           BloomQueryModel bloomQueryModel =
               buildQueryModelForIn((ColumnExpression) left, (ListExpression) right);
           queryModels.add(bloomQueryModel);
@@ -249,10 +269,12 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
         }
         return queryModels;
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2774
         String errorMsg = "BloomFilter can only support the 'in' filter like 'Col in PlainValue'";
         LOGGER.warn(errorMsg);
         throw new RuntimeException(errorMsg);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2974
     }  else if (expression instanceof AndExpression) {
       queryModels.addAll(createQueryModel(((AndExpression) expression).getLeft()));
       queryModels.addAll(createQueryModel(((AndExpression) expression).getRight()));
@@ -286,6 +308,7 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
   private byte[] getInternalFilterValue(CarbonColumn carbonColumn, LiteralExpression le) {
     // convert the filter value to string and apply converters on it to get carbon internal value
     String strFilterValue = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3278
     try {
       strFilterValue = le.getExpressionResult().getString();
     } catch (FilterIllegalMemberException e) {
@@ -299,6 +322,7 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
     if (carbonColumn.isMeasure()) {
       // for measures, the value is already the type, just convert it to bytes.
       if (convertedValue == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2757
         convertedValue = DataConvertUtil.getNullValueForMeasure(carbonColumn.getDataType(),
             carbonColumn.getColumnSchema().getScale());
       }
@@ -307,12 +331,14 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
         convertedValue = BooleanConvert.boolean2Byte((Boolean)convertedValue);
       }
       internalFilterValue = CarbonUtil.getValueAsBytes(carbonColumn.getDataType(), convertedValue);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     } else if (carbonColumn.getDataType() == DataTypes.DATE) {
       // for dictionary/date columns, convert the surrogate key to bytes
       internalFilterValue = CarbonUtil.getValueAsBytes(DataTypes.INT, convertedValue);
     } else {
       // for non dictionary dimensions, numeric columns will be of original data,
       // so convert the data to bytes
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       if (DataTypeUtil.isPrimitiveColumn(carbonColumn.getDataType())) {
         if (convertedValue == null) {
           convertedValue = DataConvertUtil.getNullValueForMeasure(carbonColumn.getDataType(),
@@ -327,6 +353,7 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
     if (internalFilterValue.length == 0) {
       internalFilterValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2983
     return internalFilterValue;
   }
 
@@ -352,6 +379,7 @@ public class BloomCoarseGrainIndex extends CoarseGrainIndex {
      */
     private BloomQueryModel(String columnName, List<byte[]> filterValues) {
       this.columnName = columnName;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2983
       this.filterValues = filterValues;
     }
 

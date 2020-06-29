@@ -52,6 +52,7 @@ public class CarbonStreamOutputFormatTest extends TestCase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1552
     JobID jobId = CarbonInputFormatUtil.getJobId(new Date(), 0);
     TaskID taskId = new TaskID(jobId, TaskType.MAP, 0);
     taskAttemptId = new TaskAttemptID(taskId, 0);
@@ -63,6 +64,7 @@ public class CarbonStreamOutputFormatTest extends TestCase {
     hadoopConf.setBoolean("mapred.task.is.map", true);
     hadoopConf.setInt("mapred.task.partition", 0);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
     tablePath = new File("target/stream_output").getCanonicalPath();
     String dbName = "default";
     String tableName = "stream_table_output";
@@ -71,6 +73,7 @@ public class CarbonStreamOutputFormatTest extends TestCase {
             tablePath,
             new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     CarbonTable table = new StoreCreator(new File("target/store").getAbsolutePath(),
         new File("../hadoop/src/test/resources/data.csv").getCanonicalPath()).createTable(identifier);
 
@@ -117,6 +120,7 @@ public class CarbonStreamOutputFormatTest extends TestCase {
   @Override
   protected void tearDown() throws Exception {
     super.tearDown();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1844
     if (tablePath != null) {
       FileFactory.deleteAllFilesOfDir(new File(tablePath));
     }

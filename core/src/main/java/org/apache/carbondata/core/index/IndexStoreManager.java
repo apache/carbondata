@@ -63,6 +63,7 @@ public final class IndexStoreManager {
   private static IndexStoreManager instance = new IndexStoreManager();
 
   public Map<String, List<TableIndex>> getTableIndexForAllTables() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     return allIndexes;
   }
 
@@ -80,6 +81,7 @@ public final class IndexStoreManager {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(IndexStoreManager.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
 
   private IndexStoreManager() {
 
@@ -118,6 +120,7 @@ public final class IndexStoreManager {
    * @return
    */
   public TableIndex getDefaultIndex(CarbonTable table) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return getIndex(table, BlockletIndexFactory.INDEX_SCHEMA);
   }
 
@@ -128,6 +131,7 @@ public final class IndexStoreManager {
     String tableId =
         table.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableId();
     List<TableIndex> tableIndices = allIndexes.get(table.getTableId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3588
     if (tableIndices == null && !table.isTransactionalTable()) {
       String keyUsingTablePath = getKeyUsingTablePath(table.getTablePath());
       if (keyUsingTablePath != null) {
@@ -144,6 +148,7 @@ public final class IndexStoreManager {
       clearIndex(tableId);
       tableIndices = null;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     TableIndex index = null;
     if (tableIndices != null) {
       index = getTableIndex(indexSchema.getIndexName(), tableIndices);
@@ -164,6 +169,7 @@ public final class IndexStoreManager {
       }
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     if (index == null) {
       throw new RuntimeException("Index does not exist");
     }
@@ -177,6 +183,7 @@ public final class IndexStoreManager {
   }
 
   private String getKeyUsingTablePath(String tablePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2898
     if (tablePath != null) {
       // Try get using table path
       for (Map.Entry<String, String> entry : tablePathMap.entrySet()) {
@@ -197,6 +204,7 @@ public final class IndexStoreManager {
     try {
       // try to create Index by reflection to test whether it is a valid IndexFactory class
       return (IndexFactory)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           Class.forName(indexSchema.getProviderName()).getConstructors()[0]
               .newInstance(table, indexSchema);
     } catch (ClassNotFoundException e) {
@@ -224,7 +232,9 @@ public final class IndexStoreManager {
     // Just update the segmentRefreshMap with the table if not added.
     getTableSegmentRefresher(table);
     List<TableIndex> tableIndices = allIndexes.get(table.getTableId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2898
     if (tableIndices == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2898
       String keyUsingTablePath = getKeyUsingTablePath(table.getTablePath());
       if (keyUsingTablePath != null) {
         tableUniqueName = keyUsingTablePath;
@@ -243,6 +253,7 @@ public final class IndexStoreManager {
       blockletDetailsFetcher = getBlockletDetailsFetcher(table);
     }
     segmentPropertiesFetcher = (SegmentPropertiesFetcher) blockletDetailsFetcher;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     TableIndex index = new TableIndex(table, indexSchema, indexFactory, blockletDetailsFetcher,
         segmentPropertiesFetcher);
 
@@ -272,6 +283,7 @@ public final class IndexStoreManager {
   public void clearInvalidSegments(CarbonTable carbonTable, List<String> segments)
       throws IOException {
     getDefaultIndex(carbonTable).clear(segments);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     List<TableIndex> indexes = getAllCGAndFGIndexes(carbonTable);
     for (TableIndex index: indexes) {
       index.clear(segments);
@@ -280,7 +292,10 @@ public final class IndexStoreManager {
   }
 
   public List<String> getSegmentsToBeRefreshed(CarbonTable carbonTable,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3759
       List<Segment> filteredSegmentToAccess) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     List<String> toBeCleanedSegments = new ArrayList<>();
     for (Segment filteredSegment : filteredSegmentToAccess) {
       boolean refreshNeeded = getTableSegmentRefresher(carbonTable).isRefreshNeeded(filteredSegment,
@@ -297,6 +312,7 @@ public final class IndexStoreManager {
       SegmentUpdateStatusManager updateStatusManager, List<Segment> filteredSegmentToAccess)
       throws IOException {
     List<String> toBeCleanedSegments =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3759
         getSegmentsToBeRefreshed(carbonTable, filteredSegmentToAccess);
     if (toBeCleanedSegments.size() > 0) {
       clearInvalidSegments(carbonTable, toBeCleanedSegments);
@@ -314,10 +330,12 @@ public final class IndexStoreManager {
     try {
       // launchJob will be true if either the table has a CGIndex or index server is enabled for
       // the specified table.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       launchJob = hasCGIndex(carbonTable) ||
           CarbonProperties.getInstance().isDistributedPruningEnabled(identifier.getDatabaseName(),
               identifier.getTableName());
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       LOGGER.warn("Unable to launch job to clear indexes.", e);
     }
     clearIndexCache(identifier, launchJob);
@@ -329,6 +347,7 @@ public final class IndexStoreManager {
    * @param identifier Table identifier
    */
   public void clearIndexCache(AbsoluteTableIdentifier identifier, boolean clearInAllWorkers) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3496
     String tableId = identifier.getCarbonTableIdentifier().getTableId();
     if (clearInAllWorkers) {
       // carbon table need to lookup only if launch job is set.
@@ -337,6 +356,7 @@ public final class IndexStoreManager {
         String jobClassName;
         if (CarbonProperties.getInstance()
             .isDistributedPruningEnabled(identifier.getDatabaseName(), identifier.getTableName())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           jobClassName = IndexUtil.DISTRIBUTED_JOB_NAME;
         } else {
           jobClassName = IndexUtil.EMBEDDED_JOB_NAME;
@@ -354,6 +374,7 @@ public final class IndexStoreManager {
       CarbonMetadata.getInstance()
           .removeTable(identifier.getDatabaseName(), identifier.getTableName());
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     List<TableIndex> tableIndices =
         allIndexes.get(identifier.getCarbonTableIdentifier().getTableId());
     if (tableIndices == null) {
@@ -363,6 +384,7 @@ public final class IndexStoreManager {
       }
     }
     segmentRefreshMap.remove(tableId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     clearIndex(tableId);
     allIndexes.remove(tableId);
     tablePathMap.remove(tableId);
@@ -381,8 +403,10 @@ public final class IndexStoreManager {
       try {
         carbonTable = CarbonTable
             .buildFromTablePath(identifier.getTableName(), identifier.getDatabaseName(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2642
                 identifier.getTablePath(), identifier.getCarbonTableIdentifier().getTableId());
       } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
         LOGGER.warn("failed to get carbon table from table Path" + e.getMessage(), e);
         // ignoring exception
       }
@@ -394,6 +418,7 @@ public final class IndexStoreManager {
    * this methods clears the index of table from memory
    */
   public void clearIndex(String tableId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     List<TableIndex> tableIndices = allIndexes.get(tableId);
     if (tableIndices != null) {
       for (TableIndex tableIndex : tableIndices) {
@@ -416,16 +441,19 @@ public final class IndexStoreManager {
    * Clear the index/indexes of a table from memory and disk
    */
   public void deleteIndex(CarbonTable carbonTable, String indexName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3494
     if (carbonTable == null) {
       // If carbon table is null then it means table is already deleted, therefore return without
       // doing any further changes.
       return;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     String tableId = carbonTable.getTableId();
     if (CarbonProperties.getInstance()
         .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName())) {
       try {
         IndexUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
             .executeClearIndexJob(carbonTable, IndexUtil.DISTRIBUTED_JOB_NAME, indexName);
       } catch (IOException e) {
         LOGGER.error("clear index job failed", e);
@@ -436,6 +464,7 @@ public final class IndexStoreManager {
       if (tableIndices != null) {
         int i = 0;
         for (TableIndex tableIndex : tableIndices) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           if (tableIndex != null && indexName
               .equalsIgnoreCase(tableIndex.getIndexSchema().getIndexName())) {
             try {
@@ -443,6 +472,7 @@ public final class IndexStoreManager {
                   .executeClearIndexJob(carbonTable, IndexUtil.EMBEDDED_JOB_NAME, indexName);
               tableIndex.clear();
             } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
               LOGGER.error("clear index job failed", e);
               // ignoring the exception
             }
@@ -464,6 +494,7 @@ public final class IndexStoreManager {
    * @return
    */
   private BlockletDetailsFetcher getBlockletDetailsFetcher(CarbonTable table) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     TableIndex index = getIndex(table, BlockletIndexFactory.INDEX_SCHEMA);
     return (BlockletDetailsFetcher) index.getIndexFactory();
   }
@@ -481,6 +512,7 @@ public final class IndexStoreManager {
    * Get the TableSegmentRefresher for the table. If not existed then add one and return.
    */
   public TableSegmentRefresher getTableSegmentRefresher(CarbonTable table) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3496
     String tableId = table.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableId();
     if (segmentRefreshMap.get(tableId) == null) {
       segmentRefreshMap.put(tableId, new TableSegmentRefresher(table));
@@ -502,6 +534,7 @@ public final class IndexStoreManager {
     private Map<String, Boolean> manualSegmentRefresh = new HashMap<>();
 
     TableSegmentRefresher(CarbonTable table) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3759
       SegmentStatusManager segmentStatusManager =
           new SegmentStatusManager(table.getAbsoluteTableIdentifier());
       List<Segment> validSegments;
@@ -538,6 +571,7 @@ public final class IndexStoreManager {
       SegmentRefreshInfo segmentRefreshInfo =
           seg.getSegmentRefreshInfo(updateVo);
       String segmentId = seg.getSegmentNo();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3759
       if (segmentRefreshInfo.getSegmentUpdatedTimestamp() == null
           && segmentRefreshInfo.getSegmentFileTimestamp() == 0) {
         return false;
@@ -569,6 +603,7 @@ public final class IndexStoreManager {
   }
 
   public synchronized void clearInvalidIndex(CarbonTable carbonTable, List<String> segmentNos,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       String indexToClear) throws IOException {
     List<TableIndex> indexes = getAllCGAndFGIndexes(carbonTable);
     List<TableIndex> remainingIndexes = new ArrayList<>();
@@ -596,6 +631,7 @@ public final class IndexStoreManager {
 
   private boolean hasCGIndex(CarbonTable carbonTable) throws IOException {
     // In case of spark file format flow, carbontable will be null
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     if (null == carbonTable) {
       return false;
     }

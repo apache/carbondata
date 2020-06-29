@@ -22,5 +22,6 @@ import java.io.IOException;
 import org.apache.commons.cli.CommandLine;
 
 interface Command {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
   void run(CommandLine line) throws IOException;
 }

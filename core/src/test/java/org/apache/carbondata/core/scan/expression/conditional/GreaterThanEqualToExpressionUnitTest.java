@@ -45,6 +45,7 @@ public class GreaterThanEqualToExpressionUnitTest {
 
   @Test public void testEvaluateForGreaterThanEqualToExpressionWithBothStringISSame()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression left = new ColumnExpression("left_name", DataTypes.STRING);
     left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("right_name", DataTypes.STRING);
@@ -90,7 +91,9 @@ public class GreaterThanEqualToExpressionUnitTest {
   }
 
   @Test public void testEvaluateForGreaterThanEqualToExpressionWithShortDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("id", DataTypes.SHORT);
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("id", DataTypes.SHORT);
@@ -142,7 +145,9 @@ public class GreaterThanEqualToExpressionUnitTest {
   }
 
   @Test public void testEvaluateForGreaterThanEqualToExpressionWithIntDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("right_number", DataTypes.INT);
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("left_number", DataTypes.INT);
@@ -193,7 +198,9 @@ public class GreaterThanEqualToExpressionUnitTest {
   }
 
   @Test public void testEvaluateForGreaterThanEqualToExpressionWithDoubleDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("right_contact", DataTypes.DOUBLE);
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("left_contact", DataTypes.DOUBLE);
@@ -244,7 +251,9 @@ public class GreaterThanEqualToExpressionUnitTest {
   }
 
   @Test public void testEvaluateForGreaterThanEqualToExpressionWithLongDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("contact", DataTypes.LONG);
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("contact", DataTypes.LONG);
@@ -302,8 +311,10 @@ public class GreaterThanEqualToExpressionUnitTest {
   }
 
   @Test public void testEvaluateForGreaterThanEqualToExpressionWithTimestampDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       ColumnExpression left = new ColumnExpression("timestamp", DataTypes.TIMESTAMP);
       left.setColIndex(0);
       ColumnExpression right = new ColumnExpression("timestamp", DataTypes.TIMESTAMP);
@@ -338,6 +349,7 @@ public class GreaterThanEqualToExpressionUnitTest {
 
   @Test public void testForGreaterThanEqualToExpressionWithDefaultCase()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("contact", DataTypes.BOOLEAN);
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("contact", DataTypes.BOOLEAN);
@@ -352,12 +364,15 @@ public class GreaterThanEqualToExpressionUnitTest {
 
   @Test public void testEvaluateForGreaterThanEqualToExpressionWithDecimalDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     ColumnExpression right = new ColumnExpression("contact", DataTypes.createDefaultDecimalType());
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("contact", DataTypes.createDefaultDecimalType());
     left.setColIndex(1);
     greaterThanEqualToExpression = new GreaterThanEqualToExpression(left, right);
     RowImpl value = new RowImpl();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
     BigDecimal[] row = new BigDecimal[] { new BigDecimal(12345.0) };
     Object objectRow[] = { row, row };
     value.setValues(objectRow);
@@ -402,7 +417,9 @@ public class GreaterThanEqualToExpressionUnitTest {
   }
 
   @Test public void testEvaluateForGreaterThanEqualToExpressionWithIsNullReturnTrue1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression left = new ColumnExpression("id", DataTypes.SHORT);
     left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("id", DataTypes.SHORT);
@@ -437,6 +454,7 @@ public class GreaterThanEqualToExpressionUnitTest {
 
   @Test public void testEvaluateForGreaterThanEqualToExpressionWithLeftAndRightDifferentDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression left = new ColumnExpression("name", DataTypes.STRING);
     left.setColIndex(1);
     ColumnExpression right = new ColumnExpression("number", DataTypes.INT);
@@ -459,6 +477,7 @@ public class GreaterThanEqualToExpressionUnitTest {
   }
 
   @Test public void testEvaluateForGreaterThanEqualToExpressionWithLeftAndRightDifferentDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression left = new ColumnExpression("name", DataTypes.INT);
     left.setColIndex(1);
@@ -482,6 +501,7 @@ public class GreaterThanEqualToExpressionUnitTest {
   }
 
   @Test public void testForGreaterThanEqualToExpressionWithGetString() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression left = new ColumnExpression("left_name", DataTypes.STRING);
     left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("right_name", DataTypes.STRING);

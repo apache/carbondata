@@ -87,15 +87,20 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
    */
   private QueryStatisticsModel queryStatisticsModel;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
       ExecutorService execService) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3396
     batchSize = CarbonProperties.getQueryBatchSize();
     this.recorder = queryModel.getStatisticsRecorder();
     this.blockExecutionInfos = infos;
     this.fileReader = FileFactory.getFileHolder(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
         FileFactory.getFileType(queryModel.getAbsoluteTableIdentifier().getTablePath()));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
     this.fileReader.setReadPageByPage(queryModel.isReadPageByPage());
     this.execService = execService;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
     initialiseInfos();
     initQueryStatiticsModel();
   }
@@ -113,6 +118,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
         blockInfo.setDeletedRecordsMap(deletedRowsMap);
       }
       DataRefNode dataRefNode = blockInfo.getDataBlock().getDataRefNode();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2911
       assert (dataRefNode instanceof BlockletDataRefNode);
       BlockletDataRefNode node = (BlockletDataRefNode) dataRefNode;
       blockInfo.setFirstDataBlock(node);
@@ -161,6 +167,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
           carbonDeleteDeltaFileReader = new CarbonDeleteFilesDataReader();
           Map<String, DeleteDeltaVo> deletedRowsMap = carbonDeleteDeltaFileReader
               .getDeletedRowsDataVo(deleteDeltaInfo.getDeleteDeltaFile());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3002
           setDeletedDeltaBoToDataBlock(deleteDeltaInfo, deletedRowsMap, dataBlock);
           // remove the lock
           deleteDeltaToLockObjectMap.remove(deleteDeltaInfo);
@@ -208,6 +215,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
     }
   }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   void updateDataBlockIterator() {
     if (dataBlockIterator == null || !dataBlockIterator.hasNext()) {
       dataBlockIterator = getDataBlockIterator();
@@ -218,6 +226,8 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   }
 
   private DataBlockIterator getDataBlockIterator() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2885
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3485
     try {
       fileReader.finish();
     } catch (IOException e) {
@@ -226,6 +236,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
     if (blockExecutionInfos.size() > 0) {
       BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
       blockExecutionInfos.remove(executionInfo);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       return new DataBlockIterator(executionInfo, fileReader, batchSize, queryStatisticsModel,
           execService);
     }
@@ -245,6 +256,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
         .put(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM, queryStatisticValidScanBlocklet);
     queryStatisticsModel.getRecorder().recordStatistics(queryStatisticValidScanBlocklet);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3593
     QueryStatistic scannedBlocklets = new QueryStatistic();
     queryStatisticsModel.getStatisticsTypeAndObjMap()
         .put(QueryStatisticsConstants.BLOCKLET_SCANNED_NUM, scannedBlocklets);
@@ -309,6 +321,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
     try {
       fileReader.finish();
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
       LOGGER.error(e.getMessage(), e);
     }
   }

@@ -63,6 +63,7 @@ public class CarbonUpdateUtil {
    *
    */
   public static String getRequiredFieldFromTID(String Tid, int index) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
     return Tid.split(CarbonCommonConstants.FILE_SEPARATOR)[index];
   }
 
@@ -83,6 +84,7 @@ public class CarbonUpdateUtil {
    * @return
    */
   public static String getSegmentWithBlockFromTID(String Tid, boolean isPartitionTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
     if (isPartitionTable) {
       return getRequiredFieldFromTID(Tid, TupleIdEnum.SEGMENT_ID);
     }
@@ -96,6 +98,7 @@ public class CarbonUpdateUtil {
   public static String getTableBlockPath(String tid, String tablePath, boolean isStandardTable) {
     String partField = getRequiredFieldFromTID(tid, TupleIdEnum.PART_ID);
     // If it has segment file then partfield can be appended directly to table path
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2734
     if (!isStandardTable) {
       return tablePath + CarbonCommonConstants.FILE_SEPARATOR + partField.replace("#", "/");
     }
@@ -130,6 +133,7 @@ public class CarbonUpdateUtil {
   public static boolean updateSegmentStatus(List<SegmentUpdateDetails> updateDetailsList,
       CarbonTable table, String updateStatusFileIdentifier, boolean isCompaction) {
     boolean status = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
     SegmentUpdateStatusManager segmentUpdateStatusManager = new SegmentUpdateStatusManager(table);
     ICarbonLock updateLock = segmentUpdateStatusManager.getTableUpdateStatusLock();
     boolean lockStatus = false;
@@ -145,6 +149,7 @@ public class CarbonUpdateUtil {
         List<SegmentUpdateDetails> oldList = new ArrayList(Arrays.asList(oldDetails));
 
         for (SegmentUpdateDetails newBlockEntry : updateDetailsList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
           mergeSegmentUpdate(isCompaction, oldList, newBlockEntry);
         }
 
@@ -169,6 +174,7 @@ public class CarbonUpdateUtil {
   }
 
   public static void mergeSegmentUpdate(boolean isCompaction, List<SegmentUpdateDetails> oldList,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
       SegmentUpdateDetails newBlockEntry) {
     int index = oldList.indexOf(newBlockEntry);
     if (index != -1) {
@@ -179,6 +185,7 @@ public class CarbonUpdateUtil {
             .setDeleteDeltaStartTimestamp(newBlockEntry.getDeleteDeltaStartTimestamp());
       }
       blockDetail.setDeleteDeltaEndTimestamp(newBlockEntry.getDeleteDeltaEndTimestamp());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
       blockDetail.setSegmentStatus(newBlockEntry.getSegmentStatus());
       blockDetail.setDeletedRowsInBlock(newBlockEntry.getDeletedRowsInBlock());
       // If the start and end time is different then the delta is there in multiple files so
@@ -206,9 +213,11 @@ public class CarbonUpdateUtil {
    * @return
    */
   public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
       CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdationRequired,
       List<Segment> segmentsToBeDeleted) {
     return updateTableMetadataStatus(updatedSegmentsList, table, updatedTimeStamp,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2294
         isTimestampUpdationRequired, segmentsToBeDeleted, new ArrayList<Segment>(), "");
   }
 
@@ -224,6 +233,7 @@ public class CarbonUpdateUtil {
   public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
       CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdationRequired,
       List<Segment> segmentsToBeDeleted, List<Segment> segmentFilesTobeUpdated, String uuid) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2294
 
     boolean status = false;
     String metaDataFilepath = table.getMetadataPath();
@@ -238,11 +248,13 @@ public class CarbonUpdateUtil {
       lockStatus = carbonLock.lockWithRetries();
       if (lockStatus) {
         LOGGER.info(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1739
                 "Acquired lock for table" + table.getDatabaseName() + "." + table.getTableName()
                         + " for table status updation");
 
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
                 SegmentStatusManager.readLoadMetadata(metaDataFilepath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
 
         for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
 
@@ -254,7 +266,9 @@ public class CarbonUpdateUtil {
             }
 
             // if the segments is in the list of marked for delete then update the status.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
             if (segmentsToBeDeleted.contains(new Segment(loadMetadata.getLoadName()))) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
               loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
               loadMetadata.setModificationOrdeletionTimesStamp(Long.parseLong(updatedTimeStamp));
             }
@@ -272,6 +286,7 @@ public class CarbonUpdateUtil {
                 // update end timestamp for each time.
                 loadMetadata.setUpdateDeltaEndTimestamp(updatedTimeStamp);
               }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
               if (segmentFilesTobeUpdated
                   .contains(Segment.toSegment(loadMetadata.getLoadName(), null))) {
                 loadMetadata.setSegmentFile(loadMetadata.getLoadName() + "_" + updatedTimeStamp
@@ -282,6 +297,7 @@ public class CarbonUpdateUtil {
         }
 
         try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
           SegmentStatusManager
                   .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
         } catch (IOException e) {
@@ -291,6 +307,7 @@ public class CarbonUpdateUtil {
         status = true;
       } else {
         LOGGER.error("Not able to acquire the lock for Table status updation for table " + table
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1739
                 .getDatabaseName() + "." + table.getTableName());
       }
     } finally {
@@ -329,9 +346,11 @@ public class CarbonUpdateUtil {
    */
   public static void cleanStaleDeltaFiles(CarbonTable table, final String timeStamp) {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
     String partitionDir = CarbonTablePath.getPartitionDir(identifier.getTablePath());
     CarbonFile file =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
             FileFactory.getCarbonFile(partitionDir);
     if (!file.exists()) {
       return;
@@ -366,6 +385,7 @@ public class CarbonUpdateUtil {
    */
   public static Long getTimeStampAsLong(String timtstamp) {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
       return Long.parseLong(timtstamp);
     } catch (NumberFormatException nfe) {
       String errorMsg = "Invalid timestamp : " + timtstamp;
@@ -383,6 +403,7 @@ public class CarbonUpdateUtil {
    */
   public static Integer getIntegerValue(String value) throws Exception {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
       return Integer.parseInt(value);
     } catch (NumberFormatException nfe) {
       LOGGER.error("Invalid row : " + value + nfe.getLocalizedMessage());
@@ -397,6 +418,7 @@ public class CarbonUpdateUtil {
    * @return
    */
   public static String getBlockName(String completeBlockName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
     return completeBlockName
         .substring(0, completeBlockName.lastIndexOf(CarbonCommonConstants.HYPHEN));
   }
@@ -408,15 +430,19 @@ public class CarbonUpdateUtil {
    * @return
    */
   public static String getSegmentId(String segmentName) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     return segmentName.split(CarbonCommonConstants.UNDERSCORE)[1];
   }
 
   public static long getLatestTaskIdForSegment(Segment segment, String tablePath)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2428
       throws IOException {
     long max = 0;
     List<String> dataFiles = new ArrayList<>();
     if (segment.getSegmentFileName() != null) {
       SegmentFileStore fileStore = new SegmentFileStore(tablePath, segment.getSegmentFileName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
       fileStore.readIndexFiles(FileFactory.getConfiguration());
       Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
       List<String> dataFilePaths = new ArrayList<>();
@@ -431,6 +457,7 @@ public class CarbonUpdateUtil {
       String segmentDirPath = CarbonTablePath.getSegmentPath(tablePath, segment.getSegmentNo());
       // scan all the carbondata files and get the latest task ID.
       CarbonFile segmentDir =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
           FileFactory.getCarbonFile(segmentDirPath);
       CarbonFile[] carbonDataFiles = segmentDir.listFiles(new CarbonFileFilter() {
         @Override
@@ -468,6 +495,7 @@ public class CarbonUpdateUtil {
 
     SegmentStatusManager ssm = new SegmentStatusManager(table.getAbsoluteTableIdentifier());
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     LoadMetadataDetails[] details =
         SegmentStatusManager.readLoadMetadata(table.getMetadataPath());
 
@@ -478,6 +506,7 @@ public class CarbonUpdateUtil {
     boolean isInvalidFile = false;
 
     List<Segment> segmentFilesToBeUpdated = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
 
     // scan through each segment.
 
@@ -489,21 +518,26 @@ public class CarbonUpdateUtil {
       // if this segment is valid then only we will go for delta file deletion.
       // if the segment is mark for delete or compacted then any way it will get deleted.
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
       if (segment.getSegmentStatus() == SegmentStatus.SUCCESS
               || segment.getSegmentStatus() == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
 
         // when there is no update operations done on table, then no need to go ahead. So
         // just check the update delta start timestamp and proceed if not empty
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3394
         if (!segment.getUpdateDeltaStartTimestamp().isEmpty()) {
           // take the list of files from this segment.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
           String segmentPath = CarbonTablePath.getSegmentPath(
               table.getAbsoluteTableIdentifier().getTablePath(), segment.getLoadName());
           CarbonFile segDir =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
               FileFactory.getCarbonFile(segmentPath);
           CarbonFile[] allSegmentFiles = segDir.listFiles();
 
           // scan through the segment and find the carbondatafiles and index files.
           SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(table);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
 
           boolean updateSegmentFile = false;
           // deleting of the aborted file scenario.
@@ -532,6 +566,8 @@ public class CarbonUpdateUtil {
           // and then delete.
 
           for (CarbonFile invalidFile : invalidIndexFiles) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
             if (compareTimestampsAndDelete(invalidFile, forceDelete, false)) {
               updateSegmentFile = true;
             }
@@ -553,7 +589,9 @@ public class CarbonUpdateUtil {
             }
 
             // aborted scenario.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2021
             invalidDeleteDeltaFiles = updateStatusManager
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
                 .getDeleteDeltaInvalidFilesList(block, false,
                     allSegmentFiles, isAbortedFile);
             for (CarbonFile invalidFile : invalidDeleteDeltaFiles) {
@@ -562,8 +600,10 @@ public class CarbonUpdateUtil {
             }
 
             // case 1
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
             if (CarbonUpdateUtil.isBlockInvalid(block.getSegmentStatus())) {
               completeListOfDeleteDeltaFiles = updateStatusManager
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
                   .getDeleteDeltaInvalidFilesList(block, true,
                       allSegmentFiles, isInvalidFile);
               for (CarbonFile invalidFile : completeListOfDeleteDeltaFiles) {
@@ -572,7 +612,9 @@ public class CarbonUpdateUtil {
 
             } else {
               invalidDeleteDeltaFiles = updateStatusManager
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
                   .getDeleteDeltaInvalidFilesList(block, false,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2021
                       allSegmentFiles, isInvalidFile);
               for (CarbonFile invalidFile : invalidDeleteDeltaFiles) {
                 compareTimestampsAndDelete(invalidFile, forceDelete, false);
@@ -580,17 +622,20 @@ public class CarbonUpdateUtil {
             }
           }
           if (updateSegmentFile) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3755
             segmentFilesToBeUpdated.add(
                 new Segment(segment.getLoadName(), segment.getSegmentFile(), null));
           }
         }
         // handle cleanup of merge index files and data files after small files merge happened for
         // SI table
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
         cleanUpDataFilesAfterSmallFilesMergeForSI(table, segment);
       }
     }
     String UUID = String.valueOf(System.currentTimeMillis());
     List<Segment> segmentFilesToBeUpdatedLatest = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3755
     CarbonFile segmentFilesLocation =
         FileFactory.getCarbonFile(CarbonTablePath.getSegmentFilesLocation(table.getTablePath()));
     for (Segment segment : segmentFilesToBeUpdated) {
@@ -621,6 +666,7 @@ public class CarbonUpdateUtil {
           UUID,
           false,
           new ArrayList<Segment>(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2294
           segmentFilesToBeUpdatedLatest, "");
     }
 
@@ -629,10 +675,12 @@ public class CarbonUpdateUtil {
 
       final String updateStatusTimestamp = validUpdateStatusFile
           .substring(validUpdateStatusFile.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
 
       String tablePath = table.getAbsoluteTableIdentifier().getTablePath();
       CarbonFile metaFolder = FileFactory.getCarbonFile(
           CarbonTablePath.getMetadataPath(tablePath));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
 
       CarbonFile[] invalidUpdateStatusFiles = metaFolder.listFiles(new CarbonFileFilter() {
         @Override
@@ -641,6 +689,7 @@ public class CarbonUpdateUtil {
 
             // CHECK if this is valid or not.
             // we only send invalid ones to delete.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
             return !file.getName().endsWith(updateStatusTimestamp);
           }
           return false;
@@ -660,6 +709,7 @@ public class CarbonUpdateUtil {
    * refer {@link org.apache.spark.sql.secondaryindex.rdd.CarbonSIRebuildRDD}
    */
   private static void cleanUpDataFilesAfterSmallFilesMergeForSI(CarbonTable table,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
       LoadMetadataDetails segment) throws IOException {
     if (table.isIndexTable()) {
       String segmentPath = CarbonTablePath
@@ -712,6 +762,7 @@ public class CarbonUpdateUtil {
   private static boolean deleteStaleCarbonDataFiles(LoadMetadataDetails segment,
       CarbonFile[] allSegmentFiles, SegmentUpdateStatusManager updateStatusManager) {
     CarbonFile[] invalidUpdateDeltaFiles = updateStatusManager
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3394
         .getUpdateDeltaFilesList(segment, false,
             CarbonCommonConstants.UPDATE_DELTA_FILE_EXT, true, allSegmentFiles,
             true);
@@ -722,6 +773,7 @@ public class CarbonUpdateUtil {
     }
     // do the same for the index files.
     CarbonFile[] invalidIndexFiles = updateStatusManager
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3394
         .getUpdateDeltaFilesList(segment, false,
             CarbonCommonConstants.UPDATE_INDEX_FILE_EXT, true, allSegmentFiles,
             true);
@@ -729,6 +781,7 @@ public class CarbonUpdateUtil {
     // and then delete.
     boolean updateSegmentFile = false;
     for (CarbonFile invalidFile : invalidIndexFiles) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
       if (compareTimestampsAndDelete(invalidFile, true, false)) {
         updateSegmentFile = true;
       }
@@ -767,10 +820,12 @@ public class CarbonUpdateUtil {
    * @param isUpdateStatusFile if true then the parsing of file name logic changes.
    */
   private static boolean compareTimestampsAndDelete(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2270
       CarbonFile invalidFile,
       boolean forceDelete, boolean isUpdateStatusFile) {
     boolean isDeleted = false;
     Long fileTimestamp;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3360
 
     if (isUpdateStatusFile) {
       fileTimestamp = CarbonUpdateUtil.getTimeStampAsLong(invalidFile.getName()
@@ -784,6 +839,7 @@ public class CarbonUpdateUtil {
     // present in store [[which can happen during delete or update if the disk is full or hdfs quota
     // is finished]] then fileTimestamp will be null, in that case check for max query out and
     // delete the .write file after timeout
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3360
     if (fileTimestamp == null) {
       String tableUpdateStatusFilename = invalidFile.getName();
       if (tableUpdateStatusFilename.endsWith(".write")) {
@@ -817,6 +873,7 @@ public class CarbonUpdateUtil {
   }
 
   public static boolean isBlockInvalid(SegmentStatus blockStatus) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
     return blockStatus == SegmentStatus.COMPACTED || blockStatus == SegmentStatus.MARKED_FOR_DELETE;
   }
 
@@ -854,6 +911,7 @@ public class CarbonUpdateUtil {
     for (Map.Entry<String, Long> eachSeg : segmentBlockCount.entrySet()) {
 
       if (eachSeg.getValue() == 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
         segmentsToBeDeleted.add(new Segment(eachSeg.getKey(), ""));
       }
 
@@ -865,11 +923,13 @@ public class CarbonUpdateUtil {
    * Return row count of input block
    */
   public static long getRowCount(BlockMappingVO blockMappingVO, CarbonTable carbonTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3293
     if (blockMappingVO.getBlockRowCountMapping().size() == 1
         && blockMappingVO.getBlockRowCountMapping().get(CarbonCommonConstantsInternal.ROW_COUNT)
         != null) {
       return blockMappingVO.getBlockRowCountMapping().get(CarbonCommonConstantsInternal.ROW_COUNT);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1746
     SegmentUpdateStatusManager updateStatusManager =
         new SegmentUpdateStatusManager(carbonTable);
     long rowCount = 0;
@@ -930,6 +990,7 @@ public class CarbonUpdateUtil {
   public static String getSegmentBlockNameKey(String segID, String blockName,
       boolean isPartitionTable) {
     String blockNameWithOutPart = blockName
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
         .substring(blockName.indexOf(CarbonCommonConstants.HYPHEN) + 1,
             blockName.lastIndexOf(CarbonTablePath.getCarbonDataExtension()));
     if (isPartitionTable) {

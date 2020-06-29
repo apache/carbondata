@@ -51,6 +51,7 @@ public class Schema {
    * @param fields
    */
   public Schema(Field[] fields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     this(fields, new HashMap<String, String>());
   }
 
@@ -69,6 +70,7 @@ public class Schema {
    * @param columnSchemaList column schema list
    */
   public Schema(List<ColumnSchema> columnSchemaList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     this(columnSchemaList, new HashMap<String, String>());
   }
 
@@ -78,6 +80,7 @@ public class Schema {
    * @param columnSchemaList column schema list
    */
   public Schema(List<ColumnSchema> columnSchemaList, Map<String, String> properties) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2558
     fields = new Field[columnSchemaList.size()];
     for (int i = 0; i < columnSchemaList.size(); i++) {
       fields[i] = new Field(columnSchemaList.get(i));
@@ -125,6 +128,7 @@ public class Schema {
    * @return fields length
    */
   public int getFieldsLength() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2997
     return fields.length;
   }
 
@@ -167,6 +171,7 @@ public class Schema {
    * @return Schema object
    */
   public Schema asOriginOrder() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2558
     Arrays.sort(fields, new Comparator<Field>() {
       @Override
       public int compare(Field o1, Field o2) {
@@ -177,11 +182,13 @@ public class Schema {
   }
 
   public Map<String, String> getProperties() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3553
     return properties;
   }
 
   @Override
   public int hashCode() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2996
     return super.hashCode();
   }
 

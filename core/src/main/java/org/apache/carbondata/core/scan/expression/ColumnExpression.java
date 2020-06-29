@@ -99,15 +99,18 @@ public class ColumnExpression extends LeafExpression {
   }
 
   public void reset() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     dimension = null;
     measure = null;
     isDimension = false;
     isMeasure = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3551
     carbonColumn = null;
   }
 
   @Override
   public ExpressionResult evaluate(RowIntf value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
     return new ExpressionResult(dataType, (null == value ? null : value.getVal(colIndex)));
   }
 
@@ -125,6 +128,7 @@ public class ColumnExpression extends LeafExpression {
 
   @Override
   public String getStatement() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     return columnName;
   }
 

@@ -105,6 +105,8 @@ public class PartitionSpec implements Serializable, Writable {
 
   @Override
   public void write(DataOutput out) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     if (partitions == null) {
       out.writeBoolean(false);
     } else {

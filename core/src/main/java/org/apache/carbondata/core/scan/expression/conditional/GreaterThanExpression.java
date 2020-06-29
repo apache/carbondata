@@ -40,6 +40,7 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
     ExpressionResult exprRightRes = right.evaluate(value);
     ExpressionResult val1 = exprLeftRes;
     if (exprLeftRes.isNull() || exprRightRes.isNull()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       exprLeftRes.set(DataTypes.BOOLEAN, false);
       return exprLeftRes;
     }
@@ -51,7 +52,9 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
 
     }
     boolean result = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     DataType dataType = val1.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     if (dataType == DataTypes.BOOLEAN) {
       result = exprLeftRes.getBoolean().compareTo(exprRightRes.getBoolean()) > 0;
     } else if (dataType == DataTypes.STRING) {
@@ -62,12 +65,14 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
       result = exprLeftRes.getShort() > (exprRightRes.getShort());
     } else if (dataType == DataTypes.INT) {
       result = exprLeftRes.getInt() > (exprRightRes.getInt());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
     } else if (dataType == DataTypes.DATE) {
       result = exprLeftRes.getTime() > (exprRightRes.getTime());
     } else if (dataType == DataTypes.TIMESTAMP) {
       result = exprLeftRes.getTimeAsMillisecond() > (exprRightRes.getTimeAsMillisecond());
     } else if (dataType == DataTypes.LONG) {
       result = exprLeftRes.getLong() > (exprRightRes.getLong());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       result = exprLeftRes.getDecimal().compareTo(exprRightRes.getDecimal()) > 0;
     } else {
@@ -90,6 +95,7 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
 
   @Override
   public String getStatement() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     return left.getStatement() + " > " + right.getStatement();
   }
 }

@@ -50,6 +50,7 @@ public class UnsafeInmemoryMergeHolder implements Comparable<UnsafeInmemoryMerge
   public UnsafeInmemoryMergeHolder(UnsafeCarbonRowPage rowPage, byte index) {
     this.actualSize = rowPage.getBuffer().getActualSize();
     this.rowPage = rowPage;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2220
     LOGGER.info("Processing unsafe inmemory rows page with size : " + actualSize);
     this.comparator = new UnsafeRowComparator(rowPage);
     this.baseObject = rowPage.getDataBlock().getBaseObject();

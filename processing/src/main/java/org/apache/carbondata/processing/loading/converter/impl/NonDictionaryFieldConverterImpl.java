@@ -45,17 +45,21 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
 
   public NonDictionaryFieldConverterImpl(DataField dataField, String nullFormat, int index,
       boolean isEmptyBadRecord) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1450
     this.dataField = dataField;
     this.dataType = dataField.getColumn().getDataType();
     this.column = dataField.getColumn();
     this.index = index;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     this.nullFormat = nullFormat;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-784
     this.isEmptyBadRecord = isEmptyBadRecord;
   }
 
   @Override
   public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
     String dimensionValue = row.getString(index);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
     row.update(convert(dimensionValue, logHolder), index);
   }
 
@@ -63,13 +67,16 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
   public Object convert(Object value, BadRecordLogHolder logHolder)
       throws RuntimeException {
     String dimensionValue = (String) value;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     if (null == dimensionValue && column.getDataType() != DataTypes.STRING) {
       logHolder.setReason(
           CarbonDataProcessorUtil.prepareFailureReason(column.getColName(), column.getDataType()));
       return getNullValue();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     } else if (dimensionValue == null || dimensionValue.equals(nullFormat)) {
       return getNullValue();
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1762
       String dateFormat = null;
       if (dataType == DataTypes.DATE) {
         dateFormat = dataField.getDateFormat();
@@ -78,6 +85,7 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
       }
       try {
         if (!dataField.isUseActualData()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
           byte[] parsedValue = DataTypeUtil
               .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType, dateFormat);
           if (dataType == DataTypes.STRING
@@ -93,6 +101,8 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
               .getDataDataTypeForNoDictionaryColumn(dimensionValue, dataType, dateFormat);
           if (dataType == DataTypes.STRING && parsedValue.toString().length()
               > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
             throw new CarbonDataLoadingException(String.format(
                 "Dataload failed, String size cannot exceed %d bytes,"
                     + " please consider long string data type",
@@ -104,6 +114,7 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
         throw e;
       } catch (Throwable ex) {
         if (dimensionValue.length() > 0 || (dimensionValue.length() == 0 && isEmptyBadRecord)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1049
           String message = logHolder.getColumnMessageMap().get(column.getColName());
           if (null == message) {
             message = CarbonDataProcessorUtil
@@ -114,11 +125,13 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2633
     return getNullValue();
   }
 
   @Override
   public DataField getDataField() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
     return dataField;
   }
 

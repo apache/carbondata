@@ -42,6 +42,7 @@ public class DriverQueryStatisticsRecorderDummy implements QueryStatisticsRecord
   }
 
   public TaskStatistics statisticsForTask(long taskId, long startTime) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     return null;
   }
 

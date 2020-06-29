@@ -52,6 +52,7 @@ public class SpatialIndexFieldConverterImpl extends MeasureFieldConverterImpl {
             .getTableProperties();
     try {
       instance = CustomIndex.getCustomInstance(properties.get(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
           CarbonCommonConstants.SPATIAL_INDEX + "." + dataField.getColumn().getColName()
               + ".instance"));
     } catch (IOException e) {

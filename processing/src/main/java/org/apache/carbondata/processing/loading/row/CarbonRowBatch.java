@@ -62,6 +62,7 @@ public class CarbonRowBatch extends CarbonIterator<CarbonRow> {
 
   @Override
   public void remove() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2136
     rowBatch = (CarbonRow[]) ArrayUtils.remove(rowBatch, index - 1);
     --size;
     --index;
@@ -73,6 +74,7 @@ public class CarbonRowBatch extends CarbonIterator<CarbonRow> {
    * @param row row
    */
   public void setPreviousRow(CarbonRow row) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1837
     if (index == 0) {
       throw new RuntimeException("Unable to set a row in RowBatch before index 0");
     }

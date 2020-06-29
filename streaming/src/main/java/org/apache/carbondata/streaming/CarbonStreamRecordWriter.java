@@ -111,6 +111,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   }
 
   public CarbonStreamRecordWriter(TaskAttemptContext job, CarbonLoadModel carbonLoadModel)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1766
       throws IOException {
     this.carbonLoadModel = carbonLoadModel;
     initialize(job);
@@ -126,9 +127,11 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
             "CarbonStreamRecordWriter require configuration: mapreduce.output.carbon.load.model");
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     String segmentId = CarbonStreamOutputFormat.getSegmentId(hadoopConf);
     carbonLoadModel.setSegmentId(segmentId);
     carbonTable = carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1856
     long taskNo = TaskID.forName(hadoopConf.get("mapred.tip.id")).getId();
     carbonLoadModel.setTaskNo("" + taskNo);
     configuration = DataLoadProcessBuilder.createConfiguration(carbonLoadModel);
@@ -137,6 +140,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     maxCacheSize = hadoopConf.getInt(CarbonStreamOutputFormat.CARBON_STREAM_CACHE_SIZE,
         CarbonStreamOutputFormat.CARBON_STREAM_CACHE_SIZE_DEFAULT);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     segmentDir = CarbonTablePath.getSegmentPath(
         carbonTable.getAbsoluteTableIdentifier().getTablePath(), segmentId);
     fileName = CarbonTablePath.getCarbonDataFileName(
@@ -149,10 +153,12 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     dimensionWithComplexCount = configuration.getDimensionCount();
     measureCount = configuration.getMeasureCount();
     dataFields = configuration.getDataFields();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3497
     dimensionsIsVarcharTypeMap = new boolean[dimensionWithComplexCount];
     for (int i = 0; i < dimensionWithComplexCount; i++) {
       dimensionsIsVarcharTypeMap[i] = dataFields[i].getColumn().getDataType() == DataTypes.VARCHAR;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     measureDataTypes = new DataType[measureCount];
     for (int i = 0; i < measureCount; i++) {
       measureDataTypes[i] =
@@ -163,19 +169,24 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   private void initializeAtFirstRow() throws IOException {
     // initialize parser and converter
     rowParser = new RowParserImpl(dataFields, configuration);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1218
     badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
     converter =
         new RowConverterImpl(configuration.getDataFields(), configuration, badRecordLogger, true);
     converter.initialize();
 
     // initialize data writer and compressor
     String filePath = segmentDir + File.separator + fileName;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     CarbonFile carbonFile = FileFactory.getCarbonFile(filePath);
     if (carbonFile.exists()) {
       // if the file is existed, use the append api
       outputStream = FileFactory.getDataOutputStreamUsingAppend(filePath);
       // get the compressor from the fileheader. In legacy store,
       // the compressor name is not set and it use snappy compressor
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       FileHeader header = new CarbonHeaderReader(filePath).readHeader();
       if (header.isSetCompressor_name()) {
         compressorName = header.getCompressor_name();
@@ -184,6 +195,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       }
     } else {
       // IF the file is not existed, use the create api
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       outputStream = FileFactory.getDataOutputStream(filePath);
       compressorName = carbonTable.getTableInfo().getFactTable().getTableProperties().get(
           CarbonCommonConstants.COMPRESSOR);
@@ -211,6 +223,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     }
     // null bit set
     nullBitSet.clear();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2198
     Object[] rowData = (Object[]) value;
     currentRow.setRawData(rowData);
     // parse and convert row
@@ -239,12 +252,14 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
         if (null != columnValue) {
           if (isNoDictionaryDimensionColumn[dimCount]) {
             byte[] col = (byte[]) columnValue;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3497
             if (dimensionsIsVarcharTypeMap[dimCount]) {
               output.writeInt(col.length);
             } else {
               output.writeShort(col.length);
             }
             output.writeBytes(col);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2853
             output.dimStatsCollectors[dimCount].update(col);
           } else {
             output.writeInt((int) columnValue);
@@ -264,6 +279,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
         }
       }
       // measure
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
       DataType dataType;
       for (int msrCount = 0; msrCount < measureCount; msrCount++) {
         columnValue = currentRow.getObject(dimCount + msrCount);
@@ -271,6 +287,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
           dataType = measureDataTypes[msrCount];
           if (dataType == DataTypes.BOOLEAN) {
             output.writeBoolean((boolean) columnValue);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2853
             output.msrStatsCollectors[msrCount].update((byte) ((boolean) columnValue ? 1 : 0));
           } else if (dataType == DataTypes.SHORT) {
             output.writeShort((short) columnValue);
@@ -297,6 +314,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
             LOGGER.error(msg);
             throw new IOException(msg);
           }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2853
         } else {
           output.msrStatsCollectors[msrCount].updateNull(0);
         }
@@ -312,12 +330,15 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     List<ColumnSchema> wrapperColumnSchemaList = CarbonUtil
         .getColumnSchemaList(carbonTable.getVisibleDimensions(), carbonTable.getVisibleMeasures());
     List<org.apache.carbondata.format.ColumnSchema> columnSchemaList = AbstractFactDataWriter
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         .getColumnSchemaListAndCardinality(wrapperColumnSchemaList);
     FileHeader fileHeader =
         CarbonMetadataUtil.getFileHeader(true, columnSchemaList, System.currentTimeMillis());
     fileHeader.setIs_footer_present(false);
     fileHeader.setIs_splitable(true);
     fileHeader.setSync_marker(CarbonStreamOutputFormat.CARBON_SYNC_MARKER);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     fileHeader.setCompressor_name(compressorName);
     outputStream.write(CarbonUtil.getByteArray(fileHeader));
   }
@@ -331,6 +352,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     }
     output.apppendBlocklet(outputStream);
     outputStream.flush();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2853
     if (!isClosed) {
       batchMinMaxIndex = StreamSegment.mergeBlockletMinMax(
           batchMinMaxIndex, output.generateBlockletMinMax(), measureDataTypes);
@@ -357,6 +379,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     try {
       isClosed = true;
       // append remain buffer data
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
       if (!hasException && !isFirstRow) {
         appendBlockletToDataFile();
         converter.finish();
@@ -382,6 +405,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   }
 
   public void setHasException(boolean hasException) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2058
     this.hasException = hasException;
   }
 }

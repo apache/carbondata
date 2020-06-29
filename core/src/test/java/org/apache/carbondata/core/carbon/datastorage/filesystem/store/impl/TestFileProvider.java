@@ -40,6 +40,7 @@ public class TestFileProvider implements FileTypeInterface {
     FileFactory.FileType fileType = FileFactory.getFileType(path);
     switch (fileType) {
       case LOCAL:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         return new LocalCarbonFile(FileFactory.getUpdatedFilePath(path));
       case HDFS:
         return new HDFSCarbonFile(path, configuration);
@@ -50,6 +51,7 @@ public class TestFileProvider implements FileTypeInterface {
       case VIEWFS:
         return new ViewFSCarbonFile(path);
       default:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         return new LocalCarbonFile(FileFactory.getUpdatedFilePath(path));
     }
   }

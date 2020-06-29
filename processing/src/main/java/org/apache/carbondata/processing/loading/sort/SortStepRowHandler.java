@@ -90,7 +90,9 @@ public class SortStepRowHandler implements Serializable {
     this.dictNoSortDimCnt = tableFieldStat.getDictNoSortDimCnt();
     this.noDictSortDimCnt = tableFieldStat.getNoDictSortDimCnt();
     this.noDictNoSortDimCnt = tableFieldStat.getNoDictNoSortDimCnt();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     this.varcharDimCnt = tableFieldStat.getVarcharDimCnt();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2796
     this.complexDimCnt = tableFieldStat.getComplexDimCnt();
     this.measureCnt = tableFieldStat.getMeasureCnt();
     this.dictSortDimIdx = tableFieldStat.getDictSortDimIdx();
@@ -101,6 +103,7 @@ public class SortStepRowHandler implements Serializable {
     this.complexDimIdx = tableFieldStat.getComplexDimIdx();
     this.measureIdx = tableFieldStat.getMeasureIdx();
     this.dataTypes = tableFieldStat.getMeasureDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     this.noDictSortDataTypes = tableFieldStat.getNoDictSortDataType();
     noDictSortColMapping = new boolean[noDictSortDataTypes.length];
     for (int i = 0; i < noDictSortDataTypes.length; i++) {
@@ -111,6 +114,7 @@ public class SortStepRowHandler implements Serializable {
     for (int i = 0; i < noDictNoSortDataTypes.length; i++) {
       noDictNoSortColMapping[i] = DataTypeUtil.isPrimitiveColumn(noDictNoSortDataTypes[i]);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
     this.sortTempRowUpdater = tableFieldStat.getSortTempRowUpdater();
   }
 
@@ -134,6 +138,7 @@ public class SortStepRowHandler implements Serializable {
     Object[] holder = new Object[3];
     try {
       int[] dictDims = new int[this.dictSortDimCnt + this.dictNoSortDimCnt];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       Object[] nonDictArray = new Object[this.noDictSortDimCnt + this.noDictNoSortDimCnt
                                        + this.varcharDimCnt + this.complexDimCnt];
       Object[] measures = new Object[this.measureCnt];
@@ -151,6 +156,7 @@ public class SortStepRowHandler implements Serializable {
       // convert no-dict & sort
       idxAcc = 0;
       for (int idx = 0; idx < this.noDictSortDimCnt; idx++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
         nonDictArray[idxAcc++] = row[this.noDictSortDimIdx[idx]];
       }
       // convert no-dict & no-sort
@@ -170,6 +176,7 @@ public class SortStepRowHandler implements Serializable {
       for (int idx = 0; idx < this.measureCnt; idx++) {
         measures[idx] = row[this.measureIdx[idx]];
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
       sortTempRowUpdater.updateOutputRow(holder, dictDims, nonDictArray, measures);
     } catch (Exception e) {
       throw new RuntimeException("Problem while converting row to 3 parts", e);
@@ -185,6 +192,7 @@ public class SortStepRowHandler implements Serializable {
    * @return 3-parted row
    */
   public Object[] convertIntermediateSortTempRowTo3Parted(IntermediateSortTempRow sortTempRow) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2836
     Object[] out = new Object[3];
     NonDictionaryUtil
         .prepareOutObj(out, sortTempRow.getDictSortDims(), sortTempRow.getNoDictSortDims(),
@@ -204,6 +212,7 @@ public class SortStepRowHandler implements Serializable {
       DataInputStream inputStream) throws IOException {
     int[] dictSortDims = new int[this.dictSortDimCnt];
     Object[] noDictSortDims = new Object[this.noDictSortDimCnt];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
 
     // read dict & sort dim data
     for (int idx = 0; idx < this.dictSortDimCnt; idx++) {
@@ -234,8 +243,10 @@ public class SortStepRowHandler implements Serializable {
    * @throws IOException if error occrus while reading from stream
    */
   public IntermediateSortTempRow readWithNoSortFieldConvert(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2836
       DataInputStream inputStream) throws IOException {
     int[] dictSortDims = new int[this.dictSortDimCnt + this.dictNoSortDimCnt];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     Object[] noDictSortDims =
         new Object[this.noDictSortDimCnt + this.noDictNoSortDimCnt + this.varcharDimCnt
             + this.complexDimCnt];
@@ -248,6 +259,8 @@ public class SortStepRowHandler implements Serializable {
     // read no-dict & sort data
     for (int idx = 0; idx < this.noDictSortDimCnt; idx++) {
       // for no dict measure column get the original data
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       noDictSortDims[idx] = getDataForNoDictSortColumn(inputStream, idx);
     }
 
@@ -269,6 +282,7 @@ public class SortStepRowHandler implements Serializable {
    * @throws IOException
    */
   private Object getDataForNoDictSortColumn(DataInputStream inputStream, int idx)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       throws IOException {
     if (this.noDictSortColMapping[idx]) {
       return readDataFromStream(inputStream, idx);
@@ -302,6 +316,7 @@ public class SortStepRowHandler implements Serializable {
       data = inputStream.readShort();
     } else if (dataType == DataTypes.INT) {
       data = inputStream.readInt();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       data = inputStream.readLong();
     } else if (dataType == DataTypes.DOUBLE) {
@@ -328,6 +343,7 @@ public class SortStepRowHandler implements Serializable {
     // read no_dict_no_sort
     for (int i = 0; i < noDictNoSortDimCnt; i++) {
       // for no dict measure column get the original data
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       if (this.noDictNoSortColMapping[i]) {
         noDictDims[noDictIndex++] = getDataFromRowBuffer(noDictNoSortDataTypes[i], rowBuffer);
       } else {
@@ -357,7 +373,9 @@ public class SortStepRowHandler implements Serializable {
     // read measure
     int measureCnt = measures.length;
     Object tmpContent;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3591
     for (short idx = 0; idx < measureCnt; idx++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       tmpContent = getDataFromRowBuffer(dataTypes[idx], rowBuffer);
       measures[idx] = tmpContent;
     }
@@ -386,10 +404,12 @@ public class SortStepRowHandler implements Serializable {
       tmpContent = rowBuffer.getShort();
     } else if (DataTypes.INT == tmpDataType) {
       tmpContent = rowBuffer.getInt();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
     } else if (DataTypes.LONG == tmpDataType || DataTypes.TIMESTAMP == tmpDataType) {
       tmpContent = rowBuffer.getLong();
     } else if (DataTypes.DOUBLE == tmpDataType) {
       tmpContent = rowBuffer.getDouble();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (DataTypes.FLOAT == tmpDataType) {
       tmpContent = rowBuffer.getFloat();
     } else if (DataTypes.BYTE == tmpDataType) {
@@ -399,6 +419,7 @@ public class SortStepRowHandler implements Serializable {
       byte[] decimalBytes = new byte[len];
       rowBuffer.get(decimalBytes);
       tmpContent = DataTypeUtil.byteToBigDecimal(decimalBytes);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     } else if (DataTypes.BINARY == tmpDataType) {
       int len = rowBuffer.getInt();
       byte[] bytes = new byte[len];
@@ -427,6 +448,7 @@ public class SortStepRowHandler implements Serializable {
 
     // write no-dict & sort dim
     for (int idx = 0; idx < this.noDictSortDimCnt; idx++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       if (this.noDictSortColMapping[idx]) {
         // write the original data to the stream
         writeDataToStream(sortTempRow.getNoDictSortDims()[idx], outputStream, idx);
@@ -456,6 +478,7 @@ public class SortStepRowHandler implements Serializable {
    * @throws IOException if error occurs while writing to stream
    */
   public void writeRawRowAsIntermediateSortTempRowToOutputStream(Object[] row,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
       DataOutputStream outputStream,
       ReUsableByteArrayDataOutputStream reUsableByteArrayDataOutputStream) throws IOException {
     // write dict & sort
@@ -465,6 +488,7 @@ public class SortStepRowHandler implements Serializable {
 
     // write no-dict & sort
     for (int idx = 0; idx < this.noDictSortDimCnt; idx++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       if (this.noDictSortColMapping[idx]) {
         // write the original data to the stream
         writeDataToStream(row[this.noDictSortDimIdx[idx]], outputStream, idx);
@@ -476,6 +500,7 @@ public class SortStepRowHandler implements Serializable {
     }
 
     // pack no-sort
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
     reUsableByteArrayDataOutputStream.reset();
     packNoSortFieldsToBytes(row, reUsableByteArrayDataOutputStream);
     int packSize = reUsableByteArrayDataOutputStream.getSize();
@@ -494,6 +519,7 @@ public class SortStepRowHandler implements Serializable {
    * @throws IOException
    */
   private void writeDataToStream(Object data, DataOutputStream outputStream, int idx)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       throws IOException {
     DataType dataType = noDictSortDataTypes[idx];
     if (null == data) {
@@ -508,6 +534,7 @@ public class SortStepRowHandler implements Serializable {
         outputStream.writeShort((short) data);
       } else if (dataType == DataTypes.INT) {
         outputStream.writeInt((int) data);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
       } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
         outputStream.writeLong((long) data);
       } else if (dataType == DataTypes.DOUBLE) {
@@ -576,10 +603,12 @@ public class SortStepRowHandler implements Serializable {
    * @return intermediate sort temp row
    */
   public IntermediateSortTempRow readRowFromMemoryWithNoSortFieldConvert(Object baseObject,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2836
       long address) {
     int size = 0;
 
     int[] dictSortDims = new int[this.dictSortDimCnt + this.dictNoSortDimCnt];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     Object[] noDictSortDims =
         new Object[this.noDictSortDimCnt + this.noDictNoSortDimCnt + this.varcharDimCnt
             + this.complexDimCnt];
@@ -594,6 +623,7 @@ public class SortStepRowHandler implements Serializable {
     for (int idx = 0; idx < this.noDictSortDimCnt; idx++) {
       short length = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
       size += 2;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       if (this.noDictSortColMapping[idx]) {
         // get the original data from the unsafe memory
         if (0 == length) {
@@ -638,6 +668,7 @@ public class SortStepRowHandler implements Serializable {
    * @throws IOException if error occurs while writing to stream
    */
   public void writeIntermediateSortTempRowFromUnsafeMemoryToStream(Object baseObject, long address,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
       DataOutputStream outputStream, long unsafeRemainingLength, long unsafeTotalLength)
       throws IOException, MemoryException {
     int size = 0;
@@ -652,6 +683,7 @@ public class SortStepRowHandler implements Serializable {
     for (int idx = 0; idx < noDictSortDimCnt; idx++) {
       short length = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
       size += 2;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       if (this.noDictSortColMapping[idx]) {
         // get the original data from unsafe memory
         if (0 == length) {
@@ -664,6 +696,7 @@ public class SortStepRowHandler implements Serializable {
           writeDataToStream(data, outputStream, idx);
         }
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
         validateUnsafeMemoryBlockSizeLimit(unsafeRemainingLength, length, unsafeTotalLength);
         byte[] bytes = new byte[length];
         CarbonUnsafe.getUnsafe()
@@ -677,6 +710,7 @@ public class SortStepRowHandler implements Serializable {
     // packed no-sort & measure
     int len = CarbonUnsafe.getUnsafe().getInt(baseObject, address + size);
     size += 4;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
     validateUnsafeMemoryBlockSizeLimit(unsafeRemainingLength, len, unsafeTotalLength);
     byte[] noSortDimsAndMeasures = new byte[len];
     CarbonUnsafe.getUnsafe().copyMemory(baseObject, address + size,
@@ -701,6 +735,7 @@ public class SortStepRowHandler implements Serializable {
    * @return number of bytes written to memory
    */
   public int writeRawRowAsIntermediateSortTempRowToUnsafeMemory(Object[] row, Object baseObject,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
       long address, ReUsableByteArrayDataOutputStream reUsableByteArrayDataOutputStream,
       long unsafeRemainingLength, long unsafeTotalLength) throws MemoryException, IOException {
     int size = 0;
@@ -714,6 +749,7 @@ public class SortStepRowHandler implements Serializable {
 
     // write no-dict & sort
     for (int idx = 0; idx < this.noDictSortDimCnt; idx++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       if (this.noDictSortColMapping[idx]) {
         Object data = row[this.noDictSortDimIdx[idx]];
         if (null == data) {
@@ -722,6 +758,7 @@ public class SortStepRowHandler implements Serializable {
           size += 2;
         } else {
           int sizeInBytes = this.noDictSortDataTypes[idx].getSizeInBytes();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
           if (this.noDictSortDataTypes[idx] == DataTypes.TIMESTAMP) {
             sizeInBytes = DataTypes.LONG.getSizeInBytes();
           }
@@ -735,6 +772,7 @@ public class SortStepRowHandler implements Serializable {
         }
       } else {
         byte[] bytes = (byte[]) row[this.noDictSortDimIdx[idx]];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
         validateUnsafeMemoryBlockSizeLimit(unsafeRemainingLength, 2 + bytes.length,
             unsafeTotalLength);
         CarbonUnsafe.getUnsafe().putShort(baseObject, address + size, (short) bytes.length);
@@ -747,6 +785,7 @@ public class SortStepRowHandler implements Serializable {
     }
 
     // convert pack no-sort
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
     reUsableByteArrayDataOutputStream.reset();
     packNoSortFieldsToBytes(row, reUsableByteArrayDataOutputStream);
     int packSize = reUsableByteArrayDataOutputStream.getSize();
@@ -839,10 +878,12 @@ public class SortStepRowHandler implements Serializable {
       reUsableByteArrayDataOutputStream.writeShort((Short) tmpValue);
     } else if (DataTypes.INT == tmpDataType) {
       reUsableByteArrayDataOutputStream.writeInt((Integer) tmpValue);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
     } else if (DataTypes.LONG == tmpDataType || DataTypes.TIMESTAMP == tmpDataType) {
       reUsableByteArrayDataOutputStream.writeLong((Long) tmpValue);
     } else if (DataTypes.DOUBLE == tmpDataType) {
       reUsableByteArrayDataOutputStream.writeDouble((Double) tmpValue);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     }  else if (DataTypes.FLOAT == tmpDataType) {
       reUsableByteArrayDataOutputStream.writeFloat((Float) tmpValue);
     } else if (DataTypes.BYTE == tmpDataType) {
@@ -851,6 +892,7 @@ public class SortStepRowHandler implements Serializable {
       byte[] decimalBytes = DataTypeUtil.bigDecimalToByte((BigDecimal) tmpValue);
       reUsableByteArrayDataOutputStream.writeShort((short) decimalBytes.length);
       reUsableByteArrayDataOutputStream.write(decimalBytes);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     } else if (DataTypes.BINARY == tmpDataType) {
       byte[] bytes = (byte[]) tmpValue;
       reUsableByteArrayDataOutputStream.writeInt(bytes.length);

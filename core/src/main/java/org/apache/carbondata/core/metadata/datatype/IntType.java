@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata.datatype;
 
 class IntType extends DataType {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
 
   static final DataType INT = new IntType(DataTypes.INT_TYPE_ID, 3, "INT", 4);
 

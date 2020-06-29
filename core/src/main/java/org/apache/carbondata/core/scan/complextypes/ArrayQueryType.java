@@ -34,6 +34,7 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
   private GenericQueryType children;
 
   public ArrayQueryType(String name, String parentName, int columnIndex) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     super(name, parentName, columnIndex);
   }
 
@@ -68,6 +69,7 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
   }
 
   public void parseBlocksAndReturnComplexColumnByteArray(DimensionRawColumnChunk[] rawColumnChunks,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3145
       DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber,
       DataOutputStream dataOutputStream) throws IOException {
     byte[] input = copyBlockDataChunk(rawColumnChunks, dimensionColumnPages, rowNumber, pageNumber);
@@ -97,10 +99,13 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
 
   @Override
   public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
     Object[] data = fillData(dataBuffer);
     if (data == null) {
       return null;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
     return DataTypeUtil.getDataTypeConverter().wrapWithGenericArrayData(data);
   }
 
@@ -113,11 +118,13 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     for (int i = 0; i < dataLength; i++) {
       data[i] = children.getDataBasedOnDataType(dataBuffer);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
     return data;
   }
 
   @Override
   public Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2606
       CarbonDimension child) {
     throw new UnsupportedOperationException("Operation Unsupported for ArrayType");
   }

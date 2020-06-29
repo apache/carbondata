@@ -41,6 +41,7 @@ import org.apache.commons.io.FileUtils;
  */
 public class CarbonReaderExample {
   public static void main(String[] args) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3251
     String path = "./testWriteFiles";
     try {
       FileUtils.deleteDirectory(new File(path));
@@ -49,7 +50,9 @@ public class CarbonReaderExample {
               CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
           .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
               CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2932
       Field[] fields = new Field[11];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2566
       fields[0] = new Field("stringField", DataTypes.STRING);
       fields[1] = new Field("shortField", DataTypes.SHORT);
       fields[2] = new Field("intField", DataTypes.INT);
@@ -63,7 +66,9 @@ public class CarbonReaderExample {
       fields[10] = new Field("arrayField", DataTypes.createArrayType(DataTypes.STRING));
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3073
           .withLoadOption("complex_delimiter_level_1", "#")
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3060
           .withCsvInput(new Schema(fields))
           .writtenBy("CarbonReaderExample")
           .build();
@@ -99,6 +104,7 @@ public class CarbonReaderExample {
         throw new RuntimeException("Carbon index file not exists.");
       }
       Schema schema = CarbonSchemaReader
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2996
           .readSchema(dataFiles[0].getAbsolutePath())
           .asOriginOrder();
       // Transform the schema
@@ -112,6 +118,7 @@ public class CarbonReaderExample {
           .builder(path, "_temp")
           .projection(strings)
           .build();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
 
       System.out.println("\nData:");
       long day = 24L * 3600 * 1000;
@@ -120,6 +127,7 @@ public class CarbonReaderExample {
         Object[] row = (Object[]) reader.readNextRow();
         System.out.println(String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t",
             i, row[0], row[1], row[2], row[3], row[4], row[5],
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2932
             new Date((day * ((int) row[6]))), new Timestamp((long) row[7] / 1000),
             row[8], row[9]
         ));
@@ -127,6 +135,7 @@ public class CarbonReaderExample {
         for (int j = 0; j < arr.length; j++) {
           System.out.print(arr[j] + " ");
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2982
         assert (arr[0].equals("Hello"));
         assert (arr[3].equals("Carbon"));
         System.out.println();
@@ -138,10 +147,12 @@ public class CarbonReaderExample {
       CarbonReader reader2 = CarbonReader
           .builder(path, "_temp")
           .build();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
 
       System.out.println("\nData:");
       i = 0;
       while (reader2.hasNext()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2932
         Object[] row = (Object[]) reader2.readNextRow();
         System.out.print(String.format("%s\t%s\t%s\t%s\t%s\t",
             i, row[0], new Date((day * ((int) row[1]))), new Timestamp((long) row[2] / 1000),

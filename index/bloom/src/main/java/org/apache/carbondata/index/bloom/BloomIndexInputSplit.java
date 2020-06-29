@@ -36,8 +36,10 @@ class BloomIndexInputSplit extends IndexInputSplit {
    */
   private Set<String> filteredShards;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
   BloomIndexInputSplit(String indexPath, Set<String> filteredShards) {
     this.indexPath = indexPath;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2845
     this.filteredShards = filteredShards;
   }
 

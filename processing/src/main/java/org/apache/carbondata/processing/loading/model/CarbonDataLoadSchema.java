@@ -57,7 +57,9 @@ public class CarbonDataLoadSchema implements Serializable {
    * @return carbonTable
    */
   public CarbonTable getCarbonTable() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2119
     if (!updatedDataTypes) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2119
       carbonTable = CarbonTable.buildFromTableInfo(carbonTable.getTableInfo());
       updatedDataTypes = true;
     }

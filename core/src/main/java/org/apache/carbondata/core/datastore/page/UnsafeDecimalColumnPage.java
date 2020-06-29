@@ -30,7 +30,10 @@ import org.apache.carbondata.core.util.ByteUtil;
  */
 public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
   UnsafeDecimalColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     this(columnPageEncoderMeta, pageSize, (int) (pageSize * DEFAULT_ROW_SIZE * FACTOR));
   }
 
@@ -114,12 +117,14 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
       memoryBlock = null;
       baseAddress = null;
       baseOffset = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
       super.freeMemory();
     }
   }
 
   @Override
   public void putByte(int rowId, byte value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     long offset = (long)rowId << byteBits;
     CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset, value);
   }
@@ -141,6 +146,7 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   public void putInt(int rowId, int value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     long offset = (long)rowId << intBits;
     CarbonUnsafe.getUnsafe().putInt(baseAddress, baseOffset + offset, value);
   }
@@ -158,8 +164,10 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   public void putBytes(int rowId, byte[] bytes, int offset, int length) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     ensureMemory(length);
     CarbonUnsafe.getUnsafe().copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET + offset, baseAddress,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
         baseOffset + rowOffset.getInt(rowId), length);
   }
 
@@ -179,6 +187,7 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   public byte getByte(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     long offset = (long)rowId << byteBits;
     return CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset);
   }
@@ -187,6 +196,7 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
   public byte[] getBytes(int rowId) {
     int length = rowOffset.getInt(rowId + 1) - rowOffset.getInt(rowId);
     byte[] bytes = new byte[length];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.getInt(rowId),
         bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
     return bytes;
@@ -194,6 +204,7 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   public short getShort(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     long offset = (long) rowId << shortBits;
     return CarbonUnsafe.getUnsafe().getShort(baseAddress, baseOffset + offset);
   }
@@ -210,6 +221,7 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   public int getInt(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     long offset = (long)rowId << intBits;
     return CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset);
   }
@@ -222,6 +234,7 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   void copyBytes(int rowId, byte[] dest, int destOffset, int length) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
     CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.getInt(rowId), dest,
         CarbonUnsafe.BYTE_ARRAY_OFFSET + destOffset, length);
   }
@@ -235,6 +248,7 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
     switch (decimalConverter.getDecimalConverterType()) {
       case DECIMAL_INT:
         for (int i = 0; i < pageSize; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
           long offset = (long)i << intBits;
           codec.encode(i, CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset));
         }
@@ -246,6 +260,8 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
         }
         break;
       default:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
         throw new UnsupportedOperationException("not support value conversion on "
             + columnPageEncoderMeta.getStoreDataType() + " page");
     }

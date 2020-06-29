@@ -22,6 +22,7 @@ public class MapType extends DataType {
   private DataType keyType;
   private DataType valueType;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
   MapType(DataType keyType, DataType valueType) {
     super(DataTypes.MAP_TYPE_ID, 11, "MAP", -1);
     this.keyType = keyType;
@@ -35,6 +36,7 @@ public class MapType extends DataType {
 
   @Override
   public boolean equals(Object obj) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2493
     if (this == obj) {
       return true;
     }
@@ -68,6 +70,7 @@ public class MapType extends DataType {
   }
 
   public DataType getKeyType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2869
     return keyType;
   }
 

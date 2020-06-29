@@ -46,6 +46,7 @@ public abstract class AbstractBloomIndexWriter extends IndexWriter {
   private List<DataOutputStream> currentDataOutStreams;
   protected List<CarbonBloomFilter> indexBloomFilters;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
   AbstractBloomIndexWriter(String tablePath, String indexName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp,
       boolean compressBloom)
@@ -101,6 +102,7 @@ public abstract class AbstractBloomIndexWriter extends IndexWriter {
 
   @Override
   public void onBlockletEnd(int blockletId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     writeBloomIndexFile();
     currentBlockletId++;
   }
@@ -126,14 +128,18 @@ public abstract class AbstractBloomIndexWriter extends IndexWriter {
       // or `RawBytesReadSupport.readRow` with actual data type
 
       // Carbon stores boolean as byte. Here we convert it for `getValueAsBytes`
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2757
       if (indexColumns.get(indexColIdx).getDataType().equals(DataTypes.BOOLEAN)) {
         value = BooleanConvert.boolean2Byte((Boolean)value);
       }
       indexValue = CarbonUtil.getValueAsBytes(indexColumns.get(indexColIdx).getDataType(), value);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       if (indexColumns.get(indexColIdx).getDataType() == DataTypes.DATE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2727
         indexValue = convertDictionaryValue(indexColIdx, value);
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
         indexValue = convertNonDictionaryValue(indexColIdx, value);
       }
     }
@@ -148,6 +154,7 @@ public abstract class AbstractBloomIndexWriter extends IndexWriter {
   protected abstract byte[] convertNonDictionaryValue(int indexColIdx, Object value);
 
   private void initIndexFile() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     if (!FileFactory.isFileExist(indexPath)) {
       FileFactory.touchDirectory(FileFactory.getCarbonFile(indexPath));
       if (!FileFactory.isFileExist(indexPath)) {
@@ -159,6 +166,7 @@ public abstract class AbstractBloomIndexWriter extends IndexWriter {
           indexColumns.get(indexColId).getColName());
       DataOutputStream dataOutStream = null;
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         FileFactory.createNewFile(dmFile);
         dataOutStream = FileFactory.getDataOutputStream(dmFile);
       } catch (IOException e) {

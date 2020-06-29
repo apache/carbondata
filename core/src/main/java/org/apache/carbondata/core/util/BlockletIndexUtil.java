@@ -70,8 +70,10 @@ public class BlockletIndexUtil {
 
   private static final Logger LOG =
       LogServiceFactory.getLogService(BlockletIndexUtil.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
   public static Set<TableBlockIndexUniqueIdentifier> getSegmentUniqueIdentifiers(Segment segment)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
       throws IOException {
     Set<TableBlockIndexUniqueIdentifier> set = new HashSet<>();
     set.add(new TableBlockIndexUniqueIdentifier(segment.getSegmentNo()));
@@ -81,6 +83,7 @@ public class BlockletIndexUtil {
   public static Map<String, BlockMetaInfo> getBlockMetaInfoMap(
       TableBlockIndexUniqueIdentifierWrapper identifierWrapper,
       SegmentIndexFileStore indexFileStore, Set<String> filesRead,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
       Map<String, BlockMetaInfo> fileNameToMetaInfoMapping, List<DataFileFooter> indexInfos)
       throws IOException {
     boolean isTransactionalTable = true;
@@ -91,6 +94,7 @@ public class BlockletIndexUtil {
         && indexFileStore.getFileData(identifier.getIndexFileName()) == null) {
       CarbonFile indexMergeFile = FileFactory.getCarbonFile(
           identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
               .getMergeIndexFileName(), identifierWrapper.getConfiguration());
       if (indexMergeFile.exists() && !filesRead.contains(indexMergeFile.getPath())) {
         indexFileStore.readAllIIndexOfSegment(new CarbonFile[] { indexMergeFile });
@@ -100,6 +104,7 @@ public class BlockletIndexUtil {
     if (indexFileStore.getFileData(identifier.getIndexFileName()) == null) {
       indexFileStore.readAllIIndexOfSegment(new CarbonFile[] { FileFactory.getCarbonFile(
           identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
               .getIndexFileName(), identifierWrapper.getConfiguration()) });
     }
     Map<String, BlockMetaInfo> blockMetaInfoMap = new HashMap<>();
@@ -109,15 +114,19 @@ public class BlockletIndexUtil {
       tableColumnList =
           carbonTable.getTableInfo().getFactTable().getListOfColumns();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     DataFileFooterConverter fileFooterConverter =
         new DataFileFooterConverter(identifierWrapper.getConfiguration());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2910
     List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(
         identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
             .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()),
         isTransactionalTable);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     indexInfos.addAll(indexInfo);
     for (DataFileFooter footer : indexInfo) {
       if ((!isTransactionalTable) && (tableColumnList.size() != 0) &&
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3287
           !isSameColumnAndDifferentDatatypeInSchema(footer.getColumnInTable(), tableColumnList)) {
         LOG.error("Datatype of the common columns present in " + identifier.getIndexFileName()
             + " doesn't match with the column's datatype in table schema");
@@ -129,7 +138,9 @@ public class BlockletIndexUtil {
         carbonTable.getTableInfo().getFactTable().setListOfColumns(footer.getColumnInTable());
         CarbonTable.updateTableByTableInfo(carbonTable, carbonTable.getTableInfo());
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       String blockPath = footer.getBlockInfo().getFilePath();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2817
       if (null == blockMetaInfoMap.get(blockPath)) {
         BlockMetaInfo blockMetaInfo = createBlockMetaInfo(
             fileNameToMetaInfoMapping, footer.getBlockInfo());
@@ -153,9 +164,11 @@ public class BlockletIndexUtil {
    * @throws IOException
    */
   public static Map<String, BlockMetaInfo> createCarbonDataFileBlockMetaInfoMapping(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
       String segmentFilePath, Configuration configuration) throws IOException {
     Map<String, BlockMetaInfo> fileNameToMetaInfoMapping = new TreeMap();
     CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFilePath, configuration);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3523
     if (carbonFile instanceof AbstractDFSCarbonFile && !(carbonFile instanceof S3CarbonFile)) {
       PathFilter pathFilter = new PathFilter() {
         @Override
@@ -168,6 +181,7 @@ public class BlockletIndexUtil {
         String[] location = file.getLocations();
         long len = file.getSize();
         BlockMetaInfo blockMetaInfo = new BlockMetaInfo(location, len);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2625
         fileNameToMetaInfoMapping.put(file.getPath(), blockMetaInfo);
       }
     }
@@ -175,6 +189,7 @@ public class BlockletIndexUtil {
   }
 
   private static BlockMetaInfo createBlockMetaInfo(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3523
       Map<String, BlockMetaInfo> fileNameToMetaInfoMapping, TableBlockInfo blockInfo)
       throws IOException {
     String carbonDataFile = blockInfo.getFilePath();
@@ -191,9 +206,11 @@ public class BlockletIndexUtil {
         if (!FileFactory.isFileExist(carbonDataFile)) {
           return null;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         CarbonFile carbonFile = FileFactory.getCarbonFile(carbonDataFile);
         return new BlockMetaInfo(new String[] { "localhost" }, carbonFile.getSize());
       default:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3659
         return fileNameToMetaInfoMapping.get(FileFactory.getFormattedPath(carbonDataFile));
     }
   }
@@ -203,6 +220,7 @@ public class BlockletIndexUtil {
     Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = new HashSet<>();
     Map<String, String> indexFiles = segment.getCommittedIndexFile();
     for (Map.Entry<String, String> indexFileEntry : indexFiles.entrySet()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3659
       String indexFile = indexFileEntry.getKey();
       tableBlockIndexUniqueIdentifiers.add(
           new TableBlockIndexUniqueIdentifier(FilenameUtils.getFullPathNoEndSeparator(indexFile),
@@ -220,6 +238,7 @@ public class BlockletIndexUtil {
    */
   public static TableBlockIndexUniqueIdentifier filterIdentifiersBasedOnDistributable(
       Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       BlockletIndexInputSplit distributable) {
     TableBlockIndexUniqueIdentifier validIdentifier = null;
     String fileName = CarbonTablePath.DataFileUtil.getFileName(distributable.getFilePath());
@@ -247,6 +266,7 @@ public class BlockletIndexUtil {
     List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers = new ArrayList<>();
     String mergeFilePath =
         identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3392
             .getIndexFileName();
     segmentIndexFileStore.readMergeFile(mergeFilePath);
     List<String> indexFiles =
@@ -265,6 +285,7 @@ public class BlockletIndexUtil {
   public static boolean isCacheLevelBlock(CarbonTable carbonTable) {
     String cacheLevel = carbonTable.getTableInfo().getFactTable().getTableProperties()
         .get(CarbonCommonConstants.CACHE_LEVEL);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     if (BlockletIndexFactory.CACHE_LEVEL_BLOCKLET.equals(cacheLevel)) {
       return false;
     }
@@ -276,9 +297,11 @@ public class BlockletIndexUtil {
    * name but with different dataType.
    */
   public static boolean isSameColumnAndDifferentDatatypeInSchema(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3356
       List<ColumnSchema> indexFileColumnList, List<ColumnSchema> tableColumnList)
       throws IOException {
     for (int i = 0; i < tableColumnList.size(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3287
       for (int j = 0; j < indexFileColumnList.size(); j++) {
         if (indexFileColumnList.get(j).getColumnName()
             .equalsIgnoreCase(tableColumnList.get(i).getColumnName()) && !indexFileColumnList.get(j)
@@ -308,6 +331,7 @@ public class BlockletIndexUtil {
    * Convert schema to binary
    */
   public static byte[] convertSchemaToBinary(List<ColumnSchema> columnSchemas) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2701
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutput dataOutput = new DataOutputStream(stream);
     dataOutput.writeShort(columnSchemas.size());
@@ -319,6 +343,7 @@ public class BlockletIndexUtil {
     }
     byte[] byteArray = stream.toByteArray();
     // Compress to reduce the size of schema
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     ByteBuffer byteBuffer =
         CompressorFactory.NativeSupportedCompressor.SNAPPY.getCompressor().compressByte(byteArray);
     return byteBuffer.array();
@@ -332,6 +357,7 @@ public class BlockletIndexUtil {
    */
   public static List<ColumnSchema> readColumnSchema(byte[] schemaArray) throws IOException {
     // uncompress it.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2930
     schemaArray = CompressorFactory.NativeSupportedCompressor.SNAPPY.getCompressor().unCompressByte(
         schemaArray);
     ByteArrayInputStream schemaStream = new ByteArrayInputStream(schemaArray);
@@ -355,6 +381,7 @@ public class BlockletIndexUtil {
    * @return
    */
   public static byte[][] getMinMaxForColumnsToBeCached(SegmentProperties segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
       List<CarbonColumn> minMaxCacheColumns, byte[][] minMaxValuesForAllColumns) {
     byte[][] minMaxValuesForColumnsToBeCached = minMaxValuesForAllColumns;
     if (null != minMaxCacheColumns) {
@@ -377,6 +404,7 @@ public class BlockletIndexUtil {
    * @return
    */
   public static boolean[] getMinMaxFlagValuesForColumnsToBeCached(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3036
       SegmentProperties segmentProperties, List<CarbonColumn> minMaxCacheColumns,
       boolean[] minMaxFlag) {
     boolean[] minMaxFlagValuesForColumnsToBeCached = minMaxFlag;
@@ -418,6 +446,7 @@ public class BlockletIndexUtil {
    * @return
    */
   public static boolean useMinMaxForBlockletPruning(FilterResolverIntf filterResolverTree,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
       List<CarbonColumn> minMaxCacheColumns) {
     boolean serializeMinMax = false;
     if (null != minMaxCacheColumns) {
@@ -482,6 +511,7 @@ public class BlockletIndexUtil {
    */
   public static void updateMinMaxFlag(BlockletMinMaxIndex minMaxIndex, boolean[] minMaxFlag) {
     boolean[] isMinMaxSet = minMaxIndex.getIsMinMaxSet();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     if (null != isMinMaxSet) {
       for (int i = 0; i < minMaxFlag.length; i++) {
         if (!isMinMaxSet[i]) {
@@ -498,6 +528,7 @@ public class BlockletIndexUtil {
    * @return
    */
   public static boolean loadIndexesParallel(CarbonTable carbonTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     String parentTableName = carbonTable.getParentTableName();
     String tableName;
     String dbName;
@@ -510,6 +541,7 @@ public class BlockletIndexUtil {
       tableName = carbonTable.getTableName();
     }
     dbName = carbonTable.getDatabaseName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return CarbonProperties.getInstance().isIndexParallelLoadingEnabled(dbName, tableName);
   }
 }

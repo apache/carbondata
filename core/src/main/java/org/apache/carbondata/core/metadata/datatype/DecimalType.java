@@ -23,6 +23,8 @@ public class DecimalType extends DataType {
   private int scale;
 
   // create a decimal type object with specified precision and scale
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3081
   DecimalType(int precision, int scale) {
     super(DataTypes.DECIMAL_TYPE_ID, 8, "DECIMAL", -1);
     this.precision = precision;
@@ -31,12 +33,14 @@ public class DecimalType extends DataType {
 
   @Override
   public boolean equals(Object obj) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     if (this == obj) {
       return true;
     }
     if (obj == null) {
       return false;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2493
     if (getClass() != obj.getClass()) {
       return false;
     }
@@ -58,6 +62,7 @@ public class DecimalType extends DataType {
     final int prime = 31;
     int result = 1;
     result = prime * result + getName().hashCode();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2493
     result = prime * result + getPrecision();
     result = prime * result + getScale();
     return result;

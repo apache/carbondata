@@ -87,10 +87,12 @@ public class SegmentStatusManager {
 
   public SegmentStatusManager(AbsoluteTableIdentifier identifier) {
     this.identifier = identifier;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     configuration = FileFactory.getConfiguration();
   }
 
   public SegmentStatusManager(AbsoluteTableIdentifier identifier, Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     this.identifier = identifier;
     this.configuration = configuration;
   }
@@ -101,6 +103,7 @@ public class SegmentStatusManager {
    * @return
    */
   public ICarbonLock getTableStatusLock() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     return CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
   }
 
@@ -109,7 +112,9 @@ public class SegmentStatusManager {
    */
   public static long getTableStatusLastModifiedTime(AbsoluteTableIdentifier identifier)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     String tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     if (!FileFactory.isFileExist(tableStatusPath)) {
       return 0L;
     } else {
@@ -119,6 +124,7 @@ public class SegmentStatusManager {
   }
 
   public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3456
     return getValidAndInvalidSegments(false, null, null);
   }
 
@@ -143,11 +149,13 @@ public class SegmentStatusManager {
 
     try {
       if (loadMetadataDetails == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
         loadMetadataDetails = readTableStatusFile(
             CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()));
       }
 
       if (readCommittedScope == null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
         readCommittedScope = new TableStatusReadCommittedScope(identifier, loadMetadataDetails,
             configuration);
       }
@@ -161,6 +169,7 @@ public class SegmentStatusManager {
           // check for merged loads.
           if (null != segment.getMergedLoadName()) {
             Segment seg = new Segment(segment.getMergedLoadName(), segment.getSegmentFile(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2386
                 readCommittedScope, segment);
             if (!listOfValidSegments.contains(seg)) {
               listOfValidSegments.add(seg);
@@ -174,6 +183,7 @@ public class SegmentStatusManager {
 
           if (SegmentStatus.MARKED_FOR_UPDATE == segment.getSegmentStatus()) {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2361
             listOfValidUpdatedSegments.add(
                 new Segment(segment.getLoadName(), segment.getSegmentFile(), readCommittedScope));
           }
@@ -186,6 +196,7 @@ public class SegmentStatusManager {
           // In case of child table, during loading, if no record is loaded to the segment, then
           // segmentStatus will be marked as 'Success'. During query, don't need to add that segment
           // to validSegment list, as segment does not exists
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3456
           if (isChildTable) {
             if (!segment.getDataSize().equalsIgnoreCase("0") && !segment.getIndexSize()
                 .equalsIgnoreCase("0")) {
@@ -195,6 +206,7 @@ public class SegmentStatusManager {
             }
           } else {
             listOfValidSegments.add(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2386
                 new Segment(segment.getLoadName(), segment.getSegmentFile(), readCommittedScope,
                     segment));
           }
@@ -213,6 +225,7 @@ public class SegmentStatusManager {
       throw e;
     }
     return new ValidAndInvalidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
         listOfInvalidSegments, listOfStreamSegments, listOfInProgressSegments);
   }
 
@@ -224,6 +237,7 @@ public class SegmentStatusManager {
    */
   public static LoadMetadataDetails[] readLoadMetadata(String metadataFolderPath) {
     String metadataFileName = metadataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2204
         + CarbonTablePath.TABLE_STATUS_FILE;
     try {
       return readTableStatusFile(metadataFileName);
@@ -239,6 +253,7 @@ public class SegmentStatusManager {
    * @return list of valid segment id's
    */
   public static List<String> getValidSegmentList(RelationIdentifier relationIdentifier)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       throws IOException {
     List<String> segmentList = new ArrayList<>();
     List<Segment> validSegments = new SegmentStatusManager(AbsoluteTableIdentifier
@@ -273,6 +288,7 @@ public class SegmentStatusManager {
    * @return
    */
   public static LoadMetadataDetails[] readLoadHistoryMetadata(String metadataFolderPath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2258
     String metadataFileName = metadataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonTablePath.TABLE_STATUS_HISTORY_FILE;
     try {
@@ -296,8 +312,12 @@ public class SegmentStatusManager {
 
     AtomicFileOperations fileOperation =
         AtomicFileOperationFactory.getAtomicFileOperations(tableStatusPath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2745
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     if (!FileFactory.isFileExist(tableStatusPath)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3582
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3582
       return null;
     }
 
@@ -305,11 +325,13 @@ public class SegmentStatusManager {
       dataInputStream = fileOperation.openForRead();
       inStream = new InputStreamReader(dataInputStream, Charset.forName(DEFAULT_CHARSET));
       buffReader = new BufferedReader(inStream);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3582
       return buffReader.readLine();
     } catch (EOFException ex) {
       throw ex;
     } catch (IOException e) {
       LOG.error("Failed to read table status file", e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2204
       throw e;
     } finally {
       closeStreams(buffReader, inStream, dataInputStream);
@@ -366,6 +388,7 @@ public class SegmentStatusManager {
    */
   private static int getMaxSegmentId(LoadMetadataDetails[] loadMetadataDetails) {
     int newSegmentId = -1;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1319
     for (int i = 0; i < loadMetadataDetails.length; i++) {
       try {
         int loadCount = Integer.parseInt(loadMetadataDetails[i].getLoadName());
@@ -388,6 +411,7 @@ public class SegmentStatusManager {
         }
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2302
     return newSegmentId;
   }
 
@@ -426,6 +450,7 @@ public class SegmentStatusManager {
       List<String> loadIds, String tableFolderPath) throws Exception {
     CarbonTableIdentifier carbonTableIdentifier = identifier.getCarbonTableIdentifier();
     ICarbonLock carbonDeleteSegmentLock =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
         CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.DELETE_SEGMENT_LOCK);
     ICarbonLock carbonTableStatusLock =
         CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
@@ -436,8 +461,10 @@ public class SegmentStatusManager {
       if (carbonDeleteSegmentLock.lockWithRetries()) {
         LOG.info("Delete segment lock has been successfully acquired");
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
         String dataLoadLocation = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
         LoadMetadataDetails[] listOfLoadFolderDetailsArray = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         if (!FileFactory.isFileExist(dataLoadLocation)) {
           // log error.
           LOG.error("Load metadata file is not present.");
@@ -445,7 +472,9 @@ public class SegmentStatusManager {
         }
         // read existing metadata details in load metadata.
         listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
         if (listOfLoadFolderDetailsArray.length != 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2061
           updateDeletionStatus(identifier, loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
           if (invalidLoadIds.isEmpty()) {
             // All or None , if anything fails then don't write
@@ -504,6 +533,7 @@ public class SegmentStatusManager {
       String loadDate, String tableFolderPath, Long loadStartTime) throws Exception {
     CarbonTableIdentifier carbonTableIdentifier = identifier.getCarbonTableIdentifier();
     ICarbonLock carbonDeleteSegmentLock =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
         CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.DELETE_SEGMENT_LOCK);
     ICarbonLock carbonTableStatusLock =
         CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
@@ -514,9 +544,11 @@ public class SegmentStatusManager {
       if (carbonDeleteSegmentLock.lockWithRetries()) {
         LOG.info("Delete segment lock has been successfully acquired");
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
         String dataLoadLocation = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
         LoadMetadataDetails[] listOfLoadFolderDetailsArray = null;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         if (!FileFactory.isFileExist(dataLoadLocation)) {
           // Table status file is not present, maybe table is empty, ignore this operation
           LOG.warn("Trying to update table metadata file which is not present.");
@@ -524,7 +556,9 @@ public class SegmentStatusManager {
         }
         // read existing metadata details in load metadata.
         listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
         if (listOfLoadFolderDetailsArray.length != 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2061
           updateDeletionStatus(identifier, loadDate, listOfLoadFolderDetailsArray,
               invalidLoadTimestamps, loadStartTime);
           if (invalidLoadTimestamps.isEmpty()) {
@@ -565,6 +599,8 @@ public class SegmentStatusManager {
       }
     } catch (IOException e) {
       LOG.error("Error message: " + "IOException" + e.getMessage(), e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-881
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-881
       throw e;
     } finally {
       CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
@@ -580,6 +616,7 @@ public class SegmentStatusManager {
    * @param tableStatusPath table status file path
    */
   private static void backupTableStatus(String tableStatusPath) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3582
     CarbonFile file = FileFactory.getCarbonFile(tableStatusPath);
     if (file.exists()) {
       String backupPath = tableStatusPath + ".backup";
@@ -611,11 +648,13 @@ public class SegmentStatusManager {
     String content = new Gson().toJson(listOfLoadFolderDetailsArray);
     mockForTest();
     // make the table status file smaller by removing fields that are default value
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3578
     for (LoadMetadataDetails loadMetadataDetails : listOfLoadFolderDetailsArray) {
       loadMetadataDetails.removeUnnecessaryField();
     }
     // If process crashed during following write, table status file need to be
     // manually recovered.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3744
     writeStringIntoFile(FileFactory.getUpdatedFilePath(tableStatusPath), content);
   }
 
@@ -641,7 +680,9 @@ public class SegmentStatusManager {
       brWriter.write(content);
     } catch (IOException ioe) {
       LOG.error("Write file failed: " + ioe.getLocalizedMessage());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2749
       fileWrite.setFailed();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-881
       throw ioe;
     } finally {
       CarbonUtil.closeStreams(brWriter);
@@ -658,8 +699,10 @@ public class SegmentStatusManager {
    * @return invalidLoadIds
    */
   private static List<String> updateDeletionStatus(AbsoluteTableIdentifier absoluteTableIdentifier,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2061
       List<String> loadIds, LoadMetadataDetails[] listOfLoadFolderDetailsArray,
       List<String> invalidLoadIds) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1999
     SegmentStatus segmentStatus = null;
     for (String loadId : loadIds) {
       boolean loadFound = false;
@@ -669,6 +712,7 @@ public class SegmentStatusManager {
       for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
 
         if (loadId.equalsIgnoreCase(loadMetadata.getLoadName())) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1999
           segmentStatus = loadMetadata.getSegmentStatus();
           if (SegmentStatus.COMPACTED == segmentStatus) {
             // if the segment is compacted then no need to delete that.
@@ -676,6 +720,7 @@ public class SegmentStatusManager {
             invalidLoadIds.add(loadId);
             return invalidLoadIds;
           } else if (SegmentStatus.INSERT_IN_PROGRESS == segmentStatus
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2104
               && isLoadInProgress(absoluteTableIdentifier, loadId)) {
             // if the segment status is in progress then no need to delete that.
             LOG.error("Cannot delete the segment " + loadId + " which is load in progress");
@@ -739,7 +784,9 @@ public class SegmentStatusManager {
         } else if (SegmentStatus.STREAMING == segmentStatus) {
           LOG.info("Ignoring the segment : " + loadMetadata.getLoadName()
               + "as the segment is streaming in progress.");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2104
         } else if (SegmentStatus.INSERT_IN_PROGRESS == segmentStatus && isLoadInProgress(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2061
             absoluteTableIdentifier, loadMetadata.getLoadName())) {
           LOG.info("Ignoring the segment : " + loadMetadata.getLoadName()
               + "as the segment is insert in progress.");
@@ -797,6 +844,7 @@ public class SegmentStatusManager {
     List<LoadMetadataDetails> newListMetadata =
         new ArrayList<LoadMetadataDetails>(Arrays.asList(newMetadata));
     for (LoadMetadataDetails oldSegment : oldMetadata) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
       if (SegmentStatus.MARKED_FOR_DELETE == oldSegment.getSegmentStatus()) {
         updateSegmentMetadataDetails(newListMetadata.get(newListMetadata.indexOf(oldSegment)));
       }
@@ -811,6 +859,7 @@ public class SegmentStatusManager {
    */
   private static void updateSegmentMetadataDetails(LoadMetadataDetails loadMetadata) {
     // update status only if the segment is not marked for delete
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1693
     if (SegmentStatus.MARKED_FOR_DELETE != loadMetadata.getSegmentStatus()) {
       loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
       loadMetadata.setModificationOrdeletionTimesStamp(CarbonUpdateUtil.readCurrentTime());
@@ -845,6 +894,7 @@ public class SegmentStatusManager {
     private final List<Segment> listOfInProgressSegments;
 
     private ValidAndInvalidSegmentsInfo(List<Segment> listOfValidSegments,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2187
         List<Segment> listOfValidUpdatedSegments, List<Segment> listOfInvalidUpdatedSegments,
         List<Segment> listOfStreamSegments, List<Segment> listOfInProgressSegments) {
       this.listOfValidSegments = listOfValidSegments;
@@ -875,6 +925,7 @@ public class SegmentStatusManager {
    * Return true if any load or insert overwrite is in progress for specified table
    */
   public static Boolean isLoadInProgressInTable(CarbonTable carbonTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2104
     if (carbonTable == null) {
       return false;
     }
@@ -902,6 +953,7 @@ public class SegmentStatusManager {
    * @return
    */
   public static Boolean isCompactionInProgress(CarbonTable carbonTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2771
     if (carbonTable == null) {
       return false;
     }
@@ -920,10 +972,13 @@ public class SegmentStatusManager {
    * Return true if insert overwrite is in progress for specified table
    */
   public static Boolean isOverwriteInProgressInTable(CarbonTable carbonTable) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2104
     if (carbonTable == null) {
       return false;
     }
     boolean loadInProgress = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2025
     String metaPath = carbonTable.getMetadataPath();
     LoadMetadataDetails[] listOfLoadFolderDetailsArray =
         SegmentStatusManager.readLoadMetadata(metaPath);
@@ -998,18 +1053,23 @@ public class SegmentStatusManager {
 
     AtomicFileOperations writeOperation =
         AtomicFileOperationFactory.getAtomicFileOperations(dataLoadLocation);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2745
 
     try {
 
       dataOutputStream = writeOperation.openForWrite(FileWriteOperation.OVERWRITE);
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
           Charset.forName(DEFAULT_CHARSET)));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3571
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3571
 
       // make the table status file smaller by removing fields that are default value
       listOfLoadFolderDetails.forEach(LoadMetadataDetails::removeUnnecessaryField);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3578
 
       String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetails.toArray());
       brWriter.write(metadataInstance);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2749
     } catch (IOException ie) {
       LOG.error("Error message: " + ie.getLocalizedMessage());
       writeOperation.setFailed();
@@ -1038,6 +1098,7 @@ public class SegmentStatusManager {
   }
 
   private static ReturnTuple isUpdationRequired(boolean isForceDeletion, CarbonTable carbonTable,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3394
       AbsoluteTableIdentifier absoluteTableIdentifier, LoadMetadataDetails[] details) {
     // Delete marked loads
     boolean isUpdationRequired = DeleteLoadFolders
@@ -1051,10 +1112,13 @@ public class SegmentStatusManager {
     LoadMetadataDetails[] metadataDetails =
         SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
     // delete the expired segment lock files
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2230
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2298
     CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable);
     if (isLoadDeletionRequired(metadataDetails)) {
       AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
       boolean updationCompletionStatus = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2854
       LoadMetadataDetails[] newAddedLoadHistoryList = null;
       ReturnTuple tuple =
           isUpdationRequired(isForceDeletion, carbonTable, identifier, metadataDetails);
@@ -1068,6 +1132,7 @@ public class SegmentStatusManager {
           if (locked) {
             LOG.info("Table status lock has been successfully acquired.");
             // Again read status and check to verify updation required or not.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3394
             LoadMetadataDetails[] details =
                 SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
             ReturnTuple tuple2 =
@@ -1080,9 +1145,11 @@ public class SegmentStatusManager {
                 SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
 
             int invisibleSegmentPreserveCnt =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2258
                 CarbonProperties.getInstance().getInvisibleSegmentPreserveCount();
             int maxSegmentId = SegmentStatusManager.getMaxSegmentId(tuple2.details);
             int invisibleSegmentCnt = SegmentStatusManager.countInvisibleSegments(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2302
                 tuple2.details, maxSegmentId);
             // if execute command 'clean files' or the number of invisible segment info
             // exceeds the value of 'carbon.invisible.segments.preserve.count',
@@ -1101,15 +1168,18 @@ public class SegmentStatusManager {
                   CarbonTablePath.getTableStatusHistoryFilePath(carbonTable.getTablePath()),
                   newLoadHistoryList);
               // the segments which will be moved to history file need to be deleted
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2302
               newAddedLoadHistoryList = tableStatusReturn.arrayOfLoadHistoryDetails;
             } else {
               // update the metadata details from old to new status.
               List<LoadMetadataDetails> latestStatus =
                   updateLoadMetadataFromOldToNew(tuple2.details, latestMetadata);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3582
               writeLoadDetailsIntoFile(
                   CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()),
                   latestStatus.toArray(new LoadMetadataDetails[0]));
             }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2854
             updationCompletionStatus = true;
           } else {
             String dbName = identifier.getCarbonTableIdentifier().getDatabaseName();
@@ -1126,6 +1196,7 @@ public class SegmentStatusManager {
             CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
           }
           if (updationCompletionStatus) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
             DeleteLoadFolders
                 .physicalFactAndMeasureMetadataDeletion(carbonTable, newAddedLoadHistoryList,
                     isForceDeletion, partitionSpecs);
@@ -1136,6 +1207,7 @@ public class SegmentStatusManager {
   }
 
   public static void truncateTable(CarbonTable carbonTable)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
       throws ConcurrentOperationException, IOException {
     ICarbonLock carbonTableStatusLock = CarbonLockFactory.getCarbonLockObj(
         carbonTable.getAbsoluteTableIdentifier(), LockUsage.TABLE_STATUS_LOCK);
@@ -1191,8 +1263,10 @@ public class SegmentStatusManager {
    * Get the number of invisible segment info from segment info list.
    */
   public static int countInvisibleSegments(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2302
       LoadMetadataDetails[] segmentList, int maxSegmentId) {
     int invisibleSegmentCnt = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2258
     if (segmentList.length != 0) {
       for (LoadMetadataDetails eachSeg : segmentList) {
         // can not remove segment 0, there are some info will be used later
@@ -1238,6 +1312,7 @@ public class SegmentStatusManager {
       LoadMetadataDetails newSegment = newList[i];
       if (i < oldSegmentsLength) {
         LoadMetadataDetails oldSegment = oldList[i];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2302
         if (newSegment.getLoadName().equalsIgnoreCase("0")
             || newSegment.getLoadName().equalsIgnoreCase(String.valueOf(maxSegmentId))) {
           newSegment.setVisibility(oldSegment.getVisibility());
@@ -1285,6 +1360,8 @@ public class SegmentStatusManager {
    * This method reads the load metadata file and returns Carbon segments only
    */
   public static LoadMetadataDetails[] readCarbonMetaData(String metadataFolderPath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1586
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     String metadataFileName = metadataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonTablePath.TABLE_STATUS_FILE;
     try {

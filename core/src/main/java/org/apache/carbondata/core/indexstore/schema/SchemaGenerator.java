@@ -60,6 +60,7 @@ public class SchemaGenerator {
     // written in the metadata or not.
     addMinMaxFlagSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
     CarbonRowSchema[] schema = indexSchemas.toArray(new CarbonRowSchema[indexSchemas.size()]);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     updateBytePosition(schema);
     return schema;
   }
@@ -138,6 +139,8 @@ public class SchemaGenerator {
    * @return
    */
   public static CarbonRowSchema[] createBlockletSchema(SegmentProperties segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
       List<CarbonColumn> minMaxCacheColumns) {
     List<CarbonRowSchema> indexSchemas = new ArrayList<>();
     // get MinMax Schema
@@ -158,6 +161,8 @@ public class SchemaGenerator {
     indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));
     // for storing min max flag for each column which reflects whether min max for a column is
     // written in the metadata or not.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3036
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3036
     addMinMaxFlagSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
     //for blocklet info
     indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
@@ -178,21 +183,25 @@ public class SchemaGenerator {
    * @param segmentProperties
    */
   public static CarbonRowSchema[] createTaskSummarySchema(SegmentProperties segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
       List<CarbonColumn> minMaxCacheColumns,
       boolean storeBlockletCount, boolean filePathToBeStored) {
     List<CarbonRowSchema> taskMinMaxSchemas = new ArrayList<>();
     // for number of rows.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3293
     taskMinMaxSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));
     // get MinMax Schema
     getMinMaxSchema(segmentProperties, taskMinMaxSchemas, minMaxCacheColumns);
     // for storing file name
     taskMinMaxSchemas
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2701
         .add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
     // for storing segmentId
     taskMinMaxSchemas
         .add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
     // for storing min max flag for each column which reflects whether min max for a column is
     // written in the metadata or not.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3036
     addMinMaxFlagSchema(segmentProperties, taskMinMaxSchemas, minMaxCacheColumns);
     // store path only in case of partition table or non transactional table
     if (filePathToBeStored) {
@@ -208,6 +217,8 @@ public class SchemaGenerator {
     }
     CarbonRowSchema[] schema =
         taskMinMaxSchemas.toArray(new CarbonRowSchema[taskMinMaxSchemas.size()]);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
     updateBytePosition(schema);
     return schema;
   }
@@ -219,6 +230,7 @@ public class SchemaGenerator {
    * @param minMaxSchemas
    */
   private static void getMinMaxSchema(SegmentProperties segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
       List<CarbonRowSchema> minMaxSchemas, List<CarbonColumn> minMaxCacheColumns) {
     // Index key
     int[] minMaxLen = getMinMaxLength(segmentProperties, minMaxCacheColumns);
@@ -255,6 +267,7 @@ public class SchemaGenerator {
    * @param minMaxCacheColumns
    */
   private static void addMinMaxFlagSchema(SegmentProperties segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3036
       List<CarbonRowSchema> indexSchemas, List<CarbonColumn> minMaxCacheColumns) {
     int minMaxFlagLength = segmentProperties.getNumberOfColumns();
     if (null != minMaxCacheColumns) {
@@ -279,12 +292,14 @@ public class SchemaGenerator {
    * @return
    */
   private static int[] getMinMaxLength(SegmentProperties segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
       List<CarbonColumn> minMaxCacheColumns) {
     int[] minMaxLen = null;
     if (null != minMaxCacheColumns) {
       minMaxLen = new int[minMaxCacheColumns.size()];
       int counter = 0;
       for (CarbonColumn column : minMaxCacheColumns) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         minMaxLen[counter++] = segmentProperties.createColumnValueLength()[BlockletIndexUtil
             .getColumnOrdinal(segmentProperties, column)];
       }
@@ -309,11 +324,13 @@ public class SchemaGenerator {
       int counter = 0;
       for (CarbonColumn column : minMaxCacheColumns) {
         columnOrdinalsTOAccess[counter++] =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
             BlockletIndexUtil.getColumnOrdinal(segmentProperties, column);
       }
     } else {
       // when columns to cache is not specified then column access order will be same as the array
       // index of min max length
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       columnOrdinalsTOAccess = new int[segmentProperties.getNumberOfColumns()];
       for (int i = 0; i < columnOrdinalsTOAccess.length; i++) {
         columnOrdinalsTOAccess[i] = i;

@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 public interface ColumnPageStatsCollector {
 
   void updateNull(int rowId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1098
 
   void update(byte value);
 
@@ -34,6 +35,7 @@ public interface ColumnPageStatsCollector {
   void update(double value);
 
   void update(float value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
 
   void update(BigDecimal value);
 
@@ -42,5 +44,6 @@ public interface ColumnPageStatsCollector {
   /**
    * return the collected statistics
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
   SimpleStatsResult getPageStats();
 }

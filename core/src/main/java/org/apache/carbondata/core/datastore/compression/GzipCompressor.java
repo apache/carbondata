@@ -36,6 +36,7 @@ public class GzipCompressor extends AbstractCompressor {
   }
 
   private byte[] compressData(byte[] data) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     return compressData(data, 0, data.length);
   }
 
@@ -112,6 +113,7 @@ public class GzipCompressor extends AbstractCompressor {
 
   @Override
   public ByteBuffer compressByte(ByteBuffer compInput) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     if (compInput.isDirect()) {
       return ByteBuffer.wrap(compressData(compInput));
     } else {

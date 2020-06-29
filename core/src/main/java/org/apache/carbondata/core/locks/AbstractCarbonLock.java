@@ -39,6 +39,7 @@ public abstract class AbstractCarbonLock implements ICarbonLock {
 
   @Override
   public String getLockFilePath() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2919
     return this.lockFilePath;
   }
 
@@ -64,6 +65,7 @@ public abstract class AbstractCarbonLock implements ICarbonLock {
    * API for enabling the locking of file with retries.
    */
   public boolean lockWithRetries(int retries, int retryInterval) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1928
     retryCount = retries;
     retryTimeout = retryInterval;
     return lockWithRetries();
@@ -94,6 +96,7 @@ public abstract class AbstractCarbonLock implements ICarbonLock {
 
   public boolean releaseLockManually(String lockFile) {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       return FileFactory.deleteFile(lockFile);
     } catch (Exception e) {
       return false;

@@ -124,6 +124,7 @@ public class CarbonInternalLoaderUtil {
           updatedLoadMetadataDetails.addAll(newLoadMetadataDetails);
         }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         List<String> indexTables = CarbonIndexUtil.getSecondaryIndexes(carbonTable);
         if (!indexTables.isEmpty()) {
           List<LoadMetadataDetails> newSegmentDetailsListForIndexTable =
@@ -134,6 +135,7 @@ public class CarbonInternalLoaderUtil {
             newSegmentDetailsListForIndexTable.add(newSegmentDetailsObject);
           }
           for (CarbonTable indexTable : indexCarbonTables) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
             List<LoadMetadataDetails> indexTableDetailsList = CarbonIndexUtil
                 .getTableStatusDetailsForIndexTable(updatedLoadMetadataDetails, indexTable,
                     newSegmentDetailsListForIndexTable);

@@ -53,6 +53,8 @@ public final class ProxyRecoverableSerializer
     final ByteBuffer byteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
     serializeString(byteBuffer, proxyRecoverable.getWriterType());
     serializeConfiguration(byteBuffer, proxyRecoverable.getWriterConfiguration());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     serializeString(byteBuffer, proxyRecoverable.getWriterIdentifier());
     serializeString(byteBuffer, proxyRecoverable.getWritePath());
     final byte[] bytes = new byte[byteBuffer.position()];
@@ -114,6 +116,8 @@ public final class ProxyRecoverableSerializer
     final String writerType = deserializeString(byteBuffer);
     final ProxyFileWriterFactory.Configuration writerConfiguration =
         deserializeConfiguration(byteBuffer);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     final String writerIdentifier = deserializeString(byteBuffer);
     final String writePath = deserializeString(byteBuffer);
     return new ProxyRecoverable(writerType, writerConfiguration, writerIdentifier, writePath);

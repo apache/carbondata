@@ -47,6 +47,7 @@ public class CarbonDataWriterException extends RuntimeException {
    * @param t exception.
    */
   public CarbonDataWriterException(Throwable t) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1410
     super(t);
   }
 

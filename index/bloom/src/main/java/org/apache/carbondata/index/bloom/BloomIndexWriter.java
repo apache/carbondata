@@ -38,6 +38,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 @InterfaceAudience.Internal
 public class BloomIndexWriter extends AbstractBloomIndexWriter {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
   BloomIndexWriter(String tablePath, String indexName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName, int bloomFilterSize, double bloomFilterFpp,
       boolean compressBloom)
@@ -48,6 +49,7 @@ public class BloomIndexWriter extends AbstractBloomIndexWriter {
 
   protected byte[] convertNonDictionaryValue(int indexColIdx, Object value) {
     if (DataTypes.VARCHAR == indexColumns.get(indexColIdx).getDataType()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       return DataConvertUtil.getRawBytesForVarchar((byte[]) value);
     } else if (DataTypeUtil.isPrimitiveColumn(indexColumns.get(indexColIdx).getDataType())) {
       // get bytes for the original value of the no dictionary column
@@ -63,6 +65,7 @@ public class BloomIndexWriter extends AbstractBloomIndexWriter {
 
     // for dict columns including dictionary and date columns decode value to get the surrogate key
     int surrogateKey = CarbonUtil.getSurrogateInternal((byte[]) value, 0,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
         ByteUtil.dateBytesSize());
     // store the dictionary key in bloom
     return CarbonUtil.getValueAsBytes(DataTypes.INT, surrogateKey);

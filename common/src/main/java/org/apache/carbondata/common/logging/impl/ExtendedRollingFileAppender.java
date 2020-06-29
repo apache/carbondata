@@ -74,6 +74,7 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
         }
       });
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
       if (null == files) {
         return;
       }
@@ -195,6 +196,7 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
     }
 
     // Do clean up finally
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     if (!cleanupInProgress) {
       cleanUpLogs(startName, folderPath);
     }

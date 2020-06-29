@@ -23,20 +23,26 @@ import java.nio.ByteBuffer;
 public interface Compressor {
 
   String getName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
 
   ByteBuffer compressByte(ByteBuffer compInput);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
 
   ByteBuffer compressByte(byte[] unCompInput);
 
   byte[] compressByte(byte[] unCompInput, int byteSize);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
 
   byte[] unCompressByte(byte[] compInput);
 
   byte[] unCompressByte(byte[] compInput, int offset, int length);
 
   ByteBuffer compressShort(short[] unCompInput);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
 
   short[] unCompressShort(byte[] compInput, int offset, int length);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
 
   ByteBuffer compressInt(int[] unCompInput);
 
@@ -57,8 +63,11 @@ public interface Compressor {
   long rawCompress(long inputAddress, int inputSize, long outputAddress) throws IOException;
 
   long rawUncompress(byte[] input, byte[] output) throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
 
   long maxCompressedLength(long inputSize);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
 
   /**
    * Whether this compressor support zero-copy during compression.

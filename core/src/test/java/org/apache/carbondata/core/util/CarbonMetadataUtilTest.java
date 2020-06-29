@@ -111,6 +111,7 @@ public class CarbonMetadataUtilTest {
     meta.setMinValue(objMinArr);
     meta.setMaxValue(objMaxArr);
     meta.setType(org.apache.carbondata.core.metadata.datatype.DataType.DOUBLE_MEASURE_CHAR);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1537
 
     List<Encoding> encoders = new ArrayList<>();
     encoders.add(Encoding.INVERTED_INDEX);
@@ -149,6 +150,7 @@ public class CarbonMetadataUtilTest {
   @Test public void testGetIndexHeader() {
     SegmentInfo segmentInfo = new SegmentInfo();
     segmentInfo.setNum_cols(0);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(new int[0]));
     IndexHeader indexHeader = new IndexHeader();
     indexHeader.setVersion(3);
@@ -171,6 +173,7 @@ public class CarbonMetadataUtilTest {
     List<ByteBuffer> maxList = new ArrayList<>();
     maxList.add(ByteBuffer.wrap(byteArr1));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     List<Boolean> isMinMaxSet = new ArrayList<>();
     isMinMaxSet.add(true);
 

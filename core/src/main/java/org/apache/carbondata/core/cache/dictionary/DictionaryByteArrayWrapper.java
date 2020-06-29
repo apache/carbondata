@@ -93,6 +93,8 @@ public class DictionaryByteArrayWrapper {
   }
 
   public byte[] getData() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     return data;
   }
 }

@@ -165,6 +165,7 @@ public class CarbonInputSplit extends FileSplit
    * @throws IOException
    */
   public CarbonInputSplit(int serializeLen, DataInput in, String filePath, String[] allLocation,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
       String blockletId) throws IOException {
     this.filePath = filePath;
     this.blockletId = blockletId;
@@ -189,6 +190,7 @@ public class CarbonInputSplit extends FileSplit
     this.version = ColumnarFormatVersion.valueOf(in.readShort());
     // will be removed after count(*) optmization in case of index server
     this.rowCount = in.readInt();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3460
     if (in.readBoolean()) {
       int numberOfDeleteDeltaFiles = in.readInt();
       deleteDeltaFiles = new String[numberOfDeleteDeltaFiles];
@@ -216,6 +218,7 @@ public class CarbonInputSplit extends FileSplit
 
   private CarbonInputSplit(String segmentId, String blockletId, String filePath, long start,
       long length, ColumnarFormatVersion version, String[] deleteDeltaFiles,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       String indexWritePath) {
     this.filePath = filePath;
     this.start = start;
@@ -232,6 +235,7 @@ public class CarbonInputSplit extends FileSplit
     this.blockletId = blockletId;
     this.version = version;
     this.deleteDeltaFiles = deleteDeltaFiles;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.indexWritePath = indexWritePath;
   }
 
@@ -286,6 +290,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public static CarbonInputSplit from(String segmentId, String blockletId, String path, long start,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       long length, ColumnarFormatVersion version, String indexWritePath) {
     return new CarbonInputSplit(segmentId, blockletId, path, start, length, version, null,
         indexWritePath);
@@ -296,10 +301,12 @@ public class CarbonInputSplit extends FileSplit
     for (CarbonInputSplit split : splitList) {
       try {
         TableBlockInfo blockInfo =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
             new TableBlockInfo(split.getFilePath(), split.getStart(),
                 split.getSegment().toString(), split.getLocations(), split.getLength(),
                 split.getVersion(), split.getDeleteDeltaFiles());
         blockInfo.setDetailInfo(split.getDetailInfo());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         blockInfo.setIndexWriterPath(split.indexWritePath);
         if (split.getDetailInfo() != null) {
           blockInfo.setBlockOffset(split.getDetailInfo().getBlockFooterOffset());
@@ -315,6 +322,7 @@ public class CarbonInputSplit extends FileSplit
   public static TableBlockInfo getTableBlockInfo(CarbonInputSplit inputSplit) {
     try {
       TableBlockInfo blockInfo =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
           new TableBlockInfo(inputSplit.getFilePath(),
               inputSplit.getStart(), inputSplit.getSegment().toString(), inputSplit.getLocations(),
               inputSplit.getLength(), inputSplit.getVersion(),
@@ -330,6 +338,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public String getSegmentId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     derserializeField();
     if (segment != null) {
       return segment.getSegmentNo();
@@ -339,6 +348,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public Segment getSegment() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     derserializeField();
     return segment;
   }
@@ -354,8 +364,10 @@ public class CarbonInputSplit extends FileSplit
       this.length = in.readLong();
       this.version = ColumnarFormatVersion.valueOf(in.readShort());
       this.rowCount = in.readInt();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3460
       if (in.readBoolean()) {
         int numberOfDeleteDeltaFiles = in.readInt();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3440
         deleteDeltaFiles = new String[numberOfDeleteDeltaFiles];
         for (int i = 0; i < numberOfDeleteDeltaFiles; i++) {
           deleteDeltaFiles[i] = in.readUTF();
@@ -371,6 +383,7 @@ public class CarbonInputSplit extends FileSplit
       detailInfo.readFields(in);
     }
     boolean indexWriterPathExists = in.readBoolean();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     if (indexWriterPathExists) {
       indexWritePath = in.readUTF();
     }
@@ -391,6 +404,7 @@ public class CarbonInputSplit extends FileSplit
       out.writeLong(length);
       out.writeShort(version.number());
       out.writeInt(rowCount);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3460
       writeDeleteDeltaFile(out);
       out.writeUTF(bucketId);
       out.write(serializeData, offset, actualLen);
@@ -404,6 +418,7 @@ public class CarbonInputSplit extends FileSplit
     out.writeLong(length);
     out.writeShort(version.number());
     //TODO remove this code once count(*) optmization is added in case of index server
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     if (null != indexRow) {
       out.writeInt(this.indexRow.getInt(BlockletIndexRowIndexes.ROW_COUNT_INDEX));
     } else if (null != detailInfo) {
@@ -411,6 +426,7 @@ public class CarbonInputSplit extends FileSplit
     } else {
       out.writeInt(0);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3460
     writeDeleteDeltaFile(out);
     if (null != bucketId) {
       out.writeUTF(bucketId);
@@ -418,6 +434,7 @@ public class CarbonInputSplit extends FileSplit
     out.writeUTF(blockletId);
     out.writeUTF(segment.toString());
     // please refer writeDetailInfo doc
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     out.writeBoolean(writeDetailInfo && (detailInfo != null || indexRow != null));
     if (writeDetailInfo && detailInfo != null) {
       detailInfo.write(out);
@@ -425,6 +442,7 @@ public class CarbonInputSplit extends FileSplit
     } else if (writeDetailInfo && indexRow != null) {
       writeBlockletDetailsInfo(out);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     out.writeBoolean(indexWritePath != null);
     if (indexWritePath != null) {
       out.writeUTF(indexWritePath);
@@ -436,6 +454,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   private void writeDeleteDeltaFile(DataOutput out) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3460
     if (deleteDeltaFiles != null) {
       out.writeBoolean(true);
       out.writeInt(deleteDeltaFiles.length);
@@ -471,6 +490,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public String getBlockletId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
     return blockletId;
   }
 
@@ -480,6 +500,7 @@ public class CarbonInputSplit extends FileSplit
       return -1;
     }
     CarbonInputSplit other = (CarbonInputSplit) o;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     derserializeField();
     other.derserializeField();
     int compareResult = 0;
@@ -545,6 +566,7 @@ public class CarbonInputSplit extends FileSplit
 
   @Override
   public int hashCode() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     derserializeField();
     int result = taskId.hashCode();
     result = 31 * result + segment.hashCode();
@@ -612,6 +634,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public void setIndexWritePath(String indexWritePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.indexWritePath = indexWritePath;
   }
 
@@ -624,6 +647,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public void setIndexRow(IndexRow indexRow) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     this.indexRow = indexRow;
   }
 
@@ -640,10 +664,12 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public boolean isBlockCache() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     return this.isBlockCache;
   }
 
   private void writeBlockletDetailsInfo(DataOutput out) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     out.writeInt(this.indexRow.getInt(BlockletIndexRowIndexes.ROW_COUNT_INDEX));
     if (this.isBlockCache) {
       out.writeShort(0);
@@ -671,19 +697,23 @@ public class CarbonInputSplit extends FileSplit
       out.write(new byte[0]);
     } else {
       byte[] blockletInfoBinary =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           this.indexRow.getByteArray(BlockletIndexRowIndexes.BLOCKLET_INFO_INDEX);
       out.writeInt(blockletInfoBinary.length);
       out.write(blockletInfoBinary);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3328
     out.writeLong(getLength());
     out.writeBoolean(this.useMinMaxForPruning);
   }
 
   public BlockletDetailInfo getDetailInfo() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     if (null != indexRow && detailInfo == null) {
       detailInfo = new BlockletDetailInfo();
       detailInfo
           .setRowCount(this.indexRow.getInt(BlockletIndexRowIndexes.ROW_COUNT_INDEX));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
       rowCount = detailInfo.getRowCount();
       detailInfo
           .setVersionNumber(this.indexRow.getShort(BlockletIndexRowIndexes.VERSION_INDEX));
@@ -692,14 +722,17 @@ public class CarbonInputSplit extends FileSplit
           this.indexRow.getLong(BlockletIndexRowIndexes.SCHEMA_UPADATED_TIME_INDEX));
       detailInfo.setBlockFooterOffset(
           this.indexRow.getLong(BlockletIndexRowIndexes.BLOCK_FOOTER_OFFSET));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
       start = detailInfo.getBlockFooterOffset();
       detailInfo
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3328
           .setBlockSize(getLength());
       length = detailInfo.getBlockSize();
       detailInfo.setUseMinMaxForPruning(useMinMaxForPruning);
       if (!this.isBlockCache) {
         detailInfo.setColumnSchemas(this.columnSchema);
         detailInfo.setPagesCount(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
             this.indexRow.getShort(BlockletIndexRowIndexes.BLOCKLET_PAGE_COUNT_INDEX));
         detailInfo.setBlockletInfoBinary(
             this.indexRow.getByteArray(BlockletIndexRowIndexes.BLOCKLET_INFO_INDEX));
@@ -736,6 +769,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public IndexRow getIndexRow() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3751
     return indexRow;
   }
 
@@ -745,6 +779,7 @@ public class CarbonInputSplit extends FileSplit
 
   /** The position of the first byte in the file to process. */
   public long getStart() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
     return start;
   }
 
@@ -754,7 +789,9 @@ public class CarbonInputSplit extends FileSplit
    *
    */
   public void updateFooteroffset() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     if (isBlockCache && start == 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       if (null != indexRow) {
         start = this.indexRow.getLong(BlockletIndexRowIndexes.BLOCK_FOOTER_OFFSET);
       } else if (null != detailInfo) {
@@ -765,6 +802,7 @@ public class CarbonInputSplit extends FileSplit
 
   public void updateBlockLength() {
     if (length == -1) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       if (null != indexRow) {
         length = this.indexRow.getLong(BlockletIndexRowIndexes.BLOCK_LENGTH);
       } else if (null != detailInfo) {
@@ -775,17 +813,20 @@ public class CarbonInputSplit extends FileSplit
 
   @Override
   public long getLength() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     updateBlockLength();
     return length;
   }
 
   @Override
   public String toString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
     return filePath + ":" + start + "+" + length;
   }
 
   @Override
   public String[] getLocations() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     if (this.location == null && indexRow == null) {
       return new String[] {};
     } else if (indexRow != null) {
@@ -796,6 +837,8 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public void setLocation(String[] location) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3337
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3306
     this.location = location;
   }
 
@@ -805,6 +848,7 @@ public class CarbonInputSplit extends FileSplit
    * @param writeDetailInfo
    */
   public void setWriteDetailInfo(boolean writeDetailInfo) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3447
     this.writeDetailInfo = writeDetailInfo;
   }
 

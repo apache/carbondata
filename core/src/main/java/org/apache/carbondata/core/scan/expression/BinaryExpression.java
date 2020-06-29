@@ -40,6 +40,7 @@ public abstract class BinaryExpression extends Expression {
 
   @Override
   public void findAndSetChild(Expression oldExpr, Expression newExpr) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-792
     for (int i = 0; i < children.size(); i++) {
       if (oldExpr.equals(children.get(i))) {
         if (this.left.equals(children.get(i))) {

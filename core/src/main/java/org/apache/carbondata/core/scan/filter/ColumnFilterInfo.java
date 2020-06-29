@@ -42,6 +42,7 @@ public class ColumnFilterInfo implements Serializable {
   private List<byte[]> noDictionaryFilterValuesList;
 
   public boolean isOptimized() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1704
     return isOptimized;
   }
 
@@ -86,6 +87,7 @@ public class ColumnFilterInfo implements Serializable {
   }
 
   public Map<String, Set<Integer>> getImplicitColumnFilterBlockToBlockletsMap() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3217
     return implicitColumnFilterBlockToBlockletsMap;
   }
 

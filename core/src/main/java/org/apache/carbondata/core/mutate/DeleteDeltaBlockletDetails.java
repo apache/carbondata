@@ -63,6 +63,7 @@ public class DeleteDeltaBlockletDetails implements Serializable {
       return false;
     }
     DeleteDeltaBlockletDetails that = (DeleteDeltaBlockletDetails) obj;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1326
     if (null == pageId || null == that.pageId) {
       return false;
     }

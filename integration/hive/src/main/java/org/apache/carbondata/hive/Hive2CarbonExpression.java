@@ -67,6 +67,7 @@ public class Hive2CarbonExpression {
       LogServiceFactory.getLogService(CarbonInputFormat.class.getName());
 
   private static String getExpressionValue(ExprNodeDesc exprNodeDesc) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
     if (exprNodeDesc instanceof ExprNodeConstantDesc) {
       return ((ExprNodeConstantDesc) exprNodeDesc).getValue().toString();
     } else {
@@ -84,6 +85,7 @@ public class Hive2CarbonExpression {
             getDateType(l1.get(left).getTypeString()));
         List<Expression> listExpr = new ArrayList<>();
         for (int i = right; i < l1.size(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
           LiteralExpression literalExpression = new LiteralExpression(getExpressionValue(l1.get(i)),
               getDateType(l1.get(left).getTypeString()));
           listExpr.add(literalExpression);
@@ -111,6 +113,7 @@ public class Hive2CarbonExpression {
               getDateType(l1.get(left).getTypeString()));
         }
         LiteralExpression literalExpression =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3771
             new LiteralExpression(getExpressionValue(l1.get(right)),
                 getDateType(l1.get(right).getTypeString()));
         return new EqualToExpression(columnExpression, literalExpression);
@@ -167,6 +170,7 @@ public class Hive2CarbonExpression {
   }
 
   public static DataType getDateType(String type) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     try {
       return DataTypeUtil.convertHiveTypeToCarbon(type);
     } catch (SQLException e) {

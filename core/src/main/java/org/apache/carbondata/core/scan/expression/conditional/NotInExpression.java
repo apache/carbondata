@@ -64,7 +64,9 @@ public class NotInExpression extends BinaryConditionalExpression {
       for (ExpressionResult exprResVal : rightRsult.getList()) {
 
         if (exprResVal.isNull()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
           nullValuePresent = new ExpressionResult(DataTypes.BOOLEAN, false);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
           leftRsult.set(DataTypes.BOOLEAN, false);
           return leftRsult;
         }
@@ -75,7 +77,9 @@ public class NotInExpression extends BinaryConditionalExpression {
         } else {
           val = exprResVal;
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         DataType dataType = val.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
         if (dataType == DataTypes.BOOLEAN) {
           val = new ExpressionResult(val.getDataType(), exprResVal.getBoolean());
         } else if (dataType == DataTypes.STRING) {
@@ -86,12 +90,14 @@ public class NotInExpression extends BinaryConditionalExpression {
           val = new ExpressionResult(val.getDataType(), exprResVal.getInt());
         } else if (dataType == DataTypes.DOUBLE) {
           val = new ExpressionResult(val.getDataType(), exprResVal.getDouble());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3503
         } else if (dataType == DataTypes.DATE) {
           val = new ExpressionResult(val.getDataType(), exprResVal.getTime());
         } else if (dataType == DataTypes.TIMESTAMP) {
           val = new ExpressionResult(val.getDataType(), exprResVal.getTimeAsMillisecond());
         } else if (dataType == DataTypes.LONG) {
           val = new ExpressionResult(val.getDataType(), exprResVal.getLong());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
         } else if (DataTypes.isDecimal(dataType)) {
           val = new ExpressionResult(val.getDataType(), exprResVal.getDecimal());
         } else {
@@ -119,6 +125,7 @@ public class NotInExpression extends BinaryConditionalExpression {
 
   @Override
   public String getStatement() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     return left.getStatement() + " not in " + right.getStatement();
   }
 }

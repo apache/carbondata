@@ -246,6 +246,7 @@ public class CarbonUtilTest {
     byte[] dataChunks = { 5, 6, 7, 8, 9 };
     byte[] compareValues = { 7 };
     FixedLengthDimensionColumnPage fixedLengthDataChunk =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
         new FixedLengthDimensionColumnPage(dataChunks, null, null, 5, 1, dataChunks.length);
     int result = CarbonUtil.nextLesserValueToTarget(2, fixedLengthDataChunk, compareValues);
     assertEquals(result, 1);
@@ -255,6 +256,7 @@ public class CarbonUtilTest {
     byte[] dataChunks = { 7, 7, 7, 8, 9 };
     byte[] compareValues = { 7 };
     FixedLengthDimensionColumnPage fixedLengthDataChunk =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
         new FixedLengthDimensionColumnPage(dataChunks, null, null, 5, 1, dataChunks.length);
     int result = CarbonUtil.nextLesserValueToTarget(2, fixedLengthDataChunk, compareValues);
     assertEquals(result, -1);
@@ -264,6 +266,7 @@ public class CarbonUtilTest {
     byte[] dataChunks = { 5, 6, 7, 8, 9 };
     byte[] compareValues = { 7 };
     FixedLengthDimensionColumnPage fixedLengthDataChunk =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
         new FixedLengthDimensionColumnPage(dataChunks, null, null, 5, 1, dataChunks.length);
     int result = CarbonUtil.nextGreaterValueToTarget(2, fixedLengthDataChunk, compareValues, 5);
     assertEquals(result, 3);
@@ -281,12 +284,14 @@ public class CarbonUtilTest {
     byte[] dataChunks = { 5, 6, 7, 7, 7 };
     byte[] compareValues = { 7 };
     FixedLengthDimensionColumnPage fixedLengthDataChunk =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
         new FixedLengthDimensionColumnPage(dataChunks, null, null, 5, 1, dataChunks.length);
     int result = CarbonUtil.nextGreaterValueToTarget(2, fixedLengthDataChunk, compareValues, 5);
     assertEquals(result, 5);
   }
 
   @Test public void testToUnescapeChar() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3740
     String[] input = { "\\001", "\\t", "\\r", "\\b", "\\n", "\\f", "\\r\\n", "\\\\" };
     String[] output = { "\001", "\t", "\r", "\b", "\n", "\f", "\r\n", "\\" };
     for (int i = 0; i < input.length; i++) {
@@ -317,6 +322,7 @@ public class CarbonUtilTest {
       }
     };
     String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("../core/src/test/resources/testDatabase");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1236
     assertEquals(hdfsURL, "file:///BASE_URL/../core/src/test/resources/testDatabase");
   }
 
@@ -332,6 +338,7 @@ public class CarbonUtilTest {
       }
     };
     String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("../core/src/test/resources/testDatabase");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1236
     assertEquals(hdfsURL, "file:///BASE_URL/../core/src/test/resources/testDatabase");
   }
 
@@ -347,10 +354,12 @@ public class CarbonUtilTest {
       }
     };
     String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("../core/src/test/resources/testDatabase");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1236
     assertEquals(hdfsURL, "file:////../core/src/test/resources/testDatabase");
   }
 
   @Test public void testToCheckAndAppendHDFSUrlWithHdfs() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1236
     new MockUp<FileFactory>() {
       @SuppressWarnings("unused") @Mock public FileFactory.FileType getFileType(String path) {
         return FileFactory.FileType.HDFS;
@@ -481,12 +490,14 @@ public class CarbonUtilTest {
   }
 
   @Test public void testForHasDataTypes() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     DataType[] dataTypes = {DataTypes.createDefaultDecimalType(), DataTypes.BOOLEAN, DataTypes.INT };
     assertTrue(CarbonUtil.hasDataType(DataTypes.BOOLEAN, dataTypes));
     assertTrue(!CarbonUtil.hasDataType(DataTypes.DATE, dataTypes));
   }
 
   @Test public void testForHasComplexDataTypes() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     assertTrue(DataTypes.createDefaultArrayType().isComplexType());
     assertTrue(!DataTypes.DATE.isComplexType());
   }
@@ -498,8 +509,12 @@ public class CarbonUtilTest {
     column1Schema.setDataType(DataTypes.DATE);
     ProjectionDimension
         column1 = new ProjectionDimension(new CarbonDimension(column1Schema, 1, 1, 1));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
 
     column2Schema.setColumnName("Column2");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     column2Schema.setDataType(DataTypes.createDefaultArrayType());
     ProjectionDimension
         column2 = new ProjectionDimension(new CarbonDimension(column2Schema, 1, 1, 1));
@@ -514,6 +529,7 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToReadMetadataFile() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3650
     new MockUp<DataFileFooterConverterV3>() {
       @SuppressWarnings("unused") @Mock
       public DataFileFooter readDataFileFooter(TableBlockInfo info) {
@@ -542,6 +558,7 @@ public class CarbonUtilTest {
     column1Schema.setColumnName("Column1");
     column2Schema.setColumnName("Column2");
     List<CarbonDimension> carbonDimension = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     carbonDimension.add(new CarbonDimension(column1Schema, 1, 1, 1));
     carbonDimension.add(new CarbonDimension(column2Schema, 2, 1, 1));
     assertEquals(CarbonUtil.findDimension(carbonDimension, "Column1"),
@@ -554,6 +571,7 @@ public class CarbonUtilTest {
     column1Schema.setColumnName("Column1");
     column2Schema.setColumnName("Column2");
     List<CarbonDimension> carbonDimension = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     carbonDimension.add(new CarbonDimension(column1Schema, 1, 1, 1));
     carbonDimension.add(new CarbonDimension(column2Schema, 2, 2, 1));
 
@@ -611,8 +629,10 @@ public class CarbonUtilTest {
 
   @Test public void testToGetSegmentString() {
     List<Segment> list = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     list.add(new Segment("1", null, null));
     list.add(new Segment("2", null, null));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1858
     String segments = CarbonUtil.convertToString(list);
     assertEquals(segments, "1,2");
   }
@@ -660,6 +680,7 @@ public class CarbonUtilTest {
     ColumnSchema column2Schema = new ColumnSchema();
     ColumnSchema column3Schema = new ColumnSchema();
     column1Schema.setColumnName("Column1");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     column1Schema.setDataType(DataTypes.DATE);
     column1Schema.setEncodingList(Arrays.asList(Encoding.DELTA, Encoding.DICTIONARY));
     column2Schema.setColumnName("Column2");
@@ -667,6 +688,7 @@ public class CarbonUtilTest {
     column2Schema.setEncodingList(Arrays.asList(Encoding.DELTA, Encoding.DICTIONARY));
     column3Schema.setColumnName("Column3");
     column3Schema.setEncodingList(Arrays.asList(Encoding.DELTA, Encoding.INVERTED_INDEX));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     CarbonDimension carbonDimension = new CarbonDimension(column1Schema, 1, 1, 1);
     CarbonDimension carbonDimension2 = new CarbonDimension(column2Schema, 2, 2, 2);
     CarbonDimension carbonDimension3 = new CarbonDimension(column3Schema, 3, 3, 3);
@@ -680,6 +702,7 @@ public class CarbonUtilTest {
     byte[] dataChunks = { 10, 20, 30, 40, 50, 60 };
     byte[] compareValue = { 5 };
     FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
         new FixedLengthDimensionColumnPage(dataChunks, null, null, 6, 1, dataChunks.length);
     int result = CarbonUtil
         .getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 1, 3, compareValue, false);
@@ -700,6 +723,8 @@ public class CarbonUtilTest {
     byte[] dataChunks = { 10, 10, 10, 40, 50, 60 };
     byte[] compareValue = { 10 };
     FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
         new FixedLengthDimensionColumnPage(dataChunks, null, null, 6, 1, dataChunks.length);
     int result = CarbonUtil
         .getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 1, 3, compareValue, false);
@@ -710,6 +735,7 @@ public class CarbonUtilTest {
     byte[] dataChunks = { 10, 10, 10, 40, 50, 60 };
     byte[] compareValue = { 10 };
     FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
         new FixedLengthDimensionColumnPage(dataChunks, null, null, 6, 1, dataChunks.length);
     int result = CarbonUtil
         .getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 1, 3, compareValue, true);
@@ -720,6 +746,7 @@ public class CarbonUtilTest {
   public void testBinaryRangeSearch() {
 
     byte[] dataChunk = new byte[10];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk;
     byte[] keyWord = new byte[1];
     int[] range;
@@ -797,6 +824,10 @@ public class CarbonUtilTest {
     dataChunk = "aa".getBytes();
     fixedLengthDimensionDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
         dataChunk.length / keyWord.length, keyWord.length, dataChunk.length);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
 
     keyWord[0] = Byte.valueOf("97");
     range = CarbonUtil.getRangeIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 0, dataChunk.length - 1, keyWord);
@@ -804,7 +835,9 @@ public class CarbonUtilTest {
     assertEquals(1, range[1]);
 
     dataChunk = "aabbbbbbbbbbcc".getBytes();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     fixedLengthDimensionDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
         dataChunk.length / keyWord.length, keyWord.length, dataChunk.length);
     keyWord[0] = Byte.valueOf("98");
     range = CarbonUtil.getRangeIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 0, dataChunk.length - 1, keyWord);
@@ -818,12 +851,17 @@ public class CarbonUtilTest {
 
     byte[] dataChunk = new byte[10];
     FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
 
     byte[] keyWord = new byte[2];
 
     dataChunk = "aabbbbbbbbbbcc".getBytes();
     byte[][] dataArr = new byte[dataChunk.length / keyWord.length][keyWord.length];
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     fixedLengthDimensionDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
         dataChunk.length / keyWord.length, keyWord.length, dataChunk.length);
 
@@ -860,6 +898,7 @@ public class CarbonUtilTest {
 
     byte[] dataChunk = new byte[10];
     FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
 
     byte[] keyWord = new byte[3];
 
@@ -868,6 +907,9 @@ public class CarbonUtilTest {
 
     fixedLengthDimensionDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
         dataChunk.length / keyWord.length, keyWord.length, dataChunk.length);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
 
     for (int ii = 0; ii < dataChunk.length / keyWord.length; ii++) {
       dataArr[ii] = fixedLengthDimensionDataChunk.getChunkData(ii);
@@ -885,8 +927,10 @@ public class CarbonUtilTest {
 
   @Test
   public void testSplitSchemaStringToMapWithLessThanSplitLen() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1443
     String schema = generateString(399);
     Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2038
     Assert.assertTrue(map.size() == 2);
     String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
     Assert.assertTrue(schemaString.length() > schema.length());
@@ -928,6 +972,7 @@ public class CarbonUtilTest {
   }
 
   private void assertRangeIndex(byte[][] dataArr, byte[] dataChunk,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       FixedLengthDimensionColumnPage fixedLengthDimensionDataChunk, byte[] keyWord, int[] expectRangeIndex) {
     int[] range;
     range = CarbonUtil.getRangeIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 0,

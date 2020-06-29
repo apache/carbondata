@@ -50,7 +50,11 @@ public class ColumnPageWrapper implements DimensionColumnPage {
       int[] invertedIndex, int[] invertedReverseIndex, boolean isAdaptivePrimitivePage,
       boolean isExplicitSorted) {
     this.columnPage = columnPage;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
     this.localDictionary = localDictionary;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     this.invertedIndex = invertedIndex;
     this.invertedReverseIndex = invertedReverseIndex;
     this.isAdaptivePrimitivePage = isAdaptivePrimitivePage;
@@ -95,6 +99,7 @@ public class ColumnPageWrapper implements DimensionColumnPage {
 
   @Override
   public byte[] getChunkData(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2987
     byte[] nullBitSet = getNullBitSet(rowId, columnPage.getColumnSpec().getColumnType());
     if (nullBitSet != null) {
       // if this row is null, return default null represent in byte array
@@ -114,8 +119,10 @@ public class ColumnPageWrapper implements DimensionColumnPage {
     if (null != localDictionary) {
       return localDictionary
           .getDictionaryValue(CarbonUtil.getSurrogateInternal(columnPage.getBytes(rowId), 0, 3));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
     } else if ((columnType == ColumnType.COMPLEX_PRIMITIVE && isAdaptiveEncoded()) || (
         columnType == ColumnType.PLAIN_VALUE && DataTypeUtil.isPrimitiveColumn(srcDataType))) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
       if (srcDataType == DataTypes.FLOAT) {
         float floatData = columnPage.getFloat(rowId);
         return ByteUtil.toXorBytes(floatData);
@@ -131,12 +138,14 @@ public class ColumnPageWrapper implements DimensionColumnPage {
         long longData = columnPage.getLong(rowId);
         if ((srcDataType == DataTypes.BYTE)) {
           byte out = (byte) longData;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
           return new byte[] { out };
         } else if (srcDataType == DataTypes.BOOLEAN) {
           byte out = (byte) longData;
           return ByteUtil.toBytes(ByteUtil.toBoolean(out));
         } else if (srcDataType == DataTypes.SHORT) {
           short out = (short) longData;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
           return ByteUtil.toXorBytes(out);
         } else if (srcDataType == DataTypes.SHORT_INT) {
           int out = (int) longData;
@@ -154,6 +163,7 @@ public class ColumnPageWrapper implements DimensionColumnPage {
       } else {
         throw new RuntimeException("unsupported type: " + targetDataType);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2947
     } else if ((columnType == ColumnType.COMPLEX_PRIMITIVE && !isAdaptiveEncoded())) {
       if ((srcDataType == DataTypes.BYTE) || (srcDataType == DataTypes.BOOLEAN)) {
         byte[] out = new byte[1];
@@ -162,7 +172,9 @@ public class ColumnPageWrapper implements DimensionColumnPage {
       } else if (srcDataType == DataTypes.BYTE_ARRAY) {
         return columnPage.getBytes(rowId);
       } else if (srcDataType == DataTypes.DOUBLE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2884
         return ByteUtil.toXorBytes(columnPage.getDouble(rowId));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
       } else if (srcDataType == DataTypes.FLOAT) {
         return ByteUtil.toXorBytes(columnPage.getFloat(rowId));
       } else if (srcDataType == targetDataType) {
@@ -176,6 +188,7 @@ public class ColumnPageWrapper implements DimensionColumnPage {
   }
 
   private byte[] getNullBitSet(int rowId, ColumnType columnType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2987
     if (columnPage.getNullBits().get(rowId) && columnType == ColumnType.COMPLEX_PRIMITIVE) {
       // if this row is null, return default null represent in byte array
       return CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
@@ -195,6 +208,7 @@ public class ColumnPageWrapper implements DimensionColumnPage {
    * @param vectorRow
    */
   private void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3022
     if (columnPage.getNullBits().get(rowId)) {
       vector.putNull(vectorRow);
     } else {
@@ -228,6 +242,7 @@ public class ColumnPageWrapper implements DimensionColumnPage {
 
   @Override
   public int getInvertedIndex(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     return invertedIndex[rowId];
   }
 
@@ -251,6 +266,7 @@ public class ColumnPageWrapper implements DimensionColumnPage {
     // rowId is the inverted index, but the null bitset is based on actual data
     int nullBitSetRowId = rowId;
     if (isExplicitSorted()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3023
       nullBitSetRowId = getInvertedIndex(rowId);
     }
     byte[] nullBitSet = getNullBitSet(nullBitSetRowId, columnPage.getColumnSpec().getColumnType());
@@ -260,6 +276,7 @@ public class ColumnPageWrapper implements DimensionColumnPage {
       // if the compare value is null and the data is also null we can directly return 0
       return 0;
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3341
       byte[] chunkData;
       if (nullBitSet != null && nullBitSet.length == 0) {
         chunkData = nullBitSet;
@@ -272,6 +289,7 @@ public class ColumnPageWrapper implements DimensionColumnPage {
 
   @Override
   public void freeMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2812
     if (null != columnPage) {
       columnPage.freeMemory();
       columnPage = null;

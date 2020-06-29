@@ -19,6 +19,7 @@ package org.apache.carbondata.core.metadata.datatype;
 
 public class BinaryType extends DataType {
   static final DataType BINARY =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
       new BinaryType(DataTypes.BINARY_TYPE_ID, 26, "BINARY", -1);
   private BinaryType(int id, int precedenceOrder, String name, int sizeInBytes) {
     super(id, precedenceOrder, name, sizeInBytes);

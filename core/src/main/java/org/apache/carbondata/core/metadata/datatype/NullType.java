@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata.datatype;
 
 class NullType extends DataType {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
 
   static final DataType NULL = new NullType(DataTypes.NULL_TYPE_ID, 7, "NULL", 1);
 

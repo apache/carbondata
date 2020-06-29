@@ -62,6 +62,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(RowLevelFilterExecuterImpl.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
   List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList;
   List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList;
   protected Expression exp;
@@ -110,7 +111,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     } else {
       this.dimColEvaluatorInfoList = dimColEvaluatorInfoList;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     if (this.dimColEvaluatorInfoList.size() > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       this.isDimensionPresentInCurrentBlock = new boolean[this.dimColEvaluatorInfoList.size()];
       this.dimensionChunkIndex = new int[this.dimColEvaluatorInfoList.size()];
     } else {
@@ -122,7 +125,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     } else {
       this.msrColEvalutorInfoList = msrColEvalutorInfoList;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1386
     if (this.msrColEvalutorInfoList.size() > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       this.isMeasurePresentInCurrentBlock = new boolean[this.msrColEvalutorInfoList.size()];
       this.measureChunkIndex = new int[this.msrColEvalutorInfoList.size()];
     } else {
@@ -147,6 +152,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           .getDimensionFromCurrentBlock(dimColEvaluatorInfoList.get(i).getDimension());
       if (null != dimensionFromCurrentBlock) {
         dimColEvaluatorInfoList.get(i).setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
         this.dimensionChunkIndex[i] =
             dimColEvaluatorInfoList.get(i).getColumnIndexInMinMaxByteArray();
         isDimensionPresentInCurrentBlock[i] = true;
@@ -165,6 +171,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           segmentProperties.getMeasureFromCurrentBlock(msrColEvalutorInfoList.get(i).getMeasure());
       if (null != measureFromCurrentBlock) {
         msrColEvalutorInfoList.get(i).setColumnIndex(measureFromCurrentBlock.getOrdinal());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
         this.measureChunkIndex[i] = msrColEvalutorInfoList.get(i).getColumnIndexInMinMaxByteArray();
         isMeasurePresentInCurrentBlock[i] = true;
       }
@@ -183,6 +190,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       }
       return bitSetGroup;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     readColumnChunks(rawBlockletColumnChunks);
     // CHECKSTYLE:ON
 
@@ -206,6 +214,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     }
     if (msrColEvalutorInfoList.size() > 0) {
       if (isMeasurePresentInCurrentBlock[0]) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
         pageNumbers =
             rawBlockletColumnChunks.getMeasureRawColumnChunks()[msrColEvalutorInfoList.get(0)
                 .getColumnIndex()].getPagesCount();
@@ -225,9 +234,11 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     for (int i = 0; i < pageNumbers; i++) {
       BitSet set = new BitSet(numberOfRows[i]);
       RowIntf row = new RowImpl();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1538
       BitSet prvBitset = null;
       // if bitset pipe line is enabled then use rowid from previous bitset
       // otherwise use older flow
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       if (!useBitsetPipeLine ||
           null == rawBlockletColumnChunks.getBitSetGroup() ||
           null == bitSetGroup.getBitSet(i) ||
@@ -249,6 +260,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           }
         }
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         prvBitset = rawBlockletColumnChunks.getBitSetGroup().getBitSet(i);
         for (int index = prvBitset.nextSetBit(0);
              index >= 0; index = prvBitset.nextSetBit(index + 1)) {
@@ -271,7 +283,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
   @Override
   public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3013
     readColumnChunks(rawBlockletColumnChunks);
     int pages = rawBlockletColumnChunks.getDataBlock().numberOfPages();
     BitSet bitSet = new BitSet();
@@ -281,6 +295,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
   @Override
   public boolean applyFilter(RowIntf value, int dimOrdinalMax)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws FilterUnsupportedException {
     try {
       Boolean result = exp.evaluate(convertRow(value, dimOrdinalMax)).getBoolean();
@@ -314,6 +329,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           record[index] = dimColumnEvaluatorInfo.getDimension().getDefaultValue();
         }
         byte[] memberBytes = (byte[]) value.getVal(index);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
         if (null != memberBytes) {
           if (Arrays.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, memberBytes)) {
             memberBytes = null;
@@ -370,6 +386,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
             getDimensionDefaultValue(dimColumnEvaluatorInfo);
         continue;
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
       if (!dimColumnEvaluatorInfo.getDimension().getDataType().isComplexType()) {
         if (!dimColumnEvaluatorInfo.isDimensionExistsInCurrentSilce()) {
           record[dimColumnEvaluatorInfo.getRowIndex()] =
@@ -378,6 +395,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         DimensionColumnPage columnDataChunk =
             blockChunkHolder.getDimensionRawColumnChunks()[dimensionChunkIndex[i]]
                 .decodeColumnPage(pageIndex);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
         if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.DATE &&
             (columnDataChunk instanceof VariableLengthDimensionColumnPage ||
                 columnDataChunk instanceof ColumnPageWrapper)) {
@@ -386,6 +404,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           if (null != memberBytes) {
             if (Arrays.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, memberBytes)) {
               memberBytes = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1450
             } else if (memberBytes.length == 0) {
               memberBytes = null;
             }
@@ -400,6 +419,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
           DataOutputStream dataOutputStream = new DataOutputStream(byteStream);
           complexType.parseBlocksAndReturnComplexColumnByteArray(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3145
               blockChunkHolder.getDimensionRawColumnChunks(), null, index, pageIndex,
               dataOutputStream);
           record[dimColumnEvaluatorInfo.getRowIndex()] =
@@ -415,6 +435,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     for (int i = 0; i < msrColEvalutorInfoList.size(); i++) {
       MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo = msrColEvalutorInfoList.get(i);
       DataType dataType = msrColumnEvalutorInfo.getType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
       if (dataType == DataTypes.BOOLEAN) {
         msrType = DataTypes.BOOLEAN;
       } else if (dataType == DataTypes.SHORT) {
@@ -423,6 +444,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         msrType = DataTypes.INT;
       } else if (dataType == DataTypes.LONG) {
         msrType = DataTypes.LONG;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       } else if (DataTypes.isDecimal(dataType)) {
         msrType = DataTypes.createDefaultDecimalType();
       } else {
@@ -439,17 +461,22 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       }
 
       Object msrValue;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
       ColumnPage columnPage =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
           blockChunkHolder.getMeasureRawColumnChunks()[msrColEvalutorInfoList.get(0)
               .getColumnIndex()].decodeColumnPage(pageIndex);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
       if (msrType == DataTypes.BOOLEAN) {
         msrValue = columnPage.getBoolean(index);
       } else if (msrType == DataTypes.SHORT) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         msrValue = (short) columnPage.getLong(index);
       } else if (msrType == DataTypes.INT) {
         msrValue = (int) columnPage.getLong(index);
       } else if (msrType == DataTypes.LONG) {
         msrValue = columnPage.getLong(index);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
       } else if (DataTypes.isDecimal(msrType)) {
         BigDecimal bigDecimalValue = columnPage.getDecimal(index);
         if (null != bigDecimalValue
@@ -461,6 +488,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         }
         msrValue = bigDecimalValue;
       } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
         msrValue = columnPage.getDouble(index);
       }
       record[msrColumnEvalutorInfo.getRowIndex()] =
@@ -477,6 +505,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    */
   private Object getDimensionDefaultValue(DimColumnResolvedFilterInfo dimColumnEvaluatorInfo) {
     CarbonDimension dimension = dimColumnEvaluatorInfo.getDimension();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     return RestructureUtil.validateAndGetDefaultValue(dimension);
   }
 
@@ -492,7 +521,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   public void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) throws IOException {
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = dimColEvaluatorInfoList.get(i);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
       if (!dimColumnEvaluatorInfo.getDimension().getDataType().isComplexType()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
         if (null == rawBlockletColumnChunks.getDimensionRawColumnChunks()[dimensionChunkIndex[i]]) {
           rawBlockletColumnChunks.getDimensionRawColumnChunks()[dimensionChunkIndex[i]] =
               rawBlockletColumnChunks.getDataBlock().readDimensionChunk(
@@ -506,6 +537,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
     for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
       int chunkIndex = msrColEvalutorInfoList.get(0).getColumnIndex();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
       if (null == rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex]) {
         rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex] =
             rawBlockletColumnChunks.getDataBlock()

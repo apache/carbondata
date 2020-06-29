@@ -40,6 +40,7 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
    */
   public VariableLengthDimensionColumnPage(byte[] dataChunks, int[] invertedIndex,
       int[] invertedIndexReverse, int numberOfRows, DimensionStoreType dimStoreType,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       CarbonDictionary dictionary, ColumnVectorInfo vectorInfo, int dataLength) {
     boolean isExplicitSorted = isExplicitSorted(invertedIndex);
     long totalSize = 0;
@@ -62,6 +63,7 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE
         .getDimensionChunkStore(0, isExplicitSorted, numberOfRows, totalSize, dimStoreType,
             dictionary, vectorInfo != null, dataLength);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     if (vectorInfo != null) {
       dataChunkStore.fillVector(invertedIndex, invertedIndexReverse, dataChunks, vectorInfo);
     } else {
@@ -146,6 +148,7 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
     for (int i = offset; i < len; i++) {
       // Considering only String case now as we support only
       // string in no dictionary case at present.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       dataChunkStore.fillRow(filteredRowId[i], vector, vectorOffset++);
     }
     return chunkIndex + 1;

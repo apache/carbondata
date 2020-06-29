@@ -41,6 +41,7 @@ import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 public abstract class FineGrainIndexFactory extends IndexFactory<FineGrainIndex> {
 
   public FineGrainIndexFactory(CarbonTable carbonTable, IndexSchema indexSchema) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     super(carbonTable, indexSchema);
   }
 

@@ -83,6 +83,8 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
   }
 
   public byte[] getComplexKeyByIndex(int index) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3196
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3203
     return this.complexTypesKeys[index];
   }
 
@@ -101,6 +103,7 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
    * @return no complex values
    */
   public byte[][] getComplexTypesKeys() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2755
     return this.complexTypesKeys;
   }
 
@@ -222,6 +225,7 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
   }
 
   public byte[] getImplicitColumnByteArray() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3371
     return implicitColumnByteArray;
   }
 }

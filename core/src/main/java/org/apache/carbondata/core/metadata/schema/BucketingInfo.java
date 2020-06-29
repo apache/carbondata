@@ -44,6 +44,7 @@ public class BucketingInfo implements ColumnRangeInfo, Serializable, Writable {
 
   public BucketingInfo(List<ColumnSchema> listOfColumns, int numberOfRanges) {
     this.listOfColumns = listOfColumns;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     this.numOfRanges = numberOfRanges;
   }
 
@@ -59,6 +60,7 @@ public class BucketingInfo implements ColumnRangeInfo, Serializable, Writable {
   @Override
   public void write(DataOutput output) throws IOException {
     output.writeInt(numOfRanges);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1448
     output.writeInt(listOfColumns.size());
     for (ColumnSchema aColSchema : listOfColumns) {
       aColSchema.write(output);
@@ -67,6 +69,7 @@ public class BucketingInfo implements ColumnRangeInfo, Serializable, Writable {
 
   @Override
   public void readFields(DataInput input) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     this.numOfRanges = input.readInt();
     int colSchemaSize = input.readInt();
     this.listOfColumns = new ArrayList<>(colSchemaSize);

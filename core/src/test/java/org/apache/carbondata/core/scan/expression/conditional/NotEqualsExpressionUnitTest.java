@@ -45,6 +45,7 @@ public class NotEqualsExpressionUnitTest {
 
   @Test public void testEvaluateForNotEqualsExpressionWithBothStringISSame()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression left = new ColumnExpression("left_name", DataTypes.STRING);
     left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("right_name", DataTypes.STRING);
@@ -111,7 +112,9 @@ public class NotEqualsExpressionUnitTest {
 
   @Test public void testEvaluateForNotEqualsExpressionWithShortDataType1()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression left = new ColumnExpression("left_id", DataTypes.SHORT);
     left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("right_id", DataTypes.SHORT);
@@ -168,7 +171,9 @@ public class NotEqualsExpressionUnitTest {
   }
 
   @Test public void testEvaluateForNotEqualsExpressionWithIntDataType()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("right_number", DataTypes.INT);
     right.setColIndex(1);
     ColumnExpression left = new ColumnExpression("left_number", DataTypes.INT);
@@ -192,6 +197,7 @@ public class NotEqualsExpressionUnitTest {
 
   @Test public void testEvaluateForNotEqualsExpressionWithDoubleDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("right_contact", DataTypes.DOUBLE);
     right.setColIndex(1);
     ColumnExpression left = new ColumnExpression("left_contact", DataTypes.DOUBLE);
@@ -252,7 +258,9 @@ public class NotEqualsExpressionUnitTest {
   }
 
   @Test public void testEvaluateForNotEqualsExpressionWithLongDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("right_contact", DataTypes.LONG);
     right.setColIndex(1);
     ColumnExpression left = new ColumnExpression("left_contact", DataTypes.LONG);
@@ -322,8 +330,10 @@ public class NotEqualsExpressionUnitTest {
   }
 
   @Test public void testEvaluateForNotEqualsExpressionWithTimestampDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       ColumnExpression left = new ColumnExpression("left_timestamp", DataTypes.TIMESTAMP);
       left.setColIndex(0);
       ColumnExpression right = new ColumnExpression("right_timestamp", DataTypes.TIMESTAMP);
@@ -363,6 +373,7 @@ public class NotEqualsExpressionUnitTest {
 
   @Test public void testForNotEqualsExpressionWithDefaultCase()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("contact", DataTypes.BOOLEAN);
     right.setColIndex(0);
     notEqualsExpression = new NotEqualsExpression(right, right);
@@ -404,13 +415,17 @@ public class NotEqualsExpressionUnitTest {
   }
 
   @Test public void testEvaluateWithForNotEqualsExpressionDecimalDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     ColumnExpression right = new ColumnExpression("contact", DataTypes.createDefaultDecimalType());
     right.setColIndex(1);
     ColumnExpression left = new ColumnExpression("contact", DataTypes.createDefaultDecimalType());
     left.setColIndex(0);
     notEqualsExpression = new NotEqualsExpression(left, right);
     RowImpl value = new RowImpl();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
     BigDecimal[] row = new BigDecimal[] { new BigDecimal(12345.0) };
     BigDecimal[] row1 = new BigDecimal[] { new BigDecimal(1235445.0) };
     Object objectRow[] = { row, row1 };
@@ -456,7 +471,9 @@ public class NotEqualsExpressionUnitTest {
   }
 
   @Test public void testEvaluateForNotEqualsExpressionWithIsNullReturnTrue1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("id", DataTypes.SHORT);
     right.setColIndex(0);
     notEqualsExpression = new NotEqualsExpression(right, right);
@@ -489,6 +506,7 @@ public class NotEqualsExpressionUnitTest {
 
   @Test public void testEvaluateForNotEqualsExpressionWithLeftAndRightDifferentDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression left = new ColumnExpression("name", DataTypes.STRING);
     left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("number", DataTypes.INT);
@@ -518,6 +536,7 @@ public class NotEqualsExpressionUnitTest {
   }
 
   @Test public void testEvaluateForNotEqualsExpressionWithLeftAndRightDifferentDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression left = new ColumnExpression("name", DataTypes.INT);
     left.setColIndex(0);
@@ -548,6 +567,7 @@ public class NotEqualsExpressionUnitTest {
   }
 
   @Test public void testForNotEqualsExpressionWithGetString() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("right_name", DataTypes.STRING);
     ColumnExpression left = new ColumnExpression("left_name", DataTypes.STRING);
     notEqualsExpression = new NotEqualsExpression(left, right);
@@ -558,6 +578,7 @@ public class NotEqualsExpressionUnitTest {
 
   @Test public void testEvaluateForNotEqualsExpressionWithNullWhileCreatingObject()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("id", DataTypes.SHORT);
     right.setColIndex(0);
     notEqualsExpression = new NotEqualsExpression(right, right, false);
@@ -580,6 +601,7 @@ public class NotEqualsExpressionUnitTest {
 
     ExpressionResult result = notEqualsExpression.evaluate(value);
     assertEquals(DataTypes.BOOLEAN, result.getDataType());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
 
   }
 
@@ -601,6 +623,7 @@ public class NotEqualsExpressionUnitTest {
 
     ExpressionResult result = notEqualsExpression.evaluate(value);
     assertEquals(DataTypes.BOOLEAN, result.getDataType());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
 
   }
 }

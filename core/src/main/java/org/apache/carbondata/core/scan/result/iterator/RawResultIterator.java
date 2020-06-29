@@ -66,15 +66,20 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
    */
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(RawResultIterator.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2304
 
   public RawResultIterator(CarbonIterator<RowBatch> detailRawQueryResultIterator,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2304
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3088
       SegmentProperties sourceSegProperties, SegmentProperties destinationSegProperties,
       boolean init) {
     this.detailRawQueryResultIterator = detailRawQueryResultIterator;
     this.sourceSegProperties = sourceSegProperties;
     this.destinationSegProperties = destinationSegProperties;
     this.executorService = Executors.newFixedThreadPool(1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3396
     batchSize = CarbonProperties.getQueryBatchSize();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3371
     if (init) {
       init();
     }
@@ -119,6 +124,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
 
   private List<Object[]> fetchRows() {
     List<Object[]> converted = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3396
     while (detailRawQueryResultIterator.hasNext()) {
       for (Object[] r : detailRawQueryResultIterator.next().getRows()) {
         converted.add(convertRow(r));
@@ -195,6 +201,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
    * @return
    */
   public Object[] fetchConverted() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3088
     pickRow();
     return this.currentRawRow;
   }
@@ -204,6 +211,8 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   }
 
   public void close() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2304
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3088
     if (null != executorService) {
       executorService.shutdownNow();
     }

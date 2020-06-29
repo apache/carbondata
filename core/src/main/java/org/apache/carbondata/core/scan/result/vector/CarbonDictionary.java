@@ -26,9 +26,11 @@ public interface CarbonDictionary  {
   boolean isDictionaryUsed();
 
   void setDictionaryUsed();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
 
   byte[] getDictionaryValue(int index);
 
   byte[][] getAllDictionaryValues();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
 
 }

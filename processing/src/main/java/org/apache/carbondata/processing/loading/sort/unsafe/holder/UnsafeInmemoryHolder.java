@@ -46,11 +46,14 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
   public UnsafeInmemoryHolder(UnsafeCarbonRowPage rowPage) {
     this.actualSize = rowPage.getBuffer().getActualSize();
     this.rowPage = rowPage;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2220
     LOGGER.info("Processing unsafe inmemory rows page with size : " + actualSize);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3552
     this.comparator =
         new FileMergeSortComparator(rowPage.getTableFieldStat().getIsSortColNoDictFlags(),
             rowPage.getTableFieldStat().getNoDictDataType(),
             rowPage.getTableFieldStat().getNoDictSortColumnSchemaOrderMapping());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2836
     this.rowPage.setReadConvertedNoSortField();
   }
 
@@ -63,6 +66,8 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
 
   public void readRow() {
     address = rowPage.getBuffer().get(counter);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
     currentRow = rowPage.getRow(address + rowPage.getDataBlock().getBaseOffset());
     counter++;
   }

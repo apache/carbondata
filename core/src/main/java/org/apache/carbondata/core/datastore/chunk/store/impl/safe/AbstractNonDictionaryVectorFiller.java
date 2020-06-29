@@ -48,10 +48,12 @@ class NonDictionaryVectorFillerFactory {
       int numberOfRows, int actualDataLength) {
     if (type == DataTypes.STRING) {
       if (length > DataTypes.SHORT.getSizeInBytes()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
         return new LongStringVectorFiller(numberOfRows, actualDataLength);
       } else {
         return new StringVectorFiller(numberOfRows, actualDataLength);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     } else if (type == DataTypes.VARCHAR || type == DataTypes.BINARY) {
       return new LongStringVectorFiller(numberOfRows, actualDataLength);
     } else if (type == DataTypes.TIMESTAMP) {
@@ -77,6 +79,7 @@ class StringVectorFiller extends AbstractNonDictionaryVectorFiller {
   private int actualDataLength;
 
   public StringVectorFiller(int numberOfRows, int actualDataLength) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3048
     super(numberOfRows);
     this.actualDataLength = actualDataLength;
   }
@@ -86,6 +89,7 @@ class StringVectorFiller extends AbstractNonDictionaryVectorFiller {
     // start position will be used to store the current data position
     boolean addSequential = vector instanceof ColumnarVectorWrapperDirectWithInvertedIndex
         || vector instanceof SequentialFill;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
 
     int localOffset = 0;
     ByteUtil.UnsafeComparer comparator = ByteUtil.UnsafeComparer.INSTANCE;
@@ -115,6 +119,7 @@ class StringVectorFiller extends AbstractNonDictionaryVectorFiller {
         }
         localOffset += length;
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       vector.putAllByteArray(data, 0, actualDataLength);
     }
   }
@@ -126,6 +131,7 @@ class LongStringVectorFiller extends AbstractNonDictionaryVectorFiller {
 
   public LongStringVectorFiller(int numberOfRows, int actualDataLength) {
     super(numberOfRows);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     this.actualDataLength = actualDataLength;
   }
 
@@ -133,9 +139,11 @@ class LongStringVectorFiller extends AbstractNonDictionaryVectorFiller {
   public void fillVector(byte[] data, CarbonColumnVector vector) {
     // start position will be used to store the current data position
     boolean invertedIndex = vector instanceof ColumnarVectorWrapperDirectWithInvertedIndex
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
         || vector instanceof SequentialFill;
     int localOffset = 0;
     ByteUtil.UnsafeComparer comparator = ByteUtil.UnsafeComparer.INSTANCE;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
     if (invertedIndex) {
       for (int i = 0; i < numberOfRows; i++) {
         int length =
@@ -164,6 +172,7 @@ class LongStringVectorFiller extends AbstractNonDictionaryVectorFiller {
         }
         localOffset += length;
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       vector.putAllByteArray(data, 0, actualDataLength);
     }
   }

@@ -62,6 +62,8 @@ public class PageLevelDictionary {
   private String columnCompressor;
 
   public PageLevelDictionary(LocalDictionaryGenerator localDictionaryGenerator, String columnName,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
       DataType dataType, boolean isComplexTypePrimitive, String columnCompressor) {
     this.localDictionaryGenerator = localDictionaryGenerator;
     this.usedDictionaryValues = new BitSet();
@@ -90,6 +92,7 @@ public class PageLevelDictionary {
    * @param pageLevelDictionary other page level dictionary
    */
   public void mergerDictionaryValues(PageLevelDictionary pageLevelDictionary) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2669
     usedDictionaryValues.or(pageLevelDictionary.usedDictionaryValues);
   }
 
@@ -101,6 +104,7 @@ public class PageLevelDictionary {
    * in case of problem in encoding
    */
   public LocalDictionaryChunk getLocalDictionaryChunkForBlocklet()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       throws IOException {
     // TODO support for actual data type dictionary ColumnSPEC
     ColumnType columnType = ColumnType.PLAIN_VALUE;
@@ -108,17 +112,25 @@ public class PageLevelDictionary {
     int lvSize = CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
     if (DataTypes.VARCHAR == dataType) {
       columnType = ColumnType.PLAIN_LONG_VALUE;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
       lvSize = CarbonCommonConstants.INT_SIZE_IN_BYTE;
       isVarcharType = true;
     }
     TableSpec.ColumnSpec spec =
         TableSpec.ColumnSpec.newInstance(columnName, DataTypes.BYTE_ARRAY, columnType);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     ColumnPage dictionaryColumnPage = ColumnPage.newPage(
         new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor),
         usedDictionaryValues.cardinality());
     // TODO support data type specific stats collector for numeric data types
     dictionaryColumnPage.setStatsCollector(new DummyStatsCollector());
     int rowId = 0;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
     ByteBuffer byteBuffer = null;
     for (int i = usedDictionaryValues.nextSetBit(0);
          i >= 0; i = usedDictionaryValues.nextSetBit(i + 1)) {
@@ -142,6 +154,8 @@ public class PageLevelDictionary {
     // get encoded dictionary values
     LocalDictionaryChunk localDictionaryChunk = encoder.encodeDictionary(dictionaryColumnPage);
     // set compressed dictionary values
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     localDictionaryChunk.setDictionary_values(
         CompressorFactory.getInstance().getCompressor(columnCompressor).compressByte(
             usedDictionaryValues.toByteArray()));

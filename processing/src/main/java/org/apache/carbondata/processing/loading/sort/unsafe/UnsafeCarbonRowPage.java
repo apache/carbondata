@@ -56,20 +56,27 @@ public class UnsafeCarbonRowPage {
   private boolean isSaveToDisk;
 
   public UnsafeCarbonRowPage(TableFieldStat tableFieldStat, MemoryBlock memoryBlock,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
       String taskId, boolean isSaveToDisk) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
     this.tableFieldStat = tableFieldStat;
     this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1318
     this.taskId = taskId;
     buffer = new IntPointerBuffer(this.taskId);
     this.dataBlock = memoryBlock;
     // TODO Only using 98% of space for safe side.May be we can have different logic.
     sizeToBeUsed = dataBlock.size() - (dataBlock.size() * 5) / 100;
     this.managerType = MemoryManagerType.UNSAFE_MEMORY_MANAGER;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
     this.sortTempRowUpdater = tableFieldStat.getSortTempRowUpdater();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     this.isSaveToDisk = isSaveToDisk;
   }
 
   public int addRow(Object[] row,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
       ReUsableByteArrayDataOutputStream reUsableByteArrayDataOutputStream)
       throws MemoryException, IOException {
     int size = addRow(row, dataBlock.getBaseOffset() + lastSize, reUsableByteArrayDataOutputStream);
@@ -86,6 +93,7 @@ public class UnsafeCarbonRowPage {
    * @return
    */
   private int addRow(Object[] row, long address,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
       ReUsableByteArrayDataOutputStream reUsableByteArrayDataOutputStream)
       throws MemoryException, IOException {
     return sortStepRowHandler
@@ -99,7 +107,9 @@ public class UnsafeCarbonRowPage {
    * @return one row
    */
   public IntermediateSortTempRow getRow(long address) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2836
     if (convertNoSortFields) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3335
       IntermediateSortTempRow intermediateSortTempRow = sortStepRowHandler
           .readRowFromMemoryWithNoSortFieldConvert(dataBlock.getBaseObject(), address);
       this.sortTempRowUpdater.updateSortTempRow(intermediateSortTempRow);
@@ -118,10 +128,12 @@ public class UnsafeCarbonRowPage {
    */
   public void writeRow(long address, DataOutputStream stream) throws IOException, MemoryException {
     sortStepRowHandler.writeIntermediateSortTempRowFromUnsafeMemoryToStream(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
         dataBlock.getBaseObject(), address, stream, dataBlock.size() - lastSize, dataBlock.size());
   }
 
   public void freeMemory() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1318
     switch (managerType) {
       case UNSAFE_MEMORY_MANAGER:
         UnsafeMemoryManager.INSTANCE.freeMemory(taskId, dataBlock);
@@ -149,10 +161,13 @@ public class UnsafeCarbonRowPage {
   }
 
   public TableFieldStat getTableFieldStat() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
     return tableFieldStat;
   }
 
   public void setNewDataBlock(MemoryBlock newMemoryBlock) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1318
     this.dataBlock = newMemoryBlock;
     this.managerType = MemoryManagerType.UNSAFE_SORT_MEMORY_MANAGER;
   }
@@ -162,14 +177,17 @@ public class UnsafeCarbonRowPage {
   }
 
   public void setReadConvertedNoSortField() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2836
     this.convertNoSortFields = true;
   }
 
   public void makeCanAddFail() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
     this.lastSize = (int) sizeToBeUsed;
   }
 
   public boolean isSaveToDisk() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     return this.isSaveToDisk;
   }
 }

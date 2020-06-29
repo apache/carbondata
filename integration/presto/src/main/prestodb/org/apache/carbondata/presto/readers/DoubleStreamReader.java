@@ -39,6 +39,7 @@ public class DoubleStreamReader extends CarbonColumnVectorImpl implements Presto
   public DoubleStreamReader(int batchSize, DataType dataType) {
     super(batchSize, dataType);
     this.batchSize = batchSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2818
     this.builder = type.createBlockBuilder(null, batchSize);
   }
 
@@ -59,6 +60,7 @@ public class DoubleStreamReader extends CarbonColumnVectorImpl implements Presto
 
   @Override
   public void putDoubles(int rowId, int count, double value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3218
     for (int i = 0; i < count; i++) {
       type.writeDouble(builder, value);
     }
@@ -78,6 +80,7 @@ public class DoubleStreamReader extends CarbonColumnVectorImpl implements Presto
 
   @Override
   public void reset() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2818
     builder = type.createBlockBuilder(null, batchSize);
   }
 
@@ -86,6 +89,7 @@ public class DoubleStreamReader extends CarbonColumnVectorImpl implements Presto
     if (value == null) {
       putNull(rowId);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
       putDouble(rowId, (double) value);
     }
   }

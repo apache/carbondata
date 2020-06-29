@@ -34,6 +34,7 @@ public class FalseExpressionTest {
   private FalseExpression falseExpression;
 
   @Before public void setUp() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression columnExpression = new ColumnExpression("IMEI", DataTypes.BOOLEAN);
     falseExpression = new FalseExpression(columnExpression);
   }
@@ -42,10 +43,12 @@ public class FalseExpressionTest {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new Boolean[] { true });
     ExpressionResult actualValue = falseExpression.evaluate(rowImpl);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     assertEquals(new ExpressionResult(DataTypes.BOOLEAN, false), actualValue);
   }
 
   @Test public void testGetString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     String actualValue = falseExpression.getString();
     String expectedValue = "False(ColumnExpression(IMEI)";
     assertEquals(expectedValue, actualValue);

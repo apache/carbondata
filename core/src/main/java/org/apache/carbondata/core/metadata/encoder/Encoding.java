@@ -28,20 +28,24 @@ public enum Encoding {
   RLE,
   INVERTED_INDEX,
   BIT_PACKED,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
   DIRECT_DICTIONARY,  // currently, only DATE data type use this encoding
   IMPLICIT,
   DIRECT_COMPRESS,
   ADAPTIVE_INTEGRAL,
   ADAPTIVE_DELTA_INTEGRAL,
   RLE_INTEGRAL,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3061
   DIRECT_STRING,
   ADAPTIVE_FLOATING,
   BOOL_BYTE,
   ADAPTIVE_DELTA_FLOATING,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
   DIRECT_COMPRESS_VARCHAR,
   INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY;
 
   public static Encoding valueOf(int ordinal) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1286
     if (ordinal == DICTIONARY.ordinal()) {
       return DICTIONARY;
     } else if (ordinal == DELTA.ordinal()) {
@@ -56,6 +60,7 @@ public enum Encoding {
       return DIRECT_DICTIONARY;
     } else if (ordinal == IMPLICIT.ordinal()) {
       return IMPLICIT;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
     } else if (ordinal == DIRECT_COMPRESS.ordinal()) {
       return DIRECT_COMPRESS;
     } else if (ordinal == ADAPTIVE_INTEGRAL.ordinal()) {
@@ -64,6 +69,7 @@ public enum Encoding {
       return ADAPTIVE_DELTA_INTEGRAL;
     } else if (ordinal == RLE_INTEGRAL.ordinal()) {
       return RLE_INTEGRAL;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3061
     } else if (ordinal == DIRECT_STRING.ordinal()) {
       return DIRECT_STRING;
     } else if (ordinal == ADAPTIVE_FLOATING.ordinal()) {
@@ -72,8 +78,10 @@ public enum Encoding {
       return BOOL_BYTE;
     } else if (ordinal == ADAPTIVE_DELTA_FLOATING.ordinal()) {
       return ADAPTIVE_DELTA_FLOATING;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2420
     } else if (ordinal == DIRECT_COMPRESS_VARCHAR.ordinal()) {
       return DIRECT_COMPRESS_VARCHAR;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
     } else if (ordinal == INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY.ordinal()) {
       return INT_LENGTH_COMPLEX_CHILD_BYTE_ARRAY;
     } else {

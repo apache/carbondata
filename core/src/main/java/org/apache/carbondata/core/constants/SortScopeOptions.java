@@ -34,11 +34,13 @@ public class SortScopeOptions {
       case "NO_SORT":
         return SortScope.NO_SORT;
       default:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3243
         return getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
     }
   }
 
   public enum SortScope {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3607
     NO_SORT, LOCAL_SORT, GLOBAL_SORT
   }
 }

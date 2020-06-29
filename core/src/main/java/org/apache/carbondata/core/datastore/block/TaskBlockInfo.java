@@ -47,6 +47,7 @@ public class TaskBlockInfo {
   }
 
   public Collection<List<TableBlockInfo>> getAllTableBlockInfoList() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1232
     return taskBlockInfoMapping.values();
   }
 

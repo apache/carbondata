@@ -75,6 +75,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   private boolean loaded;
 
   public CarbonColumnVectorImpl(int batchSize, DataType dataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
     this.batchSize = batchSize;
     nullBytes = new BitSet(batchSize);
     this.dataType = dataType;
@@ -82,6 +83,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       byteArr = new byte[batchSize];
     } else if (dataType == DataTypes.SHORT) {
       shorts = new short[batchSize];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3057
     } else if (dataType == DataTypes.INT || dataType == DataTypes.DATE) {
       ints = new int[batchSize];
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
@@ -93,7 +95,11 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     } else if (dataType instanceof DecimalType) {
       decimals = new BigDecimal[batchSize];
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
         || dataType == DataTypes.VARCHAR || dataType == DataTypes.BINARY) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
       dictionaryVector = new CarbonColumnVectorImpl(batchSize, DataTypes.INT);
       bytes = new byte[batchSize][];
     } else {
@@ -235,6 +241,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   @Override
   public Object getData(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
     if (!loaded) {
       loadPage();
     }
@@ -245,6 +252,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       return  byteArr[rowId];
     } else if (dataType == DataTypes.SHORT) {
       return shorts[rowId];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3057
     } else if (dataType == DataTypes.INT || dataType == DataTypes.DATE) {
       return ints[rowId];
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
@@ -256,10 +264,15 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     } else if (dataType instanceof DecimalType) {
       return decimals[rowId];
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
         || dataType == DataTypes.VARCHAR || dataType == DataTypes.BINARY) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
       if (null != carbonDictionary) {
         int dictKey = (Integer) dictionaryVector.getData(rowId);
         return carbonDictionary.getDictionaryValue(dictKey);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
       } else if (byteArr != null) {
         byte[] bytes = new byte[lengths[rowId]];
         System.arraycopy(byteArr, offsets[rowId], bytes, 0, bytes.length);
@@ -273,9 +286,11 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   }
 
   public Object getDataArray() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
     if (!loaded) {
       loadPage();
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       return  byteArr;
     } else if (dataType == DataTypes.SHORT) {
@@ -290,6 +305,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       return doubles;
     } else if (dataType instanceof DecimalType) {
       return decimals;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3057
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY || dataType ==
         DataTypes.VARCHAR) {
       if (null != carbonDictionary) {
@@ -308,6 +324,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       Arrays.fill(byteArr, (byte) 0);
     } else if (dataType == DataTypes.SHORT) {
       Arrays.fill(shorts, (short) 0);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3057
     } else if (dataType == DataTypes.INT || dataType == DataTypes.DATE) {
       Arrays.fill(ints, 0);
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
@@ -319,13 +336,18 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     } else if (dataType instanceof DecimalType) {
       Arrays.fill(decimals, null);
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
         || dataType == DataTypes.VARCHAR || dataType == DataTypes.BINARY) {
       Arrays.fill(bytes, null);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
       this.dictionaryVector.reset();
     } else {
       Arrays.fill(data, null);
     }
     loaded = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
 
   }
 
@@ -336,6 +358,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   @Override
   public DataType getBlockDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1946
     return blockDataType;
   }
 
@@ -369,6 +392,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
    * as an optimization to prevent setting nulls.
    */
   public final boolean anyNullsSet() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
     return anyNullsSet;
   }
 
@@ -382,6 +406,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   @Override
   public void putShorts(int rowId, int count, short[] src, int srcIndex) {
     for (int i = srcIndex; i < count; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3591
       shorts[rowId++] = src[i];
     }
   }
@@ -416,6 +441,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   @Override
   public void setLazyPage(LazyPageLoader lazyPage) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3157
     this.lazyPage = lazyPage;
   }
 
@@ -428,6 +454,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   @Override
   public void putArray(int rowId, int offset, int length) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
     if (offsets == null) {
       offsets = new int[batchSize];
       lengths = new int[batchSize];

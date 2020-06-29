@@ -58,6 +58,7 @@ class LocalCarbonStore extends MetaCachedCarbonStore {
 
   @Override
   public Iterator<CarbonRow> scan(AbsoluteTableIdentifier tableIdentifier, String[] projectColumns)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2754
       throws IOException {
     return scan(tableIdentifier, projectColumns, null);
   }
@@ -69,6 +70,7 @@ class LocalCarbonStore extends MetaCachedCarbonStore {
     Objects.requireNonNull(projectColumns);
 
     CarbonTable table = getTable(tableIdentifier.getTablePath());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2504
     if (table.isStreamingSink() || table.isHivePartitionTable()) {
       throw new UnsupportedOperationException("streaming and partition table is not supported");
     }
@@ -81,10 +83,12 @@ class LocalCarbonStore extends MetaCachedCarbonStore {
     CarbonInputFormat.setTableName(job.getConfiguration(), table.getTableName());
     CarbonInputFormat.setDatabaseName(job.getConfiguration(), table.getDatabaseName());
     CarbonInputFormat.setCarbonReadSupport(job.getConfiguration(), CarbonRowReadSupport.class);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     CarbonInputFormat
         .setColumnProjection(job.getConfiguration(), new CarbonProjection(projectColumns));
     if (filter != null) {
       CarbonInputFormat
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
           .setFilterPredicates(job.getConfiguration(), new IndexFilter(table, filter));
     }
 
@@ -94,6 +98,7 @@ class LocalCarbonStore extends MetaCachedCarbonStore {
     List<RecordReader<Void, Object>> readers = new ArrayList<>(splits.size());
 
     List<CarbonRow> rows = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
 
     try {
       for (InputSplit split : splits) {
@@ -106,11 +111,13 @@ class LocalCarbonStore extends MetaCachedCarbonStore {
 
       for (RecordReader<Void, Object> reader : readers) {
         while (reader.nextKeyValue()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
           rows.add((CarbonRow) reader.getCurrentValue());
         }
         try {
           reader.close();
         } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
           LOGGER.error(e.getMessage(), e);
         }
       }
@@ -121,6 +128,7 @@ class LocalCarbonStore extends MetaCachedCarbonStore {
         try {
           reader.close();
         } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
           LOGGER.error(e.getMessage(), e);
         }
       }

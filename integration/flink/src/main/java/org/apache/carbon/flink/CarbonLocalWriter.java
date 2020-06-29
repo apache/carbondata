@@ -46,12 +46,15 @@ final class CarbonLocalWriter extends CarbonWriter {
 
   CarbonLocalWriter(
       final CarbonLocalWriterFactory factory,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
       final String identifier,
       final CarbonTable table,
       final String writePath
   ) {
     super(factory, identifier, table);
     final Properties writerProperties = factory.getConfiguration().getWriterProperties();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3655
     final Properties carbonProperties = factory.getConfiguration().getCarbonProperties();
     final String commitThreshold =
         writerProperties.getProperty(CarbonLocalProperty.COMMIT_THRESHOLD);
@@ -60,8 +63,10 @@ final class CarbonLocalWriter extends CarbonWriter {
       protected org.apache.carbondata.sdk.file.CarbonWriter newWriter(
           final Object[] row) {
         try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3655
           final CarbonWriterBuilder writerBuilder =
               org.apache.carbondata.sdk.file.CarbonWriter.builder()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3661
               .taskNo(UUID.randomUUID().toString().replace("-", ""))
               .outputPath(super.getWritePath(row))
               .writtenBy("flink")
@@ -150,6 +155,7 @@ final class CarbonLocalWriter extends CarbonWriter {
       LOGGER.debug("Commit write. " + this.toString());
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3676
       String dataPath = CarbonTablePath.getStageDataDir(this.table.getTablePath());
       tryCreateLocalDirectory(new File(dataPath));
       StageInput stageInput = this.uploadSegmentDataFiles(this.writePath, dataPath);
@@ -160,6 +166,7 @@ final class CarbonLocalWriter extends CarbonWriter {
         // make it ordered by time in case the files ordered by file name.
         String stageInputPath = CarbonTablePath.getStageDir(
             table.getAbsoluteTableIdentifier().getTablePath()) +
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3678
             CarbonCommonConstants.FILE_SEPARATOR + System.currentTimeMillis() + UUID.randomUUID();
         tryCreateLocalDirectory(new File(stageInputPath));
         StageManager.writeStageInput(stageInputPath, stageInput);
@@ -178,12 +185,16 @@ final class CarbonLocalWriter extends CarbonWriter {
 
   @Override
   public void close() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     if (this.writerFactory == null) {
       return;
     }
     try {
       synchronized (this) {
         if (!this.flushed) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
           this.closeWriters();
           this.flushed = true;
         }
@@ -200,6 +211,8 @@ final class CarbonLocalWriter extends CarbonWriter {
   }
 
   private void closeWriters() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
     if (this.writerFactory == null) {
       return;
     }

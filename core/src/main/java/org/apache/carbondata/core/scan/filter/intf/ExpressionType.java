@@ -43,6 +43,8 @@ public enum ExpressionType {
   STARTSWITH,
   ENDSWITH,
   CONTAINSWITH,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3217
   TEXT_MATCH,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3548
   IMPLICIT
 }

@@ -67,7 +67,7 @@ public final class ProxyRecoverableOutputStream extends RecoverableFsDataOutputS
 
   @Override
   public void close() {
-    // TODO streaming结束的时候和出异常的时候都会调用该方法
+    // TODO streaming结束的时候和出异常的时�?�都会调用该方法
     if (this.writer != null) {
       this.writer.close();
     }
@@ -82,6 +82,8 @@ public final class ProxyRecoverableOutputStream extends RecoverableFsDataOutputS
         new ProxyRecoverable(
             this.writer.getFactory().getType(),
             this.writer.getFactory().getConfiguration(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
             this.writer.getIdentifier(),
             this.writer.getPath()
         )
@@ -119,6 +121,8 @@ public final class ProxyRecoverableOutputStream extends RecoverableFsDataOutputS
         throw new UnsupportedOperationException();
       }
       writerFactory.setConfiguration(this.recoverable.getWriterConfiguration());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3640
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3557
       return writerFactory.create(this.recoverable.getWriterIdentifier(),
           this.recoverable.getWritePath());
     }

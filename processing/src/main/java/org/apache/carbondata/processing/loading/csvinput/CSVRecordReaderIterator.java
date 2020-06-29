@@ -64,6 +64,7 @@ public class CSVRecordReaderIterator extends CarbonIterator<Object []> {
       }
       return true;
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1470
       if (e instanceof TextParsingException) {
         throw new CarbonDataLoadingException(
             CarbonDataProcessorUtil.trimErrorMessage(e.getMessage()));

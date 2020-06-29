@@ -45,6 +45,7 @@ public class SDKS3Example {
         Logger logger = LogServiceFactory.getLogService(SDKS3Example.class.getName());
         if (args == null || args.length < 3) {
             logger.error("Usage: java CarbonS3Example: <access-key> <secret-key>"
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3221
                 + "<s3-endpoint> [table-path-on-s3] [rows] [Number of writes]");
             System.exit(0);
         }
@@ -62,6 +63,7 @@ public class SDKS3Example {
 
         int rows = 3;
         if (args.length > 4) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3221
             rows = Integer.parseInt(args[4]);
         }
         int num = 3;
@@ -69,6 +71,7 @@ public class SDKS3Example {
             num = Integer.parseInt(args[5]);
         }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3000
         Configuration conf = new Configuration(true);
         conf.set(Constants.ACCESS_KEY, args[0]);
         conf.set(Constants.SECRET_KEY, args[1]);
@@ -77,7 +80,9 @@ public class SDKS3Example {
         Field[] fields = new Field[2];
         fields[0] = new Field("name", DataTypes.STRING);
         fields[1] = new Field("age", DataTypes.INT);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3221
         for (int j = 0; j < num; j++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3000
             CarbonWriter writer = CarbonWriter
                 .builder()
                 .outputPath(path)
@@ -101,6 +106,7 @@ public class SDKS3Example {
             .builder(path, "_temp")
             .projection(new String[]{"name", "age"})
             .filter(equalToExpression)
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
             .withHadoopConf(conf)
             .build();
 
@@ -113,8 +119,10 @@ public class SDKS3Example {
         }
         System.out.println("\nFinished");
         reader.close();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2392
 
         // Read without filter
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3221
         CarbonReader reader2 = CarbonReader
             .builder(path, "_temp")
             .projection(new String[]{"name", "age"})

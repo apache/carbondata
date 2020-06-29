@@ -66,6 +66,8 @@ public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColu
     int[] rlePage;
 
     // uncompress the encoded column page
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     byte[] bytes = CompressorFactory.getInstance().getCompressor(
         encodedColumnPage.getActualPage().getColumnPageEncoderMeta().getCompressorName())
         .unCompressByte(encodedColumnPage.getEncodedData().array(), offset,
@@ -90,6 +92,7 @@ public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColu
           CarbonUtil.getIntArray(data, offset, encodedColumnPage.getPageMetadata().rle_page_length);
       // uncompress the data with rle indexes
       bytes = UnBlockIndexer
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
           .uncompressData(bytes, rlePage, CarbonCommonConstants.LOCAL_DICT_ENCODED_BYTEARRAY_SIZE,
               bytes.length);
     }
@@ -99,6 +102,8 @@ public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColu
 
     // create a new column page which will have actual data instead of encoded data
     ColumnPage actualDataColumnPage =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
         ColumnPage.newPage(encodedColumnPage.getActualPage().getColumnPageEncoderMeta(),
             encodedColumnPage.getActualPage().getPageSize());
 
@@ -119,6 +124,8 @@ public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColu
     }
 
     // get column spec for existing column page
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     TableSpec.ColumnSpec columnSpec = encodedColumnPage.getActualPage().getColumnSpec();
     FallbackEncodedColumnPage fallBackEncodedColumnPage =
         CarbonUtil.getFallBackEncodedColumnPage(actualDataColumnPage, pageIndex, columnSpec);
@@ -126,6 +133,7 @@ public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColu
     // fallBackEncodedColumnPage is created using new page of actual data
     // This is required to free the memory once it is of no use
     actualDataColumnPage.freeMemory();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3787
     encodedColumnPage.cleanBuffer();
     return fallBackEncodedColumnPage;
   }

@@ -59,6 +59,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
  */
 @InterfaceAudience.Internal
 abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
   /**
    * Size of the cache to maintain in Lucene writer, if specified then it tries to aggregate the
@@ -87,11 +88,13 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
    * Logger
    */
   final Logger LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
 
   /**
    * table's index columns
    */
   IndexMeta indexMeta = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
   /**
    * analyzer for lucene
@@ -102,6 +105,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
    * index name
    */
   String indexName = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
 
   /**
    * table identifier
@@ -109,6 +113,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
   AbsoluteTableIdentifier tableIdentifier = null;
 
   List<CarbonColumn> indexedCarbonColumns = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2494
 
   int flushCacheSize;
 
@@ -116,6 +121,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
 
   public LuceneIndexFactoryBase(CarbonTable carbonTable, IndexSchema indexSchema)
       throws MalformedIndexCommandException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     super(carbonTable, indexSchema);
     Objects.requireNonNull(carbonTable.getAbsoluteTableIdentifier());
     Objects.requireNonNull(indexSchema);
@@ -136,6 +142,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
     // optimizedOperations.add(ExpressionType.LESSTHAN_EQUALTO);
     // optimizedOperations.add(ExpressionType.NOT);
     optimizedOperations.add(ExpressionType.TEXT_MATCH);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     this.indexMeta = new IndexMeta(indexedCarbonColumns, optimizedOperations);
     // get analyzer
     // TODO: how to get analyzer ?
@@ -143,6 +150,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
   }
 
   public static int validateAndGetWriteCacheSize(IndexSchema schema) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2494
     String cacheStr = schema.getProperties().get(FLUSH_CACHE);
     if (cacheStr == null) {
       cacheStr = FLUSH_CACHE_DEFAULT_SIZE;
@@ -183,6 +191,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
       }
     } catch (IOException | RuntimeException ex) {
       throw new MalformedIndexCommandException(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           "drop index failed, failed to delete index directory");
     }
   }
@@ -202,6 +211,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
   @Override
   public IndexBuilder createBuilder(Segment segment, String shardName,
       SegmentProperties segmentProperties) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     return new LuceneIndexBuilder(getCarbonTable().getTablePath(), indexName,
         segment, shardName, indexMeta.getIndexedColumns(), flushCacheSize, storeBlockletWise);
   }
@@ -211,6 +221,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
    */
   @Override
   public List<IndexInputSplit> toDistributable(Segment segment) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     List<IndexInputSplit> splits = new ArrayList<>();
     CarbonFile[] indexDirs =
         getAllIndexDirs(tableIdentifier.getTablePath(), segment.getSegmentNo());
@@ -220,6 +231,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
             new LuceneIndexInputSplit(tableIdentifier.getTablePath(),
                 indexDir.getAbsolutePath());
         luceneIndexInputSplit.setSegment(segment);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         luceneIndexInputSplit.setIndexSchema(getIndexSchema());
         splits.add(luceneIndexInputSplit);
       }
@@ -235,6 +247,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
           CarbonTablePath.getSegmentPath(tableIdentifier.getTablePath(), segment.getSegmentNo()),
           indexDir.getAbsolutePath());
       luceneIndexInputSplit.setSegment(segment);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       luceneIndexInputSplit.setIndexSchema(getIndexSchema());
       splits.add(luceneIndexInputSplit);
     }
@@ -256,12 +269,14 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
 
   @Override
   public void deleteIndexData(Segment segment) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     deleteSegmentIndexData(segment.getSegmentNo());
   }
 
   @Override
   public void deleteSegmentIndexData(String segmentId) throws IOException {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
       String indexPath = CarbonTablePath
           .getIndexesStorePath(tableIdentifier.getTablePath(), segmentId, indexName);
       if (FileFactory.isFileExist(indexPath)) {
@@ -277,6 +292,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
   public void deleteIndexData() {
     try {
       deleteIndex();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     } catch (MalformedIndexCommandException ex) {
       LOGGER.error("failed to delete index directory ", ex);
     }
@@ -286,6 +302,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
    * Return metadata of this index
    */
   public IndexMeta getMeta() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     return indexMeta;
   }
 
@@ -297,6 +314,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
    */
   private CarbonFile[] getAllIndexDirs(String tablePath, String segmentId) {
     List<CarbonFile> indexDirs = new ArrayList<>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     List<TableIndex> indexes = new ArrayList<>();
     try {
       // there can be multiple lucene index present on a table, so get all indexes and form
@@ -311,6 +329,7 @@ abstract class LuceneIndexFactoryBase<T extends Index> extends IndexFactory<T> {
           List<CarbonFile> indexFiles;
           String dmPath = CarbonTablePath.getIndexesStorePath(tablePath, segmentId,
               index.getIndexSchema().getIndexName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
           final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath);
           indexFiles = Arrays.asList(dirPath.listFiles(new CarbonFileFilter() {
             @Override

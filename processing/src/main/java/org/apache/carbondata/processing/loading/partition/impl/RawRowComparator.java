@@ -36,6 +36,7 @@ public class RawRowComparator implements Comparator<CarbonRow> {
   private DataType[] noDicDataTypes;
 
   public RawRowComparator(int[] sortColumnIndices, boolean[] isSortColumnNoDict,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       DataType[] noDicDataTypes) {
     this.sortColumnIndices = sortColumnIndices;
     this.isSortColumnNoDict = isSortColumnNoDict;
@@ -65,6 +66,7 @@ public class RawRowComparator implements Comparator<CarbonRow> {
             return diff;
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2953
         noDicIdx++;
       } else {
         int colA = (int) o1.getObject(colIdx);

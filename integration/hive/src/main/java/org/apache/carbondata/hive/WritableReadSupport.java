@@ -67,6 +67,7 @@ public class WritableReadSupport<T> implements CarbonReadSupport<T> {
    */
   @Override
   public void initialize(CarbonColumn[] carbonColumns,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       CarbonTable carbonTable) {
     this.carbonColumns = carbonColumns;
   }
@@ -74,10 +75,12 @@ public class WritableReadSupport<T> implements CarbonReadSupport<T> {
   @Override
   public T readRow(Object[] data) {
     writableArr = new Writable[data.length];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3605
     for (int i = 0; i < data.length; i++) {
       try {
         writableArr[i] = createWritableObject(data[i], carbonColumns[i]);
       } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
         throw new RuntimeException(e);
       }
     }
@@ -94,10 +97,12 @@ public class WritableReadSupport<T> implements CarbonReadSupport<T> {
    */
   private Writable createWritableObject(Object obj, CarbonColumn carbonColumn) throws IOException {
     DataType dataType = carbonColumn.getDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
     if (DataTypes.isStructType(dataType)) {
       return createStruct(obj, carbonColumn);
     } else if (DataTypes.isArrayType(dataType)) {
       return createArray(obj, carbonColumn);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3542
     } else if (DataTypes.isMapType(dataType)) {
       return createMap(obj, carbonColumn);
     } else {
@@ -114,6 +119,7 @@ public class WritableReadSupport<T> implements CarbonReadSupport<T> {
    * @throws IOException
    */
   private ArrayWritable createArray(Object obj, CarbonColumn carbonColumn) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3406
     Object[] objArray = (Object[]) obj;
     List<CarbonDimension> childCarbonDimensions = null;
     CarbonDimension arrayDimension = null;
@@ -145,12 +151,14 @@ public class WritableReadSupport<T> implements CarbonReadSupport<T> {
    * @throws IOException
    */
   private ArrayWritable createStruct(Object obj, CarbonColumn carbonColumn) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3406
     Object[] objArray = (Object[]) obj;
     List<CarbonDimension> childCarbonDimensions = null;
     if (carbonColumn.isDimension() && carbonColumn.getColumnSchema().getNumberOfChild() > 0) {
       childCarbonDimensions = ((CarbonDimension) carbonColumn).getListOfChildDimensions();
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
     if (null != childCarbonDimensions) {
       Writable[] arr = new Writable[objArray.length];
       for (int i = 0; i < objArray.length; i++) {
@@ -222,6 +230,7 @@ public class WritableReadSupport<T> implements CarbonReadSupport<T> {
       return new LongWritable((long) obj);
     } else if (dataType == DataTypes.SHORT) {
       return new ShortWritable((short) obj);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3406
     } else if (dataType == DataTypes.BOOLEAN) {
       return new BooleanWritable((boolean) obj);
     } else if (dataType == DataTypes.VARCHAR) {
@@ -235,14 +244,18 @@ public class WritableReadSupport<T> implements CarbonReadSupport<T> {
       return ins.getPrimitiveWritableObject(ins.create(new Timestamp((long) obj / 1000)));
     } else if (dataType == DataTypes.STRING) {
       return new Text(obj.toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3406
     } else if (DataTypes.isArrayType(dataType)) {
       return createArray(obj, carbonColumn);
     } else if (DataTypes.isStructType(dataType)) {
       return createStruct(obj, carbonColumn);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3542
     } else if (DataTypes.isMapType(dataType)) {
       return createMap(obj, carbonColumn);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       return new HiveDecimalWritable(HiveDecimal.create(new java.math.BigDecimal(obj.toString())));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3687
     } else if (dataType == DataTypes.FLOAT) {
       return new FloatWritable((float) obj);
     } else {

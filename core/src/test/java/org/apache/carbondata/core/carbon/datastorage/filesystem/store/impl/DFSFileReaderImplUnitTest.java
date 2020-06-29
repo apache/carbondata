@@ -47,10 +47,13 @@ public class DFSFileReaderImplUnitTest {
   private static File fileWithEmptyContent;
 
   @BeforeClass public static void setup() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
     dfsFileHolder = new DFSFileReaderImpl(new Configuration());
     file = new File("Test.carbondata");
     fileWithEmptyContent = new File("TestEXception.carbondata");
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
     if (file.exists()) {
       file.delete();
     }
@@ -60,6 +63,7 @@ public class DFSFileReaderImplUnitTest {
       e.printStackTrace();
     }
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1114
       FileOutputStream of = new FileOutputStream(file, false);
       BufferedWriter br = new BufferedWriter(new OutputStreamWriter(of, "UTF-8"));
       br.write("Hello World");

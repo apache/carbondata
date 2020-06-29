@@ -57,6 +57,7 @@ public class BlockMappingVO {
   }
 
   public void setBlockToSegmentMapping(Map<String, String> blockToSegmentMapping) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
     this.blockToSegmentMapping = blockToSegmentMapping;
   }
 

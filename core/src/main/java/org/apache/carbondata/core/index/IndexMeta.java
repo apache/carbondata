@@ -49,6 +49,7 @@ public class IndexMeta {
   public IndexMeta(String indexName, List<CarbonColumn> indexedColumns,
       List<ExpressionType> optimizedOperation) {
     this(indexedColumns, optimizedOperation);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     this.indexName = indexName;
   }
 
@@ -61,6 +62,7 @@ public class IndexMeta {
   }
 
   public List<String> getIndexedColumnNames() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
     return (List<String>) CollectionUtils.collect(indexedColumns, new Transformer() {
       @Override
       public Object transform(Object input) {
@@ -75,7 +77,9 @@ public class IndexMeta {
 
   @Override
   public String toString() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     return new StringBuilder("IndexMeta{")
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
         .append("indexName='").append(indexName).append('\'')
         .append(", indexedColumns=[")
         .append(StringUtils.join(getIndexedColumnNames(), ", ")).append("]\'")

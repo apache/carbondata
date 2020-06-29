@@ -18,10 +18,12 @@
 package org.apache.carbondata.core.features;
 
 public enum TableOperation {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2347
   ALTER_RENAME,
   ALTER_DROP,
   ALTER_ADD_COLUMN,
   ALTER_CHANGE_DATATYPE,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3149
   ALTER_COLUMN_RENAME,
   STREAMING,
   UPDATE,

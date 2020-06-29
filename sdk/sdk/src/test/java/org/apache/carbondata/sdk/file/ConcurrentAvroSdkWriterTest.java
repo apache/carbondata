@@ -60,6 +60,7 @@ public class ConcurrentAvroSdkWriterTest {
     try {
       CarbonWriterBuilder builder =
           CarbonWriter.builder().outputPath(path).withThreadSafe(numOfThreads);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3025
       CarbonWriter writer = builder.withAvroInput(avroSchema).writtenBy("ConcurrentAvroSdkWriterTest").build();
       // write in multi-thread
       for (int i = 0; i < numOfThreads; i++) {
@@ -77,6 +78,7 @@ public class ConcurrentAvroSdkWriterTest {
     CarbonReader reader;
     try {
       reader =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2961
           CarbonReader.builder(path, "_temp2122").projection(new String[] { "name", "age" }).build();
       int i = 0;
       while (reader.hasNext()) {

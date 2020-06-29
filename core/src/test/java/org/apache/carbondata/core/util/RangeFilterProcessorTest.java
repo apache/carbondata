@@ -51,6 +51,7 @@ public class RangeFilterProcessorTest {
 
   public static DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo =
       new DimColumnResolvedFilterInfo();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
 
   @BeforeClass public static void setUp() throws Exception {
     ColumnSchema columnSchema = new ColumnSchema();
@@ -90,6 +91,7 @@ public class RangeFilterProcessorTest {
     empColumnSchema.setColumnUniqueId("empNameCol");
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     empColumnSchema.setDataType(DataTypes.STRING);
     CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0);
     cola.setDimension(empDimension);
@@ -103,6 +105,7 @@ public class RangeFilterProcessorTest {
     Expression lessThan =
         new LessThanEqualToExpression(colb, new LiteralExpression("20", DataTypes.STRING));
     inputFilter = new AndExpression(greaterThan, lessThan);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
 
     Expression output = new AndExpression(new RangeExpression(
         new GreaterThanEqualToExpression(new ColumnExpression("a", DataTypes.STRING),
@@ -123,6 +126,8 @@ public class RangeFilterProcessorTest {
 
     Expression inputFilter;
     boolean result = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression cola = new ColumnExpression("a", DataTypes.STRING);
     cola.setDimension(true);
 
@@ -131,7 +136,10 @@ public class RangeFilterProcessorTest {
     empColumnSchema.setColumnUniqueId("empNameCol");
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     empColumnSchema.setDataType(DataTypes.STRING);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0);
     cola.setDimension(empDimension);
 
@@ -144,6 +152,7 @@ public class RangeFilterProcessorTest {
     Expression lessThan =
         new LessThanEqualToExpression(colb, new LiteralExpression("05", DataTypes.STRING));
     inputFilter = new AndExpression(greaterThan, lessThan);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
 
     Expression output = new AndExpression(
         new GreaterThanEqualToExpression(new ColumnExpression("a", DataTypes.STRING),
@@ -151,6 +160,8 @@ public class RangeFilterProcessorTest {
         new LessThanEqualToExpression(new ColumnExpression("a", DataTypes.STRING),
             new LiteralExpression("05", DataTypes.STRING)));
     FilterOptimizer rangeFilterOptimizer =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         new RangeFilterOptmizer(inputFilter);
     rangeFilterOptimizer.optimizeFilter();
     result = checkBothTrees(inputFilter, output);
@@ -170,6 +181,7 @@ public class RangeFilterProcessorTest {
     empColumnSchema.setColumnUniqueId("a");
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     empColumnSchema.setDataType(DataTypes.STRING);
     CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0);
 
@@ -202,9 +214,11 @@ public class RangeFilterProcessorTest {
     Expression And2 = new AndExpression(And1, greaterThan1);
     Expression And3 = new AndExpression(And2, lessThan2);
     inputFilter = new AndExpression(And3, lessThan1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
 
     // Build The output
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression colb1 = new ColumnExpression("a", DataTypes.STRING);
     cola1.setDimension(true);
     cola1.setDimension(empDimension);
@@ -226,8 +240,10 @@ public class RangeFilterProcessorTest {
     Expression Andb3 = new AndExpression(Andb2, new TrueExpression(null));
 
     FilterOptimizer rangeFilterOptimizer =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         new RangeFilterOptmizer(inputFilter);
     rangeFilterOptimizer.optimizeFilter();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
     result = checkBothTrees(inputFilter, new AndExpression(Andb3, new TrueExpression(null)));
     // no change
     Assert.assertTrue(result);
@@ -245,8 +261,11 @@ public class RangeFilterProcessorTest {
     empColumnSchema.setColumnUniqueId("a");
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     empColumnSchema.setDataType(DataTypes.STRING);
     CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
 
     ColumnExpression cola1 = new ColumnExpression("a", DataTypes.STRING);
     cola1.setDimension(true);
@@ -277,9 +296,11 @@ public class RangeFilterProcessorTest {
     Expression Or2 = new OrExpression(Or1, greaterThan1);
     Expression Or3 = new OrExpression(Or2, lessThan2);
     inputFilter = new OrExpression(Or3, lessThan1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
 
     // Build The output
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression colb1 = new ColumnExpression("a", DataTypes.STRING);
     cola1.setDimension(true);
     cola1.setDimension(empDimension);
@@ -310,8 +331,10 @@ public class RangeFilterProcessorTest {
     Expression Orb3 = new OrExpression(Orb2, lessThanb2);
 
     FilterOptimizer rangeFilterOptimizer =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         new RangeFilterOptmizer(inputFilter);
     rangeFilterOptimizer.optimizeFilter();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
     result = checkBothTrees(inputFilter, new OrExpression(Orb3, lessThanb1));
     // no change
     Assert.assertTrue(result);
@@ -330,6 +353,7 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
     Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
 
     result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     Assert.assertFalse(result);
@@ -347,7 +371,10 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     Assert.assertFalse(result);
   }
@@ -383,7 +410,9 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
     Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     rangeCovered = Deencapsulation.getField(range, "isRangeFullyCoverBlock");
     Assert.assertTrue(result);
@@ -404,7 +433,9 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
     Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     startBlockMinIsDefaultStart = Deencapsulation.getField(range, "startBlockMinIsDefaultStart");
     Assert.assertTrue(result);
@@ -425,7 +456,11 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
     Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
     result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     endBlockMaxisDefaultEnd = Deencapsulation.getField(range, "endBlockMaxisDefaultEnd");
     Assert.assertTrue(result);

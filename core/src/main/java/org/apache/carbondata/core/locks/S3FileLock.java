@@ -56,6 +56,7 @@ public class S3FileLock extends AbstractCarbonLock {
    * @param lockFile
    */
   public S3FileLock(String lockFileLocation, String lockFile) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2230
     this.lockFileDir = CarbonTablePath.getLockFilesDirPath(lockFileLocation);
     this.lockFilePath = CarbonTablePath.getLockFilePath(lockFileLocation, lockFile);
     LOGGER.info("S3 lock path:" + this.lockFilePath);
@@ -86,6 +87,7 @@ public class S3FileLock extends AbstractCarbonLock {
   public boolean lock() {
     try {
       if (!FileFactory.isFileExist(lockFileDir)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         FileFactory.mkdirs(lockFileDir);
       }
       if (!FileFactory.isFileExist(lockFilePath)) {
@@ -95,6 +97,7 @@ public class S3FileLock extends AbstractCarbonLock {
           FileFactory.getDataOutputStreamUsingAppend(lockFilePath);
       return true;
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error(e.getMessage(), e);
       return false;
     }

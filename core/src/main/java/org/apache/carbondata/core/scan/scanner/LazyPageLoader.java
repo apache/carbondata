@@ -55,6 +55,7 @@ public class LazyPageLoader {
     this.pageNumber = pageNumber;
     this.vectorInfo = vectorInfo;
     this.queryStatisticsModel = lazyBlockletLoader.getQueryStatisticsModel();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     this.reusableDataBuffer = reusableDataBuffer;
   }
 
@@ -69,6 +70,7 @@ public class LazyPageLoader {
     long startTime = System.currentTimeMillis();
     if (isMeasure) {
       ((MeasureRawColumnChunk) lazyChunkWrapper.getRawColumnChunk())
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
           .convertToColumnPageAndFillVector(pageNumber, vectorInfo, reusableDataBuffer);
     } else {
       ((DimensionRawColumnChunk) lazyChunkWrapper.getRawColumnChunk())

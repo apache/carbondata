@@ -26,6 +26,7 @@ public class ByteArrayColumnWithRowId implements Comparable<ByteArrayColumnWithR
 
   private short rowId;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3730
   ByteArrayColumnWithRowId(byte[] column, short rowId) {
     this.column = column;
     this.rowId = rowId;
@@ -50,6 +51,7 @@ public class ByteArrayColumnWithRowId implements Comparable<ByteArrayColumnWithR
     if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3730
     ByteArrayColumnWithRowId o = (ByteArrayColumnWithRowId)obj;
     return Arrays.equals(column, o.column) && rowId == o.rowId;
   }

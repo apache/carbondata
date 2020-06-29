@@ -51,6 +51,7 @@ public abstract class IndexExprWrapper implements Serializable {
    */
   public abstract List<ExtendedBlocklet> prune(IndexInputSplit distributable,
       List<PartitionSpec> partitionsToPrune) throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
 
   /**
    * It is used in case on distributable index. First using job it gets all blockets from all
@@ -77,6 +78,7 @@ public abstract class IndexExprWrapper implements Serializable {
    */
   public abstract List<IndexInputSplitWrapper> toDistributable(List<Segment> segments)
       throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2389
 
   /**
    * Each leaf node is identified by uniqueid, so if user wants the underlying filter expression for

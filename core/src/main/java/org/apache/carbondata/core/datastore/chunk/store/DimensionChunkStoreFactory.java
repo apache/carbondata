@@ -65,6 +65,7 @@ public class DimensionChunkStoreFactory {
    */
   public DimensionDataChunkStore getDimensionChunkStore(int columnValueSize,
       boolean isInvertedIndex, int numberOfRows, long totalSize, DimensionStoreType storeType,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
       CarbonDictionary dictionary, boolean fillDirectVector, int dataLength) {
     if (isUnsafe && !fillDirectVector) {
       switch (storeType) {
@@ -90,6 +91,7 @@ public class DimensionChunkStoreFactory {
           return new SafeFixedLengthDimensionDataChunkStore(isInvertedIndex, columnValueSize,
               numberOfRows);
         case VARIABLE_SHORT_LENGTH:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
           return new SafeVariableShortLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows,
               dataLength);
         case VARIABLE_INT_LENGTH:
@@ -109,6 +111,9 @@ public class DimensionChunkStoreFactory {
    * dimension store type enum
    */
   public enum DimensionStoreType {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2589
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2590
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2602
     FIXED_LENGTH, VARIABLE_SHORT_LENGTH, VARIABLE_INT_LENGTH, LOCAL_DICT;
   }
 }

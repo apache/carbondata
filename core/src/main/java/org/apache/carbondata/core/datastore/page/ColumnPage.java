@@ -59,6 +59,7 @@ public abstract class ColumnPage {
   protected ColumnPageStatsCollector statsCollector;
 
   protected static final boolean unsafe = Boolean.parseBoolean(CarbonProperties.getInstance()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1993
       .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
           CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT));
 
@@ -67,7 +68,10 @@ public abstract class ColumnPage {
    */
   protected ColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     this.pageSize = pageSize;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
     this.nullBitSet = new BitSet(pageSize);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     this.columnPageEncoderMeta = columnPageEncoderMeta;
   }
 
@@ -76,6 +80,9 @@ public abstract class ColumnPage {
   }
 
   public SimpleStatsResult getStatistics() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1098
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     return statsCollector.getPageStats();
   }
 
@@ -89,7 +96,11 @@ public abstract class ColumnPage {
 
   private static ColumnPage createDecimalPage(ColumnPageEncoderMeta columnPageEncoderMeta,
       int pageSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     if (isUnsafeEnabled(columnPageEncoderMeta)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       return new UnsafeDecimalColumnPage(columnPageEncoderMeta, pageSize);
     } else {
       return new SafeDecimalColumnPage(columnPageEncoderMeta, pageSize);
@@ -98,7 +109,9 @@ public abstract class ColumnPage {
 
   private static ColumnPage createVarLengthPage(ColumnPageEncoderMeta columnPageEncoderMeta,
       int pageSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     if (isUnsafeEnabled(columnPageEncoderMeta)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       return new UnsafeVarLengthColumnPage(columnPageEncoderMeta, pageSize);
     } else {
       return new SafeVarLengthColumnPage(columnPageEncoderMeta, pageSize);
@@ -107,7 +120,9 @@ public abstract class ColumnPage {
 
   private static ColumnPage createFixLengthPage(
       ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     if (isUnsafeEnabled(columnPageEncoderMeta)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       return new UnsafeFixLengthColumnPage(columnPageEncoderMeta, pageSize);
     } else {
       return new SafeFixLengthColumnPage(columnPageEncoderMeta, pageSize);
@@ -116,7 +131,9 @@ public abstract class ColumnPage {
 
   private static ColumnPage createFixLengthByteArrayPage(
       ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize, int eachValueSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     if (isUnsafeEnabled(columnPageEncoderMeta)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       return new UnsafeFixLengthColumnPage(columnPageEncoderMeta, pageSize, eachValueSize);
     } else {
       return new SafeFixLengthColumnPage(columnPageEncoderMeta, pageSize);
@@ -146,7 +163,9 @@ public abstract class ColumnPage {
             CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT));
     ColumnPage actualPage;
     ColumnPage encodedPage;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     if (isUnsafeEnabled(columnPageEncoderMeta)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
       DataType dataType = columnPageEncoderMeta.getStoreDataType();
       if (dataType == DataTypes.STRING ||
           dataType == DataTypes.VARCHAR ||
@@ -179,6 +198,7 @@ public abstract class ColumnPage {
     DataType dataType = columnPageEncoderMeta.getStoreDataType();
     TableSpec.ColumnSpec columnSpec = columnPageEncoderMeta.getColumnSpec();
     String compressorName = columnPageEncoderMeta.getCompressorName();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     if (isUnsafeEnabled(columnPageEncoderMeta)) {
       if (dataType == DataTypes.BOOLEAN) {
         instance = new UnsafeFixLengthColumnPage(
@@ -190,6 +210,7 @@ public abstract class ColumnPage {
           dataType == LONG ||
           dataType == DataTypes.FLOAT ||
           dataType == DataTypes.DOUBLE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
         instance = new UnsafeFixLengthColumnPage(columnPageEncoderMeta, pageSize);
       } else if (dataType == DataTypes.TIMESTAMP) {
         instance = new UnsafeFixLengthColumnPage(
@@ -207,6 +228,7 @@ public abstract class ColumnPage {
       }
     } else {
       if (dataType == DataTypes.BOOLEAN || dataType == BYTE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
         instance = newBytePage(columnPageEncoderMeta, new byte[pageSize]);
       } else if (dataType == SHORT) {
         instance = newShortPage(columnPageEncoderMeta, new short[pageSize]);
@@ -224,6 +246,7 @@ public abstract class ColumnPage {
         instance = newDoublePage(columnPageEncoderMeta, new double[pageSize]);
       } else if (DataTypes.isDecimal(dataType)) {
         instance = newDecimalPage(columnPageEncoderMeta, new byte[pageSize][]);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
       } else if (dataType == DataTypes.STRING ||
           dataType == DataTypes.VARCHAR ||
           dataType == DataTypes.BINARY) {
@@ -238,6 +261,7 @@ public abstract class ColumnPage {
   }
 
   private static ColumnPage newBytePage(ColumnPageEncoderMeta meta, byte[] byteData) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     ColumnPageEncoderMeta encoderMeta =
         new ColumnPageEncoderMeta(meta.getColumnSpec(), BYTE, meta.getCompressorName());
     encoderMeta.setFillCompleteVector(meta.isFillCompleteVector());
@@ -296,7 +320,9 @@ public abstract class ColumnPage {
   }
 
   private static ColumnPage newDecimalPage(ColumnPageEncoderMeta meta,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
       byte[] lvEncodedByteArray) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     return VarLengthColumnPageBase
         .newDecimalColumnPage(meta, lvEncodedByteArray, lvEncodedByteArray.length);
   }
@@ -381,10 +407,14 @@ public abstract class ColumnPage {
   public void putData(int rowId, Object value) {
     if (value == null) {
       putNull(rowId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1098
       statsCollector.updateNull(rowId);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
       nullBitSet.set(rowId);
       return;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     DataType dataType = columnPageEncoderMeta.getStoreDataType();
     if (dataType == DataTypes.BOOLEAN || dataType == BYTE) {
       if (columnPageEncoderMeta.getColumnSpec().getSchemaDataType() == DataTypes.BOOLEAN) {
@@ -404,6 +434,7 @@ public abstract class ColumnPage {
     } else if (dataType == DataTypes.DOUBLE) {
       putDouble(rowId, (double) value);
       statsCollector.update((double) value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       putDecimal(rowId, (BigDecimal) value);
       statsCollector.update((BigDecimal) value);
@@ -412,9 +443,11 @@ public abstract class ColumnPage {
         || dataType == DataTypes.VARCHAR) {
       putBytes(rowId, (byte[]) value);
       statsCollector.update((byte[]) value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType == DataTypes.FLOAT) {
       putFloat(rowId, (float) value);
       statsCollector.update((float) value);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3351
     } else if (dataType == DataTypes.BINARY) {
       putBytes(rowId, (byte[]) value);
       statsCollector.update((byte[]) value);
@@ -429,9 +462,12 @@ public abstract class ColumnPage {
    * @return value
    */
   public Object getData(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2350
     if (nullBitSet.get(rowId)) {
       return getNull(rowId);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     DataType dataType = columnPageEncoderMeta.getStoreDataType();
     if (dataType == DataTypes.BOOLEAN || dataType == BYTE) {
       byte value = getByte(rowId);
@@ -507,6 +543,7 @@ public abstract class ColumnPage {
    * Set boolean value at rowId
    */
   public void putBoolean(int rowId, boolean value) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     putByte(rowId, BooleanConvert.boolean2Byte(value));
   }
 
@@ -519,6 +556,8 @@ public abstract class ColumnPage {
    * Set null at rowId
    */
   protected void putNull(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     DataType dataType = columnPageEncoderMeta.getStoreDataType();
     if (dataType == DataTypes.BOOLEAN) {
       putBoolean(rowId, false);
@@ -532,8 +571,10 @@ public abstract class ColumnPage {
       putLong(rowId, 0L);
     } else if (dataType == DataTypes.DOUBLE) {
       putDouble(rowId, 0.0);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2948
     } else if (dataType == DataTypes.FLOAT) {
       putFloat(rowId, 0.0f);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       putDecimal(rowId, BigDecimal.ZERO);
     } else {
@@ -545,7 +586,10 @@ public abstract class ColumnPage {
    * Get null at rowId
    */
   private Object getNull(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2350
     Object result;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     DataType dataType = columnPageEncoderMeta.getStoreDataType();
     if (dataType == DataTypes.BOOLEAN) {
       result = getBoolean(rowId);
@@ -589,6 +633,7 @@ public abstract class ColumnPage {
    * Get boolean value at rowId
    */
   public boolean getBoolean(int rowId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     return BooleanConvert.byte2Boolean(getByte(rowId));
   }
 
@@ -641,6 +686,7 @@ public abstract class ColumnPage {
    * Get boolean value page
    */
   public byte[] getBooleanPage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1444
     return getBytePage();
   }
 
@@ -680,6 +726,7 @@ public abstract class ColumnPage {
    */
   public abstract byte[] getComplexChildrenLVFlattenedBytePage(DataType dataType)
       throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
 
   /**
    * For complex type columns
@@ -722,6 +769,7 @@ public abstract class ColumnPage {
       return getDecimalPage().length;
     } else if (dataType == BYTE_ARRAY
         && columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.COMPLEX_PRIMITIVE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
       return getComplexChildrenLVFlattenedBytePage(
           columnPageEncoderMeta.getColumnSpec().getSchemaDataType()).length;
     } else if (dataType == BYTE_ARRAY
@@ -741,7 +789,10 @@ public abstract class ColumnPage {
    * Compress page data using specified compressor
    */
   public ByteBuffer compress(Compressor compressor) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     DataType dataType = columnPageEncoderMeta.getStoreDataType();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     if (dataType == DataTypes.STRING) {
       return compressor.compressByte(getByteBuffer());
     } else if (dataType == DataTypes.BOOLEAN) {
@@ -760,10 +811,16 @@ public abstract class ColumnPage {
       return compressor.compressFloat(getFloatPage());
     } else if (dataType == DataTypes.DOUBLE) {
       return compressor.compressDouble(getDoublePage());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     } else if (DataTypes.isDecimal(dataType)) {
       return compressor.compressByte(getDecimalPage());
     } else if (dataType == BYTE_ARRAY
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
         && columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.COMPLEX_PRIMITIVE) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
       return compressor.compressByte(getComplexChildrenLVFlattenedBytePage(
           columnPageEncoderMeta.getColumnSpec().getSchemaDataType()));
     } else if (dataType == BYTE_ARRAY
@@ -773,10 +830,14 @@ public abstract class ColumnPage {
         || columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.PLAIN_VALUE)) {
       return compressor.compressByte(getComplexParentFlattenedBytePage());
     } else if (dataType == DataTypes.BINARY) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
       return ByteBuffer.wrap(getLVFlattenedBytePage());
     } else if (dataType == BYTE_ARRAY) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
       return compressor.compressByte(getLVFlattenedBytePage());
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3208
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3208
       throw new UnsupportedOperationException("unsupported compress column page: " + dataType);
     }
   }
@@ -792,6 +853,7 @@ public abstract class ColumnPage {
     DataType storeDataType = meta.getStoreDataType();
     if (storeDataType == DataTypes.BOOLEAN || storeDataType == BYTE) {
       byte[] byteData = compressor.unCompressByte(compressedData, offset, length);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
       return newBytePage(meta, byteData);
     } else if (storeDataType == SHORT) {
       short[] shortData = compressor.unCompressShort(compressedData, offset, length);
@@ -815,6 +877,7 @@ public abstract class ColumnPage {
         columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE
             || columnSpec.getColumnType() == ColumnType.PLAIN_VALUE)) {
       byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3653
       if (isComplexPrimitiveIntLengthEncoding) {
         // decode as int length
         return newComplexLVBytesPage(columnSpec, lvVarBytes,
@@ -848,6 +911,7 @@ public abstract class ColumnPage {
           CarbonCommonConstants.INT_SIZE_IN_BYTE, meta.getCompressorName());
     } else {
       throw new UnsupportedOperationException(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3208
           "unsupported uncompress column page: " + meta.getStoreDataType());
     }
   }
@@ -858,6 +922,7 @@ public abstract class ColumnPage {
   public static ColumnPage decompressDecimalPage(ColumnPageEncoderMeta meta, byte[] compressedData,
       int offset, int length) {
     Compressor compressor = CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
     ColumnPage decimalPage;
     DataType storeDataType = meta.getStoreDataType();
     if (storeDataType == BYTE) {
@@ -872,6 +937,7 @@ public abstract class ColumnPage {
       return decimalPage;
     } else if (storeDataType == DataTypes.SHORT_INT) {
       byte[] shortIntData = compressor.unCompressByte(compressedData, offset, length);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
       decimalPage = createDecimalPage(meta, shortIntData.length / 3);
       decimalPage.setShortIntPage(shortIntData);
       return decimalPage;
@@ -887,6 +953,7 @@ public abstract class ColumnPage {
       return decimalPage;
     } else {
       byte[] lvEncodedBytes = compressor.unCompressByte(compressedData, offset, length);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
       return newDecimalPage(meta, lvEncodedBytes);
     }
   }
@@ -910,10 +977,14 @@ public abstract class ColumnPage {
   }
 
   public TableSpec.ColumnSpec getColumnSpec() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     return columnPageEncoderMeta.getColumnSpec();
   }
 
   public boolean isLocalDictGeneratedPage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     return false;
   }
 
@@ -930,6 +1001,8 @@ public abstract class ColumnPage {
   }
 
   public String getColumnCompressorName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     return columnPageEncoderMeta.getCompressorName();
   }
 
@@ -938,6 +1011,8 @@ public abstract class ColumnPage {
   }
 
   public ByteBuffer getByteBuffer() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2735
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     throw new UnsupportedOperationException("Operation not supported");
   }
 }

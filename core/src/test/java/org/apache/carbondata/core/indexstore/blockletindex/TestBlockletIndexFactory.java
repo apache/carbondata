@@ -72,30 +72,38 @@ public class TestBlockletIndexFactory {
       throws ClassNotFoundException, IllegalAccessException, InvocationTargetException,
       InstantiationException {
     tableInfo = new TableInfo();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
     factTable = new TableSchema();
     Constructor<?> constructor =
         Class.forName("org.apache.carbondata.core.metadata.schema.table.CarbonTable")
             .getDeclaredConstructors()[0];
     constructor.setAccessible(true);
     carbonTable = (CarbonTable) constructor.newInstance();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2642
     absoluteTableIdentifier = AbsoluteTableIdentifier
         .from("/opt/store/default/carbon_table/", "default", "carbon_table",
             UUID.randomUUID().toString());
     Deencapsulation.setField(tableInfo, "identifier", absoluteTableIdentifier);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3665
     Deencapsulation.setField(tableInfo, "factTable", factTable);
     Deencapsulation.setField(carbonTable, "tableInfo", tableInfo);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2753
     new MockUp<CarbonTable>() {
       @Mock
       public AbsoluteTableIdentifier getAbsoluteTableIdentifier(){
         return absoluteTableIdentifier;
       }
     };
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     blockletIndexFactory = new BlockletIndexFactory(carbonTable, new IndexSchema());
     Deencapsulation.setField(blockletIndexFactory, "cache",
         CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_INDEX));
     tableBlockIndexUniqueIdentifier =
         new TableBlockIndexUniqueIdentifier("/opt/store/default/carbon_table/Fact/Part0/Segment_0",
             "0_batchno0-0-1521012756709.carbonindex", null, "0");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2472
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2570
     tableBlockIndexUniqueIdentifierWrapper =
         new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier, carbonTable);
     cache = CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_INDEX);
@@ -117,6 +125,7 @@ public class TestBlockletIndexFactory {
   @Test public void getValidDistributables() throws IOException {
     BlockletIndexInputSplit blockletIndexInputSplit = new BlockletIndexInputSplit(
         "/opt/store/default/carbon_table/Fact/Part0/Segment_0/0_batchno0-0-1521012756709.carbonindex");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     Segment segment = new Segment("0", null, new TableStatusReadCommittedScope(carbonTable
         .getAbsoluteTableIdentifier(), new Configuration(false)));
     blockletIndexInputSplit.setSegment(segment);
@@ -139,6 +148,7 @@ public class TestBlockletIndexFactory {
         return tableBlockIndexUniqueIdentifiers;
       }
     };
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     List<IndexInputSplit> validDistributables =
         blockletIndexFactory.getAllUncachedDistributables(indexInputSplits);
     assert 1 == validDistributables.size();

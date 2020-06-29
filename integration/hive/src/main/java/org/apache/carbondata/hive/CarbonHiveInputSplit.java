@@ -91,6 +91,7 @@ public class CarbonHiveInputSplit extends FileSplit
   }
 
   public CarbonHiveInputSplit(String segmentId, Path path, long start, long length,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3364
       String[] locations, int numberOfBlocklets, ColumnarFormatVersion version,
       BlockletDetailInfo detailInfo) {
     this(segmentId, path, start, length, locations, version);
@@ -112,12 +113,14 @@ public class CarbonHiveInputSplit extends FileSplit
    */
   public CarbonHiveInputSplit(String segmentId, Path path, long start, long length,
       String[] locations, int numberOfBlocklets, ColumnarFormatVersion version,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3364
       Map<String, String> blockStorageIdMap, BlockletDetailInfo detailInfo) {
     this(segmentId, path, start, length, locations, numberOfBlocklets, version, detailInfo);
     this.blockStorageIdMap = blockStorageIdMap;
   }
 
   public static CarbonHiveInputSplit from(String segmentId, FileSplit split,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1271
       ColumnarFormatVersion version) throws IOException {
     return new CarbonHiveInputSplit(segmentId, split.getPath(), split.getStart(), split.getLength(),
         split.getLocations(), version);
@@ -127,7 +130,9 @@ public class CarbonHiveInputSplit extends FileSplit
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
     for (CarbonHiveInputSplit split : splitList) {
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3127
         TableBlockInfo blockInfo = new TableBlockInfo(split.getPath().toString(), split.getStart(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
                 split.getSegmentId(), split.getLocations(), split.getLength(),
                 split.getVersion(), null);
         blockInfo.setDetailInfo(split.getDetailInfo());
@@ -156,6 +161,7 @@ public class CarbonHiveInputSplit extends FileSplit
       invalidSegments.add(in.readUTF());
     }
     boolean detailInfoExists = in.readBoolean();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3127
     if (detailInfoExists) {
       detailInfo = new BlockletDetailInfo();
       detailInfo.readFields(in);
@@ -173,10 +179,12 @@ public class CarbonHiveInputSplit extends FileSplit
     for (String invalidSegment : invalidSegments) {
       out.writeUTF(invalidSegment);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3127
     out.writeBoolean(detailInfo != null);
     if (detailInfo != null) {
       detailInfo.write(out);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1271
     out.writeInt(numberOfBlocklets);
   }
 
@@ -229,6 +237,7 @@ public class CarbonHiveInputSplit extends FileSplit
 
     double seg1 = Double.parseDouble(segmentId);
     double seg2 = Double.parseDouble(other.getSegmentId());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1396
     if (Double.compare(seg1, seg2) < 0) {
       return -1;
     }
@@ -270,6 +279,7 @@ public class CarbonHiveInputSplit extends FileSplit
 
   @Override
   public boolean equals(Object obj) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1396
     if (this == obj) {
       return true;
     }
@@ -317,6 +327,7 @@ public class CarbonHiveInputSplit extends FileSplit
   }
 
   public BlockletDetailInfo getDetailInfo() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3127
     return detailInfo;
   }
 

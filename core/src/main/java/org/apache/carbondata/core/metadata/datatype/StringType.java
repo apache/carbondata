@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
 class StringType extends DataType {
   static final DataType STRING = new StringType(DataTypes.STRING_TYPE_ID, 0, "STRING", -1);
 

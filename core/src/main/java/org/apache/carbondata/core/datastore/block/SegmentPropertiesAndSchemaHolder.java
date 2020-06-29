@@ -97,6 +97,7 @@ public class SegmentPropertiesAndSchemaHolder {
    * @param segmentId
    */
   public SegmentPropertiesWrapper addSegmentProperties(CarbonTable carbonTable,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       List<ColumnSchema> columnsInTable, String segmentId) {
     SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper segmentPropertiesWrapper =
         new SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper(carbonTable,
@@ -114,6 +115,7 @@ public class SegmentPropertiesAndSchemaHolder {
           int segmentPropertiesIndex = segmentPropertiesIndexCounter.incrementAndGet();
           indexToSegmentPropertiesWrapperMapping
               .put(segmentPropertiesIndex, segmentPropertiesWrapper);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
           LOGGER.info("Constructing new SegmentProperties for table: " + carbonTable
               .getCarbonTableIdentifier().getTableUniqueName()
               + ". Current size of segment properties" + " holder list is: "
@@ -128,6 +130,7 @@ public class SegmentPropertiesAndSchemaHolder {
         }
       }
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
       synchronized (getOrCreateTableLock(carbonTable.getAbsoluteTableIdentifier())) {
         segmentIdSetAndIndexWrapper.addSegmentId(segmentId);
         indexToSegmentPropertiesWrapperMapping
@@ -135,6 +138,7 @@ public class SegmentPropertiesAndSchemaHolder {
             .addMinMaxColumns(carbonTable);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3482
     return getSegmentPropertiesWrapper(segmentIdSetAndIndexWrapper.getSegmentPropertiesIndex());
   }
 
@@ -225,6 +229,7 @@ public class SegmentPropertiesAndSchemaHolder {
    */
   public void invalidate(String segmentId, SegmentPropertiesWrapper segmentPropertiesWrapper,
       boolean clearSegmentWrapperFromMap) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3482
     SegmentIdAndSegmentPropertiesIndexWrapper segmentIdAndSegmentPropertiesIndexWrapper =
         segmentPropWrapperToSegmentSetMap.get(segmentPropertiesWrapper);
     if (segmentIdAndSegmentPropertiesIndexWrapper != null) {
@@ -233,8 +238,10 @@ public class SegmentPropertiesAndSchemaHolder {
         // if after removal of given SegmentId, the segmentIdSet becomes empty that means this
         // segmentPropertiesWrapper is not getting used at all. In that case this object can be
         // removed from all the holders
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2649
         if (clearSegmentWrapperFromMap && segmentIdAndSegmentPropertiesIndexWrapper.segmentIdSet
             .isEmpty()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3482
           indexToSegmentPropertiesWrapperMapping
               .remove(segmentIdAndSegmentPropertiesIndexWrapper.getSegmentPropertiesIndex());
           segmentPropWrapperToSegmentSetMap.remove(segmentPropertiesWrapper);
@@ -303,10 +310,12 @@ public class SegmentPropertiesAndSchemaHolder {
     }
 
     public CarbonTable getCarbonTable() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
       return this.carbonTable;
     }
 
     public void initSegmentProperties() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       segmentProperties = new SegmentProperties(columnsInTable);
     }
 
@@ -324,8 +333,10 @@ public class SegmentPropertiesAndSchemaHolder {
         minMaxCacheColumns = null;
       }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3062
       taskSummarySchemaForBlock = null;
       taskSummarySchemaForBlocklet = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
       taskSummarySchemaForBlockWithOutFilePath = null;
       taskSummarySchemaForBlockletWithOutFilePath = null;
       fileFooterEntrySchemaForBlock = null;
@@ -341,6 +352,7 @@ public class SegmentPropertiesAndSchemaHolder {
           (SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper) obj;
       return carbonTable.getAbsoluteTableIdentifier()
           .equals(other.carbonTable.getAbsoluteTableIdentifier()) && checkColumnSchemaEquality(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
           columnsInTable, other.columnsInTable);
     }
 
@@ -350,6 +362,7 @@ public class SegmentPropertiesAndSchemaHolder {
       }
       boolean exists = true;
       for (int i = 0; i < obj1.size(); i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3371
         if (!obj1.get(i).equalsWithStrictCheck(obj2.get(i))) {
           exists = false;
           break;
@@ -376,6 +389,7 @@ public class SegmentPropertiesAndSchemaHolder {
         allColumnsHashCode = allColumnsHashCode + columnSchema.strictHashCode();
         builder.append(columnSchema.getColumnUniqueId()).append(",");
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
       return carbonTable.getAbsoluteTableIdentifier().hashCode() + allColumnsHashCode +
           builder.toString().hashCode();
     }
@@ -394,14 +408,17 @@ public class SegmentPropertiesAndSchemaHolder {
 
     public CarbonRowSchema[] getTaskSummarySchemaForBlock(boolean storeBlockletCount,
         boolean filePathToBeStored) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
       if (null == taskSummarySchemaForBlock && filePathToBeStored) {
         synchronized (taskSchemaLock) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3062
           if (null == taskSummarySchemaForBlock) {
             taskSummarySchemaForBlock = SchemaGenerator
                 .createTaskSummarySchema(segmentProperties, getMinMaxCacheColumns(),
                     storeBlockletCount, filePathToBeStored);
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
       } else if (null == taskSummarySchemaForBlockWithOutFilePath && !filePathToBeStored) {
         synchronized (taskSchemaLock) {
           if (null == taskSummarySchemaForBlockWithOutFilePath) {
@@ -429,6 +446,7 @@ public class SegmentPropertiesAndSchemaHolder {
                     storeBlockletCount, filePathToBeStored);
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3517
       } else if (null == taskSummarySchemaForBlockletWithOutFilePath && !filePathToBeStored) {
         synchronized (taskSchemaLock) {
           if (null == taskSummarySchemaForBlockletWithOutFilePath) {

@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata.datatype;
 
 class DoubleType extends DataType {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1662
 
   static final DataType DOUBLE = new DoubleType(DataTypes.DOUBLE_TYPE_ID, 6, "DOUBLE", 8);
 

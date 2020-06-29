@@ -64,6 +64,7 @@ public class BloomIndexFileStore {
     // Step 1. check current folders
 
     // get all shard paths of old store
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     CarbonFile segmentPath = FileFactory.getCarbonFile(dmSegmentPathString);
     CarbonFile[] shardPaths = segmentPath.listFiles(new CarbonFileFilter() {
       @Override
@@ -80,6 +81,7 @@ public class BloomIndexFileStore {
     try {
       // delete mergeShard folder if exists
       if (FileFactory.isFileExist(mergeShardPath)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         FileFactory.deleteFile(mergeShardPath);
       }
       // create flag file before creating mergeShard folder
@@ -91,6 +93,7 @@ public class BloomIndexFileStore {
         throw new RuntimeException("Failed to create directory " + mergeShardPath);
       }
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3040
       throw new RuntimeException(e);
     }
 
@@ -103,6 +106,7 @@ public class BloomIndexFileStore {
       DataInputStream dataInputStream = null;
       DataOutputStream dataOutputStream = null;
       try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         FileFactory.createNewFile(mergeIndexFile);
         dataOutputStream = FileFactory.getDataOutputStream(
             mergeIndexFile);
@@ -119,9 +123,11 @@ public class BloomIndexFileStore {
           CarbonUtil.closeStream(dataInputStream);
         }
       } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
         LOGGER.error("Error occurs while merge bloom index file of column: " + indexCol, e);
         // if any column failed, delete merge shard for this segment and exit
         FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(mergeShardPath));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3040
         FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(mergeInprogressFile));
         throw new RuntimeException(
             "Error occurs while merge bloom index file of column: " + indexCol, e);
@@ -132,8 +138,10 @@ public class BloomIndexFileStore {
 
     // Step 4. delete flag file and mergeShard can be used
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       FileFactory.deleteFile(mergeInprogressFile);
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error("Error occurs while deleting file " + mergeInprogressFile, e);
       throw new RuntimeException("Error occurs while deleting file " + mergeInprogressFile);
     }
@@ -164,6 +172,7 @@ public class BloomIndexFileStore {
     List<CarbonBloomFilter> bloomFilters = new ArrayList<>();
     try {
       String indexFile = getBloomIndexFile(shardPath, colName);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       dataInStream = FileFactory.getDataInputStream(indexFile);
       while (dataInStream.available() > 0) {
         CarbonBloomFilter bloomFilter = new CarbonBloomFilter();
@@ -175,6 +184,7 @@ public class BloomIndexFileStore {
 
       return bloomFilters;
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error("Error occurs while reading bloom index", e);
       throw new RuntimeException("Error occurs while reading bloom index", e);
     } finally {
@@ -191,6 +201,7 @@ public class BloomIndexFileStore {
     DataInputStream mergeIndexInStream = null;
     List<CarbonBloomFilter> bloomFilters = new ArrayList<>();
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       mergeIndexInStream = FileFactory.getDataInputStream(mergeIndexFile);
       while (mergeIndexInStream.available() > 0) {
         // read shard name
@@ -216,6 +227,7 @@ public class BloomIndexFileStore {
           String.format("Read %d bloom indices from %s", bloomFilters.size(), mergeIndexFile));
       return bloomFilters;
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error("Error occurs while reading merge bloom index", e);
       throw new RuntimeException("Error occurs while reading merge bloom index", e);
     } finally {

@@ -55,12 +55,14 @@ public class SnappyCompressor extends AbstractCompressor {
 
   @Override
   public String getName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1371
     return "snappy";
   }
 
   @Override
   public ByteBuffer compressByte(ByteBuffer compInput) {
     int inputLength = compInput.position();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3731
     ByteBuffer output = ByteBuffer.allocateDirect(Snappy.maxCompressedLength(inputLength));
     int outputSize;
     compInput.flip();
@@ -100,6 +102,7 @@ public class SnappyCompressor extends AbstractCompressor {
       return Snappy.uncompress(compInput);
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       throw new RuntimeException(e);
     }
   }
@@ -111,8 +114,10 @@ public class SnappyCompressor extends AbstractCompressor {
     try {
       uncompressedLength = Snappy.uncompressedLength(compInput, offset, length);
       data = new byte[uncompressedLength];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
       snappyNative.rawUncompress(compInput, offset, length, data, 0);
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
@@ -125,6 +130,7 @@ public class SnappyCompressor extends AbstractCompressor {
       return Snappy.uncompressShortArray(compInput, offset, length);
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       throw new RuntimeException(e);
     }
   }
@@ -135,6 +141,7 @@ public class SnappyCompressor extends AbstractCompressor {
       return Snappy.uncompressIntArray(compInput, offset, length);
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       throw new RuntimeException(e);
     }
   }
@@ -145,6 +152,7 @@ public class SnappyCompressor extends AbstractCompressor {
       return Snappy.uncompressLongArray(compInput, offset, length);
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       throw new RuntimeException(e);
     }
   }
@@ -155,6 +163,7 @@ public class SnappyCompressor extends AbstractCompressor {
       return Snappy.uncompressFloatArray(compInput, offset, length);
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       throw new RuntimeException(e);
     }
   }
@@ -167,6 +176,19 @@ public class SnappyCompressor extends AbstractCompressor {
       snappyNative.rawUncompress(compInput, offset, length, result, 0);
       return result;
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
@@ -179,11 +201,14 @@ public class SnappyCompressor extends AbstractCompressor {
 
   @Override
   public long rawUncompress(byte[] input, byte[] output) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1572
     return snappyNative.rawUncompress(input, 0, input.length, output, 0);
   }
 
   @Override
   public long maxCompressedLength(long inputSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2851
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2852
     return snappyNative.maxCompressedLength((int) inputSize);
   }
 
@@ -194,9 +219,11 @@ public class SnappyCompressor extends AbstractCompressor {
 
   @Override
   public int unCompressedLength(byte[] data, int offset, int length) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3113
     try {
       return Snappy.uncompressedLength(data, offset, length);
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       throw new RuntimeException(e);
     }
   }
@@ -206,6 +233,9 @@ public class SnappyCompressor extends AbstractCompressor {
     try {
       return Snappy.rawUncompress(data, offset, length, output, 0);
     } catch (IOException e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       throw new RuntimeException(e);
     }
   }

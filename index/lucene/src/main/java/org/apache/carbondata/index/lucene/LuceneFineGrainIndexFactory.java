@@ -45,6 +45,7 @@ public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrai
 
   public LuceneFineGrainIndexFactory(CarbonTable carbonTable, IndexSchema indexSchema)
       throws MalformedIndexCommandException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     super(carbonTable, indexSchema);
   }
 
@@ -78,6 +79,7 @@ public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrai
   @Override
   public List<FineGrainIndex> getIndexes(IndexInputSplit distributable)
       throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     List<FineGrainIndex> indexes = new ArrayList<>();
     FineGrainIndex index = new LuceneFineGrainIndex(analyzer, getIndexSchema());
     String indexPath = ((LuceneIndexInputSplit) distributable).getIndexPath();
@@ -93,6 +95,7 @@ public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrai
 
   @Override
   public boolean willBecomeStale(TableOperation operation) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2347
     switch (operation) {
       case ALTER_RENAME:
         return true;
@@ -102,9 +105,11 @@ public class LuceneFineGrainIndexFactory extends LuceneIndexFactoryBase<FineGrai
         return true;
       case ALTER_CHANGE_DATATYPE:
         return true;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3149
       case ALTER_COLUMN_RENAME:
         return true;
       case STREAMING:
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2823
         return false;
       case DELETE:
         return true;

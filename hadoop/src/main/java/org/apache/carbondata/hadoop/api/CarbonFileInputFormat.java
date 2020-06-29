@@ -65,6 +65,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
   private CarbonTable carbonTable;
 
   public CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2224
     CarbonTable carbonTableTemp;
     if (carbonTable == null) {
       // carbon table should be created either from deserialized table info (schema saved in
@@ -76,8 +77,10 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       } else {
         String schemaPath = CarbonTablePath
             .getSchemaFilePath(getAbsoluteTableIdentifier(configuration).getTablePath());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
         if (!FileFactory.isFileExist(schemaPath)) {
           TableInfo tableInfoInfer =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2313
               SchemaReader.inferSchema(getAbsoluteTableIdentifier(configuration), true);
           localCarbonTable = CarbonTable.buildFromTableInfo(tableInfoInfer);
         } else {
@@ -109,14 +112,19 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       throw new IOException("Missing/Corrupt schema file for table.");
     }
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2717
 
     // get all valid segments and set them into the configuration
     // check for externalTable segment (Segment_null)
     // process and resolve the expression
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3609
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3610
     ReadCommittedScope readCommittedScope = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2423
     if (carbonTable.isTransactionalTable()) {
       readCommittedScope = new LatestFilesReadCommittedScope(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
           identifier.getTablePath() + "/Fact/Part0/Segment_null/", job.getConfiguration());
     } else {
       readCommittedScope = getReadCommittedScope(job.getConfiguration());
@@ -129,8 +137,12 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
     }
     // this will be null in case of corrupt schema file.
     IndexFilter filter = getFilterPredicates(job.getConfiguration());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
     // if external table Segments are found, add it to the List
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2472
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2570
     List<Segment> externalTableSegments = new ArrayList<Segment>();
     Segment seg;
     if (carbonTable.isTransactionalTable()) {
@@ -144,6 +156,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
       for (LoadMetadataDetails load : loadMetadataDetails) {
         seg = new Segment(load.getLoadName(), null, readCommittedScope);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3363
         if (fileLists != null) {
           for (int i = 0; i < fileLists.size(); i++) {
             String timestamp =
@@ -163,13 +176,18 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
     // useBlockIndex would be false in case of SDK when user has not provided any filter, In
     // this case we don't want to load block/blocklet index. It would be true in all other
     // scenarios
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3555
     if (filter != null) {
       filter.resolve(false);
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     if (useBlockIndex) {
       // do block filtering and get split
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3606
       splits = getSplits(job, filter, externalTableSegments);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3365
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3363
       List<CarbonFile> carbonFiles = null;
       if (null != this.fileLists) {
         carbonFiles = getAllCarbonDataFiles(this.fileLists);
@@ -181,6 +199,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         // Segment id is set to null because SDK does not write carbondata files with respect
         // to segments. So no specific name is present for this load.
         CarbonInputSplit split =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
             new CarbonInputSplit("null", carbonFile.getAbsolutePath(), 0,
                 carbonFile.getLength(), carbonFile.getLocations(), FileFormat.COLUMNAR_V3);
         split.setVersion(ColumnarFormatVersion.V3);
@@ -194,11 +213,13 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       Collections.sort(splits, new Comparator<InputSplit>() {
         @Override
         public int compare(InputSplit o1, InputSplit o2) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
           return ((CarbonInputSplit) o1).getFilePath()
               .compareTo(((CarbonInputSplit) o2).getFilePath());
         }
       });
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3395
     setAllColumnProjectionIfNotConfigured(job, carbonTable);
     return splits;
   }
@@ -213,6 +234,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
   }
 
   private List<CarbonFile> getAllCarbonDataFiles(String tablePath) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3057
     List<CarbonFile> carbonFiles;
     try {
       carbonFiles = FileFactory.getCarbonFile(tablePath).listFiles(true, new CarbonFileFilter() {
@@ -228,7 +250,9 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
   }
 
   private List<CarbonFile> getAllCarbonDataFiles(List fileLists) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3363
     List<CarbonFile> carbonFiles = new LinkedList<CarbonFile>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3365
     try {
       for (int i = 0; i < fileLists.size(); i++) {
         carbonFiles.add(FileFactory.getCarbonFile(fileLists.get(i).toString()));
@@ -249,17 +273,24 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
    */
   private List<InputSplit> getSplits(
       JobContext job,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       IndexFilter indexFilter,
       List<Segment> validSegments) throws IOException {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     numSegments = validSegments.size();
     List<InputSplit> result = new LinkedList<InputSplit>();
 
     // for each segment fetch blocks matching filter in Driver BTree
     List<CarbonInputSplit> dataBlocksOfSegment =
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
         getDataBlocksOfSegment(job, carbonTable, indexFilter, validSegments,
             new ArrayList<Segment>(), new ArrayList<String>());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     numBlocks = dataBlocksOfSegment.size();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2557
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2472
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2570
     result.addAll(dataBlocksOfSegment);
     return result;
   }

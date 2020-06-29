@@ -27,6 +27,7 @@ public abstract class Event {
    *
    * @return
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3572
   String getEventType() {
     return this.getClass().getName();
   }

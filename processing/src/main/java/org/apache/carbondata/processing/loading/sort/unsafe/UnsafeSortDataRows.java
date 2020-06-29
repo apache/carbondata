@@ -84,10 +84,12 @@ public class UnsafeSortDataRows {
   }
 
   public void setInstanceId(int instanceId) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
     this.instanceId = instanceId;
   }
 
   public void initialize() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     MemoryBlock baseBlock =
         UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
     boolean isMemoryAvailable =
@@ -100,6 +102,7 @@ public class UnsafeSortDataRows {
         UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
     boolean isSaveToDisk =
         UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(baseBlock.size());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
     if (!isSaveToDisk) {
       // merge and spill in-memory pages to disk if memory is not enough
       unsafeInMemoryIntermediateFileMerger.tryTriggerInMemoryMerging(true);
@@ -108,6 +111,7 @@ public class UnsafeSortDataRows {
   }
 
   public void addRowBatch(Object[][] rowBatch, int size) throws CarbonSortKeyAndGroupByException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2901
     if (rowPage == null) {
       return;
     }
@@ -125,8 +129,10 @@ public class UnsafeSortDataRows {
             throw new CarbonSortKeyAndGroupByException(ex);
           }
         }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
         rowPage.addRow(rowBatch[i], reUsableByteArrayDataOutputStream.get());
       } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3304
         if (e.getMessage().contains("cannot handle this row. create new page")) {
           rowPage.makeCanAddFail();
           // so that same rowBatch will be handled again in new page
@@ -141,18 +147,27 @@ public class UnsafeSortDataRows {
   }
 
   public void addRow(Object[] row) throws CarbonSortKeyAndGroupByException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2901
     if (rowPage == null) {
       return;
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
     try {
       // if record holder list size is equal to sort buffer size then it will
       // sort the list and then write current list data to file
       if (!rowPage.canAdd()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2238
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2238
         handlePreviousPage();
         try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2232
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2232
           rowPage = createUnsafeRowPage();
         } catch (Exception ex) {
           rowPage = null;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
           LOGGER.error("exception occurred while trying to acquire a semaphore lock: "
               + ex.getMessage(), ex);
           throw new CarbonSortKeyAndGroupByException(ex);
@@ -160,11 +175,14 @@ public class UnsafeSortDataRows {
       }
       rowPage.addRow(row, reUsableByteArrayDataOutputStream.get());
     } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3304
       if (e.getMessage().contains("cannot handle this row. create new page")) {
         rowPage.makeCanAddFail();
         addRow(row);
       } else {
         LOGGER.error(
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
             "exception occurred while trying to acquire a semaphore lock: " + e.getMessage(), e);
         throw new CarbonSortKeyAndGroupByException(e);
       }
@@ -179,6 +197,7 @@ public class UnsafeSortDataRows {
   public void startSorting() {
     LOGGER.info("Unsafe based sorting will be used");
     if (this.rowPage.getUsedSize() > 0) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3680
       TimSort<UnsafeCarbonRow, IntPointerBuffer> timSort = new TimSort<>(
           new UnsafeIntSortDataFormat(rowPage));
       if (parameters.getNumberOfNoDictSortColumns() > 0) {
@@ -186,6 +205,8 @@ public class UnsafeSortDataRows {
             new UnsafeRowComparator(rowPage));
       } else {
         timSort.sort(rowPage.getBuffer(), 0, rowPage.getBuffer().getActualSize(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
             new UnsafeRowComparatorForNormalDims(rowPage));
       }
       unsafeInMemoryIntermediateFileMerger.addDataChunkToMerge(rowPage);
@@ -205,15 +226,20 @@ public class UnsafeSortDataRows {
     DataOutputStream stream = null;
     try {
       // open stream
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
       stream = FileFactory.getDataOutputStream(file.getPath(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1839
           parameters.getFileWriteBufferSize(), parameters.getSortTempCompressorName());
       int actualSize = rowPage.getBuffer().getActualSize();
       // write number of entries to the file
       stream.writeInt(actualSize);
       for (int i = 0; i < actualSize; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
         rowPage.writeRow(
             rowPage.getBuffer().get(i) + rowPage.getDataBlock().getBaseOffset(), stream);
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2927
     } catch (IOException | MemoryException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while writing the file", e);
     } finally {
@@ -247,6 +273,7 @@ public class UnsafeSortDataRows {
    * sort memory or just spill them.
    */
   private void handlePreviousPage() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
     try {
       long startTime = System.currentTimeMillis();
       TimSort<UnsafeCarbonRow, IntPointerBuffer> timSort = new TimSort<>(
@@ -278,6 +305,8 @@ public class UnsafeSortDataRows {
         writeDataToFile(rowPage, sortTempFile);
         LOGGER.info("Time taken to sort row page with size" + rowPage.getBuffer().getActualSize()
                 + " and write is: " + (System.currentTimeMillis() - startTime) + ": location:"
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2018
                 + sortTempFile + ", sort temp file size in MB is "
                 + sortTempFile.length() * 0.1 * 10 / 1024 / 1024);
         rowPage.freeMemory();
@@ -304,6 +333,7 @@ public class UnsafeSortDataRows {
       try {
         threadStatusObserver.notifyFailed(e);
       } catch (CarbonSortKeyAndGroupByException ex) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
         LOGGER.error(e.getMessage(), e);
       }
     }

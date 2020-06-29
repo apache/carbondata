@@ -45,6 +45,7 @@ public class RowIdBasedResultCollector extends DictionaryBasedResultCollector {
     byte[][] complexTypeKeyArray;
     int columnCount = queryDimensions.length + queryMeasures.length;
     while (scannedResult.hasNext() && rowCounter < batchSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3597
       scannedResult.incrementCounter();
       if (scannedResult.containsDeletedRow(scannedResult.getCurrentRowId())) {
         continue;
@@ -61,6 +62,7 @@ public class RowIdBasedResultCollector extends DictionaryBasedResultCollector {
         complexTypeColumnIndex = 0;
         for (int i = 0; i < queryDimensions.length; i++) {
           fillDimensionData(scannedResult, surrogateResult, noDictionaryKeys, complexTypeKeyArray,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3596
               comlexDimensionInfoMap, row, i, queryDimensions[i].getDimension().getOrdinal());
         }
       }

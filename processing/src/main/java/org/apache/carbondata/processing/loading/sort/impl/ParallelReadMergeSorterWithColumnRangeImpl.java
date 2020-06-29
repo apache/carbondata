@@ -56,6 +56,7 @@ import org.apache.log4j.Logger;
 public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSorter {
   private static final Logger LOGGER = LogServiceFactory.getLogService(
       ParallelReadMergeSorterWithColumnRangeImpl.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
 
   private SortParameters originSortParameters;
 
@@ -91,6 +92,7 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
       insideRowCounterList.add(new AtomicLong(0));
     }
     // Delete if any older file exists in sort temp folder
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3679
     CarbonDataProcessorUtil.deleteSortLocationIfExists(sortParameters.getTempFileLocation());
     // create new sort temp directory
     CarbonDataProcessorUtil.createLocations(sortParameters.getTempFileLocation());
@@ -102,6 +104,7 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
     SortDataRows[] sortDataRows = new SortDataRows[columnRangeInfo.getNumOfRanges()];
     intermediateFileMergers = new SortIntermediateFileMerger[columnRangeInfo.getNumOfRanges()];
     SortParameters[] sortParameterArray = new SortParameters[columnRangeInfo.getNumOfRanges()];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     for (int i = 0; i < columnRangeInfo.getNumOfRanges(); i++) {
       SortParameters parameters = originSortParameters.getCopy();
       parameters.setPartitionID(i + "");
@@ -120,6 +123,7 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
       // dispatch rows to sortDataRows by range id
       for (int i = 0; i < iterators.length; i++) {
         executorService.execute(new SortIteratorThread(iterators[i], sortDataRows, rowCounter,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
             this.insideRowCounterList, this.threadStatusObserver));
       }
       executorService.shutdown();
@@ -134,10 +138,12 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
       for (int i = 0; i < intermediateFileMergers.length; i++) {
         intermediateFileMergers[i].finish();
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
     } catch (CarbonDataWriterException | CarbonSortKeyAndGroupByException e) {
       throw new CarbonDataLoadingException(e);
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
     Iterator<CarbonRowBatch>[] batchIterator = new Iterator[columnRangeInfo.getNumOfRanges()];
     for (int i = 0; i < columnRangeInfo.getNumOfRanges(); i++) {
       batchIterator[i] = new MergedDataIterator(sortParameterArray[i], batchSize);
@@ -147,14 +153,19 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
   }
 
   private SingleThreadFinalSortFilesMerger getFinalMerger(SortParameters sortParameters) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
     String[] storeLocation = CarbonDataProcessorUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
         .getLocalDataFolderLocation(sortParameters.getCarbonTable(),
             String.valueOf(sortParameters.getTaskNo()),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-940
             sortParameters.getSegmentId() + "", false, false);
     // Set the data file location
     String[] dataFolderLocation = CarbonDataProcessorUtil.arrayAppend(storeLocation, File.separator,
         CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-886
     return new SingleThreadFinalSortFilesMerger(dataFolderLocation, sortParameters.getTableName(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1839
         sortParameters);
   }
 
@@ -188,7 +199,9 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
   }
 
   private void setTempLocation(SortParameters parameters) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1281
     String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3042
         .getLocalDataFolderLocation(parameters.getCarbonTable(), parameters.getTaskNo(),
             parameters.getSegmentId(),
             false, false);
@@ -211,6 +224,7 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
     private ThreadStatusObserver threadStatusObserver;
 
     public SortIteratorThread(Iterator<CarbonRowBatch> iterator, SortDataRows[] sortDataRows,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
         AtomicLong rowCounter, List<AtomicLong> insideCounterList,
         ThreadStatusObserver observer) {
       this.iterator = iterator;
@@ -228,6 +242,7 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
           while (batch.hasNext()) {
             CarbonRow row = batch.next();
             if (row != null) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
               SortDataRows sortDataRow = sortDataRows[row.getRangeId()];
               synchronized (sortDataRow) {
                 sortDataRow.addRow(row.getData());
@@ -239,7 +254,9 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
         }
         LOGGER.info("Rows processed by each range: " + insideCounterList);
       } catch (Exception e) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3107
         LOGGER.error(e.getMessage(), e);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-903
         this.threadStatusObserver.notifyFailed(e);
       }
     }
@@ -255,6 +272,7 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
     private boolean firstRow = true;
 
     public MergedDataIterator(SortParameters sortParameters, int batchSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
       this.sortParameters = sortParameters;
       this.batchSize = batchSize;
     }
@@ -265,6 +283,7 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
     public boolean hasNext() {
       if (firstRow) {
         firstRow = false;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2091
         finalMerger = getFinalMerger(sortParameters);
         finalMerger.startFinalMerge();
       }

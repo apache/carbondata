@@ -52,6 +52,7 @@ public class CarbonBloomFilter extends BloomFilter {
   public boolean membershipTest(Key key) {
     if (compress) {
       // If it is compressed check in roaring bitmap
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3181
       if (key == null) {
         throw new NullPointerException("key cannot be null");
       }
@@ -71,6 +72,7 @@ public class CarbonBloomFilter extends BloomFilter {
 
   @Override
   public void write(DataOutput out) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2549
     out.writeInt(blockletNo);
     out.writeInt(this.nbHash);
     out.writeByte(this.hashType);
@@ -95,6 +97,7 @@ public class CarbonBloomFilter extends BloomFilter {
 
   @Override
   public void readFields(DataInput in) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2549
     this.blockletNo = in.readInt();
     this.nbHash = in.readInt();
     this.hashType = in.readByte();
@@ -104,6 +107,7 @@ public class CarbonBloomFilter extends BloomFilter {
       int len = in.readInt();
       byte[] bytes = new byte[len];
       in.readFully(bytes);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2549
       setBitSet(BitSet.valueOf(bytes));
     } else {
       this.bitmap = new RoaringBitmap();
@@ -168,6 +172,7 @@ public class CarbonBloomFilter extends BloomFilter {
   }
 
   public String getShardName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2845
     return shardName;
   }
 

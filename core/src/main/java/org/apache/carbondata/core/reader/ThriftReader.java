@@ -64,6 +64,7 @@ public class ThriftReader {
   }
 
   public ThriftReader(String fileName, TBaseCreator creator, Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     this.fileName = fileName;
     this.configuration = configuration;
     this.creator = creator;
@@ -80,6 +81,7 @@ public class ThriftReader {
    * Constructor.
    */
   public ThriftReader(String fileName, Configuration configuration) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
     this.fileName = fileName;
     this.configuration = configuration;
   }
@@ -88,6 +90,7 @@ public class ThriftReader {
    * Constructor.
    */
   public ThriftReader(byte[] fileData) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1617
     dataInputStream = new DataInputStream(new ByteArrayInputStream(fileData));
     binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
   }
@@ -97,6 +100,7 @@ public class ThriftReader {
    */
   public void open() throws IOException {
     Configuration conf = configuration != null ? configuration : FileFactory.getConfiguration();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2863
     dataInputStream = FileFactory.getDataInputStream(fileName, conf);
     binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
   }

@@ -54,6 +54,7 @@ public final class CarbonLoadOptionConstants {
   @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_OPTIONS_SKIP_EMPTY_LINE =
       "carbon.options.is.empty.data.bad.record";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1734
 
   /**
    * option to specify the dateFormat in load option for all date columns in table
@@ -61,6 +62,7 @@ public final class CarbonLoadOptionConstants {
   @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_OPTIONS_DATEFORMAT =
       "carbon.options.date.format";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3038
 
   public static final String CARBON_OPTIONS_DATEFORMAT_DEFAULT = "";
 
@@ -107,6 +109,7 @@ public final class CarbonLoadOptionConstants {
   @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT =
       "carbon.options.serialization.null.format";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1936
 
   public static final String CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT_DEFAULT = "\\N";
 
@@ -124,6 +127,7 @@ public final class CarbonLoadOptionConstants {
   @CarbonProperty
   public static final String ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION =
       "carbon.load.skewedDataOptimization.enabled";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
   public static final String ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION_DEFAULT = "false";
 
@@ -140,6 +144,7 @@ public final class CarbonLoadOptionConstants {
   @CarbonProperty
   public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH =
       "carbon.load.directWriteToStorePath.enabled";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
   public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH_DEFAULT = "false";
 
@@ -153,6 +158,7 @@ public final class CarbonLoadOptionConstants {
   @CarbonProperty
   public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE =
       "carbon.load.sortmemory.spill.percentage";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
   public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT = "0";
 

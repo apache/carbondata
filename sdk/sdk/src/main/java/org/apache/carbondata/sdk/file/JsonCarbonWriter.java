@@ -47,6 +47,7 @@ public class JsonCarbonWriter extends CarbonWriter {
   private TaskAttemptContext context;
   private ObjectArrayWritable writable;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2909
   JsonCarbonWriter(CarbonLoadModel loadModel, Configuration configuration) throws IOException {
     CarbonTableOutputFormat.setLoadModel(configuration, loadModel);
     CarbonTableOutputFormat outputFormat = new CarbonTableOutputFormat();

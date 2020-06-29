@@ -74,6 +74,7 @@ public class LuceneIndexWriter extends IndexWriter {
    */
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(LuceneIndexWriter.class.getName());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
 
   /**
    * index writer
@@ -90,6 +91,7 @@ public class LuceneIndexWriter extends IndexWriter {
 
   private Codec compressionCodec =
       new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_COMPRESSION);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2433
 
   private Map<LuceneColumnKeys, Map<Integer, RoaringBitmap>> cache = new HashMap<>();
 
@@ -99,7 +101,9 @@ public class LuceneIndexWriter extends IndexWriter {
 
   private boolean storeBlockletWise;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
   LuceneIndexWriter(String tablePath, String indexName, List<CarbonColumn> indexColumns,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2494
       Segment segment, String shardName, int flushSize,
       boolean storeBlockletWise) {
     super(tablePath, indexName, indexColumns, segment, shardName);
@@ -129,6 +133,7 @@ public class LuceneIndexWriter extends IndexWriter {
    */
   public void onBlockletStart(int blockletId) throws IOException {
     if (null == analyzer) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2433
       if (CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS,
               CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT)
@@ -139,14 +144,18 @@ public class LuceneIndexWriter extends IndexWriter {
       }
     }
     // save index data into ram, write into disk after one page finished
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
     ramDir = new RAMDirectory();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     ramIndexWriter = new org.apache.lucene.index.IndexWriter(
         ramDir, new IndexWriterConfig(analyzer));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2390
     if (indexWriter != null) {
       return;
     }
     // get index path, put index data into segment's path
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
     String path;
     if (storeBlockletWise) {
       path = this.indexPath + File.separator + blockletId;
@@ -157,6 +166,7 @@ public class LuceneIndexWriter extends IndexWriter {
     FileSystem fs = FileFactory.getFileSystem(indexPath);
 
     // if index path not exists, create it
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2350
     if (!fs.exists(indexPath)) {
       if (!fs.mkdirs(indexPath)) {
         throw new IOException("Failed to create directory " + path);
@@ -165,23 +175,28 @@ public class LuceneIndexWriter extends IndexWriter {
 
     // the indexWriter closes the FileSystem on closing the writer, so for a new configuration
     // and disable the cache for the index writer, it will be closed on closing the writer
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2844
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2865
     Configuration conf = FileFactory.getConfiguration();
     conf.set("fs.hdfs.impl.disable.cache", "true");
 
     // create a index writer
     Directory indexDir = new HdfsDirectory(indexPath, conf);
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2347
     IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
     if (CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE,
             CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)
         .equalsIgnoreCase(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2433
       indexWriterConfig.setCodec(speedCodec);
     } else {
       indexWriterConfig
           .setCodec(compressionCodec);
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
     indexWriter = new org.apache.lucene.index.IndexWriter(indexDir, indexWriterConfig);
   }
 
@@ -215,8 +230,10 @@ public class LuceneIndexWriter extends IndexWriter {
       throws IOException {
     // save index data into ram, write into disk after one page finished
     int columnsCount = pages.length;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2494
     if (columnsCount <= 0) {
       LOGGER.warn("No data in the page " + pageId + "with blockletid " + blockletId
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3765
           + " to write lucene index");
       return;
     }
@@ -255,6 +272,7 @@ public class LuceneIndexWriter extends IndexWriter {
       if (store == Field.Store.YES) {
         doc.add(new StoredField(fieldName, (int) value));
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2494
     } else if (key instanceof Short) {
       // short type , use int range to deal with short type, lucene has no short type
       short value = (Short) key;
@@ -267,6 +285,7 @@ public class LuceneIndexWriter extends IndexWriter {
       if (store == Field.Store.YES) {
         doc.add(new StoredField(fieldName, (int) value));
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2494
     } else if (key instanceof Integer) {
       // int type , use int point to deal with int type
       int value = (Integer) key;
@@ -314,6 +333,7 @@ public class LuceneIndexWriter extends IndexWriter {
   private Object getValue(ColumnPage page, int rowId) {
 
     //get field type
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2347
     DataType type = page.getColumnSpec().getSchemaDataType();
     Object value = null;
     if (type == DataTypes.BYTE) {
@@ -346,6 +366,7 @@ public class LuceneIndexWriter extends IndexWriter {
     } else if (type == DataTypes.BOOLEAN) {
       value = page.getBoolean(rowId);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3208
       LOGGER.error("unsupported data type " + type);
       throw new RuntimeException("unsupported data type " + type);
     }
@@ -379,6 +400,7 @@ public class LuceneIndexWriter extends IndexWriter {
   }
 
   public static void addData(LuceneColumnKeys key, int rowId, int pageId, int blockletId,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       ByteBuffer intBuffer, org.apache.lucene.index.IndexWriter indexWriter,
       List<CarbonColumn> indexCols, boolean storeBlockletWise) throws IOException {
 
@@ -387,6 +409,7 @@ public class LuceneIndexWriter extends IndexWriter {
       addField(document, key.getColValues()[i], indexCols.get(i).getColName(), Field.Store.NO);
     }
     intBuffer.clear();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2494
     if (storeBlockletWise) {
       // No need to store blocklet id to it.
       intBuffer.putShort((short) pageId);
@@ -410,6 +433,7 @@ public class LuceneIndexWriter extends IndexWriter {
   }
 
   public static void flushCache(Map<LuceneColumnKeys, Map<Integer, RoaringBitmap>> cache,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3704
       List<CarbonColumn> indexCols, org.apache.lucene.index.IndexWriter indexWriter,
       boolean storeBlockletWise) throws IOException {
     for (Map.Entry<LuceneColumnKeys, Map<Integer, RoaringBitmap>> entry : cache.entrySet()) {
@@ -447,9 +471,12 @@ public class LuceneIndexWriter extends IndexWriter {
    * class.
    */
   public void finish() throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2520
     if (!isWritingFinished()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2494
       flushCache(cache, getIndexColumns(), indexWriter, storeBlockletWise);
       // finished a file , close this index writer
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2376
       if (indexWriter != null) {
         indexWriter.close();
         indexWriter = null;

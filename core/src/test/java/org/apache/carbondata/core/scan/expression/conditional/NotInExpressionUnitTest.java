@@ -59,6 +59,7 @@ public class NotInExpressionUnitTest {
     new MockUp<ExpressionResult>() {
 
       @Mock public DataType getDataType() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
         return DataTypes.STRING;
       }
 
@@ -75,6 +76,7 @@ public class NotInExpressionUnitTest {
   @Test public void testEvaluateForNotInExpressionWithShortDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression left = new ColumnExpression("left_id", DataTypes.SHORT);
     left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("right_id", DataTypes.SHORT);
@@ -94,6 +96,7 @@ public class NotInExpressionUnitTest {
 
     ExpressionResult result = notInExpression.evaluate(value);
     assertEquals(result.getDataType(), DataTypes.BOOLEAN);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
 
   }
 
@@ -119,6 +122,7 @@ public class NotInExpressionUnitTest {
 
     ExpressionResult result = notInExpression.evaluate(value);
     assertEquals(result.getDataType(), DataTypes.BOOLEAN);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
 
   }
 
@@ -146,6 +150,7 @@ public class NotInExpressionUnitTest {
   }
 
   @Test public void testEvaluateForNotInExpressionWithDoubleDataType1()
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression left = new ColumnExpression("left_contact", DataTypes.DOUBLE);
     left.setColIndex(0);
@@ -176,6 +181,7 @@ public class NotInExpressionUnitTest {
 
   @Test public void testEvaluateForNotInExpressionWithLongDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression left = new ColumnExpression("left_contact", DataTypes.LONG);
     left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("right_contact", DataTypes.LONG);
@@ -200,6 +206,7 @@ public class NotInExpressionUnitTest {
   @Test public void testEvaluateForNotInExpressionWithTimestampDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     try {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
       ColumnExpression left = new ColumnExpression("left_timestamp", DataTypes.TIMESTAMP);
       left.setColIndex(0);
       ColumnExpression right = new ColumnExpression("right_timestamp", DataTypes.TIMESTAMP);
@@ -232,12 +239,15 @@ public class NotInExpressionUnitTest {
 
   @Test public void testEvaluateForNotInExpressionWithDecimalDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1594
     ColumnExpression left = new ColumnExpression("left_contact", DataTypes.createDefaultDecimalType());
     left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("right_contact", DataTypes.createDefaultDecimalType());
     right.setColIndex(1);
     notInExpression = new NotInExpression(left, right);
     RowImpl value = new RowImpl();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2163
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2164
     BigDecimal row = new BigDecimal(123452154.0);
     BigDecimal row1 = new BigDecimal(1234521215454.0);
     Object objectRow[] = { row, row1 };
@@ -255,6 +265,7 @@ public class NotInExpressionUnitTest {
 
   @Test public void testDefaultCaseForNotInExpression()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression left = new ColumnExpression("contact", DataTypes.BOOLEAN);
     left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("contact", DataTypes.BOOLEAN);
@@ -269,6 +280,8 @@ public class NotInExpressionUnitTest {
   }
 
   @Test public void testForNotInExpressionWithGetString() throws Exception {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression left = new ColumnExpression("left_name", DataTypes.STRING);
     left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("right_name", DataTypes.STRING);
@@ -280,6 +293,7 @@ public class NotInExpressionUnitTest {
   }
   @Test public void testEvaluateForNotInExpressionWithLeftAndRightDifferentDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     ColumnExpression right = new ColumnExpression("name", DataTypes.STRING);
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("number", DataTypes.INT);

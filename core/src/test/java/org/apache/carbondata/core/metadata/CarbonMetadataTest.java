@@ -48,8 +48,10 @@ public class CarbonMetadataTest {
 
   @BeforeClass public static void setUp() {
     carbonMetadata = CarbonMetadata.getInstance();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3480
     carbonMetadata.clearAll();
     carbonMetadata.loadTableMetadata(getTableInfo(10000));
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1820
     tableUniqueName = CarbonTable.buildUniqueName("carbonTestDatabase", "carbonTestTable");
   }
 
@@ -94,7 +96,9 @@ public class CarbonMetadataTest {
   }
 
   @Test public void testGetCarbonTableReturingProperTableWithProperFactTableName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3480
     String expectedResult = "carbontesttable";
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1739
     assertEquals(expectedResult, carbonMetadata.getCarbonTable(tableUniqueName).getTableName());
   }
 
@@ -121,6 +125,7 @@ public class CarbonMetadataTest {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
@@ -135,6 +140,7 @@ public class CarbonMetadataTest {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI_COUNT");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1539
     dimColumn.setDataType(DataTypes.STRING);
     return dimColumn;
   }
@@ -156,11 +162,13 @@ public class CarbonMetadataTest {
     info.setLastUpdatedTime(timeStamp);
     info.setTableUniqueName("carbonTestDatabase_carbonTestTable");
     info.setFactTable(getTableSchema());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1573
     info.setTablePath("/test/store/carbonTestDatabase/carbonTestTable");
     return info;
   }
 
   @Test public void testGetCarbonDimensionBasedOnColIdentifier() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1286
     CarbonTable carbonTable = CarbonTable.buildFromTableInfo(getTableInfo(1000L));
     String columnIdentifier = "1";
     final List<CarbonDimension> carbonDimensions = new ArrayList();
@@ -168,6 +176,7 @@ public class CarbonMetadataTest {
     ColumnSchema colSchema2 = new ColumnSchema();
     colSchema1.setColumnUniqueId("1");
     colSchema2.setColumnUniqueId("2");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     carbonDimensions.add(new CarbonDimension(colSchema1, 1, 1, 1));
     carbonDimensions.add(new CarbonDimension(colSchema2, 2, 2, 2));
     new MockUp<CarbonTable>() {
@@ -187,12 +196,14 @@ public class CarbonMetadataTest {
 
   @Test
   public void testGetCarbonDimensionBasedOnColIdentifierWhenChildDimensionColumnEqualsColumnIdentifier() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1286
     CarbonTable carbonTable = CarbonTable.buildFromTableInfo(getTableInfo(1000L));
     String columnIdentifier = "9";
     final List<CarbonDimension> carbonDimensions = new ArrayList();
     ColumnSchema colSchema1 = new ColumnSchema();
     ColumnSchema colSchema2 = new ColumnSchema();
     colSchema1.setColumnUniqueId("1");
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     carbonDimensions.add(new CarbonDimension(colSchema1, 1, 1, 1));
     final List<CarbonDimension> carbonChildDimensions = new ArrayList();
     ColumnSchema colSchema3 = new ColumnSchema();
@@ -227,12 +238,14 @@ public class CarbonMetadataTest {
   }
 
   @Test public void testGetCarbonDimensionBasedOnColIdentifierNullCase() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1286
     CarbonTable carbonTable = CarbonTable.buildFromTableInfo(getTableInfo(1000L));
     String columnIdentifier = "3";
     final List<CarbonDimension> carbonDimensions = new ArrayList();
     ColumnSchema colSchema1 = new ColumnSchema();
     colSchema1.setColumnUniqueId("1");
     colSchema1.setNumberOfChild(1);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
     CarbonDimension carbonDimension = new CarbonDimension(colSchema1, 1, 1, 1);
     carbonDimensions.add(carbonDimension);
     final List<CarbonDimension> carbonChildDimensions = new ArrayList();

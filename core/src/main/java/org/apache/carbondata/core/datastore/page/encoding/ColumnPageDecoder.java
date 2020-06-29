@@ -30,10 +30,12 @@ public interface ColumnPageDecoder {
    * Apply decoding algorithm on input byte array and return decoded column page
    */
   ColumnPage decode(byte[] input, int offset, int length) throws IOException;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3575
 
   /**
    *  Apply decoding algorithm on input byte array and fill the vector here.
    */
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3012
   void decodeAndFillVector(byte[] input, int offset, int length, ColumnVectorInfo vectorInfo,
       BitSet nullBits, boolean isLVEncoded, int pageSize, ReusableDataBuffer reusableDataBuffer);
 

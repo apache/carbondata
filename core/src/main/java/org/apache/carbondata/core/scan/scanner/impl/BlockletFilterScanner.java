@@ -70,6 +70,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
 
   public BlockletFilterScanner(BlockExecutionInfo blockExecutionInfo,
       QueryStatisticsModel queryStatisticsModel) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     super(blockExecutionInfo, queryStatisticsModel);
     // to check whether min max is enabled or not
     String minMaxEnableValue = CarbonProperties.getInstance()
@@ -82,6 +83,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     this.filterExecuter = blockExecutionInfo.getFilterExecuterTree();
     this.queryStatisticsModel = queryStatisticsModel;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1538
     String useBitSetPipeLine = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.BITSET_PIPE_LINE,
             CarbonCommonConstants.BITSET_PIPE_LINE_DEFAULT);
@@ -99,9 +101,11 @@ public class BlockletFilterScanner extends BlockletFullScanner {
   @Override
   public BlockletScannedResult scanBlocklet(RawBlockletColumnChunks rawBlockletColumnChunks)
       throws IOException, FilterUnsupportedException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3013
     if (blockExecutionInfo.isDirectVectorFill()) {
       return executeFilterForPages(rawBlockletColumnChunks);
     } else {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       return executeFilter(rawBlockletColumnChunks);
     }
   }
@@ -113,12 +117,14 @@ public class BlockletFilterScanner extends BlockletFullScanner {
         .get(QueryStatisticsConstants.TOTAL_PAGE_SCANNED);
     totalPagesScanned.addCountStatistic(QueryStatisticsConstants.TOTAL_PAGE_SCANNED,
         totalPagesScanned.getCount() + dataBlock.numberOfPages());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3593
     QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);
     totalBlockletStatistic.addCountStatistic(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM,
         totalBlockletStatistic.getCount() + 1);
     // apply min max
     if (isMinMaxEnabled) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
       if (null == dataBlock.getColumnsMaxValue()
               || null == dataBlock.getColumnsMinValue()) {
         return true;
@@ -131,6 +137,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
         bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
             .isFilterValuesPresentInBlockOrBlocklet(
                 dataBlock.getColumnsMaxValue(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2942
                 dataBlock.getColumnsMinValue(), blockletId, dataBlock.minMaxFlagArray());
       } else {
         bitSet = this.filterExecuter
@@ -173,9 +180,11 @@ public class BlockletFilterScanner extends BlockletFullScanner {
       throws FilterUnsupportedException, IOException {
     long startTime = System.currentTimeMillis();
     // set the indexed data if it has any during fgindex pruning.
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2415
     BitSetGroup fgBitSetGroup = rawBlockletColumnChunks.getDataBlock().getIndexedData();
     rawBlockletColumnChunks.setBitSetGroup(fgBitSetGroup);
     // apply filter on actual data, for each page
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     BitSetGroup bitSetGroup = this.filterExecuter.applyFilter(rawBlockletColumnChunks,
         useBitSetPipeLine);
     // if filter result is empty then return with empty result
@@ -202,6 +211,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
 
     BlockletScannedResult scannedResult =
         new FilterQueryScannedResult(blockExecutionInfo, queryStatisticsModel);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
     scannedResult.setBlockletId(blockExecutionInfo.getBlockIdString(),
         String.valueOf(rawBlockletColumnChunks.getDataBlock().blockletIndex()));
     // valid scanned blocklet
@@ -253,6 +263,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
           rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex];
     }
     //dimensionReadTime is the time required to read the data from dimension array
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3476
     long totalReadTime = System.currentTimeMillis();
     int[][] allSelectedDimensionColumnIndexRange =
         blockExecutionInfo.getAllSelectedDimensionColumnIndexRange();
@@ -281,6 +292,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
       }
     }
     totalReadTime += System.currentTimeMillis() - filterDimensionReadTime;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3476
 
     DimensionColumnPage[][] dimensionColumnPages =
         new DimensionColumnPage[numDimensionChunks][numPages];
@@ -296,6 +308,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
       }
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3476
     long measureReadTime = System.currentTimeMillis();
     int[][] allSelectedMeasureColumnIndexRange =
         blockExecutionInfo.getAllSelectedMeasureIndexRange();
@@ -320,6 +333,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
             .readMeasureChunk(fileReader, projectionListMeasureIndex);
       }
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3476
     measureReadTime += System.currentTimeMillis() - filterMeasureReadTime;
     totalReadTime += measureReadTime;
     ColumnPage[][] measureColumnPages = new ColumnPage[numMeasureChunks][numPages];
@@ -329,11 +343,13 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     scannedResult.setDimRawColumnChunks(dimensionRawColumnChunks);
     scannedResult.setMsrRawColumnChunks(measureRawColumnChunks);
     scannedResult.setPageFilteredRowCount(pageFilteredRowCount);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2325
     scannedResult.fillDataChunks();
     // adding statistics for carbon scan time
     QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
     scanTime.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKlET_TIME,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3476
         scanTime.getCount() + (System.currentTimeMillis() - startTime - totalReadTime));
     QueryStatistic readTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.READ_BLOCKlET_TIME);
@@ -373,6 +389,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
       scanTime.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKlET_TIME,
           scanTime.getCount() + (System.currentTimeMillis() - startTime));
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3593
       QueryStatistic scannedBlocklets = queryStatisticsModel.getStatisticsTypeAndObjMap()
           .get(QueryStatisticsConstants.BLOCKLET_SCANNED_NUM);
       scannedBlocklets.addCountStatistic(QueryStatisticsConstants.BLOCKLET_SCANNED_NUM,
@@ -380,6 +397,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
 
       QueryStatistic scannedPages = queryStatisticsModel.getStatisticsTypeAndObjMap()
           .get(QueryStatisticsConstants.PAGE_SCANNED);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
       scannedPages
           .addCountStatistic(QueryStatisticsConstants.PAGE_SCANNED, scannedPages.getCount());
       return createEmptyResult();
@@ -400,6 +418,9 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     validPages.addCountStatistic(QueryStatisticsConstants.VALID_PAGE_SCANNED,
         validPages.getCount() + pages.cardinality());
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3593
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3593
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3593
     QueryStatistic scannedBlocklets = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.BLOCKLET_SCANNED_NUM);
     scannedBlocklets.addCountStatistic(QueryStatisticsConstants.BLOCKLET_SCANNED_NUM,
@@ -414,12 +435,14 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     int[] numberOfRows = new int[pages.cardinality()];
     int index = 0;
     for (int i = pages.nextSetBit(0); i >= 0; i = pages.nextSetBit(i + 1)) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3014
       pageFilteredPages[index] = i;
       numberOfRows[index++] = rawBlockletColumnChunks.getDataBlock().getPageRowCount(i);
     }
 
     DimensionRawColumnChunk[] dimensionRawColumnChunks =
         new DimensionRawColumnChunk[blockExecutionInfo.getTotalNumberDimensionToRead()];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
     MeasureRawColumnChunk[] measureRawColumnChunks =
         new MeasureRawColumnChunk[blockExecutionInfo.getTotalNumberOfMeasureToRead()];
     int numDimensionChunks = dimensionRawColumnChunks.length;
@@ -438,6 +461,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
       }
     }
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3015
     LazyBlockletLoader lazyBlocklet =
         new LazyBlockletLoader(rawBlockletColumnChunks, blockExecutionInfo,
             dimensionRawColumnChunks, measureRawColumnChunks, queryStatisticsModel);
@@ -446,11 +470,13 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     ColumnPage[][] measureColumnPages = new ColumnPage[numMeasureChunks][pages.cardinality()];
     scannedResult.setDimensionColumnPages(dimensionColumnPages);
     scannedResult.setMeasureColumnPages(measureColumnPages);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1224
     scannedResult.setDimRawColumnChunks(dimensionRawColumnChunks);
     scannedResult.setMsrRawColumnChunks(measureRawColumnChunks);
     scannedResult.setPageFilteredRowCount(numberOfRows);
     scannedResult.setPageIdFiltered(pageFilteredPages);
     scannedResult.setLazyBlockletLoader(lazyBlocklet);
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3724
     scannedResult.setBlockletId(blockExecutionInfo.getBlockIdString(),
         String.valueOf(rawBlockletColumnChunks.getDataBlock().blockletIndex()));
     // adding statistics for carbon scan time

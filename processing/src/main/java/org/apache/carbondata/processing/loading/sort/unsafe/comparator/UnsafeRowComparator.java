@@ -69,6 +69,7 @@ public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
         short lengthB = CarbonUnsafe.getUnsafe().getShort(baseObjectR,
             rowB + dictSizeInMemory + sizeInNonDictPartB);
         sizeInNonDictPartB += 2;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
         DataType dataType = tableFieldStat.getNoDictDataType()[noDicSortIdx++];
         if (DataTypeUtil.isPrimitiveColumn(dataType)) {
           Object data1 = null;

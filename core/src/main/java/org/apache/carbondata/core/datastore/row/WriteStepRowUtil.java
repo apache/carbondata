@@ -46,6 +46,7 @@ public class WriteStepRowUtil {
   }
 
   public static CarbonRow fromMergerRow(Object[] row, SegmentProperties segmentProperties,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
       CarbonColumn[] noDicAndComplexColumns) {
     Object[] converted = new Object[3];
 
@@ -53,11 +54,13 @@ public class WriteStepRowUtil {
     byte[] mdk = ((ByteArrayWrapper) row[0]).getDictionaryKey();
     int numDict = mdk.length / ByteUtil.dateBytesSize();
     int[] dictDimensions = new int[numDict];
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
     for (int i = 0; i < numDict; i++) {
       dictDimensions[i] = ByteUtil.convertBytesToInt(mdk, i * ByteUtil.dateBytesSize());
     }
     converted[DICTIONARY_DIMENSION] = dictDimensions;
 
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2755
     Object[] noDictAndComplexKeys =
         new Object[segmentProperties.getNumberOfNoDictionaryDimension() + segmentProperties
             .getComplexDimensions().size()];
@@ -84,6 +87,7 @@ public class WriteStepRowUtil {
 
     // For Complex Type Columns
     byte[][] complexKeys = ((ByteArrayWrapper) row[0]).getComplexTypesKeys();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3160
     for (int i = segmentProperties.getNumberOfNoDictionaryDimension(), j = 0;
          i < segmentProperties.getNumberOfNoDictionaryDimension() + segmentProperties
              .getComplexDimensions().size(); i++) {
@@ -107,6 +111,7 @@ public class WriteStepRowUtil {
   }
 
   public static Object[] getNoDictAndComplexDimension(CarbonRow row) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     return (Object[]) row.getData()[NO_DICTIONARY_AND_COMPLEX];
   }
 

@@ -36,6 +36,7 @@ public class LogService extends Logger {
   private static String username;
 
   {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
     try {
       hostName = InetAddress.getLocalHost().getHostName();
     } catch (UnknownHostException e) {

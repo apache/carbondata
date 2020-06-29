@@ -42,12 +42,14 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
    */
   @Override
   public int[] getDictionaryKeyIntegerArray() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     return getDictionaryKeyIntegerArray(pageFilteredRowId[pageCounter][currentRow]);
   }
 
   @Override
   public void fillValidRowIdsBatchFilling(int rowId, int batchSize) {
     // row id will be different for every batch so clear it before filling
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3343
     clearValidRowIdList();
     int startPosition = rowId;
     int minSize = Math.min(batchSize, pageFilteredRowId[pageCounter].length);
@@ -67,11 +69,13 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
    */
   @Override
   public byte[][] getComplexTypeKeyArray() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     return getComplexTypeKeyArray(pageFilteredRowId[pageCounter][currentRow]);
   }
 
   @Override
   public List<byte[][]> getComplexTypeKeyArrayBatch(int batchSize) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3343
     return getComplexTypeKeyArrayBatch();
   }
 
@@ -83,6 +87,7 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
    */
   @Override
   public byte[][] getNoDictionaryKeyArray() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     return getNoDictionaryKeyArray(pageFilteredRowId[pageCounter][currentRow]);
   }
 
@@ -93,6 +98,7 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
    */
   @Override
   public int getCurrentRowId() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
     return pageFilteredRowId[pageCounter][currentRow];
   }
 
@@ -105,6 +111,8 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
       column = dimensionColumnPages[chunkIndex][pageCounter].fillVector(
           pageFilteredRowId[pageCounter],
           vectorInfo,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2720
           column);
     }
   }
@@ -113,6 +121,7 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
    * Fill the column data to vector
    */
   public void fillColumnarNoDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2896
     for (int index = 0; index < this.noDictionaryColumnChunkIndexes.length; index++) {
       dimensionColumnPages[noDictionaryColumnChunkIndexes[index]][pageCounter]
           .fillVector(pageFilteredRowId[pageCounter], vectorInfo, index);
@@ -124,6 +133,7 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
    */
   public void fillColumnarMeasureBatch(ColumnVectorInfo[] vectorInfo, int[] measuresOrdinal) {
     for (int i = 0; i < measuresOrdinal.length; i++) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
       vectorInfo[i].measureVectorFiller.fillMeasureVector(
           pageFilteredRowId[pageCounter],
           measureColumnPages[measuresOrdinal[i]][pageCounter],

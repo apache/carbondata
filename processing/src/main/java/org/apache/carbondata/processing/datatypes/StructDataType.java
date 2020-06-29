@@ -71,7 +71,10 @@ public class StructDataType implements GenericDataType<StructObject> {
   private int depth;
 
   private StructDataType(List<GenericDataType> children, int outputArrayIndex, int dataCounter,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
       String name) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
     this.children = children;
     this.outputArrayIndex = outputArrayIndex;
     this.dataCounter = dataCounter;
@@ -86,6 +89,7 @@ public class StructDataType implements GenericDataType<StructObject> {
    */
   public StructDataType(String name, String parentName, String columnId) {
     this.name = name;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     this.parentName = parentName;
     this.columnId = columnId;
   }
@@ -98,6 +102,7 @@ public class StructDataType implements GenericDataType<StructObject> {
    * @param isDictionary
    */
   public StructDataType(String name, String parentName, String columnId,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
       Boolean isDictionary) {
     this.name = name;
     this.parentName = parentName;
@@ -110,6 +115,7 @@ public class StructDataType implements GenericDataType<StructObject> {
    */
   @Override
   public void addChildren(GenericDataType newChild) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     if (this.getName().equals(newChild.getParentName())) {
       this.children.add(newChild);
     } else {
@@ -133,6 +139,7 @@ public class StructDataType implements GenericDataType<StructObject> {
    */
   @Override
   public String getParentName() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3206
     return parentName;
   }
 
@@ -169,12 +176,15 @@ public class StructDataType implements GenericDataType<StructObject> {
 
   @Override
   public boolean getIsColumnDictionary() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3674
     return isDictionary;
   }
 
   @Override
   public void writeByteArray(StructObject input, DataOutputStream dataOutputStream,
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3761
       BadRecordLogHolder logHolder, Boolean isWithoutConverter) throws IOException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
     dataOutputStream.writeShort(children.size());
     if (input == null) {
       for (int i = 0; i < children.size(); i++) {
@@ -204,11 +214,13 @@ public class StructDataType implements GenericDataType<StructObject> {
   @Override
   public void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream)
       throws IOException, KeyGenException {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
     short childElement = byteArrayInput.getShort();
     dataOutputStream.writeShort(childElement);
     for (int i = 0; i < childElement; i++) {
       if (children.get(i) instanceof PrimitiveDataType) {
         if (children.get(i).getIsColumnDictionary()) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3684
           dataOutputStream.writeInt(ByteUtil.dateBytesSize());
         }
       }
@@ -265,12 +277,14 @@ public class StructDataType implements GenericDataType<StructObject> {
   @Override
   public void getColumnarDataForComplexType(List<ArrayList<byte[]>> columnsArray,
       ByteBuffer inputArray) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2477
     ByteBuffer b = ByteBuffer.allocate(2);
     int childElement = inputArray.getShort();
     b.putShort((short)childElement);
     columnsArray.get(this.outputArrayIndex).add(b.array());
     for (int i = 0; i < childElement; i++) {
       if (children.get(i) instanceof PrimitiveDataType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2437
         PrimitiveDataType child = ((PrimitiveDataType) children.get(i));
         if (child.getIsColumnDictionary()) {
           child.setKeySize(inputArray.getInt());
@@ -291,15 +305,19 @@ public class StructDataType implements GenericDataType<StructObject> {
 
   @Override
   public GenericDataType<StructObject> deepCopy() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1400
     List<GenericDataType> childrenClone = new ArrayList<>();
     for (GenericDataType child : children) {
       childrenClone.add(child.deepCopy());
     }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2587
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2588
     return new StructDataType(childrenClone, this.outputArrayIndex, this.dataCounter, this.name);
   }
 
   @Override
   public void getComplexColumnInfo(List<ComplexColumnInfo> columnInfoList) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2607
     columnInfoList.add(
         new ComplexColumnInfo(ColumnType.COMPLEX_STRUCT, DataTypeUtil.valueOf("struct"),
             name, false));
@@ -310,6 +328,7 @@ public class StructDataType implements GenericDataType<StructObject> {
 
   @Override
   public int getDepth() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3001
     if (depth == 0) {
       // calculate only one time
       List<ComplexColumnInfo> complexColumnInfoList = new ArrayList<>();

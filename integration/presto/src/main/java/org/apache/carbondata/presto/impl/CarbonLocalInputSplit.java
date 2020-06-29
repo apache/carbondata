@@ -104,6 +104,7 @@ public class CarbonLocalInputSplit {
 
   @JsonProperty
   public int getFileFormatOrdinal() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
     return fileFormatOrdinal;
   }
 
@@ -139,19 +140,23 @@ public class CarbonLocalInputSplit {
     this.deleteDeltaFiles = deleteDeltaFiles;
     this.blockletId = blockletId;
     this.detailInfo = detailInfo;
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
     this.fileFormatOrdinal = fileFormatOrdinal;
     this.fileFormat = FileFormat.getByOrdinal(fileFormatOrdinal);
   }
 
   public static CarbonInputSplit convertSplit(CarbonLocalInputSplit carbonLocalInputSplit) {
     CarbonInputSplit inputSplit = new CarbonInputSplit(carbonLocalInputSplit.getSegmentId(),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3321
         carbonLocalInputSplit.getBlockletId(), carbonLocalInputSplit.getPath(),
         carbonLocalInputSplit.getStart(), carbonLocalInputSplit.getLength(),
         carbonLocalInputSplit.getLocations()
             .toArray(new String[carbonLocalInputSplit.getLocations().size()]),
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2489
         carbonLocalInputSplit.getNumberOfBlocklets(),
         ColumnarFormatVersion.valueOf(carbonLocalInputSplit.getVersion()),
         carbonLocalInputSplit.getDeleteDeltaFiles());
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3220
     inputSplit.setFormat(carbonLocalInputSplit.getFileFormat());
     if (FileFormat.COLUMNAR_V3.ordinal() == inputSplit.getFileFormat().ordinal()) {
       Gson gson = new Gson();
@@ -160,6 +165,7 @@ public class CarbonLocalInputSplit {
       if (null == blockletDetailInfo) {
         throw new RuntimeException("Could not read blocklet details");
       }
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2020
       try {
         blockletDetailInfo.readColumnSchema(blockletDetailInfo.getColumnSchemaBinary());
       } catch (IOException e) {

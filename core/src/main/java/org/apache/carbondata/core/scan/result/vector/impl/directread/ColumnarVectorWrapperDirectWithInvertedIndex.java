@@ -35,6 +35,7 @@ public class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbon
 
   public ColumnarVectorWrapperDirectWithInvertedIndex(CarbonColumnVector columnVector,
       int[] invertedIndex, boolean isnullBitsExists) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3112
     super(columnVector);
     this.invertedIndex = invertedIndex;
     this.isnullBitsExists = isnullBitsExists;

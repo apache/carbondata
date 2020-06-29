@@ -29,8 +29,10 @@ public class ThreadLocalTaskInfo {
   }
 
   public static CarbonTaskInfo getCarbonTaskInfo() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-1351
     if (null == threadLocal.get()) {
       CarbonTaskInfo carbonTaskInfo = new CarbonTaskInfo();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2991
       carbonTaskInfo.setTaskId(CarbonUtil.generateUUID());
       ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo);
     }
@@ -38,6 +40,7 @@ public class ThreadLocalTaskInfo {
   }
 
   public static void clearCarbonTaskInfo() {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3080
     if (null != threadLocal.get()) {
       threadLocal.set(null);
     }

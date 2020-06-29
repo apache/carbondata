@@ -229,6 +229,7 @@ public class DataFileFooterConverterTest {
 
       @SuppressWarnings("unused") @Mock
       public FileReader getFileHolder(FileFactory.FileType fileType) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2099
         return new FileReaderImpl();
       }
 

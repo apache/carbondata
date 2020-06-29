@@ -53,6 +53,7 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
 
   public QueryStatisticsRecorderImpl(String queryId) {
     queryStatistics = new ArrayList<QueryStatistic>();
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-2271
     this.queryId = queryId;
   }
 
@@ -70,6 +71,7 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
    */
   public void logStatistics() {
     for (QueryStatistic statistic : queryStatistics) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.log(StatisticLevel.STATISTIC, statistic.getStatistics(queryId));
     }
   }
@@ -79,6 +81,7 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
    */
   public void logStatisticsForTask(TaskStatistics result) {
     if (null != result) {
+//IC see: https://issues.apache.org/jira/browse/CARBONDATA-3024
       LOGGER.log(StatisticLevel.STATISTIC,
           "Print query statistic for each task id:" + "\n" + result.toString());
     }
