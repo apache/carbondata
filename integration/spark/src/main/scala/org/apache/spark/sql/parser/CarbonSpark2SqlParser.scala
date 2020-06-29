@@ -766,13 +766,12 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       throw new MalformedCarbonCommandException("Invalid table properties")
     }
     if (options.isBucketingEnabled) {
-      if (options.bucketNumber.toString.contains("-") ||
-          options.bucketNumber.toString.contains("+") ||  options.bucketNumber == 0) {
+      if (options.bucketNumber.isEmpty || options.bucketNumber.get <= 0) {
         throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED")
       }
       else {
         Some(BucketFields(options.bucketColumns.toLowerCase.split(",").map(_.trim),
-          options.bucketNumber))
+          options.bucketNumber.get))
       }
     } else {
       None
