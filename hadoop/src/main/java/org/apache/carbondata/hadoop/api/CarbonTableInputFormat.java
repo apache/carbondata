@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -64,6 +65,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
+import com.google.common.collect.Sets;
 import org.apache.hadoop.fs.BlockLocation;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -232,47 +234,36 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
   private List<Segment> getFilteredSegment(JobContext job, List<Segment> validSegments,
       boolean validationRequired, ReadCommittedScope readCommittedScope) {
     Segment[] segmentsToAccess = getSegmentsToAccess(job, readCommittedScope);
-    List<Segment> segmentToAccessSet =
-        new ArrayList<>(new HashSet<>(Arrays.asList(segmentsToAccess)));
-    List<Segment> filteredSegmentToAccess = new ArrayList<>();
     if (segmentsToAccess.length == 0 || segmentsToAccess[0].getSegmentNo().equalsIgnoreCase("*")) {
-      filteredSegmentToAccess.addAll(validSegments);
-    } else {
-      for (Segment validSegment : validSegments) {
-        int index = segmentToAccessSet.indexOf(validSegment);
-        if (index > -1) {
-          // In case of in progress reading segment, segment file name is set to the property itself
-          if (segmentToAccessSet.get(index).getSegmentFileName() != null
-              && validSegment.getSegmentFileName() == null) {
-            filteredSegmentToAccess.add(segmentToAccessSet.get(index));
-          } else {
-            filteredSegmentToAccess.add(validSegment);
-          }
+      return validSegments;
+    }
+    Map<String, Segment> segmentToAccessMap = Arrays.stream(segmentsToAccess)
+        .collect(Collectors.toMap(Segment::getSegmentNo, segment -> segment, (e1, e2) -> e1));
+    Map<String, Segment> filteredSegmentToAccess = new HashMap<>(segmentToAccessMap.size());
+    for (Segment validSegment : validSegments) {
+      String segmentNoOfValidSegment = validSegment.getSegmentNo();
+      if (segmentToAccessMap.containsKey(segmentNoOfValidSegment)) {
+        Segment segmentToAccess = segmentToAccessMap.get(segmentNoOfValidSegment);
+        if (segmentToAccess.getSegmentFileName() != null &&
+            validSegment.getSegmentFileName() == null) {
+          validSegment = segmentToAccess;
         }
-      }
-      if (filteredSegmentToAccess.size() != segmentToAccessSet.size() && !validationRequired) {
-        for (Segment segment : segmentToAccessSet) {
-          if (!filteredSegmentToAccess.contains(segment)) {
-            filteredSegmentToAccess.add(segment);
-          }
-        }
-      }
-      // TODO: add validation for set segments access based on valid segments in table status
-      if (filteredSegmentToAccess.size() != segmentToAccessSet.size() && !validationRequired) {
-        for (Segment segment : segmentToAccessSet) {
-          if (!filteredSegmentToAccess.contains(segment)) {
-            filteredSegmentToAccess.add(segment);
-          }
-        }
-      }
-      if (!filteredSegmentToAccess.containsAll(segmentToAccessSet)) {
-        List<Segment> filteredSegmentToAccessTemp = new ArrayList<>(filteredSegmentToAccess);
-        filteredSegmentToAccessTemp.removeAll(segmentToAccessSet);
-        LOG.info(
-            "Segments ignored are : " + Arrays.toString(filteredSegmentToAccessTemp.toArray()));
+        filteredSegmentToAccess.put(segmentNoOfValidSegment, validSegment);
       }
     }
-    return filteredSegmentToAccess;
+    if (!validationRequired && filteredSegmentToAccess.size() != segmentToAccessMap.size()) {
+      for (Segment segment : segmentToAccessMap.values()) {
+        if (!filteredSegmentToAccess.containsKey(segment.getSegmentNo())) {
+          filteredSegmentToAccess.put(segment.getSegmentNo(), segment);
+        }
+      }
+    }
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Segments ignored are : " +
+          Arrays.toString(Sets.difference(new HashSet<>(filteredSegmentToAccess.values()),
+          new HashSet<>(segmentToAccessMap.values())).toArray()));
+    }
+    return new ArrayList<>(filteredSegmentToAccess.values());
   }
 
   public List<InputSplit> getSplitsOfStreaming(JobContext job, List<Segment> streamSegments,
