@@ -206,7 +206,8 @@ public final class TableIndex extends OperationEventListener {
       Set<Path> partitionLocations, List<ExtendedBlocklet> blocklets,
       Map<Segment, List<Index>> indexes) throws IOException {
     for (Segment segment : segments) {
-      if (indexes.get(segment).isEmpty() || indexes.get(segment) == null) {
+      if (segment == null ||
+          indexes.get(segment) == null || indexes.get(segment).isEmpty()) {
         continue;
       }
       boolean isExternalSegment = segment.getSegmentPath() != null;
