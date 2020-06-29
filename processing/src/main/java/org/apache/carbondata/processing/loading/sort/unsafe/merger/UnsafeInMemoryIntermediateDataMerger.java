@@ -147,6 +147,7 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
 
     // check if there no entry present
     if (!poll.hasNext()) {
+      poll.close();
       this.recordHolderHeap.poll();
       // change the file counter
       --this.holderCounter;
