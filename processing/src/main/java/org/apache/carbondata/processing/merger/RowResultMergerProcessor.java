@@ -130,6 +130,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         if (null == convertedRow) {
           index--;
           iterator.close();
+          this.recordHolderHeap.poll();
           continue;
         }
         if (!isDataPresent) {
