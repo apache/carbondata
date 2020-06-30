@@ -28,6 +28,7 @@ import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 public class CarbonColumnVectorWrapper implements CarbonColumnVector {
 
   private CarbonColumnVectorImpl columnVector;
+  private CarbonColumnVectorWrapper dictionaryVectorWrapper;
 
   private boolean[] filteredRows;
 
@@ -40,6 +41,11 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
   public CarbonColumnVectorWrapper(CarbonColumnVectorImpl columnVector, boolean[] filteredRows) {
     this.columnVector = columnVector;
     this.filteredRows = filteredRows;
+
+    if (columnVector.getDictionaryVector() != null) {
+      dictionaryVectorWrapper = new CarbonColumnVectorWrapper(
+              (CarbonColumnVectorImpl)columnVector.getDictionaryVector(), filteredRows);
+    }
   }
 
   @Override
@@ -273,7 +279,7 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
 
   @Override
   public CarbonColumnVector getDictionaryVector() {
-    return this.columnVector.getDictionaryVector();
+    return this.dictionaryVectorWrapper;
   }
 
   @Override
