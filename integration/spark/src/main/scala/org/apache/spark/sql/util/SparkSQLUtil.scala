@@ -165,9 +165,9 @@ object SparkSQLUtil {
      * datatype of column data and corresponding datatype in schema provided to create dataframe.
      * Since carbonScanRDD gives Long data for timestamp column and corresponding column datatype in
      * schema is Timestamp, this validation fails if we use createDataFrame API which takes rdd as
-     * input. Hence, using below API which creates dataframe from tablename.
+     * input. Hence, using below API which creates dataframe from qualified tablename.
      */
-    sparkSession.sqlContext.table(carbonTable.getTableName)
+    sparkSession.sqlContext.table(carbonTable.getDatabaseName + "." + carbonTable.getTableName)
   }
 
   def setOutputMetrics(outputMetrics: OutputMetrics, dataLoadMetrics: DataLoadMetrics): Unit = {
