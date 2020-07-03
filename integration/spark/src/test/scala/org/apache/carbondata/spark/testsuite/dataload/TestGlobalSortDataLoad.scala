@@ -89,6 +89,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql("DROP TABLE IF EXISTS carbon_globalsort_minor")
     sql("DROP TABLE IF EXISTS carbon_globalsort_major")
     sql("DROP TABLE IF EXISTS carbon_globalsort_custom")
+    sql("drop table if exists source")
+    sql("drop table if exists sink")
   }
 
   // ----------------------------------- Compare Result -----------------------------------
@@ -466,6 +468,16 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
 
     checkAnswer(sql("SELECT * FROM carbon_globalsort_difftypes ORDER BY shortField"),
       sql("SELECT * FROM carbon_localsort_difftypes ORDER BY shortField"))
+  }
+
+  test("test global sort with null values") {
+    sql("drop table if exists source")
+    sql("drop table if exists sink")
+    sql("create table source(a string, b int, c int, d int, e int, f int) stored as carbondata TBLPROPERTIES('bad_record_action'='force')")
+    sql("insert into source select 'k','k', 'k','k','k', 'k'")
+    sql("create table sink (a string, b string, c int, d bigint, e double, f char(5)) stored as carbondata TBLPROPERTIES('sort_scope'='global_sort', 'sort_columns'='b,c,d,f')")
+    sql("insert into sink select * from source")
+    checkAnswer(sql("select * from sink"), Row("k", null, null,null,null, null))
   }
 
   private def resetConf() {

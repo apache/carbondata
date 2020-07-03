@@ -921,52 +921,55 @@ object CommonUtil {
     var i = 0
     val fieldTypesLen = fields.length
     while (i < fieldTypesLen) {
-      if (!row.isNullAt(i)) {
-        fields(i).dataType match {
-          case StringType =>
-            data(i) = DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(row.getString(i),
+      fields(i).dataType match {
+        case StringType =>
+          data(i) = if (row.isNullAt(i)) {
+            DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(null,
               DataTypes.STRING)
-          case d: DecimalType =>
-            data(i) = row.getDecimal(i, d.precision, d.scale).toJavaBigDecimal
-          case arrayType : ArrayType =>
-            val result = convertSparkComplexTypeToCarbonObject(row.get(i, arrayType), arrayType)
-            // convert carbon complex object to byte array
-            val byteArray: ByteArrayOutputStream = new ByteArrayOutputStream()
-            val dataOutputStream: DataOutputStream = new DataOutputStream(byteArray)
-            dataFieldsWithComplexDataType(fields(i).name).asInstanceOf[ArrayDataType]
-              .writeByteArray(result.asInstanceOf[ArrayObject],
-                dataOutputStream,
-                badRecordLogHolder,
-                true)
-            dataOutputStream.close()
-            data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
-          case structType : StructType =>
-            val result = convertSparkComplexTypeToCarbonObject(row.get(i, structType), structType)
-            // convert carbon complex object to byte array
-            val byteArray: ByteArrayOutputStream = new ByteArrayOutputStream()
-            val dataOutputStream: DataOutputStream = new DataOutputStream(byteArray)
-            dataFieldsWithComplexDataType(fields(i).name).asInstanceOf[StructDataType]
-              .writeByteArray(result.asInstanceOf[StructObject],
-                dataOutputStream,
-                badRecordLogHolder,
-                true)
-            dataOutputStream.close()
-            data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
-          case mapType : MapType =>
-            val result = convertSparkComplexTypeToCarbonObject(row.get(i, mapType), mapType)
-            // convert carbon complex object to byte array
-            val byteArray: ByteArrayOutputStream = new ByteArrayOutputStream()
-            val dataOutputStream: DataOutputStream = new DataOutputStream(byteArray)
-            dataFieldsWithComplexDataType(fields(i).name).asInstanceOf[ArrayDataType]
-              .writeByteArray(result.asInstanceOf[ArrayObject],
-                dataOutputStream,
-                badRecordLogHolder,
-                true)
-            dataOutputStream.close()
-            data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
-          case other =>
-            data(i) = row.get(i, other)
-        }
+          } else {
+            DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(row.getString(i),
+              DataTypes.STRING)
+          }
+        case d: DecimalType =>
+          data(i) = row.getDecimal(i, d.precision, d.scale).toJavaBigDecimal
+        case arrayType: ArrayType =>
+          val result = convertSparkComplexTypeToCarbonObject(row.get(i, arrayType), arrayType)
+          // convert carbon complex object to byte array
+          val byteArray: ByteArrayOutputStream = new ByteArrayOutputStream()
+          val dataOutputStream: DataOutputStream = new DataOutputStream(byteArray)
+          dataFieldsWithComplexDataType(fields(i).name).asInstanceOf[ArrayDataType]
+            .writeByteArray(result.asInstanceOf[ArrayObject],
+              dataOutputStream,
+              badRecordLogHolder,
+              true)
+          dataOutputStream.close()
+          data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
+        case structType: StructType =>
+          val result = convertSparkComplexTypeToCarbonObject(row.get(i, structType), structType)
+          // convert carbon complex object to byte array
+          val byteArray: ByteArrayOutputStream = new ByteArrayOutputStream()
+          val dataOutputStream: DataOutputStream = new DataOutputStream(byteArray)
+          dataFieldsWithComplexDataType(fields(i).name).asInstanceOf[StructDataType]
+            .writeByteArray(result.asInstanceOf[StructObject],
+              dataOutputStream,
+              badRecordLogHolder,
+              true)
+          dataOutputStream.close()
+          data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
+        case mapType: MapType =>
+          val result = convertSparkComplexTypeToCarbonObject(row.get(i, mapType), mapType)
+          // convert carbon complex object to byte array
+          val byteArray: ByteArrayOutputStream = new ByteArrayOutputStream()
+          val dataOutputStream: DataOutputStream = new DataOutputStream(byteArray)
+          dataFieldsWithComplexDataType(fields(i).name).asInstanceOf[ArrayDataType]
+            .writeByteArray(result.asInstanceOf[ArrayObject],
+              dataOutputStream,
+              badRecordLogHolder,
+              true)
+          dataOutputStream.close()
+          data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
+        case other =>
+          data(i) = row.get(i, other)
       }
       i += 1
     }
