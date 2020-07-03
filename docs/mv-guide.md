@@ -23,6 +23,7 @@
 * [Querying Data](#querying-data)
 * [Compaction](#compacting)
 * [Data Management](#data-management)
+* [Show Materialized Views](#show-materialized-views)
 * [Time Series Support](#time-series-support)
 * [Time Series RollUp Support](#time-series-rollup-support)
 
@@ -221,6 +222,26 @@
    
  Basically, user can manually trigger the operation by re-building the materialized view.
 
+### Show Materialized Views
+
+ Command syntax:
+   ```
+     SHOW MATERIALIZED VIEWS [ON TABLE [db_name.]table_name]
+   ```
+
+SHOW MATERIALIZED VIEWS command will display the information about all the materialized 
+views created on the database or on the carbon table.
+The current information includes:
+
+ | Column Info            | Description                                                      |
+ |-----------------------------|----------------------------------------------------------------------------|
+ | Database               | Materialized view database name                               |
+ | Name                  | Materialized view name                                         | 
+ | Status                  | ENABLED / DISABLED                                          |
+ | Refresh Mode          | FULL / INCREMENTAL refresh to MV                          |
+ | Refresh Trigger Mode  | ON_COMMIT / ON_MANUAL refresh to MV provided by user |
+ | Properties              | Table properties of the materialized view                       |
+  
 ## Time Series Support
 
  Time series data are simply measurements or events that are tracked, monitored, down sampled, and 

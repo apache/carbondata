@@ -678,6 +678,29 @@ class TestAllOperationsOnMV extends QueryTest with BeforeAndAfterEach {
     sql("drop table IF EXISTS maintable")
   }
 
+  test("test case sensitive issues with implicit cast type expressions") {
+    sql("drop table IF EXISTS maintable")
+    sql("CREATE TABLE maintable (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB " +
+      "timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 " +
+      "decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 " +
+      "double,INTEGER_COLUMN1 int) STORED AS carbondata")
+    sql("insert into maintable select 1,'abc','2001','2017-09-01 00:00:00','2017-09-03 00:00:00',1234567,1234564,'1234.456','1234.4567',1.123455,1.123455,null")
+    sql("drop materialized view if exists mv1")
+    sql("create materialized view mv1 as select length(CUST_NAME) from maintable where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1=1234567 or" +
+        " DECIMAL_COLUMN1=1234.456 or Double_COLUMN1=1.123455 or INTEGER_COLUMN1 IS NULL")
+    val withUpperCase = sql(
+      "select length(CUST_NAME) from maintable where CUST_ID IS NULL or DOB IS NOT NULL or " +
+      "BIGINT_COLUMN1=1234567 or DECIMAL_COLUMN1=1234.456 or Double_COLUMN1=1.123455 or INTEGER_COLUMN1 IS NULL")
+    val withLowerCase = sql(
+      "select length(cust_name) from maintable where cust_id IS NULL or dob IS NOT NULL or " +
+      "bigint_column1=1234567 or decimal_column1=1234.456 or double_column1=1.123455 or integer_column1 IS NULL")
+    checkAnswer(withUpperCase, Seq(Row(3)))
+    checkAnswer(withLowerCase, Seq(Row(3)))
+    TestUtil.verifyMVHit(withUpperCase.queryExecution.optimizedPlan, "mv1")
+    TestUtil.verifyMVHit(withLowerCase.queryExecution.optimizedPlan, "mv1")
+    sql("drop table IF EXISTS maintable")
+  }
+
   test("drop meta cache on mv materialized view table") {
     defaultConfig()
     sql("drop table IF EXISTS maintable")
