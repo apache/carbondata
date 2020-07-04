@@ -551,6 +551,7 @@
             <artifactId>flatten-maven-plugin</artifactId>
             <version>1.2.2</version>
             <configuration>
+              <outputDirectory>${project.build.directory}</outputDirectory>
             </configuration>
             <executions>
               <!-- enable flattening -->
