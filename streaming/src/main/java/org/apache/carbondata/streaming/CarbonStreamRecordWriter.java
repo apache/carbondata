@@ -82,7 +82,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   private RowParser rowParser;
   private BadRecordsLogger badRecordLogger;
   private RowConverter converter;
-  private CarbonRow currentRow = new CarbonRow(null);
+  private final CarbonRow currentRow = new CarbonRow(null);
 
   // encoder
   private DataField[] dataFields;
@@ -174,7 +174,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     if (carbonFile.exists()) {
       // if the file is existed, use the append api
       outputStream = FileFactory.getDataOutputStreamUsingAppend(filePath);
-      // get the compressor from the fileheader. In legacy store,
+      // get the compressor from the file header. In legacy store,
       // the compressor name is not set and it use snappy compressor
       FileHeader header = new CarbonHeaderReader(filePath).readHeader();
       if (header.isSetCompressor_name()) {
@@ -329,7 +329,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     if (output.getRowIndex() == -1) {
       return;
     }
-    output.apppendBlocklet(outputStream);
+    output.appendBlocklet(outputStream);
     outputStream.flush();
     if (!isClosed) {
       batchMinMaxIndex = StreamSegment.mergeBlockletMinMax(

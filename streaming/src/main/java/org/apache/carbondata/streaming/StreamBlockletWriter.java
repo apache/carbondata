@@ -44,14 +44,14 @@ public class StreamBlockletWriter {
   private byte[] buffer;
   private int maxSize;
   private int maxRowNum;
-  private int rowSize;
+  private final int rowSize;
   private int count = 0;
   private int rowIndex = -1;
-  private Compressor compressor;
+  private final Compressor compressor;
 
-  private int dimCountWithoutComplex;
-  private int measureCount;
-  private DataType[] measureDataTypes;
+  private final int dimCountWithoutComplex;
+  private final int measureCount;
+  private final DataType[] measureDataTypes;
 
   // blocklet level stats
   ColumnPageStatsCollector[] dimStatsCollectors;
@@ -93,11 +93,11 @@ public class StreamBlockletWriter {
   }
 
   private void ensureCapacity(int space) {
-    int newcount = space + count;
-    if (newcount > buffer.length) {
-      byte[] newbuf = new byte[Math.max(newcount, buffer.length + rowSize)];
-      System.arraycopy(buffer, 0, newbuf, 0, count);
-      buffer = newbuf;
+    int newCount = space + count;
+    if (newCount > buffer.length) {
+      byte[] newBuffer = new byte[Math.max(newCount, buffer.length + rowSize)];
+      System.arraycopy(buffer, 0, newBuffer, 0, count);
+      buffer = newBuffer;
     }
   }
 
@@ -212,7 +212,7 @@ public class StreamBlockletWriter {
     return blockletMinMaxIndex;
   }
 
-  void apppendBlocklet(DataOutputStream outputStream) throws IOException {
+  void appendBlocklet(DataOutputStream outputStream) throws IOException {
     outputStream.write(CarbonStreamOutputFormat.CARBON_SYNC_MARKER);
 
     BlockletInfo blockletInfo = new BlockletInfo();

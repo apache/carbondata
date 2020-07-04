@@ -25,7 +25,7 @@ import java.util.Base64
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 object FieldConverter {
-  val stringLengthExceedErrorMsg = "Dataload failed, String length cannot exceed "
+  val stringLengthExceedErrorMsg = "Data load failed, String length cannot exceed "
 
   /**
    * Return a String representation of the input value
