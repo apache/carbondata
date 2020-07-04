@@ -36,7 +36,7 @@ public class MalformedCarbonCommandException extends Exception {
   /**
    * The Error message.
    */
-  private String msg = "";
+  private final String msg;
 
   /**
    * Constructor

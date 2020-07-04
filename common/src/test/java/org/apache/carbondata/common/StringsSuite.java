@@ -36,7 +36,7 @@ public class StringsSuite {
   public void testMkString() {
     String[] strings = new String[]{};
     String output = Strings.mkString(strings, ",");
-    Assert.assertTrue(output.length() == 0);
+    Assert.assertEquals(0, output.length());
 
     strings = new String[]{"abc"};
     output = Strings.mkString(strings, ",");

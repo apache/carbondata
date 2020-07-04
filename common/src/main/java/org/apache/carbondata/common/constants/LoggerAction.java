@@ -26,7 +26,7 @@ public enum LoggerAction {
   REDIRECT("REDIRECT"), // no null conversion moved to bad record and written to raw csv
   IGNORE("IGNORE"), // no null conversion moved to bad record and not written to raw csv
   FAIL("FAIL");  //data loading will fail if a bad record is found
-  private String name;
+  private final String name;
 
   LoggerAction(String name) {
     this.name = name;

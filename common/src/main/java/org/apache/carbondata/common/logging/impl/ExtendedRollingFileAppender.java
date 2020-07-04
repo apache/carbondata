@@ -18,7 +18,6 @@
 package org.apache.carbondata.common.logging.impl;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.text.DateFormat;
@@ -63,16 +62,8 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
     File file = new File(folderPath);
 
     if (file.exists()) {
-      File[] files = file.listFiles(new FileFilter() {
-
-        public boolean accept(File file) {
-          if (!file.isDirectory() && file.getName().toLowerCase(Locale.US)
-              .startsWith(fileStartName)) {
-            return true;
-          }
-          return false;
-        }
-      });
+      File[] files = file.listFiles(f ->
+          !f.isDirectory() && f.getName().toLowerCase(Locale.US).startsWith(fileStartName));
 
       if (null == files) {
         return;
@@ -85,7 +76,7 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
       }
 
       // Sort the file based on its name.
-      TreeMap<String, File> sortedMap = new TreeMap<String, File>();
+      TreeMap<String, File> sortedMap = new TreeMap<>();
       for (File file1 : files) {
         sortedMap.put(file1.getName(), file1);
       }
@@ -95,7 +86,7 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
       sortedMap.remove(sortedMap.firstKey());
 
       Iterator<Entry<String, File>> it = sortedMap.entrySet().iterator();
-      Entry<String, File> temp = null;
+      Entry<String, File> temp;
 
       // After clean up the files should be maxBackupIndex -1 number of
       // files. Because one more backup file
@@ -151,7 +142,7 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
       String extension = "";
       if (fileName.contains(".")) {
         extension = fileName.substring(fileName.lastIndexOf("."));
-        buffer.append(fileName.substring(0, fileName.lastIndexOf(".")));
+        buffer.append(fileName, 0, fileName.lastIndexOf("."));
       } else {
         buffer.append(fileName);
       }
