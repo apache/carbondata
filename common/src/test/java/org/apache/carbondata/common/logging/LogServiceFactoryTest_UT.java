@@ -19,21 +19,13 @@ package org.apache.carbondata.common.logging;
 
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 public class LogServiceFactoryTest_UT extends TestCase {
 
-  @Before public void setUp() throws Exception {
-  }
-
-  @After public void tearDown() throws Exception {
-  }
-
   @Test public void testGetLogService() {
     Logger logger = LogServiceFactory.getLogService(this.getClass().getName());
-    assertTrue(logger instanceof Logger);
+    assertNotNull(logger);
   }
 
 }

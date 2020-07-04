@@ -19,17 +19,9 @@ package org.apache.carbondata.common.logging.impl;
 
 import junit.framework.TestCase;
 import org.apache.log4j.Level;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 public class AuditLevelTest_UT extends TestCase {
-
-  @Before public void setUp() throws Exception {
-  }
-
-  @After public void tearDown() throws Exception {
-  }
 
   @Test public void testAuditLevel() {
     assertEquals(AuditLevel.AUDIT.toInt(), 55000);

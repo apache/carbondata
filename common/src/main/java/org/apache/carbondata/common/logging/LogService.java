@@ -35,7 +35,7 @@ public class LogService extends Logger {
   private static String hostName;
   private static String username;
 
-  {
+  static {
     try {
       hostName = InetAddress.getLocalHost().getHostName();
     } catch (UnknownHostException e) {
@@ -77,9 +77,9 @@ public class LogService extends Logger {
   }
 
   public void audit(String message) {
-    String threadid = Thread.currentThread().getId() + "";
+    String threadId = Thread.currentThread().getId() + "";
     super.log(AuditLevel.AUDIT,
-        "[" + hostName + "]" + "[" + username + "]" + "[Thread-" + threadid + "]" + message);
+        "[" + hostName + "]" + "[" + username + "]" + "[Thread-" + threadId + "]" + message);
   }
 
   /**
@@ -91,15 +91,8 @@ public class LogService extends Logger {
     super.log(StatisticLevel.STATISTIC, message);
   }
 
-  public boolean isDebugEnabled() {
-    return super.isDebugEnabled();
-  }
-
   public boolean isWarnEnabled() {
     return super.isEnabledFor(org.apache.log4j.Level.WARN);
   }
 
-  public boolean isInfoEnabled() {
-    return super.isInfoEnabled();
-  }
 }

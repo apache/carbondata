@@ -21,7 +21,6 @@ import org.junit.Assert;
 import mockit.Deencapsulation;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,14 +28,11 @@ public class ExtendedRollingFileAppenderTest_UT {
 
   private ExtendedRollingFileAppender rAppender = null;
 
-  @Before public void setUp() throws Exception {
+  @Before public void setUp() {
     rAppender = new ExtendedRollingFileAppender();
     Deencapsulation.setField(rAppender, "fileName", "dummy.log");
     Deencapsulation.setField(rAppender, "maxBackupIndex", 1);
     Deencapsulation.setField(rAppender, "maxFileSize", 1000L);
-  }
-
-  @After public void tearDown() throws Exception {
   }
 
   @Test public void testRollOver() {
