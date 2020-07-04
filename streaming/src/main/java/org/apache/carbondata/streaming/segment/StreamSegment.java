@@ -29,7 +29,6 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.locks.CarbonLockFactory;
@@ -94,22 +93,7 @@ public class StreamSegment {
           }
         }
         if (null == streamSegment) {
-          int segmentId = SegmentStatusManager.createNewSegmentId(details);
-          LoadMetadataDetails newDetail = new LoadMetadataDetails();
-          newDetail.setLoadName("" + segmentId);
-          newDetail.setFileFormat(FileFormat.ROW_V1);
-          newDetail.setLoadStartTime(System.currentTimeMillis());
-          newDetail.setSegmentStatus(SegmentStatus.STREAMING);
-
-          LoadMetadataDetails[] newDetails = new LoadMetadataDetails[details.length + 1];
-          int i = 0;
-          for (; i < details.length; i++) {
-            newDetails[i] = details[i];
-          }
-          newDetails[i] = newDetail;
-          SegmentStatusManager.writeLoadDetailsIntoFile(
-              CarbonTablePath.getTableStatusFilePath(table.getTablePath()), newDetails);
-          return newDetail.getLoadName();
+          return createNewSegment(table, details);
         } else {
           return streamSegment.getLoadName();
         }
@@ -129,6 +113,27 @@ public class StreamSegment {
                 .getTableName() + " during stream table get or create segment");
       }
     }
+  }
+
+  private static String createNewSegment(CarbonTable table, LoadMetadataDetails[] details)
+      throws IOException {
+    int segmentId = SegmentStatusManager.createNewSegmentId(details);
+    LoadMetadataDetails newDetail = new LoadMetadataDetails();
+    newDetail.setLoadName(String.valueOf(segmentId));
+    newDetail.setFileFormat(FileFormat.ROW_V1);
+    newDetail.setLoadStartTime(System.currentTimeMillis());
+    newDetail.setSegmentStatus(SegmentStatus.STREAMING);
+
+    LoadMetadataDetails[] newDetails = new LoadMetadataDetails[details.length + 1];
+    int i = 0;
+    for (; i < details.length; i++) {
+      newDetails[i] = details[i];
+    }
+    newDetails[i] = newDetail;
+    SegmentStatusManager
+        .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(table.getTablePath()),
+            newDetails);
+    return newDetail.getLoadName();
   }
 
   /**
@@ -155,38 +160,21 @@ public class StreamSegment {
             break;
           }
         }
-
-        int newSegmentId = SegmentStatusManager.createNewSegmentId(details);
-        LoadMetadataDetails newDetail = new LoadMetadataDetails();
-        newDetail.setLoadName(String.valueOf(newSegmentId));
-        newDetail.setFileFormat(FileFormat.ROW_V1);
-        newDetail.setLoadStartTime(System.currentTimeMillis());
-        newDetail.setSegmentStatus(SegmentStatus.STREAMING);
-
-        LoadMetadataDetails[] newDetails = new LoadMetadataDetails[details.length + 1];
-        int i = 0;
-        for (; i < details.length; i++) {
-          newDetails[i] = details[i];
-        }
-        newDetails[i] = newDetail;
-        SegmentStatusManager
-            .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(
-                table.getTablePath()), newDetails);
-        return newDetail.getLoadName();
+        return createNewSegment(table, details);
       } else {
         LOGGER.error(
-            "Not able to acquire the lock for stream table status updation for table " + table
+            "Not able to acquire the status update lock for streaming table " + table
                 .getDatabaseName() + "." + table.getTableName());
         throw new IOException("Failed to get stream segment");
       }
     } finally {
       if (carbonLock.unlock()) {
         LOGGER.info(
-            "Table unlocked successfully after table status updation" + table.getDatabaseName()
+            "Table unlocked successfully after table status update" + table.getDatabaseName()
                 + "." + table.getTableName());
       } else {
         LOGGER.error("Unable to unlock Table lock for table" + table.getDatabaseName() + "." + table
-            .getTableName() + " during table status updation");
+            .getTableName() + " during table status update");
       }
     }
   }
@@ -223,11 +211,11 @@ public class StreamSegment {
       }
     } finally {
       if (statusLock.unlock()) {
-        LOGGER.info("Table unlocked successfully after table status updation"
+        LOGGER.info("Table unlocked successfully after table status update"
             + carbonTable.getDatabaseName() + "." + carbonTable.getTableName());
       } else {
         LOGGER.error("Unable to unlock Table lock for table " + carbonTable.getDatabaseName()
-            + "." + carbonTable.getTableName() + " during table status updation");
+            + "." + carbonTable.getTableName() + " during table status update");
       }
     }
   }
@@ -268,9 +256,7 @@ public class StreamSegment {
    */
   private static StreamFileIndex createStreamBlockIndex(String fileName,
       BlockletMinMaxIndex minMaxIndex, int blockletRowCount) {
-    StreamFileIndex streamFileIndex =
-        new StreamFileIndex(fileName, minMaxIndex, blockletRowCount);
-    return streamFileIndex;
+    return new StreamFileIndex(fileName, minMaxIndex, blockletRowCount);
   }
 
   /**
@@ -400,12 +386,7 @@ public class StreamSegment {
   public static CarbonFile[] listDataFiles(String segmentDir) {
     CarbonFile carbonDir = FileFactory.getCarbonFile(segmentDir);
     if (carbonDir.exists()) {
-      return carbonDir.listFiles(new CarbonFileFilter() {
-        @Override
-        public boolean accept(CarbonFile file) {
-          return CarbonTablePath.isCarbonDataFile(file.getName());
-        }
-      });
+      return carbonDir.listFiles(file -> CarbonTablePath.isCarbonDataFile(file.getName()));
     } else {
       return new CarbonFile[0];
     }
@@ -415,9 +396,8 @@ public class StreamSegment {
    * read index file to list BlockIndex
    *
    * @param indexPath path of the index file
-   * @param fileType  file type of the index file
    * @return the list of BlockIndex in the index file
-   * @throws IOException
+   * @throws IOException failed to read index file
    */
   public static List<BlockIndex> readIndexFile(String indexPath)
       throws IOException {
@@ -460,10 +440,7 @@ public class StreamSegment {
       return;
     }
 
-    SerializableComparator[] comparators = new SerializableComparator[msrDataTypes.length];
-    for (int index = 0; index < comparators.length; index++) {
-      comparators[index] = Comparator.getComparatorByDataTypeForMeasure(msrDataTypes[index]);
-    }
+    SerializableComparator[] comparators = getSerializableComparators(msrDataTypes);
 
     // min value
     byte[][] minValues = minMaxIndex.getMinValues();
@@ -475,23 +452,7 @@ public class StreamSegment {
       if (minValues.length != mergedMinValues.length) {
         throw new IOException("the lengths of the min values should be same.");
       }
-      int dimCount = minValues.length - msrDataTypes.length;
-      for (int index = 0; index < minValues.length; index++) {
-        if (index < dimCount) {
-          if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(minValues[index], mergedMinValues[index])
-              > 0) {
-            minValues[index] = mergedMinValues[index];
-          }
-        } else {
-          Object object = DataTypeUtil.getMeasureObjectFromDataType(
-              minValues[index], msrDataTypes[index - dimCount]);
-          Object mergedObject = DataTypeUtil.getMeasureObjectFromDataType(
-              mergedMinValues[index], msrDataTypes[index - dimCount]);
-          if (comparators[index - dimCount].compare(object, mergedObject) > 0) {
-            minValues[index] = mergedMinValues[index];
-          }
-        }
-      }
+      mergeMinValues(msrDataTypes, comparators, minValues, mergedMinValues);
     }
 
     // max value
@@ -503,21 +464,55 @@ public class StreamSegment {
       if (maxValues.length != mergedMaxValues.length) {
         throw new IOException("the lengths of the max values should be same.");
       }
-      int dimCount = maxValues.length - msrDataTypes.length;
-      for (int index = 0; index < maxValues.length; index++) {
-        if (index < dimCount) {
-          if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(maxValues[index], mergedMaxValues[index])
-              < 0) {
-            maxValues[index] = mergedMaxValues[index];
-          }
-        } else {
-          Object object = DataTypeUtil.getMeasureObjectFromDataType(
-              maxValues[index], msrDataTypes[index - dimCount]);
-          Object mergedObject = DataTypeUtil.getMeasureObjectFromDataType(
-              mergedMaxValues[index], msrDataTypes[index - dimCount]);
-          if (comparators[index - dimCount].compare(object, mergedObject) < 0) {
-            maxValues[index] = mergedMaxValues[index];
-          }
+      mergeMaxValues(msrDataTypes, comparators, maxValues, mergedMaxValues);
+    }
+  }
+
+  private static SerializableComparator[] getSerializableComparators(DataType[] msrDataTypes) {
+    SerializableComparator[] comparators = new SerializableComparator[msrDataTypes.length];
+    for (int index = 0; index < comparators.length; index++) {
+      comparators[index] = Comparator.getComparatorByDataTypeForMeasure(msrDataTypes[index]);
+    }
+    return comparators;
+  }
+
+  private static void mergeMaxValues(DataType[] msrDataTypes, SerializableComparator[] comparators,
+      byte[][] maxValues, byte[][] mergedMaxValues) {
+    int dimCount = maxValues.length - msrDataTypes.length;
+    for (int index = 0; index < maxValues.length; index++) {
+      if (index < dimCount) {
+        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(maxValues[index], mergedMaxValues[index])
+            < 0) {
+          maxValues[index] = mergedMaxValues[index];
+        }
+      } else {
+        Object object = DataTypeUtil
+            .getMeasureObjectFromDataType(maxValues[index], msrDataTypes[index - dimCount]);
+        Object mergedObject = DataTypeUtil
+            .getMeasureObjectFromDataType(mergedMaxValues[index], msrDataTypes[index - dimCount]);
+        if (comparators[index - dimCount].compare(object, mergedObject) < 0) {
+          maxValues[index] = mergedMaxValues[index];
+        }
+      }
+    }
+  }
+
+  private static void mergeMinValues(DataType[] msrDataTypes, SerializableComparator[] comparators,
+      byte[][] minValues, byte[][] mergedMinValues) {
+    int dimCount = minValues.length - msrDataTypes.length;
+    for (int index = 0; index < minValues.length; index++) {
+      if (index < dimCount) {
+        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(minValues[index], mergedMinValues[index])
+            > 0) {
+          minValues[index] = mergedMinValues[index];
+        }
+      } else {
+        Object object = DataTypeUtil
+            .getMeasureObjectFromDataType(minValues[index], msrDataTypes[index - dimCount]);
+        Object mergedObject = DataTypeUtil
+            .getMeasureObjectFromDataType(mergedMinValues[index], msrDataTypes[index - dimCount]);
+        if (comparators[index - dimCount].compare(object, mergedObject) > 0) {
+          minValues[index] = mergedMinValues[index];
         }
       }
     }
@@ -535,52 +530,17 @@ public class StreamSegment {
       return to;
     }
 
-    SerializableComparator[] comparators = new SerializableComparator[msrDataTypes.length];
-    for (int index = 0; index < comparators.length; index++) {
-      comparators[index] = Comparator.getComparatorByDataTypeForMeasure(msrDataTypes[index]);
-    }
+    SerializableComparator[] comparators = getSerializableComparators(msrDataTypes);
 
     // min value
     byte[][] minValues = to.getMinValues();
     byte[][] mergedMinValues = from.getMinValues();
-    int dimCount1 = minValues.length - msrDataTypes.length;
-    for (int index = 0; index < minValues.length; index++) {
-      if (index < dimCount1) {
-        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(minValues[index], mergedMinValues[index])
-            > 0) {
-          minValues[index] = mergedMinValues[index];
-        }
-      } else {
-        Object object = DataTypeUtil.getMeasureObjectFromDataType(
-            minValues[index], msrDataTypes[index - dimCount1]);
-        Object mergedObject = DataTypeUtil.getMeasureObjectFromDataType(
-            mergedMinValues[index], msrDataTypes[index - dimCount1]);
-        if (comparators[index - dimCount1].compare(object, mergedObject) > 0) {
-          minValues[index] = mergedMinValues[index];
-        }
-      }
-    }
+    mergeMinValues(msrDataTypes, comparators, minValues, mergedMinValues);
 
     // max value
     byte[][] maxValues = to.getMaxValues();
     byte[][] mergedMaxValues = from.getMaxValues();
-    int dimCount2 = maxValues.length - msrDataTypes.length;
-    for (int index = 0; index < maxValues.length; index++) {
-      if (index < dimCount2) {
-        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(maxValues[index], mergedMaxValues[index])
-            < 0) {
-          maxValues[index] = mergedMaxValues[index];
-        }
-      } else {
-        Object object = DataTypeUtil.getMeasureObjectFromDataType(
-            maxValues[index], msrDataTypes[index - dimCount2]);
-        Object mergedObject = DataTypeUtil.getMeasureObjectFromDataType(
-            mergedMaxValues[index], msrDataTypes[index - dimCount2]);
-        if (comparators[index - dimCount2].compare(object, mergedObject) < 0) {
-          maxValues[index] = mergedMaxValues[index];
-        }
-      }
-    }
+    mergeMaxValues(msrDataTypes, comparators, maxValues, mergedMaxValues);
     return to;
   }
 

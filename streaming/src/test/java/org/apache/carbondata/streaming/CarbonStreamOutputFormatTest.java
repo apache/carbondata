@@ -82,7 +82,7 @@ public class CarbonStreamOutputFormatTest extends TestCase {
     try {
       CarbonStreamOutputFormat.setCarbonLoadModel(hadoopConf, carbonLoadModel);
     } catch (IOException e) {
-      Assert.assertTrue("Failed to config CarbonLoadModel for CarbonStreamOutputFromat", false);
+      Assert.fail("Failed to config CarbonLoadModel for CarbonStreamOutputFormat");
     }
   }
 
@@ -92,11 +92,11 @@ public class CarbonStreamOutputFormatTest extends TestCase {
       CarbonLoadModel model = CarbonStreamOutputFormat.getCarbonLoadModel(hadoopConf);
 
       Assert.assertNotNull("Failed to get CarbonLoadModel", model);
-      Assert.assertTrue("CarbonLoadModel should be same with previous",
-          carbonLoadModel.getFactTimeStamp() == model.getFactTimeStamp());
+      Assert.assertEquals("CarbonLoadModel should be same with previous",
+          carbonLoadModel.getFactTimeStamp(), model.getFactTimeStamp());
 
     } catch (IOException e) {
-      Assert.assertTrue("Failed to get CarbonLoadModel for CarbonStreamOutputFromat", false);
+      Assert.fail("Failed to get CarbonLoadModel for CarbonStreamOutputFormat");
     }
   }
 
@@ -106,11 +106,11 @@ public class CarbonStreamOutputFormatTest extends TestCase {
       CarbonStreamOutputFormat.setCarbonLoadModel(hadoopConf, carbonLoadModel);
       TaskAttemptContext taskAttemptContext =
           new TaskAttemptContextImpl(hadoopConf, taskAttemptId);
-      RecordWriter recordWriter = outputFormat.getRecordWriter(taskAttemptContext);
+      RecordWriter<Void, Object> recordWriter = outputFormat.getRecordWriter(taskAttemptContext);
       Assert.assertNotNull("Failed to get CarbonStreamRecordWriter", recordWriter);
     } catch (Exception e) {
       e.printStackTrace();
-      Assert.assertTrue(e.getMessage(), false);
+      Assert.fail(e.getMessage());
     }
   }
 
