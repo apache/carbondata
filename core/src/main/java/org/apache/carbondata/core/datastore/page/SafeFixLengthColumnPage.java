@@ -40,7 +40,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   private float[] floatData;
   private double[] doubleData;
   private byte[] shortIntData;
-  private byte[][] fixedLengthdata;
+  private byte[][] fixedLengthData;
   private int totalLength;
 
   // total number of entries in array
@@ -122,7 +122,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   @Override
   public void putBytes(int rowId, byte[] bytes) {
     ensureArraySize(rowId, DataTypes.BYTE_ARRAY);
-    this.fixedLengthdata[rowId] = bytes;
+    this.fixedLengthData[rowId] = bytes;
     arrayElementCount++;
     totalLength += bytes.length;
   }
@@ -218,7 +218,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[] getBytes(int rowId) {
-    return this.fixedLengthdata[rowId];
+    return this.fixedLengthData[rowId];
   }
 
   /**
@@ -284,7 +284,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   public byte[][] getByteArrayPage() {
     byte[][] data = new byte[arrayElementCount][];
     for (int i = 0; i < arrayElementCount; i++) {
-      data[i] = fixedLengthdata[i];
+      data[i] = fixedLengthData[i];
     }
     return data;
   }
@@ -300,7 +300,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream out = new DataOutputStream(stream);
     for (int i = 0; i < arrayElementCount; i++) {
-      out.write(fixedLengthdata[i]);
+      out.write(fixedLengthData[i]);
     }
     return stream.toByteArray();
   }
@@ -384,7 +384,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     floatData = null;
     doubleData = null;
     shortIntData = null;
-    fixedLengthdata = null;
+    fixedLengthData = null;
   }
 
   /**
@@ -467,16 +467,16 @@ public class SafeFixLengthColumnPage extends ColumnPage {
         doubleData = newArray;
       }
     } else if (dataType == DataTypes.BYTE_ARRAY) {
-      if (fixedLengthdata == null) {
-        fixedLengthdata = new byte[pageSize][];
+      if (fixedLengthData == null) {
+        fixedLengthData = new byte[pageSize][];
       }
-      if (requestSize >= fixedLengthdata.length) {
+      if (requestSize >= fixedLengthData.length) {
         byte[][] newArray = new byte[arrayElementCount * 2][];
         int index = 0;
-        for (byte[] data : fixedLengthdata) {
+        for (byte[] data : fixedLengthData) {
           newArray[index++] = data;
         }
-        fixedLengthdata = newArray;
+        fixedLengthData = newArray;
       }
     } else {
       throw new UnsupportedOperationException(

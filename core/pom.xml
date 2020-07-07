@@ -147,7 +147,7 @@
             <phase>generate-resources</phase>
             <!-- Execute the shell script to generate the CarbonData build information. -->
             <configuration>
-              <executable>${project.basedir}/../build/carbondata-build-info${script.exetension}</executable>
+              <executable>${project.basedir}/../build/carbondata-build-info${script.extension}</executable>
               <arguments>
                 <argument>${project.build.directory}/extra-resources</argument>
                 <argument>${project.version}</argument>

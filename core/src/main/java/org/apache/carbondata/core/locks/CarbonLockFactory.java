@@ -69,7 +69,7 @@ public class CarbonLockFactory {
       absoluteLockPath = absoluteTableIdentifier.getTablePath();
     } else {
       absoluteLockPath =
-          getLockpath(absoluteTableIdentifier.getCarbonTableIdentifier().getTableId());
+          getLockPath(absoluteTableIdentifier.getCarbonTableIdentifier().getTableId());
     }
     FileFactory.FileType fileType = FileFactory.getFileType(absoluteLockPath);
     if (lockTypeConfigured.equals(CarbonCommonConstants.CARBON_LOCK_TYPE_CUSTOM)) {
@@ -103,7 +103,7 @@ public class CarbonLockFactory {
     if (lockPath.isEmpty()) {
       lockFileLocation = locFileLocation;
     } else {
-      lockFileLocation = getLockpath("1");
+      lockFileLocation = getLockPath("1");
     }
     switch (lockTypeConfigured) {
       case CarbonCommonConstants.CARBON_LOCK_TYPE_CUSTOM:
@@ -139,7 +139,7 @@ public class CarbonLockFactory {
     CarbonLockFactory.lockConstructor = getCustomLockConstructor(lockClassName);
   }
 
-  public static String getLockpath(String tableId) {
+  public static String getLockPath(String tableId) {
     return lockPath + CarbonCommonConstants.FILE_SEPARATOR + tableId;
   }
 

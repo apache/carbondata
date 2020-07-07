@@ -129,7 +129,7 @@ public abstract class BlockletScannedResult {
   private int[] complexParentBlockIndexes;
 
   /**
-   * blockletid+pageumber to deleted reocrd map
+   * blockletId+pageNumber to deleted record map
    */
   private Map<String, DeleteDeltaVo> deletedRecordMap;
 
@@ -160,7 +160,7 @@ public abstract class BlockletScannedResult {
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
     this.noDictionaryColumnChunkIndexes = blockExecutionInfo.getNoDictionaryColumnChunkIndexes();
     this.dictionaryColumnChunkIndexes = blockExecutionInfo.getDictionaryColumnChunkIndex();
-    this.complexParentIndexToQueryMap = blockExecutionInfo.getComlexDimensionInfoMap();
+    this.complexParentIndexToQueryMap = blockExecutionInfo.getComplexDimensionInfoMap();
     this.complexParentBlockIndexes = blockExecutionInfo.getComplexColumnParentBlockIndexes();
     this.totalDimensionsSize = blockExecutionInfo.getProjectionDimensions().length;
     this.deletedRecordMap = blockExecutionInfo.getDeletedRecordsMap();
@@ -263,7 +263,7 @@ public abstract class BlockletScannedResult {
 
   public void fillColumnarComplexBatch(ColumnVectorInfo[] vectorInfos) {
     ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-    ReUsableByteArrayDataOutputStream reuseableDataOutput =
+    ReUsableByteArrayDataOutputStream reusableDataOutput =
         new ReUsableByteArrayDataOutputStream(byteStream);
     boolean isExceptionThrown = false;
     for (int i = 0; i < vectorInfos.length; i++) {
@@ -276,23 +276,23 @@ public abstract class BlockletScannedResult {
           vectorInfos[i].genericQueryType
               .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks, dimensionColumnPages,
                   pageFilteredRowId == null ? j : pageFilteredRowId[pageCounter][j], pageCounter,
-                  reuseableDataOutput);
+                  reusableDataOutput);
           Object data = vectorInfos[i].genericQueryType
-              .getDataBasedOnDataType(ByteBuffer.wrap(reuseableDataOutput.getByteArray()));
+              .getDataBasedOnDataType(ByteBuffer.wrap(reusableDataOutput.getByteArray()));
           vector.putObject(vectorOffset++, data);
-          reuseableDataOutput.reset();
+          reusableDataOutput.reset();
         } catch (IOException e) {
           isExceptionThrown = true;
           LOGGER.error(e.getMessage(), e);
         } finally {
           if (isExceptionThrown) {
-            CarbonUtil.closeStreams(reuseableDataOutput);
+            CarbonUtil.closeStreams(reusableDataOutput);
             CarbonUtil.closeStreams(byteStream);
           }
         }
       }
     }
-    CarbonUtil.closeStreams(reuseableDataOutput);
+    CarbonUtil.closeStreams(reusableDataOutput);
     CarbonUtil.closeStreams(byteStream);
   }
 
@@ -323,7 +323,7 @@ public abstract class BlockletScannedResult {
   }
 
   /**
-   * Just increment the counter incase of query only on measures.
+   * Just increment the counter in case of query only on measures.
    */
   public void incrementCounter() {
     rowCounter++;
@@ -442,7 +442,7 @@ public abstract class BlockletScannedResult {
     clearValidRowIdList();
   }
 
-  public int numberOfpages() {
+  public int numberOfPages() {
     return pageFilteredRowCount.length;
   }
 
@@ -521,7 +521,7 @@ public abstract class BlockletScannedResult {
   protected List<byte[][]> getComplexTypeKeyArrayBatch() {
     List<byte[][]> complexTypeArrayList = new ArrayList<>(validRowIds.size());
     ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-    ReUsableByteArrayDataOutputStream reUseableDataOutput =
+    ReUsableByteArrayDataOutputStream reusableDataOutput =
         new ReUsableByteArrayDataOutputStream(byteStream);
     boolean isExceptionThrown = false;
     byte[][] complexTypeData = null;
@@ -538,23 +538,23 @@ public abstract class BlockletScannedResult {
         try {
           genericQueryType
               .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks, dimensionColumnPages,
-                  validRowIds.get(j), pageCounter, reUseableDataOutput);
+                  validRowIds.get(j), pageCounter, reusableDataOutput);
           // get the key array in columnar way
           byte[][] complexKeyArray = complexTypeArrayList.get(j);
           complexKeyArray[i] = byteStream.toByteArray();
-          reUseableDataOutput.reset();
+          reusableDataOutput.reset();
         } catch (IOException e) {
           isExceptionThrown = true;
           LOGGER.error(e.getMessage(), e);
         } finally {
           if (isExceptionThrown) {
-            CarbonUtil.closeStreams(reUseableDataOutput);
+            CarbonUtil.closeStreams(reusableDataOutput);
             CarbonUtil.closeStreams(byteStream);
           }
         }
       }
     }
-    CarbonUtil.closeStreams(reUseableDataOutput);
+    CarbonUtil.closeStreams(reusableDataOutput);
     CarbonUtil.closeStreams(byteStream);
     return complexTypeArrayList;
   }
@@ -573,7 +573,7 @@ public abstract class BlockletScannedResult {
   public void setBlockletId(String blockletId, String blockletNumber) {
     this.blockletId = blockletId + CarbonCommonConstants.FILE_SEPARATOR + blockletNumber;
     this.blockletNumber = blockletNumber;
-    // if deleted recors map is present for this block
+    // if deleted record map is present for this block
     // then get the first page deleted vo
     if (null != deletedRecordMap) {
       String key;
@@ -727,7 +727,7 @@ public abstract class BlockletScannedResult {
   public abstract int getCurrentRowId();
 
   /**
-   * @return dictionary key array for all the dictionary dimension in integer array forat
+   * @return dictionary key array for all the dictionary dimension in integer array format
    * selected in query
    */
   public abstract int[] getDictionaryKeyIntegerArray();
@@ -750,7 +750,7 @@ public abstract class BlockletScannedResult {
       completeKey = new byte[fixedLengthKeySize];
       dictionaryKeyArrayList.add(completeKey);
     }
-    // initialize offset array onli if data is present
+    // initialize offset array if data is present
     if (this.dictionaryColumnChunkIndexes.length > 0) {
       columnDataOffsets = new int[validRowIds.size()];
     }

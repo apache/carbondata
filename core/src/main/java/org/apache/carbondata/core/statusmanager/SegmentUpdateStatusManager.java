@@ -120,7 +120,7 @@ public class SegmentUpdateStatusManager {
    */
   private void updateUpdateDetails(String updateVersion) {
     if (updateVersion != null) {
-      List<SegmentUpdateDetails> newupdateDetails = new ArrayList<>();
+      List<SegmentUpdateDetails> newUpdateDetails = new ArrayList<>();
       for (SegmentUpdateDetails updateDetail : updateDetails) {
         if (updateDetail.getDeltaFileStamps() != null) {
           if (updateDetail.getDeltaFileStamps().contains(updateVersion)) {
@@ -128,14 +128,14 @@ public class SegmentUpdateStatusManager {
             set.add(updateVersion);
             updateDetail.setDeltaFileStamps(set);
             updateDetail.setSegmentStatus(SegmentStatus.SUCCESS);
-            newupdateDetails.add(updateDetail);
+            newUpdateDetails.add(updateDetail);
           }
         } else if (updateDetail.getDeleteDeltaStartTimestamp().equalsIgnoreCase(updateVersion)) {
           updateDetail.setSegmentStatus(SegmentStatus.SUCCESS);
-          newupdateDetails.add(updateDetail);
+          newUpdateDetails.add(updateDetail);
         }
       }
-      updateDetails = newupdateDetails.toArray(new SegmentUpdateDetails[0]);
+      updateDetails = newUpdateDetails.toArray(new SegmentUpdateDetails[0]);
     }
   }
 
@@ -169,7 +169,7 @@ public class SegmentUpdateStatusManager {
 
   /**
    *
-   * @param key will be like (segid/blockname)  0/0-0-5464654654654
+   * @param key will be like (segmentId/blockName)  0/0-0-5464654654654
    * @return
    */
   public SegmentUpdateDetails getDetailsForABlock(String key) {
@@ -203,7 +203,7 @@ public class SegmentUpdateStatusManager {
   }
 
   /**
-   * This will return the lock object used to lock the table update status file before updation.
+   * This will return the lock object used to lock the table update status file before updating.
    *
    * @return
    */
@@ -269,8 +269,8 @@ public class SegmentUpdateStatusManager {
       }
     });
 
-    for (CarbonFile cfile : files) {
-      updatedDeltaFilesList.add(cfile.getCanonicalPath());
+    for (CarbonFile file : files) {
+      updatedDeltaFilesList.add(file.getCanonicalPath());
     }
 
     return updatedDeltaFilesList;
@@ -293,11 +293,11 @@ public class SegmentUpdateStatusManager {
   private List<String> getDeltaFiles(String blockPath, String segment, String extension) {
     Path path = new Path(blockPath);
     String completeBlockName = path.getName();
-    String blockNameWithoutExtn =
+    String blockNameWithoutExtension =
         completeBlockName.substring(0, completeBlockName.lastIndexOf('.'));
     //blockName without timestamp
     final String blockNameFromTuple =
-        blockNameWithoutExtn.substring(0, blockNameWithoutExtn.lastIndexOf("-"));
+        blockNameWithoutExtension.substring(0, blockNameWithoutExtension.lastIndexOf("-"));
     return getDeltaFiles(path.getParent().toString(), blockNameFromTuple, extension, segment);
   }
 
@@ -362,7 +362,7 @@ public class SegmentUpdateStatusManager {
               new StringBuilder(blockDir).append(CarbonCommonConstants.FILE_SEPARATOR)
                   .append(block.getBlockName()).append("-")
                   .append(block.getDeleteDeltaStartTimestamp()).append(extension).toString());
-          // If deltatimestamps list has data then it has multiple delta file so construct the file
+          // If delta timestamp list has data then it has multiple delta file so construct the file
           // directly with list of deltas with out listing
         } else if (block.getDeltaFileStamps() != null && block.getDeltaFileStamps().size() > 0) {
           for (String delta : block.getDeltaFileStamps()) {
@@ -372,7 +372,7 @@ public class SegmentUpdateStatusManager {
                     .toString());
           }
         } else {
-          // It is for backward compatability.It lists the files.
+          // It is for backward compatibility.It lists the files.
           return getFilePaths(blockDir, blockNameFromTuple, extension, deleteFileList,
               deltaStartTimestamp, deltaEndTimeStamp);
         }
@@ -397,8 +397,8 @@ public class SegmentUpdateStatusManager {
         }
       });
       deltaList = new ArrayList<>(files.length);
-      for (CarbonFile cfile : files) {
-        deltaList.add(cfile.getCanonicalPath());
+      for (CarbonFile file : files) {
+        deltaList.add(file.getCanonicalPath());
       }
       segmentDeleteDeltaListMap.put(blockDir, deltaList);
     }
@@ -469,7 +469,7 @@ public class SegmentUpdateStatusManager {
   /**
    * Returns all update delta files of specified Segment.
    *
-   * @param loadMetadataDetail metadatadetails of segment
+   * @param loadMetadataDetail metadata details of segment
    * @param validUpdateFiles if true then only the valid range files will be returned.
    * @return
    */

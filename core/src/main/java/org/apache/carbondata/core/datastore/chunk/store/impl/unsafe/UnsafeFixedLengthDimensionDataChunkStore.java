@@ -22,7 +22,7 @@ import org.apache.carbondata.core.memory.CarbonUnsafe;
 
 /**
  * Below class is responsible to store fixed length dimension data chunk in
- * memory Memory occupied can be on heap or offheap using unsafe interface
+ * memory Memory occupied can be on heap or off-heap using unsafe interface
  */
 public class UnsafeFixedLengthDimensionDataChunkStore
     extends UnsafeAbstractDimensionDataChunkStore {
@@ -36,12 +36,12 @@ public class UnsafeFixedLengthDimensionDataChunkStore
    * Constructor
    *
    * @param columnValueSize value of each column
-   * @param isInvertedIdex  is inverted index present
+   * @param isInvertedIndex  is inverted index present
    * @param numberOfRows    total number of rows
    */
   public UnsafeFixedLengthDimensionDataChunkStore(long totalDataSize, int columnValueSize,
-      boolean isInvertedIdex, int numberOfRows, int dataLength) {
-    super(totalDataSize, isInvertedIdex, numberOfRows, dataLength);
+      boolean isInvertedIndex, int numberOfRows, int dataLength) {
+    super(totalDataSize, isInvertedIndex, numberOfRows, dataLength);
     this.columnValueSize = columnValueSize;
   }
 
@@ -52,7 +52,7 @@ public class UnsafeFixedLengthDimensionDataChunkStore
    */
   @Override
   public byte[] getRow(int rowId) {
-    // if column was explicitly sorted we need to get the rowid based inverted index reverse
+    // if column was explicitly sorted we need to get the row id based inverted index reverse
     if (isExplicitSorted) {
       rowId = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)rowId
@@ -77,7 +77,7 @@ public class UnsafeFixedLengthDimensionDataChunkStore
    */
   @Override
   public int getSurrogate(int index) {
-    // if column was explicitly sorted we need to get the rowid based inverted index reverse
+    // if column was explicitly sorted we need to get the row id based inverted index reverse
     if (isExplicitSorted) {
       index = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)index
@@ -104,7 +104,7 @@ public class UnsafeFixedLengthDimensionDataChunkStore
    */
   @Override
   public void fillRow(int rowId, byte[] buffer, int offset) {
-    // if column was explicitly sorted we need to get the rowid based inverted index reverse
+    // if column was explicitly sorted we need to get the row id based inverted index reverse
     if (isExplicitSorted) {
       rowId = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)rowId

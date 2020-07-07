@@ -33,7 +33,7 @@ public interface BlockletIndexRowIndexes {
 
   int VERSION_INDEX = 4;
 
-  int SCHEMA_UPADATED_TIME_INDEX = 5;
+  int SCHEMA_UPDATED_TIME_INDEX = 5;
 
   int BLOCK_FOOTER_OFFSET = 6;
 
@@ -59,7 +59,7 @@ public interface BlockletIndexRowIndexes {
 
   int SUMMARY_INDEX_FILE_NAME = 3;
 
-  int SUMMARY_SEGMENTID = 4;
+  int SUMMARY_SEGMENT_ID = 4;
 
   int TASK_MIN_MAX_FLAG = 5;
 

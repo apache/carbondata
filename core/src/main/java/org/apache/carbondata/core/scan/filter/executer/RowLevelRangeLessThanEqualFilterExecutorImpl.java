@@ -46,7 +46,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.comparator.Comparator;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
-public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilterExecuterImpl {
+public class RowLevelRangeLessThanEqualFilterExecutorImpl extends RowLevelFilterExecutorImpl {
   protected byte[][] filterRangeValues;
   protected Object[] msrFilterRangeValues;
   protected SerializableComparator comparator;
@@ -55,7 +55,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
    * flag to check whether default values is present in the filter value list
    */
   private boolean isDefaultValuePresentInFilter;
-  public RowLevelRangeLessThanEqualFilterExecuterImpl(
+  public RowLevelRangeLessThanEqualFilterExecutorImpl(
       List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, byte[][] filterRangeValues,
@@ -160,7 +160,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       int minCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMinValue);
 
       // if any filter applied is not in range of min and max of block
-      // then since its a less than equal to fiter validate whether the block
+      // then since its a less than equal to filter validate whether the block
       // min range is less than equal to applied filter member
       if (minCompare >= 0) {
         isScanRequired = true;
@@ -180,7 +180,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
         return true;
       }
       // filter value should be in range of max and min value i.e
-      // max>filtervalue>min
+      // max>filterValue>min
       // so filter-max should be negative
       Object data =
           DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(filterValues[k], dataType);
@@ -233,7 +233,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       DimensionRawColumnChunk rawColumnChunk =
           rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex];
       BitSetGroup bitSetGroup = new BitSetGroup(rawColumnChunk.getPagesCount());
-      FilterExecuter filterExecuter = null;
+      FilterExecutor filterExecutor = null;
       boolean isExclude = false;
       for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
         if (rawColumnChunk.getMinValues() != null) {
@@ -241,20 +241,20 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
             BitSet bitSet;
             DimensionColumnPage dimensionColumnPage = rawColumnChunk.decodeColumnPage(i);
             if (null != rawColumnChunk.getLocalDictionary()) {
-              if (null == filterExecuter) {
-                filterExecuter = FilterUtil
+              if (null == filterExecutor) {
+                filterExecutor = FilterUtil
                     .getFilterExecutorForRangeFilters(rawColumnChunk, exp, isNaturalSorted);
-                if (filterExecuter instanceof ExcludeFilterExecuterImpl) {
+                if (filterExecutor instanceof ExcludeFilterExecutorImpl) {
                   isExclude = true;
                 }
               }
               if (!isExclude) {
-                bitSet = ((IncludeFilterExecuterImpl) filterExecuter)
+                bitSet = ((IncludeFilterExecutorImpl) filterExecutor)
                     .getFilteredIndexes(dimensionColumnPage,
                         rawColumnChunk.getRowCount()[i], useBitsetPipeLine,
                         rawBlockletColumnChunks.getBitSetGroup(), i);
               } else {
-                bitSet = ((ExcludeFilterExecuterImpl) filterExecuter)
+                bitSet = ((ExcludeFilterExecutorImpl) filterExecutor)
                     .getFilteredIndexes(dimensionColumnPage,
                         rawColumnChunk.getRowCount()[i], useBitsetPipeLine,
                         rawBlockletColumnChunks.getBitSetGroup(), i);
@@ -394,8 +394,8 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
   }
 
   private BitSet getFilteredIndexesForMeasures(ColumnPage columnPage,
-      int numerOfRows) {
-    BitSet bitSet = new BitSet(numerOfRows);
+      int numberOfRows) {
+    BitSet bitSet = new BitSet(numberOfRows);
     Object[] filterValues = this.msrFilterRangeValues;
     DataType msrType = msrColEvalutorInfoList.get(0).getType();
     SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
@@ -407,7 +407,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
         }
         continue;
       }
-      for (int startIndex = 0; startIndex < numerOfRows; startIndex++) {
+      for (int startIndex = 0; startIndex < numberOfRows; startIndex++) {
         if (!nullBitSet.get(startIndex)) {
           Object msrValue = DataTypeUtil
               .getMeasureObjectBasedOnDataType(columnPage, startIndex,
@@ -424,7 +424,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
   }
 
   private BitSet getFilteredIndexes(DimensionColumnPage dimensionColumnPage,
-      int numerOfRows) {
+      int numberOfRows) {
     byte[] defaultValue = null;
     if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.DATE) {
       defaultValue = FilterUtil
@@ -434,16 +434,16 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     }
     BitSet bitSet = null;
     if (dimensionColumnPage.isExplicitSorted()) {
-      bitSet = setFilterdIndexToBitSetWithColumnIndex(dimensionColumnPage, numerOfRows,
+      bitSet = setFilteredIndexToBitSetWithColumnIndex(dimensionColumnPage, numberOfRows,
           dimensionColumnPage.isAdaptiveEncoded() ? null : defaultValue);
     } else {
-      bitSet = setFilterdIndexToBitSet(dimensionColumnPage, numerOfRows,
+      bitSet = setFilteredIndexToBitSet(dimensionColumnPage, numberOfRows,
           dimensionColumnPage.isAdaptiveEncoded() ? null : defaultValue);
     }
     if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.STRING) {
       defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
     }
-    if (dimensionColumnPage.isNoDicitionaryColumn() ||
+    if (dimensionColumnPage.isNoDictionaryColumn() ||
         dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.DATE) {
       FilterUtil.removeNullValues(dimensionColumnPage, bitSet, defaultValue);
     }
@@ -454,16 +454,16 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
    * Method will scan the block and finds the range start index from which all members
    * will be considered for applying range filters. this method will be called if the
    * column is not supported by default so column index mapping  will be present for
-   * accesing the members from the block.
+   * accessing the members from the block.
    *
    * @param dimensionColumnPage
-   * @param numerOfRows
+   * @param numberOfRows
    * @return BitSet.
    */
-  private BitSet setFilterdIndexToBitSetWithColumnIndex(
-      DimensionColumnPage dimensionColumnPage, int numerOfRows,
+  private BitSet setFilteredIndexToBitSetWithColumnIndex(
+      DimensionColumnPage dimensionColumnPage, int numberOfRows,
       byte[] defaultValue) {
-    BitSet bitSet = new BitSet(numerOfRows);
+    BitSet bitSet = new BitSet(numberOfRows);
     int start = 0;
     int last = 0;
     int skip = 0;
@@ -472,12 +472,12 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     //find the number of default values to skip the null value in case of direct dictionary
     if (null != defaultValue) {
       start = CarbonUtil
-          .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numerOfRows - 1,
+          .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
               defaultValue, true);
       if (start < 0) {
         skip = -(start + 1);
         // end of block
-        if (skip == numerOfRows) {
+        if (skip == numberOfRows) {
           return bitSet;
         }
       } else {
@@ -489,11 +489,11 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     }
     for (int i = 0; i < filterValues.length; i++) {
       start = CarbonUtil
-          .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numerOfRows - 1,
+          .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
               filterValues[i], true);
       if (start < 0) {
         start = -(start + 1);
-        if (start >= numerOfRows) {
+        if (start >= numberOfRows) {
           start = start - 1;
         }
         // When negative value of start is returned from getFirstIndexUsingBinarySearch the Start
@@ -522,16 +522,16 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
    * Method will scan the block and finds the range start index from which all
    * members will be considered for applying range filters. this method will
    * be called if the column is sorted default so column index
-   * mapping will be present for accesing the members from the block.
+   * mapping will be present for accessing the members from the block.
    *
    * @param dimensionColumnPage
-   * @param numerOfRows
+   * @param numberOfRows
    * @param defaultValue
    * @return BitSet.
    */
-  private BitSet setFilterdIndexToBitSet(DimensionColumnPage dimensionColumnPage,
-      int numerOfRows, byte[] defaultValue) {
-    BitSet bitSet = new BitSet(numerOfRows);
+  private BitSet setFilteredIndexToBitSet(DimensionColumnPage dimensionColumnPage,
+      int numberOfRows, byte[] defaultValue) {
+    BitSet bitSet = new BitSet(numberOfRows);
     byte[][] filterValues = this.filterRangeValues;
     // binary search can only be applied if column is sorted
     if (isNaturalSorted && dimensionColumnPage.isExplicitSorted()) {
@@ -543,11 +543,11 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       if (null != defaultValue) {
         start = CarbonUtil
             .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex,
-                numerOfRows - 1, defaultValue, true);
+                numberOfRows - 1, defaultValue, true);
         if (start < 0) {
           skip = -(start + 1);
           // end of block
-          if (skip == numerOfRows) {
+          if (skip == numberOfRows) {
             return bitSet;
           }
         } else {
@@ -560,10 +560,10 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       for (int k = 0; k < filterValues.length; k++) {
         start = CarbonUtil
             .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex,
-                numerOfRows - 1, filterValues[k], true);
+                numberOfRows - 1, filterValues[k], true);
         if (start < 0) {
           start = -(start + 1);
-          if (start >= numerOfRows) {
+          if (start >= numberOfRows) {
             start = start - 1;
           }
           // When negative value of start is returned from getFirstIndexUsingBinarySearch the Start
@@ -585,7 +585,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       }
     } else {
       for (int k = 0; k < filterValues.length; k++) {
-        for (int i = 0; i < numerOfRows; i++) {
+        for (int i = 0; i < numberOfRows; i++) {
           if (ByteUtil.compare(dimensionColumnPage.getChunkData(i), filterValues[k]) <= 0) {
             bitSet.set(i);
           }

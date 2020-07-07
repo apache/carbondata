@@ -99,7 +99,7 @@ case class CarbonDeleteStageFilesCommand(
     val stageDirectory = FileFactory.getCarbonFile(stagePath, configuration)
     if (stageDirectory.exists()) {
       stageDirectory.listFiles().filter { file =>
-        !file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUBFIX)
+        !file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUFFIX)
       }
     } else {
       Seq.empty

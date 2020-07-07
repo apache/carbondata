@@ -24,7 +24,7 @@ import org.apache.carbondata.core.scan.expression.ExpressionResult;
 
 public interface ConditionalExpression {
 
-  // Will get the column informations involved in the expressions by
+  // Will get the column information involved in the expressions by
   // traversing the tree
   List<ColumnExpression> getColumnList();
 

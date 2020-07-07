@@ -22,12 +22,12 @@ import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
  * Interface responsibility is to store dimension data in memory.
- * storage can be on heap or offheap.
+ * storage can be on heap or off-heap.
  */
 public interface DimensionDataChunkStore {
 
   /**
-   * Below method will be used to put the rows and its metadata in offheap
+   * Below method will be used to put the rows and its metadata in off-heap
    *
    * @param invertedIndex        inverted index to be stored
    * @param invertedIndexReverse inverted index reverse to be stored

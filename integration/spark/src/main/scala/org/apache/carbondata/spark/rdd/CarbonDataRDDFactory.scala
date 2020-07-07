@@ -100,7 +100,7 @@ object CarbonDataRDDFactory {
     val lock = CarbonLockFactory.getSystemLevelCarbonLockObj(
       configuredMdtPath + CarbonCommonConstants.FILE_SEPARATOR +
         CarbonCommonConstants.SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER,
-      LockUsage.SYSTEMLEVEL_COMPACTION_LOCK)
+      LockUsage.SYSTEM_LEVEL_COMPACTION_LOCK)
 
     if (lock.lockWithRetries()) {
       LOGGER.info(s"Acquired the compaction lock for table ${ carbonLoadModel.getDatabaseName }" +

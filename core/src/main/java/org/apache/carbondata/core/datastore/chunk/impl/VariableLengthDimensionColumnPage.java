@@ -79,8 +79,7 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
    */
   @Override
   public int fillRawData(int rowId, int offset, byte[] data) {
-    // no required in this case because this column chunk is not the part if
-    // mdkey
+    // no required in this case because this column chunk is not the part of MDKey
     return 0;
   }
 
@@ -101,7 +100,7 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
    * @return whether column is dictionary column or not
    */
   @Override
-  public boolean isNoDicitionaryColumn() {
+  public boolean isNoDictionaryColumn() {
     return true;
   }
 

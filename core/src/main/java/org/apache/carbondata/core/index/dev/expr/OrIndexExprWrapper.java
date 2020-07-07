@@ -119,7 +119,7 @@ public class OrIndexExprWrapper extends IndexExprWrapper {
   }
 
   @Override
-  public IndexExprWrapper getRightIndexWrapprt() {
+  public IndexExprWrapper getRightIndexWrapper() {
     return right;
   }
 }

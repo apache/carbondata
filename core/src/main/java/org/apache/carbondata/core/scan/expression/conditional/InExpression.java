@@ -41,16 +41,16 @@ public class InExpression extends BinaryConditionalExpression {
   @Override
   public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ExpressionResult leftRsult = left.evaluate(value);
+    ExpressionResult leftResult = left.evaluate(value);
 
     if (setOfExprResult == null) {
-      ExpressionResult rightRsult = right.evaluate(value);
+      ExpressionResult rightResult = right.evaluate(value);
       ExpressionResult val = null;
       setOfExprResult = new HashSet<ExpressionResult>(10);
-      for (ExpressionResult expressionResVal : rightRsult.getList()) {
-        if (expressionResVal.getDataType().getPrecedenceOrder() < leftRsult.getDataType()
+      for (ExpressionResult expressionResVal : rightResult.getList()) {
+        if (expressionResVal.getDataType().getPrecedenceOrder() < leftResult.getDataType()
             .getPrecedenceOrder()) {
-          val = leftRsult;
+          val = leftResult;
         } else {
           val = expressionResVal;
         }
@@ -88,12 +88,12 @@ public class InExpression extends BinaryConditionalExpression {
     // Left check will cover both the cases when left and right is null therefore no need
     // for a check on the right result.
     // Example: (null==null) -> Left null return false, (1==null) would automatically be false.
-    if (leftRsult.isNull()) {
-      leftRsult.set(DataTypes.BOOLEAN, false);
+    if (leftResult.isNull()) {
+      leftResult.set(DataTypes.BOOLEAN, false);
     } else {
-      leftRsult.set(DataTypes.BOOLEAN, setOfExprResult.contains(leftRsult));
+      leftResult.set(DataTypes.BOOLEAN, setOfExprResult.contains(leftResult));
     }
-    return leftRsult;
+    return leftResult;
   }
 
   @Override

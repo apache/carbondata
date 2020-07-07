@@ -56,7 +56,7 @@ import org.apache.carbondata.format.SegmentInfo;
 import org.apache.log4j.Logger;
 
 /**
- * Util class to convert to thrift metdata classes
+ * Util class to convert to thrift metadata classes
  */
 public class CarbonMetadataUtil {
 
@@ -93,13 +93,13 @@ public class CarbonMetadataUtil {
    * Below method prepares the file footer object for carbon data file version 3
    *
    * @param infoList
-   * @param blockletIndexs
+   * @param blockletIndexes
    * @param numberOfColumns
    * @return FileFooter
    */
   public static FileFooter3 convertFileFooterVersion3(List<BlockletInfo3> infoList,
-      List<BlockletIndex> blockletIndexs, int numberOfColumns) {
-    FileFooter3 footer = getFileFooter3(infoList, blockletIndexs, numberOfColumns);
+      List<BlockletIndex> blockletIndexes, int numberOfColumns) {
+    FileFooter3 footer = getFileFooter3(infoList, blockletIndexes, numberOfColumns);
     for (BlockletInfo3 info : infoList) {
       footer.addToBlocklet_info_list3(info);
     }
@@ -110,19 +110,19 @@ public class CarbonMetadataUtil {
    * Below method will be used to get the file footer object
    *
    * @param infoList         blocklet info
-   * @param blockletIndexs
+   * @param blockletIndexes
    * @param numberOfColumns
    * @return file footer
    */
   private static FileFooter3 getFileFooter3(List<BlockletInfo3> infoList,
-      List<BlockletIndex> blockletIndexs, int numberOfColumns) {
+      List<BlockletIndex> blockletIndexes, int numberOfColumns) {
     SegmentInfo segmentInfo = new SegmentInfo();
     segmentInfo.setNum_cols(numberOfColumns);
     segmentInfo.setColumn_cardinalities(dummyCardinality);
     FileFooter3 footer = new FileFooter3();
     footer.setNum_rows(getNumberOfRowForFooter(infoList));
     footer.setSegment_info(segmentInfo);
-    for (BlockletIndex info : blockletIndexs) {
+    for (BlockletIndex info : blockletIndexes) {
       footer.addToBlocklet_index_list(info);
     }
     return footer;
@@ -409,7 +409,7 @@ public class CarbonMetadataUtil {
       blockIndex.setFile_name(blockIndexInfo.getFileName());
       blockIndex.setBlock_index(getBlockletIndex(blockIndexInfo.getBlockletIndex()));
       if (blockIndexInfo.getBlockletInfo() != null) {
-        blockIndex.setBlocklet_info(getBlocletInfo3(blockIndexInfo.getBlockletInfo()));
+        blockIndex.setBlocklet_info(getBlockletInfo3(blockIndexInfo.getBlockletInfo()));
       }
       blockIndex.setFile_size(blockIndexInfo.getFileSize());
       thriftBlockIndexList.add(blockIndex);
@@ -417,7 +417,7 @@ public class CarbonMetadataUtil {
     return thriftBlockIndexList;
   }
 
-  public static BlockletInfo3 getBlocletInfo3(
+  public static BlockletInfo3 getBlockletInfo3(
       org.apache.carbondata.core.metadata.blocklet.BlockletInfo blockletInfo) {
     List<Long> dimensionChunkOffsets = blockletInfo.getDimensionChunkOffsets();
     dimensionChunkOffsets.addAll(blockletInfo.getMeasureChunkOffsets());
@@ -462,7 +462,7 @@ public class CarbonMetadataUtil {
   }
 
   /**
-   * return DataChunk3 for the dimension column (specifed by `columnIndex`)
+   * return DataChunk3 for the dimension column (specified by `columnIndex`)
    * in `encodedTablePageList`
    */
   public static DataChunk3 getDimensionDataChunk3(EncodedBlocklet encodedBlocklet,
@@ -479,7 +479,7 @@ public class CarbonMetadataUtil {
   }
 
   /**
-   * return DataChunk3 for the measure column (specifed by `columnIndex`)
+   * return DataChunk3 for the measure column (specified by `columnIndex`)
    * in `encodedTablePageList`
    */
   public static DataChunk3 getMeasureDataChunk3(EncodedBlocklet encodedBlocklet, int columnIndex) {

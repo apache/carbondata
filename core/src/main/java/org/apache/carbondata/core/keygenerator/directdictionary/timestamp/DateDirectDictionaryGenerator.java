@@ -129,7 +129,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
       }
       dateToStr = null;
     }
-    //adding +2 to reserve the first cuttOffDiff value for null or empty date
+    //adding +2 to reserve the first cutOffDiff value for null or empty date
     if (null == dateToStr) {
       return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {

@@ -24,7 +24,7 @@ import org.apache.carbondata.common.annotations.InterfaceStability;
 
 /**
  * It is sort of a marker interface to let execution engine know that it is appendable/sequential
- * data adding vector. It means we cannot add random rowids to it.
+ * data adding vector. It means we cannot add random row ids to it.
  */
 @InterfaceStability.Evolving
 @InterfaceAudience.Internal

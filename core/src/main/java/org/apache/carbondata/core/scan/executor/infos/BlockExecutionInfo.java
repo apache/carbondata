@@ -24,7 +24,7 @@ import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
-import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecutor;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
@@ -105,7 +105,7 @@ public class BlockExecutionInfo {
   /**
    * filter tree to execute the filter
    */
-  private FilterExecuter filterExecuterTree;
+  private FilterExecutor filterExecutorTree;
 
   /**
    * whether it needs only raw byte records with out aggregation.
@@ -335,15 +335,15 @@ public class BlockExecutionInfo {
   /**
    * @return the filterEvaluatorTree
    */
-  public FilterExecuter getFilterExecuterTree() {
-    return filterExecuterTree;
+  public FilterExecutor getFilterExecutorTree() {
+    return filterExecutorTree;
   }
 
   /**
-   * @param filterExecuterTree the filterEvaluatorTree to set
+   * @param filterExecutorTree the filterEvaluatorTree to set
    */
-  public void setFilterExecuterTree(FilterExecuter filterExecuterTree) {
-    this.filterExecuterTree = filterExecuterTree;
+  public void setFilterExecutorTree(FilterExecutor filterExecutorTree) {
+    this.filterExecutorTree = filterExecutorTree;
   }
 
   /**
@@ -385,7 +385,7 @@ public class BlockExecutionInfo {
   /**
    * @return the complexParentIndexToQueryMap
    */
-  public Map<Integer, GenericQueryType> getComlexDimensionInfoMap() {
+  public Map<Integer, GenericQueryType> getComplexDimensionInfoMap() {
     return complexParentIndexToQueryMap;
   }
 

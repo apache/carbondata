@@ -33,7 +33,7 @@ public class MemoryBlock extends MemoryLocation {
   private boolean isFreed;
 
   /**
-   * Whether it is offheap or onheap memory type
+   * Whether it is off-heap or on-heap memory type
    */
   private MemoryType memoryType;
 

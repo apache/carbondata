@@ -44,9 +44,9 @@ public class Bits implements Serializable {
    */
   private int[] lens;
   /**
-   * wsize.
+   * word size.
    */
-  private int wsize;
+  private int wSize;
   /**
    * byteSize.
    */
@@ -56,11 +56,11 @@ public class Bits implements Serializable {
     this.lens = lens;
     this.length = getTotalLength(lens);
 
-    wsize = length / LONG_LENGTH;
+    wSize = length / LONG_LENGTH;
     byteSize = length / 8;
 
     if (length % LONG_LENGTH != 0) {
-      wsize++;
+      wSize++;
     }
 
     if (length % 8 != 0) {
@@ -116,7 +116,7 @@ public class Bits implements Serializable {
   }
 
   protected long[] get(long[] keys) {
-    long[] words = new long[wsize];
+    long[] words = new long[wSize];
     int ll = 0;
     int minLength = Math.min(lens.length, keys.length);
     for (int i = minLength - 1; i >= 0; i--) {
@@ -153,7 +153,7 @@ public class Bits implements Serializable {
   }
 
   protected long[] get(int[] keys) {
-    long[] words = new long[wsize];
+    long[] words = new long[wSize];
     int ll = 0;
     int minLength = Math.min(lens.length, keys.length);
     for (int i = minLength - 1; i >= 0; i--) {
@@ -191,7 +191,7 @@ public class Bits implements Serializable {
   }
 
   private long[] getArray(long[] words) {
-    long[] vals = new long[lens.length];
+    long[] values = new long[lens.length];
     int ll = 0;
     for (int i = lens.length - 1; i >= 0; i--) {
 
@@ -200,8 +200,8 @@ public class Bits implements Serializable {
       long val = words[index];
       long mask = (LONG_MAX >>> (MAX_LENGTH - lens[i]));
       mask = mask << pos;
-      vals[i] = (val & mask);
-      vals[i] >>>= pos;
+      values[i] = (val & mask);
+      values[i] >>>= pos;
       ll += lens[i];
 
       int nextIndex = ll >> 6;
@@ -211,11 +211,11 @@ public class Bits implements Serializable {
         if (pos != 0) {
           mask = (LONG_MAX >>> (MAX_LENGTH - pos));
           val = words[nextIndex];
-          vals[i] = vals[i] | ((val & mask) << (lens[i] - pos));
+          values[i] = values[i] | ((val & mask) << (lens[i] - pos));
         }
       }
     }
-    return vals;
+    return values;
   }
 
   public byte[] getBytes(long[] keys) {
@@ -255,7 +255,7 @@ public class Bits implements Serializable {
 
     int length = 8;
     int ls = byteSize;
-    long[] words = new long[wsize];
+    long[] words = new long[wSize];
     for (int i = 0; i < words.length; i++) {
       long l = 0;
       ls -= 8;
@@ -281,7 +281,7 @@ public class Bits implements Serializable {
 
     int length = 8;
     int ls = byteSize;
-    long[] words = new long[wsize];
+    long[] words = new long[wSize];
     for (int i = 0; i < words.length; i++) {
       long l = 0;
       ls -= 8;

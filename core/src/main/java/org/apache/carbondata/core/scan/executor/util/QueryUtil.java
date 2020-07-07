@@ -126,12 +126,12 @@ public class QueryUtil {
    */
   public static int[] getMeasureChunkIndexes(List<ProjectionMeasure> queryMeasures,
       List<CarbonMeasure> expressionMeasure, Map<Integer, Integer> ordinalToBlockIndexMapping,
-      Set<CarbonMeasure> filterMeasures, List<Integer> allProjectionListMeasureIdexes) {
+      Set<CarbonMeasure> filterMeasures, List<Integer> allProjectionListMeasureIndexes) {
     Set<Integer> measureChunkIndex = new HashSet<Integer>();
     Set<Integer> filterMeasureOrdinal = getFilterMeasureOrdinal(filterMeasures);
     for (int i = 0; i < queryMeasures.size(); i++) {
       Integer measureOrdinal = queryMeasures.get(i).getMeasure().getOrdinal();
-      allProjectionListMeasureIdexes.add(measureOrdinal);
+      allProjectionListMeasureIndexes.add(measureOrdinal);
       if (!filterMeasureOrdinal.contains(measureOrdinal)) {
         measureChunkIndex.add(ordinalToBlockIndexMapping.get(measureOrdinal));
       }
@@ -422,9 +422,9 @@ public class QueryUtil {
   }
 
   /**
-   * In case of non transactional table just set columnuniqueid as columnName to support
-   * backward compatabiity. non transactional tables column uniqueid is always equal to
-   * columnname
+   * In case of non transactional table just set column unique id as columnName to support
+   * backward compatibility. non transactional tables column unique id is always equal to
+   * column name
    */
   public static void updateColumnUniqueIdForNonTransactionTable(List<ColumnSchema> columnSchemas) {
     for (ColumnSchema columnSchema : columnSchemas) {

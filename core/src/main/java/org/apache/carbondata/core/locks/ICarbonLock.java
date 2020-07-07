@@ -30,7 +30,7 @@ public interface ICarbonLock {
   boolean unlock();
 
   /**
-   * This will acquire the lock and if it doesnt get then it will retry after the confiured time.
+   * This will acquire the lock and if it doesnt get then it will retry after the configured time.
    *
    * @return
    */

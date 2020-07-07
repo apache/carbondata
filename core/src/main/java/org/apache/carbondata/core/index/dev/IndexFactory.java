@@ -181,7 +181,7 @@ public abstract class IndexFactory<T extends Index> {
 
   /**
    * whether to block operation on corresponding table or column.
-   * For example, bloomfilter index will block changing datatype for bloomindex column.
+   * For example, bloom filter index will block changing datatype for bloom index column.
    * By default it will not block any operation.
    *
    * @param operation table operation

@@ -24,7 +24,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.log4j.Logger;
 
 /**
- * A util which provide methods used to record time information druing data loading.
+ * A util which provide methods used to record time information during data loading.
  */
 public class CarbonLoadStatisticsImpl implements LoadStatistics {
   private CarbonLoadStatisticsImpl() {
@@ -46,8 +46,8 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
    *threads, who does the same thing, LET - EST is the cost time of doing one thing using
    *multiple thread.
  */
-  private long loadCsvfilesToDfStartTime = 0;
-  private long loadCsvfilesToDfCostTime = 0;
+  private long loadCsvFilesToDfStartTime = 0;
+  private long loadCsvFilesToDfCostTime = 0;
   private long dicShuffleAndWriteFileTotalStartTime = 0;
 
   //LRU cache load one time
@@ -100,13 +100,13 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
     }
   }
 
-  public void recordLoadCsvfilesToDfTime() {
-    long loadCsvfilesToDfTimePoint = System.currentTimeMillis();
-    if (0 == loadCsvfilesToDfStartTime) {
-      loadCsvfilesToDfStartTime = loadCsvfilesToDfTimePoint;
+  public void recordLoadCsvFilesToDfTime() {
+    long loadCsvFilesToDfTimePoint = System.currentTimeMillis();
+    if (0 == loadCsvFilesToDfStartTime) {
+      loadCsvFilesToDfStartTime = loadCsvFilesToDfTimePoint;
     }
-    if (loadCsvfilesToDfTimePoint - loadCsvfilesToDfStartTime > loadCsvfilesToDfCostTime) {
-      loadCsvfilesToDfCostTime = loadCsvfilesToDfTimePoint - loadCsvfilesToDfStartTime;
+    if (loadCsvFilesToDfTimePoint - loadCsvFilesToDfStartTime > loadCsvFilesToDfCostTime) {
+      loadCsvFilesToDfCostTime = loadCsvFilesToDfTimePoint - loadCsvFilesToDfStartTime;
     }
   }
 
@@ -228,8 +228,8 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
     this.totalRecords = totalRecords;
   }
 
-  private double getLoadCsvfilesToDfTime() {
-    return loadCsvfilesToDfCostTime / 1000.0;
+  private double getLoadCsvFilesToDfTime() {
+    return loadCsvFilesToDfCostTime / 1000.0;
   }
 
   private double getDictionaryValuesTotalTime(String partitionID) {
@@ -288,7 +288,7 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
   }
 
   private double getTotalTime(String partitionID) {
-    this.totalTime = getLoadCsvfilesToDfTime() +
+    this.totalTime = getLoadCsvFilesToDfTime() +
         getLruCacheLoadTime() + getDictionaryValuesTotalTime(partitionID) +
         getDictionaryValue2MdkAdd2FileTime(partitionID);
     return totalTime;
@@ -296,9 +296,9 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
 
   //Print the statistics information
   private void printDicGenStatisticsInfo() {
-    double loadCsvfilesToDfTime = getLoadCsvfilesToDfTime();
+    double loadCsvFilesToDfTime = getLoadCsvFilesToDfTime();
     LOGGER.info("STAGE 1 ->Load csv to DataFrame and generate" +
-            " block distinct values: " + loadCsvfilesToDfTime + "(s)");
+            " block distinct values: " + loadCsvFilesToDfTime + "(s)");
   }
 
   private void printLruCacheLoadTimeInfo() {
@@ -377,8 +377,8 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
 
   //Reset the load statistics values
   private void resetLoadStatistics() {
-    loadCsvfilesToDfStartTime = 0;
-    loadCsvfilesToDfCostTime = 0;
+    loadCsvFilesToDfStartTime = 0;
+    loadCsvFilesToDfCostTime = 0;
     dicShuffleAndWriteFileTotalStartTime = 0;
     lruCacheLoadTime = 0;
     totalRecords = 0;

@@ -43,29 +43,29 @@ public class CarbonLockUtil {
    *
    * @param carbonLock
    */
-  public static void fileUnlock(ICarbonLock carbonLock, String locktype) {
+  public static void fileUnlock(ICarbonLock carbonLock, String lockType) {
     if (carbonLock.unlock()) {
-      if (locktype.equals(LockUsage.METADATA_LOCK)) {
+      if (lockType.equals(LockUsage.METADATA_LOCK)) {
         LOGGER.info("Metadata lock has been successfully released");
-      } else if (locktype.equals(LockUsage.TABLE_STATUS_LOCK)) {
+      } else if (lockType.equals(LockUsage.TABLE_STATUS_LOCK)) {
         LOGGER.info("Table status lock has been successfully released");
-      } else if (locktype.equals(LockUsage.CLEAN_FILES_LOCK)) {
+      } else if (lockType.equals(LockUsage.CLEAN_FILES_LOCK)) {
         LOGGER.info("Clean files lock has been successfully released");
-      } else if (locktype.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
+      } else if (lockType.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
         LOGGER.info("Delete segments lock has been successfully released");
-      } else if (locktype.equals(LockUsage.INDEX_STATUS_LOCK)) {
+      } else if (lockType.equals(LockUsage.INDEX_STATUS_LOCK)) {
         LOGGER.info("Index status lock has been successfully released");
       }
     } else {
-      if (locktype.equals(LockUsage.METADATA_LOCK)) {
+      if (lockType.equals(LockUsage.METADATA_LOCK)) {
         LOGGER.error("Not able to release the metadata lock");
-      } else if (locktype.equals(LockUsage.TABLE_STATUS_LOCK)) {
+      } else if (lockType.equals(LockUsage.TABLE_STATUS_LOCK)) {
         LOGGER.error("Not able to release the table status lock");
-      } else if (locktype.equals(LockUsage.CLEAN_FILES_LOCK)) {
+      } else if (lockType.equals(LockUsage.CLEAN_FILES_LOCK)) {
         LOGGER.info("Not able to release the clean files lock");
-      } else if (locktype.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
+      } else if (lockType.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
         LOGGER.info("Not able to release the delete segments lock");
-      } else if (locktype.equals(LockUsage.INDEX_STATUS_LOCK)) {
+      } else if (lockType.equals(LockUsage.INDEX_STATUS_LOCK)) {
         LOGGER.info("Not able to release the index status lock");
       }
     }
@@ -130,7 +130,7 @@ public class CarbonLockUtil {
       lockFilesDir = CarbonTablePath.getLockFilesDirPath(absoluteTableIdentifier.getTablePath());
     } else {
       lockFilesDir = CarbonTablePath.getLockFilesDirPath(
-          CarbonLockFactory.getLockpath(carbonTable.getTableInfo().getFactTable().getTableId()));
+          CarbonLockFactory.getLockPath(carbonTable.getTableInfo().getFactTable().getTableId()));
     }
     CarbonFile[] files = FileFactory.getCarbonFile(lockFilesDir)
         .listFiles(new CarbonFileFilter() {

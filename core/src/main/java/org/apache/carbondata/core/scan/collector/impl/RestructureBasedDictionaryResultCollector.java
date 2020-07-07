@@ -71,8 +71,8 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
     int[] surrogateResult;
     byte[][] noDictionaryKeys;
     byte[][] complexTypeKeyArray;
-    Map<Integer, GenericQueryType> comlexDimensionInfoMap =
-        executionInfo.getComlexDimensionInfoMap();
+    Map<Integer, GenericQueryType> complexDimensionInfoMap =
+        executionInfo.getComplexDimensionInfoMap();
     while (scannedResult.hasNext() && rowCounter < batchSize) {
       scannedResult.incrementCounter();
       if (scannedResult.containsDeletedRow(scannedResult.getCurrentRowId())) {
@@ -102,7 +102,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
             continue;
           }
           fillDimensionData(scannedResult, surrogateResult, noDictionaryKeys, complexTypeKeyArray,
-              comlexDimensionInfoMap, row, i, executionInfo
+              complexDimensionInfoMap, row, i, executionInfo
                   .getProjectionDimensions()[segmentDimensionsIdx++].getDimension().getOrdinal());
         }
       }

@@ -237,7 +237,7 @@ public class ColumnPageWrapper implements DimensionColumnPage {
   }
 
   @Override
-  public boolean isNoDicitionaryColumn() {
+  public boolean isNoDictionaryColumn() {
     return true;
   }
 

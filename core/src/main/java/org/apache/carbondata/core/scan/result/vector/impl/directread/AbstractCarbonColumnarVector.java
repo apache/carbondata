@@ -25,7 +25,7 @@ import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 
 public abstract class AbstractCarbonColumnarVector
-    implements CarbonColumnVector, ConvertableVector {
+    implements CarbonColumnVector, ConvertibleVector {
 
   protected CarbonColumnVector columnVector;
 

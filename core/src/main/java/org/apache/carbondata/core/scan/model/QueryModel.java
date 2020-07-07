@@ -204,10 +204,10 @@ public class QueryModel {
       col.setDimension(dim);
       col.setDimension(true);
     } else {
-      // in case of sdk or fileformat, there can be chance that each carbondata file may have
+      // in case of sdk or file format, there can be chance that each carbondata file may have
       // different schema, so every segment properties will have dims and measures based on
       // corresponding segment. So the filter column may not be present in it. so generate the
-      // dimension and measure from the carbontable
+      // dimension and measure from the carbon table
       CarbonDimension dimension =
           table.getDimensionByName(col.getColumnName());
       CarbonMeasure measure = table.getMeasureByName(col.getColumnName());

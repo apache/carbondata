@@ -28,7 +28,7 @@ import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 /**
  * Responsibility is to store dimension data in memory. storage can be on heap
- * or offheap.
+ * or off-heap.
  */
 public abstract class UnsafeAbstractDimensionDataChunkStore implements DimensionDataChunkStore {
 
@@ -68,20 +68,20 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    * Constructor
    *
    * @param totalSize      total size of the data to be kept
-   * @param isInvertedIdex is inverted index present
+   * @param isInvertedIndex is inverted index present
    * @param numberOfRows   total number of rows
    */
-  public UnsafeAbstractDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
+  public UnsafeAbstractDimensionDataChunkStore(long totalSize, boolean isInvertedIndex,
       int numberOfRows, int dataLength) {
     // allocating the data page
     this.dataPageMemoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, totalSize);
 
     this.dataLength = dataLength;
-    this.isExplicitSorted = isInvertedIdex;
+    this.isExplicitSorted = isInvertedIndex;
   }
 
   /**
-   * Below method will be used to put the rows and its metadata in offheap
+   * Below method will be used to put the rows and its metadata in off-heap
    *
    * @param invertedIndex        inverted index to be stored
    * @param invertedIndexReverse inverted index reverse to be stored

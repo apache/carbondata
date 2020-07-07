@@ -28,7 +28,7 @@ import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecutor;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
@@ -47,24 +47,24 @@ public interface Index<T extends Blocklet> {
    * It returns the list of blocklets where these filters can exist.
    */
   List<T> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      FilterExecuter filterExecuter, CarbonTable table) throws IOException;
+      FilterExecutor filterExecutor, CarbonTable table) throws IOException;
 
   /**
    * Prune the table with filter expression. It returns the list of
    * blocklets where these filters can exist.
    */
   List<T> prune(Expression filter, SegmentProperties segmentProperties,
-      CarbonTable carbonTable, FilterExecuter filterExecuter);
+      CarbonTable carbonTable, FilterExecutor filterExecutor);
 
   /**
    * Prune the indexes for finding the row count. It returns a Map of
-   * blockletpath and the row count
+   * blocklet path and the row count
    */
   long getRowCount(Segment segment, List<PartitionSpec> partitions);
 
   /**
    * Prune the indexes for finding the row count for each block. It returns a Map of
-   * blockletpath and the row count
+   * blocklet path and the row count
    */
   Map<String, Long> getRowCountForEachBlock(Segment segment, List<PartitionSpec> partitions,
       Map<String, Long> blockletToRowCountMap);
@@ -93,7 +93,7 @@ public interface Index<T extends Blocklet> {
   /**
    * Returns number of records information that are stored in Index.
    * Driver multi-thread block pruning happens based on the number of rows in Index.
-   * So Indexs can have multiple rows if they store information of multiple files.
+   * So Indexes can have multiple rows if they store information of multiple files.
    * so, this number of entries is used to represent how many files information a Index contains
    */
   int getNumberOfEntries();

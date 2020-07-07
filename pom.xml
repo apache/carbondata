@@ -150,7 +150,7 @@
     <!--todo:this can be enabled when presto tests need to be run-->
     <!--<spark.hadoop.hive.metastore.uris>thrift://localhost:8086</spark.hadoop.hive.metastore.uris>-->
     <suite.name>org.apache.carbondata.cluster.sdv.suite.SDVSuites</suite.name>
-    <script.exetension>.sh</script.exetension>
+    <script.extension>.sh</script.extension>
     <carbon.hive.based.metastore>false</carbon.hive.based.metastore>
   </properties>
 
@@ -724,7 +724,7 @@
     <profile>
       <id>windows</id>
       <properties>
-        <script.exetension>.bat</script.exetension>
+        <script.extension>.bat</script.extension>
       </properties>
     </profile>
     <!--    prestodb-->

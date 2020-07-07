@@ -29,7 +29,7 @@ public interface FilterProcessor {
    * expression tree which is been passed.
    *
    * @param expressionTree  , filter expression tree
-   * @param tableIdentifier ,contains carbon store informations.
+   * @param tableIdentifier ,contains carbon store information.
    * @return
    * @throws FilterUnsupportedException
    */

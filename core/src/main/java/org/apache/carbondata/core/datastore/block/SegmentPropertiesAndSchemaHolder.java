@@ -492,7 +492,7 @@ public class SegmentPropertiesAndSchemaHolder {
      */
     private Set<String> segmentIdSet;
     /**
-     * index which maps to segmentPropertiesWrpper Index from where segmentProperties
+     * index which maps to segmentPropertiesWrapper Index from where segmentProperties
      * can be retrieved
      */
     private int segmentPropertiesIndex;

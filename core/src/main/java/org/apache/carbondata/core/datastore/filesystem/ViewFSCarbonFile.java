@@ -90,7 +90,7 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
         return false;
       }
     } catch (IOException e) {
-      LOGGER.error("Exception occured" + e.getMessage(), e);
+      LOGGER.error("Exception occurred" + e.getMessage(), e);
       return false;
     }
   }

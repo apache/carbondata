@@ -36,7 +36,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.MatchExpression;
-import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecutor;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
@@ -202,7 +202,7 @@ public class LuceneFineGrainIndex extends FineGrainIndex {
    */
   @Override
   public List<FineGrainBlocklet> prune(FilterResolverIntf filterExp,
-      SegmentProperties segmentProperties, FilterExecuter filterExecuter,
+      SegmentProperties segmentProperties, FilterExecutor filterExecutor,
       CarbonTable carbonTable) throws IOException {
 
     // convert filter expr into lucene list query

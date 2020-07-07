@@ -28,7 +28,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.filter.FilterExecutorUtil;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
-import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
+import org.apache.carbondata.core.scan.filter.intf.FilterExecutorType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
@@ -40,12 +40,12 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.comparator.Comparator;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
-public class ExcludeFilterExecuterImpl implements FilterExecuter {
+public class ExcludeFilterExecutorImpl implements FilterExecutor {
 
   private DimColumnResolvedFilterInfo dimColEvaluatorInfo;
-  private DimColumnExecuterFilterInfo dimColumnExecuterInfo;
+  private DimColumnExecutorFilterInfo dimColumnExecuterInfo;
   private MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo;
-  private MeasureColumnExecuterFilterInfo msrColumnExecutorInfo;
+  private MeasureColumnExecutorFilterInfo msrColumnExecutorInfo;
   protected SegmentProperties segmentProperties;
   private boolean isDimensionPresentInCurrentBlock = false;
   private boolean isMeasurePresentInCurrentBlock = false;
@@ -59,22 +59,22 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
 
   private FilterBitSetUpdater filterBitSetUpdater;
 
-  public ExcludeFilterExecuterImpl(byte[][] filterValues, boolean isNaturalSorted) {
+  public ExcludeFilterExecutorImpl(byte[][] filterValues, boolean isNaturalSorted) {
     this.filterValues = filterValues;
     this.isNaturalSorted = isNaturalSorted;
     this.filterBitSetUpdater =
-        BitSetUpdaterFactory.INSTANCE.getBitSetUpdater(FilterExecuterType.EXCLUDE);
+        BitSetUpdaterFactory.INSTANCE.getBitSetUpdater(FilterExecutorType.EXCLUDE);
   }
 
-  public ExcludeFilterExecuterImpl(DimColumnResolvedFilterInfo dimColEvaluatorInfo,
+  public ExcludeFilterExecutorImpl(DimColumnResolvedFilterInfo dimColEvaluatorInfo,
       MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo, SegmentProperties segmentProperties,
       boolean isMeasure) {
     this.filterBitSetUpdater =
-        BitSetUpdaterFactory.INSTANCE.getBitSetUpdater(FilterExecuterType.EXCLUDE);
+        BitSetUpdaterFactory.INSTANCE.getBitSetUpdater(FilterExecutorType.EXCLUDE);
     this.segmentProperties = segmentProperties;
     if (!isMeasure) {
       this.dimColEvaluatorInfo = dimColEvaluatorInfo;
-      dimColumnExecuterInfo = new DimColumnExecuterFilterInfo();
+      dimColumnExecuterInfo = new DimColumnExecutorFilterInfo();
 
       FilterUtil.prepareKeysFromSurrogates(dimColEvaluatorInfo.getFilterValues(), segmentProperties,
           dimColEvaluatorInfo.getDimension(), dimColumnExecuterInfo, null, null);
@@ -84,7 +84,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
               .getDimension().isSortColumn();
     } else {
       this.msrColumnEvaluatorInfo = msrColumnEvaluatorInfo;
-      msrColumnExecutorInfo = new MeasureColumnExecuterFilterInfo();
+      msrColumnExecutorInfo = new MeasureColumnExecutorFilterInfo();
       FilterUtil
           .prepareKeysFromSurrogates(msrColumnEvaluatorInfo.getFilterValues(), segmentProperties,
               null, null, msrColumnEvaluatorInfo.getMeasure(), msrColumnExecutorInfo);
@@ -190,12 +190,12 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     return true;
   }
 
-  private BitSet getFilteredIndexes(ColumnPage columnPage, int numerOfRows, DataType msrType) {
+  private BitSet getFilteredIndexes(ColumnPage columnPage, int numberOfRows, DataType msrType) {
     // Here the algorithm is
     // Get the measure values from the chunk. compare sequentially with the
     // the filter values. The one that matches sets it Bitset.
-    BitSet bitSet = new BitSet(numerOfRows);
-    bitSet.flip(0, numerOfRows);
+    BitSet bitSet = new BitSet(numberOfRows);
+    bitSet.flip(0, numberOfRows);
     FilterExecutorUtil.executeIncludeExcludeFilterForMeasure(columnPage, bitSet,
         msrColumnExecutorInfo, msrColumnEvaluatorInfo, filterBitSetUpdater);
     return bitSet;
@@ -230,7 +230,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
    * @param pageNumber
    * @param numberOfRows
    * @param msrDataType
-   * @return filtred indexes bitset
+   * @return filtered indexes bitset
    */
   private BitSet getFilteredIndexesForMsrUsingPrvBitSet(ColumnPage measureColumnPage,
       BitSetGroup prvBitSetGroup, int pageNumber, int numberOfRows, DataType msrDataType) {
@@ -280,7 +280,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     if (filterValues.length > 0 && CarbonUtil
         .usePreviousFilterBitsetGroup(useBitsetPipeLine, prvBitSetGroup, pageNumber,
             filterValues.length)) {
-      return getFilteredIndexesUisngPrvBitset(dimensionColumnPage, prvBitSetGroup, pageNumber);
+      return getFilteredIndexesUsingPrvBitset(dimensionColumnPage, prvBitSetGroup, pageNumber);
     } else {
       return getFilteredIndexes(dimensionColumnPage, numberOfRows);
     }
@@ -289,9 +289,9 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
   private BitSet getFilteredIndexes(DimensionColumnPage dimensionColumnPage,
       int numberOfRows) {
     if (dimensionColumnPage.isExplicitSorted()) {
-      return setFilterdIndexToBitSetWithColumnIndex(dimensionColumnPage, numberOfRows);
+      return setFilteredIndexToBitSetWithColumnIndex(dimensionColumnPage, numberOfRows);
     }
-    return setFilterdIndexToBitSet(dimensionColumnPage, numberOfRows);
+    return setFilteredIndexToBitSet(dimensionColumnPage, numberOfRows);
   }
 
   /**
@@ -301,7 +301,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
    * @param pageNumber
    * @return filtered indexes bitset
    */
-  private BitSet getFilteredIndexesUisngPrvBitset(DimensionColumnPage dimensionColumnPage,
+  private BitSet getFilteredIndexesUsingPrvBitset(DimensionColumnPage dimensionColumnPage,
       BitSetGroup prvBitSetGroup, int pageNumber) {
     BitSet prvPageBitSet = prvBitSetGroup.getBitSet(pageNumber);
     if (prvPageBitSet == null || prvPageBitSet.isEmpty()) {
@@ -343,7 +343,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     return bitSet;
   }
 
-  private BitSet setFilterdIndexToBitSetWithColumnIndex(
+  private BitSet setFilteredIndexToBitSetWithColumnIndex(
       DimensionColumnPage dimensionColumnPage, int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
     bitSet.flip(0, numerOfRows);
@@ -368,7 +368,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     return bitSet;
   }
 
-  private BitSet setFilterdIndexToBitSet(DimensionColumnPage dimensionColumnPage,
+  private BitSet setFilteredIndexToBitSet(DimensionColumnPage dimensionColumnPage,
       int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
     bitSet.flip(0, numerOfRows);

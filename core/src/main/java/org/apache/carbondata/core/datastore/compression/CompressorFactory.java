@@ -103,8 +103,8 @@ public class CompressorFactory {
               + " found '%s'", compressorClassName, ((Compressor) instance).getName()));
         }
         allSupportedCompressors.put(compressorClassName, (Compressor) instance);
-        LOGGER.info(
-            String.format("sucessfully register compressor %s to carbondata", compressorClassName));
+        LOGGER.info(String.format(
+            "successfully register compressor %s to carbondata", compressorClassName));
         return (Compressor) instance;
       } else {
         throw new RuntimeException(
@@ -142,7 +142,7 @@ public class CompressorFactory {
   }
 
   // if we specify the compressor name in table property, carbondata now will convert the
-  // property value to lowercase, so here we will ingore the case and find the real name.
+  // property value to lowercase, so here we will ignore the case and find the real name.
   private String getInternalCompressorName(String name) {
     for (String key : allSupportedCompressors.keySet()) {
       if (key.equalsIgnoreCase(name)) {

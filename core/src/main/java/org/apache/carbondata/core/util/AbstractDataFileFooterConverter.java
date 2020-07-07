@@ -320,10 +320,10 @@ public abstract class AbstractDataFileFooterConverter {
   }
 
   private List<ParentColumnTableRelation> fromThriftToWrapperParentTableColumnRelations(
-      List<org.apache.carbondata.format.ParentColumnTableRelation> thirftParentColumnRelation) {
+      List<org.apache.carbondata.format.ParentColumnTableRelation> thriftParentColumnRelation) {
     List<ParentColumnTableRelation> parentColumnTableRelationList = new ArrayList<>();
     for (org.apache.carbondata.format.ParentColumnTableRelation carbonTableRelation :
-        thirftParentColumnRelation) {
+        thriftParentColumnRelation) {
       RelationIdentifier relationIdentifier =
           new RelationIdentifier(carbonTableRelation.getRelationIdentifier().getDatabaseName(),
               carbonTableRelation.getRelationIdentifier().getTableName(),

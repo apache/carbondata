@@ -73,11 +73,11 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
   private byte[][] noDictionaryKeys;
   private byte[][] complexTypeKeyArray;
 
-  protected Map<Integer, GenericQueryType> comlexDimensionInfoMap;
+  protected Map<Integer, GenericQueryType> complexDimensionInfoMap;
 
   /**
    * Field of this Map is the parent Column and associated child columns.
-   * Final Projection shuld be a merged list consist of only parents.
+   * Final Projection should be a merged list consist of only parents.
    */
   private Map<Integer, List<Integer>> parentToChildColumnsMap = new HashMap<>();
 
@@ -101,7 +101,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     queryMeasures = executionInfo.getProjectionMeasures();
     initDimensionAndMeasureIndexesForFillingData();
     isDimensionExists = queryDimensions.length > 0;
-    this.comlexDimensionInfoMap = executionInfo.getComlexDimensionInfoMap();
+    this.complexDimensionInfoMap = executionInfo.getComplexDimensionInfoMap();
     this.readOnlyDelta = executionInfo.isReadOnlyDelta();
   }
 
@@ -157,7 +157,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         fillComplexColumnDataBufferForThisRow();
         for (int i = 0; i < queryDimensions.length; i++) {
           fillDimensionData(scannedResult, surrogateResult, noDictionaryKeys, complexTypeKeyArray,
-              comlexDimensionInfoMap, row, i, queryDimensions[i].getDimension().getOrdinal());
+              complexDimensionInfoMap, row, i, queryDimensions[i].getDimension().getOrdinal());
         }
       }
       fillMeasureData(scannedResult, row);

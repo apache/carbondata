@@ -23,7 +23,7 @@ import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.BitSetGroup;
 
-public class TrueFilterExecutor implements FilterExecuter {
+public class TrueFilterExecutor implements FilterExecutor {
 
   /**
    * API will apply filter based on resolver instance

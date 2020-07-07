@@ -162,9 +162,9 @@ public class IndexTableInfo implements Serializable {
     IndexTableInfo[] indexTableInfos = fromGson(oldIndexIno);
     for (IndexTableInfo indexTableInfo : indexTableInfos) {
       if (indexTableInfo.tableName.equalsIgnoreCase(indexName)) {
-        Map<String, String> oldindexProperties = indexTableInfo.indexProperties;
-        oldindexProperties.put(CarbonCommonConstants.INDEX_STATUS, IndexStatus.ENABLED.name());
-        indexTableInfo.setIndexProperties(oldindexProperties);
+        Map<String, String> oldIndexProperties = indexTableInfo.indexProperties;
+        oldIndexProperties.put(CarbonCommonConstants.INDEX_STATUS, IndexStatus.ENABLED.name());
+        indexTableInfo.setIndexProperties(oldIndexProperties);
       }
     }
     return toGson(indexTableInfos);

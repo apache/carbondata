@@ -28,7 +28,7 @@ public interface ResolvedFilterInfoVisitorIntf {
    * dimColResolvedFilterInfo visitable object with filter member values based
    * on the visitor type, currently there 3 types of visitors custom,direct
    * and no dictionary, all types of visitor populate the visitable instance
-   * as per its buisness logic which is different for all the visitors.
+   * as per its business logic which is different for all the visitors.
    *
    * @param visitableObj
    * @param metadata

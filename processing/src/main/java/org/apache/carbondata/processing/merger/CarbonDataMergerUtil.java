@@ -331,7 +331,7 @@ public final class CarbonDataMergerUtil {
               return false;
             }
             loadDetail.setSegmentStatus(SegmentStatus.COMPACTED);
-            loadDetail.setModificationOrdeletionTimesStamp(modificationOrDeletionTimeStamp);
+            loadDetail.setModificationOrDeletionTimestamp(modificationOrDeletionTimeStamp);
             loadDetail.setMergedLoadName(mergedLoadNumber);
           }
         }

@@ -25,7 +25,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpression;
-import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
+import org.apache.carbondata.core.scan.filter.intf.FilterExecutorType;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 
@@ -64,7 +64,7 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
           dimColumnEvaluatorInfo.setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
           dimColumnEvaluatorInfo.setRowIndex(index++);
           dimColumnEvaluatorInfo.setDimension(columnExpression.getDimension());
-          dimColumnEvaluatorInfo.setDimensionExistsInCurrentSilce(false);
+          dimColumnEvaluatorInfo.setDimensionExistsInCurrentSlice(false);
           dimColEvaluatorInfoList.add(dimColumnEvaluatorInfo);
         } else {
           msrColumnEvalutorInfo = new MeasureColumnResolvedFilterInfo();
@@ -87,13 +87,13 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
    * and will be send to the spark for processing
    */
   @Override
-  public FilterExecuterType getFilterExecuterType() {
-    return FilterExecuterType.ROWLEVEL;
+  public FilterExecutorType getFilterExecutorType() {
+    return FilterExecutorType.ROWLEVEL;
   }
 
   /**
    * Method will the read filter expression corresponding to the resolver.
-   * This method is required in row level executer inorder to evaluate the filter
+   * This method is required in row level executor inorder to evaluate the filter
    * expression against spark, as mentioned above row level is a special type
    * filter resolver.
    *
@@ -115,7 +115,7 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
   }
 
   /**
-   * Method will return the DimColumnResolvedFilterInfo instance which containts
+   * Method will return the DimColumnResolvedFilterInfo instance which contains
    * measure level details.
    *
    * @return MeasureColumnResolvedFilterInfo

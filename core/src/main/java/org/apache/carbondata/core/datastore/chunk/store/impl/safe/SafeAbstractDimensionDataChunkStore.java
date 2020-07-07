@@ -23,7 +23,7 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 /**
  * Responsibility is to store dimension data
  */
-public abstract class SafeAbsractDimensionDataChunkStore implements DimensionDataChunkStore {
+public abstract class SafeAbstractDimensionDataChunkStore implements DimensionDataChunkStore {
 
   /**
    * data chunk for dimension column
@@ -43,19 +43,19 @@ public abstract class SafeAbsractDimensionDataChunkStore implements DimensionDat
   /**
    * to check whether dimension column was explicitly sorted or not
    */
-  protected boolean isExplictSorted;
+  protected boolean isExplicitSorted;
 
   /**
    * Constructor
    *
    * @param isInvertedIdex is inverted index present
    */
-  public SafeAbsractDimensionDataChunkStore(boolean isInvertedIdex) {
-    this.isExplictSorted = isInvertedIdex;
+  public SafeAbstractDimensionDataChunkStore(boolean isInvertedIdex) {
+    this.isExplicitSorted = isInvertedIdex;
   }
 
   /**
-   * Below method will be used to put the rows and its metadata in offheap
+   * Below method will be used to put the rows and its metadata in off-heap
    *
    * @param invertedIndex        inverted index to be stored
    * @param invertedIndexReverse inverted index reverse to be stored
@@ -126,7 +126,7 @@ public abstract class SafeAbsractDimensionDataChunkStore implements DimensionDat
    */
   @Override
   public boolean isExplicitSorted() {
-    return isExplictSorted;
+    return isExplicitSorted;
   }
 
   /**

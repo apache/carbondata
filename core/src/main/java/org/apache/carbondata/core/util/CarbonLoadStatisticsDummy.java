@@ -40,7 +40,7 @@ public class CarbonLoadStatisticsDummy implements LoadStatistics {
   }
 
   @Override
-  public void recordLoadCsvfilesToDfTime() {
+  public void recordLoadCsvFilesToDfTime() {
 
   }
 

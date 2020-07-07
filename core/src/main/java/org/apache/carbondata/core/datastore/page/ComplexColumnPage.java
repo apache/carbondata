@@ -31,7 +31,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
- * holds the complex columndata and its children data
+ * holds the complex column data and its children data
  */
 public class ComplexColumnPage {
 
@@ -63,7 +63,7 @@ public class ComplexColumnPage {
   }
 
   /**
-   * below method will be used to initlize the column page of complex type
+   * below method will be used to initialize the column page of complex type
    * @param columnToDictMap dictionary map
    * @param pageSize number of records
    */
@@ -180,7 +180,7 @@ public class ComplexColumnPage {
    * return the column page
    * @param complexColumnIndex
    * complexColumnIndex of column
-   * @return colum page
+   * @return column page
    */
   public ColumnPage getColumnPage(int complexColumnIndex) {
     assert (complexColumnIndex <= this.complexColumnIndex);

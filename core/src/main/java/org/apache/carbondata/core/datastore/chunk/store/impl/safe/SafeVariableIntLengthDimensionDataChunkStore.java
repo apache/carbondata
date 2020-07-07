@@ -23,7 +23,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 /**
  * Below class is responsible to store variable long length(>32000) dimension data chunk in
- * memory. Memory occupied can be on heap or offheap using unsafe interface
+ * memory. Memory occupied can be on heap or off-heap using unsafe interface
  */
 public class SafeVariableIntLengthDimensionDataChunkStore
     extends SafeVariableLengthDimensionDataChunkStore {

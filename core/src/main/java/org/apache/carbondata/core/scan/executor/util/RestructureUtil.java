@@ -52,7 +52,7 @@ import org.apache.commons.lang3.ArrayUtils;
 public class RestructureUtil {
 
   /**
-   * Below method will be used to get the updated query dimension updation
+   * Below method will be used to get the updated query dimension update
    * means, after restructuring some dimension will be not present in older
    * table blocks in that case we need to select only those dimension out of
    * query dimension which is present in the current table block
@@ -168,7 +168,7 @@ public class RestructureUtil {
     if (tableColumn.getDataType().isComplexType() && !(tableColumn.getDataType().getId()
         == DataTypes.ARRAY_TYPE_ID)) {
       if (tableColumn.getColumnId().equalsIgnoreCase(queryColumn.getColumnId()) || tableColumn
-          .isColmatchBasedOnId(queryColumn)) {
+          .isColumnMatchBasedOnId(queryColumn)) {
         return true;
       } else {
         return isColumnMatchesStruct(tableColumn, queryColumn);
@@ -180,12 +180,12 @@ public class RestructureUtil {
           // In case of SDK, columnId is same as columnName therefore the following check will
           // ensure that if the table columnName is same as the query columnName and the table
           // columnId is the same as table columnName then it's a valid columnName to be scanned.
-          || tableColumn.isColmatchBasedOnId(queryColumn));
+          || tableColumn.isColumnMatchBasedOnId(queryColumn));
     }
   }
 
   /**
-   * In case of Multilevel Complex column - STRUCT/STRUCTofSTRUCT, traverse all the child dimension
+   * In case of Multilevel Complex column - Struct/StructOfStruct, traverse all the child dimension
    * to check column Id
    *
    * @param tableColumn

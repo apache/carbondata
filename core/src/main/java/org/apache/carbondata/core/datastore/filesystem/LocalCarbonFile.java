@@ -117,7 +117,7 @@ public class LocalCarbonFile implements CarbonFile {
     try {
       return file.getCanonicalPath();
     } catch (IOException e) {
-      LOGGER.error("Exception occured" + e.getMessage(), e);
+      LOGGER.error("Exception occurred" + e.getMessage(), e);
     }
     return null;
   }
@@ -137,9 +137,9 @@ public class LocalCarbonFile implements CarbonFile {
     return file.length();
   }
 
-  public boolean renameTo(String changetoName) {
-    changetoName = FileFactory.getUpdatedFilePath(changetoName);
-    return file.renameTo(new File(changetoName));
+  public boolean renameTo(String changeToName) {
+    changeToName = FileFactory.getUpdatedFilePath(changeToName);
+    return file.renameTo(new File(changeToName));
   }
 
   public boolean delete() {
@@ -256,7 +256,7 @@ public class LocalCarbonFile implements CarbonFile {
       tempFile.renameForce(fileName);
       fileTruncatedSuccessfully = true;
     } catch (IOException e) {
-      LOGGER.error("Exception occured while truncating the file " + e.getMessage(), e);
+      LOGGER.error("Exception occurred while truncating the file " + e.getMessage(), e);
     } finally {
       CarbonUtil.closeStreams(source, destination);
     }
@@ -331,7 +331,7 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   /**
-   * return the datainputStream which is seek to the offset of file
+   * return the DataInputStream which is seek to the offset of file
    *
    * @param bufferSize
    * @param offset

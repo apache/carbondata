@@ -39,7 +39,7 @@ import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedExc
 import org.apache.carbondata.core.scan.expression.logical.BinaryLogicalExpression;
 import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
-import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
+import org.apache.carbondata.core.scan.filter.intf.FilterExecutorType;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -143,18 +143,18 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
       } catch (FilterIllegalMemberException e) {
         // Any invalid member while evaluation shall be ignored, system will log the
         // error only once since all rows the evaluation happens so inorder to avoid
-        // too much log inforation only once the log will be printed.
+        // too much log information only once the log will be printed.
         FilterUtil.logError(e, invalidRowsPresent);
       }
     }
-    Comparator<byte[]> filterNoDictValueComaparator = new Comparator<byte[]>() {
+    Comparator<byte[]> filterNoDictValueComparator = new Comparator<byte[]>() {
       @Override
       public int compare(byte[] filterMember1, byte[] filterMember2) {
         return ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterMember1, filterMember2);
       }
 
     };
-    Collections.sort(filterValuesList, filterNoDictValueComaparator);
+    Collections.sort(filterValuesList, filterNoDictValueComparator);
     return filterValuesList;
   }
 
@@ -177,7 +177,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
       } catch (FilterIllegalMemberException e) {
         // Any invalid member while evaluation shall be ignored, system will log the
         // error only once since all rows the evaluation happens so inorder to avoid
-        // too much log inforation only once the log will be printed.
+        // too much log information only once the log will be printed.
         FilterUtil.logError(e, invalidRowsPresent);
       }
     }
@@ -205,7 +205,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           dimColumnEvaluatorInfo.setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
           dimColumnEvaluatorInfo.setRowIndex(index++);
           dimColumnEvaluatorInfo.setDimension(columnExpression.getDimension());
-          dimColumnEvaluatorInfo.setDimensionExistsInCurrentSilce(false);
+          dimColumnEvaluatorInfo.setDimensionExistsInCurrentSlice(false);
           if (columnExpression.getDimension().getDataType() == DataTypes.DATE) {
             if (!isIncludeFilter) {
               filterInfo.setExcludeFilterList(getDirectSurrogateValues(columnExpression));
@@ -228,7 +228,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           msrColumnEvalutorInfo.setCarbonColumn(columnExpression.getCarbonColumn());
           msrColumnEvalutorInfo.setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
           msrColumnEvalutorInfo.setType(columnExpression.getCarbonColumn().getDataType());
-          msrColumnEvalutorInfo.setMeasureExistsInCurrentSilce(false);
+          msrColumnEvalutorInfo.setMeasureExistsInCurrentSlice(false);
           filterInfo
               .setMeasuresFilterValuesList(getMeasureRangeValues(columnExpression.getMeasure()));
           filterInfo.setIncludeFilter(isIncludeFilter);
@@ -298,12 +298,12 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
   }
 
   /**
-   * Method will return the DimColumnResolvedFilterInfo instance which containts
+   * Method will return the DimColumnResolvedFilterInfo instance which contains
    * measure level details.
    *
    * @return MeasureColumnResolvedFilterInfo
    */
-  public List<MeasureColumnResolvedFilterInfo> getMsrColEvalutorInfoList() {
+  public List<MeasureColumnResolvedFilterInfo> getMsrColEvaluatorInfoList() {
     return msrColEvalutorInfoList;
   }
 
@@ -316,24 +316,24 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
   }
 
   /**
-   * This method will provide the executer type to the callee inorder to identify
+   * This method will provide the executor type to the callee inorder to identify
    * the executer type for the filter resolution, Row level filter executer is a
    * special executer since it get all the rows of the specified filter dimension
    * and will be send to the spark for processing
    */
-  public FilterExecuterType getFilterExecuterType() {
+  public FilterExecutorType getFilterExecutorType() {
     switch (exp.getFilterExpressionType()) {
       case GREATERTHAN:
-        return FilterExecuterType.ROWLEVEL_GREATERTHAN;
+        return FilterExecutorType.ROWLEVEL_GREATERTHAN;
       case GREATERTHAN_EQUALTO:
-        return FilterExecuterType.ROWLEVEL_GREATERTHAN_EQUALTO;
+        return FilterExecutorType.ROWLEVEL_GREATERTHAN_EQUALTO;
       case LESSTHAN:
-        return FilterExecuterType.ROWLEVEL_LESSTHAN;
+        return FilterExecutorType.ROWLEVEL_LESSTHAN;
       case LESSTHAN_EQUALTO:
-        return FilterExecuterType.ROWLEVEL_LESSTHAN_EQUALTO;
+        return FilterExecutorType.ROWLEVEL_LESSTHAN_EQUALTO;
 
       default:
-        return FilterExecuterType.ROWLEVEL;
+        return FilterExecutorType.ROWLEVEL;
     }
   }
 }

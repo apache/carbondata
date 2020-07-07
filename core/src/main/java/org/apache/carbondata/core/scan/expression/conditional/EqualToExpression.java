@@ -59,7 +59,7 @@ public class EqualToExpression extends BinaryConditionalExpression {
       }
       return elRes;
     }
-    //default implementation if the data types are different for the resultsets
+    //default implementation if the data types are different for the result sets
     if (elRes.getDataType() != erRes.getDataType()) {
       if (elRes.getDataType().getPrecedenceOrder() < erRes.getDataType().getPrecedenceOrder()) {
         val2 = elRes;

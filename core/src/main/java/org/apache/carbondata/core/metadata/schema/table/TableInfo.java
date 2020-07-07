@@ -79,9 +79,9 @@ public class TableInfo implements Serializable, Writable {
    * or Transactional Table. The difference between Transactional and Non Transactional table is
    * Non Transactional Table will not contain any Metadata folder and subsequently
    * no TableStatus or Schema files.
-   * All ACID properties cannot be aplied to Non Transactional Table as there is no Commit points
+   * All ACID properties cannot be applied to Non Transactional Table as there is no Commit points
    * i.e. no TableStatus File.
-   * What ever files present in the path will be read but it system doesnot ensure ACID rules for
+   * What ever files present in the path will be read but it system doesn't ensure ACID rules for
    * this data, mostly Consistency part.
    *
    */

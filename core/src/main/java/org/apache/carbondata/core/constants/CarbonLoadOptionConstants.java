@@ -144,7 +144,7 @@ public final class CarbonLoadOptionConstants {
   public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH_DEFAULT = "false";
 
   /**
-   * If the sort memory is insufficient, spill inmemory pages to disk.
+   * If the sort memory is insufficient, spill in-memory pages to disk.
    * The total amount of pages is at most the specified percentage of total sort memory. Default
    * value 0 means that no pages will be spilled and the newly incoming pages will be spilled,
    * whereas value 100 means that all pages will be spilled and newly incoming pages will be loaded

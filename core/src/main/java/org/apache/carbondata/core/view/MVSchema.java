@@ -40,7 +40,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import com.google.gson.Gson;
 
 /**
- * It is the new schama of mv and it has less fields compare to {{@link MVSchema}}
+ * It is the new schema of mv and it has less fields compare to {{@link MVSchema}}
  */
 public class MVSchema implements Serializable, Writable {
 
@@ -77,7 +77,7 @@ public class MVSchema implements Serializable, Writable {
   private Map<Integer, String> columnsOrderMap;
 
   /**
-   * timeseries query
+   * time series query
    */
   private boolean timeSeries;
 

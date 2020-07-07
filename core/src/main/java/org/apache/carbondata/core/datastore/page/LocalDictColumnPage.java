@@ -76,7 +76,7 @@ public class LocalDictColumnPage extends ColumnPage {
   /**
    * Create a new column page with input data type and page size.
    */
-  protected LocalDictColumnPage(ColumnPage actualDataColumnPage, ColumnPage encodedColumnpage,
+  protected LocalDictColumnPage(ColumnPage actualDataColumnPage, ColumnPage encodedColumnPage,
       LocalDictionaryGenerator localDictionaryGenerator, boolean isComplexTypePrimitive,
       boolean isDecoderBasedFallBackEnabled) {
     super(actualDataColumnPage.getColumnPageEncoderMeta(), actualDataColumnPage.getPageSize());
@@ -86,13 +86,13 @@ public class LocalDictColumnPage extends ColumnPage {
       pageLevelDictionary = new PageLevelDictionary(localDictionaryGenerator,
           actualDataColumnPage.getColumnSpec().getFieldName(), actualDataColumnPage.getDataType(),
           isComplexTypePrimitive, actualDataColumnPage.getColumnCompressorName());
-      this.encodedDataColumnPage = encodedColumnpage;
+      this.encodedDataColumnPage = encodedColumnPage;
       this.keyGenerator = KeyGeneratorFactory
           .getKeyGenerator(new int[] { CarbonCommonConstants.LOCAL_DICTIONARY_MAX + 1 });
       this.dummyKey = new int[1];
     } else {
       // else free the encoded column page memory as its of no use
-      encodedColumnpage.freeMemory();
+      encodedColumnPage.freeMemory();
     }
     this.isDecoderBasedFallBackEnabled = isDecoderBasedFallBackEnabled;
     this.actualDataColumnPage = actualDataColumnPage;
@@ -118,7 +118,7 @@ public class LocalDictColumnPage extends ColumnPage {
 
   /**
    * Below method will be used to check whether page is local dictionary
-   * generated or not. This will be used for while enoding the the page
+   * generated or not. This will be used for while encoding the the page
    *
    * @return
    */

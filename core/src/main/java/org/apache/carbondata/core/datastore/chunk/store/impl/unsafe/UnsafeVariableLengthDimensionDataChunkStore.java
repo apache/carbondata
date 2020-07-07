@@ -26,7 +26,7 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 
 /**
  * Below class is responsible to store variable length dimension data chunk in
- * memory Memory occupied can be on heap or offheap using unsafe interface
+ * memory Memory occupied can be on heap or off-heap using unsafe interface
  */
 public abstract class UnsafeVariableLengthDimensionDataChunkStore
     extends UnsafeAbstractDimensionDataChunkStore {
@@ -49,16 +49,16 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
    */
   private byte[] value;
 
-  public UnsafeVariableLengthDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
+  public UnsafeVariableLengthDimensionDataChunkStore(long totalSize, boolean isInvertedIndex,
       int numberOfRows, int dataLength) {
-    super(totalSize, isInvertedIdex, numberOfRows, dataLength);
+    super(totalSize, isInvertedIndex, numberOfRows, dataLength);
     this.numberOfRows = numberOfRows;
     // initials size assigning to some random value
     this.value = new byte[20];
   }
 
   /**
-   * Below method will be used to put the rows and its metadata in offheap
+   * Below method will be used to put the rows and its metadata in off-heap
    *
    * @param invertedIndex        inverted index to be stored
    * @param invertedIndexReverse inverted index reverse to be stored
@@ -147,7 +147,7 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
    * @return actual row id
    */
   private int getRowId(int rowId) {
-    // if column was explicitly sorted we need to get the rowid based inverted index reverse
+    // if column was explicitly sorted we need to get the row id based inverted index reverse
     if (isExplicitSorted) {
       rowId = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)rowId
@@ -181,10 +181,10 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
     int length = 0;
     // calculating the length of data
     if (rowId < numberOfRows - 1) {
-      int OffsetOfNextdata = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
+      int OffsetOfNextData = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + ((rowId + 1)
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
-      length = OffsetOfNextdata - (currentDataOffset + getLengthSize());
+      length = OffsetOfNextData - (currentDataOffset + getLengthSize());
     } else {
       // for last record we need to subtract with data length
       length = this.dataLength - currentDataOffset;

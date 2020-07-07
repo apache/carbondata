@@ -18,35 +18,35 @@
 package org.apache.carbondata.core.scan.filter.executer;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
+import org.apache.carbondata.core.scan.filter.intf.FilterExecutorType;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelRangeFilterResolverImpl;
 
-public class RowLevelRangeTypeExecuterFactory {
+public class RowLevelRangeTypeExecutorFactory {
 
-  private RowLevelRangeTypeExecuterFactory() {
+  private RowLevelRangeTypeExecutorFactory() {
 
   }
 
   /**
-   * The method returns the Row Level Range fiter type instance based on
+   * The method returns the Row Level Range filter type instance based on
    * filter tree resolver type.
    *
    * @param filterExpressionResolverTree
    * @param segmentProperties
    * @return the generator instance
    */
-  public static RowLevelFilterExecuterImpl getRowLevelRangeTypeExecuter(
-      FilterExecuterType filterExecuterType, FilterResolverIntf filterExpressionResolverTree,
+  public static RowLevelFilterExecutorImpl getRowLevelRangeTypeExecutor(
+      FilterExecutorType filterExecutorType, FilterResolverIntf filterExpressionResolverTree,
       SegmentProperties segmentProperties) {
-    switch (filterExecuterType) {
+    switch (filterExecutorType) {
 
       case ROWLEVEL_LESSTHAN:
-        return new RowLevelRangeLessThanFilterExecuterImpl(
+        return new RowLevelRangeLessThanFilterExecutorImpl(
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getDimColEvaluatorInfoList(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
-                .getMsrColEvalutorInfoList(),
+                .getMsrColEvaluatorInfoList(),
             filterExpressionResolverTree.getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
@@ -54,11 +54,11 @@ public class RowLevelRangeTypeExecuterFactory {
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
             .getMeasureFilterRangeValues(), segmentProperties);
       case ROWLEVEL_LESSTHAN_EQUALTO:
-        return new RowLevelRangeLessThanEqualFilterExecuterImpl(
+        return new RowLevelRangeLessThanEqualFilterExecutorImpl(
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getDimColEvaluatorInfoList(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
-                .getMsrColEvalutorInfoList(),
+                .getMsrColEvaluatorInfoList(),
             filterExpressionResolverTree.getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
@@ -66,11 +66,11 @@ public class RowLevelRangeTypeExecuterFactory {
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getMeasureFilterRangeValues(), segmentProperties);
       case ROWLEVEL_GREATERTHAN_EQUALTO:
-        return new RowLevelRangeGrtrThanEquaToFilterExecuterImpl(
+        return new RowLevelRangeGreaterThanEqualFilterExecutorImpl(
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getDimColEvaluatorInfoList(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
-                .getMsrColEvalutorInfoList(),
+                .getMsrColEvaluatorInfoList(),
             filterExpressionResolverTree.getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
@@ -78,11 +78,11 @@ public class RowLevelRangeTypeExecuterFactory {
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getMeasureFilterRangeValues(), segmentProperties);
       case ROWLEVEL_GREATERTHAN:
-        return new RowLevelRangeGrtThanFiterExecuterImpl(
+        return new RowLevelRangeGreaterThanFilterExecutorImpl(
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getDimColEvaluatorInfoList(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
-                .getMsrColEvalutorInfoList(),
+                .getMsrColEvaluatorInfoList(),
             filterExpressionResolverTree.getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)

@@ -32,10 +32,10 @@ import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 
 /**
  * It is not a collector it is just a scanned result holder.
- * most of the lines are copyied from `RawBasedResultCollector`, the difference in function is that
+ * most of the lines are copied from `RawBasedResultCollector`, the difference in function is that
  * this class return all the dimensions in a ByteArrayWrapper and append blockletNo/PageId/RowId at
  * end of the row.
- * This implementation refers to `RawBasedResultCollector` and `RowIdBaedResultCollector`
+ * This implementation refers to `RawBasedResultCollector` and `RowIdBasedResultCollector`
  */
 @InterfaceAudience.Internal
 public class RowIdRawBasedResultCollector extends AbstractScannedResultCollector {
@@ -73,7 +73,7 @@ public class RowIdRawBasedResultCollector extends AbstractScannedResultCollector
    */
   protected void scanAndFillData(BlockletScannedResult scannedResult, int batchSize,
       List<Object[]> listBasedResult, ProjectionMeasure[] queryMeasures) {
-    int numberOfPages = scannedResult.numberOfpages();
+    int numberOfPages = scannedResult.numberOfPages();
     // loop will exit once the batchSize data has been read or the pages have been exhausted
     while (scannedResult.getCurrentPageCounter() < numberOfPages) {
       int currentPageRowCount = scannedResult.getCurrentPageRowCount();
@@ -94,7 +94,7 @@ public class RowIdRawBasedResultCollector extends AbstractScannedResultCollector
       if (batchSize > availableRows) {
         batchSize = batchSize - availableRows;
       } else {
-        // this is done because in IUD cases actuals rows fetch can be less than batch size as
+        // this is done because in IUD cases actual rows fetch can be less than batch size as
         // some of the rows could have deleted. So in those cases batchSize need to be
         // re initialized with left over value
         batchSize = 0;

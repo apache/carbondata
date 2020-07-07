@@ -58,10 +58,10 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.log4j.Logger;
 
-public class RowLevelFilterExecuterImpl implements FilterExecuter {
+public class RowLevelFilterExecutorImpl implements FilterExecutor {
 
   private static final Logger LOGGER =
-      LogServiceFactory.getLogService(RowLevelFilterExecuterImpl.class.getName());
+      LogServiceFactory.getLogService(RowLevelFilterExecutorImpl.class.getName());
   List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList;
   List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList;
   protected Expression exp;
@@ -100,7 +100,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    */
   boolean isNaturalSorted;
 
-  public RowLevelFilterExecuterImpl(List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
+  public RowLevelFilterExecutorImpl(List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties,
       Map<Integer, GenericQueryType> complexDimensionInfoMap) {
@@ -226,7 +226,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       BitSet set = new BitSet(numberOfRows[i]);
       RowIntf row = new RowImpl();
       BitSet prvBitset = null;
-      // if bitset pipe line is enabled then use rowid from previous bitset
+      // if bitset pipe line is enabled then use row id from previous bitset
       // otherwise use older flow
       if (!useBitsetPipeLine ||
           null == rawBlockletColumnChunks.getBitSetGroup() ||
@@ -234,9 +234,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           rawBlockletColumnChunks.getBitSetGroup().getBitSet(i).isEmpty()) {
         for (int index = 0; index < numberOfRows[i]; index++) {
           createRow(rawBlockletColumnChunks, row, i, index);
-          Boolean rslt = false;
+          Boolean result = false;
           try {
-            rslt = exp.evaluate(row).getBoolean();
+            result = exp.evaluate(row).getBoolean();
           }
           // Any invalid member while evaluation shall be ignored, system will log the
           // error only once since all rows the evaluation happens so inorder to avoid
@@ -244,7 +244,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           catch (FilterIllegalMemberException e) {
             FilterUtil.logError(e, false);
           }
-          if (null != rslt && rslt) {
+          if (null != result && result) {
             set.set(index);
           }
         }
@@ -253,13 +253,13 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         for (int index = prvBitset.nextSetBit(0);
              index >= 0; index = prvBitset.nextSetBit(index + 1)) {
           createRow(rawBlockletColumnChunks, row, i, index);
-          Boolean rslt = false;
+          Boolean result = false;
           try {
-            rslt = exp.evaluate(row).getBoolean();
+            result = exp.evaluate(row).getBoolean();
           } catch (FilterIllegalMemberException e) {
             FilterUtil.logError(e, false);
           }
-          if (null != rslt && rslt) {
+          if (null != result && result) {
             set.set(index);
           }
         }
@@ -310,7 +310,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         continue;
       }
       if (!dimColumnEvaluatorInfo.getDimension().getDataType().isComplexType()) {
-        if (!dimColumnEvaluatorInfo.isDimensionExistsInCurrentSilce()) {
+        if (!dimColumnEvaluatorInfo.isDimensionExistsInCurrentSlice()) {
           record[index] = dimColumnEvaluatorInfo.getDimension().getDefaultValue();
         }
         byte[] memberBytes = (byte[]) value.getVal(index);
@@ -371,7 +371,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         continue;
       }
       if (!dimColumnEvaluatorInfo.getDimension().getDataType().isComplexType()) {
-        if (!dimColumnEvaluatorInfo.isDimensionExistsInCurrentSilce()) {
+        if (!dimColumnEvaluatorInfo.isDimensionExistsInCurrentSlice()) {
           record[dimColumnEvaluatorInfo.getRowIndex()] =
               dimColumnEvaluatorInfo.getDimension().getDefaultValue();
         }

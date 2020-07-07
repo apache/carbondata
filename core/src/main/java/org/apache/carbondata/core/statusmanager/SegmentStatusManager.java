@@ -96,7 +96,7 @@ public class SegmentStatusManager {
   }
 
   /**
-   * This will return the lock object used to lock the table status file before updation.
+   * This will return the lock object used to lock the table status file before update.
    *
    * @return
    */
@@ -347,7 +347,7 @@ public class SegmentStatusManager {
           throw ex;
         }
         try {
-          LOG.warn("Failed to read table status file, retrycount:" + retry);
+          LOG.warn("Failed to read table status file, retry count:" + retry);
           // sleep for some time before retry
           TimeUnit.SECONDS.sleep(READ_TABLE_STATUS_RETRY_TIMEOUT);
         } catch (InterruptedException e) {
@@ -696,7 +696,7 @@ public class SegmentStatusManager {
           } else if (SegmentStatus.MARKED_FOR_DELETE != segmentStatus) {
             loadFound = true;
             loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
-            loadMetadata.setModificationOrdeletionTimesStamp(CarbonUpdateUtil.readCurrentTime());
+            loadMetadata.setModificationOrDeletionTimestamp(CarbonUpdateUtil.readCurrentTime());
             LOG.info("Segment ID " + loadId + " Marked for Delete");
           }
           break;
@@ -805,7 +805,7 @@ public class SegmentStatusManager {
   }
 
   /**
-   * updates segment status and modificaton time details
+   * updates segment status and modification time details
    *
    * @param loadMetadata
    */
@@ -813,7 +813,7 @@ public class SegmentStatusManager {
     // update status only if the segment is not marked for delete
     if (SegmentStatus.MARKED_FOR_DELETE != loadMetadata.getSegmentStatus()) {
       loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
-      loadMetadata.setModificationOrdeletionTimesStamp(CarbonUpdateUtil.readCurrentTime());
+      loadMetadata.setModificationOrDeletionTimestamp(CarbonUpdateUtil.readCurrentTime());
     }
   }
 
@@ -883,13 +883,13 @@ public class SegmentStatusManager {
     LoadMetadataDetails[] listOfLoadFolderDetailsArray =
               SegmentStatusManager.readLoadMetadata(metaPath);
     if (listOfLoadFolderDetailsArray.length != 0) {
-      for (LoadMetadataDetails loaddetail :listOfLoadFolderDetailsArray) {
-        SegmentStatus segmentStatus = loaddetail.getSegmentStatus();
+      for (LoadMetadataDetails loadDetail :listOfLoadFolderDetailsArray) {
+        SegmentStatus segmentStatus = loadDetail.getSegmentStatus();
         if (segmentStatus == SegmentStatus.INSERT_IN_PROGRESS
             || segmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
           loadInProgress =
               isLoadInProgress(carbonTable.getAbsoluteTableIdentifier(),
-                  loaddetail.getLoadName());
+                  loadDetail.getLoadName());
         }
       }
     }
@@ -928,12 +928,12 @@ public class SegmentStatusManager {
     LoadMetadataDetails[] listOfLoadFolderDetailsArray =
         SegmentStatusManager.readLoadMetadata(metaPath);
     if (listOfLoadFolderDetailsArray.length != 0) {
-      for (LoadMetadataDetails loaddetail :listOfLoadFolderDetailsArray) {
-        SegmentStatus segmentStatus = loaddetail.getSegmentStatus();
+      for (LoadMetadataDetails loadDetail :listOfLoadFolderDetailsArray) {
+        SegmentStatus segmentStatus = loadDetail.getSegmentStatus();
         if (segmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
           loadInProgress =
               isLoadInProgress(carbonTable.getAbsoluteTableIdentifier(),
-                  loaddetail.getLoadName());
+                  loadDetail.getLoadName());
         }
       }
     }
@@ -1037,13 +1037,13 @@ public class SegmentStatusManager {
     }
   }
 
-  private static ReturnTuple isUpdationRequired(boolean isForceDeletion, CarbonTable carbonTable,
+  private static ReturnTuple isUpdateRequired(boolean isForceDeletion, CarbonTable carbonTable,
       AbsoluteTableIdentifier absoluteTableIdentifier, LoadMetadataDetails[] details) {
     // Delete marked loads
-    boolean isUpdationRequired = DeleteLoadFolders
+    boolean isUpdateRequired = DeleteLoadFolders
         .deleteLoadFoldersFromFileSystem(absoluteTableIdentifier, isForceDeletion, details,
             carbonTable.getMetadataPath());
-    return new ReturnTuple(details, isUpdationRequired);
+    return new ReturnTuple(details, isUpdateRequired);
   }
 
   public static void deleteLoadsAndUpdateMetadata(CarbonTable carbonTable, boolean isForceDeletion,
@@ -1054,24 +1054,24 @@ public class SegmentStatusManager {
     CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable);
     if (isLoadDeletionRequired(metadataDetails)) {
       AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
-      boolean updationCompletionStatus = false;
+      boolean updateCompletionStatus = false;
       LoadMetadataDetails[] newAddedLoadHistoryList = null;
       ReturnTuple tuple =
-          isUpdationRequired(isForceDeletion, carbonTable, identifier, metadataDetails);
+          isUpdateRequired(isForceDeletion, carbonTable, identifier, metadataDetails);
       if (tuple.isUpdateRequired) {
         ICarbonLock carbonTableStatusLock =
             CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
         boolean locked = false;
         try {
-          // Update load metadate file after cleaning deleted nodes
+          // Update load metadata file after cleaning deleted nodes
           locked = carbonTableStatusLock.lockWithRetries();
           if (locked) {
             LOG.info("Table status lock has been successfully acquired.");
-            // Again read status and check to verify updation required or not.
+            // Again read status and check to verify update required or not.
             LoadMetadataDetails[] details =
                 SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
             ReturnTuple tuple2 =
-                isUpdationRequired(isForceDeletion, carbonTable, identifier, details);
+                isUpdateRequired(isForceDeletion, carbonTable, identifier, details);
             if (!tuple2.isUpdateRequired) {
               return;
             }
@@ -1110,7 +1110,7 @@ public class SegmentStatusManager {
                   CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()),
                   latestStatus.toArray(new LoadMetadataDetails[0]));
             }
-            updationCompletionStatus = true;
+            updateCompletionStatus = true;
           } else {
             String dbName = identifier.getCarbonTableIdentifier().getDatabaseName();
             String tableName = identifier.getCarbonTableIdentifier().getTableName();
@@ -1125,7 +1125,7 @@ public class SegmentStatusManager {
           if (locked) {
             CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
           }
-          if (updationCompletionStatus) {
+          if (updateCompletionStatus) {
             DeleteLoadFolders
                 .physicalFactAndMeasureMetadataDeletion(carbonTable, newAddedLoadHistoryList,
                     isForceDeletion, partitionSpecs);
@@ -1141,7 +1141,7 @@ public class SegmentStatusManager {
         carbonTable.getAbsoluteTableIdentifier(), LockUsage.TABLE_STATUS_LOCK);
     boolean locked = false;
     try {
-      // Update load metadate file after cleaning deleted nodes
+      // Update load metadata file after cleaning deleted nodes
       locked = carbonTableStatusLock.lockWithRetries();
       if (locked) {
         LOG.info("Table status lock has been successfully acquired.");

@@ -51,27 +51,27 @@ public class NotInExpression extends BinaryConditionalExpression {
       return nullValuePresent;
     }
 
-    ExpressionResult leftRsult = left.evaluate(value);
-    if (leftRsult.isNull()) {
-      leftRsult.set(DataTypes.BOOLEAN, false);
-      return leftRsult;
+    ExpressionResult leftResult = left.evaluate(value);
+    if (leftResult.isNull()) {
+      leftResult.set(DataTypes.BOOLEAN, false);
+      return leftResult;
     }
 
     if (setOfExprResult == null) {
       ExpressionResult val = null;
-      ExpressionResult rightRsult = right.evaluate(value);
+      ExpressionResult rightResult = right.evaluate(value);
       setOfExprResult = new HashSet<ExpressionResult>(10);
-      for (ExpressionResult exprResVal : rightRsult.getList()) {
+      for (ExpressionResult exprResVal : rightResult.getList()) {
 
         if (exprResVal.isNull()) {
           nullValuePresent = new ExpressionResult(DataTypes.BOOLEAN, false);
-          leftRsult.set(DataTypes.BOOLEAN, false);
-          return leftRsult;
+          leftResult.set(DataTypes.BOOLEAN, false);
+          return leftResult;
         }
 
-        if (exprResVal.getDataType().getPrecedenceOrder() < leftRsult.getDataType()
+        if (exprResVal.getDataType().getPrecedenceOrder() < leftResult.getDataType()
             .getPrecedenceOrder()) {
-          val = leftRsult;
+          val = leftResult;
         } else {
           val = exprResVal;
         }
@@ -103,8 +103,8 @@ public class NotInExpression extends BinaryConditionalExpression {
       }
     }
 
-    leftRsult.set(DataTypes.BOOLEAN, !setOfExprResult.contains(leftRsult));
-    return leftRsult;
+    leftResult.set(DataTypes.BOOLEAN, !setOfExprResult.contains(leftResult));
+    return leftResult;
   }
 
   @Override

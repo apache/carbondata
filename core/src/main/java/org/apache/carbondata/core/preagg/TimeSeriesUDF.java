@@ -30,7 +30,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.log4j.Logger;
 
 /**
- * class for applying timeseries udf
+ * class for applying time-series udf
  */
 public class TimeSeriesUDF {
 
@@ -40,7 +40,7 @@ public class TimeSeriesUDF {
   public final List<String> TIMESERIES_FUNCTION = new ArrayList<>();
 
   // thread local for keeping calender instance
-  private ThreadLocal<Calendar> calanderThreadLocal = new ThreadLocal<>();
+  private ThreadLocal<Calendar> calenderThreadLocal = new ThreadLocal<>();
 
   /**
    * singleton instance
@@ -73,7 +73,7 @@ public class TimeSeriesUDF {
       return data;
     }
     initialize();
-    Calendar calendar = calanderThreadLocal.get();
+    Calendar calendar = calenderThreadLocal.get();
     calendar.clear();
     calendar.setTimeInMillis(data.getTime());
     TimeSeriesFunctionEnum timeSeriesFunctionEnum =
@@ -132,7 +132,7 @@ public class TimeSeriesUDF {
         calendar.set(Calendar.MILLISECOND, 0);
         break;
       default:
-        throw new IllegalArgumentException("Invalid timeseries function name: " + function);
+        throw new IllegalArgumentException("Invalid time-series function name: " + function);
     }
     data.setTime(calendar.getTimeInMillis());
     return data;
@@ -151,8 +151,8 @@ public class TimeSeriesUDF {
    * Below method will be used to initialize the thread local
    */
   private void initialize() {
-    if (calanderThreadLocal.get() == null) {
-      calanderThreadLocal.set(new GregorianCalendar());
+    if (calenderThreadLocal.get() == null) {
+      calenderThreadLocal.set(new GregorianCalendar());
     }
     if (TIMESERIES_FUNCTION.isEmpty()) {
       TIMESERIES_FUNCTION.add("second");
@@ -180,6 +180,6 @@ public class TimeSeriesUDF {
           DaysOfWeekEnum.valueOf(CarbonCommonConstants.CARBON_TIMESERIES_FIRST_DAY_OF_WEEK_DEFAULT)
               .getOrdinal();
     }
-    calanderThreadLocal.get().setFirstDayOfWeek(firstDayOfWeek);
+    calenderThreadLocal.get().setFirstDayOfWeek(firstDayOfWeek);
   }
 }

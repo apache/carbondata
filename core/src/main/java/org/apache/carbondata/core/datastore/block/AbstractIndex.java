@@ -52,8 +52,7 @@ public abstract class AbstractIndex implements Cacheable {
   private long deleteDeltaTimestamp;
 
   /**
-   * map of blockletidAndPageId to
-   * deleted rows
+   * map of blockletIdAndPageId to deleted rows
    */
   private Map<String, DeleteDeltaVo> deletedRowsMap;
   /**

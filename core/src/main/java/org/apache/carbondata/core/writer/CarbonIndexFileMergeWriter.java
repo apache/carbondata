@@ -66,10 +66,10 @@ public class CarbonIndexFileMergeWriter {
   }
 
   /**
-   * Merge all the carbonindex files of segment to a  merged file
+   * Merge all the carbon index files of segment to a  merged file
    * @param tablePath
-   * @param indexFileNamesTobeAdded while merging it comsiders only these files.
-   *                                If null then consider all
+   * @param indexFileNamesTobeAdded while merging, it considers only these files.
+   *                                If null, then consider all
    * @param readFileFooterFromCarbonDataFile flag to read file footer information from carbondata
    *                                         file. This will used in case of upgrade from version
    *                                         which do not store the blocklet info to current version
@@ -190,7 +190,7 @@ public class CarbonIndexFileMergeWriter {
       // this case will be used in case of upgrade where old store will not have the blocklet
       // info in the index file and therefore blocklet info need to be read from the file footer
       // in the carbondata file
-      fileStore.readAllIndexAndFillBolckletInfo(segmentPath);
+      fileStore.readAllIndexAndFillBlockletInfo(segmentPath);
     } else {
       fileStore.readAllIIndexOfSegment(segmentPath);
     }
@@ -232,16 +232,16 @@ public class CarbonIndexFileMergeWriter {
     for (Map.Entry<String, Map<String, byte[]>> entry : indexLocationMap.entrySet()) {
       String mergeIndexFile =
           writeMergeIndexFile(indexFileNamesTobeAdded, entry.getKey(), entry.getValue(), segmentId);
-      for (Map.Entry<String, SegmentFileStore.FolderDetails> segentry : segmentFileStore
+      for (Map.Entry<String, SegmentFileStore.FolderDetails> segment : segmentFileStore
           .getLocationMap().entrySet()) {
-        String location = segentry.getKey();
-        if (segentry.getValue().isRelative()) {
+        String location = segment.getKey();
+        if (segment.getValue().isRelative()) {
           location =
               segmentFileStore.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + location;
         }
         if (FileFactory.getCarbonFile(entry.getKey()).equals(FileFactory.getCarbonFile(location))) {
-          segentry.getValue().setMergeFileName(mergeIndexFile);
-          segentry.getValue().setFiles(new HashSet<String>());
+          segment.getValue().setMergeFileName(mergeIndexFile);
+          segment.getValue().setFiles(new HashSet<String>());
           break;
         }
       }
@@ -297,7 +297,7 @@ public class CarbonIndexFileMergeWriter {
   }
 
   /**
-   * Merge all the carbonindex files of segment to a  merged file
+   * Merge all the carbon index files of segment to a  merged file
    *
    * @param segmentId
    */
@@ -307,7 +307,7 @@ public class CarbonIndexFileMergeWriter {
   }
 
   /**
-   * Merge all the carbonindex files of segment to a  merged file
+   * Merge all the carbon index files of segment to a  merged file
    *
    * @param segmentId
    * @param readFileFooterFromCarbonDataFile

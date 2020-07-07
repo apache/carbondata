@@ -175,7 +175,7 @@ public class CarbonColumn implements Serializable {
   }
 
   /**
-   * @return columnproperty
+   * @return column property map
    */
   public Map<String, String> getColumnProperties() {
     return this.columnSchema.getColumnProperties();
@@ -216,7 +216,7 @@ public class CarbonColumn implements Serializable {
     this.useActualData = useActualData;
   }
 
-  public boolean isColmatchBasedOnId(CarbonColumn queryColumn) {
+  public boolean isColumnMatchBasedOnId(CarbonColumn queryColumn) {
     return this.getColName().equalsIgnoreCase(this.getColumnId()) && this.getColName()
         .equalsIgnoreCase(queryColumn.getColName());
   }

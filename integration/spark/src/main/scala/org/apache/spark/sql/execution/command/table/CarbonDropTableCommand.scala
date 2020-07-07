@@ -177,7 +177,7 @@ case class CarbonDropTableCommand(
         CarbonCommonConstants.LOCK_PATH_DEFAULT).toLowerCase
         .nonEmpty) {
         val tableLockPath = CarbonLockFactory
-          .getLockpath(carbonTable.getCarbonTableIdentifier.getTableId)
+          .getLockPath(carbonTable.getCarbonTableIdentifier.getTableId)
         val file = FileFactory.getCarbonFile(tableLockPath)
         CarbonUtil.deleteFoldersAndFilesSilent(file)
       }

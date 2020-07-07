@@ -58,7 +58,7 @@ import org.apache.carbondata.core.profiler.ExplainCollector;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
-import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecutor;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitColumnFilterExecutor;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.BlockletIndexUtil;
@@ -133,7 +133,7 @@ public class BlockIndex extends CoarseGrainIndex
     this.isPartitionTable = blockletIndexModel.getCarbonTable().isHivePartitionTable();
     if (this.isPartitionTable || !blockletIndexModel.getCarbonTable().isTransactionalTable() ||
         blockletIndexModel.getCarbonTable().isSupportFlatFolder() ||
-        // if the segment data is written in tablepath then no need to store whole path of file.
+        // if the segment data is written in table path then no need to store whole path of file.
         !blockletIndexModel.getFilePath().startsWith(
             blockletIndexModel.getCarbonTable().getTablePath())) {
       filePath = FilenameUtils.getFullPathNoEndSeparator(path)
@@ -444,7 +444,7 @@ public class BlockIndex extends CoarseGrainIndex
     }
     // create the segment directory path
     String tablePath = segmentPropertiesWrapper.getTableIdentifier().getTablePath();
-    String segmentId = getTableTaskInfo(SUMMARY_SEGMENTID);
+    String segmentId = getTableTaskInfo(SUMMARY_SEGMENT_ID);
     return CarbonTablePath.getSegmentPath(tablePath, segmentId);
   }
 
@@ -460,7 +460,7 @@ public class BlockIndex extends CoarseGrainIndex
     // write the task summary info to unsafe memory store
     if (null != summaryRow) {
       summaryRow.setByteArray(fileName, SUMMARY_INDEX_FILE_NAME);
-      summaryRow.setByteArray(segmentId, SUMMARY_SEGMENTID);
+      summaryRow.setByteArray(segmentId, SUMMARY_SEGMENT_ID);
       if (filePath.length > 0) {
         summaryRow.setByteArray(filePath, SUMMARY_INDEX_PATH);
       }
@@ -560,12 +560,12 @@ public class BlockIndex extends CoarseGrainIndex
 
   @Override
   public boolean isScanRequired(FilterResolverIntf filterExp) {
-    FilterExecuter filterExecuter = FilterUtil.getFilterExecuterTree(
+    FilterExecutor filterExecutor = FilterUtil.getFilterExecutorTree(
         filterExp, getSegmentProperties(), null, getMinMaxCacheColumns(), false);
     IndexRow unsafeRow = taskSummaryDMStore
         .getIndexRow(getTaskSummarySchema(), taskSummaryDMStore.getRowCount() - 1);
     boolean isScanRequired = FilterExpressionProcessor
-        .isScanRequired(filterExecuter, getMinMaxValue(unsafeRow, TASK_MAX_VALUES_INDEX),
+        .isScanRequired(filterExecutor, getMinMaxValue(unsafeRow, TASK_MAX_VALUES_INDEX),
             getMinMaxValue(unsafeRow, TASK_MIN_VALUES_INDEX),
             getMinMaxFlag(unsafeRow, TASK_MIN_MAX_FLAG));
     if (isScanRequired) {
@@ -584,8 +584,8 @@ public class BlockIndex extends CoarseGrainIndex
    */
   protected short getBlockletNumOfEntry(int index) {
     final byte[] bytes = getBlockletRowCountForEachBlock();
-    // if the segment data is written in tablepath
-    // then the reuslt of getBlockletRowCountForEachBlock will be empty.
+    // if the segment data is written in table path
+    // then the result of getBlockletRowCountForEachBlock will be empty.
     if (bytes.length == 0) {
       return 0;
     } else {
@@ -657,7 +657,7 @@ public class BlockIndex extends CoarseGrainIndex
     return blockletToRowCountMap;
   }
 
-  private List<Blocklet> prune(FilterResolverIntf filterExp, FilterExecuter filterExecuter,
+  private List<Blocklet> prune(FilterResolverIntf filterExp, FilterExecutor filterExecutor,
       SegmentProperties segmentProperties) {
     if (memoryDMStore.getRowCount() == 0) {
       return new ArrayList<>();
@@ -685,8 +685,8 @@ public class BlockIndex extends CoarseGrainIndex
       // flag to be used for deciding whether use min/max in executor pruning for BlockletIndex
       boolean useMinMaxForPruning = useMinMaxForExecutorPruning(filterExp);
       if (!validateSegmentProperties(segmentProperties)) {
-        filterExecuter = FilterUtil
-                .getFilterExecuterTree(filterExp, getSegmentProperties(),
+        filterExecutor = FilterUtil
+                .getFilterExecutorTree(filterExp, getSegmentProperties(),
                         null, getMinMaxCacheColumns(), false);
       }
       // min and max for executor pruning
@@ -696,7 +696,7 @@ public class BlockIndex extends CoarseGrainIndex
         String fileName = getFileNameWithFilePath(row, filePath);
         short blockletId = getBlockletId(row);
         boolean isValid =
-            addBlockBasedOnMinMaxValue(filterExecuter, getMinMaxValue(row, MAX_VALUES_INDEX),
+            addBlockBasedOnMinMaxValue(filterExecutor, getMinMaxValue(row, MAX_VALUES_INDEX),
                 getMinMaxValue(row, MIN_VALUES_INDEX), minMaxFlag, fileName, blockletId);
         if (isValid) {
           blocklets.add(createBlocklet(row, fileName, blockletId, useMinMaxForPruning));
@@ -722,14 +722,14 @@ public class BlockIndex extends CoarseGrainIndex
 
   @Override
   public List<Blocklet> prune(Expression expression, SegmentProperties properties,
-      CarbonTable carbonTable, FilterExecuter filterExecuter) {
+      CarbonTable carbonTable, FilterExecutor filterExecutor) {
     return prune(new IndexFilter(properties, carbonTable, expression).getResolver(), properties,
-        filterExecuter, carbonTable);
+        filterExecutor, carbonTable);
   }
 
   @Override
   public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
-      FilterExecuter filterExecuter, CarbonTable table) {
+      FilterExecutor filterExecutor, CarbonTable table) {
     if (memoryDMStore.getRowCount() == 0) {
       return new ArrayList<>();
     }
@@ -738,7 +738,7 @@ public class BlockIndex extends CoarseGrainIndex
     // segmentProperties.
     // Its a temporary fix. The Interface Index.prune(FilterResolverIntf filterExp,
     // SegmentProperties segmentProperties, List<PartitionSpec> partitions) should be corrected
-    return prune(filterExp, filterExecuter, segmentProperties);
+    return prune(filterExp, filterExecutor, segmentProperties);
   }
 
   public boolean validatePartitionInfo(List<PartitionSpec> partitions) {
@@ -781,7 +781,7 @@ public class BlockIndex extends CoarseGrainIndex
   /**
    * select the blocks based on column min and max value
    *
-   * @param filterExecuter
+   * @param filterExecutor
    * @param maxValue
    * @param minValue
    * @param minMaxFlag
@@ -789,10 +789,10 @@ public class BlockIndex extends CoarseGrainIndex
    * @param blockletId
    * @return
    */
-  private boolean addBlockBasedOnMinMaxValue(FilterExecuter filterExecuter, byte[][] maxValue,
+  private boolean addBlockBasedOnMinMaxValue(FilterExecutor filterExecutor, byte[][] maxValue,
       byte[][] minValue, boolean[] minMaxFlag, String filePath, int blockletId) {
     BitSet bitSet = null;
-    if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
+    if (filterExecutor instanceof ImplicitColumnFilterExecutor) {
       String uniqueBlockPath;
       CarbonTable carbonTable = segmentPropertiesWrapper.getCarbonTable();
       if (carbonTable.isHivePartitionTable()) {
@@ -810,10 +810,10 @@ public class BlockIndex extends CoarseGrainIndex
       if (blockletId != -1) {
         uniqueBlockPath = uniqueBlockPath + CarbonCommonConstants.FILE_SEPARATOR + blockletId;
       }
-      bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
+      bitSet = ((ImplicitColumnFilterExecutor) filterExecutor)
           .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath, minMaxFlag);
     } else {
-      bitSet = filterExecuter.isScanRequired(maxValue, minValue, minMaxFlag);
+      bitSet = filterExecutor.isScanRequired(maxValue, minValue, minMaxFlag);
     }
     if (!bitSet.isEmpty()) {
       return true;
@@ -933,7 +933,7 @@ public class BlockIndex extends CoarseGrainIndex
           CarbonCommonConstants.DEFAULT_CHARSET);
       fileDetails[1] = new String(unsafeRow.getByteArray(SUMMARY_INDEX_FILE_NAME),
           CarbonCommonConstants.DEFAULT_CHARSET);
-      fileDetails[2] = new String(unsafeRow.getByteArray(SUMMARY_SEGMENTID),
+      fileDetails[2] = new String(unsafeRow.getByteArray(SUMMARY_SEGMENT_ID),
           CarbonCommonConstants.DEFAULT_CHARSET);
       return fileDetails;
     } catch (Exception e) {
@@ -994,7 +994,7 @@ public class BlockIndex extends CoarseGrainIndex
   }
 
   /**
-   * This method will ocnvert safe to unsafe memory DM store
+   * This method will convert safe to unsafe memory DM store
    *
    */
   public void convertToUnsafeDMStore() {

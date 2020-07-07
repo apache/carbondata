@@ -483,7 +483,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
   }
 
   /* (non-Javadoc)
-   * convert from external to wrapper columnschema
+   * convert from external to wrapper column schema
    */
   @Override
   public ColumnSchema fromExternalToWrapperColumnSchema(
@@ -558,7 +558,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
   }
 
   /* (non-Javadoc)
-   * convert from external to wrapper tableschema
+   * convert from external to wrapper table schema
    */
   @Override
   public TableSchema fromExternalToWrapperTableSchema(
@@ -603,7 +603,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
   }
 
   /* (non-Javadoc)
-   * convert from external to wrapper tableinfo
+   * convert from external to wrapper table info
    */
   @Override
   public TableInfo fromExternalToWrapperTableInfo(
@@ -625,10 +625,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
   }
 
   private List<ParentColumnTableRelation> fromExternalToWrapperParentTableColumnRelations(
-      List<org.apache.carbondata.format.ParentColumnTableRelation> thirftParentColumnRelation) {
+      List<org.apache.carbondata.format.ParentColumnTableRelation> thriftParentColumnRelation) {
     List<ParentColumnTableRelation> parentColumnTableRelationList = new ArrayList<>();
     for (org.apache.carbondata.format.ParentColumnTableRelation carbonTableRelation :
-        thirftParentColumnRelation) {
+        thriftParentColumnRelation) {
       RelationIdentifier relationIdentifier =
           new RelationIdentifier(carbonTableRelation.getRelationIdentifier().getDatabaseName(),
               carbonTableRelation.getRelationIdentifier().getTableName(),

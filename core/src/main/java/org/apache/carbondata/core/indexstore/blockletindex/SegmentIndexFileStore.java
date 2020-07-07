@@ -66,12 +66,12 @@ public class SegmentIndexFileStore {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(SegmentIndexFileStore.class.getName());
   /**
-   * Stores the indexfile name and related binary file data in it.
+   * Stores the index file name and related binary file data in it.
    */
   private Map<String, byte[]> carbonIndexMap;
 
   /**
-   * Stores the indexfile name and related binary file data in it.
+   * Stores the index file name and related binary file data in it.
    */
   private Map<String, byte[]> carbonIndexMapWithFullPath;
 
@@ -168,7 +168,7 @@ public class SegmentIndexFileStore {
    * @param segmentPath
    * @throws IOException
    */
-  public void readAllIndexAndFillBolckletInfo(String segmentPath) throws IOException {
+  public void readAllIndexAndFillBlockletInfo(String segmentPath) throws IOException {
     CarbonFile[] carbonIndexFiles =
         getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
     for (int i = 0; i < carbonIndexFiles.length; i++) {
@@ -290,7 +290,7 @@ public class SegmentIndexFileStore {
   }
 
   /**
-   * Read carbonindex file and convert to stream and add to map
+   * Read carbon index file and convert to stream and add to map
    *
    * @param indexFile
    * @throws IOException
@@ -329,7 +329,7 @@ public class SegmentIndexFileStore {
   }
 
   /**
-   * Get the carbonindex file content
+   * Get the carbon index file content
    *
    * @param fileName
    * @return
@@ -468,7 +468,7 @@ public class SegmentIndexFileStore {
           blockIndexReplica
               .setBlock_index(CarbonMetadataUtil.getBlockletIndex(blockletInfo.getBlockletIndex()));
           blockIndexReplica
-              .setBlocklet_info(CarbonMetadataUtil.getBlocletInfo3(blockletInfo));
+              .setBlocklet_info(CarbonMetadataUtil.getBlockletInfo3(blockletInfo));
           blockIndexThrift.add(blockIndexReplica);
         }
       }

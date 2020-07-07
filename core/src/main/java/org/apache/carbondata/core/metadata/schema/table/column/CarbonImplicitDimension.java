@@ -27,7 +27,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 
 /**
- * This instance will be created for implicit column like tupleid.
+ * This instance will be created for implicit column like tupleId.
  */
 public class CarbonImplicitDimension extends CarbonDimension {
   /**
@@ -124,7 +124,7 @@ public class CarbonImplicitDimension extends CarbonDimension {
   }
 
   /**
-   * To specify the visibily of the column by default its false
+   * To specify the visibility of the column by default its false
    */
   public boolean isInvisible() {
     return true;

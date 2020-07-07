@@ -296,7 +296,7 @@ public abstract class MVManager {
       try {
         if (carbonLock.lockWithRetries()) {
           LOGGER.info("Acquired lock for table" + relationIdentifier.getDatabaseName() + "."
-              + relationIdentifier.getTableName() + " for table status updation");
+              + relationIdentifier.getTableName() + " for table status update");
           String metaDataPath =
               CarbonTablePath.getMetadataPath(relationIdentifier.getTablePath());
           LoadMetadataDetails[] loadMetadataDetails =
@@ -308,20 +308,20 @@ public abstract class MVManager {
               CarbonTablePath.getTableStatusFilePath(relationIdentifier.getTablePath()),
               loadMetadataDetails);
         } else {
-          LOGGER.error("Not able to acquire the lock for Table status updation for table "
+          LOGGER.error("Not able to acquire the lock for Table status update for table "
               + relationIdentifier.getDatabaseName() + "." + relationIdentifier
               .getTableName());
         }
       } finally {
         if (carbonLock.unlock()) {
           LOGGER.info(
-              "Table unlocked successfully after table status updation" + relationIdentifier
+              "Table unlocked successfully after table status update" + relationIdentifier
                   .getDatabaseName() + "." + relationIdentifier.getTableName());
         } else {
           LOGGER.error(
               "Unable to unlock Table lock for table" + relationIdentifier.getDatabaseName()
                   + "." + relationIdentifier.getTableName()
-                  + " during table status updation");
+                  + " during table status update");
         }
       }
     }

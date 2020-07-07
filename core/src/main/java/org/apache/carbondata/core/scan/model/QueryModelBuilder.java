@@ -127,19 +127,19 @@ public class QueryModelBuilder {
     Map<Integer, List<Integer>> complexColumnMap = new HashMap<>();
     List<ProjectionDimension> carbonDimensions = projection.getDimensions();
     // Traverse and find out if the top most parent of projection column is already there
-    List<CarbonDimension> projectionDimenesionToBeMerged = new ArrayList<>();
+    List<CarbonDimension> projectionDimensionToBeMerged = new ArrayList<>();
     for (ProjectionDimension projectionDimension : carbonDimensions) {
       CarbonDimension complexParentDimension =
           projectionDimension.getDimension().getComplexParentDimension();
       if (null != complexParentDimension && isAlreadyExists(complexParentDimension,
           carbonDimensions)) {
-        projectionDimenesionToBeMerged.add(projectionDimension.getDimension());
+        projectionDimensionToBeMerged.add(projectionDimension.getDimension());
       }
     }
 
-    if (projectionDimenesionToBeMerged.size() != 0) {
+    if (projectionDimensionToBeMerged.size() != 0) {
       projection =
-          removeMergedDimensions(projectionDimenesionToBeMerged, projectionColumns, factTableName);
+          removeMergedDimensions(projectionDimensionToBeMerged, projectionColumns, factTableName);
       carbonDimensions = projection.getDimensions();
     }
 
@@ -220,7 +220,7 @@ public class QueryModelBuilder {
       for (int j = i; j < childOrdinals.size(); j++) {
         CarbonDimension parentDimension = getDimensionBasedOnOrdinal(dimList, childOrdinals.get(i));
         CarbonDimension childDimension = getDimensionBasedOnOrdinal(dimList, childOrdinals.get(j));
-        if (!mergedChild.contains(childOrdinals.get(j)) && checkChildsInSamePath(parentDimension,
+        if (!mergedChild.contains(childOrdinals.get(j)) && checkChildrenInSamePath(parentDimension,
             childDimension)) {
           mergedChild.add(childDimension);
         }
@@ -229,7 +229,7 @@ public class QueryModelBuilder {
     return mergedChild;
   }
 
-  private boolean checkChildsInSamePath(CarbonDimension parentDimension,
+  private boolean checkChildrenInSamePath(CarbonDimension parentDimension,
       CarbonDimension childDimension) {
     if (parentDimension.getColName().equals(childDimension.getColName())) {
       return false;
@@ -327,7 +327,7 @@ public class QueryModelBuilder {
       boolean[] isFilterMeasures = new boolean[table.getAllMeasures().size()];
       queryModel.setIsFilterDimensions(isFilterDimensions);
       queryModel.setIsFilterMeasures(isFilterMeasures);
-      // In case of Dictionary Include Range Column we donot optimize the range expression
+      // In case of Dictionary Include Range Column we do not optimize the range expression
       if (indexFilter != null) {
         if (isConvertToRangeFilter()) {
           indexFilter.processFilterExpression(isFilterDimensions, isFilterMeasures);

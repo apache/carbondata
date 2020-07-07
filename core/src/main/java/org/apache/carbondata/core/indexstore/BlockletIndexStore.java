@@ -174,7 +174,7 @@ public class BlockletIndexStore
         new ArrayList<>(tableSegmentUniqueIdentifiers.size());
     List<TableBlockIndexUniqueIdentifierWrapper> missedIdentifiersWrapper = new ArrayList<>();
     BlockletIndexWrapper blockletIndexWrapper = null;
-    // Get the indexes for each indexfile from cache.
+    // Get the indexes for each index file from cache.
     try {
       for (TableBlockIndexUniqueIdentifierWrapper
                identifierWrapper : tableSegmentUniqueIdentifiers) {
@@ -278,7 +278,7 @@ public class BlockletIndexStore
   /**
    * Below method will be used to load the segment of segments
    * One segment may have multiple task , so  table segment will be loaded
-   * based on task id and will return the map of taksId to table segment
+   * based on task id and will return the map of taskId to table segment
    * map
    *
    * @return map of taks id to segment mapping
@@ -317,12 +317,12 @@ public class BlockletIndexStore
   private synchronized Object addAndGetSegmentLock(String uniqueIdentifier) {
     // get the segment lock object if it is present then return
     // otherwise add the new lock and return
-    Object segmentLoderLockObject = segmentLockMap.get(uniqueIdentifier);
-    if (null == segmentLoderLockObject) {
-      segmentLoderLockObject = new Object();
-      segmentLockMap.put(uniqueIdentifier, segmentLoderLockObject);
+    Object segmentLockObject = segmentLockMap.get(uniqueIdentifier);
+    if (null == segmentLockObject) {
+      segmentLockObject = new Object();
+      segmentLockMap.put(uniqueIdentifier, segmentLockObject);
     }
-    return segmentLoderLockObject;
+    return segmentLockObject;
   }
 
   /**

@@ -164,20 +164,20 @@ public class BlockletInfo implements Serializable, Writable {
   public void write(DataOutput output) throws IOException {
     output.writeLong(dimensionOffset);
     output.writeLong(measureOffsets);
-    int dsize = dimensionChunkOffsets != null ? dimensionChunkOffsets.size() : 0;
-    output.writeShort(dsize);
-    for (int i = 0; i < dsize; i++) {
+    int dimensionSize = dimensionChunkOffsets != null ? dimensionChunkOffsets.size() : 0;
+    output.writeShort(dimensionSize);
+    for (int i = 0; i < dimensionSize; i++) {
       output.writeLong(dimensionChunkOffsets.get(i));
     }
-    for (int i = 0; i < dsize; i++) {
+    for (int i = 0; i < dimensionSize; i++) {
       output.writeInt(dimensionChunksLength.get(i));
     }
-    int mSize = measureChunkOffsets != null ? measureChunkOffsets.size() : 0;
-    output.writeShort(mSize);
-    for (int i = 0; i < mSize; i++) {
+    int measureSize = measureChunkOffsets != null ? measureChunkOffsets.size() : 0;
+    output.writeShort(measureSize);
+    for (int i = 0; i < measureSize; i++) {
       output.writeLong(measureChunkOffsets.get(i));
     }
-    for (int i = 0; i < mSize; i++) {
+    for (int i = 0; i < measureSize; i++) {
       output.writeInt(measureChunksLength.get(i));
     }
 

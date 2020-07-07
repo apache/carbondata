@@ -62,7 +62,7 @@ public class ExtendedBlockletWrapperContainer implements Writable {
     this.isFallbackJob = isFallbackJob;
   }
 
-  public List<ExtendedBlocklet> getExtendedBlockets(String tablePath, String queryId,
+  public List<ExtendedBlocklet> getExtendedBlocklets(String tablePath, String queryId,
       boolean isCountJob) throws IOException {
     if (!isFallbackJob) {
       int numOfThreads = CarbonProperties.getNumOfThreadsForPruning();

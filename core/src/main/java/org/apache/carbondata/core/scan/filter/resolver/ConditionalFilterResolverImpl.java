@@ -28,7 +28,7 @@ import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpress
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.expression.logical.RangeExpression;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
-import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
+import org.apache.carbondata.core.scan.filter.intf.FilterExecutorType;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
@@ -59,7 +59,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
   /**
    * This API will resolve the filter expression and generates the
    * dictionaries for executing/evaluating the filter expressions in the
-   * executer layer.
+   * executor layer.
    *
    * @throws FilterUnsupportedException
    */
@@ -89,7 +89,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
           // dimColResolvedFilterInfo
           //visitable object with filter member values based on the visitor type, currently there
           //3 types of visitors custom,direct and no dictionary, all types of visitor populate
-          //the visitable instance as per its buisness logic which is different for all the
+          //the visitable instance as per its business logic which is different for all the
           // visitors.
           if (columnExpression.isMeasure()) {
             msrColResolvedFilterInfo.setMeasure(columnExpression.getMeasure());
@@ -160,7 +160,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
   }
 
   /**
-   * Left node will not be presentin this scenario
+   * Left node will not be present in this scenario
    *
    * @return left node of type FilterResolverIntf instance
    */
@@ -170,7 +170,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
   }
 
   /**
-   * Right node will not be presentin this scenario
+   * Right node will not be present in this scenario
    *
    * @return left node of type FilterResolverIntf instance
    */
@@ -203,21 +203,21 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
   }
 
   /**
-   * Method will return the executer type for particular conditional resolver
-   * basically two types of executers will be formed for the conditional query.
+   * Method will return the executor type for particular conditional resolver
+   * basically two types of executors will be formed for the conditional query.
    *
-   * @return the filter executer type
+   * @return the filter executor type
    */
   @Override
-  public FilterExecuterType getFilterExecuterType() {
+  public FilterExecutorType getFilterExecutorType() {
     switch (exp.getFilterExpressionType()) {
       case NOT_EQUALS:
       case NOT_IN:
-        return FilterExecuterType.EXCLUDE;
+        return FilterExecutorType.EXCLUDE;
       case RANGE:
-        return FilterExecuterType.RANGE;
+        return FilterExecutorType.RANGE;
       default:
-        return FilterExecuterType.INCLUDE;
+        return FilterExecutorType.INCLUDE;
     }
 
   }

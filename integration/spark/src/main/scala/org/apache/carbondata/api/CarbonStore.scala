@@ -131,21 +131,21 @@ object CarbonStore {
       //        which exclude the success files and loading files
       // Second,  only collect the stage files having success tag.
       val stageFiles = allFiles.filterNot { file =>
-        file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUBFIX)
+        file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUFFIX)
       }.filterNot { file =>
-        file.getName.endsWith(CarbonTablePath.LOADING_FILE_SUBFIX)
+        file.getName.endsWith(CarbonTablePath.LOADING_FILE_SUFFIX)
       }.filter { file =>
-        allFiles.contains(file.getName + CarbonTablePath.SUCCESS_FILE_SUBFIX)
+        allFiles.contains(file.getName + CarbonTablePath.SUCCESS_FILE_SUFFIX)
       }.sortWith {
         (file1, file2) => file1.getLastModifiedTime > file2.getLastModifiedTime
       }
       // 3. Get the unloaded stage files, which haven't loading tag.
       val unloadedFiles = stageFiles.filterNot { file =>
-        allFiles.contains(file.getName + CarbonTablePath.LOADING_FILE_SUBFIX)
+        allFiles.contains(file.getName + CarbonTablePath.LOADING_FILE_SUFFIX)
       }
       // 4. Get the loading stage files, which have loading tag.
       val loadingFiles = stageFiles.filter { file =>
-        allFiles.contains(file.getName + CarbonTablePath.LOADING_FILE_SUBFIX)
+        allFiles.contains(file.getName + CarbonTablePath.LOADING_FILE_SUFFIX)
       }
       (unloadedFiles, loadingFiles)
     } else {

@@ -116,11 +116,11 @@ public class CarbonDeleteFilesDataReader {
 
   /**
    * Below method will be used to read the delete delta files
-   * and get the map of blockletid and page id mapping to deleted
+   * and get the map of blockletId and page id mapping to deleted
    * rows
    *
    * @param deltaFiles delete delta files array
-   * @return map of blockletid_pageid to deleted rows
+   * @return map of blockletId_pageId to deleted rows
    */
   public Map<String, DeleteDeltaVo> getDeletedRowsDataVo(String[] deltaFiles) {
     List<Future<DeleteDeltaBlockDetails>> taskSubmitList = new ArrayList<>();

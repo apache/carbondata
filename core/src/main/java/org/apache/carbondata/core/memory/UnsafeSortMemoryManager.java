@@ -43,14 +43,14 @@ public class UnsafeSortMemoryManager {
       LogServiceFactory.getLogService(UnsafeSortMemoryManager.class.getName());
 
   /**
-   * offheap is enabled
+   * off-heap is enabled
    */
   private static boolean offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
           CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
 
   /**
-   * map to keep taskid to memory blocks
+   * map to keep task id to memory blocks
    */
   private static Map<String, Set<MemoryBlock>> taskIdToMemoryBlockMap;
 
@@ -145,24 +145,24 @@ public class UnsafeSortMemoryManager {
   public synchronized void freeMemoryAll(String taskId) {
     Set<MemoryBlock> memoryBlockSet = null;
     memoryBlockSet = taskIdToMemoryBlockMap.remove(taskId);
-    long occuppiedMemory = 0;
+    long occupiedMemory = 0;
     if (null != memoryBlockSet) {
       Iterator<MemoryBlock> iterator = memoryBlockSet.iterator();
       MemoryBlock memoryBlock = null;
       while (iterator.hasNext()) {
         memoryBlock = iterator.next();
         if (!memoryBlock.isFreedStatus()) {
-          occuppiedMemory += memoryBlock.size();
+          occupiedMemory += memoryBlock.size();
           allocator.free(memoryBlock);
         }
       }
     }
-    memoryUsed -= occuppiedMemory;
+    memoryUsed -= occupiedMemory;
     memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug(
           String.format("Freeing sort memory of size: %d, current available memory is: %d",
-              occuppiedMemory, totalMemory - memoryUsed));
+              occupiedMemory, totalMemory - memoryUsed));
     }
     LOGGER.info(String.format(
         "Total sort memory used after task %s is %d. Current running tasks are: %s",

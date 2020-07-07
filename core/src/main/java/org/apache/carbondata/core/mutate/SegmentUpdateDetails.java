@@ -180,16 +180,16 @@ public class SegmentUpdateDetails implements Serializable {
   /**
    * returns timestamp as long value
    *
-   * @param timtstamp
+   * @param timestamp
    * @return
    */
-  private Long getTimeStampAsLong(String timtstamp) {
+  private Long getTimeStampAsLong(String timestamp) {
     long longValue = 0;
     try {
-      longValue = Long.parseLong(timtstamp);
+      longValue = Long.parseLong(timestamp);
     } catch (NumberFormatException nfe) {
       if (LOGGER.isDebugEnabled()) {
-        String errorMsg = "Invalid timestamp : " + timtstamp;
+        String errorMsg = "Invalid timestamp : " + timestamp;
         LOGGER.debug(errorMsg);
       }
     }

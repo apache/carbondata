@@ -507,7 +507,7 @@ case class CarbonInsertFromStageCommand(
           // Get the loading files path
           val stageLoadingFile =
             FileFactory.getCarbonFile(files._1.getAbsolutePath +
-              CarbonTablePath.LOADING_FILE_SUBFIX);
+              CarbonTablePath.LOADING_FILE_SUFFIX);
           // Try to create loading files
           // make isFailed to be true if createNewFile return false.
           // the reason can be file exists or exceptions.
@@ -565,7 +565,7 @@ case class CarbonInsertFromStageCommand(
           // Delete three types of file: stage|.success|.loading
           val stageLoadingFile =
             FileFactory.getCarbonFile(files._1.getAbsolutePath
-              + CarbonTablePath.LOADING_FILE_SUBFIX);
+              + CarbonTablePath.LOADING_FILE_SUFFIX);
           var isFailed = false
           // If delete() return false, maybe the reason is FileNotFount or FileFailedClean.
           // Considering FileNotFound means FileCleanSucessfully.
@@ -657,7 +657,7 @@ case class CarbonInsertFromStageCommand(
     if (dir.exists()) {
       val allFiles = dir.listFiles()
       val successFiles = allFiles.filter { file =>
-        file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUBFIX)
+        file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUFFIX)
       }.map { file =>
         (file.getName.substring(0, file.getName.indexOf(".")), file)
       }.toMap
@@ -669,7 +669,7 @@ case class CarbonInsertFromStageCommand(
       // 1) stages never loaded, choose the stages without '.loading' tag.
       // 2) stages loaded timeout, the timeout threshold depends on INSERT_STAGE_TIMEOUT
       val loadingFiles = allFiles.filter { file =>
-        file.getName.endsWith(CarbonTablePath.LOADING_FILE_SUBFIX)
+        file.getName.endsWith(CarbonTablePath.LOADING_FILE_SUFFIX)
       }.filter { file =>
         (System.currentTimeMillis() - file.getLastModifiedTime) <
           CarbonInsertFromStageCommand.INSERT_STAGE_TIMEOUT
@@ -678,9 +678,9 @@ case class CarbonInsertFromStageCommand(
       }.toMap
 
       val stageFiles = allFiles.filter { file =>
-        !file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUBFIX)
+        !file.getName.endsWith(CarbonTablePath.SUCCESS_FILE_SUFFIX)
       }.filter { file =>
-        !file.getName.endsWith(CarbonTablePath.LOADING_FILE_SUBFIX)
+        !file.getName.endsWith(CarbonTablePath.LOADING_FILE_SUFFIX)
       }.filter { file =>
         successFiles.contains(file.getName)
       }.filterNot { file =>

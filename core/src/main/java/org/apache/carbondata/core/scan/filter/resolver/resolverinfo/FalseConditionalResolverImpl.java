@@ -18,7 +18,7 @@
 package org.apache.carbondata.core.scan.filter.resolver.resolverinfo;
 
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
+import org.apache.carbondata.core.scan.filter.intf.FilterExecutorType;
 import org.apache.carbondata.core.scan.filter.resolver.ConditionalFilterResolverImpl;
 
 /* The expression with If FALSE will be resolved setting empty bitset. */
@@ -36,18 +36,18 @@ public class FalseConditionalResolverImpl extends ConditionalFilterResolverImpl 
   }
 
   /**
-   * This method will provide the executer type to the callee inorder to identify
-   * the executer type for the filter resolution, False Expresssion willl not execute anything.
+   * This method will provide the executor type to the callee inorder to identify
+   * the executer type for the filter resolution, False Expression will not execute anything.
    * it will return empty bitset
    */
   @Override
-  public FilterExecuterType getFilterExecuterType() {
-    return FilterExecuterType.FALSE;
+  public FilterExecutorType getFilterExecutorType() {
+    return FilterExecutorType.FALSE;
   }
 
   /**
    * Method will the read filter expression corresponding to the resolver.
-   * This method is required in row level executer inorder to evaluate the filter
+   * This method is required in row level executor inorder to evaluate the filter
    * expression against spark, as mentioned above row level is a special type
    * filter resolver.
    *

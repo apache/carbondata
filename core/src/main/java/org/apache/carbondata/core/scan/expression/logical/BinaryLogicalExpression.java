@@ -48,7 +48,7 @@ public abstract class BinaryLogicalExpression extends BinaryExpression {
     return listOfExp;
   }
 
-  // Will get the column informations involved in the expressions by
+  // Will get the column information involved in the expressions by
   // traversing the tree
   public List<ColumnExpression> getColumnList() {
     // TODO

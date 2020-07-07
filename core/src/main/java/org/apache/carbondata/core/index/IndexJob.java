@@ -28,7 +28,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 /**
  * Distributable index job to execute the #IndexInputFormat in cluster. it prunes the
- * indexes distributably and returns the final blocklet list
+ * indexes distributed and returns the final blocklet list
  */
 public interface IndexJob extends Serializable {
 

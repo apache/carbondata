@@ -93,7 +93,7 @@ public class BlockletIndexInputFormat
         IndexStoreManager.getInstance().getDefaultIndex(table).getIndexFactory();
     CacheableIndex factory = (CacheableIndex) indexFactory;
     List<IndexInputSplit> validDistributables =
-        factory.getAllUncachedDistributables(validSegments, indexExprWrapper);
+        factory.getAllUncached(validSegments, indexExprWrapper);
     if (!validSegments.isEmpty()) {
       this.readCommittedScope = validSegments.get(0).getReadCommittedScope();
     }

@@ -137,7 +137,7 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
   private List<ParentColumnTableRelation> parentColumnTableRelations;
 
   /**
-   * timeseries function applied on column
+   * time-series function applied on column
    */
   private String timeSeriesFunction = "";
 
@@ -419,7 +419,7 @@ public class ColumnSchema implements Serializable, Writable, Cloneable {
   }
 
   /**
-   * return columnproperties
+   * return column properties
    */
   public Map<String, String> getColumnProperties() {
     return columnProperties;

@@ -26,14 +26,14 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
-import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertableVector;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertibleVector;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * Below class will be used to store fixed length dimension data
  */
-public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimensionDataChunkStore {
+public class SafeFixedLengthDimensionDataChunkStore extends SafeAbstractDimensionDataChunkStore {
 
   /**
    * Size of each value
@@ -58,8 +58,8 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
     vector = ColumnarVectorWrapperDirectFactory
         .getDirectVectorWrapperFactory(vector, invertedIndex, nullBits, deletedRows, false, false);
     fillVector(data, vectorInfo, vector);
-    if (vector instanceof ConvertableVector) {
-      ((ConvertableVector) vector).convert();
+    if (vector instanceof ConvertibleVector) {
+      ((ConvertibleVector) vector).convert();
     }
   }
 
@@ -102,8 +102,8 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
    */
   @Override
   public byte[] getRow(int rowId) {
-    // if column was explicitly sorted we need to get the rowid based inverted index reverse
-    if (isExplictSorted) {
+    // if column was explicitly sorted we need to get the row id based inverted index reverse
+    if (isExplicitSorted) {
       rowId = invertedIndexReverse[rowId];
     }
     // creating a row
@@ -123,8 +123,8 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
    */
   @Override
   public int getSurrogate(int index) {
-    // if column was explicitly sorted we need to get the rowid based inverted index reverse
-    if (isExplictSorted) {
+    // if column was explicitly sorted we need to get the row id based inverted index reverse
+    if (isExplicitSorted) {
       index = invertedIndexReverse[index];
     }
     // below part is to convert the byte array to surrogate value
@@ -141,8 +141,8 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
    */
   @Override
   public void fillRow(int rowId, byte[] buffer, int offset) {
-    // if column was explicitly sorted we need to get the rowid based inverted index reverse
-    if (isExplictSorted) {
+    // if column was explicitly sorted we need to get the row id based inverted index reverse
+    if (isExplicitSorted) {
       rowId = invertedIndexReverse[rowId];
     }
     //copy the row from memory block based on offset

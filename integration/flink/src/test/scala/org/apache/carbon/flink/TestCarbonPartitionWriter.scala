@@ -426,7 +426,7 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
     assert(unloadedFiles.length > 0)
     val loadingFilesCountBefore = loadingFiles.length
     FileFactory.getCarbonFile(unloadedFiles(0).getAbsolutePath +
-      CarbonTablePath.LOADING_FILE_SUBFIX).createNewFile()
+      CarbonTablePath.LOADING_FILE_SUFFIX).createNewFile()
     loadingFiles = CarbonStore.listStageFiles(stagePath)._2
     val loadingFilesCountAfter = loadingFiles.length
     assert(loadingFilesCountAfter == loadingFilesCountBefore + 1)

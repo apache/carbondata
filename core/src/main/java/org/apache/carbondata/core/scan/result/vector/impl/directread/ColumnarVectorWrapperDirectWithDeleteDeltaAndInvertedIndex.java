@@ -27,8 +27,8 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 
 /**
- * Column vector for column pages which has delete delta and inverted index, so it uses delta biset
- * to filter out data and use inverted index before filling to actual vector
+ * Column vector for column pages which has delete delta and inverted index, so it uses delta
+ * bitset to filter out data and use inverted index before filling to actual vector
  */
 public class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
     extends ColumnarVectorWrapperDirectWithInvertedIndex {
@@ -48,7 +48,7 @@ public class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
    * @param invertedIndex Inverted index of the column
    * @param nullBits Null row ordinals in the bitset
    * @param isnullBitsExists whether to consider inverted index while setting null bitset or not.
-   *                          we are having nullbitset even for dimensions also.
+   *                          we are having nullBitset even for dimensions also.
    *                          But some dimension columns still don't have nullbitset.
    *                          So if null bitset does not exist then
    *                          it should not inverted index while setting the null

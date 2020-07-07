@@ -27,7 +27,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.filter.executer.FilterBitSetUpdater;
-import org.apache.carbondata.core.scan.filter.executer.MeasureColumnExecuterFilterInfo;
+import org.apache.carbondata.core.scan.filter.executer.MeasureColumnExecutorFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -50,19 +50,19 @@ public class FilterExecutorUtil {
    *
    * @param page
    * @param bitSet
-   * @param measureColumnExecuterFilterInfo
+   * @param measureColumnExecutorFilterInfo
    * @param measureColumnResolvedFilterInfo
    * @param filterBitSetUpdater
    */
   public static void executeIncludeExcludeFilterForMeasure(ColumnPage page, BitSet bitSet,
-      MeasureColumnExecuterFilterInfo measureColumnExecuterFilterInfo,
+      MeasureColumnExecutorFilterInfo measureColumnExecutorFilterInfo,
       MeasureColumnResolvedFilterInfo measureColumnResolvedFilterInfo,
       FilterBitSetUpdater filterBitSetUpdater) {
     final CarbonMeasure measure = measureColumnResolvedFilterInfo.getMeasure();
     final DataType dataType = FilterUtil.getMeasureDataType(measureColumnResolvedFilterInfo);
     int numberOfRows = page.getPageSize();
     BitSet nullBitSet = page.getNullBits();
-    Object[] filterKeys = measureColumnExecuterFilterInfo.getFilterKeys();
+    Object[] filterKeys = measureColumnExecutorFilterInfo.getFilterKeys();
     // to handle the null value
     for (int i = 0; i < filterKeys.length; i++) {
       if (filterKeys[i] == null) {
@@ -71,7 +71,7 @@ public class FilterExecutorUtil {
         }
       }
     }
-    AbstractCollection filterSet = measureColumnExecuterFilterInfo.getFilterSet();
+    AbstractCollection filterSet = measureColumnExecutorFilterInfo.getFilterSet();
     if (dataType == DataTypes.BYTE) {
       ByteOpenHashSet byteOpenHashSet = (ByteOpenHashSet) filterSet;
       for (int i = 0; i < numberOfRows; i++) {

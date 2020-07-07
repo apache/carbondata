@@ -97,7 +97,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
    * LO: Last Offset
    *
    * Read:
-   * FD: Read directly based of byte postion added in CarbonRowSchema
+   * FD: Read directly based of byte position added in CarbonRowSchema
    *
    * VD: Read based on below logic
    * if not last variable column schema
@@ -144,7 +144,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
     bytePosition += CarbonCommonConstants.INT_SIZE_IN_BYTE;
     // start byte position of variable length data
     int varColPosition = bytePosition + CarbonCommonConstants.INT_SIZE_IN_BYTE;
-    // current position refers to current byte postion in memory block
+    // current position refers to current byte position in memory block
     int currentPosition;
     for (int i = 0; i < schema.length; i++) {
       switch (schema[i].getSchemaType()) {
@@ -167,11 +167,11 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
           break;
       }
     }
-    // writting the last offset
+    // writing the last offset
     getUnsafe()
         .putInt(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + pointer + bytePosition,
             varColPosition);
-    // after adding last offset increament the length by 4 bytes as last postion
+    // after adding last offset increment the length by 4 bytes as last position
     // written as INT
     runningLength += CarbonCommonConstants.INT_SIZE_IN_BYTE;
     pointers[rowCount++] = pointer;

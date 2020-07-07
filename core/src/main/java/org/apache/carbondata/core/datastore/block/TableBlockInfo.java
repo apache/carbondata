@@ -233,7 +233,7 @@ public class TableBlockInfo implements Distributable, Serializable {
 
     int compareResult = 0;
     // get the segment id
-    // converr seg ID to double.
+    // convert segment ID to double.
 
     double seg1 = Double.parseDouble(segment.getSegmentNo());
     double seg2 = Double.parseDouble(((TableBlockInfo) other).segment.getSegmentNo());

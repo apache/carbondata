@@ -32,7 +32,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
  * on the implicit column filter values
  */
 public class ImplicitIncludeFilterExecutorImpl
-    implements FilterExecuter, ImplicitColumnFilterExecutor {
+    implements FilterExecutor, ImplicitColumnFilterExecutor {
 
   private final DimColumnResolvedFilterInfo dimColumnEvaluatorInfo;
 
@@ -111,7 +111,7 @@ public class ImplicitIncludeFilterExecutorImpl
 
   /**
    * For implicit column filtering, complete data need to be selected. As it is a special case
-   * no data need to be discarded, implicit filtering is only for slecting block and blocklets
+   * no data need to be discarded, implicit filtering is only for selecting block and blocklets
    *
    * @param numberOfRows
    * @return

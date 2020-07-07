@@ -15,16 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.scan.result.vector.impl.directread;
+package org.apache.carbondata.core.scan.filter.optimizer;
 
-/**
- * This interface provides method to convert the values by using inverted index and delete delta
- * and fill to the underlying vector.
- */
-public interface ConvertableVector {
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.RangeExpressionEvaluator;
+import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
 
-  /**
-   * Convert the values and fill it to the underlying vector.
-   */
-  void convert();
+public class RangeFilterOptimizer implements FilterOptimizer {
+
+  RangeExpressionEvaluator rangeExpEvaluator;
+
+  public RangeFilterOptimizer(Expression filterExpression) {
+    this.rangeExpEvaluator = new RangeExpressionEvaluator(filterExpression);
+
+  }
+
+  @Override
+  public Expression optimizeFilter() {
+    // Check if Range Filter can be applied.
+    // rangeExpEvaluator.rangeExpressionEvaluatorGraphBased(null, null);
+    rangeExpEvaluator.rangeExpressionEvaluatorMapBased();
+    return this.rangeExpEvaluator.getExpr();
+  }
 }

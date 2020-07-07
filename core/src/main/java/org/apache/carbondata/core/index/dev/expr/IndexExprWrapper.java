@@ -53,7 +53,7 @@ public abstract class IndexExprWrapper implements Serializable {
       List<PartitionSpec> partitionsToPrune) throws IOException;
 
   /**
-   * It is used in case on distributable index. First using job it gets all blockets from all
+   * It is used in case on distributable index. First using job it gets all blocklets from all
    * related indexes. These blocklets are passed to this method to apply expression.
    *
    * @param blocklets
@@ -79,7 +79,7 @@ public abstract class IndexExprWrapper implements Serializable {
       throws IOException;
 
   /**
-   * Each leaf node is identified by uniqueid, so if user wants the underlying filter expression for
+   * Each leaf node is identified by uniqueId, so if user wants the underlying filter expression for
    * any leaf node then this method can be used.
    * @param uniqueId
    * @return
@@ -99,7 +99,7 @@ public abstract class IndexExprWrapper implements Serializable {
   /**
    * get the right index wrapper
    */
-  public abstract IndexExprWrapper getRightIndexWrapprt();
+  public abstract IndexExprWrapper getRightIndexWrapper();
 
   /**
    * Convert segment to distributable object.

@@ -166,8 +166,8 @@ object CarbonIndexUtil {
           indexTableDetails.setMajorCompacted(factTableDetails.isMajorCompacted)
           indexTableDetails.setMergedLoadName(factTableDetails.getMergedLoadName)
           indexTableDetails
-            .setModificationOrdeletionTimesStamp(factTableDetails
-              .getModificationOrdeletionTimesStamp)
+            .setModificationOrDeletionTimestamp(factTableDetails
+              .getModificationOrDeletionTimestamp)
           indexTableDetails.setLoadEndTime(factTableDetails.getLoadEndTime)
           indexTableDetails.setVisibility(factTableDetails.getVisibility)
           found = true
