@@ -139,8 +139,8 @@ public class CarbonMultiBlockSplit extends InputSplit implements Serializable, W
     }
     getLocationIfNull();
     out.writeInt(locations.length);
-    for (int i = 0; i < locations.length; i++) {
-      out.writeUTF(locations[i]);
+    for (String location : locations) {
+      out.writeUTF(location);
     }
     out.writeInt(fileFormat.ordinal());
   }

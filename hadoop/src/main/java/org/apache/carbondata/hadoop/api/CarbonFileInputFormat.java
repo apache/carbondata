@@ -20,7 +20,6 @@ package org.apache.carbondata.hadoop.api;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,7 +27,6 @@ import java.util.List;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.IndexFilter;
 import org.apache.carbondata.core.index.Segment;
@@ -94,12 +92,9 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
   }
 
   /**
-   * {@inheritDoc}
-   * Configurations FileInputFormat.INPUT_DIR
-   * are used to get table path to read.
-   *
-   * @param job
-   * @return List<InputSplit> list of CarbonInputSplit
+   * get list of block/blocklet and make them to CarbonInputSplit
+   * @param job JobContext with Configuration
+   * @return list of CarbonInputSplit
    * @throws IOException
    */
   @Override
@@ -114,7 +109,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
     // check for externalTable segment (Segment_null)
     // process and resolve the expression
 
-    ReadCommittedScope readCommittedScope = null;
+    ReadCommittedScope readCommittedScope;
     if (carbonTable.isTransactionalTable()) {
       readCommittedScope = new LatestFilesReadCommittedScope(
           identifier.getTablePath() + "/Fact/Part0/Segment_null/", job.getConfiguration());
@@ -131,7 +126,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
     IndexFilter filter = getFilterPredicates(job.getConfiguration());
 
     // if external table Segments are found, add it to the List
-    List<Segment> externalTableSegments = new ArrayList<Segment>();
+    List<Segment> externalTableSegments = new ArrayList<>();
     Segment seg;
     if (carbonTable.isTransactionalTable()) {
       // SDK some cases write into the Segment Path instead of Table Path i.e. inside
@@ -145,9 +140,9 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       for (LoadMetadataDetails load : loadMetadataDetails) {
         seg = new Segment(load.getLoadName(), null, readCommittedScope);
         if (fileLists != null) {
-          for (int i = 0; i < fileLists.size(); i++) {
+          for (Object fileList : fileLists) {
             String timestamp =
-                CarbonTablePath.DataFileUtil.getTimeStampFromFileName(fileLists.get(i).toString());
+                CarbonTablePath.DataFileUtil.getTimeStampFromFileName(fileList.toString());
             if (timestamp.equals(seg.getSegmentNo())) {
               externalTableSegments.add(seg);
               break;
@@ -170,7 +165,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       // do block filtering and get split
       splits = getSplits(job, filter, externalTableSegments);
     } else {
-      List<CarbonFile> carbonFiles = null;
+      List<CarbonFile> carbonFiles;
       if (null != this.fileLists) {
         carbonFiles = getAllCarbonDataFiles(this.fileLists);
       } else {
@@ -191,13 +186,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         info.setUseMinMaxForPruning(false);
         splits.add(split);
       }
-      Collections.sort(splits, new Comparator<InputSplit>() {
-        @Override
-        public int compare(InputSplit o1, InputSplit o2) {
-          return ((CarbonInputSplit) o1).getFilePath()
-              .compareTo(((CarbonInputSplit) o2).getFilePath());
-        }
-      });
+      splits.sort(Comparator.comparing(o -> ((CarbonInputSplit) o).getFilePath()));
     }
     setAllColumnProjectionIfNotConfigured(job, carbonTable);
     return splits;
@@ -215,12 +204,8 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
   private List<CarbonFile> getAllCarbonDataFiles(String tablePath) {
     List<CarbonFile> carbonFiles;
     try {
-      carbonFiles = FileFactory.getCarbonFile(tablePath).listFiles(true, new CarbonFileFilter() {
-        @Override
-        public boolean accept(CarbonFile file) {
-          return file.getName().endsWith(CarbonTablePath.CARBON_DATA_EXT);
-        }
-      });
+      carbonFiles = FileFactory.getCarbonFile(tablePath).listFiles(true,
+          file -> file.getName().endsWith(CarbonTablePath.CARBON_DATA_EXT));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -228,10 +213,10 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
   }
 
   private List<CarbonFile> getAllCarbonDataFiles(List fileLists) {
-    List<CarbonFile> carbonFiles = new LinkedList<CarbonFile>();
+    List<CarbonFile> carbonFiles = new LinkedList<>();
     try {
-      for (int i = 0; i < fileLists.size(); i++) {
-        carbonFiles.add(FileFactory.getCarbonFile(fileLists.get(i).toString()));
+      for (Object fileList : fileLists) {
+        carbonFiles.add(FileFactory.getCarbonFile(fileList.toString()));
       }
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -247,20 +232,13 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
    * @return
    * @throws IOException
    */
-  private List<InputSplit> getSplits(
-      JobContext job,
-      IndexFilter indexFilter,
+  private List<InputSplit> getSplits(JobContext job, IndexFilter indexFilter,
       List<Segment> validSegments) throws IOException {
-
     numSegments = validSegments.size();
-    List<InputSplit> result = new LinkedList<InputSplit>();
-
     // for each segment fetch blocks matching filter in Driver BTree
-    List<CarbonInputSplit> dataBlocksOfSegment =
-        getDataBlocksOfSegment(job, carbonTable, indexFilter, validSegments,
-            new ArrayList<Segment>(), new ArrayList<String>());
+    List<CarbonInputSplit> dataBlocksOfSegment = getDataBlocksOfSegment(job, carbonTable,
+        indexFilter, validSegments, new ArrayList<>(), new ArrayList<>());
     numBlocks = dataBlocksOfSegment.size();
-    result.addAll(dataBlocksOfSegment);
-    return result;
+    return new LinkedList<>(dataBlocksOfSegment);
   }
 }

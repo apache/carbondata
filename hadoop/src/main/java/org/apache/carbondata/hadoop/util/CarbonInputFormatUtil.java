@@ -21,11 +21,8 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.index.IndexUtil;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 
 import org.apache.hadoop.conf.Configuration;
@@ -33,31 +30,11 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobID;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.log4j.Logger;
 
 /**
  * Utility class
  */
 public class CarbonInputFormatUtil {
-
-  /**
-   * Attribute for Carbon LOGGER.
-   */
-  private static final Logger LOGGER =
-      LogServiceFactory.getLogService(CarbonProperties.class.getName());
-
-  public static <V> CarbonFileInputFormat<V> createCarbonFileInputFormat(
-      AbsoluteTableIdentifier identifier, Job job) throws IOException {
-    CarbonFileInputFormat<V> carbonInputFormat = new CarbonFileInputFormat<V>();
-    CarbonTableInputFormat.setDatabaseName(job.getConfiguration(),
-        identifier.getCarbonTableIdentifier().getDatabaseName());
-    CarbonTableInputFormat
-        .setTableName(job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
-    FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
-    setIndexJobIfConfigured(job.getConfiguration());
-    return carbonInputFormat;
-  }
-
   public static <V> CarbonTableInputFormat<V> createCarbonInputFormat(
       AbsoluteTableIdentifier identifier,
       Job job) throws IOException {
@@ -73,9 +50,6 @@ public class CarbonInputFormatUtil {
 
   /**
    * This method set IndexJob if configured
-   *
-   * @param conf
-   * @throws IOException
    */
   public static void setIndexJobIfConfigured(Configuration conf) throws IOException {
     String className = "org.apache.carbondata.indexserver.EmbeddedIndexJob";
@@ -87,8 +61,7 @@ public class CarbonInputFormatUtil {
   }
 
   public static JobID getJobId(java.util.Date date, int batch) {
-    String jobtrackerID = createJobTrackerID(date);
-    return new JobID(jobtrackerID, batch);
+    String jobTrackerID = createJobTrackerID(date);
+    return new JobID(jobTrackerID, batch);
   }
-
 }

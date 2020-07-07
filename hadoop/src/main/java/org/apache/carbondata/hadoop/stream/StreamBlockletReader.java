@@ -41,10 +41,10 @@ public class StreamBlockletReader {
   private final long limitStart;
   private final long limitEnd;
   private boolean isAlreadySync = false;
-  private Compressor compressor;
+  private final Compressor compressor;
   private int rowNums = 0;
   private int rowIndex = 0;
-  private boolean isHeaderPresent;
+  private final boolean isHeaderPresent;
 
   public StreamBlockletReader(byte[] syncMarker, InputStream in, long limit,
       boolean isHeaderPresent, String compressorName) {
@@ -175,7 +175,7 @@ public class StreamBlockletReader {
     int ch4 = in.read();
     if ((ch1 | ch2 | ch3 | ch4) < 0) throw new EOFException();
     pos += 4;
-    return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
+    return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + ch4);
   }
 
   /**

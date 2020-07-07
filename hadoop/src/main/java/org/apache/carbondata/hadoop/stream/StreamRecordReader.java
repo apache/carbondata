@@ -113,8 +113,8 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
   // empty project, null filter
   protected boolean skipScanData;
 
-  // return raw row for handoff
-  private boolean useRawRow = false;
+  // return raw row for hand off
+  private final boolean useRawRow;
 
   public StreamRecordReader(QueryModel mdl, boolean useRawRow) {
     this.model = mdl;
@@ -137,7 +137,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     // metadata
     hadoopConf = context.getConfiguration();
     if (model == null) {
-      CarbonTableInputFormat format = new CarbonTableInputFormat<Object>();
+      CarbonTableInputFormat<Object> format = new CarbonTableInputFormat<>();
       model = format.createQueryModel(split, context);
     }
     carbonTable = model.getTable();
@@ -169,19 +169,19 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     projection = model.getProjectionColumns();
 
     isRequired = new boolean[storageColumns.length];
-    boolean[] isFiltlerDimensions = model.getIsFilterDimensions();
-    boolean[] isFiltlerMeasures = model.getIsFilterMeasures();
+    boolean[] isFilterDimensions = model.getIsFilterDimensions();
+    boolean[] isFilterMeasures = model.getIsFilterMeasures();
     isFilterRequired = new boolean[storageColumns.length];
     filterMap = new int[storageColumns.length];
     for (int i = 0; i < storageColumns.length; i++) {
       if (storageColumns[i].isDimension()) {
-        if (isFiltlerDimensions[storageColumns[i].getOrdinal()]) {
+        if (isFilterDimensions[storageColumns[i].getOrdinal()]) {
           isRequired[i] = true;
           isFilterRequired[i] = true;
           filterMap[i] = storageColumns[i].getOrdinal();
         }
       } else {
-        if (isFiltlerMeasures[storageColumns[i].getOrdinal()]) {
+        if (isFilterMeasures[storageColumns[i].getOrdinal()]) {
           isRequired[i] = true;
           isFilterRequired[i] = true;
           filterMap[i] = carbonTable.getDimensionOrdinalMax() + storageColumns[i].getOrdinal();
@@ -279,7 +279,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
             scanMore = false;
           } else {
             if (useRawRow) {
-              // read raw row for streaming handoff which does not require decode raw row
+              // read raw row for streaming hand off which does not require decode raw row
               readRawRowFromStream();
             } else {
               readRowFromStream();
@@ -346,11 +346,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
         BitSet bitSet = filter
             .isScanRequired(minMaxIndex.getMaxValues(), minMaxIndex.getMinValues(),
                 minMaxIndex.getIsMinMaxSet());
-        if (bitSet.isEmpty()) {
-          return false;
-        } else {
-          return true;
-        }
+        return !bitSet.isEmpty();
       }
     }
     return true;
@@ -375,7 +371,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
         }
       } else {
         if (isNoDictColumn[colCount]) {
-          int v = 0;
+          int v;
           if (dimensionsIsVarcharTypeMap[colCount]) {
             v = input.readInt();
           } else {
@@ -554,7 +550,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
         outputValues[colCount] = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
       } else {
         if (isNoDictColumn[colCount]) {
-          int v = 0;
+          int v;
           if (dimensionsIsVarcharTypeMap[colCount]) {
             v = input.readInt();
           } else {

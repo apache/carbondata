@@ -59,7 +59,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.log4j.Logger;
 
 /**
- * Outputcommitter which manages the segments during loading.It commits segment information to the
+ * OutputCommitter which manages the segments during loading.It commits segment information to the
  * tablestatus file upon success or fail.
  */
 public class CarbonOutputCommitter extends FileOutputCommitter {
@@ -74,10 +74,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
   }
 
   /**
-   * Update the tablestatus with inprogress while setup the job.
-   *
-   * @param context
-   * @throws IOException
+   * Update the tablestatus with in-progress while setup the job.
    */
   @Override
   public void setupJob(JobContext context) throws IOException {
@@ -104,9 +101,6 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
 
   /**
    * Update the tablestatus as success after job is success
-   *
-   * @param context
-   * @throws IOException
    */
   @Override
   public void commitJob(JobContext context) throws IOException {
@@ -230,7 +224,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       }
     }
     String updateTime =
-        context.getConfiguration().get(CarbonTableOutputFormat.UPADTE_TIMESTAMP, null);
+        context.getConfiguration().get(CarbonTableOutputFormat.UPDATE_TIMESTAMP, null);
     String segmentsToBeDeleted =
         context.getConfiguration().get(CarbonTableOutputFormat.SEGMENTS_TO_BE_DELETED, "");
     List<Segment> segmentDeleteList = Segment.toSegmentList(segmentsToBeDeleted.split(","), null);
@@ -327,10 +321,6 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
   /**
    * Overwrite the partitions in case of overwrite query. It just updates the partition map files
    * of all segment files.
-   *
-   * @param loadModel
-   * @return
-   * @throws IOException
    */
   private String overwritePartitions(CarbonLoadModel loadModel, LoadMetadataDetails newMetaEntry,
       String uuid) throws IOException {
@@ -345,19 +335,18 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
           new SegmentStatusManager(table.getAbsoluteTableIdentifier())
               .getValidAndInvalidSegments(table.isMV()).getValidSegments();
       String uniqueId = String.valueOf(System.currentTimeMillis());
-      List<String> tobeUpdatedSegs = new ArrayList<>();
-      List<String> tobeDeletedSegs = new ArrayList<>();
+      List<String> toBeUpdatedSegments = new ArrayList<>();
+      List<String> toBeDeletedSegments = new ArrayList<>();
       // First drop the partitions from partition mapper files of each segment
       for (Segment segment : validSegments) {
-        new SegmentFileStore(table.getTablePath(), segment.getSegmentFileName())
-            .dropPartitions(segment, partitionSpecs, uniqueId, tobeDeletedSegs, tobeUpdatedSegs);
-
+        new SegmentFileStore(table.getTablePath(), segment.getSegmentFileName()).dropPartitions(
+            segment, partitionSpecs, uniqueId, toBeDeletedSegments, toBeUpdatedSegments);
       }
       newMetaEntry.setUpdateStatusFileName(uniqueId);
       // Commit the removed partitions in carbon store.
       CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid,
-          Segment.toSegmentList(tobeDeletedSegs, null),
-          Segment.toSegmentList(tobeUpdatedSegs, null));
+          Segment.toSegmentList(toBeDeletedSegments, null),
+          Segment.toSegmentList(toBeUpdatedSegments, null));
       return uniqueId;
     }
     return null;
@@ -375,10 +364,6 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
   /**
    * Update the tablestatus as fail if any fail happens.And also clean up the temp folders if any
    * are existed.
-   *
-   * @param context
-   * @param state
-   * @throws IOException
    */
   @Override
   public void abortJob(JobContext context, JobStatus.State state) throws IOException {

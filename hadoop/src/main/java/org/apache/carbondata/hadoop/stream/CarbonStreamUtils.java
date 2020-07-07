@@ -33,9 +33,9 @@ public class CarbonStreamUtils {
 
   }
 
-  public static Object getInstanceWithReflection(Constructor cons, Object... initargs) throws
+  public static Object getInstanceWithReflection(Constructor cons, Object... initArgs) throws
           IllegalAccessException,
           InvocationTargetException, InstantiationException {
-    return cons.newInstance(initargs);
+    return cons.newInstance(initArgs);
   }
 }
