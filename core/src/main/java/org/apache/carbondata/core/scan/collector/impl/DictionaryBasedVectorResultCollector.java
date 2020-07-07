@@ -70,7 +70,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     super(blockExecutionInfos);
     this.isDirectVectorFill = blockExecutionInfos.isDirectVectorFill();
     if (this.isDirectVectorFill) {
-      LOGGER.info("Direct pagewise vector fill collector is used to scan and collect the data");
+      LOGGER.info("Direct page-wise vector fill collector is used to scan and collect the data");
     }
     // initialize only if the current block is not a restructured block else the initialization
     // will be taken care by RestructureBasedVectorResultCollector
@@ -118,7 +118,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
         columnVectorInfo.dimension = queryDimensions[i];
         columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
         columnVectorInfo.genericQueryType =
-            executionInfo.getComlexDimensionInfoMap().get(columnVectorInfo.ordinal);
+            executionInfo.getComplexDimensionInfoMap().get(columnVectorInfo.ordinal);
         allColumnInfo[queryDimensions[i].getOrdinal()] = columnVectorInfo;
       } else {
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
@@ -164,7 +164,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     if (isDirectVectorFill) {
       collectResultInColumnarBatchDirect(scannedResult, columnarBatch);
     } else {
-      int numberOfPages = scannedResult.numberOfpages();
+      int numberOfPages = scannedResult.numberOfPages();
       int filteredRows = 0;
       while (scannedResult.getCurrentPageCounter() < numberOfPages) {
         int currentPageRowCount = scannedResult.getCurrentPageRowCount();
@@ -226,7 +226,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
    */
   private void collectResultInColumnarBatchDirect(BlockletScannedResult scannedResult,
       CarbonColumnarBatch columnarBatch) {
-    int numberOfPages = scannedResult.numberOfpages();
+    int numberOfPages = scannedResult.numberOfPages();
     while (scannedResult.getCurrentPageCounter() < numberOfPages) {
       int currentPageRowCount = scannedResult.getCurrentPageRowCount();
       if (currentPageRowCount == 0) {

@@ -18,7 +18,7 @@
 package org.apache.carbondata.core.locks;
 
 /**
- * This enum is used to define the usecase of the lock.
+ * This enum is used to define the use case of the lock.
  * Each enum value is one specific lock case.
  */
 public class LockUsage {
@@ -26,7 +26,7 @@ public class LockUsage {
   public static final String METADATA_LOCK = "meta.lock";
   public static final String COMPACTION_LOCK = "compaction.lock";
   public static final String HANDOFF_LOCK = "handoff.lock";
-  public static final String SYSTEMLEVEL_COMPACTION_LOCK = "system_level_compaction.lock";
+  public static final String SYSTEM_LEVEL_COMPACTION_LOCK = "system_level_compaction.lock";
   public static final String ALTER_PARTITION_LOCK = "alter_partition.lock";
   public static final String TABLE_STATUS_LOCK = "tablestatus.lock";
   public static final String TABLE_UPDATE_STATUS_LOCK = "tableupdatestatus.lock";

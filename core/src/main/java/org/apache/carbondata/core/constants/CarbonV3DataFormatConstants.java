@@ -49,7 +49,7 @@ public interface CarbonV3DataFormatConstants {
   /**
    * number of column to be read in one IO in query default value
    */
-  String NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE = "10";
+  String NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULT_VALUE = "10";
 
   /**
    * number of column to be read in one IO in query max value

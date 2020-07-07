@@ -90,7 +90,7 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
     this.fileReader = fileReader;
     blockletIterator = new BlockletIterator(blockExecutionInfo.getFirstDataBlock(),
         blockExecutionInfo.getNumberOfBlockToScan());
-    if (blockExecutionInfo.getFilterExecuterTree() != null) {
+    if (blockExecutionInfo.getFilterExecutorTree() != null) {
       blockletScanner = new BlockletFilterScanner(blockExecutionInfo, queryStatisticsModel);
     } else {
       blockletScanner = new BlockletFullScanner(blockExecutionInfo, queryStatisticsModel);

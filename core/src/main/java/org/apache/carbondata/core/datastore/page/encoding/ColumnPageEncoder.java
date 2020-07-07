@@ -133,14 +133,14 @@ public abstract class ColumnPageEncoder {
 
   private List<ByteBuffer> buildEncoderMeta(ColumnPage inputPage) throws IOException {
     ColumnPageEncoderMeta meta = getEncoderMeta(inputPage);
-    List<ByteBuffer> metaDatas = new ArrayList<>();
+    List<ByteBuffer> metaData = new ArrayList<>();
     if (meta != null) {
       ByteArrayOutputStream stream = new ByteArrayOutputStream();
       DataOutputStream out = new DataOutputStream(stream);
       meta.write(out);
-      metaDatas.add(ByteBuffer.wrap(stream.toByteArray()));
+      metaData.add(ByteBuffer.wrap(stream.toByteArray()));
     }
-    return metaDatas;
+    return metaData;
   }
 
   private void fillMinMaxIndex(ColumnPage inputPage, DataChunk2 dataChunk) {
@@ -176,8 +176,8 @@ public abstract class ColumnPageEncoder {
    * `buildPageMetadata` will call this for backward compatibility
    */
   protected void fillLegacyFields(DataChunk2 dataChunk) {
-    // Subclass should override this to update datachunk2 if any backward compatibility if required,
-    // For example, when using IndexStorageCodec, rle_page_length and rowid_page_length need to be
+    // Subclass should override this to update DataChunk2 if any backward compatibility if required,
+    // For example, when using IndexStorageCodec, rle_page_length and rowId_page_length need to be
     // updated
   }
 

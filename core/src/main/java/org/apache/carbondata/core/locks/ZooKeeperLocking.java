@@ -99,7 +99,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
       createBaseNode();
       // if exists returns null then path doesnt exist. so creating.
       if (null == zk.exists(this.tableIdFolder, true)) {
-        createRecursivly(this.tableIdFolder);
+        createRecursively(this.tableIdFolder);
       }
       // if exists returns null then path doesnt exist. so creating.
       if (null == zk.exists(this.lockTypeFolder, true)) {
@@ -122,15 +122,15 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   }
 
   /**
-   * Create zookeepr node if not exist
+   * Create zookeeper node if not exist
    * @param path
    * @throws KeeperException
    * @throws InterruptedException
    */
-  private void createRecursivly(String path) throws KeeperException, InterruptedException {
+  private void createRecursively(String path) throws KeeperException, InterruptedException {
     if (zk.exists(path, true) == null && path.length() > 0) {
       String temp = path.substring(0, path.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
-      createRecursivly(temp);
+      createRecursively(temp);
       zk.create(path, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
     }
   }
@@ -149,7 +149,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
       // get the children present in zooKeeperLocation.
       List<String> nodes = zk.getChildren(this.lockTypeFolder, null);
 
-      // sort the childrens
+      // sort the children
       Collections.sort(nodes);
 
       // here the logic is , for each lock request zookeeper will create a file ending with

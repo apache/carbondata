@@ -60,10 +60,10 @@ public class CarbonDataReaderFactory {
    * @return dimension column data reader based on version number
    */
   public DimensionColumnChunkReader getDimensionColumnChunkReader(ColumnarFormatVersion version,
-      BlockletInfo blockletInfo, String filePath, boolean readPagebyPage) {
+      BlockletInfo blockletInfo, String filePath, boolean readPageByPage) {
     switch (version) {
       case V3:
-        if (readPagebyPage) {
+        if (readPageByPage) {
           return new DimensionChunkPageReaderV3(blockletInfo, filePath);
         } else {
           return new DimensionChunkReaderV3(blockletInfo, filePath);
@@ -82,10 +82,10 @@ public class CarbonDataReaderFactory {
    * @return measure column data reader based on version number
    */
   public MeasureColumnChunkReader getMeasureColumnChunkReader(ColumnarFormatVersion version,
-      BlockletInfo blockletInfo, String filePath, boolean readPagebyPage) {
+      BlockletInfo blockletInfo, String filePath, boolean readPageByPage) {
     switch (version) {
       case V3:
-        if (readPagebyPage) {
+        if (readPageByPage) {
           return new MeasureChunkPageReaderV3(blockletInfo, filePath);
         } else {
           return new MeasureChunkReaderV3(blockletInfo, filePath);

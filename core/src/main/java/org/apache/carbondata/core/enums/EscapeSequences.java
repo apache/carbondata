@@ -27,7 +27,7 @@ public enum EscapeSequences {
   private String name;
 
   /**
-   * unicode of the escapechar
+   * unicode of the escape char
    */
   private char escapeChar;
 

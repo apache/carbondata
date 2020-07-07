@@ -29,7 +29,7 @@ import org.junit.Test;
 
 import junit.framework.TestCase;
 
-public class IncludeFilterExecuterImplTest extends TestCase {
+public class IncludeFilterExecutorImplTest extends TestCase {
 
   /**
    * @throws Exception
@@ -165,7 +165,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
     System.out.println("dimColumnSize: " + dimColumnSize);
     
     FixedLengthDimensionColumnPage dimensionColumnDataChunk;
-    DimColumnExecuterFilterInfo dim = new DimColumnExecuterFilterInfo();
+    DimColumnExecutorFilterInfo dim = new DimColumnExecutorFilterInfo();
 
     byte[] dataChunk = new byte[dataChunkSize * dimColumnSize];
     for (int i = 0; i < dataChunkSize; i++) {
@@ -283,7 +283,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
     // column dictionary size
     int dimColumnSize = 2;
     FixedLengthDimensionColumnPage dimensionColumnDataChunk;
-    DimColumnExecuterFilterInfo dim = new DimColumnExecuterFilterInfo();
+    DimColumnExecutorFilterInfo dim = new DimColumnExecutorFilterInfo();
 
     byte[] dataChunk = new byte[dataChunkSize * dimColumnSize];
     for (int i = 0; i < dataChunkSize; i++) {

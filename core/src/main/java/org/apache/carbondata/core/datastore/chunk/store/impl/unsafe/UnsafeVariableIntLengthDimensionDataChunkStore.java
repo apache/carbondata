@@ -23,13 +23,13 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 /**
  * Below class is responsible to store variable length dimension data chunk in
- * memory Memory occupied can be on heap or offheap using unsafe interface
+ * memory Memory occupied can be on heap or off-heap using unsafe interface
  */
 public class UnsafeVariableIntLengthDimensionDataChunkStore
     extends UnsafeVariableLengthDimensionDataChunkStore {
-  public UnsafeVariableIntLengthDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
+  public UnsafeVariableIntLengthDimensionDataChunkStore(long totalSize, boolean isInvertedIndex,
       int numberOfRows, int dataLength) {
-    super(totalSize, isInvertedIdex, numberOfRows, dataLength);
+    super(totalSize, isInvertedIndex, numberOfRows, dataLength);
   }
 
   @Override

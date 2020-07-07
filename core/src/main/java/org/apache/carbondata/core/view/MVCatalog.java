@@ -20,7 +20,7 @@ package org.apache.carbondata.core.view;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 
 /**
- * This is the interface for inmemory catalog registry for mv.
+ * This is the interface for in-memory catalog registry for mv.
  * For query rewrite.
  * @since 1.4.0
  */

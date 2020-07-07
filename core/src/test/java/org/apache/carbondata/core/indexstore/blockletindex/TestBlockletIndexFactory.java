@@ -35,7 +35,6 @@ import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.BlockletIndexWrapper;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifierWrapper;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
@@ -140,7 +139,7 @@ public class TestBlockletIndexFactory {
       }
     };
     List<IndexInputSplit> validDistributables =
-        blockletIndexFactory.getAllUncachedDistributables(indexInputSplits);
+        blockletIndexFactory.getAllUncached(indexInputSplits);
     assert 1 == validDistributables.size();
   }
 }

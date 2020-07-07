@@ -51,7 +51,7 @@ public final class DataTypeUtil {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(DataTypeUtil.class.getName());
 
-  private static final ThreadLocal<DateFormat> timeStampformatter = new ThreadLocal<DateFormat>() {
+  private static final ThreadLocal<DateFormat> timestampFormatter = new ThreadLocal<DateFormat>() {
     @Override
     protected DateFormat initialValue() {
       DateFormat dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
@@ -62,7 +62,7 @@ public final class DataTypeUtil {
     }
   };
 
-  private static final ThreadLocal<DateFormat> dateformatter = new ThreadLocal<DateFormat>() {
+  private static final ThreadLocal<DateFormat> dateFormatter = new ThreadLocal<DateFormat>() {
     @Override
     protected DateFormat initialValue() {
       return new SimpleDateFormat(CarbonProperties.getInstance()
@@ -164,7 +164,7 @@ public final class DataTypeUtil {
           dateFormatter = new SimpleDateFormat(timeStampFormat);
           dateFormatter.setLenient(false);
         } else {
-          dateFormatter = timeStampformatter.get();
+          dateFormatter = timestampFormatter.get();
         }
         dateToStr = dateFormatter.parse(dimValue);
         return dateToStr.getTime();
@@ -257,11 +257,11 @@ public final class DataTypeUtil {
   public static byte[] bigDecimalToByte(BigDecimal num) {
     BigInteger sig = new BigInteger(num.unscaledValue().toString());
     int scale = num.scale();
-    byte[] bscale = { (byte) (scale) };
+    byte[] scaleBytes = { (byte) (scale) };
     byte[] buff = sig.toByteArray();
-    byte[] completeArr = new byte[buff.length + bscale.length];
-    System.arraycopy(bscale, 0, completeArr, 0, bscale.length);
-    System.arraycopy(buff, 0, completeArr, bscale.length, buff.length);
+    byte[] completeArr = new byte[buff.length + scaleBytes.length];
+    System.arraycopy(scaleBytes, 0, completeArr, 0, scaleBytes.length);
+    System.arraycopy(buff, 0, completeArr, scaleBytes.length, buff.length);
     return completeArr;
   }
 
@@ -273,9 +273,9 @@ public final class DataTypeUtil {
    */
   public static BigDecimal byteToBigDecimal(byte[] raw) {
     int scale = (raw[0] & 0xFF);
-    byte[] unscale = new byte[raw.length - 1];
-    System.arraycopy(raw, 1, unscale, 0, unscale.length);
-    BigInteger sig = new BigInteger(unscale);
+    byte[] value = new byte[raw.length - 1];
+    System.arraycopy(raw, 1, value, 0, value.length);
+    BigInteger sig = new BigInteger(value);
     return new BigDecimal(sig, scale);
   }
 
@@ -287,9 +287,9 @@ public final class DataTypeUtil {
    */
   public static BigDecimal byteToBigDecimal(byte[] raw, int offset, int length) {
     int scale = (raw[offset] & 0xFF);
-    byte[] unscale = new byte[length - 1];
-    System.arraycopy(raw, offset + 1, unscale, 0, unscale.length);
-    BigInteger sig = new BigInteger(unscale);
+    byte[] value = new byte[length - 1];
+    System.arraycopy(raw, offset + 1, value, 0, value.length);
+    BigInteger sig = new BigInteger(value);
     return new BigDecimal(sig, scale);
   }
 
@@ -354,7 +354,7 @@ public final class DataTypeUtil {
           return null;
         }
         try {
-          Date dateToStr = dateformatter.get().parse(data);
+          Date dateToStr = dateFormatter.get().parse(data);
           return dateToStr.getTime() * 1000;
         } catch (ParseException e) {
           LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
@@ -365,7 +365,7 @@ public final class DataTypeUtil {
           return null;
         }
         try {
-          Date dateToStr = timeStampformatter.get().parse(data);
+          Date dateToStr = timestampFormatter.get().parse(data);
           return dateToStr.getTime() * 1000;
         } catch (ParseException e) {
           LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
@@ -411,7 +411,7 @@ public final class DataTypeUtil {
           dateFormatter = new SimpleDateFormat(dateFormat);
           dateFormatter.setLenient(false);
         } else {
-          dateFormatter = timeStampformatter.get();
+          dateFormatter = timestampFormatter.get();
         }
         dateToStr = dateFormatter.parse(dimensionValue);
         return ByteUtil.toXorBytes(dateToStr.getTime());
@@ -446,7 +446,7 @@ public final class DataTypeUtil {
           dateFormatter = new SimpleDateFormat(dateFormat);
           dateFormatter.setLenient(false);
         } else {
-          dateFormatter = timeStampformatter.get();
+          dateFormatter = timestampFormatter.get();
         }
         dateToStr = dateFormatter.parse(dimensionValue);
         return dateToStr.getTime();
@@ -694,7 +694,7 @@ public final class DataTypeUtil {
           return null;
         }
         try {
-          Date dateToStr = dateformatter.get().parse(data5);
+          Date dateToStr = dateFormatter.get().parse(data5);
           return dateToStr.getTime() * 1000;
         } catch (ParseException e) {
           LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
@@ -706,7 +706,7 @@ public final class DataTypeUtil {
           return null;
         }
         try {
-          Date dateToStr = timeStampformatter.get().parse(data6);
+          Date dateToStr = timestampFormatter.get().parse(data6);
           return dateToStr.getTime() * 1000;
         } catch (ParseException e) {
           LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
@@ -739,7 +739,7 @@ public final class DataTypeUtil {
   }
 
   /**
-   * Below method will be used to basically to know whether any non parseable
+   * Below method will be used to basically to know whether any non parsable
    * data is present or not. if present then return null so that system can
    * process to default null member value.
    *
@@ -908,8 +908,8 @@ public final class DataTypeUtil {
               .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         } else {
           try {
-            timeStampformatter.remove();
-            Date dateToStr = timeStampformatter.get().parse(data);
+            timestampFormatter.remove();
+            Date dateToStr = timestampFormatter.get().parse(data);
             return ByteUtil.toXorBytes(dateToStr.getTime());
           } catch (ParseException e) {
             LOGGER.error(
@@ -983,8 +983,8 @@ public final class DataTypeUtil {
   public static void setDataTypeConverter(DataTypeConverter converterLocal) {
     if (converterLocal != null) {
       converter = converterLocal;
-      timeStampformatter.remove();
-      dateformatter.remove();
+      timestampFormatter.remove();
+      dateFormatter.remove();
     }
   }
 
@@ -992,8 +992,8 @@ public final class DataTypeUtil {
    * As each load can have it's own time format. Reset the thread local for each load.
    */
   public static void clearFormatter() {
-    timeStampformatter.remove();
-    dateformatter.remove();
+    timestampFormatter.remove();
+    dateFormatter.remove();
   }
 
   public static DataTypeConverter getDataTypeConverter() {

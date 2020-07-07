@@ -23,7 +23,7 @@ import java.util.BitSet;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 
 /**
- * Column vector for column pages which has delete delta, so it uses delta biset to filter out
+ * Column vector for column pages which has delete delta, so it uses delta bitset to filter out
  * data before filling to actual vector.
  */
 class ColumnarVectorWrapperDirectWithDeleteDelta extends AbstractCarbonColumnarVector {

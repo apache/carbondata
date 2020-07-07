@@ -35,7 +35,7 @@ public class CarbonDimension extends CarbonColumn {
 
   /**
    * in case of dictionary dimension this will store the ordinal
-   * of the dimension in mdkey
+   * of the dimension in MDKey
    */
   private int keyOrdinal;
 
@@ -86,7 +86,7 @@ public class CarbonDimension extends CarbonColumn {
     return keyOrdinal;
   }
 
-  public void setComplexTypeOridnal(int complexTypeOrdinal) {
+  public void setComplexTypeOrdinal(int complexTypeOrdinal) {
   }
 
   /**

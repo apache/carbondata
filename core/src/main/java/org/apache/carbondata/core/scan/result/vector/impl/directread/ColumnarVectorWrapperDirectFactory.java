@@ -34,7 +34,7 @@ public final class ColumnarVectorWrapperDirectFactory {
    * @param invertedIndex    Inverted index of column page
    * @param nullBitset       row locations of nulls in bitset
    * @param deletedRows      deleted rows locations in bitset.
-   * @param isnullBitsExists whether nullbitset present on this page, usually for dimension columns
+   * @param isnullBitsExists whether nullBitset present on this page, usually for dimension columns
    *                         there is no null bitset.
    * @return wrapped CarbonColumnVector
    */

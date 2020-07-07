@@ -25,7 +25,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension;
-import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecutor;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitIncludeFilterExecutorImpl;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -45,7 +45,7 @@ public class TestBlockletIndex {
     dimColumnEvaluatorInfo.setColumnIndex(0);
     dimColumnEvaluatorInfo.setRowIndex(0);
     dimColumnEvaluatorInfo.setDimension(carbonImplicitDimension);
-    dimColumnEvaluatorInfo.setDimensionExistsInCurrentSilce(false);
+    dimColumnEvaluatorInfo.setDimensionExistsInCurrentSlice(false);
     implicitIncludeFilterExecutor =
         new ImplicitIncludeFilterExecutorImpl(dimColumnEvaluatorInfo);
   }
@@ -73,7 +73,7 @@ public class TestBlockletIndex {
         new SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper(new CarbonTable(),
             new ArrayList<>()));
     Method method = BlockIndex.class
-        .getDeclaredMethod("addBlockBasedOnMinMaxValue", FilterExecuter.class, byte[][].class,
+        .getDeclaredMethod("addBlockBasedOnMinMaxValue", FilterExecutor.class, byte[][].class,
             byte[][].class, boolean[].class, String.class, int.class);
     method.setAccessible(true);
 

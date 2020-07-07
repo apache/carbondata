@@ -72,7 +72,7 @@ public final class IndexStoreManager {
   private Map<String, List<TableIndex>> allIndexes = new ConcurrentHashMap<>();
 
   /**
-   * Contains the table name to the tablepath mapping.
+   * Contains the table name to the table path mapping.
    */
   private Map<String, String> tablePathMap = new ConcurrentHashMap<>();
 
@@ -135,7 +135,7 @@ public final class IndexStoreManager {
         tableIndices = allIndexes.get(tableId);
       }
     }
-    // in case of fileformat or sdk, when table is dropped or schema is changed the indexes are
+    // in case of file format or sdk, when table is dropped or schema is changed the indexes are
     // not cleared, they need to be cleared by using API, so compare the columns, if not same, clear
     // the indexes on that table
     if (allIndexes.size() > 0 && !CollectionUtils.isEmpty(allIndexes.get(tableId))
@@ -595,7 +595,7 @@ public final class IndexStoreManager {
   }
 
   private boolean hasCGIndex(CarbonTable carbonTable) throws IOException {
-    // In case of spark file format flow, carbontable will be null
+    // In case of spark file format flow, carbon table will be null
     if (null == carbonTable) {
       return false;
     }

@@ -23,12 +23,12 @@ import java.util.List;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
- * Store the infomation about the schema evolution
+ * Store the information about the schema evolution
  */
 public class SchemaEvolutionEntry implements Serializable {
 
   /**
-   * serilization version
+   * serialization version
    */
   private static final long serialVersionUID = -7619477063676325276L;
 

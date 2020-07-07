@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 
 /**
  * This class handles the file locking in the local file system.
- * This will be handled using the file channel lock API.
+ * This will be handled by using the file channel lock API.
  */
 public class LocalFileLock extends AbstractCarbonLock {
   /**

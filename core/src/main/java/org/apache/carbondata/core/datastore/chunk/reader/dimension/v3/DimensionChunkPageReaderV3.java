@@ -155,7 +155,7 @@ public class DimensionChunkPageReaderV3 extends DimensionChunkReaderV3 {
           CarbonMetadataUtil.getCompressorNameFromChunkMeta(pageMetadata.getChunk_meta()));
     }
     // calculating the start point of data
-    // as buffer can contain multiple column data, start point will be datachunkoffset +
+    // as buffer can contain multiple column data, start point will be data chunk offset +
     // data chunk length + page offset
     long offset = dimensionRawColumnChunk.getOffSet() + dimensionChunksLength
         .get(dimensionRawColumnChunk.getColumnIndex()) + dataChunk3.getPage_offset()

@@ -31,7 +31,7 @@ public class BlockMappingVO {
   private Map<String, RowCountDetailsVO> completeBlockRowDetailVO;
 
   // This map will help us to finding the segment id from the block path.
-  // key is 'blockpath' and value is 'segmentId'
+  // key is 'blockPath' and value is 'segmentId'
   private Map<String, String> blockToSegmentMapping;
 
   public void setCompleteBlockRowDetailVO(Map<String, RowCountDetailsVO> completeBlockRowDetailVO) {

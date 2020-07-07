@@ -27,7 +27,7 @@ class BlockletIterator extends CarbonIterator<DataRefNode> {
   /**
    * data store block
    */
-  protected DataRefNode datablock;
+  protected DataRefNode dataBlock;
   /**
    * block counter to keep a track how many block has been processed
    */
@@ -39,18 +39,18 @@ class BlockletIterator extends CarbonIterator<DataRefNode> {
   private boolean hasNext = true;
 
   /**
-   * total number blocks assgned to this iterator
+   * total number blocks assigned to this iterator
    */
   private long totalNumberOfBlocksToScan;
 
   /**
    * Constructor
    *
-   * @param datablock                 first data block
+   * @param dataBlock                 first data block
    * @param totalNumberOfBlockletToScan total number of blocklets to be scanned
    */
-  BlockletIterator(DataRefNode datablock, long totalNumberOfBlockletToScan) {
-    this.datablock = datablock;
+  BlockletIterator(DataRefNode dataBlock, long totalNumberOfBlockletToScan) {
+    this.dataBlock = dataBlock;
     this.totalNumberOfBlocksToScan = totalNumberOfBlockletToScan;
   }
 
@@ -71,18 +71,18 @@ class BlockletIterator extends CarbonIterator<DataRefNode> {
   @Override
   public DataRefNode next() {
     // get the current blocks
-    DataRefNode datablockTemp = datablock;
+    DataRefNode dataBlockTemp = dataBlock;
     // store the next data block
-    datablock = datablock.getNextDataRefNode();
+    dataBlock = dataBlock.getNextDataRefNode();
     // increment the counter
     blockCounter++;
     // if all the data block is processed then
     // set the has next flag to false
     // or if number of blocks assigned to this iterator is processed
-    // then also set the hasnext flag to false
-    if (null == datablock || blockCounter >= this.totalNumberOfBlocksToScan) {
+    // then also set the hasNext flag to false
+    if (null == dataBlock || blockCounter >= this.totalNumberOfBlocksToScan) {
       hasNext = false;
     }
-    return datablockTemp;
+    return dataBlockTemp;
   }
 }

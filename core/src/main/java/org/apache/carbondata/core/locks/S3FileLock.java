@@ -29,7 +29,7 @@ import org.apache.log4j.Logger;
 
 /**
  * This class is used to handle the S3 File locking.
- * This is acheived using the concept of acquiring the data out stream using Append option.
+ * This is achieved by using the concept of acquiring the data out stream using Append option.
  */
 public class S3FileLock extends AbstractCarbonLock {
 

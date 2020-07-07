@@ -34,7 +34,7 @@ public final class CarbonMetadata {
   /**
    * meta data instance
    */
-  private static final CarbonMetadata CARBONMETADATAINSTANCE = new CarbonMetadata();
+  private static final CarbonMetadata INSTANCE = new CarbonMetadata();
 
   /**
    * holds the list of tableInfo currently present
@@ -47,16 +47,16 @@ public final class CarbonMetadata {
   }
 
   public static CarbonMetadata getInstance() {
-    return CARBONMETADATAINSTANCE;
+    return INSTANCE;
   }
 
   /**
    * removed the table information
    *
-   * @param tableUniquName
+   * @param tableUniqueName
    */
-  public void removeTable(String tableUniquName) {
-    tableInfoMap.remove(convertToLowerCase(tableUniquName));
+  public void removeTable(String tableUniqueName) {
+    tableInfoMap.remove(convertToLowerCase(tableUniqueName));
   }
 
   /**

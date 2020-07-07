@@ -39,7 +39,7 @@ public interface FileTypeInterface {
    * Check if the FileSystem mapped with the given path is supported or not.
    *
    * @param path path of the file
-   * @return true if supported, fasle if not supported
+   * @return true if supported, false if not supported
    */
   public boolean isPathSupported(String path);
 }

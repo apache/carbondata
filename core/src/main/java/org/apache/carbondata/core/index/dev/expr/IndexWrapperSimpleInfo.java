@@ -56,11 +56,11 @@ public class IndexWrapperSimpleInfo {
     } else if (indexExprWrapper instanceof AndIndexExprWrapper) {
       return new IndexWrapperSimpleInfo(WrapperType.AND,
           fromIndexWrapper(indexExprWrapper.getLeftIndexWrapper()),
-          fromIndexWrapper(indexExprWrapper.getRightIndexWrapprt()));
+          fromIndexWrapper(indexExprWrapper.getRightIndexWrapper()));
     } else {
       return new IndexWrapperSimpleInfo(WrapperType.OR,
           fromIndexWrapper(indexExprWrapper.getLeftIndexWrapper()),
-          fromIndexWrapper(indexExprWrapper.getRightIndexWrapprt()));
+          fromIndexWrapper(indexExprWrapper.getRightIndexWrapper()));
     }
   }
 

@@ -63,7 +63,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
-import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecutor;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.segmentmeta.SegmentColumnMetaDataInfo;
 import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo;
@@ -220,7 +220,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   /**
    * Using blockLevel minmax values, identify if segment has to be added for further pruning and to
    * load segment index info to cache
-   * @param segment to be identified if needed for loading block indexs
+   * @param segment to be identified if needed for loading block indexes
    * @param segmentMetaDataInfo list of block level min max values
    * @param filter filter expression
    * @param identifiers tableBlockIndexUniqueIdentifiers
@@ -290,11 +290,11 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
     FilterResolverIntf resolver =
         new IndexFilter(segmentProperties, this.getCarbonTable(), filter.getExpression())
             .getResolver();
-    // prepare filter executer using datmapFilter resolver
-    FilterExecuter filterExecuter =
-        FilterUtil.getFilterExecuterTree(resolver, segmentProperties, null, null, false);
+    // prepare filter executor using IndexFilter resolver
+    FilterExecutor filterExecutor =
+        FilterUtil.getFilterExecutorTree(resolver, segmentProperties, null, null, false);
     // check if block has to be pruned based on segment minmax
-    BitSet scanRequired = filterExecuter.isScanRequired(max, min, minMaxFlag);
+    BitSet scanRequired = filterExecutor.isScanRequired(max, min, minMaxFlag);
     if (!scanRequired.isEmpty()) {
       isScanRequired = true;
     }
@@ -374,7 +374,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   }
 
   /**
-   * Get the blocklet detail information based on blockletid, blockid and segmentId. This method is
+   * Get the blocklet detail information based on blockletId, blockId and segmentId. This method is
    * exclusively for BlockletIndexFactory as detail information is only available in this
    * default index.
    */
@@ -447,19 +447,19 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
 
   @Override
   public List<IndexInputSplit> toDistributable(Segment segment) {
-    List<IndexInputSplit> distributables = new ArrayList<>();
+    List<IndexInputSplit> distributableList = new ArrayList<>();
     try {
       BlockletIndexInputSplit distributable = new BlockletIndexInputSplit();
       distributable.setSegment(segment);
       distributable.setIndexSchema(INDEX_SCHEMA);
       distributable.setSegmentPath(CarbonTablePath.getSegmentPath(identifier.getTablePath(),
           segment.getSegmentNo()));
-      distributables.add(new IndexInputSplitWrapper(UUID.randomUUID().toString(),
+      distributableList.add(new IndexInputSplitWrapper(UUID.randomUUID().toString(),
           distributable).getDistributable());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
-    return distributables;
+    return distributableList;
   }
 
   @Override
@@ -680,10 +680,10 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   }
 
   @Override
-  public List<IndexInputSplit> getAllUncachedDistributables(
-      List<IndexInputSplit> distributables) throws IOException {
-    List<IndexInputSplit> distributablesToBeLoaded = new ArrayList<>(distributables.size());
-    for (IndexInputSplit distributable : distributables) {
+  public List<IndexInputSplit> getAllUncached(
+      List<IndexInputSplit> distributableList) throws IOException {
+    List<IndexInputSplit> distributableToBeLoaded = new ArrayList<>(distributableList.size());
+    for (IndexInputSplit distributable : distributableList) {
       Segment segment = distributable.getSegment();
       Set<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
           getTableBlockIndexUniqueIdentifiers(segment);
@@ -695,10 +695,10 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
           new TableBlockIndexUniqueIdentifierWrapper(validIdentifier, this.getCarbonTable()))) {
         ((BlockletIndexInputSplit) distributable)
             .setTableBlockIndexUniqueIdentifier(validIdentifier);
-        distributablesToBeLoaded.add(distributable);
+        distributableToBeLoaded.add(distributable);
       }
     }
-    return distributablesToBeLoaded;
+    return distributableToBeLoaded;
   }
 
   private Set<TableBlockIndexUniqueIdentifier> getTableSegmentUniqueIdentifiers(Segment segment)
@@ -719,9 +719,9 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
   }
 
   @Override
-  public List<IndexInputSplit> getAllUncachedDistributables(List<Segment> validSegments,
+  public List<IndexInputSplit> getAllUncached(List<Segment> validSegments,
       IndexExprWrapper indexExprWrapper) throws IOException {
-    List<IndexInputSplit> distributablesToBeLoaded = new ArrayList<>();
+    List<IndexInputSplit> distributableToBeLoaded = new ArrayList<>();
     for (Segment segment : validSegments) {
       IndexInputSplitWrapper indexInputSplitWrappers =
           indexExprWrapper.toDistributableSegment(segment);
@@ -733,11 +733,11 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
         if (identifier.getIndexFilePath() == null || blockletIndexWrapper == null) {
           ((BlockletIndexInputSplit) indexInputSplitWrappers.getDistributable())
               .setTableBlockIndexUniqueIdentifier(identifier);
-          distributablesToBeLoaded.add(indexInputSplitWrappers.getDistributable());
+          distributableToBeLoaded.add(indexInputSplitWrappers.getDistributable());
         }
       }
     }
-    return distributablesToBeLoaded;
+    return distributableToBeLoaded;
   }
 
   @Override

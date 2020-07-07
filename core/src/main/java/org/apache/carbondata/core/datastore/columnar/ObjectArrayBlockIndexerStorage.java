@@ -45,12 +45,12 @@ public class ObjectArrayBlockIndexerStorage extends BlockIndexerStorage<Object[]
    * @return
    */
   private ObjectColumnWithRowId[] createColumnWithRowId(Object[] dataPage) {
-    ObjectColumnWithRowId[] columnWithIndexs =
+    ObjectColumnWithRowId[] columnWithIndexes =
         new ObjectColumnWithRowId[dataPage.length];
-    for (short i = 0; i < columnWithIndexs.length; i++) {
-      columnWithIndexs[i] = new ObjectColumnWithRowId(dataPage[i], i, dataType);
+    for (short i = 0; i < columnWithIndexes.length; i++) {
+      columnWithIndexes[i] = new ObjectColumnWithRowId(dataPage[i], i, dataType);
     }
-    return columnWithIndexs;
+    return columnWithIndexes;
   }
 
   private short[] extractDataAndReturnRowId(ObjectColumnWithRowId[] dataWithRowId,

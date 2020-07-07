@@ -40,7 +40,7 @@ public interface Cacheable {
 
   /**
    * Method to be used for invalidating the cacheable object. API to be invoked at the time of
-   * removing the cacheable object from memory. Example at the of removing the cachebale object
+   * removing the cacheable object from memory. Example at removing the cacheable object
    * from LRU cache
    */
   void invalidate();

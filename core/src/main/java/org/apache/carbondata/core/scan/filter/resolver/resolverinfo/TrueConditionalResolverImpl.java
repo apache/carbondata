@@ -18,7 +18,7 @@
 package org.apache.carbondata.core.scan.filter.resolver.resolverinfo;
 
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
+import org.apache.carbondata.core.scan.filter.intf.FilterExecutorType;
 import org.apache.carbondata.core.scan.filter.resolver.ConditionalFilterResolverImpl;
 
 /* The expression with If TRUE will be resolved setting all bits to TRUE. */
@@ -36,13 +36,13 @@ public class TrueConditionalResolverImpl extends ConditionalFilterResolverImpl {
   }
 
   /**
-   * This method will provide the executer type to the callee inorder to identify
+   * This method will provide the executor type to the callee inorder to identify
    * the executer type for the filter resolution, Row level filter executer is a
    * special executer since it get all the rows of the specified filter dimension
    * and will be send to the spark for processing
    */
   @Override
-  public FilterExecuterType getFilterExecuterType() {
-    return FilterExecuterType.TRUE;
+  public FilterExecutorType getFilterExecutorType() {
+    return FilterExecutorType.TRUE;
   }
 }

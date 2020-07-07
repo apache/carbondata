@@ -88,7 +88,7 @@ public class CarbonInputSplit extends FileSplit
 
   private String indexWritePath;
   /**
-   * validBlockletIds will contain the valid blocklted ids for a given block that contains the data
+   * validBlockletIds will contain the valid blocklet ids for a given block that contains the data
    * after pruning from driver. These will be used in executor for further pruning of blocklets
    */
   private Set<Integer> validBlockletIds;
@@ -117,8 +117,8 @@ public class CarbonInputSplit extends FileSplit
 
   /**
    * used in case of index server, all the fields which is required
-   * only in case in executor not need to deseralize and will be kept as
-   * byte array and duing write method directly it will be written to output stream
+   * only in case in executor not need to deserialize and will be kept as
+   * byte array and during write method directly it will be written to output stream
    */
   private byte[] serializeData;
 
@@ -168,8 +168,8 @@ public class CarbonInputSplit extends FileSplit
       String blockletId) throws IOException {
     this.filePath = filePath;
     this.blockletId = blockletId;
-    // getting the underline stream to get the actual position of the fileds which won't be
-    // deseralize as its used by executor
+    // getting the underline stream to get the actual position of the file which won't be
+    // deserialize as its used by executor
     ExtendedByteArrayInputStream underlineStream =
         ((ExtendedDataInputStream) in).getUnderlineStream();
     // current position
@@ -187,7 +187,7 @@ public class CarbonInputSplit extends FileSplit
     this.start = in.readLong();
     this.length = in.readLong();
     this.version = ColumnarFormatVersion.valueOf(in.readShort());
-    // will be removed after count(*) optmization in case of index server
+    // will be removed after count(*) optimization in case of index server
     this.rowCount = in.readInt();
     if (in.readBoolean()) {
       int numberOfDeleteDeltaFiles = in.readInt();
@@ -196,7 +196,7 @@ public class CarbonInputSplit extends FileSplit
         deleteDeltaFiles[i] = in.readUTF();
       }
     }
-    // after deseralizing required field get the start position of field which will be only used
+    // after deserializing required field get the start position of field which will be only used
     // in executor
     int leftoverPosition = underlineStream.getPosition();
     // position of next split
@@ -330,7 +330,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public String getSegmentId() {
-    derserializeField();
+    deserializeField();
     if (segment != null) {
       return segment.getSegmentNo();
     } else {
@@ -339,14 +339,14 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public Segment getSegment() {
-    derserializeField();
+    deserializeField();
     return segment;
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    // if serializeData is not null it means fields which is present below if condition are alredy
-    // deserialize  org.apache.carbondata.hadoop.CarbonInputSplit#CarbonInputSplit(
+    // if serializeData is not null it means fields which is present below if condition are already
+    // deserialize org.apache.carbondata.hadoop.CarbonInputSplit#CarbonInputSplit(
     // int, java.io.DataInput, java.lang.String, java.lang.String[], java.lang.String)
     if (null == serializeData) {
       this.filePath = in.readUTF();
@@ -403,7 +403,7 @@ public class CarbonInputSplit extends FileSplit
     out.writeLong(start);
     out.writeLong(length);
     out.writeShort(version.number());
-    //TODO remove this code once count(*) optmization is added in case of index server
+    //TODO remove this code once count(*) optimization is added in case of index server
     if (null != indexRow) {
       out.writeInt(this.indexRow.getInt(BlockletIndexRowIndexes.ROW_COUNT_INDEX));
     } else if (null != detailInfo) {
@@ -480,11 +480,11 @@ public class CarbonInputSplit extends FileSplit
       return -1;
     }
     CarbonInputSplit other = (CarbonInputSplit) o;
-    derserializeField();
-    other.derserializeField();
+    deserializeField();
+    other.deserializeField();
     int compareResult = 0;
     // get the segment id
-    // converr seg ID to double.
+    // convert seg ID to double.
 
     double seg1 = Double.parseDouble(segment.getSegmentNo());
     double seg2 = Double.parseDouble(other.segment.getSegmentNo());
@@ -545,7 +545,7 @@ public class CarbonInputSplit extends FileSplit
 
   @Override
   public int hashCode() {
-    derserializeField();
+    deserializeField();
     int result = taskId.hashCode();
     result = 31 * result + segment.hashCode();
     result = 31 * result + bucketId.hashCode();
@@ -572,7 +572,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   /**
-   * returns map of blocklocation and storage id
+   * returns map of block location and storage id
    *
    * @return
    */
@@ -652,7 +652,7 @@ public class CarbonInputSplit extends FileSplit
     }
     out.writeShort(this.indexRow.getShort(BlockletIndexRowIndexes.VERSION_INDEX));
     out.writeShort(Short.parseShort(this.blockletId));
-    out.writeLong(this.indexRow.getLong(BlockletIndexRowIndexes.SCHEMA_UPADATED_TIME_INDEX));
+    out.writeLong(this.indexRow.getLong(BlockletIndexRowIndexes.SCHEMA_UPDATED_TIME_INDEX));
     out.writeBoolean(false);
     out.writeLong(this.indexRow.getLong(BlockletIndexRowIndexes.BLOCK_FOOTER_OFFSET));
     // write -1 if columnSchemaBinary is null so that at the time of reading it can distinguish
@@ -689,7 +689,7 @@ public class CarbonInputSplit extends FileSplit
           .setVersionNumber(this.indexRow.getShort(BlockletIndexRowIndexes.VERSION_INDEX));
       detailInfo.setBlockletId(Short.parseShort(this.blockletId));
       detailInfo.setSchemaUpdatedTimeStamp(
-          this.indexRow.getLong(BlockletIndexRowIndexes.SCHEMA_UPADATED_TIME_INDEX));
+          this.indexRow.getLong(BlockletIndexRowIndexes.SCHEMA_UPDATED_TIME_INDEX));
       detailInfo.setBlockFooterOffset(
           this.indexRow.getLong(BlockletIndexRowIndexes.BLOCK_FOOTER_OFFSET));
       start = detailInfo.getBlockFooterOffset();
@@ -753,7 +753,7 @@ public class CarbonInputSplit extends FileSplit
    * so footer offsets needs to be written correctly, so updating the length
    *
    */
-  public void updateFooteroffset() {
+  public void updateFooterOffset() {
     if (isBlockCache && start == 0) {
       if (null != indexRow) {
         start = this.indexRow.getLong(BlockletIndexRowIndexes.BLOCK_FOOTER_OFFSET);
@@ -839,7 +839,7 @@ public class CarbonInputSplit extends FileSplit
    * This method will be used to deserialize fields
    * in case of index server
    */
-  private void derserializeField() {
+  private void deserializeField() {
     if (null != serializeData) {
       DataInputStream in = null;
       try {

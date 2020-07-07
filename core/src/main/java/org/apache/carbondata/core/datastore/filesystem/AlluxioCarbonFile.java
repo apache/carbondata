@@ -71,10 +71,10 @@ public class AlluxioCarbonFile extends HDFSCarbonFile {
   }
 
   @Override
-  public boolean renameForce(String changetoName) {
+  public boolean renameForce(String changeToName) {
     try {
       if (fileSystem instanceof DistributedFileSystem) {
-        ((DistributedFileSystem) fileSystem).rename(path, new Path(changetoName),
+        ((DistributedFileSystem) fileSystem).rename(path, new Path(changeToName),
             org.apache.hadoop.fs.Options.Rename.OVERWRITE);
         return true;
       }

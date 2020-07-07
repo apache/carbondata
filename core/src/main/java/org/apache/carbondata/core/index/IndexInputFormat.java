@@ -93,7 +93,7 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
 
   private boolean isCountStarJob = false;
 
-  // Whether AsyncCall to the Index Server(true in the case of prepriming)
+  // Whether AsyncCall to the Index Server(true in the case of pre-priming)
   private boolean isAsyncCall;
 
   IndexInputFormat() {
@@ -128,11 +128,11 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
 
   @Override
   public List<InputSplit> getSplits(JobContext job) throws IOException {
-    List<IndexInputSplitWrapper> distributables;
-    distributables =
+    List<IndexInputSplitWrapper> distributableList;
+    distributableList =
         IndexChooser.getDefaultIndex(table, filterResolverIntf).toDistributable(validSegments);
-    List<InputSplit> inputSplits = new ArrayList<>(distributables.size());
-    inputSplits.addAll(distributables);
+    List<InputSplit> inputSplits = new ArrayList<>(distributableList.size());
+    inputSplits.addAll(distributableList);
     return inputSplits;
   }
 
@@ -356,19 +356,19 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
   *  then need to cut as transferring big query to IndexServer will be costly.
   */
   public void setTaskGroupDesc(String taskGroupDesc) {
-    int maxJobLenth;
+    int maxJobLength;
     try {
-      String maxJobLenthString = CarbonProperties.getInstance()
+      String maxJobLengthString = CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_JOBNAME_LENGTH ,
                       CarbonCommonConstants.CARBON_INDEX_SERVER_JOBNAME_LENGTH_DEFAULT);
-      maxJobLenth = Integer.parseInt(maxJobLenthString);
+      maxJobLength = Integer.parseInt(maxJobLengthString);
     } catch (Exception e) {
-      String maxJobLenthString = CarbonProperties.getInstance()
+      String maxJobLengthString = CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_JOBNAME_LENGTH_DEFAULT);
-      maxJobLenth = Integer.parseInt(maxJobLenthString);
+      maxJobLength = Integer.parseInt(maxJobLengthString);
     }
-    if (taskGroupDesc.length() > maxJobLenth) {
-      this.taskGroupDesc = taskGroupDesc.substring(0, maxJobLenth);
+    if (taskGroupDesc.length() > maxJobLength) {
+      this.taskGroupDesc = taskGroupDesc.substring(0, maxJobLength);
     } else {
       this.taskGroupDesc = taskGroupDesc;
     }

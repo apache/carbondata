@@ -15,27 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.scan.filter.executer;
+package org.apache.carbondata.core.scan.result.vector.impl.directread;
 
-public class DimColumnExecuterFilterInfo {
+/**
+ * This interface provides method to convert the values by using inverted index and delete delta
+ * and fill to the underlying vector.
+ */
+public interface ConvertibleVector {
 
-  byte[][] filterKeys;
-
-  public byte[][] getExcludeFilterKeys() {
-    return filterKeysForExclude;
-  }
-
-  public void setExcludeFilterKeys(byte[][] filterKeysForExclude) {
-    this.filterKeysForExclude = filterKeysForExclude;
-  }
-
-  byte[][] filterKeysForExclude;
-
-  public void setFilterKeys(byte[][] filterKeys) {
-    this.filterKeys = filterKeys;
-  }
-
-  public byte[][] getFilterKeys() {
-    return filterKeys;
-  }
+  /**
+   * Convert the values and fill it to the underlying vector.
+   */
+  void convert();
 }

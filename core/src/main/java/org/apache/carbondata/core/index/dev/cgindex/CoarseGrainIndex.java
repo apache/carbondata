@@ -29,7 +29,7 @@ import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecutor;
 
 /**
  * Index for Coarse Grain level, see {@link org.apache.carbondata.core.index.IndexLevel#CG}
@@ -40,7 +40,7 @@ public abstract class CoarseGrainIndex implements Index<Blocklet> {
 
   @Override
   public List<Blocklet> prune(Expression expression, SegmentProperties segmentProperties,
-      CarbonTable carbonTable, FilterExecuter filterExecuter) {
+      CarbonTable carbonTable, FilterExecutor filterExecutor) {
     throw new UnsupportedOperationException("Filter expression not supported");
   }
 

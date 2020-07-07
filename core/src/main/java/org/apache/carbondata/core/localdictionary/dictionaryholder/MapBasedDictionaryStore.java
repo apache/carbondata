@@ -43,7 +43,7 @@ public class MapBasedDictionaryStore implements DictionaryStore {
 
   /**
    * maintaining array for reverse lookup
-   * otherwise iterating everytime in map for reverse lookup will be slowdown the performance
+   * otherwise iterating every time in map for reverse lookup will be slowdown the performance
    * It will only maintain the reference
    */
   private DictionaryByteArrayWrapper[] referenceDictionaryArray;
@@ -64,7 +64,7 @@ public class MapBasedDictionaryStore implements DictionaryStore {
   private boolean isThresholdReached;
 
   /**
-   * current datasize
+   * current data size
    */
   private long currentSize;
 
@@ -92,13 +92,13 @@ public class MapBasedDictionaryStore implements DictionaryStore {
     Integer value = dictionary.get(key);
     // if value is null then dictionary is not present in store
     if (null == value) {
-      // aquire the lock
+      // acquire the lock
       synchronized (dictionary) {
         // check threshold
         checkIfThresholdReached();
         // get the value again as other thread might have added
         value = dictionary.get(key);
-        // double chekcing
+        // double checking
         if (null == value) {
           // increment the value
           value = ++lastAssignValue;

@@ -25,7 +25,7 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
-import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertableVector;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertibleVector;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
@@ -48,7 +48,7 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
   }
 
   /**
-   * Below method will be used to put the rows and its metadata in offheap
+   * Below method will be used to put the rows and its metadata in off-heap
    *
    * @param invertedIndex        inverted index to be stored
    * @param invertedIndexReverse inverted index reverse to be stored
@@ -87,8 +87,8 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
         dictionaryVector.putInt(i, surrogate);
       }
     }
-    if (dictionaryVector instanceof ConvertableVector) {
-      ((ConvertableVector) dictionaryVector).convert();
+    if (dictionaryVector instanceof ConvertibleVector) {
+      ((ConvertibleVector) dictionaryVector).convert();
     }
   }
 

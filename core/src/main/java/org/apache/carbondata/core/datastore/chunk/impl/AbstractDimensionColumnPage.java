@@ -113,7 +113,7 @@ public abstract class AbstractDimensionColumnPage implements DimensionColumnPage
    * @return column is dictionary column or not
    */
   @Override
-  public boolean isNoDicitionaryColumn() {
+  public boolean isNoDictionaryColumn() {
     return false;
   }
 }

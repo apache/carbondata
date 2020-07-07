@@ -44,15 +44,15 @@ public interface CacheableIndex {
       BlockletIndexWrapper blockletIndexWrapper) throws IOException;
 
   /**
-   * Get all the uncached distributables from the list.
+   * Get all the uncached distributableList from the list.
    *
-   * @param distributables
+   * @param distributableList
    * @return
    */
-  List<IndexInputSplit> getAllUncachedDistributables(List<IndexInputSplit> distributables)
+  List<IndexInputSplit> getAllUncached(List<IndexInputSplit> distributableList)
       throws IOException;
 
-  List<IndexInputSplit> getAllUncachedDistributables(
+  List<IndexInputSplit> getAllUncached(
       List<Segment> segments, IndexExprWrapper indexExprWrapper) throws IOException;
 
   void updateSegmentIndex(

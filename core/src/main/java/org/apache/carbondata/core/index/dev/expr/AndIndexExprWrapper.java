@@ -126,7 +126,7 @@ public class AndIndexExprWrapper extends IndexExprWrapper {
   }
 
   @Override
-  public IndexExprWrapper getRightIndexWrapprt() {
+  public IndexExprWrapper getRightIndexWrapper() {
     return right;
   }
 }

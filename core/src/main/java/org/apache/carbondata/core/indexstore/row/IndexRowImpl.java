@@ -41,7 +41,7 @@ public class IndexRowImpl extends IndexRow {
 
   @Override
   public int getLengthInBytes(int ordinal) {
-    // if the segment data is written in tablepath
+    // if the segment data is written in table path
     // then the data[BlockletIndexRowIndexes.SUMMARY_INDEX_PATH] will be null.
     if (data[ordinal] == null) {
       return 0;

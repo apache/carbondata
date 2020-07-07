@@ -267,7 +267,7 @@ public class CarbonInternalLoaderUtil {
               return false;
             }
             loadDetail.setSegmentStatus(SegmentStatus.COMPACTED);
-            loadDetail.setModificationOrdeletionTimesStamp(modificationOrDeletionTimeStamp);
+            loadDetail.setModificationOrDeletionTimestamp(modificationOrDeletionTimeStamp);
             loadDetail.setMergedLoadName(mergedLoadNumber);
           }
         }

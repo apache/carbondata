@@ -84,7 +84,7 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
         final CarbonFile carbonFile = FileFactory.getCarbonFile(folderPath);
         boolean isFolderExists = true;
         if (!carbonFile.isFileExist()) {
-          LOGGER.warn("Folder:" + folderPath + "doesn't exists, data will be send through netwrok");
+          LOGGER.warn("Folder:" + folderPath + "doesn't exists, data will be send through network");
           isFolderExists = false;
         }
         if (isFolderExists) {
@@ -164,7 +164,7 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
   }
 
   /**
-   * deseralize the blocklet data from file or stream
+   * deserialize the blocklet data from file or stream
    * data format
    * <number of splits><number of unique location[short]><locations><serialize data len><data>
    *

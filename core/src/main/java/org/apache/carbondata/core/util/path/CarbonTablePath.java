@@ -59,8 +59,8 @@ public class CarbonTablePath {
   private static final String STREAMING_CHECKPOINT_DIR = "checkpoint";
   private static final String STAGE_DIR = "stage";
   private static final String STAGE_DATA_DIR = "stage_data";
-  public static final String  SUCCESS_FILE_SUBFIX = ".success";
-  public static final String  LOADING_FILE_SUBFIX = ".loading";
+  public static final String SUCCESS_FILE_SUFFIX = ".success";
+  public static final String LOADING_FILE_SUFFIX = ".loading";
   private static final String SNAPSHOT_FILE_NAME = "snapshot";
 
   public static final String SYSTEM_FOLDER_DIR = "_system";
@@ -273,12 +273,12 @@ public class CarbonTablePath {
   }
 
   private static String getCarbonIndexFileName(String taskNo, int bucketNumber,
-      String factUpdatedtimeStamp, String segmentNo) {
+      String factUpdatedTimestamp, String segmentNo) {
     if (bucketNumber == -1) {
       return new StringBuilder()
           .append(taskNo).append(DASH)
           .append(segmentNo).append(DASH)
-          .append(factUpdatedtimeStamp)
+          .append(factUpdatedTimestamp)
           .append(INDEX_FILE_EXT)
           .toString();
     } else {
@@ -286,7 +286,7 @@ public class CarbonTablePath {
           .append(taskNo).append(DASH)
           .append(bucketNumber).append(DASH)
           .append(segmentNo).append(DASH)
-          .append(factUpdatedtimeStamp)
+          .append(factUpdatedTimestamp)
           .append(INDEX_FILE_EXT)
           .toString();
     }
@@ -398,7 +398,7 @@ public class CarbonTablePath {
   /**
    * Return store path for index based on the indexName,
    *
-   * @return store path based on indexname
+   * @return store path based on index name
    */
   public static String getIndexesStorePath(String tablePath, String segmentId,
       String indexName) {
@@ -564,15 +564,15 @@ public class CarbonTablePath {
     }
 
     /**
-     * gets segement id from given absolute data file path
+     * gets segment id from given absolute data file path
      */
     public static String getSegmentIdFromPath(String dataFileAbsolutePath) {
       // find segment id from last of data file path
-      String tempdataFileAbsolutePath = dataFileAbsolutePath.replace(
+      String tempDataFileAbsolutePath = dataFileAbsolutePath.replace(
           CarbonCommonConstants.WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR);
-      int endIndex = tempdataFileAbsolutePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
+      int endIndex = tempDataFileAbsolutePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
       // + 1 for size of "/"
-      int startIndex = tempdataFileAbsolutePath.lastIndexOf(
+      int startIndex = tempDataFileAbsolutePath.lastIndexOf(
           CarbonCommonConstants.FILE_SEPARATOR, endIndex - 1) + 1;
       String segmentDirStr = dataFileAbsolutePath.substring(startIndex, endIndex);
       //identify id in segment_<id>

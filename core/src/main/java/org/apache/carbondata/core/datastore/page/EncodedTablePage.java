@@ -33,7 +33,7 @@ public class EncodedTablePage {
   // number of row in this page
   private int pageSize;
 
-  // size in bytes of all encoded columns (including data and metadate)
+  // size in bytes of all encoded columns (including data and metadata)
   private int encodedSize;
 
   public static EncodedTablePage newInstance(int pageSize,

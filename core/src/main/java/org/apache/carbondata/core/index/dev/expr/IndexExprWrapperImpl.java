@@ -111,7 +111,7 @@ public class IndexExprWrapperImpl extends IndexExprWrapper {
   }
 
   @Override
-  public IndexExprWrapper getRightIndexWrapprt() {
+  public IndexExprWrapper getRightIndexWrapper() {
     return null;
   }
 

@@ -63,7 +63,7 @@ class DistributedIndexJob extends AbstractIndexJob {
           indexFormat.getCarbonTable.getAbsoluteTableIdentifier, filterProcessor)
         indexFormat.setFilterResolverIntf(filterInf)
         IndexServer.getClient.getSplits(indexFormat)
-          .getExtendedBlockets(indexFormat.getCarbonTable.getTablePath, indexFormat
+          .getExtendedBlocklets(indexFormat.getCarbonTable.getTablePath, indexFormat
             .getQueryId, indexFormat.isCountStarJob)
       } finally {
         if (null != splitFolderPath && !splitFolderPath.deleteFile()) {
@@ -100,7 +100,7 @@ class DistributedIndexJob extends AbstractIndexJob {
     }
     if (filterInf.isInstanceOf[RowLevelFilterResolverImpl] &&
         filterInf.getFilterExpression.getFilterExpressionType == ExpressionType.UNKNOWN) {
-      return filterProcessor.changeUnknownResloverToTrue(tableIdentifer)
+      return filterProcessor.changeUnknownResolverToTrue(tableIdentifer)
     }
     filterInf
   }
@@ -121,7 +121,7 @@ class EmbeddedIndexJob extends AbstractIndexJob {
     val originalJobDesc = spark.sparkContext.getLocalProperty("spark.job.description")
     indexFormat.setIsWriteToFile(false)
     indexFormat.setFallbackJob()
-    val splits = IndexServer.getSplits(indexFormat).getExtendedBlockets(indexFormat
+    val splits = IndexServer.getSplits(indexFormat).getExtendedBlocklets(indexFormat
       .getCarbonTable.getTablePath, indexFormat.getQueryId, indexFormat.isCountStarJob)
     // Fire a job to clear the cache from executors as Embedded mode does not maintain the cache.
     if (!indexFormat.isJobToClearIndexes) {

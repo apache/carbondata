@@ -39,7 +39,7 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
 
   /**
    * This Visitor method is been used to resolve or populate the filter details
-   * by using custom type dictionary value, the filter membrers will be resolved using
+   * by using custom type dictionary value, the filter members will be resolved using
    * custom type function which will generate dictionary for the direct column type filter members
    *
    * @param visitableObj

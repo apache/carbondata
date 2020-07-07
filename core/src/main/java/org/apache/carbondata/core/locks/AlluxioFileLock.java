@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 
 /**
  * This class is used to handle the Alluxio File locking.
- * This is acheived using the concept of acquiring the data out stream using Append option.
+ * This is achieved by using the concept of acquiring the data out stream using Append option.
  */
 public class AlluxioFileLock extends HdfsFileLock {
 

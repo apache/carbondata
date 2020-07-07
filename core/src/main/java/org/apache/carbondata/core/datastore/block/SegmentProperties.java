@@ -50,19 +50,19 @@ public class SegmentProperties {
   private static final Logger LOG =
         LogServiceFactory.getLogService(SegmentProperties.class.getName());
 
-  // When calcuting the fingerpinter of all columns. In order to
-  // identify dimension columns with other column. The fingerprinter
-  // of dimensions will leftshift 1 bit
+  // When calculating the finger printer of all columns. In order to
+  // identify dimension columns with other column. The finger printer
+  // of dimensions will left shift 1 bit
   private static final int DIMENSIONS_FINGER_PRINTER_SHIFT = 1;
 
-  // When calcuting the fingerpinter of all columns. In order to
-  // identify measure columns with other column. The fingerprinter
-  // of measures will leftshift 2 bit
+  // When calculating the finger pinter of all columns. In order to
+  // identify measure columns with other column. The finger printer
+  // of measures will left shift 2 bit
   private static final int MEASURES_FINGER_PRINTER_SHIFT = 2;
 
-  // When calcuting the fingerpinter of all columns. In order to
-  // identify complex columns with other column. The fingerprinter
-  // of complex columns will leftshift 3 bit
+  // When calculating the finger pinter of all columns. In order to
+  // identify complex columns with other column. The finger printer
+  // of complex columns will left shift 3 bit
   private static final int COMPLEX_FINGER_PRINTER_SHIFT = 3;
 
   /**
@@ -89,7 +89,7 @@ public class SegmentProperties {
    * a block can have multiple columns. This will have block index as key
    * and all dimension participated in that block as values
    */
-  private Map<Integer, Set<Integer>> blockTodimensionOrdinalMapping;
+  private Map<Integer, Set<Integer>> blockToDimensionOrdinalMapping;
 
   /**
    * mapping of measure ordinal in schema to column chunk index in the data file
@@ -113,23 +113,23 @@ public class SegmentProperties {
   private int lastDimensionColOrdinal;
 
   /**
-   * The fingerprinter is the xor result of all the columns in table.
-   * Besides, in the case of two segmentproperties have same columns
-   * but different sortcolumn, n like there is a column exists in both
-   * segmentproperties, but is dimension in one segmentproperties,
+   * The finger printer is the xor result of all the columns in table.
+   * Besides, in the case of two segment properties have same columns
+   * but different sort column, n like there is a column exists in both
+   * segment properties, but is dimension in one segment properties,
    * but is a measure in the other. In order to identify the difference
-   * of these two segmentproperties. The xor result of all dimension
-   * will leftshift 1 bit, the xor results of all measures will leftshift
-   * 2bit, and the xor results of all complex columns will leftshift 3 bits
-   * Sum up, the Formula of generate fingerprinter is
+   * of these two segment properties. The xor result of all dimension
+   * will left shift 1 bit, the xor results of all measures will left shift
+   * 2bit, and the xor results of all complex columns will left shift 3 bits
+   * Sum up, the Formula of generate finger printer is
    *
-   * fingerprinter = (dimensionfingerprinter >> 1)
-   * ^ (measurefingerprinter >> 1) ^ (complexfingerprinter >> 1)
-   * dimensionsfingerprinter = dimension1 ^ dimension2 ^ ...
-   * measuresfingerprinter = measure1 ^ measure2 ^ measure3 ...
-   * complexfingerprinter = complex1 ^ complex2 ^ complex3 ...
+   * fingerPrinter = (dimensionFingerPrinter >> 1)
+   * ^ (measureFingerPrinter >> 1) ^ (complexFingerPrinter >> 1)
+   * dimensionsFingerPrinter = dimension1 ^ dimension2 ^ ...
+   * measuresFingerPrinter = measure1 ^ measure2 ^ measure3 ...
+   * complexFingerPrinter = complex1 ^ complex2 ^ complex3 ...
    */
-  private long fingerprinter = Long.MAX_VALUE;
+  private long fingerPrinter = Long.MAX_VALUE;
 
   public SegmentProperties(List<ColumnSchema> columnsInTable) {
     dimensions = new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -139,7 +139,7 @@ public class SegmentProperties {
     fillDimensionAndMeasureDetails(columnsInTable);
     dimensionOrdinalToChunkMapping =
         new HashMap<Integer, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    blockTodimensionOrdinalMapping =
+    blockToDimensionOrdinalMapping =
         new HashMap<Integer, Set<Integer>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     measuresOrdinalToChunkMapping =
         new HashMap<Integer, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -177,33 +177,33 @@ public class SegmentProperties {
     Iterator<Entry<Integer, Integer>> blockItr = blocks.iterator();
     while (blockItr.hasNext()) {
       Entry<Integer, Integer> block = blockItr.next();
-      Set<Integer> dimensionOrdinals = blockTodimensionOrdinalMapping.get(block.getValue());
+      Set<Integer> dimensionOrdinals = blockToDimensionOrdinalMapping.get(block.getValue());
       if (dimensionOrdinals == null) {
         dimensionOrdinals = new HashSet<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        blockTodimensionOrdinalMapping.put(block.getValue(), dimensionOrdinals);
+        blockToDimensionOrdinalMapping.put(block.getValue(), dimensionOrdinals);
       }
       dimensionOrdinals.add(block.getKey());
     }
   }
 
   /**
-   * compare the segmentproperties based on fingerprinter
+   * compare the segment properties based on finger printer
    */
   @Override
   public boolean equals(Object obj) {
     if (!(obj instanceof SegmentProperties)) {
       return false;
     }
-    // If these two segmentproperties have different number of columns
+    // If these two segment properties have different number of columns
     // Return false directly
     SegmentProperties segmentProperties = (SegmentProperties) obj;
     if (this.getNumberOfColumns() != segmentProperties.getNumberOfColumns()) {
       return false;
     }
-    // Compare the fingerprinter
-    return getFingerprinter() != Long.MIN_VALUE &&
-            segmentProperties.getFingerprinter() != Long.MIN_VALUE &&
-            (getFingerprinter() == segmentProperties.getFingerprinter());
+    // Compare the finger printer
+    return getFingerPrinter() != Long.MIN_VALUE &&
+            segmentProperties.getFingerPrinter() != Long.MIN_VALUE &&
+            (getFingerPrinter() == segmentProperties.getFingerPrinter());
   }
 
   @Override
@@ -248,25 +248,25 @@ public class SegmentProperties {
   }
 
   /**
-   * fingerprinter = (dimensionfingerprinter >> 1)
-   *   ^ (measurefingerprinter >> 1) ^ (complexfingerprinter >> 1)
-   * dimensionsfingerprinter = dimension1 ^ dimension2 ^ ...
-   * measuresfingerprinter = measure1 ^ measure2 ^ measure3 ...
-   * complexfingerprinter = complex1 ^ complex2 ^ complex3 ...
+   * fingerPrinter = (dimensionFingerPrinter >> 1)
+   *   ^ (measureFingerPrinter >> 1) ^ (complexFingerPrinter >> 1)
+   * dimensionsFingerPrinter = dimension1 ^ dimension2 ^ ...
+   * measuresFingerPrinter = measure1 ^ measure2 ^ measure3 ...
+   * complexFingerPrinter = complex1 ^ complex2 ^ complex3 ...
    */
-  protected long getFingerprinter() {
-    if (this.fingerprinter == Long.MAX_VALUE) {
+  protected long getFingerPrinter() {
+    if (this.fingerPrinter == Long.MAX_VALUE) {
       long dimensionsFingerPrinter = getFingerprinter(this.dimensions.stream()
               .map(t -> t.getColumnSchema()).collect(Collectors.toList()));
       long measuresFingerPrinter = getFingerprinter(this.measures.stream()
               .map(t -> t.getColumnSchema()).collect(Collectors.toList()));
       long complexFingerPrinter = getFingerprinter(this.complexDimensions.stream()
               .map(t -> t.getColumnSchema()).collect(Collectors.toList()));
-      this.fingerprinter = (dimensionsFingerPrinter >> DIMENSIONS_FINGER_PRINTER_SHIFT)
+      this.fingerPrinter = (dimensionsFingerPrinter >> DIMENSIONS_FINGER_PRINTER_SHIFT)
               ^ (measuresFingerPrinter >> MEASURES_FINGER_PRINTER_SHIFT)
               ^ (complexFingerPrinter >> COMPLEX_FINGER_PRINTER_SHIFT);
     }
-    return this.fingerprinter;
+    return this.fingerPrinter;
   }
 
   private long getFingerprinter(List<ColumnSchema> columns) {
@@ -312,7 +312,7 @@ public class SegmentProperties {
       columnSchema = columnsInTable.get(counter);
       if (columnSchema.isDimensionColumn()) {
         // not adding the cardinality of the non dictionary
-        // column as it was not the part of mdkey
+        // column as it was not the part of MDKey
         if (CarbonUtil.hasEncoding(columnSchema.getEncodingList(), Encoding.DICTIONARY)
             && !isComplexDimensionStarted && columnSchema.getNumberOfChild() == 0) {
           this.numberOfDictDimensions++;
@@ -320,7 +320,7 @@ public class SegmentProperties {
           if (columnSchema.isSortColumn()) {
             this.numberOfSortColumns++;
           }
-          // if it is a columnar dimension participated in mdkey then added
+          // if it is a columnar dimension participated in MDKey then added
           // key ordinal and dimension ordinal
           carbonDimension =
               new CarbonDimension(columnSchema, dimensionOrdinal++, keyOrdinal++, -1);
@@ -400,11 +400,11 @@ public class SegmentProperties {
     for (int i = 0; i < parentDimension.getNumberOfChild(); i++) {
       CarbonDimension dimension = parentDimension.getListOfChildDimensions().get(i);
       if (dimension.getNumberOfChild() > 0) {
-        dimension.setComplexTypeOridnal(++complexDimensionOrdinal);
+        dimension.setComplexTypeOrdinal(++complexDimensionOrdinal);
         complexDimensionOrdinal = assignComplexOrdinal(dimension, complexDimensionOrdinal);
       } else {
         parentDimension.getListOfChildDimensions().get(i)
-            .setComplexTypeOridnal(++complexDimensionOrdinal);
+            .setComplexTypeOrdinal(++complexDimensionOrdinal);
       }
     }
     return complexDimensionOrdinal;
@@ -455,8 +455,8 @@ public class SegmentProperties {
   /**
    * @return It returns block index to dimension ordinal mapping
    */
-  public Map<Integer, Set<Integer>> getBlockTodimensionOrdinalMapping() {
-    return blockTodimensionOrdinalMapping;
+  public Map<Integer, Set<Integer>> getBlockToDimensionOrdinalMapping() {
+    return blockToDimensionOrdinalMapping;
   }
 
   /**

@@ -41,12 +41,12 @@ public class DimColumnResolvedFilterInfo extends ColumnResolvedFilterInfo implem
    */
   private int rowIndex = -1;
 
-  private boolean isDimensionExistsInCurrentSilce = true;
+  private boolean isDimensionExistsInCurrentSlice = true;
 
   private CarbonDimension dimension;
 
   /**
-   * reolved filter object of a particlar filter Expression.
+   * resolved filter object of a particular filter Expression.
    */
   private ColumnFilterInfo resolvedFilterValueObj;
 
@@ -58,13 +58,13 @@ public class DimColumnResolvedFilterInfo extends ColumnResolvedFilterInfo implem
 
   public void addDimensionResolvedFilterInstance(CarbonDimension dimension,
       ColumnFilterInfo filterResolvedObj) {
-    List<ColumnFilterInfo> currentVals = dimensionResolvedFilter.get(dimension);
-    if (null == currentVals) {
-      currentVals = new ArrayList<ColumnFilterInfo>(20);
-      currentVals.add(filterResolvedObj);
-      dimensionResolvedFilter.put(dimension, currentVals);
+    List<ColumnFilterInfo> currentValues = dimensionResolvedFilter.get(dimension);
+    if (null == currentValues) {
+      currentValues = new ArrayList<ColumnFilterInfo>(20);
+      currentValues.add(filterResolvedObj);
+      dimensionResolvedFilter.put(dimension, currentValues);
     } else {
-      currentVals.add(filterResolvedObj);
+      currentValues.add(filterResolvedObj);
     }
   }
 
@@ -104,12 +104,12 @@ public class DimColumnResolvedFilterInfo extends ColumnResolvedFilterInfo implem
     this.rowIndex = rowIndex;
   }
 
-  public boolean isDimensionExistsInCurrentSilce() {
-    return isDimensionExistsInCurrentSilce;
+  public boolean isDimensionExistsInCurrentSlice() {
+    return isDimensionExistsInCurrentSlice;
   }
 
-  public void setDimensionExistsInCurrentSilce(boolean isDimensionExistsInCurrentSilce) {
-    this.isDimensionExistsInCurrentSilce = isDimensionExistsInCurrentSilce;
+  public void setDimensionExistsInCurrentSlice(boolean isDimensionExistsInCurrentSilce) {
+    this.isDimensionExistsInCurrentSlice = isDimensionExistsInCurrentSilce;
   }
 
   public void populateFilterInfoBasedOnColumnType(ResolvedFilterInfoVisitorIntf visitor,
@@ -134,7 +134,7 @@ public class DimColumnResolvedFilterInfo extends ColumnResolvedFilterInfo implem
     dimColumnResolvedFilterInfo.resolvedFilterValueObj = this.resolvedFilterValueObj;
     dimColumnResolvedFilterInfo.rowIndex = this.rowIndex;
     dimColumnResolvedFilterInfo.dimensionResolvedFilter = this.dimensionResolvedFilter;
-    dimColumnResolvedFilterInfo.isDimensionExistsInCurrentSilce = isDimensionExistsInCurrentSilce;
+    dimColumnResolvedFilterInfo.isDimensionExistsInCurrentSlice = isDimensionExistsInCurrentSlice;
     dimColumnResolvedFilterInfo.columnIndexInMinMaxByteArray = columnIndexInMinMaxByteArray;
     return dimColumnResolvedFilterInfo;
   }

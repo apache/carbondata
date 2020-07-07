@@ -86,7 +86,7 @@ public final class CarbonProperties {
   /**
    * class instance.
    */
-  private static final CarbonProperties CARBONPROPERTIESINSTANCE = new CarbonProperties();
+  private static final CarbonProperties INSTANCE = new CarbonProperties();
 
   /**
    * Properties
@@ -116,7 +116,7 @@ public final class CarbonProperties {
    * @return carbon properties instance
    */
   public static CarbonProperties getInstance() {
-    return CARBONPROPERTIESINSTANCE;
+    return INSTANCE;
   }
 
   /**
@@ -690,23 +690,23 @@ public final class CarbonProperties {
   private void validateNumberOfColumnPerIORead() {
     String numberOfColumnPerIOString = carbonProperties
         .getProperty(NUMBER_OF_COLUMN_TO_READ_IN_IO,
-            CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+            CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULT_VALUE);
     try {
       short numberOfColumnPerIO = Short.parseShort(numberOfColumnPerIOString);
       if (numberOfColumnPerIO < CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_MIN
           || numberOfColumnPerIO > CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_MAX) {
         LOGGER.info("The Number Of pages per blocklet column value \"" + numberOfColumnPerIOString
             + "\" is invalid. Using the default value \""
-            + CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+            + CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULT_VALUE);
         carbonProperties.setProperty(NUMBER_OF_COLUMN_TO_READ_IN_IO,
-            CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+            CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULT_VALUE);
       }
     } catch (NumberFormatException e) {
       LOGGER.info("The Number Of pages per blocklet column value \"" + numberOfColumnPerIOString
           + "\" is invalid. Using the default value \""
-          + CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+          + CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULT_VALUE);
       carbonProperties.setProperty(NUMBER_OF_COLUMN_TO_READ_IN_IO,
-          CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+          CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULT_VALUE);
     }
   }
 
@@ -1031,7 +1031,7 @@ public final class CarbonProperties {
   }
 
   /**
-   * gettting the unmerged segment numbers to be merged.
+   * getting the unmerged segment numbers to be merged.
    *
    * @return corrected value of unmerged segments to be merged
    */
@@ -1182,7 +1182,7 @@ public final class CarbonProperties {
       try {
         batchSize = Integer.parseInt(batchSizeString);
       } catch (NumberFormatException ne) {
-        LOGGER.error("Invalid inmemory records size. Using default value");
+        LOGGER.error("Invalid in-memory records size. Using default value");
         batchSize = CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT;
       }
     } else {
@@ -1250,7 +1250,7 @@ public final class CarbonProperties {
   }
 
   /**
-   * Returns configured update deleta files value for IUD compaction
+   * Returns configured update delta files value for IUD compaction
    *
    * @return numberOfDeltaFilesThreshold
    */
@@ -1280,7 +1280,7 @@ public final class CarbonProperties {
   }
 
   /**
-   * Returns configured delete deleta files value for IUD compaction
+   * Returns configured delete delta files value for IUD compaction
    *
    * @return numberOfDeltaFilesThreshold
    */
@@ -1889,7 +1889,7 @@ public final class CarbonProperties {
               CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT,
               CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT_DEFAULT));
       if (driverPruningMultiThreadEnableFilesCount <= 0) {
-        LOGGER.info("The driver prunning multithread enable files count value \""
+        LOGGER.info("The driver pruning multi-thread enable files count value \""
             + driverPruningMultiThreadEnableFilesCount
             + "\" is invalid. Using the default value \""
             + CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT_DEFAULT);
@@ -1897,7 +1897,7 @@ public final class CarbonProperties {
             .CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT_DEFAULT);
       }
     } catch (NumberFormatException e) {
-      LOGGER.info("The driver prunning multithread enable files count value " +
+      LOGGER.info("The driver pruning multi-thread enable files count value " +
               "is invalid. Using the default value \""
           + CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT_DEFAULT);
       driverPruningMultiThreadEnableFilesCount = Integer.parseInt(CarbonCommonConstants

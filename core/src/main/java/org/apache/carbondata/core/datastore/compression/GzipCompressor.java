@@ -143,7 +143,7 @@ public class GzipCompressor extends AbstractCompressor {
   @Override
   public long rawUncompress(byte[] input, byte[] output) {
     //gzip api doesnt have rawUncompress yet.
-    throw new RuntimeException("Not implemented rawUcompress for gzip yet");
+    throw new RuntimeException("Not implemented rawUncompress for gzip yet");
   }
 
   @Override
@@ -165,6 +165,6 @@ public class GzipCompressor extends AbstractCompressor {
   @Override
   public int rawUncompress(byte[] data, int offset, int length, byte[] output) {
     //gzip api doesnt have rawUncompress yet.
-    throw new RuntimeException("Not implemented rawUcompress for gzip yet");
+    throw new RuntimeException("Not implemented rawUncompress for gzip yet");
   }
 }

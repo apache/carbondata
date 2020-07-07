@@ -20,7 +20,7 @@ package org.apache.carbondata.core.scan.filter.resolver;
 import org.apache.carbondata.core.scan.expression.BinaryExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
-import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
+import org.apache.carbondata.core.scan.filter.intf.FilterExecutorType;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 
@@ -30,24 +30,24 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
    */
   private static final long serialVersionUID = 5734382980564402914L;
 
-  protected FilterResolverIntf leftEvalutor;
+  protected FilterResolverIntf leftEvaluator;
 
-  protected FilterResolverIntf rightEvalutor;
+  protected FilterResolverIntf rightEvaluator;
 
   protected ExpressionType filterExpressionType;
 
   private BinaryExpression filterExpression;
 
-  public LogicalFilterResolverImpl(FilterResolverIntf leftEvalutor,
-      FilterResolverIntf rightEvalutor, BinaryExpression currentExpression) {
-    this.leftEvalutor = leftEvalutor;
-    this.rightEvalutor = rightEvalutor;
+  public LogicalFilterResolverImpl(FilterResolverIntf leftEvaluator,
+      FilterResolverIntf rightEvaluator, BinaryExpression currentExpression) {
+    this.leftEvaluator = leftEvaluator;
+    this.rightEvaluator = rightEvaluator;
     this.filterExpressionType = currentExpression.getFilterExpressionType();
     this.filterExpression = currentExpression;
   }
 
   /**
-   * Logical filter resolver will return the left and right filter expresison
+   * Logical filter resolver will return the left and right filter expresion
    * node for filter evaluation, so in this instance no implementation is required.
    *
    */
@@ -63,7 +63,7 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
    * @return FilterResolverIntf.
    */
   public FilterResolverIntf getLeft() {
-    return leftEvalutor;
+    return leftEvaluator;
   }
 
   /**
@@ -73,7 +73,7 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
    * @return FilterResolverIntf.
    */
   public FilterResolverIntf getRight() {
-    return rightEvalutor;
+    return rightEvaluator;
   }
 
   @Override
@@ -87,12 +87,12 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
   }
 
   @Override
-  public FilterExecuterType getFilterExecuterType() {
+  public FilterExecutorType getFilterExecutorType() {
     switch (filterExpressionType) {
       case OR:
-        return FilterExecuterType.OR;
+        return FilterExecutorType.OR;
       case AND:
-        return FilterExecuterType.AND;
+        return FilterExecutorType.AND;
 
       default:
         return null;

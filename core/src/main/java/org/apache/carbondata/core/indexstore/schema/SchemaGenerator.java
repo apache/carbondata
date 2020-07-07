@@ -73,7 +73,7 @@ public class SchemaGenerator {
   private static void updateBytePosition(CarbonRowSchema[] schema) {
     int currentSize;
     int bytePosition = 0;
-    // First assign byte postion to all the fixed length schema
+    // First assign byte position to all the fixed length schema
     for (int i = 0; i < schema.length; i++) {
       switch (schema[i].getSchemaType()) {
         case STRUCT:

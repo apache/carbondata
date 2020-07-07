@@ -238,8 +238,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * It updates dimensions and measures of query model. In few scenarios like SDK user can configure
    * sort options per load, so if first load has c1 as integer column and configure as sort column
    * then carbon treat that as dimension.But in second load if user change the sort option then the
-   * c1 become measure as bydefault integers are measures. So this method updates the measures to
-   * dimensions and vice versa as per the indexfile schema.
+   * c1 become measure as by default integers are measures. So this method updates the measures to
+   * dimensions and vice versa as per the index file schema.
    */
   private void updateColumns(QueryModel queryModel, List<ColumnSchema> columnsInTable,
       String filePath) throws IOException {
@@ -262,7 +262,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<ProjectionDimension> updatedDims = new ArrayList<>();
     List<ProjectionMeasure> updatedMsrs = new ArrayList<>();
 
-    // Check and update dimensions to measures if it is measure in indexfile schema
+    // Check and update dimensions to measures if it is measure in index file schema
     for (ProjectionDimension dimension : dimensions) {
       int index = columnsInTable.indexOf(dimension.getDimension().getColumnSchema());
       if (index > -1) {
@@ -280,7 +280,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       }
     }
 
-    // Check and update measure to dimension if it is dimension in indexfile schema.
+    // Check and update measure to dimension if it is dimension in index file schema.
     for (ProjectionMeasure measure : measures) {
       int index = columnsInTable.indexOf(measure.getMeasure().getColumnSchema());
       if (index > -1) {
@@ -491,9 +491,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         // loading the filter executor tree for filter evaluation
         filterResolverIntf = queryModel.getIndexFilter().getResolver();
       }
-      blockExecutionInfo.setFilterExecuterTree(
-          FilterUtil.getFilterExecuterTree(filterResolverIntf, segmentProperties,
-              blockExecutionInfo.getComlexDimensionInfoMap(), false));
+      blockExecutionInfo.setFilterExecutorTree(
+          FilterUtil.getFilterExecutorTree(filterResolverIntf, segmentProperties,
+              blockExecutionInfo.getComplexDimensionInfoMap(), false));
     }
     // expression measure
     List<CarbonMeasure> expressionMeasures =
@@ -501,13 +501,13 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // setting all the dimension chunk indexes to be read from file
     int numberOfElementToConsider = 0;
     // list of dimensions to be projected
-    Set<Integer> allProjectionListDimensionIdexes = new LinkedHashSet<>();
+    Set<Integer> allProjectionListDimensionIndexes = new LinkedHashSet<>();
     // create a list of filter dimensions present in the current block
     Set<CarbonDimension> currentBlockFilterDimensions =
         getCurrentBlockFilterDimensions(queryProperties.complexFilterDimension, segmentProperties);
     int[] dimensionChunkIndexes = QueryUtil.getDimensionChunkIndexes(projectDimensions,
         segmentProperties.getDimensionOrdinalToChunkMapping(),
-        currentBlockFilterDimensions, allProjectionListDimensionIdexes);
+        currentBlockFilterDimensions, allProjectionListDimensionIndexes);
     ReusableDataBuffer[] dimensionBuffer = new ReusableDataBuffer[projectDimensions.size()];
     for (int i = 0; i < dimensionBuffer.length; i++) {
       dimensionBuffer[i] = new ReusableDataBuffer();
@@ -515,11 +515,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setDimensionReusableDataBuffer(dimensionBuffer);
     int numberOfColumnToBeReadInOneIO = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
-            CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE));
+            CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULT_VALUE));
 
     if (dimensionChunkIndexes.length > 0) {
       numberOfElementToConsider = dimensionChunkIndexes[dimensionChunkIndexes.length - 1]
-          == segmentProperties.getBlockTodimensionOrdinalMapping().size() - 1 ?
+          == segmentProperties.getBlockToDimensionOrdinalMapping().size() - 1 ?
           dimensionChunkIndexes.length - 1 :
           dimensionChunkIndexes.length;
       blockExecutionInfo.setAllSelectedDimensionColumnIndexRange(
@@ -559,8 +559,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     }
     // setting the indexes of list of dimension in projection list
     blockExecutionInfo.setProjectionListDimensionIndexes(ArrayUtils.toPrimitive(
-        allProjectionListDimensionIdexes
-            .toArray(new Integer[allProjectionListDimensionIdexes.size()])));
+        allProjectionListDimensionIndexes
+            .toArray(new Integer[allProjectionListDimensionIndexes.size()])));
     // setting the indexes of list of measures in projection list
     blockExecutionInfo.setProjectionListMeasureIndexes(ArrayUtils.toPrimitive(
         allProjectionListMeasureIndexes
@@ -720,7 +720,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         exceptionOccurred = e;
       }
     }
-    // clear all the unsafe memory used for the given task ID only if it is neccessary to be cleared
+    // clear all the unsafe memory used for the given task ID only if it is necessary to be cleared
     if (freeUnsafeMemory) {
       UnsafeMemoryManager.INSTANCE
           .freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId());

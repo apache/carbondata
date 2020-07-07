@@ -27,9 +27,9 @@ import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 /**
  *  Factory for {@link CoarseGrainIndex}
  *  1. Any filter query which hits the table with index will call prune method of CGindex.
- *  2. The prune method of CGindex return list Blocklet , these blocklets contain the
+ *  2. The prune method of CGIndex return list Blocklet , these blocklets contain the
  *     information of block and blocklet.
- *  3. Based on the splits scanrdd schedule the tasks.
+ *  3. Based on the splits scanRdd schedule the tasks.
  */
 @InterfaceAudience.Developer("Index")
 @InterfaceStability.Evolving

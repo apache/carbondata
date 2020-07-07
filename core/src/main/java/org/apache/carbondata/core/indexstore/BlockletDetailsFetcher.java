@@ -31,7 +31,7 @@ import org.apache.hadoop.fs.Path;
 public interface BlockletDetailsFetcher {
 
   /**
-   * Get the blocklet detail information based on blockletid, blockid and segmentId.
+   * Get the blocklet detail information based on blockletId, blockId and segmentId.
    *
    * @param blocklets
    * @param segment
@@ -42,7 +42,7 @@ public interface BlockletDetailsFetcher {
       throws IOException;
 
   /**
-   * Get the blocklet detail information based on blockletid, blockid and segmentId.
+   * Get the blocklet detail information based on blockletId, blockId and segmentId.
    *
    * @param blocklet
    * @param segment

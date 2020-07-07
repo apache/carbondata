@@ -18,7 +18,7 @@
 package org.apache.carbondata.core.preagg;
 
 /**
- * enum for timeseries function
+ * enum for time-series function
  */
 public enum TimeSeriesFunctionEnum {
   SECOND("second", 0),

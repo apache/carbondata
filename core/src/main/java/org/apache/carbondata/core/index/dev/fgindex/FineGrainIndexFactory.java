@@ -27,13 +27,13 @@ import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 /**
  *  Factory for {@link FineGrainIndex}
  *
- *  1. Any filter query which hits the table with index will call prune method of FGindex.
- *  2. The prune method of FGindex return list FineGrainBlocklet , these blocklets contain the
- *     information of block, blocklet, page and rowids information as well.
- *  3. The pruned blocklets are internally wriitten to file and returns only the block ,
+ *  1. Any filter query which hits the table with index will call prune method of FGIndex.
+ *  2. The prune method of FGIndex return list FineGrainBlocklet , these blocklets contain the
+ *     information of block, blocklet, page and rowIds information as well.
+ *  3. The pruned blocklets are internally written to file and returns only the block ,
  *    blocklet and filepath information as part of Splits.
- *  4. Based on the splits scanrdd schedule the tasks.
- *  5. In filterscanner we check the indexwriterpath from split and reNoteads the
+ *  4. Based on the splits scan rdd schedule the tasks.
+ *  5. In filter scanner we check the index writer path from split and reads the
  *     bitset if exists. And pass this bitset as input to it.
  */
 @InterfaceAudience.Developer("Index")

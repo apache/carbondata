@@ -40,7 +40,7 @@ import org.apache.carbondata.core.util.comparator.SerializableComparator;
 /**
  * Abstract class for restructure
  */
-public abstract class RestructureEvaluatorImpl implements FilterExecuter {
+public abstract class RestructureEvaluatorImpl implements FilterExecutor {
 
   /**
    * This method will check whether a default value for the non-existing column is present

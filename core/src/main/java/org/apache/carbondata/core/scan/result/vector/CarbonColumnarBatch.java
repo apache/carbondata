@@ -73,7 +73,7 @@ public class CarbonColumnarBatch {
   }
 
   /**
-   * Mark the rows as filterd first before filling the batch, so that these rows will not be added
+   * Mark the rows as filtered first before filling the batch, so that these rows will not be added
    * to vector batches.
    * @param rowId
    */

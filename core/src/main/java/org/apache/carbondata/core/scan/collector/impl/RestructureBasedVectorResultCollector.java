@@ -103,7 +103,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
   @Override
   public void collectResultInColumnarBatch(BlockletScannedResult scannedResult,
       CarbonColumnarBatch columnarBatch) {
-    int numberOfPages = scannedResult.numberOfpages();
+    int numberOfPages = scannedResult.numberOfPages();
     while (scannedResult.getCurrentPageCounter() < numberOfPages) {
       int currentPageRowCount = scannedResult.getCurrentPageRowCount();
       if (currentPageRowCount == 0) {

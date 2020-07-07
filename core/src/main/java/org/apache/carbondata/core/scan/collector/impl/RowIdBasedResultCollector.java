@@ -61,7 +61,7 @@ public class RowIdBasedResultCollector extends DictionaryBasedResultCollector {
         complexTypeColumnIndex = 0;
         for (int i = 0; i < queryDimensions.length; i++) {
           fillDimensionData(scannedResult, surrogateResult, noDictionaryKeys, complexTypeKeyArray,
-              comlexDimensionInfoMap, row, i, queryDimensions[i].getDimension().getOrdinal());
+              complexDimensionInfoMap, row, i, queryDimensions[i].getDimension().getOrdinal());
         }
       }
       row[columnCount + 2] = scannedResult.getCurrentRowId();

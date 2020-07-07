@@ -33,7 +33,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
-import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecutor;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -43,7 +43,7 @@ import org.apache.carbondata.format.BlockIndex;
 public class StreamPruner {
 
   private CarbonTable carbonTable;
-  private FilterExecuter filterExecuter;
+  private FilterExecutor filterExecutor;
 
   private int totalFileNums = 0;
 
@@ -66,13 +66,13 @@ public class StreamPruner {
           carbonTable.getTableInfo().getFactTable().getListOfColumns();
       // initial filter executor
       SegmentProperties segmentProperties = new SegmentProperties(listOfColumns);
-      filterExecuter = FilterUtil.getFilterExecuterTree(
+      filterExecutor = FilterUtil.getFilterExecutorTree(
           filterExp, segmentProperties, null, minMaxCacheColumns, false);
     }
   }
 
   public List<StreamFile> prune(List<Segment> segments) throws IOException {
-    if (filterExecuter == null) {
+    if (filterExecutor == null) {
       // if filter is null, list all steam files
       return listAllStreamFiles(segments, false);
     } else {
@@ -95,7 +95,7 @@ public class StreamPruner {
     }
     byte[][] maxValue = streamFile.getMinMaxIndex().getMaxValues();
     byte[][] minValue = streamFile.getMinMaxIndex().getMinValues();
-    BitSet bitSet = filterExecuter
+    BitSet bitSet = filterExecutor
         .isScanRequired(maxValue, minValue, streamFile.getMinMaxIndex().getIsMinMaxSet());
     if (!bitSet.isEmpty()) {
       return true;

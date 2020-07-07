@@ -282,7 +282,7 @@ public final class CarbonLRUCache {
   }
 
   /**
-   * This method will check if size is available to laod dictionary into memory
+   * This method will check if size is available to load dictionary into memory
    *
    * @param requiredSize
    * @return
@@ -306,8 +306,8 @@ public final class CarbonLRUCache {
    */
   public void clear() {
     synchronized (expiringMap) {
-      for (Cacheable cachebleObj : expiringMap.values()) {
-        cachebleObj.invalidate();
+      for (Cacheable cacheable : expiringMap.values()) {
+        cacheable.invalidate();
       }
       expiringMap.clear();
     }

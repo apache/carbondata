@@ -36,7 +36,7 @@ import org.apache.carbondata.core.scan.expression.conditional.InExpression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
-import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
+import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptimizer;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
@@ -231,7 +231,7 @@ public class IndexFilter implements Serializable {
     processFilterExpressionWithoutRange(isFilterDimensions, isFilterMeasures);
     if (null != expression) {
       // Optimize Filter Expression and fit RANGE filters is conditions apply.
-      FilterOptimizer rangeFilterOptimizer = new RangeFilterOptmizer(expression);
+      FilterOptimizer rangeFilterOptimizer = new RangeFilterOptimizer(expression);
       rangeFilterOptimizer.optimizeFilter();
     }
   }

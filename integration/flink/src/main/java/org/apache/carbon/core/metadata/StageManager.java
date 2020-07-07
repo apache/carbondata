@@ -67,7 +67,7 @@ public final class StageManager {
     }
 
     try {
-      writeSuccessFile(stageInputPath + CarbonTablePath.SUCCESS_FILE_SUBFIX);
+      writeSuccessFile(stageInputPath + CarbonTablePath.SUCCESS_FILE_SUFFIX);
     } catch (Throwable exception) {
       try {
         CarbonUtil.deleteFoldersAndFiles(FileFactory.getCarbonFile(stageInputPath));

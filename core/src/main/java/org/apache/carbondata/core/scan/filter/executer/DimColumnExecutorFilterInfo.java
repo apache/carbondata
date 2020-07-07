@@ -15,13 +15,27 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.scan.filter.intf;
+package org.apache.carbondata.core.scan.filter.executer;
 
-import java.io.Serializable;
+public class DimColumnExecutorFilterInfo {
 
-public enum FilterExecuterType implements Serializable {
+  byte[][] filterKeys;
 
-  INCLUDE, EXCLUDE, OR, AND, RESTRUCTURE, ROWLEVEL, RANGE, ROWLEVEL_GREATERTHAN,
-  ROWLEVEL_GREATERTHAN_EQUALTO, ROWLEVEL_LESSTHAN_EQUALTO, ROWLEVEL_LESSTHAN, TRUE, FALSE
+  public byte[][] getExcludeFilterKeys() {
+    return filterKeysForExclude;
+  }
 
+  public void setExcludeFilterKeys(byte[][] filterKeysForExclude) {
+    this.filterKeysForExclude = filterKeysForExclude;
+  }
+
+  byte[][] filterKeysForExclude;
+
+  public void setFilterKeys(byte[][] filterKeys) {
+    this.filterKeys = filterKeys;
+  }
+
+  public byte[][] getFilterKeys() {
+    return filterKeys;
+  }
 }

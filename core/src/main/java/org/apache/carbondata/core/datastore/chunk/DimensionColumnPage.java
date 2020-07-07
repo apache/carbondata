@@ -84,10 +84,10 @@ public interface DimensionColumnPage {
   /**
    * @return whether column is dictionary column or not
    */
-  boolean isNoDicitionaryColumn();
+  boolean isNoDictionaryColumn();
 
   /**
-   * @return whether columns where explictly sorted or not
+   * @return whether columns where explicitly sorted or not
    */
   boolean isExplicitSorted();
 

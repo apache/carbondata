@@ -123,7 +123,7 @@ public class TaskMetricsMap {
       if (null != callbackList) {
         for (CarbonFSBytesReadOnThreadCallback callback : callbackList) {
           if (callback.threadId == callbackThreadId) {
-            callback.updatedReadBytes += callback.readbytes();
+            callback.updatedReadBytes += callback.readBytes();
             break;
           }
         }
@@ -132,7 +132,7 @@ public class TaskMetricsMap {
   }
 
   /**
-   * returns total task read bytes, by summing all parent & spawned threads readbytes
+   * returns total task read bytes, by summing all parent & spawned threads read bytes
    *
    * @param threadName
    * @return
@@ -149,7 +149,7 @@ public class TaskMetricsMap {
   }
 
   /**
-   * adds spawaned thread callback entry in metricmap using parentThreadId
+   * adds spawned thread callback entry in metric map using parentThreadId
    *
    * @param parentThreadId
    * @param callback
@@ -177,16 +177,16 @@ public class TaskMetricsMap {
 
     CarbonFSBytesReadOnThreadCallback(long parentThread) {
       // reads current thread readBytes
-      this.baseline = readbytes();
+      this.baseline = readBytes();
       addEntry(parentThread, this);
     }
 
     /**
-     * returns current thread readbytes from FileSystem Statistics
+     * returns current thread read bytes from FileSystem Statistics
      *
      * @return
      */
-    public long readbytes() {
+    public long readBytes() {
       List<FileSystem.Statistics> statisticsList = FileSystem.getAllStatistics();
       long sum = 0;
       try {

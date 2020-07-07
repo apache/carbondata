@@ -44,7 +44,7 @@ public class ReusableDataBuffer {
    * If requested size is less it will return same buffer, if size is more
    * it resize the buffer and return
    * @param requestedSize
-   * @return databuffer
+   * @return dataBuffer
    */
   public byte[] getDataBuffer(int requestedSize) {
     if (dataBuffer == null || requestedSize > size) {

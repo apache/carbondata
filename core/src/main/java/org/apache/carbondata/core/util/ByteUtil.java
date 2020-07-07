@@ -87,19 +87,19 @@ public final class ByteUtil {
 
   /**
    * convert number in byte to more readable format
-   * @param sizeInbyte
+   * @param sizeInByte
    * @return
    */
-  public static String convertByteToReadable(long sizeInbyte) {
+  public static String convertByteToReadable(long sizeInByte) {
 
     String readableSize;
-    if (sizeInbyte < CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR) {
-      readableSize = sizeInbyte + " Byte";
-    } else if (sizeInbyte < CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR *
+    if (sizeInByte < CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR) {
+      readableSize = sizeInByte + " Byte";
+    } else if (sizeInByte < CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR *
             CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR) {
-      readableSize = sizeInbyte / CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR + " KB";
+      readableSize = sizeInByte / CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR + " KB";
     } else {
-      readableSize = sizeInbyte / CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR /
+      readableSize = sizeInByte / CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR /
               CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR + " MB";
     }
     return readableSize;
@@ -155,7 +155,7 @@ public final class ByteUtil {
         long diff = lw ^ rw;
 
         if (diff != 0) {
-          if (!CarbonUnsafe.ISLITTLEENDIAN) {
+          if (!CarbonUnsafe.IS_LITTLE_ENDIAN) {
             return lessThanUnsigned(lw, rw) ? -1 : 1;
           }
 
@@ -230,7 +230,7 @@ public final class ByteUtil {
           long diff = lw ^ rw;
 
           if (diff != 0) {
-            if (!CarbonUnsafe.ISLITTLEENDIAN) {
+            if (!CarbonUnsafe.IS_LITTLE_ENDIAN) {
               return lessThanUnsigned(lw, rw) ? -1 : 1;
             }
 
@@ -351,7 +351,7 @@ public final class ByteUtil {
   }
 
   /**
-   * Stirng => byte[]
+   * String => byte[]
    *
    * @param s
    * @return
@@ -443,7 +443,7 @@ public final class ByteUtil {
     }
     short n = 0;
     if (CarbonUnsafe.getUnsafe() != null) {
-      if (CarbonUnsafe.ISLITTLEENDIAN) {
+      if (CarbonUnsafe.IS_LITTLE_ENDIAN) {
         n = Short.reverseBytes(
             CarbonUnsafe.getUnsafe().getShort(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET));
       } else {
@@ -513,7 +513,7 @@ public final class ByteUtil {
     }
     int n = 0;
     if (CarbonUnsafe.getUnsafe() != null) {
-      if (CarbonUnsafe.ISLITTLEENDIAN) {
+      if (CarbonUnsafe.IS_LITTLE_ENDIAN) {
         n = Integer.reverseBytes(
             CarbonUnsafe.getUnsafe().getInt(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET));
       } else {
@@ -582,7 +582,7 @@ public final class ByteUtil {
     }
     long l = 0;
     if (CarbonUnsafe.getUnsafe() != null) {
-      if (CarbonUnsafe.ISLITTLEENDIAN) {
+      if (CarbonUnsafe.IS_LITTLE_ENDIAN) {
         l = Long.reverseBytes(
             CarbonUnsafe.getUnsafe().getLong(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET));
       } else {
@@ -626,7 +626,7 @@ public final class ByteUtil {
               + " byte array");
     }
     if (CarbonUnsafe.getUnsafe() != null) {
-      if (CarbonUnsafe.ISLITTLEENDIAN) {
+      if (CarbonUnsafe.IS_LITTLE_ENDIAN) {
         val = Integer.reverseBytes(val);
       }
       CarbonUnsafe.getUnsafe().putInt(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET, val);

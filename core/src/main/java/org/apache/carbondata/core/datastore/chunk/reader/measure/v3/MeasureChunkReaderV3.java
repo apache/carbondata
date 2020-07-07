@@ -215,7 +215,7 @@ public class MeasureChunkReaderV3 extends AbstractMeasureChunkReader {
         pageMetadata.getChunk_meta());
     this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
     // calculating the start point of data
-    // as buffer can contain multiple column data, start point will be datachunkoffset +
+    // as buffer can contain multiple column data, start point will be data chunk offset +
     // data chunk length + page offset
     int offset = (int) rawColumnChunk.getOffSet() +
         measureColumnChunkLength.get(rawColumnChunk.getColumnIndex()) +

@@ -41,7 +41,7 @@ import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
-import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertableVector;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertibleVector;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.SequentialFill;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.format.DataChunk2;
@@ -299,8 +299,8 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           vector.putNull(i);
         }
       }
-      if (vector instanceof ConvertableVector) {
-        ((ConvertableVector) vector).convert();
+      if (vector instanceof ConvertibleVector) {
+        ((ConvertibleVector) vector).convert();
       }
 
     }

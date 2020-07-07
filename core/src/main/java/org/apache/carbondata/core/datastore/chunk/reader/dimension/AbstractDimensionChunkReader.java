@@ -91,7 +91,7 @@ public abstract class AbstractDimensionChunkReader implements DimensionColumnChu
     // read the column chunk based on block index and add
     DimensionRawColumnChunk[] dataChunks =
         new DimensionRawColumnChunk[dimensionChunksOffset.size()];
-    // if blocklet index is empty then return empry data chunk
+    // if blocklet index is empty then return empty data chunk
     if (columnIndexRange.length == 0) {
       return dataChunks;
     }

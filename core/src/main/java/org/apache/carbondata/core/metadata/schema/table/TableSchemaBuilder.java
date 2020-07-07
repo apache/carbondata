@@ -108,9 +108,9 @@ public class TableSchemaBuilder {
     schema.setTableId(UUID.randomUUID().toString());
     schema.setPartitionInfo(null);
     schema.setBucketingInfo(null);
-    SchemaEvolution schemaEvol = new SchemaEvolution();
-    schemaEvol.setSchemaEvolutionEntryList(new ArrayList<SchemaEvolutionEntry>());
-    schema.setSchemaEvolution(schemaEvol);
+    SchemaEvolution schemaEvolution = new SchemaEvolution();
+    schemaEvolution.setSchemaEvolutionEntryList(new ArrayList<SchemaEvolutionEntry>());
+    schema.setSchemaEvolution(schemaEvolution);
     List<ColumnSchema> allColumns = new LinkedList<>(sortColumns);
     allColumns.addAll(dimension);
     allColumns.addAll(varCharColumns);
@@ -133,10 +133,9 @@ public class TableSchemaBuilder {
     if (isLocalDictionaryEnabled) {
       property.put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
           String.valueOf(isLocalDictionaryEnabled));
-      String localdictionaryThreshold = localDictionaryThreshold.equalsIgnoreCase("0") ?
-          CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT :
-          localDictionaryThreshold;
-      property.put(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD, localdictionaryThreshold);
+      String localDictionaryThreshold = this.localDictionaryThreshold.equalsIgnoreCase("0") ?
+          CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT : this.localDictionaryThreshold;
+      property.put(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD, localDictionaryThreshold);
       for (int index = 0; index < allColumns.size(); index++) {
         ColumnSchema colSchema = allColumns.get(index);
         if (colSchema.getDataType() == DataTypes.STRING

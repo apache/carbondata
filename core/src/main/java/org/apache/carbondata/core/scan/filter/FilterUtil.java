@@ -56,23 +56,23 @@ import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedExc
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
-import org.apache.carbondata.core.scan.filter.executer.AndFilterExecuterImpl;
-import org.apache.carbondata.core.scan.filter.executer.DimColumnExecuterFilterInfo;
-import org.apache.carbondata.core.scan.filter.executer.ExcludeFilterExecuterImpl;
+import org.apache.carbondata.core.scan.filter.executer.AndFilterExecutorImpl;
+import org.apache.carbondata.core.scan.filter.executer.DimColumnExecutorFilterInfo;
+import org.apache.carbondata.core.scan.filter.executer.ExcludeFilterExecutorImpl;
 import org.apache.carbondata.core.scan.filter.executer.FalseFilterExecutor;
-import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecutor;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitIncludeFilterExecutorImpl;
-import org.apache.carbondata.core.scan.filter.executer.IncludeFilterExecuterImpl;
-import org.apache.carbondata.core.scan.filter.executer.MeasureColumnExecuterFilterInfo;
-import org.apache.carbondata.core.scan.filter.executer.OrFilterExecuterImpl;
-import org.apache.carbondata.core.scan.filter.executer.RangeValueFilterExecuterImpl;
+import org.apache.carbondata.core.scan.filter.executer.IncludeFilterExecutorImpl;
+import org.apache.carbondata.core.scan.filter.executer.MeasureColumnExecutorFilterInfo;
+import org.apache.carbondata.core.scan.filter.executer.OrFilterExecutorImpl;
+import org.apache.carbondata.core.scan.filter.executer.RangeValueFilterExecutorImpl;
 import org.apache.carbondata.core.scan.filter.executer.RestructureExcludeFilterExecutorImpl;
 import org.apache.carbondata.core.scan.filter.executer.RestructureIncludeFilterExecutorImpl;
-import org.apache.carbondata.core.scan.filter.executer.RowLevelFilterExecuterImpl;
-import org.apache.carbondata.core.scan.filter.executer.RowLevelRangeTypeExecuterFactory;
+import org.apache.carbondata.core.scan.filter.executer.RowLevelFilterExecutorImpl;
+import org.apache.carbondata.core.scan.filter.executer.RowLevelRangeTypeExecutorFactory;
 import org.apache.carbondata.core.scan.filter.executer.TrueFilterExecutor;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
-import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
+import org.apache.carbondata.core.scan.filter.intf.FilterExecutorType;
 import org.apache.carbondata.core.scan.filter.intf.RowImpl;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.ConditionalFilterResolverImpl;
@@ -104,8 +104,8 @@ public final class FilterUtil {
 
   /**
    * Pattern used : Visitor Pattern
-   * Method will create filter executer tree based on the filter resolved tree,
-   * in this algorithm based on the resolver instance the executers will be visited
+   * Method will create filter executor tree based on the filter resolved tree,
+   * in this algorithm based on the resolver instance the executors will be visited
    * and the resolved surrogates will be converted to keys
    *
    * @param filterExpressionResolverTree
@@ -113,22 +113,22 @@ public final class FilterUtil {
    * @param complexDimensionInfoMap
    * @param minMaxCacheColumns
    * @param isStreamDataFile: whether create filter executer tree for stream data files
-   * @return FilterExecuter instance
+   * @return FilterExecutor instance
    *
    */
-  private static FilterExecuter createFilterExecuterTree(
+  private static FilterExecutor createFilterExecutorTree(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
       Map<Integer, GenericQueryType> complexDimensionInfoMap,
       List<CarbonColumn> minMaxCacheColumns, boolean isStreamDataFile) {
-    FilterExecuterType filterExecuterType = filterExpressionResolverTree.getFilterExecuterType();
-    if (null != filterExecuterType) {
-      switch (filterExecuterType) {
+    FilterExecutorType filterExecutorType = filterExpressionResolverTree.getFilterExecutorType();
+    if (null != filterExecutorType) {
+      switch (filterExecutorType) {
         case INCLUDE:
           if (null != filterExpressionResolverTree.getDimColResolvedFilterInfo()
               && null != filterExpressionResolverTree.getDimColResolvedFilterInfo()
               .getFilterValues() && filterExpressionResolverTree.getDimColResolvedFilterInfo()
               .getFilterValues().isOptimized()) {
-            return getExcludeFilterExecuter(
+            return getExcludeFilterExecutor(
                 filterExpressionResolverTree.getDimColResolvedFilterInfo(),
                 filterExpressionResolverTree.getMsrColResolvedFilterInfo(), segmentProperties);
           }
@@ -137,24 +137,24 @@ public final class FilterUtil {
               segmentProperties, minMaxCacheColumns, isStreamDataFile)) {
             return new TrueFilterExecutor();
           }
-          return getIncludeFilterExecuter(
+          return getIncludeFilterExecutor(
               filterExpressionResolverTree.getDimColResolvedFilterInfo(),
               filterExpressionResolverTree.getMsrColResolvedFilterInfo(), segmentProperties);
         case EXCLUDE:
-          return getExcludeFilterExecuter(
+          return getExcludeFilterExecutor(
               filterExpressionResolverTree.getDimColResolvedFilterInfo(),
               filterExpressionResolverTree.getMsrColResolvedFilterInfo(), segmentProperties);
         case OR:
-          return new OrFilterExecuterImpl(
-              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
+          return new OrFilterExecutorImpl(
+              createFilterExecutorTree(filterExpressionResolverTree.getLeft(), segmentProperties,
                   complexDimensionInfoMap, minMaxCacheColumns, isStreamDataFile),
-              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
+              createFilterExecutorTree(filterExpressionResolverTree.getRight(), segmentProperties,
                   complexDimensionInfoMap, minMaxCacheColumns, isStreamDataFile));
         case AND:
-          return new AndFilterExecuterImpl(
-              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
+          return new AndFilterExecutorImpl(
+              createFilterExecutorTree(filterExpressionResolverTree.getLeft(), segmentProperties,
                   complexDimensionInfoMap, minMaxCacheColumns, isStreamDataFile),
-              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
+              createFilterExecutorTree(filterExpressionResolverTree.getRight(), segmentProperties,
                   complexDimensionInfoMap, minMaxCacheColumns, isStreamDataFile));
         case ROWLEVEL_LESSTHAN:
         case ROWLEVEL_LESSTHAN_EQUALTO:
@@ -165,12 +165,12 @@ public final class FilterUtil {
               (RowLevelRangeFilterResolverImpl) filterExpressionResolverTree;
           if (checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(
               rowLevelRangeFilterResolver.getDimColEvaluatorInfoList(),
-              rowLevelRangeFilterResolver.getMsrColEvalutorInfoList(), segmentProperties,
+              rowLevelRangeFilterResolver.getMsrColEvaluatorInfoList(), segmentProperties,
               minMaxCacheColumns, isStreamDataFile)) {
             return new TrueFilterExecutor();
           }
-          return RowLevelRangeTypeExecuterFactory
-              .getRowLevelRangeTypeExecuter(filterExecuterType, filterExpressionResolverTree,
+          return RowLevelRangeTypeExecutorFactory
+              .getRowLevelRangeTypeExecutor(filterExecutorType, filterExpressionResolverTree,
                   segmentProperties);
         case RANGE:
           // return true filter expression if filter column min/max is not cached in driver
@@ -178,7 +178,7 @@ public final class FilterUtil {
               segmentProperties, minMaxCacheColumns, isStreamDataFile)) {
             return new TrueFilterExecutor();
           }
-          return new RangeValueFilterExecuterImpl(
+          return new RangeValueFilterExecutorImpl(
               filterExpressionResolverTree.getDimColResolvedFilterInfo(),
               filterExpressionResolverTree.getFilterExpression(),
               ((ConditionalFilterResolverImpl) filterExpressionResolverTree)
@@ -190,14 +190,14 @@ public final class FilterUtil {
         case ROWLEVEL:
         default:
           if (filterExpressionResolverTree.getFilterExpression() instanceof UnknownExpression) {
-            FilterExecuter filterExecuter =
+            FilterExecutor filterExecutor =
                 ((UnknownExpression) filterExpressionResolverTree.getFilterExpression())
-                    .getFilterExecuter(filterExpressionResolverTree, segmentProperties);
-            if (filterExecuter != null) {
-              return filterExecuter;
+                    .getFilterExecutor(filterExpressionResolverTree, segmentProperties);
+            if (filterExecutor != null) {
+              return filterExecutor;
             }
           }
-          return new RowLevelFilterExecuterImpl(
+          return new RowLevelFilterExecutorImpl(
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
                   .getDimColEvaluatorInfoList(),
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
@@ -208,7 +208,7 @@ public final class FilterUtil {
 
       }
     }
-    return new RowLevelFilterExecuterImpl(
+    return new RowLevelFilterExecutorImpl(
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getDimColEvaluatorInfoList(),
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getMsrColEvalutorInfoList(),
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
@@ -218,13 +218,13 @@ public final class FilterUtil {
   }
 
   /**
-   * It gives filter executer based on columnar or column group
+   * It gives filter executor based on columnar or column group
    *
    * @param dimColResolvedFilterInfo
    * @param segmentProperties
    * @return
    */
-  private static FilterExecuter getIncludeFilterExecuter(
+  private static FilterExecutor getIncludeFilterExecutor(
       DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
       MeasureColumnResolvedFilterInfo msrColResolvedFilterInfo,
       SegmentProperties segmentProperties) {
@@ -238,7 +238,7 @@ public final class FilterUtil {
         msrColResolvedFilterInfoCopyObject.setMeasure(measuresFromCurrentBlock);
         msrColResolvedFilterInfoCopyObject.setColumnIndex(measuresFromCurrentBlock.getOrdinal());
         msrColResolvedFilterInfoCopyObject.setType(measuresFromCurrentBlock.getDataType());
-        return new IncludeFilterExecuterImpl(null, msrColResolvedFilterInfoCopyObject,
+        return new IncludeFilterExecutorImpl(null, msrColResolvedFilterInfoCopyObject,
             segmentProperties, true);
       } else {
         return new RestructureIncludeFilterExecutorImpl(dimColResolvedFilterInfo,
@@ -257,7 +257,7 @@ public final class FilterUtil {
             dimColResolvedFilterInfo.getCopyObject();
         dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
         dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
-        return new IncludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
+        return new IncludeFilterExecutorImpl(dimColResolvedFilterInfoCopyObject, null,
             segmentProperties, false);
       } else {
         return new RestructureIncludeFilterExecutorImpl(dimColResolvedFilterInfo,
@@ -409,13 +409,13 @@ public final class FilterUtil {
   }
 
   /**
-   * It gives filter executer based on columnar or column group
+   * It gives filter executor based on columnar or column group
    *
    * @param dimColResolvedFilterInfo
    * @param segmentProperties
    * @return
    */
-  private static FilterExecuter getExcludeFilterExecuter(
+  private static FilterExecutor getExcludeFilterExecutor(
       DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
       MeasureColumnResolvedFilterInfo msrColResolvedFilterInfo,
       SegmentProperties segmentProperties) {
@@ -430,7 +430,7 @@ public final class FilterUtil {
         msrColResolvedFilterInfoCopyObject.setMeasure(measuresFromCurrentBlock);
         msrColResolvedFilterInfoCopyObject.setColumnIndex(measuresFromCurrentBlock.getOrdinal());
         msrColResolvedFilterInfoCopyObject.setType(measuresFromCurrentBlock.getDataType());
-        return new ExcludeFilterExecuterImpl(null, msrColResolvedFilterInfoCopyObject,
+        return new ExcludeFilterExecutorImpl(null, msrColResolvedFilterInfoCopyObject,
             segmentProperties, true);
       } else {
         return new RestructureExcludeFilterExecutorImpl(dimColResolvedFilterInfo,
@@ -445,7 +445,7 @@ public final class FilterUtil {
           dimColResolvedFilterInfo.getCopyObject();
       dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
       dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
-      return new ExcludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
+      return new ExcludeFilterExecutorImpl(dimColResolvedFilterInfoCopyObject, null,
           segmentProperties, false);
     } else {
       return new RestructureExcludeFilterExecutorImpl(dimColResolvedFilterInfo,
@@ -567,7 +567,7 @@ public final class FilterUtil {
       throw new FilterUnsupportedException("Unsupported Filter condition: " + result, ex);
     }
 
-    java.util.Comparator<byte[]> filterNoDictValueComaparator = new java.util.Comparator<byte[]>() {
+    java.util.Comparator<byte[]> filterNoDictValueComparator = new java.util.Comparator<byte[]>() {
 
       @Override
       public int compare(byte[] filterMember1, byte[] filterMember2) {
@@ -576,7 +576,7 @@ public final class FilterUtil {
       }
 
     };
-    Collections.sort(filterValuesList, filterNoDictValueComaparator);
+    Collections.sort(filterValuesList, filterNoDictValueComparator);
     ColumnFilterInfo columnFilterInfo = null;
     if (filterValuesList.size() > 0) {
       columnFilterInfo = new ColumnFilterInfo();
@@ -618,9 +618,9 @@ public final class FilterUtil {
       throw new FilterUnsupportedException("Unsupported Filter condition: " + result, ex);
     }
 
-    SerializableComparator filterMeasureComaparator =
+    SerializableComparator filterMeasureComparator =
         Comparator.getComparatorByDataTypeForMeasure(dataType);
-    Collections.sort(filterValuesList, filterMeasureComaparator);
+    Collections.sort(filterValuesList, filterMeasureComparator);
     ColumnFilterInfo columnFilterInfo = null;
     if (filterValuesList.size() > 0) {
       columnFilterInfo = new ColumnFilterInfo();
@@ -665,14 +665,14 @@ public final class FilterUtil {
       boolean isExclude, int[] keys, List<byte[]> filterValuesList,
       int keyOrdinalOfDimensionFromCurrentBlock) {
     if (null != columnFilterInfo) {
-      List<Integer> listOfsurrogates = null;
+      List<Integer> listOfSurrogates = null;
       if (!isExclude && columnFilterInfo.isIncludeFilter()) {
-        listOfsurrogates = columnFilterInfo.getFilterList();
+        listOfSurrogates = columnFilterInfo.getFilterList();
       } else if (isExclude || !columnFilterInfo.isIncludeFilter()) {
-        listOfsurrogates = columnFilterInfo.getExcludeFilterList();
+        listOfSurrogates = columnFilterInfo.getExcludeFilterList();
       }
-      if (null != listOfsurrogates) {
-        for (Integer surrogate : listOfsurrogates) {
+      if (null != listOfSurrogates) {
+        for (Integer surrogate : listOfSurrogates) {
           keys[keyOrdinalOfDimensionFromCurrentBlock] = surrogate;
           filterValuesList.add(ByteUtil.convertIntToBytes(surrogate));
         }
@@ -686,14 +686,14 @@ public final class FilterUtil {
   private static byte[][] getFilterValueInBytesForDictRange(ColumnFilterInfo columnFilterInfo,
       int[] keys, List<byte[]> filterValuesList, int keyOrdinalOfDimensionFromCurrentBlock) {
     if (null != columnFilterInfo) {
-      List<Integer> listOfsurrogates = columnFilterInfo.getFilterList();
-      if (listOfsurrogates == null || listOfsurrogates.size() > 1) {
+      List<Integer> listOfSurrogates = columnFilterInfo.getFilterList();
+      if (listOfSurrogates == null || listOfSurrogates.size() > 1) {
         throw new RuntimeException(
             "Filter values cannot be null in case of range in dictionary include");
       }
       // Here we only get the first column as there can be only one range column.
-      keys[keyOrdinalOfDimensionFromCurrentBlock] = listOfsurrogates.get(0);
-      filterValuesList.add(ByteUtil.convertIntToBytes(listOfsurrogates.get(0)));
+      keys[keyOrdinalOfDimensionFromCurrentBlock] = listOfSurrogates.get(0);
+      filterValuesList.add(ByteUtil.convertIntToBytes(listOfSurrogates.get(0)));
     }
     return filterValuesList.toArray(new byte[filterValuesList.size()][]);
   }
@@ -723,7 +723,7 @@ public final class FilterUtil {
 
   /**
    * Below method will be used to convert the filter surrogate keys
-   * to mdkey
+   * to MDKey
    *
    * @param columnFilterInfo
    * @param carbonDimension
@@ -753,31 +753,31 @@ public final class FilterUtil {
   }
 
   /**
-   * API will create an filter executer tree based on the filter resolver
+   * API will create an filter executor tree based on the filter resolver
    *
    * @param filterExpressionResolverTree
    * @param segmentProperties
    * @return
    */
-  public static FilterExecuter getFilterExecuterTree(
+  public static FilterExecutor getFilterExecutorTree(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
       Map<Integer, GenericQueryType> complexDimensionInfoMap, boolean isStreamDataFile) {
-    return getFilterExecuterTree(filterExpressionResolverTree, segmentProperties,
+    return getFilterExecutorTree(filterExpressionResolverTree, segmentProperties,
         complexDimensionInfoMap, null, isStreamDataFile);
   }
 
   /**
-   * API will create an filter executer tree based on the filter resolver and minMaxColumns
+   * API will create an filter executor tree based on the filter resolver and minMaxColumns
    *
    * @param filterExpressionResolverTree
    * @param segmentProperties
    * @return
    */
-  public static FilterExecuter getFilterExecuterTree(
+  public static FilterExecutor getFilterExecutorTree(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
       Map<Integer, GenericQueryType> complexDimensionInfoMap,
       List<CarbonColumn> minMaxCacheColumns, boolean isStreamDataFile) {
-    return createFilterExecuterTree(filterExpressionResolverTree, segmentProperties,
+    return createFilterExecutorTree(filterExpressionResolverTree, segmentProperties,
         complexDimensionInfoMap, minMaxCacheColumns, isStreamDataFile);
   }
 
@@ -787,12 +787,12 @@ public final class FilterUtil {
    * @param filterValues
    * @param segmentProperties
    * @param dimension
-   * @param dimColumnExecuterInfo
+   * @param dimColumnExecutorInfo
    */
   public static void prepareKeysFromSurrogates(ColumnFilterInfo filterValues,
       SegmentProperties segmentProperties, CarbonDimension dimension,
-      DimColumnExecuterFilterInfo dimColumnExecuterInfo, CarbonMeasure measures,
-      MeasureColumnExecuterFilterInfo msrColumnExecuterInfo) {
+      DimColumnExecutorFilterInfo dimColumnExecutorInfo, CarbonMeasure measures,
+      MeasureColumnExecutorFilterInfo msrColumnExecutorInfo) {
     if (null != measures) {
       DataType filterColumnDataType = DataTypes.valueOf(measures.getDataType().getId());
       DataTypeConverterImpl converter = new DataTypeConverterImpl();
@@ -805,18 +805,18 @@ public final class FilterUtil {
                   converter);
         }
       }
-      msrColumnExecuterInfo.setFilterKeys(keysBasedOnFilter, filterColumnDataType);
+      msrColumnExecutorInfo.setFilterKeys(keysBasedOnFilter, filterColumnDataType);
     } else {
       if (filterValues == null) {
-        dimColumnExecuterInfo.setFilterKeys(new byte[0][]);
+        dimColumnExecutorInfo.setFilterKeys(new byte[0][]);
       } else {
         byte[][] keysBasedOnFilter =
             getKeyArray(filterValues, dimension, segmentProperties, false, false);
         if (!filterValues.isIncludeFilter() || filterValues.isOptimized()) {
-          dimColumnExecuterInfo.setExcludeFilterKeys(
+          dimColumnExecutorInfo.setExcludeFilterKeys(
               getKeyArray(filterValues, dimension, segmentProperties, true, false));
         }
-        dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
+        dimColumnExecutorInfo.setFilterKeys(keysBasedOnFilter);
       }
     }
   }
@@ -961,7 +961,7 @@ public final class FilterUtil {
     }
   }
 
-  public static void updateIndexOfColumnExpression(Expression exp, int dimOridnalMax) {
+  public static void updateIndexOfColumnExpression(Expression exp, int dimOrdinalMax) {
     // if expression is null, not require to update index.
     if (exp == null) {
       return;
@@ -973,14 +973,14 @@ public final class FilterUtil {
         if (column.isDimension()) {
           ce.setColIndex(column.getOrdinal());
         } else {
-          ce.setColIndex(dimOridnalMax + column.getOrdinal());
+          ce.setColIndex(dimOrdinalMax + column.getOrdinal());
         }
       }
     } else {
       if (exp.getChildren().size() > 0) {
         List<Expression> children = exp.getChildren();
         for (int i = 0; i < children.size(); i++) {
-          updateIndexOfColumnExpression(children.get(i), dimOridnalMax);
+          updateIndexOfColumnExpression(children.get(i), dimOrdinalMax);
         }
       }
     }
@@ -1044,7 +1044,7 @@ public final class FilterUtil {
   }
 
   /**
-   * This methdd will check if ImplictFilter is present or not
+   * This method will check if ImplicitFilter is present or not
    * if it is present then return that ImplicitFilterExpression
    *
    * @param expression
@@ -1062,7 +1062,7 @@ public final class FilterUtil {
           if (childExpression instanceof ColumnExpression && ((ColumnExpression) childExpression)
               .getColumnName().equalsIgnoreCase(CarbonCommonConstants.POSITION_ID)) {
             // Remove the right expression node and point the expression to left node expression
-            // if 1st children is implict column positionID then 2nd children will be
+            // if 1st children is implicit column positionID then 2nd children will be
             // implicit filter list
             return children.get(1);
           }
@@ -1130,13 +1130,13 @@ public final class FilterUtil {
    * @return sorted encoded filter values
    */
   private static byte[][] getSortedEncodedFilters(List<byte[]> encodedFilters) {
-    java.util.Comparator<byte[]> filterNoDictValueComaparator = new java.util.Comparator<byte[]>() {
+    java.util.Comparator<byte[]> filterNoDictValueComparator = new java.util.Comparator<byte[]>() {
       @Override
       public int compare(byte[] filterMember1, byte[] filterMember2) {
         return ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterMember1, filterMember2);
       }
     };
-    Collections.sort(encodedFilters, filterNoDictValueComaparator);
+    Collections.sort(encodedFilters, filterNoDictValueComparator);
     return encodedFilters.toArray(new byte[encodedFilters.size()][]);
   }
 
@@ -1165,9 +1165,9 @@ public final class FilterUtil {
             Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         row.setValues(new Object[] { DataTypeUtil.getDataBasedOnDataType(stringValue,
             columnExpression.getCarbonColumn().getDataType()) });
-        Boolean rslt = expression.evaluate(row).getBoolean();
-        if (null != rslt) {
-          if (rslt) {
+        Boolean result = expression.evaluate(row).getBoolean();
+        if (null != result) {
+          if (result) {
             includeFilterBitSet.set(i);
           }
         }
@@ -1217,7 +1217,7 @@ public final class FilterUtil {
 
   /**
    * Below method will be used to get filter executor instance for range filters
-   * when local dictonary is present for in blocklet
+   * when local dictionary is present for in blocklet
    * @param rawColumnChunk
    * raw column chunk
    * @param exp
@@ -1226,7 +1226,7 @@ public final class FilterUtil {
    * is data was already sorted
    * @return
    */
-  public static FilterExecuter getFilterExecutorForRangeFilters(
+  public static FilterExecutor getFilterExecutorForRangeFilters(
       DimensionRawColumnChunk rawColumnChunk, Expression exp, boolean isNaturalSorted) {
     BitSet includeDictionaryValues;
     try {
@@ -1241,13 +1241,13 @@ public final class FilterUtil {
     byte[][] encodedFilterValues = FilterUtil
         .getEncodedFilterValuesForRange(includeDictionaryValues,
             rawColumnChunk.getLocalDictionary(), isExclude);
-    FilterExecuter filterExecuter;
+    FilterExecutor filterExecutor;
     if (!isExclude) {
-      filterExecuter = new IncludeFilterExecuterImpl(encodedFilterValues, isNaturalSorted);
+      filterExecutor = new IncludeFilterExecutorImpl(encodedFilterValues, isNaturalSorted);
     } else {
-      filterExecuter = new ExcludeFilterExecuterImpl(encodedFilterValues, isNaturalSorted);
+      filterExecutor = new ExcludeFilterExecutorImpl(encodedFilterValues, isNaturalSorted);
     }
-    return filterExecuter;
+    return filterExecutor;
   }
 
   /**
@@ -1268,7 +1268,7 @@ public final class FilterUtil {
       Object value =
           DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(minMaxBytes, dataType);
       // filter value should be in range of max and min value i.e
-      // max>filtervalue>min
+      // max>filterValue>min
       // so filter-max should be negative
       Object data = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(filterValue, dataType);
       SerializableComparator comparator = Comparator.getComparator(dataType);

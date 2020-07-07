@@ -44,7 +44,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
  * for this Range. Also search the data block and set the required bitsets which falls within
  * the Range of the RANGE Expression.
  */
-public class RangeValueFilterExecuterImpl implements FilterExecuter {
+public class RangeValueFilterExecutorImpl implements FilterExecutor {
 
   private DimColumnResolvedFilterInfo dimColEvaluatorInfo;
   private Expression exp;
@@ -66,7 +66,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
   private boolean isRangeFullyCoverBlock;
   private boolean isNaturalSorted;
 
-  public RangeValueFilterExecuterImpl(DimColumnResolvedFilterInfo dimColEvaluatorInfo,
+  public RangeValueFilterExecutorImpl(DimColumnResolvedFilterInfo dimColEvaluatorInfo,
       Expression exp, byte[][] filterRangeValues, SegmentProperties segmentProperties) {
 
     this.dimColEvaluatorInfo = dimColEvaluatorInfo;
@@ -272,8 +272,8 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
     endBlockMaxisDefaultEnd = false;
 
     /*
-    For Undertsanding the below logic kept the value evaluation code intact.
-    int filterMinlessThanBlockMin =
+    For understanding the below logic kept the value evaluation code intact.
+    int filterMinLessThanBlockMin =
         ByteUtil.UnsafeComparer.INSTANCE.compareTo(blockMinValue, filterValues[0]);
     int filterMaxLessThanBlockMin =
         ByteUtil.UnsafeComparer.INSTANCE.compareTo(blockMinValue, filterValues[1]);
@@ -392,7 +392,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
     DimensionRawColumnChunk rawColumnChunk =
         blockChunkHolder.getDimensionRawColumnChunks()[chunkIndex];
     BitSetGroup bitSetGroup = new BitSetGroup(rawColumnChunk.getPagesCount());
-    FilterExecuter filterExecuter = null;
+    FilterExecutor filterExecutor = null;
     boolean isExclude = false;
     for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
       if (rawColumnChunk.getMaxValues() != null) {
@@ -407,20 +407,20 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
             BitSet bitSet;
             DimensionColumnPage dimensionColumnPage = rawColumnChunk.decodeColumnPage(i);
             if (null != rawColumnChunk.getLocalDictionary()) {
-              if (null == filterExecuter) {
-                filterExecuter = FilterUtil
+              if (null == filterExecutor) {
+                filterExecutor = FilterUtil
                     .getFilterExecutorForRangeFilters(rawColumnChunk, exp, isNaturalSorted);
-                if (filterExecuter instanceof ExcludeFilterExecuterImpl) {
+                if (filterExecutor instanceof ExcludeFilterExecutorImpl) {
                   isExclude = true;
                 }
               }
               if (!isExclude) {
-                bitSet = ((IncludeFilterExecuterImpl) filterExecuter)
+                bitSet = ((IncludeFilterExecutorImpl) filterExecutor)
                     .getFilteredIndexes(dimensionColumnPage,
                         rawColumnChunk.getRowCount()[i], useBitsetPipeLine,
                         blockChunkHolder.getBitSetGroup(), i);
               } else {
-                bitSet = ((ExcludeFilterExecuterImpl) filterExecuter)
+                bitSet = ((ExcludeFilterExecutorImpl) filterExecutor)
                     .getFilteredIndexes(dimensionColumnPage,
                         rawColumnChunk.getRowCount()[i], useBitsetPipeLine,
                         blockChunkHolder.getBitSetGroup(), i);
@@ -442,26 +442,26 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
   }
 
   private BitSet getFilteredIndexes(DimensionColumnPage dimensionColumnPage,
-      int numerOfRows) {
+      int numberOfRows) {
     if (dimensionColumnPage.isExplicitSorted()) {
-      return setFilterdIndexToBitSetWithColumnIndex(dimensionColumnPage, numerOfRows);
+      return setFilteredIndexToBitSetWithColumnIndex(dimensionColumnPage, numberOfRows);
     }
-    return setFilterdIndexToBitSet(dimensionColumnPage, numerOfRows);
+    return setFilteredIndexToBitSet(dimensionColumnPage, numberOfRows);
   }
 
   /**
    * Method will scan the block and finds the range start index from which all members
    * will be considered for applying range filters. this method will be called if the
    * column is not supported by default so column index mapping  will be present for
-   * accesing the members from the block.
+   * accessing the members from the block.
    *
    * @param dimensionColumnPage
-   * @param numerOfRows
+   * @param numberOfRows
    * @return BitSet.
    */
-  private BitSet setFilterdIndexToBitSetWithColumnIndex(
-      DimensionColumnPage dimensionColumnPage, int numerOfRows) {
-    BitSet bitSet = new BitSet(numerOfRows);
+  private BitSet setFilteredIndexToBitSetWithColumnIndex(
+      DimensionColumnPage dimensionColumnPage, int numberOfRows) {
+    BitSet bitSet = new BitSet(numberOfRows);
     int start = 0;
     int startIndex = 0;
     int startMin = 0;
@@ -473,17 +473,17 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
     // Get the Min Value
     if (!startBlockMinIsDefaultStart) {
       start = CarbonUtil
-          .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numerOfRows - 1,
+          .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
               filterValues[0], greaterThanExp);
       if (greaterThanExp && start >= 0) {
         start = CarbonUtil
             .nextGreaterValueToTarget(start, dimensionColumnPage, filterValues[0],
-                numerOfRows);
+                numberOfRows);
       }
 
       if (start < 0) {
         start = -(start + 1);
-        if (start == numerOfRows) {
+        if (start == numberOfRows) {
           start = start - 1;
         }
         // Method will compare the tentative index value after binary search, this tentative
@@ -503,7 +503,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
     // Get the Max value
     if (!endBlockMaxisDefaultEnd) {
       start = CarbonUtil
-          .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numerOfRows - 1,
+          .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
               filterValues[1], lessThanEqualExp);
 
       if (lessThanExp && start >= 0) {
@@ -513,7 +513,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
 
       if (start < 0) {
         start = -(start + 1);
-        if (start == numerOfRows) {
+        if (start == numberOfRows) {
           start = start - 1;
         }
         // In case the start is less than 0, then positive value of start is pointing to the next
@@ -526,7 +526,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
       }
       endMax = start;
     } else {
-      endMax = numerOfRows - 1;
+      endMax = numberOfRows - 1;
     }
 
     for (int j = startMin; j <= endMax; j++) {
@@ -535,7 +535,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
 
     // Binary Search cannot be done on '@NU#LL$!", so need to check and compare for null on
     // matching row.
-    if (dimensionColumnPage.isNoDicitionaryColumn() && !dimensionColumnPage.isAdaptiveEncoded()) {
+    if (dimensionColumnPage.isNoDictionaryColumn() && !dimensionColumnPage.isAdaptiveEncoded()) {
       updateForNoDictionaryColumn(startMin, endMax, dimensionColumnPage, bitSet);
     }
     return bitSet;
@@ -555,15 +555,15 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
    * Method will scan the block and finds the range start index from which all
    * members will be considered for applying range filters. this method will
    * be called if the column is sorted default so column index
-   * mapping will be present for accesaing the members from the block.
+   * mapping will be present for accessing the members from the block.
    *
    * @param dimensionColumnPage
-   * @param numerOfRows
+   * @param numberOfRows
    * @return BitSet.
    */
-  private BitSet setFilterdIndexToBitSet(DimensionColumnPage dimensionColumnPage,
-      int numerOfRows) {
-    BitSet bitSet = new BitSet(numerOfRows);
+  private BitSet setFilteredIndexToBitSet(DimensionColumnPage dimensionColumnPage,
+      int numberOfRows) {
+    BitSet bitSet = new BitSet(numberOfRows);
     // if (dimensionColumnPage instanceof FixedLengthDimensionColumnPage) {
     byte[][] filterValues = this.filterRangesValues;
     if (dimensionColumnPage.isExplicitSorted()) {
@@ -576,18 +576,18 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
       if (!startBlockMinIsDefaultStart) {
 
         start = CarbonUtil
-            .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numerOfRows - 1,
+            .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
                 filterValues[0], greaterThanExp);
 
         if (greaterThanExp && start >= 0) {
           start = CarbonUtil
               .nextGreaterValueToTarget(start, dimensionColumnPage, filterValues[0],
-                  numerOfRows);
+                  numberOfRows);
         }
 
         if (start < 0) {
           start = -(start + 1);
-          if (start == numerOfRows) {
+          if (start == numberOfRows) {
             start = start - 1;
           }
           // Method will compare the tentative index value after binary search, this tentative
@@ -605,7 +605,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
 
       if (!endBlockMaxisDefaultEnd) {
         start = CarbonUtil
-            .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numerOfRows - 1,
+            .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
                 filterValues[1], lessThanEqualExp);
 
         if (lessThanExp && start >= 0) {
@@ -615,7 +615,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
 
         if (start < 0) {
           start = -(start + 1);
-          if (start == numerOfRows) {
+          if (start == numberOfRows) {
             start = start - 1;
           }
           // In case the start is less than 0, then positive value of start is pointing to the next
@@ -627,7 +627,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
         }
         endMax = start;
       } else {
-        endMax = numerOfRows - 1;
+        endMax = numberOfRows - 1;
       }
 
       for (int j = startMin; j <= endMax; j++) {
@@ -636,7 +636,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
 
       // Binary Search cannot be done on '@NU#LL$!", so need to check and compare for null on
       // matching row.
-      if (dimensionColumnPage.isNoDicitionaryColumn()) {
+      if (dimensionColumnPage.isNoDictionaryColumn()) {
         updateForNoDictionaryColumn(startMin, endMax, dimensionColumnPage, bitSet);
       }
     } else {
@@ -653,10 +653,10 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
       // evaluate result for lower range value first and then perform and operation in the
       // upper range value in order to compute the final result
       bitSet = evaluateGreaterThanFilterForUnsortedColumn(dimensionColumnPage, filterValues[0],
-          numerOfRows);
+          numberOfRows);
       BitSet upperRangeBitSet =
           evaluateLessThanFilterForUnsortedColumn(dimensionColumnPage, filterValues[1],
-              numerOfRows);
+              numberOfRows);
       bitSet.and(upperRangeBitSet);
       FilterUtil.removeNullValues(dimensionColumnPage, bitSet, defaultValue);
     }

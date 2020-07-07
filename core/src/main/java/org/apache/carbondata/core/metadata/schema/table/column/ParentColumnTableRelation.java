@@ -40,10 +40,10 @@ public class ParentColumnTableRelation implements Serializable, Writable {
 
   private String columnName;
 
-  public ParentColumnTableRelation(RelationIdentifier relationIdentifier, String columId,
+  public ParentColumnTableRelation(RelationIdentifier relationIdentifier, String columnId,
       String columnName) {
     this.relationIdentifier = relationIdentifier;
-    this.columnId = columId;
+    this.columnId = columnId;
     this.columnName = columnName;
   }
 

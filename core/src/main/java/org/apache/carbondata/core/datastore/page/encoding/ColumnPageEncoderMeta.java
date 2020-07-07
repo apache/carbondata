@@ -49,7 +49,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   // Make it protected for RLEEncoderMeta
   protected String compressorName;
 
-  // Whether the flow shoild go to fill complete vector while decoding the page.
+  // Whether the flow should go to fill complete vector while decoding the page.
   private transient boolean fillCompleteVector;
 
   public ColumnPageEncoderMeta() {
@@ -58,7 +58,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   public ColumnPageEncoderMeta(TableSpec.ColumnSpec columnSpec, DataType storeDataType,
       String compressorName) {
     if (columnSpec == null) {
-      throw new IllegalArgumentException("columm spec must not be null");
+      throw new IllegalArgumentException("column spec must not be null");
     }
     if (storeDataType == null) {
       throw new IllegalArgumentException("store data type must not be null");
@@ -199,7 +199,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       byte[] min = new byte[in.readShort()];
       in.readFully(min);
       this.setMinValue(DataTypeUtil.byteToBigDecimal(min));
-      // unique value is obsoleted, maintain for compatiability
+      // unique value is obsoleted, maintain for compatibility
       short uniqueLength = in.readShort();
       in.readFully(new byte[uniqueLength]);
       // scale field is obsoleted. It is stored in the schema data type in columnSpec

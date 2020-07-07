@@ -24,7 +24,7 @@ public interface LoadStatistics {
   //Record the time
   void recordDicShuffleAndWriteTime();
 
-  void recordLoadCsvfilesToDfTime();
+  void recordLoadCsvFilesToDfTime();
 
   void recordDictionaryValuesTotalTime(String partitionID,
       Long dictionaryValuesTotalTimeTimePoint);

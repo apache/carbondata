@@ -15,26 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.scan.filter.optimizer;
+package org.apache.carbondata.core.scan.filter.intf;
 
-import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.expression.RangeExpressionEvaluator;
-import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
+import java.io.Serializable;
 
-public class RangeFilterOptmizer implements FilterOptimizer {
+public enum FilterExecutorType implements Serializable {
 
-  RangeExpressionEvaluator rangeExpEvaluator;
+  INCLUDE, EXCLUDE, OR, AND, RESTRUCTURE, ROWLEVEL, RANGE, ROWLEVEL_GREATERTHAN,
+  ROWLEVEL_GREATERTHAN_EQUALTO, ROWLEVEL_LESSTHAN_EQUALTO, ROWLEVEL_LESSTHAN, TRUE, FALSE
 
-  public RangeFilterOptmizer(Expression filterExpression) {
-    this.rangeExpEvaluator = new RangeExpressionEvaluator(filterExpression);
-
-  }
-
-  @Override
-  public Expression optimizeFilter() {
-    // Check if Range Filter can be applied.
-    // rangeExpEvaluator.rangeExpressionEvaluatorGraphBased(null, null);
-    rangeExpEvaluator.rangeExpressionEvaluatorMapBased();
-    return this.rangeExpEvaluator.getExpr();
-  }
 }

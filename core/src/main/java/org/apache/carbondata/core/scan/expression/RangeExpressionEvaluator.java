@@ -77,13 +77,13 @@ public class RangeExpressionEvaluator {
   }
 
   /**
-   * This method evaluates is any greaterthan or less than expression can be transformed
+   * This method evaluates is any greater than or less than expression can be transformed
    * into a single RANGE filter.
    */
   public void rangeExpressionEvaluatorMapBased() {
     // The algorithm :
     // Get all the nodes of the Expression Tree and fill it into a MAP.
-    // The Map structure will be currentNode, ColumnName, LessThanOrgreaterThan, Value, ParentNode
+    // The Map structure will be currentNode, ColumnName, LessThanOrGreaterThan, Value, ParentNode
     // Group the rows in MAP according to the columns and then evaluate if it can be transformed
     // into a RANGE or not.
     //
@@ -225,7 +225,7 @@ public class RangeExpressionEvaluator {
     // if the parentNode is a ANDExpression and the current node is LessThan, GreaterThan
     // then add the node into filterExpressionMap.
     if ((parentNode instanceof AndExpression) && (isLessThanGreaterThanExp(currentNode)
-        && eligibleForRangeExpConv(currentNode))) {
+        && eligibleForRangeExpConversion(currentNode))) {
       addFilterExpressionMap(filterExpressionMap, currentNode, parentNode);
     }
     // In case of Or Exp we have to evaluate both the subtrees of expression separately
@@ -282,7 +282,7 @@ public class RangeExpressionEvaluator {
    * @param expChild
    * @return
    */
-  private boolean eligibleForRangeExpConv(Expression expChild) {
+  private boolean eligibleForRangeExpConversion(Expression expChild) {
     for (Expression exp : expChild.getChildren()) {
       if (exp instanceof ColumnExpression) {
         return ((ColumnExpression) exp).isDimension() &&
@@ -393,7 +393,7 @@ public class RangeExpressionEvaluator {
   /**
    * This Method Traverses the Expression Tree to find the corresponding node of the Range
    * Expression. If one node of Range Expression is LessThan then a corresponding GreaterThan
-   * will be choosen or vice versa.
+   * will be chosen or vice versa.
    *
    * @param currentNode
    * @param parentNode

@@ -55,7 +55,7 @@ public class ResultCollectorFactory {
     if (blockExecutionInfo.isRawRecordDetailQuery()) {
       if (blockExecutionInfo.isRestructuredBlock()) {
         if (blockExecutionInfo.isRequiredRowId()) {
-          LOGGER.info("RowId Restructure based raw ollector is used to scan and collect the data");
+          LOGGER.info("RowId Restructure based raw collector is used to scan and collect the data");
           scannerResultAggregator = new RowIdRestructureBasedRawResultCollector(blockExecutionInfo);
         } else {
           LOGGER.info("Restructure based raw collector is used to scan and collect the data");

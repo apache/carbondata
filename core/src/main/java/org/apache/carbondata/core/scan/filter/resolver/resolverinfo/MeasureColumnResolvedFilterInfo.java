@@ -41,14 +41,14 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
 
   private int rowIndex = -1;
 
-  private boolean isMeasureExistsInCurrentSilce = true;
+  private boolean isMeasureExistsInCurrentSlice = true;
 
   private CarbonColumn carbonColumn;
 
   private CarbonMeasure carbonMeasure;
 
   /**
-   * reolved filter object of a particlar filter Expression.
+   * resolved filter object of a particular filter Expression.
    */
   private ColumnFilterInfo resolvedFilterValueObj;
 
@@ -66,13 +66,13 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
 
   public void addMeasureResolvedFilterInstance(CarbonMeasure measures,
       ColumnFilterInfo filterResolvedObj) {
-    List<ColumnFilterInfo> currentVals = measureResolvedFilter.get(measures);
-    if (null == currentVals) {
-      currentVals = new ArrayList<ColumnFilterInfo>(20);
-      currentVals.add(filterResolvedObj);
-      measureResolvedFilter.put(measures, currentVals);
+    List<ColumnFilterInfo> currentValues = measureResolvedFilter.get(measures);
+    if (null == currentValues) {
+      currentValues = new ArrayList<ColumnFilterInfo>(20);
+      currentValues.add(filterResolvedObj);
+      measureResolvedFilter.put(measures, currentValues);
     } else {
-      currentVals.add(filterResolvedObj);
+      currentValues.add(filterResolvedObj);
     }
   }
 
@@ -121,8 +121,8 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  public void setMeasureExistsInCurrentSilce(boolean measureExistsInCurrentSilce) {
-    isMeasureExistsInCurrentSilce = measureExistsInCurrentSilce;
+  public void setMeasureExistsInCurrentSlice(boolean measureExistsInCurrentSlice) {
+    isMeasureExistsInCurrentSlice = measureExistsInCurrentSlice;
   }
 
   public void setMeasure(CarbonMeasure carbonMeasure) {
@@ -151,7 +151,7 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
     msrColumnResolvedFilterInfo.resolvedFilterValueObj = this.resolvedFilterValueObj;
     msrColumnResolvedFilterInfo.rowIndex = this.rowIndex;
     msrColumnResolvedFilterInfo.measureResolvedFilter = this.measureResolvedFilter;
-    msrColumnResolvedFilterInfo.setMeasureExistsInCurrentSilce(this.isMeasureExistsInCurrentSilce);
+    msrColumnResolvedFilterInfo.setMeasureExistsInCurrentSlice(this.isMeasureExistsInCurrentSlice);
     msrColumnResolvedFilterInfo.columnIndexInMinMaxByteArray = columnIndexInMinMaxByteArray;
     return msrColumnResolvedFilterInfo;
   }

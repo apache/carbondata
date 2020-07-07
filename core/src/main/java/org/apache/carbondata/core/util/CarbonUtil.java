@@ -288,8 +288,8 @@ public final class CarbonUtil {
     return newDimsC;
   }
 
-  private static int getBitLengthFullyFilled(int dimlens) {
-    int bitsLength = Long.toBinaryString(dimlens).length();
+  private static int getBitLengthFullyFilled(int dimensionLens) {
+    int bitsLength = Long.toBinaryString(dimensionLens).length();
     int div = bitsLength / 8;
     int mod = bitsLength % 8;
     if (mod > 0) {
@@ -513,12 +513,12 @@ public final class CarbonUtil {
    * @param currentIndex
    * @param dimColumnDataChunk
    * @param compareValue
-   * @param numerOfRows
+   * @param numberOfRows
    * @return index value
    */
   public static int nextGreaterValueToTarget(int currentIndex,
-      DimensionColumnPage dimColumnDataChunk, byte[] compareValue, int numerOfRows) {
-    while (currentIndex + 1 < numerOfRows
+      DimensionColumnPage dimColumnDataChunk, byte[] compareValue, int numberOfRows) {
+    while (currentIndex + 1 < numberOfRows
         && dimColumnDataChunk.compareTo(currentIndex + 1, compareValue) <= 0) {
       ++currentIndex;
     }
@@ -866,14 +866,14 @@ public final class CarbonUtil {
   }
 
   /**
-   * Below method will be used to read the data file matadata
+   * Below method will be used to read the data file metadata
    */
   public static DataFileFooter readMetadataFile(TableBlockInfo tableBlockInfo) throws IOException {
     return getDataFileFooter(tableBlockInfo, false);
   }
 
   /**
-   * Below method will be used to read the data file matadata
+   * Below method will be used to read the data file metadata
    *
    * @param tableBlockInfo
    * @param forceReadDataFileFooter flag to decide whether to read the footer of
@@ -1008,9 +1008,9 @@ public final class CarbonUtil {
   public static boolean[] identifyDimensionType(List<CarbonDimension> tableDimensionList) {
     List<Boolean> isDictionaryDimensions = new ArrayList<Boolean>();
     for (CarbonDimension carbonDimension : tableDimensionList) {
-      List<CarbonDimension> childs = carbonDimension.getListOfChildDimensions();
-      //assuming complex dimensions will always be atlast
-      if (null != childs && childs.size() > 0) {
+      List<CarbonDimension> children = carbonDimension.getListOfChildDimensions();
+      //assuming complex dimensions will always be at last
+      if (null != children && children.size() > 0) {
         break;
       }
       if (carbonDimension.getDataType() == DataTypes.DATE) {
@@ -1112,7 +1112,7 @@ public final class CarbonUtil {
       // ensure that if the dimensions columnName is same as the block columnName and the dimension
       // columnId is the same as dimensions columnName then it's a valid column to be scanned.
       if (dimensionToBeSearched.getColumnId().equalsIgnoreCase(blockDimension.getColumnId())
-          || blockDimension.isColmatchBasedOnId(dimensionToBeSearched)) {
+          || blockDimension.isColumnMatchBasedOnId(dimensionToBeSearched)) {
         currentBlockDimension = blockDimension;
         break;
       }
@@ -1135,7 +1135,7 @@ public final class CarbonUtil {
       // ensure that if the measures columnName is same as the block columnName and the measures
       // columnId is the same as measures columnName then it's a valid column to be scanned.
       if (measureToBeSearched.getColumnId().equalsIgnoreCase(blockMeasure.getColumnId())
-          || blockMeasure.isColmatchBasedOnId(measureToBeSearched)) {
+          || blockMeasure.isColumnMatchBasedOnId(measureToBeSearched)) {
         currentBlockMeasure = blockMeasure;
         break;
       }
@@ -1146,20 +1146,20 @@ public final class CarbonUtil {
   public static List<ColumnSchema> getColumnSchemaList(List<CarbonDimension> carbonDimensionsList,
       List<CarbonMeasure> carbonMeasureList) {
     List<ColumnSchema> wrapperColumnSchemaList = new ArrayList<ColumnSchema>();
-    fillCollumnSchemaListForComplexDims(carbonDimensionsList, wrapperColumnSchemaList);
+    fillColumnSchemaListForComplexDims(carbonDimensionsList, wrapperColumnSchemaList);
     for (CarbonMeasure carbonMeasure : carbonMeasureList) {
       wrapperColumnSchemaList.add(carbonMeasure.getColumnSchema());
     }
     return wrapperColumnSchemaList;
   }
 
-  private static void fillCollumnSchemaListForComplexDims(
+  private static void fillColumnSchemaListForComplexDims(
       List<CarbonDimension> carbonDimensionsList, List<ColumnSchema> wrapperColumnSchemaList) {
     for (CarbonDimension carbonDimension : carbonDimensionsList) {
       wrapperColumnSchemaList.add(carbonDimension.getColumnSchema());
       List<CarbonDimension> childDims = carbonDimension.getListOfChildDimensions();
       if (null != childDims && childDims.size() > 0) {
-        fillCollumnSchemaListForComplexDims(childDims, wrapperColumnSchemaList);
+        fillColumnSchemaListForComplexDims(childDims, wrapperColumnSchemaList);
       }
     }
   }
@@ -1351,13 +1351,13 @@ public final class CarbonUtil {
     if (values == null || values.isEmpty()) {
       return "";
     }
-    StringBuilder segmentStringbuilder = new StringBuilder();
+    StringBuilder segmentStringBuilder = new StringBuilder();
     for (int i = 0; i < values.size() - 1; i++) {
-      segmentStringbuilder.append(values.get(i));
-      segmentStringbuilder.append(",");
+      segmentStringBuilder.append(values.get(i));
+      segmentStringBuilder.append(",");
     }
-    segmentStringbuilder.append(values.get(values.size() - 1));
-    return segmentStringbuilder.toString();
+    segmentStringBuilder.append(values.get(values.size() - 1));
+    return segmentStringBuilder.toString();
   }
 
   /**
@@ -1587,13 +1587,13 @@ public final class CarbonUtil {
 
   /**
    * @param invalidBlockVOForSegmentId
-   * @param updateStatusMngr
+   * @param updateStatusManager
    * @return
    */
   public static boolean isInvalidTableBlock(String segmentId, String filePath,
-      UpdateVO invalidBlockVOForSegmentId, SegmentUpdateStatusManager updateStatusMngr) {
+      UpdateVO invalidBlockVOForSegmentId, SegmentUpdateStatusManager updateStatusManager) {
 
-    if (!updateStatusMngr.isBlockValid(segmentId,
+    if (!updateStatusManager.isBlockValid(segmentId,
         CarbonTablePath.getCarbonDataFileName(filePath) +
             CarbonTablePath.getCarbonDataExtension())) {
       return true;
@@ -1614,7 +1614,7 @@ public final class CarbonUtil {
           && blockTimeStamp > invalidBlockVOForSegmentId.getLatestUpdateTimestamp()) {
         return true;
       }
-      // for 1st time starttime stamp will be empty so need to consider fact time stamp.
+      // for 1st time, start timestamp will be empty, so need to consider fact timestamp.
       if (null == invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp()
           && blockTimeStamp > invalidBlockVOForSegmentId.getFactTimestamp()) {
         return true;
@@ -1785,29 +1785,29 @@ public final class CarbonUtil {
   }
 
   /**
-   * Converts Tableinfo object to json multi string objects of size 4000
+   * Converts TableInfo object to json multi string objects of size 4000
    * @param tableInfo
-   * @param seperator separator between each string
+   * @param separator separator between each string
    * @param quote Quote to be used for string
    * @param prefix Prefix to be added before generated string
    * @return
    */
-  public static String convertToMultiGsonStrings(TableInfo tableInfo, String seperator,
+  public static String convertToMultiGsonStrings(TableInfo tableInfo, String separator,
       String quote, String prefix) {
     Gson gson = new Gson();
     String schemaString = gson.toJson(tableInfo);
-    return splitSchemaStringToMultiString(seperator, quote, prefix, schemaString);
+    return splitSchemaStringToMultiString(separator, quote, prefix, schemaString);
   }
 
   /**
    * Converts Json String to multi string objects of size 4000
    * @param schemaString Json string
-   * @param seperator separator between each string
+   * @param separator separator between each string
    * @param quote Quote to be used for string
    * @param prefix Prefix to be added before generated string
    * @return
    */
-  public static String splitSchemaStringToMultiString(String seperator, String quote,
+  public static String splitSchemaStringToMultiString(String separator, String quote,
       String prefix, String schemaString) {
     int schemaLen = schemaString.length();
     int splitLen = 4000;
@@ -1817,7 +1817,7 @@ public final class CarbonUtil {
     }
     StringBuilder builder =
         new StringBuilder(prefix).append(quote).append("carbonSchemaPartsNo").append(quote)
-            .append(seperator).append("'").append(parts).append("',");
+            .append(separator).append("'").append(parts).append("',");
     int runningLen = 0;
     int endLen = schemaLen > splitLen ? splitLen : schemaLen;
     for (int i = 0; i < parts; i++) {
@@ -1826,7 +1826,7 @@ public final class CarbonUtil {
           endLen = schemaLen % splitLen;
         }
       }
-      builder.append(quote).append("carbonSchema").append(i).append(quote).append(seperator);
+      builder.append(quote).append("carbonSchema").append(i).append(quote).append(separator);
       builder.append("'").append(schemaString.substring(runningLen, runningLen + endLen))
           .append("'");
       if (i < parts - 1) {
@@ -1838,7 +1838,7 @@ public final class CarbonUtil {
   }
 
   /**
-   * Converts Tableinfo object to json multi string objects  of size 4000 and stored in map
+   * Converts TableInfo object to json multi string objects  of size 4000 and stored in map
    * @param tableInfo
    * @return
    */
@@ -1901,17 +1901,17 @@ public final class CarbonUtil {
     Gson gson = gsonBuilder.create();
     TableInfo tableInfo = gson.fromJson(builder.toString(), TableInfo.class);
 
-    // The tableInfo is deserialized from GSON string, need to update the scale and
+    // The tableInfo is deserialize from GSON string, need to update the scale and
     // precision if there are any decimal field, because DecimalType is added in Carbon 1.3,
-    // If it is not updated, read compactibility will be break for table generated before Carbon 1.3
+    // If it is not updated, read compatibility will be break for table generated before Carbon 1.3
     updateDecimalType(tableInfo);
     return tableInfo;
   }
 
   // Update decimal type inside `tableInfo` to set scale and precision, if there are any decimal
   private static void updateDecimalType(TableInfo tableInfo) {
-    List<ColumnSchema> deserializedColumns = tableInfo.getFactTable().getListOfColumns();
-    for (ColumnSchema column : deserializedColumns) {
+    List<ColumnSchema> deserializeColumns = tableInfo.getFactTable().getListOfColumns();
+    for (ColumnSchema column : deserializeColumns) {
       DataType dataType = column.getDataType();
       if (DataTypes.isDecimal(dataType)) {
         column.setDataType(DataTypes.createDecimalType(column.getPrecision(), column.getScale()));
@@ -2008,10 +2008,10 @@ public final class CarbonUtil {
   }
 
   static List<ParentColumnTableRelation> fromThriftToWrapperParentTableColumnRelations(
-      List<org.apache.carbondata.format.ParentColumnTableRelation> thirftParentColumnRelation) {
+      List<org.apache.carbondata.format.ParentColumnTableRelation> thriftParentColumnRelation) {
     List<ParentColumnTableRelation> parentColumnTableRelationList = new ArrayList<>();
     for (org.apache.carbondata.format.ParentColumnTableRelation carbonTableRelation :
-        thirftParentColumnRelation) {
+        thriftParentColumnRelation) {
       RelationIdentifier relationIdentifier =
           new RelationIdentifier(carbonTableRelation.getRelationIdentifier().getDatabaseName(),
               carbonTableRelation.getRelationIdentifier().getTableName(),
@@ -2094,7 +2094,7 @@ public final class CarbonUtil {
     CarbonFile[] dataFiles = segment.listFiles();
     CarbonFile latestCarbonFile = null;
     long latestDatafileTimestamp = 0L;
-    // get the latest carbondatafile to get the latest schema in the folder
+    // get the latest carbon data file to get the latest schema in the folder
     for (CarbonFile dataFile : dataFiles) {
       if (dataFile.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT)
           && dataFile.getLastModifiedTime() > latestDatafileTimestamp) {
@@ -2229,11 +2229,11 @@ public final class CarbonUtil {
 
     SchemaEvolutionEntry schemaEvolutionEntry = new SchemaEvolutionEntry();
     schemaEvolutionEntry.setTimeStamp(System.currentTimeMillis());
-    SchemaEvolution schemaEvol = new SchemaEvolution();
+    SchemaEvolution schemaEvolution = new SchemaEvolution();
     List<SchemaEvolutionEntry> schEntryList = new ArrayList<>();
     schEntryList.add(schemaEvolutionEntry);
-    schemaEvol.setSchemaEvolutionEntryList(schEntryList);
-    tableSchema.setSchemaEvolution(schemaEvol);
+    schemaEvolution.setSchemaEvolutionEntryList(schEntryList);
+    tableSchema.setSchemaEvolution(schemaEvolution);
     return tableSchema;
   }
 
@@ -2370,8 +2370,8 @@ public final class CarbonUtil {
       Boolean updateSize)
       throws IOException {
     Map<String, Long> dataIndexSizeMap = new HashMap<String, Long>();
-    long dataSize = 0L;
-    long indexSize = 0L;
+    long totalDataSize = 0L;
+    long totalIndexSize = 0L;
     long lastUpdateTime = 0L;
     boolean needUpdate = false;
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
@@ -2387,7 +2387,7 @@ public final class CarbonUtil {
           lockAcquired = carbonLock.lockWithRetries();
         }
         if (lockAcquired) {
-          LOGGER.debug("Acquired lock for table for table status updation");
+          LOGGER.debug("Acquired lock for table for table status update");
           String metadataPath = carbonTable.getMetadataPath();
           LoadMetadataDetails[] loadMetadataDetails =
               SegmentStatusManager.readLoadMetadata(metadataPath);
@@ -2396,21 +2396,21 @@ public final class CarbonUtil {
             SegmentStatus loadStatus = loadMetadataDetail.getSegmentStatus();
             if (loadStatus == SegmentStatus.SUCCESS || loadStatus ==
                       SegmentStatus.LOAD_PARTIAL_SUCCESS) {
-              String dsize = loadMetadataDetail.getDataSize();
-              String isize = loadMetadataDetail.getIndexSize();
+              String dataSize = loadMetadataDetail.getDataSize();
+              String indexSize = loadMetadataDetail.getIndexSize();
               // If it is old segment, need to calculate data size and index size again
-              if (null == dsize || null == isize) {
+              if (null == dataSize || null == indexSize) {
                 needUpdate = true;
                 LOGGER.debug("It is an old segment, need calculate data size and index size again");
                 HashMap<String, Long> map = CarbonUtil.getDataSizeAndIndexSize(
                     identifier.getTablePath(), loadMetadataDetail.getLoadName());
-                dsize = String.valueOf(map.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE));
-                isize = String.valueOf(map.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE));
-                loadMetadataDetail.setDataSize(dsize);
-                loadMetadataDetail.setIndexSize(isize);
+                dataSize = String.valueOf(map.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE));
+                indexSize = String.valueOf(map.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE));
+                loadMetadataDetail.setDataSize(dataSize);
+                loadMetadataDetail.setIndexSize(indexSize);
               }
-              dataSize += Long.parseLong(dsize);
-              indexSize += Long.parseLong(isize);
+              totalDataSize += Long.parseLong(dataSize);
+              totalIndexSize += Long.parseLong(indexSize);
             }
           }
           // If it contains old segment, write new load details
@@ -2426,22 +2426,22 @@ public final class CarbonUtil {
                 FileFactory.getCarbonFile(tableStatusPath).getLastModifiedTime();
           }
           if (!FileFactory.isFileExist(metadataPath)) {
-            dataSize = FileFactory.getDirectorySize(carbonTable.getTablePath());
+            totalDataSize = FileFactory.getDirectorySize(carbonTable.getTablePath());
           }
           dataIndexSizeMap
-              .put(String.valueOf(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE), dataSize);
+              .put(String.valueOf(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE), totalDataSize);
           dataIndexSizeMap
-              .put(String.valueOf(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE), indexSize);
+              .put(String.valueOf(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE), totalIndexSize);
           dataIndexSizeMap
               .put(String.valueOf(CarbonCommonConstants.LAST_UPDATE_TIME), lastUpdateTime);
         } else {
-          LOGGER.error("Not able to acquire the lock for Table status updation for table");
+          LOGGER.error("Not able to acquire the lock for Table status update for table");
         }
       } finally {
         if (carbonLock.unlock()) {
-          LOGGER.debug("Table unlocked successfully after table status updation");
+          LOGGER.debug("Table unlocked successfully after table status update");
         } else {
-          LOGGER.error("Unable to unlock Table lock for table during table status updation");
+          LOGGER.error("Unable to unlock Table lock for table during table status update");
         }
       }
     }
@@ -2521,7 +2521,7 @@ public final class CarbonUtil {
     if (locationMap != null) {
       fileStore.readIndexFiles(FileFactory.getConfiguration());
       Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
-      // get the size of carbonindex file
+      // get the size of carbon index file
       carbonIndexSize = getCarbonIndexSize(fileStore, locationMap);
       for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
         // get the size of carbondata files
@@ -2543,7 +2543,7 @@ public final class CarbonUtil {
   }
 
   /**
-   * Calcuate the index files size of the segment
+   * Calculate the index files size of the segment
    *
    * @param fileStore
    * @param locationMap
@@ -2554,7 +2554,7 @@ public final class CarbonUtil {
     long carbonIndexSize = 0L;
     for (Map.Entry<String, SegmentFileStore.FolderDetails> entry : locationMap.entrySet()) {
       SegmentFileStore.FolderDetails folderDetails = entry.getValue();
-      Set<String> carbonindexFiles = folderDetails.getFiles();
+      Set<String> indexFiles = folderDetails.getFiles();
       String mergeFileName = folderDetails.getMergeFileName();
       if (null != mergeFileName) {
         String mergeIndexPath;
@@ -2567,7 +2567,7 @@ public final class CarbonUtil {
         }
         carbonIndexSize += FileFactory.getCarbonFile(mergeIndexPath).getSize();
       }
-      for (String indexFile : carbonindexFiles) {
+      for (String indexFile : indexFiles) {
         String indexPath;
         if (entry.getValue().isRelative()) {
           indexPath =
@@ -2615,7 +2615,7 @@ public final class CarbonUtil {
   }
 
   /**
-   * Deoce
+   * Decode string to byte array
    * @param objectString
    * @return
    * @throws UnsupportedEncodingException
@@ -2765,7 +2765,7 @@ public final class CarbonUtil {
   }
 
   /**
-   * Generate the blockid as per the block path
+   * Generate the blockId as per the block path
    *
    * @param identifier
    * @param filePath
@@ -2781,7 +2781,7 @@ public final class CarbonUtil {
   }
 
   /**
-   * Generate the blockid as per the block path
+   * Generate the blockId as per the block path
    *
    * @return
    */
@@ -3035,10 +3035,10 @@ public final class CarbonUtil {
       CarbonTable carbonTable) {
     List<ColumnSchema> wrapperColumnSchema = CarbonUtil
         .getColumnSchemaList(carbonTable.getVisibleDimensions(), carbonTable.getVisibleMeasures());
-    boolean islocalDictEnabled = carbonTable.isLocalDictionaryEnabled();
+    boolean isLocalDictEnabled = carbonTable.isLocalDictionaryEnabled();
     // creates a map only if local dictionary is enabled, else map will be null
     Map<String, LocalDictionaryGenerator> columnLocalDictGenMap = new HashMap<>();
-    if (islocalDictEnabled) {
+    if (isLocalDictEnabled) {
       int localDictionaryThreshold = carbonTable.getLocalDictionaryThreshold();
       for (ColumnSchema columnSchema : wrapperColumnSchema) {
         // check whether the column is local dictionary column or not
@@ -3051,7 +3051,7 @@ public final class CarbonUtil {
         }
       }
     }
-    if (islocalDictEnabled) {
+    if (isLocalDictEnabled) {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("Local dictionary is enabled for table: " + carbonTable.getTableUniqueName());
         LOGGER.debug(String.format("Local dictionary threshold for table %s is %d",
@@ -3086,7 +3086,7 @@ public final class CarbonUtil {
     ColumnarFormatVersion version = null;
     SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
-    // if the carbontable is support flat folder
+    // if the carbon table is support flat folder
     if (supportFlatFolder) {
       segmentPath = carbonTable.getTablePath();
       if (FileFactory.isFileExist(segmentPath)) {
@@ -3144,7 +3144,7 @@ public final class CarbonUtil {
         }
       }
       // if all valid segments path does not in the system,
-      // then the carbon file verion as default
+      // then the carbon file version as default
       if (version == null) {
         version = CarbonProperties.getInstance().getFormatVersion();
       }
@@ -3176,9 +3176,9 @@ public final class CarbonUtil {
   }
 
   /**
-   * Check whether it is standard table means tablepath has Fact/Part0/Segment_ tail present with
-   * all carbon files. In other cases carbon files present directly under tablepath or
-   * tablepath/partition folder
+   * Check whether it is standard table means table path has Fact/Part0/Segment_ tail present with
+   * all carbon files. In other cases carbon files present directly under table path or
+   * tablePath/partition folder
    * TODO Read segment file and corresponding index file to get the correct carbondata file instead
    * of using this way.
    * @param table
@@ -3190,11 +3190,11 @@ public final class CarbonUtil {
 
   /**
    * This method will form the FallbackEncodedColumnPage from input column page
-   * @param columnPage actual data column page got from encoded columnpage if decoder based fallback
-   * is disabled or newly created columnpage by extracting actual data from dictionary data, if
-   * decoder based fallback is enabled
+   * @param columnPage actual data column page got from encoded column page if decoder based
+   * fallback is disabled or newly created column page by extracting actual data from dictionary
+   * data, if decoder based fallback is enabled
    * @param pageIndex pageIndex
-   * @param columnSpec ColumSpec
+   * @param columnSpec ColumnSpec
    * @return FallbackEncodedColumnPage
    * @throws IOException
    */
@@ -3254,7 +3254,7 @@ public final class CarbonUtil {
 
   /**
    * Below method is to generateUUID (Random Based)
-   * later it will be extened for TimeBased,NameBased
+   * later it will be extended for TimeBased,NameBased
    *
    * @return UUID as String
    */

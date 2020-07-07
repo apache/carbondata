@@ -158,9 +158,9 @@ public class ExtendedBlocklet extends Blocklet {
   }
 
   /**
-   * Method to seralize extended blocklet and inputsplit for index server
+   * Method to serialize extended blocklet and input split for index server
    * DataFormat
-   * <Extended Blocklet data><Carbon input split serializeData lenght><CarbonInputSplitData>
+   * <Extended Blocklet data><Carbon input split serializeData length><CarbonInputSplitData>
    * @param out
    * @param uniqueLocation
    * @throws IOException
@@ -189,7 +189,7 @@ public class ExtendedBlocklet extends Blocklet {
         inputSplit.setFilePath(null);
         inputSplit.setBucketId(null);
         if (inputSplit.isBlockCache()) {
-          inputSplit.updateFooteroffset();
+          inputSplit.updateFooterOffset();
           inputSplit.updateBlockLength();
           inputSplit.setWriteDetailInfo(false);
         }
@@ -201,7 +201,7 @@ public class ExtendedBlocklet extends Blocklet {
   }
 
   /**
-   * Method to deseralize extended blocklet and inputsplit for index server
+   * Method to deserialize extended blocklet and input split for index server
    * @param in
    * @param locations
    * @param tablePath

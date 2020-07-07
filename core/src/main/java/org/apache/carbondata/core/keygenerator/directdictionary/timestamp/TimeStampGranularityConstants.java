@@ -29,7 +29,7 @@ public interface TimeStampGranularityConstants {
    */
   String CARBON_CUTOFF_TIMESTAMP = "carbon.cutOffTimestamp";
   /**
-   * The property to set the timestamp (ie milis) conversion to the SECOND, MINUTE, HOUR
+   * The property to set the timestamp (ie millisecond) conversion to the SECOND, MINUTE, HOUR
    * or DAY level
    */
   String CARBON_TIME_GRANULARITY = "carbon.timegranularity";

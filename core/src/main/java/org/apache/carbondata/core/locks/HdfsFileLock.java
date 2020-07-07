@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 
 /**
  * This class is used to handle the HDFS File locking.
- * This is achieved using the concept of acquiring the data out stream using Append option.
+ * This is achieved by using the concept of acquiring the data out stream using Append option.
  */
 public class HdfsFileLock extends AbstractCarbonLock {
 

@@ -72,22 +72,22 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
   }
 
   @Override
-  public boolean renameForce(String changetoName) {
+  public boolean renameForce(String changeToName) {
     try {
       if (fileSystem instanceof DistributedFileSystem) {
-        ((DistributedFileSystem) fileSystem).rename(path, new Path(changetoName),
+        ((DistributedFileSystem) fileSystem).rename(path, new Path(changeToName),
             org.apache.hadoop.fs.Options.Rename.OVERWRITE);
         return true;
       } else if ((fileSystem instanceof FilterFileSystem) && (((FilterFileSystem) fileSystem)
           .getRawFileSystem() instanceof DistributedFileSystem)) {
         ((DistributedFileSystem) ((FilterFileSystem) fileSystem).getRawFileSystem())
-            .rename(path, new Path(changetoName), org.apache.hadoop.fs.Options.Rename.OVERWRITE);
+            .rename(path, new Path(changeToName), org.apache.hadoop.fs.Options.Rename.OVERWRITE);
         return true;
       } else {
-        return fileSystem.rename(path, new Path(changetoName));
+        return fileSystem.rename(path, new Path(changeToName));
       }
     } catch (IOException e) {
-      LOGGER.error("Exception occured: " + e.getMessage(), e);
+      LOGGER.error("Exception occurred: " + e.getMessage(), e);
       return false;
     }
   }

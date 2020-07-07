@@ -20,13 +20,13 @@ package org.apache.carbondata.core.scan.result.iterator;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.scan.result.RowBatch;
 
-public class PartitionSpliterRawResultIterator extends CarbonIterator<Object[]> {
+public class PartitionSplitterRawResultIterator extends CarbonIterator<Object[]> {
 
   private CarbonIterator<RowBatch> iterator;
   private RowBatch batch;
   private int counter;
 
-  public PartitionSpliterRawResultIterator(CarbonIterator<RowBatch> iterator) {
+  public PartitionSplitterRawResultIterator(CarbonIterator<RowBatch> iterator) {
     this.iterator = iterator;
   }
 

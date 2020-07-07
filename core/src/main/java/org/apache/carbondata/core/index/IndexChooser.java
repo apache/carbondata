@@ -43,7 +43,7 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.TrueConditio
 
 /**
  * This chooser does 2 jobs.
- * 1. Based on filter expression it converts the available Indexs to Index expression.
+ * 1. Based on filter expression it converts the available Indexes to Index expression.
  *   For example, there are 2 Indexes available on table1
  *   Index1 : column1
  *   Index2 : column2

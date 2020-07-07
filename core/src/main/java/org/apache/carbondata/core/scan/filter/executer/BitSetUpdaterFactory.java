@@ -19,7 +19,7 @@ package org.apache.carbondata.core.scan.filter.executer;
 
 import java.util.BitSet;
 
-import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
+import org.apache.carbondata.core.scan.filter.intf.FilterExecutorType;
 
 /**
  * Class for updating the bitset
@@ -30,15 +30,15 @@ public final class BitSetUpdaterFactory {
 
   public static final BitSetUpdaterFactory INSTANCE = new BitSetUpdaterFactory();
 
-  public FilterBitSetUpdater getBitSetUpdater(FilterExecuterType filterExecuterType) {
-    switch (filterExecuterType) {
+  public FilterBitSetUpdater getBitSetUpdater(FilterExecutorType filterExecutorType) {
+    switch (filterExecutorType) {
       case INCLUDE:
         return new IncludeFilterBitSetUpdater();
       case EXCLUDE:
         return new ExcludeFilterBitSetUpdater();
       default:
         throw new UnsupportedOperationException(
-            "Invalid filter executor type:" + filterExecuterType);
+            "Invalid filter executor type:" + filterExecutorType);
     }
   }
 

@@ -137,7 +137,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
           if (!isBackupFilled) {
             fetchFuture.get();
           }
-          // copy backup buffer to current buffer and fill backup buffer asyn
+          // copy backup buffer to current buffer and fill backup buffer asynchronously
           currentIdxInBuffer = 0;
           currentBuffer.clear();
           currentBuffer = backupBuffer;

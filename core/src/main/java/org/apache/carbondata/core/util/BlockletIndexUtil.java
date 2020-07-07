@@ -146,7 +146,7 @@ public class BlockletIndexUtil {
 
   /**
    * This method will create file name to block Meta Info Mapping. This method will reduce the
-   * number of namenode calls and using this method one namenode will fetch 1000 entries
+   * number of nameNode calls and using this method one namenode will fetch 1000 entries
    *
    * @param segmentFilePath
    * @return
@@ -431,7 +431,7 @@ public class BlockletIndexUtil {
       } else {
         // check if all the filter dimensions are cached
         for (CarbonDimension filterDimension : filterDimensions) {
-          // complex dimensions are not allwed to be specified in COLUMN_META_CACHE property, so
+          // complex dimensions are not allowed to be specified in COLUMN_META_CACHE property, so
           // cannot validate for complex columns
           if (filterDimension.isComplex()) {
             continue;

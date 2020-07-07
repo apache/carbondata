@@ -22,7 +22,7 @@ import java.util.BitSet;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.util.CarbonUtil;
 
-public class ExcludeFilterExecuterImplTest extends IncludeFilterExecuterImplTest {
+public class ExcludeFilterExecutorImplTest extends IncludeFilterExecutorImplTest {
 
  @Override
   public BitSet setFilterdIndexToBitSetNew(DimensionColumnPage dimColumnDataChunk,

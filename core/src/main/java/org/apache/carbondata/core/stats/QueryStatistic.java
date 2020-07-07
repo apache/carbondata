@@ -42,7 +42,7 @@ public class QueryStatistic implements Serializable {
   private long timeTaken;
 
   /**
-   * starttime of the phase
+   * start time of the phase
    */
   private long startTime;
 
@@ -71,10 +71,10 @@ public class QueryStatistic implements Serializable {
    * For example total time taken for scan or result preparation
    *
    * @param message   statistic message
-   * @param timetaken
+   * @param timeTaken
    */
-  public void addFixedTimeStatistic(String message, long timetaken) {
-    this.timeTaken = timetaken;
+  public void addFixedTimeStatistic(String message, long timeTaken) {
+    this.timeTaken = timeTaken;
     this.message = message;
   }
 
@@ -95,7 +95,7 @@ public class QueryStatistic implements Serializable {
     if (StringUtils.isEmpty(queryWithTaskId)) {
       return message + timeTaken;
     }
-    return message + " for the taskid : " + queryWithTaskId + " Is : " + timeTaken;
+    return message + " for the task id : " + queryWithTaskId + " Is : " + timeTaken;
   }
 
   public String getMessage() {

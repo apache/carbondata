@@ -67,7 +67,7 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
    */
   protected void scanAndFillData(BlockletScannedResult scannedResult, int batchSize,
       List<Object[]> listBasedResult, ProjectionMeasure[] queryMeasures) {
-    int numberOfPages = scannedResult.numberOfpages();
+    int numberOfPages = scannedResult.numberOfPages();
     // loop will exit once the batchSize data has been read or the pages have been exhausted
     while (scannedResult.getCurrentPageCounter() < numberOfPages) {
       int currentPageRowCount = scannedResult.getCurrentPageRowCount();
@@ -88,7 +88,7 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
       if (batchSize > availableRows) {
         batchSize = batchSize - availableRows;
       } else {
-        // this is done because in IUD cases actuals rows fetch can be less than batch size as
+        // this is done because in IUD cases actual rows fetch can be less than batch size as
         // some of the rows could have deleted. So in those cases batchSize need to be
         // re initialized with left over value
         batchSize = 0;

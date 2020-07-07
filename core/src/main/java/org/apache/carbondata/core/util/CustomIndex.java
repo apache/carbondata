@@ -28,7 +28,7 @@ import java.util.Map;
  * An Index implementation class must extend this class and provide the concrete implementation
  * for following abstract methods:
  * 1. Init method to extract and store the sub-properties of index property. Such as index type,
- *    sourcecolumns etc.
+ *    source columns etc.
  * 2. Generate method to generate the row value for the index column from corresponding row values
  *    of its source columns.
  * 3. Query method to process the custom UDF filter queries based on source columns.

@@ -38,7 +38,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
-import static org.apache.carbondata.core.util.path.CarbonTablePath.SUCCESS_FILE_SUBFIX;
+import static org.apache.carbondata.core.util.path.CarbonTablePath.SUCCESS_FILE_SUFFIX;
 
 import com.google.gson.Gson;
 import org.apache.commons.io.IOUtils;
@@ -89,10 +89,10 @@ public class StageInputCollector {
       CarbonFile[] allFiles = dir.listFiles();
       Map<String, CarbonFile> map = new HashMap<>();
       Arrays.stream(allFiles)
-          .filter(file -> file.getName().endsWith(SUCCESS_FILE_SUBFIX))
+          .filter(file -> file.getName().endsWith(SUCCESS_FILE_SUFFIX))
           .forEach(file -> map.put(file.getName().substring(0, file.getName().indexOf(".")), file));
       Arrays.stream(allFiles)
-          .filter(file -> !file.getName().endsWith(SUCCESS_FILE_SUBFIX))
+          .filter(file -> !file.getName().endsWith(SUCCESS_FILE_SUFFIX))
           .filter(file -> map.containsKey(file.getName()))
           .forEach(carbonFile -> {
             stageInputList.add(carbonFile);

@@ -86,7 +86,7 @@ public class LoadMetadataDetails implements Serializable {
   /**
    * Segment modification or deletion time stamp
    */
-  private String modificationOrdeletionTimesStamp;
+  private String modificationOrDeletionTimestamp;
 
   private String loadStartTime;
 
@@ -167,21 +167,21 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   /**
-   * @return the modificationOrdeletionTimesStamp
+   * @return the modificationOrDeletionTimesStamp
    */
-  public long getModificationOrdeletionTimesStamp() {
-    if (null == modificationOrdeletionTimesStamp) {
+  public long getModificationOrDeletionTimestamp() {
+    if (null == modificationOrDeletionTimestamp) {
       return 0;
     }
-    return convertTimeStampToLong(modificationOrdeletionTimesStamp);
+    return convertTimeStampToLong(modificationOrDeletionTimestamp);
   }
 
   /**
-   * @param modificationOrdeletionTimesStamp the modificationOrdeletionTimesStamp to set
+   * @param modificationOrDeletionTimestamp the modificationOrDeletionTimesStamp to set
    */
-  public void setModificationOrdeletionTimesStamp(long modificationOrdeletionTimesStamp) {
-    this.modificationOrdeletionTimesStamp =
-        Long.toString(modificationOrdeletionTimesStamp);
+  public void setModificationOrDeletionTimestamp(long modificationOrDeletionTimestamp) {
+    this.modificationOrDeletionTimestamp =
+        Long.toString(modificationOrDeletionTimestamp);
   }
 
   /* (non-Javadoc)

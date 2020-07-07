@@ -95,7 +95,7 @@ public class CarbonUpdateUtil {
    */
   public static String getTableBlockPath(String tid, String tablePath, boolean isStandardTable) {
     String partField = getRequiredFieldFromTID(tid, TupleIdEnum.PART_ID);
-    // If it has segment file then partfield can be appended directly to table path
+    // If it has segment file then part field can be appended directly to table path
     if (!isStandardTable) {
       return tablePath + CarbonCommonConstants.FILE_SEPARATOR + partField.replace("#", "/");
     }
@@ -173,7 +173,7 @@ public class CarbonUpdateUtil {
     } finally {
       if (lockStatus) {
         if (updateLock.unlock()) {
-          LOGGER.info("Unlock the segment update lock successfull.");
+          LOGGER.info("Unlock the segment update lock successful.");
         } else {
           LOGGER.error("Not able to unlock the segment update lock.");
         }
@@ -215,15 +215,15 @@ public class CarbonUpdateUtil {
    * @param updatedSegmentsList
    * @param table
    * @param updatedTimeStamp
-   * @param isTimestampUpdationRequired
+   * @param isTimestampUpdateRequired
    * @param segmentsToBeDeleted
    * @return
    */
   public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
-      CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdationRequired,
+      CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdateRequired,
       List<Segment> segmentsToBeDeleted) {
     return updateTableMetadataStatus(updatedSegmentsList, table, updatedTimeStamp,
-        isTimestampUpdationRequired, segmentsToBeDeleted, new ArrayList<Segment>(), "");
+        isTimestampUpdateRequired, segmentsToBeDeleted, new ArrayList<Segment>(), "");
   }
 
   /**
@@ -231,12 +231,12 @@ public class CarbonUpdateUtil {
    * @param updatedSegmentsList
    * @param table
    * @param updatedTimeStamp
-   * @param isTimestampUpdationRequired
+   * @param isTimestampUpdateRequired
    * @param segmentsToBeDeleted
    * @return
    */
   public static boolean updateTableMetadataStatus(Set<Segment> updatedSegmentsList,
-      CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdationRequired,
+      CarbonTable table, String updatedTimeStamp, boolean isTimestampUpdateRequired,
       List<Segment> segmentsToBeDeleted, List<Segment> segmentFilesTobeUpdated, String uuid) {
 
     boolean status = false;
@@ -253,14 +253,14 @@ public class CarbonUpdateUtil {
       if (lockStatus) {
         LOGGER.info(
                 "Acquired lock for table" + table.getDatabaseName() + "." + table.getTableName()
-                        + " for table status updation");
+                        + " for table status update");
 
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
                 SegmentStatusManager.readLoadMetadata(metaDataFilepath);
 
         for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
 
-          if (isTimestampUpdationRequired) {
+          if (isTimestampUpdateRequired) {
             // we are storing the link between the 2 status files in the segment 0 only.
             if (loadMetadata.getLoadName().equalsIgnoreCase("0")) {
               loadMetadata.setUpdateStatusFileName(
@@ -270,14 +270,14 @@ public class CarbonUpdateUtil {
             // if the segments is in the list of marked for delete then update the status.
             if (segmentsToBeDeleted.contains(new Segment(loadMetadata.getLoadName()))) {
               loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
-              loadMetadata.setModificationOrdeletionTimesStamp(Long.parseLong(updatedTimeStamp));
+              loadMetadata.setModificationOrDeletionTimestamp(Long.parseLong(updatedTimeStamp));
             }
           }
           for (Segment segName : updatedSegmentsList) {
             if (loadMetadata.getLoadName().equalsIgnoreCase(segName.getSegmentNo())) {
               // if this call is coming from the delete delta flow then the time stamp
               // String will come empty then no need to write into table status file.
-              if (isTimestampUpdationRequired) {
+              if (isTimestampUpdateRequired) {
                 // if in case of update flow.
                 if (loadMetadata.getUpdateDeltaStartTimestamp().isEmpty()) {
                   // this means for first time it is getting updated .
@@ -304,19 +304,19 @@ public class CarbonUpdateUtil {
 
         status = true;
       } else {
-        LOGGER.error("Not able to acquire the lock for Table status updation for table " + table
+        LOGGER.error("Not able to acquire the lock for Table status update for table " + table
                 .getDatabaseName() + "." + table.getTableName());
       }
     } finally {
       if (lockStatus) {
         if (carbonLock.unlock()) {
           LOGGER.info(
-                 "Table unlocked successfully after table status updation" + table.getDatabaseName()
+                 "Table unlocked successfully after table status update" + table.getDatabaseName()
                           + "." + table.getTableName());
         } else {
           LOGGER.error(
                   "Unable to unlock Table lock for table" + table.getDatabaseName() + "." + table
-                          .getTableName() + " during table status updation");
+                          .getTableName() + " during table status update");
         }
       }
     }
@@ -375,14 +375,14 @@ public class CarbonUpdateUtil {
   /**
    * returns timestamp as long value
    *
-   * @param timtstamp
+   * @param timestamp
    * @return
    */
-  public static Long getTimeStampAsLong(String timtstamp) {
+  public static Long getTimeStampAsLong(String timestamp) {
     try {
-      return Long.parseLong(timtstamp);
+      return Long.parseLong(timestamp);
     } catch (NumberFormatException nfe) {
-      String errorMsg = "Invalid timestamp : " + timtstamp;
+      String errorMsg = "Invalid timestamp : " + timestamp;
       LOGGER.error(errorMsg);
       return null;
     }
@@ -473,7 +473,7 @@ public class CarbonUpdateUtil {
   }
 
   /**
-   * Handling of the clean up of old carbondata files, index files , delte delta,
+   * Handling of the clean up of old carbondata files, index files , delete delta,
    * update status files.
    * @param table clean up will be handled on this table.
    * @param forceDelete if true then max query execution timeout will not be considered.
@@ -521,7 +521,7 @@ public class CarbonUpdateUtil {
               FileFactory.getCarbonFile(segmentPath);
           CarbonFile[] allSegmentFiles = segDir.listFiles();
 
-          // scan through the segment and find the carbondatafiles and index files.
+          // scan through the segment and find the carbon data files and index files.
           boolean updateSegmentFile = false;
           // deleting of the aborted file scenario.
           if (deleteStaleCarbonDataFiles(segment, allSegmentFiles, updateStatusManager)) {
@@ -719,7 +719,7 @@ public class CarbonUpdateUtil {
 
   /**
    * This function deletes all the stale carbondata files during clean up before update operation
-   * one scenario is if update operation is ubruptly stopped before updation of table status then
+   * one scenario is if update operation is abruptly stopped before update of table status then
    * the carbondata file created during update operation is stale file and it will be deleted in
    * this function in next update operation
    * @param segment

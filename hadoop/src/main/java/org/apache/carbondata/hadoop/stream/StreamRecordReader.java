@@ -42,7 +42,7 @@ import org.apache.carbondata.core.reader.CarbonHeaderReader;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
-import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecutor;
 import org.apache.carbondata.core.scan.filter.intf.RowImpl;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -98,7 +98,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
   protected boolean isFinished = false;
 
   // filter
-  protected FilterExecuter filter;
+  protected FilterExecutor filter;
   private boolean[] isFilterRequired;
   private Object[] filterValues;
   protected RowIntf filterRow;
@@ -219,7 +219,7 @@ public class StreamRecordReader extends RecordReader<Void, Object> {
     Map<Integer, GenericQueryType> complexDimensionInfoMap = new HashMap<>();
 
     FilterResolverIntf resolverIntf = model.getIndexFilter().getResolver();
-    filter = FilterUtil.getFilterExecuterTree(
+    filter = FilterUtil.getFilterExecutorTree(
         resolverIntf, segmentProperties, complexDimensionInfoMap, true);
     // for row filter, we need update column index
     FilterUtil.updateIndexOfColumnExpression(resolverIntf.getFilterExpression(),

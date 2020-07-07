@@ -159,10 +159,10 @@ public class TableSpec {
     this.dictDimActualPosition = new int[dictSortDimSpec.size()];
     this.noDictDimActualPosition = new int[noDictSortDimSpec.size()];
     for (int i = 0; i < dictDimActualPosition.length; i++) {
-      dictDimActualPosition[i] = dictSortDimSpec.get(i).getActualPostion();
+      dictDimActualPosition[i] = dictSortDimSpec.get(i).getActualPosition();
     }
     for (int i = 0; i < noDictDimActualPosition.length; i++) {
-      noDictDimActualPosition[i] = noDictSortDimSpec.get(i).getActualPostion();
+      noDictDimActualPosition[i] = noDictSortDimSpec.get(i).getActualPosition();
     }
     isUpdateNoDictDims = !noDictSortDimSpec.equals(noDictionaryDimensionSpec);
     isUpdateDictDim = !dictSortDimSpec.equals(dictDimensionSpec);
@@ -342,13 +342,13 @@ public class TableSpec {
     // indicate whether this dimension need to do inverted index
     private boolean doInvertedIndex;
 
-    // indicate the actual postion in blocklet
-    private short actualPostion;
-    DimensionSpec(ColumnType columnType, CarbonDimension dimension, short actualPostion) {
+    // indicate the actual position in blocklet
+    private short actualPosition;
+    DimensionSpec(ColumnType columnType, CarbonDimension dimension, short actualPosition) {
       super(dimension.getColName(), dimension.getDataType(), columnType);
       this.inSortColumns = dimension.isSortColumn();
       this.doInvertedIndex = dimension.isUseInvertedIndex();
-      this.actualPostion = actualPostion;
+      this.actualPosition = actualPosition;
     }
 
     public boolean isInSortColumns() {
@@ -359,8 +359,8 @@ public class TableSpec {
       return doInvertedIndex;
     }
 
-    public short getActualPostion() {
-      return actualPostion;
+    public short getActualPosition() {
+      return actualPosition;
     }
 
     @Override

@@ -159,7 +159,7 @@ public class ExplainCollector {
     return output;
   }
 
-  public static String getFormatedOutput() {
+  public static String getFormattedOutput() {
     if (null != get()) {
       return get().toString();
     } else {

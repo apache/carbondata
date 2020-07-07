@@ -36,7 +36,7 @@ import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedExc
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
-import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecutor;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitColumnFilterExecutor;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.resolver.ConditionalFilterResolverImpl;
@@ -59,26 +59,26 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * filter expression tree which is been passed in Expression instance.
    *
    * @param expressionTree  , filter expression tree
-   * @param tableIdentifier ,contains carbon store informations
+   * @param tableIdentifier ,contains carbon store information
    * @return a filter resolver tree
    */
   public FilterResolverIntf getFilterResolver(Expression expressionTree,
       AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException {
     if (null != expressionTree && null != tableIdentifier) {
-      return getFilterResolvertree(expressionTree, tableIdentifier);
+      return getFilterResolverTree(expressionTree, tableIdentifier);
     }
     return null;
   }
 
   /**
    * API will return a filter resolver instance which will be used by
-   * executers to evaluate or execute the filters.
+   * executors to evaluate or execute the filters.
    *
    * @param expressionTree , resolver tree which will hold the resolver tree based on
    *                       filter expression.
    * @return FilterResolverIntf type.
    */
-  private FilterResolverIntf getFilterResolvertree(Expression expressionTree,
+  private FilterResolverIntf getFilterResolverTree(Expression expressionTree,
       AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException {
     FilterResolverIntf filterEvaluatorTree =
         createFilterResolverTree(expressionTree, tableIdentifier);
@@ -311,14 +311,14 @@ public class FilterExpressionProcessor implements FilterProcessor {
     return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
   }
 
-  public static boolean isScanRequired(FilterExecuter filterExecuter, byte[][] maxValue,
+  public static boolean isScanRequired(FilterExecutor filterExecutor, byte[][] maxValue,
       byte[][] minValue, boolean[] isMinMaxSet) {
-    if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
-      return ((ImplicitColumnFilterExecutor) filterExecuter)
+    if (filterExecutor instanceof ImplicitColumnFilterExecutor) {
+      return ((ImplicitColumnFilterExecutor) filterExecutor)
           .isFilterValuesPresentInAbstractIndex(maxValue, minValue, isMinMaxSet);
     } else {
       // otherwise decide based on min/max value
-      BitSet bitSet = filterExecuter.isScanRequired(maxValue, minValue, isMinMaxSet);
+      BitSet bitSet = filterExecutor.isScanRequired(maxValue, minValue, isMinMaxSet);
       return !bitSet.isEmpty();
     }
   }
@@ -353,12 +353,12 @@ public class FilterExpressionProcessor implements FilterProcessor {
   }
 
   /**
-   * Change UnknownReslover to TrueExpression Reslover.
+   * Change UnknownResolver to TrueExpression Resolver.
    *
    * @param tableIdentifier
    * @return
    */
-  public FilterResolverIntf changeUnknownResloverToTrue(AbsoluteTableIdentifier tableIdentifier) {
+  public FilterResolverIntf changeUnknownResolverToTrue(AbsoluteTableIdentifier tableIdentifier) {
     return getFilterResolverBasedOnExpressionType(ExpressionType.TRUE, false,
         new TrueExpression(null), tableIdentifier, new TrueExpression(null));
 

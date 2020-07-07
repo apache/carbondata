@@ -46,17 +46,17 @@ public class ByteArrayBlockIndexerStorage extends BlockIndexerStorage<byte[][]> 
    */
   private ByteArrayColumnWithRowId[] createColumnWithRowId(byte[][] dataPage,
       boolean isNoDictionary) {
-    ByteArrayColumnWithRowId[] columnWithIndexs = new ByteArrayColumnWithRowId[dataPage.length];
+    ByteArrayColumnWithRowId[] columnWithIndexes = new ByteArrayColumnWithRowId[dataPage.length];
     if (isNoDictionary) {
-      for (short i = 0; i < columnWithIndexs.length; i++) {
-        columnWithIndexs[i] = new ByteArrayColumnWithRowId(dataPage[i], i);
+      for (short i = 0; i < columnWithIndexes.length; i++) {
+        columnWithIndexes[i] = new ByteArrayColumnWithRowId(dataPage[i], i);
       }
     } else {
-      for (short i = 0; i < columnWithIndexs.length; i++) {
-        columnWithIndexs[i] = new ByteArrayColumnWithRowId(dataPage[i], i);
+      for (short i = 0; i < columnWithIndexes.length; i++) {
+        columnWithIndexes[i] = new ByteArrayColumnWithRowId(dataPage[i], i);
       }
     }
-    return columnWithIndexs;
+    return columnWithIndexes;
   }
 
   private short[] extractDataAndReturnRowId(ByteArrayColumnWithRowId[] dataWithRowId,

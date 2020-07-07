@@ -26,16 +26,16 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
-import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertableVector;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertibleVector;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * Below class is responsible to store variable length dimension data chunk in
- * memory. Memory occupied can be on heap or offheap using unsafe interface
+ * memory. Memory occupied can be on heap or off-heap using unsafe interface
  */
 public abstract class SafeVariableLengthDimensionDataChunkStore
-    extends SafeAbsractDimensionDataChunkStore {
+    extends SafeAbstractDimensionDataChunkStore {
 
   /**
    * total number of rows
@@ -59,7 +59,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
   }
 
   /**
-   * Below method will be used to put the rows and its metadata in offheap
+   * Below method will be used to put the rows and its metadata in off-heap
    *
    * @param invertedIndex        inverted index to be stored
    * @param invertedIndexReverse inverted index reverse to be stored
@@ -112,8 +112,8 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
         .getDirectVectorWrapperFactory(vector, invertedIndex, new BitSet(), vectorInfo.deletedRows,
             false, false);
     vectorFiller.fillVector(data, vector);
-    if (vector instanceof ConvertableVector) {
-      ((ConvertableVector) vector).convert();
+    if (vector instanceof ConvertibleVector) {
+      ((ConvertibleVector) vector).convert();
     }
   }
 
@@ -123,8 +123,8 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
 
   @Override
   public byte[] getRow(int rowId) {
-    // if column was explicitly sorted we need to get the rowid based inverted index reverse
-    if (isExplictSorted) {
+    // if column was explicitly sorted we need to get the row id based inverted index reverse
+    if (isExplicitSorted) {
       rowId = invertedIndexReverse[rowId];
     }
     // now to get the row from memory block we need to do following thing
@@ -150,8 +150,8 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
   @Override
   public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
     vector.setDictionary(null);
-    // if column was explicitly sorted we need to get the rowid based inverted index reverse
-    if (isExplictSorted) {
+    // if column was explicitly sorted we need to get the row id based inverted index reverse
+    if (isExplicitSorted) {
       rowId = invertedIndexReverse[rowId];
     }
     // now to get the row from memory block we need to do following thing
