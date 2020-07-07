@@ -193,7 +193,7 @@ class CarbonScanRDD[T: ClassTag](
         logInfo(
           s"""
              | Identified no.of.streaming splits/tasks: ${ streamPartitions.size },
-             | no.of.streaming files: ${format.getHitedStreamFiles},
+             | no.of.streaming files: ${format.getHitStreamFiles},
              | no.of.total streaming files: ${format.getNumStreamFiles},
              | no.of.total streaming segement: ${format.getNumStreamSegments}
           """.stripMargin)

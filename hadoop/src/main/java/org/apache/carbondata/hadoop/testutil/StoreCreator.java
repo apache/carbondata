@@ -43,10 +43,10 @@ import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
-import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
@@ -86,9 +86,9 @@ public class StoreCreator {
 
   private static final Logger LOG =
       LogServiceFactory.getLogService(StoreCreator.class.getCanonicalName());
-  private AbsoluteTableIdentifier absoluteTableIdentifier;
-  private String storePath = null;
-  private String csvPath;
+  private final AbsoluteTableIdentifier absoluteTableIdentifier;
+  private final String storePath;
+  private final String csvPath;
   private List<String> sortColumns = new ArrayList<>();
 
   public StoreCreator(String storePath, String csvPath) {
@@ -124,7 +124,7 @@ public class StoreCreator {
     loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
     loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
     loadModel.setFactFilePath(factFilePath);
-    loadModel.setLoadMetadataDetails(new ArrayList<LoadMetadataDetails>());
+    loadModel.setLoadMetadataDetails(new ArrayList<>());
     loadModel.setTablePath(absoluteTableIdentifier.getTablePath());
     loadModel.setDateFormat(null);
     loadModel.setCarbonTransactionalTable(table.isTransactionalTable());
@@ -198,103 +198,22 @@ public class StoreCreator {
     tableInfo.setDatabaseName(identifier.getCarbonTableIdentifier().getDatabaseName());
     TableSchema tableSchema = new TableSchema();
     tableSchema.setTableName(identifier.getCarbonTableIdentifier().getTableName());
-    List<ColumnSchema> columnSchemas = new ArrayList<ColumnSchema>();
+    List<ColumnSchema> columnSchemas = new ArrayList<>();
     ArrayList<Encoding> encodings = new ArrayList<>();
     int schemaOrdinal = 0;
-    ColumnSchema id = new ColumnSchema();
-    id.setColumnName("id");
-    id.setDataType(DataTypes.INT);
-    id.setEncodingList(encodings);
-    id.setColumnUniqueId(UUID.randomUUID().toString());
-    id.setColumnReferenceId(id.getColumnUniqueId());
-    id.setDimensionColumn(true);
-    id.setSchemaOrdinal(schemaOrdinal++);
-    if (sortColumns.contains(id.getColumnName())) {
-      id.setSortColumn(true);
-    }
-    columnSchemas.add(id);
-
-    ColumnSchema date = new ColumnSchema();
-    date.setColumnName("date");
-    date.setDataType(DataTypes.STRING);
-    date.setEncodingList(encodings);
-    date.setColumnUniqueId(UUID.randomUUID().toString());
-    date.setDimensionColumn(true);
-    date.setColumnReferenceId(date.getColumnUniqueId());
-    date.setSchemaOrdinal(schemaOrdinal++);
-    if (sortColumns.contains(date.getColumnName())) {
-      date.setSortColumn(true);
-    }
-    columnSchemas.add(date);
-
-    ColumnSchema country = new ColumnSchema();
-    country.setColumnName("country");
-    country.setDataType(DataTypes.STRING);
-    country.setEncodingList(encodings);
-    country.setColumnUniqueId(UUID.randomUUID().toString());
-    country.setDimensionColumn(true);
-    country.setSortColumn(true);
-    country.setSchemaOrdinal(schemaOrdinal++);
-    if (sortColumns.contains(country.getColumnName())) {
-      country.setSortColumn(true);
-    }
-    country.setColumnReferenceId(country.getColumnUniqueId());
-    columnSchemas.add(country);
-
-    ColumnSchema name = new ColumnSchema();
-    name.setColumnName("name");
-    name.setDataType(DataTypes.STRING);
-    name.setEncodingList(encodings);
-    name.setColumnUniqueId(UUID.randomUUID().toString());
-    name.setDimensionColumn(true);
-    name.setSchemaOrdinal(schemaOrdinal++);
-    if (sortColumns.contains(name.getColumnName())) {
-      name.setSortColumn(true);
-    }
-    name.setColumnReferenceId(name.getColumnUniqueId());
-    columnSchemas.add(name);
-
-    ColumnSchema phonetype = new ColumnSchema();
-    phonetype.setColumnName("phonetype");
-    phonetype.setDataType(DataTypes.STRING);
-    phonetype.setEncodingList(encodings);
-    phonetype.setColumnUniqueId(UUID.randomUUID().toString());
-    phonetype.setDimensionColumn(true);
-    phonetype.setSchemaOrdinal(schemaOrdinal++);
-    if (sortColumns.contains(phonetype.getColumnName())) {
-      phonetype.setSortColumn(true);
-    }
-    phonetype.setColumnReferenceId(phonetype.getColumnUniqueId());
-    columnSchemas.add(phonetype);
-
-    ColumnSchema serialname = new ColumnSchema();
-    serialname.setColumnName("serialname");
-    serialname.setDataType(DataTypes.STRING);
-    serialname.setEncodingList(encodings);
-    serialname.setColumnUniqueId(UUID.randomUUID().toString());
-    serialname.setDimensionColumn(true);
-    serialname.setSchemaOrdinal(schemaOrdinal++);
-    if (sortColumns.contains(serialname.getColumnName())) {
-      serialname.setSortColumn(true);
-    }
-    serialname.setColumnReferenceId(serialname.getColumnUniqueId());
-    columnSchemas.add(serialname);
-    ColumnSchema salary = new ColumnSchema();
-    salary.setColumnName("salary");
-    salary.setDataType(DataTypes.INT);
-    salary.setEncodingList(new ArrayList<Encoding>());
-    salary.setColumnUniqueId(UUID.randomUUID().toString());
-    salary.setDimensionColumn(false);
-    salary.setColumnReferenceId(salary.getColumnUniqueId());
-    salary.setSchemaOrdinal(schemaOrdinal++);
-    columnSchemas.add(salary);
-
+    addColumn(columnSchemas, encodings, schemaOrdinal++, "id", DataTypes.INT, true);
+    addColumn(columnSchemas, encodings, schemaOrdinal++, "date", DataTypes.STRING, true);
+    addColumn(columnSchemas, encodings, schemaOrdinal++, "country", DataTypes.STRING, true);
+    addColumn(columnSchemas, encodings, schemaOrdinal++, "name", DataTypes.STRING, true);
+    addColumn(columnSchemas, encodings, schemaOrdinal++, "phonetype", DataTypes.STRING, true);
+    addColumn(columnSchemas, encodings, schemaOrdinal++, "serialname", DataTypes.STRING, true);
+    addColumn(columnSchemas, encodings, schemaOrdinal, "salary", DataTypes.INT, false);
     // rearrange the column schema based on the sort order, if sort columns exists
     List<ColumnSchema> columnSchemas1 = reArrangeColumnSchema(columnSchemas);
     tableSchema.setListOfColumns(columnSchemas1);
-    SchemaEvolution schemaEvol = new SchemaEvolution();
-    schemaEvol.setSchemaEvolutionEntryList(new ArrayList<SchemaEvolutionEntry>());
-    tableSchema.setSchemaEvolution(schemaEvol);
+    SchemaEvolution schemaEvolution = new SchemaEvolution();
+    schemaEvolution.setSchemaEvolutionEntryList(new ArrayList<>());
+    tableSchema.setSchemaEvolution(schemaEvolution);
     tableSchema.setTableId(UUID.randomUUID().toString());
     tableInfo.setTableUniqueName(
         identifier.getCarbonTableIdentifier().getTableUniqueName()
@@ -328,6 +247,22 @@ public class StoreCreator {
     return CarbonMetadata.getInstance().getCarbonTable(tableInfo.getTableUniqueName());
   }
 
+  private void addColumn(List<ColumnSchema> columnSchemas, ArrayList<Encoding> encodings,
+      int schemaOrdinal, String name2, DataType dataType, boolean isDimensionColumn) {
+    ColumnSchema name = new ColumnSchema();
+    name.setColumnName(name2);
+    name.setDataType(dataType);
+    name.setEncodingList(encodings);
+    name.setColumnUniqueId(UUID.randomUUID().toString());
+    name.setColumnReferenceId(name.getColumnUniqueId());
+    name.setDimensionColumn(isDimensionColumn);
+    name.setSchemaOrdinal(schemaOrdinal);
+    if (sortColumns.contains(name.getColumnName())) {
+      name.setSortColumn(true);
+    }
+    columnSchemas.add(name);
+  }
+
   private List<ColumnSchema> reArrangeColumnSchema(List<ColumnSchema> columnSchemas) {
     List<ColumnSchema> newColumnSchema = new ArrayList<>(columnSchemas.size());
     // add sort columns first
@@ -357,10 +292,6 @@ public class StoreCreator {
 
   /**
    * Execute graph which will further load data
-   *
-   * @param loadModel
-   * @param storeLocation
-   * @throws Exception
    */
   public static void loadData(CarbonLoadModel loadModel, String storeLocation)
       throws Exception {
@@ -425,7 +356,7 @@ public class StoreCreator {
 
     writeLoadMetadata(
         loadModel.getCarbonDataLoadSchema(), loadModel.getTableName(), loadModel.getTableName(),
-        new ArrayList<LoadMetadataDetails>());
+        new ArrayList<>());
   }
 
   public static void writeLoadMetadata(CarbonDataLoadSchema schema, String databaseName,
@@ -460,13 +391,8 @@ public class StoreCreator {
       writeOperation.setFailed();
       throw ioe;
     } finally {
-      try {
-        if (null != brWriter) {
-          brWriter.flush();
-        }
-      } catch (Exception e) {
-        throw e;
-
+      if (null != brWriter) {
+        brWriter.flush();
       }
       CarbonUtil.closeStreams(brWriter);
 
@@ -477,11 +403,7 @@ public class StoreCreator {
 
   public static String readCurrentTime() {
     SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
-    String date = null;
-
-    date = sdf.format(new Date());
-
-    return date;
+    return sdf.format(new Date());
   }
 
   public static void main(String[] args) throws Exception {

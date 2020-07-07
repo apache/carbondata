@@ -18,6 +18,7 @@
 package org.apache.carbondata.hadoop;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -29,16 +30,14 @@ public class CarbonProjection implements Serializable {
 
   private static final long serialVersionUID = -4328676723039530713L;
 
-  private Set<String> columns = new LinkedHashSet<>();
+  private final Set<String> columns = new LinkedHashSet<>();
 
   public CarbonProjection() {
   }
 
   public CarbonProjection(String[] columnNames) {
     Objects.requireNonNull(columnNames);
-    for (String columnName : columnNames) {
-      columns.add(columnName);
-    }
+    columns.addAll(Arrays.asList(columnNames));
   }
 
   public void addColumn(String column) {

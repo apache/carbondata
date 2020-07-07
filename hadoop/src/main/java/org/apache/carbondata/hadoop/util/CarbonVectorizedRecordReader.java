@@ -69,10 +69,10 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
 
   private AbstractDetailQueryResultIterator iterator;
 
-  private QueryModel queryModel;
+  private final QueryModel queryModel;
   //This holds mapping of  fetch index with respect to project col index.
   // it is used when same col is used in projection many times.So need to fetch only that col.
-  private List<Integer> projectionMapping = new ArrayList<>();
+  private final List<Integer> projectionMapping = new ArrayList<>();
 
   public CarbonVectorizedRecordReader(QueryModel queryModel) {
     this.queryModel = queryModel;
@@ -171,16 +171,16 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
       }
       CarbonColumnVector[] vectors = new CarbonColumnVector[fields.length];
 
-      Map<String, Integer> colmap = new HashMap<>();
+      Map<String, Integer> columnMap = new HashMap<>();
       for (int i = 0; i < fields.length; i++) {
         vectors[i] = new CarbonColumnVectorImpl(
                 CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT,
                 fields[i].getDataType());
-        if (colmap.containsKey(fields[i].getFieldName())) {
-          int reusedIndex = colmap.get(fields[i].getFieldName());
+        if (columnMap.containsKey(fields[i].getFieldName())) {
+          int reusedIndex = columnMap.get(fields[i].getFieldName());
           projectionMapping.add(reusedIndex);
         } else {
-          colmap.put(fields[i].getFieldName(), i);
+          columnMap.put(fields[i].getFieldName(), i);
           projectionMapping.add(i);
         }
       }

@@ -51,7 +51,7 @@ public class CarbonInputSplitTaskInfo implements Distributable {
 
   @Override
   public String[] getLocations() {
-    Set<String> locations = new HashSet<String>();
+    Set<String> locations = new HashSet<>();
     for (CarbonInputSplit splitInfo : carbonBlockInfoList) {
       try {
         locations.addAll(Arrays.asList(splitInfo.getLocations()));
@@ -90,55 +90,47 @@ public class CarbonInputSplitTaskInfo implements Distributable {
 
   /**
    * Finding which node has the maximum number of blocks for it.
-   *
-   * @param splitList
-   * @return
    */
   public static List<String> maxNoNodes(List<CarbonInputSplit> splitList) {
     boolean useIndex = true;
-    Integer maxOccurence = 0;
+    Integer maxOccurrence = 0;
     String maxNode = null;
-    Map<String, Integer> nodeAndOccurenceMapping = new TreeMap<>();
+    Map<String, Integer> nodeAndOccurrenceMapping = new TreeMap<>();
 
-    // populate the map of node and number of occurences of that node.
+    // populate the map of node and number of occurrences of that node.
     for (CarbonInputSplit split : splitList) {
       try {
         for (String node : split.getLocations()) {
-          Integer nodeOccurence = nodeAndOccurenceMapping.get(node);
-          if (null == nodeOccurence) {
-            nodeAndOccurenceMapping.put(node, 1);
-          } else {
-            nodeOccurence++;
-          }
+          nodeAndOccurrenceMapping.putIfAbsent(node, 1);
         }
       } catch (IOException e) {
         throw new RuntimeException("Fail to get location of split: " + split, e);
       }
     }
-    Integer previousValueOccurence = null;
+    Integer previousValueOccurrence = null;
 
-    // check which node is occured maximum times.
-    for (Map.Entry<String, Integer> entry : nodeAndOccurenceMapping.entrySet()) {
+    // check which node is occurred maximum times.
+    for (Map.Entry<String, Integer> entry : nodeAndOccurrenceMapping.entrySet()) {
       // finding the maximum node.
-      if (entry.getValue() > maxOccurence) {
-        maxOccurence = entry.getValue();
+      if (entry.getValue() > maxOccurrence) {
+        maxOccurrence = entry.getValue();
         maxNode = entry.getKey();
       }
-      // first time scenario. initialzing the previous value.
-      if (null == previousValueOccurence) {
-        previousValueOccurence = entry.getValue();
+      // first time scenario. initializing the previous value.
+      if (null == previousValueOccurrence) {
+        previousValueOccurrence = entry.getValue();
       } else {
         // for the case where all the nodes have same number of blocks then
         // we need to return complete list instead of max node.
-        if (!Objects.equals(previousValueOccurence, entry.getValue())) {
+        if (!Objects.equals(previousValueOccurrence, entry.getValue())) {
           useIndex = false;
         }
       }
     }
 
-    // if all the nodes have equal occurence then returning the complete key set.
+    // if all the nodes have equal occurrence then returning the complete key set.
     if (useIndex) {
-      return new ArrayList<>(nodeAndOccurenceMapping.keySet());
+      return new ArrayList<>(nodeAndOccurrenceMapping.keySet());
     }
 
     // if any max node is found then returning the max node.

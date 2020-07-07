@@ -47,7 +47,7 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
   public static final String READ_BUFFER_SIZE_DEFAULT = "65536";
   public static final String STREAM_RECORD_READER_INSTANCE =
       "org.apache.carbondata.stream.CarbonStreamRecordReader";
-  // return raw row for handoff
+  // return raw row for hand off
   private boolean useRawRow = false;
 
   public void setUseRawRow(boolean useRawRow) {
@@ -114,7 +114,7 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
       CarbonDimension child = dimension.getListOfChildDimensions().get(i);
       DataType dataType = child.getDataType();
-      GenericQueryType queryType = null;
+      GenericQueryType queryType;
       if (DataTypes.isArrayType(dataType)) {
         queryType =
             new ArrayQueryType(child.getColName(), dimension.getColName(), ++parentColumnIndex);

@@ -31,9 +31,7 @@ public abstract class AbstractRecordReader<T> extends RecordReader<Void, T> {
   protected int rowCount = 0;
 
   /**
-   * This method will log query result count and querytime
-   * @param recordCount
-   * @param recorder
+   * This method will log query result count and query time
    */
   public void logStatistics(int recordCount, QueryStatisticsRecorder recorder) {
     // result size

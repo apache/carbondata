@@ -65,7 +65,7 @@ import org.apache.log4j.Logger;
  * creates new segment folder and manages the folder through tablestatus file.
  * It also generate and writes dictionary data during load only if dictionary server is configured.
  */
-// TODO Move dictionary generater which is coded in spark to MR framework.
+// TODO Move dictionary generator which is coded in spark to MR framework.
 public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, ObjectArrayWritable> {
 
   protected static final String LOAD_MODEL = "mapreduce.carbontable.load.model";
@@ -269,29 +269,25 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
         new CarbonThreadFactory("CarbonRecordWriter:" + loadModel.getTableName(),
                 true));
     // It should be started in new thread as the underlying iterator uses blocking queue.
-    Future future = executorService.submit(new Thread() {
-      @Override
-      public void run() {
-        ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo()
-            .put("carbonConf", taskAttemptContext.getConfiguration());
-        try {
-          dataLoadExecutor
-              .execute(loadModel, tempStoreLocations, iterators);
-        } catch (Exception e) {
-          executorService.shutdownNow();
-          for (CarbonOutputIteratorWrapper iterator : iterators) {
-            iterator.closeWriter(true);
-          }
-          try {
-            dataLoadExecutor.close();
-          } catch (Exception ex) {
-            // As already exception happened before close() send that exception.
-            throw new RuntimeException(e);
-          }
-          throw new RuntimeException(e);
-        } finally {
-          ThreadLocalSessionInfo.unsetAll();
+    Future future = executorService.submit(() -> {
+      ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo()
+          .put("carbonConf", taskAttemptContext.getConfiguration());
+      try {
+        dataLoadExecutor.execute(loadModel, tempStoreLocations, iterators);
+      } catch (Exception e) {
+        executorService.shutdownNow();
+        for (CarbonOutputIteratorWrapper iterator : iterators) {
+          iterator.closeWriter(true);
         }
+        try {
+          dataLoadExecutor.close();
+        } catch (Exception ex) {
+          // As already exception happened before close() send that exception.
+          throw new RuntimeException(e);
+        }
+        throw new RuntimeException(e);
+      } finally {
+        ThreadLocalSessionInfo.unsetAll();
       }
     });
 
@@ -433,15 +429,15 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
   public static class CarbonRecordWriter extends RecordWriter<NullWritable, ObjectArrayWritable> {
 
-    private CarbonOutputIteratorWrapper iteratorWrapper;
+    private final CarbonOutputIteratorWrapper iteratorWrapper;
 
-    private DataLoadExecutor dataLoadExecutor;
+    private final DataLoadExecutor dataLoadExecutor;
 
-    private CarbonLoadModel loadModel;
+    private final CarbonLoadModel loadModel;
 
-    private ExecutorService executorService;
+    private final ExecutorService executorService;
 
-    private Future future;
+    private final Future future;
 
     private boolean isClosed;
 
@@ -526,11 +522,11 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
   and handles the load balancing of the write rows in round robin. */
   public static class CarbonMultiRecordWriter extends CarbonRecordWriter {
 
-    private CarbonOutputIteratorWrapper[] iterators;
+    private final CarbonOutputIteratorWrapper[] iterators;
 
     // keep counts of number of writes called
     // and it is used to load balance each write call to one iterator.
-    private AtomicLong counter;
+    private final AtomicLong counter;
 
     CarbonMultiRecordWriter(CarbonOutputIteratorWrapper[] iterators,
         DataLoadExecutor dataLoadExecutor, CarbonLoadModel loadModel, Future future,
@@ -551,9 +547,9 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
     @Override
     public void close(TaskAttemptContext taskAttemptContext) throws InterruptedException {
-      for (int i = 0; i < iterators.length; i++) {
-        synchronized (iterators[i]) {
-          iterators[i].closeWriter(false);
+      for (CarbonOutputIteratorWrapper iterator : iterators) {
+        synchronized (iterator) {
+          iterator.closeWriter(false);
         }
       }
       super.close(taskAttemptContext);

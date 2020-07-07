@@ -43,13 +43,13 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
  */
 public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
 
-  protected QueryModel queryModel;
+  protected final QueryModel queryModel;
 
-  protected CarbonReadSupport<T> readSupport;
+  protected final CarbonReadSupport<T> readSupport;
 
   protected CarbonIterator<Object[]> carbonIterator;
 
-  protected QueryExecutor queryExecutor;
+  protected final QueryExecutor queryExecutor;
   private InputMetricsStats inputMetricsStats;
 
   /**

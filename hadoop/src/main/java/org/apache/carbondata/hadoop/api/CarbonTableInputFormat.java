@@ -218,16 +218,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
   }
 
   /**
-   * Method to check and refresh segment cache
-   *
-   * @param job
-   * @param carbonTable
-   * @param updateStatusManager
-   * @param filteredSegmentToAccess
-   * @throws IOException
-   */
-
-  /**
    * Return segment list after filtering out valid segments and segments set by user by
    * `INPUT_SEGMENT_NUMBERS` in job configuration
    */
@@ -276,7 +266,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    */
   public List<InputSplit> getSplitsOfStreaming(JobContext job, List<Segment> streamSegments,
       CarbonTable carbonTable, FilterResolverIntf filterResolverIntf) throws IOException {
-    List<InputSplit> splits = new ArrayList<InputSplit>();
+    List<InputSplit> splits = new ArrayList<>();
     if (streamSegments != null && !streamSegments.isEmpty()) {
       numStreamSegments = streamSegments.size();
       long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
@@ -294,7 +284,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       streamPruner.init(filterResolverIntf);
       List<StreamFile> streamFiles = streamPruner.prune(streamSegments);
       // record the hit information of the streaming files
-      this.hitedStreamFiles = streamFiles.size();
+      this.hitStreamFiles = streamFiles.size();
       this.numStreamFiles = streamPruner.getTotalFileNums();
       for (StreamFile streamFile : streamFiles) {
         Path path = new Path(streamFile.getFilePath());
@@ -358,7 +348,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
 
     numSegments = validSegments.size();
-    List<InputSplit> result = new LinkedList<InputSplit>();
+    List<InputSplit> result = new LinkedList<>();
     UpdateVO invalidBlockVOForSegmentId = null;
     boolean isIUDTable;
 

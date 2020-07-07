@@ -48,7 +48,7 @@ public class CarbonInputFormatUtil {
 
   public static <V> CarbonFileInputFormat<V> createCarbonFileInputFormat(
       AbsoluteTableIdentifier identifier, Job job) throws IOException {
-    CarbonFileInputFormat<V> carbonInputFormat = new CarbonFileInputFormat<V>();
+    CarbonFileInputFormat<V> carbonInputFormat = new CarbonFileInputFormat<>();
     CarbonTableInputFormat.setDatabaseName(job.getConfiguration(),
         identifier.getCarbonTableIdentifier().getDatabaseName());
     CarbonTableInputFormat
@@ -73,9 +73,6 @@ public class CarbonInputFormatUtil {
 
   /**
    * This method set IndexJob if configured
-   *
-   * @param conf
-   * @throws IOException
    */
   public static void setIndexJobIfConfigured(Configuration conf) throws IOException {
     String className = "org.apache.carbondata.indexserver.EmbeddedIndexJob";
@@ -87,8 +84,8 @@ public class CarbonInputFormatUtil {
   }
 
   public static JobID getJobId(java.util.Date date, int batch) {
-    String jobtrackerID = createJobTrackerID(date);
-    return new JobID(jobtrackerID, batch);
+    String jobTrackerID = createJobTrackerID(date);
+    return new JobID(jobTrackerID, batch);
   }
 
 }
