@@ -93,7 +93,7 @@ public class SparkHashExpressionPartitionerImpl implements Partitioner<CarbonRow
       }
       int intValue = 0;
       if (value[index] instanceof Boolean) {
-        boolean boolValue = (boolean) value[intValue];
+        boolean boolValue = (boolean) value[index];
         intValue = boolValue ? 1 : 0;
       } else if (value[index] instanceof Float) {
         intValue = Float.floatToIntBits((float) value[index]);
