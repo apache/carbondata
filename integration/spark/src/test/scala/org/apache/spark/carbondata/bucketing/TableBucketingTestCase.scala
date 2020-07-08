@@ -17,6 +17,9 @@
 
 package org.apache.spark.carbondata.bucketing
 
+import java.text.SimpleDateFormat
+import java.sql.Date
+
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.execution.WholeStageCodegenExec
 import org.apache.spark.sql.execution.exchange.Exchange
@@ -24,7 +27,6 @@ import org.apache.spark.sql.execution.joins.SortMergeJoinExec
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -103,6 +105,37 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     } else {
       assert(false, "Bucketing info does not exist")
     }
+  }
+
+  test("test load data with DATE data type as bucket column") {
+    sql("DROP TABLE IF EXISTS table_bucket")
+    sql("""
+           CREATE TABLE IF NOT EXISTS table_bucket
+           (ID Int, date DATE, starttime Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int)
+           STORED AS carbondata TBLPROPERTIES ('BUCKET_NUMBER'='2', 'BUCKET_COLUMNS'='date')
+        """)
+    sql(
+      s"""
+           LOAD DATA LOCAL INPATH '$resourcesPath/timeStampFormatData1.csv' into table table_bucket
+           OPTIONS('dateformat' = 'yyyy/MM/dd','timestampformat'='yyyy-MM-dd HH:mm:ss')
+           """)
+    sql(
+      s"""
+           LOAD DATA LOCAL INPATH '$resourcesPath/timeStampFormatData2.csv' into table table_bucket
+           OPTIONS('dateformat' = 'yyyy-MM-dd','timestampformat'='yyyy/MM/dd HH:mm:ss')
+           """)
+
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    checkAnswer(
+      sql("SELECT date FROM table_bucket WHERE ID = 1"),
+      Seq(Row(new Date(sdf.parse("2015-07-23").getTime)))
+    )
+    checkAnswer(
+      sql("SELECT date FROM table_bucket WHERE ID = 18"),
+      Seq(Row(new Date(sdf.parse("2015-07-25").getTime)))
+    )
+    sql("DROP TABLE IF EXISTS table_bucket")
   }
 
   test("test IUD of bucket table") {
