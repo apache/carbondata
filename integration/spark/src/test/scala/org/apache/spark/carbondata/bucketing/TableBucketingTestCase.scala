@@ -1040,6 +1040,28 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     assert(shuffleExists2, "shuffle should exist when some bucket columns not exist in filter")
   }
 
+  test("test load data with boolean type as bucket column") {
+    sql("drop table if exists boolean_table")
+    sql(
+      s"""
+         | CREATE TABLE boolean_table(
+         | booleanField BOOLEAN,
+         | stringField STRING,
+         | intField INT
+         | )
+         | STORED AS carbondata
+         | TBLPROPERTIES('BUCKET_NUMBER'='1', 'BUCKET_COLUMNS'='booleanField')
+       """.stripMargin)
+
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$resourcesPath/bool/supportBooleanWithFileHeader.csv'
+         | INTO TABLE boolean_table
+           """.stripMargin)
+
+    checkAnswer(sql("select count(*) from boolean_table"), Row(10))
+  }
+
   override def afterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
