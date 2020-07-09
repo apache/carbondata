@@ -148,7 +148,21 @@ public class CarbonUpdateUtil {
           mergeSegmentUpdate(isCompaction, oldList, newBlockEntry);
         }
 
-        segmentUpdateStatusManager.writeLoadDetailsIntoFile(oldList, updateStatusFileIdentifier);
+        List<SegmentUpdateDetails> updateDetailsValidSeg = new ArrayList<>();
+        Set<String> loadDetailsSet = new HashSet<>();
+        for (LoadMetadataDetails details : segmentUpdateStatusManager.getLoadMetadataDetails()) {
+          loadDetailsSet.add(details.getLoadName());
+        }
+        for (SegmentUpdateDetails updateDetails : oldList) {
+          if (loadDetailsSet.contains(updateDetails.getSegmentName())) {
+            // we should only keep the update info of segments in table status, especially after
+            // compaction and clean files some compacted segments will be removed. It can keep
+            // tableupdatestatus file in small size which is good for performance.
+            updateDetailsValidSeg.add(updateDetails);
+          }
+        }
+        segmentUpdateStatusManager
+            .writeLoadDetailsIntoFile(updateDetailsValidSeg, updateStatusFileIdentifier);
         status = true;
       } else {
         LOGGER.error("Not able to acquire the segment update lock.");
