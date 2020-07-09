@@ -40,6 +40,10 @@ public class CarbonColumnarBatch {
     this.filteredRows = filteredRows;
   }
 
+  public boolean[] getFilteredRows() {
+    return filteredRows;
+  }
+
   public int getBatchSize() {
     return batchSize;
   }

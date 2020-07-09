@@ -17,15 +17,19 @@
 
 package org.apache.carbondata.hadoop.api;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 
 import org.apache.carbondata.common.exceptions.DeprecatedFeatureException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -36,12 +40,16 @@ import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
+import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
+import org.apache.carbondata.core.mutate.TupleIdEnum;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.DataLoadMetrics;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
+import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
 import org.apache.carbondata.processing.loading.ComplexDelimitersEnum;
 import org.apache.carbondata.processing.loading.DataLoadExecutor;
@@ -549,5 +557,52 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       }
       super.close(taskAttemptContext);
     }
+  }
+
+  public static RecordWriter<NullWritable, ObjectArrayWritable> getDeleteDeltaRecordWriter(
+      String path) {
+    return (new RecordWriter<NullWritable, ObjectArrayWritable>() {
+      private final ArrayList<String> tupleId = new ArrayList<>();
+
+      @Override
+      public void write(NullWritable aVoid, ObjectArrayWritable objects) {
+        this.tupleId.add((String) objects.get()[0]);
+      }
+
+      @Override
+      public void close(TaskAttemptContext taskAttemptContext) throws IOException {
+        Map<String, DeleteDeltaBlockDetails> blockToDeleteDeltaBlockMapping = new HashMap<>();
+        DeleteDeltaBlockDetails blockDetails;
+        String blockName;
+        for (String tuple : tupleId) {
+          blockName = CarbonUpdateUtil.getBlockName(
+              (tuple.split(Pattern.quote(File.separator))[TupleIdEnum.BLOCK_ID.getTupleIdIndex()]));
+
+          if (!blockToDeleteDeltaBlockMapping.containsKey(blockName)) {
+            blockDetails = new DeleteDeltaBlockDetails(blockName);
+            blockToDeleteDeltaBlockMapping.put(blockName, blockDetails);
+          }
+          blockDetails = blockToDeleteDeltaBlockMapping.get(blockName);
+          try {
+            blockDetails.addBlocklet(
+                CarbonUpdateUtil.getRequiredFieldFromTID(tuple, TupleIdEnum.BLOCKLET_ID),
+                CarbonUpdateUtil.getRequiredFieldFromTID(tuple, TupleIdEnum.OFFSET), Integer
+                    .parseInt(
+                        CarbonUpdateUtil.getRequiredFieldFromTID(tuple, TupleIdEnum.PAGE_ID)));
+          } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new RuntimeException(e);
+          }
+        }
+        for (Map.Entry<String, DeleteDeltaBlockDetails> block : blockToDeleteDeltaBlockMapping
+            .entrySet()) {
+          String deleteDeltaPath = CarbonUpdateUtil.getDeleteDeltaFilePath(path, block.getKey(),
+              String.valueOf(System.currentTimeMillis()));
+          CarbonDeleteDeltaWriterImpl deleteDeltaWriter =
+              new CarbonDeleteDeltaWriterImpl(deleteDeltaPath);
+          deleteDeltaWriter.write(block.getValue());
+        }
+      }
+    });
   }
 }

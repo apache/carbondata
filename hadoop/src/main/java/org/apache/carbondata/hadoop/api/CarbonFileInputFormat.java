@@ -17,15 +17,23 @@
 
 package org.apache.carbondata.hadoop.api;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.IndexFilter;
@@ -43,6 +51,8 @@ import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
@@ -172,6 +182,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         carbonFiles = getAllCarbonDataFiles(carbonTable.getTablePath());
       }
 
+      List<String> allDeleteDeltaFiles = getAllDeleteDeltaFiles(carbonTable.getTablePath());
       for (CarbonFile carbonFile : carbonFiles) {
         // Segment id is set to null because SDK does not write carbondata files with respect
         // to segments. So no specific name is present for this load.
@@ -184,10 +195,15 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         info.setBlockSize(carbonFile.getLength());
         info.setVersionNumber(split.getVersion().number());
         info.setUseMinMaxForPruning(false);
+        if (CollectionUtils.isNotEmpty(allDeleteDeltaFiles)) {
+          split.setDeleteDeltaFiles(
+              getDeleteDeltaFiles(carbonFile.getAbsolutePath(), allDeleteDeltaFiles));
+        }
         splits.add(split);
       }
       splits.sort(Comparator.comparing(o -> ((CarbonInputSplit) o).getFilePath()));
     }
+
     setAllColumnProjectionIfNotConfigured(job, carbonTable);
     return splits;
   }
@@ -239,6 +255,67 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
     List<CarbonInputSplit> dataBlocksOfSegment = getDataBlocksOfSegment(job, carbonTable,
         indexFilter, validSegments, new ArrayList<>(), new ArrayList<>());
     numBlocks = dataBlocksOfSegment.size();
+    List<String> allDeleteDeltaFiles = getAllDeleteDeltaFiles(carbonTable.getTablePath());
+    if (CollectionUtils.isNotEmpty(allDeleteDeltaFiles)) {
+      for (CarbonInputSplit split : dataBlocksOfSegment) {
+        split.setDeleteDeltaFiles(getDeleteDeltaFiles(split.getFilePath(), allDeleteDeltaFiles));
+      }
+    }
     return new LinkedList<>(dataBlocksOfSegment);
+  }
+
+  private List<String> getAllDeleteDeltaFiles(String path) {
+    List<String> deltaFiles = null;
+    try (Stream<Path> walk = Files.walk(Paths.get(path))) {
+      deltaFiles = walk.map(x -> x.toString())
+          .filter(f -> f.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT))
+          .collect(Collectors.toList());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return deltaFiles;
+  }
+
+  private String[] getDeleteDeltaFiles(String segmentFilePath, List<String> allDeleteDeltaFiles) {
+    List<String> deleteDeltaFiles = new ArrayList<>();
+    String segmentFileName = null;
+    String[] pathElements = segmentFilePath.split(Pattern.quote(File.separator));
+    if (ArrayUtils.isNotEmpty(pathElements)) {
+      segmentFileName = pathElements[pathElements.length - 1];
+    }
+
+    /* DeleteDeltaFiles for a segment will be mapped on the basis of name.
+       So extract the expectedDeleteDeltaFileName by removing the
+       compressor name and part number from the segmentFileName.
+    */
+
+    String expectedDeleteDeltaFileName = null;
+    if (segmentFileName != null && !segmentFileName.isEmpty()) {
+      int startIndex = segmentFileName.indexOf(CarbonCommonConstants.HYPHEN);
+      int endIndex = segmentFileName.indexOf(CarbonCommonConstants.UNDERSCORE);
+      if (startIndex != -1 && endIndex != -1) {
+        expectedDeleteDeltaFileName = segmentFileName.substring(startIndex + 1, endIndex);
+      }
+    }
+    String deleteDeltaFullFileName = null;
+    for (String deltaFile : allDeleteDeltaFiles) {
+      String[] deleteDeltaPathElements = deltaFile.split(Pattern.quote(File.separator));
+      if (ArrayUtils.isNotEmpty(deleteDeltaPathElements)) {
+        deleteDeltaFullFileName = deleteDeltaPathElements[deleteDeltaPathElements.length - 1];
+      }
+      int underScoreIndex = deleteDeltaFullFileName.indexOf(CarbonCommonConstants.UNDERSCORE);
+      if (underScoreIndex != -1) {
+        String deleteDeltaFileName = deleteDeltaFullFileName.substring(0, underScoreIndex);
+        if (deleteDeltaFileName.equals(expectedDeleteDeltaFileName)) {
+          deleteDeltaFiles.add(deltaFile);
+        }
+      }
+    }
+    String[] deleteDeltaFile = new String[deleteDeltaFiles.size()];
+    int currentIndex = 0;
+    for (String deltaFile : deleteDeltaFiles) {
+      deleteDeltaFile[currentIndex++] = deltaFile;
+    }
+    return deleteDeltaFile;
   }
 }
