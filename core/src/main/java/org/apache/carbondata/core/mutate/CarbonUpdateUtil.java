@@ -471,6 +471,15 @@ public class CarbonUpdateUtil {
     LoadMetadataDetails[] details =
         SegmentStatusManager.readLoadMetadata(table.getMetadataPath());
 
+    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(table);
+    SegmentUpdateDetails[] segmentUpdateDetails = updateStatusManager.getUpdateStatusDetails();
+    // hold all the segments updated so that wen can check the delta files in them, ne need to
+    // check the others.
+    Set<String> updatedSegments = new HashSet<>();
+    for (SegmentUpdateDetails updateDetails : segmentUpdateDetails) {
+      updatedSegments.add(updateDetails.getSegmentName());
+    }
+
     String validUpdateStatusFile = "";
 
     boolean isAbortedFile = true;
@@ -479,22 +488,18 @@ public class CarbonUpdateUtil {
 
     List<Segment> segmentFilesToBeUpdated = new ArrayList<>();
 
+    // take the update status file name from 0th segment.
+    validUpdateStatusFile = ssm.getUpdateStatusFileName(details);
     // scan through each segment.
-
     for (LoadMetadataDetails segment : details) {
-
-      // take the update status file name from 0th segment.
-      validUpdateStatusFile = ssm.getUpdateStatusFileName(details);
-
       // if this segment is valid then only we will go for delta file deletion.
       // if the segment is mark for delete or compacted then any way it will get deleted.
-
       if (segment.getSegmentStatus() == SegmentStatus.SUCCESS
               || segment.getSegmentStatus() == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
-
         // when there is no update operations done on table, then no need to go ahead. So
         // just check the update delta start timestamp and proceed if not empty
-        if (!segment.getUpdateDeltaStartTimestamp().isEmpty()) {
+        if (!segment.getUpdateDeltaStartTimestamp().isEmpty()
+                || updatedSegments.contains(segment.getLoadName())) {
           // take the list of files from this segment.
           String segmentPath = CarbonTablePath.getSegmentPath(
               table.getAbsoluteTableIdentifier().getTablePath(), segment.getLoadName());
@@ -503,8 +508,6 @@ public class CarbonUpdateUtil {
           CarbonFile[] allSegmentFiles = segDir.listFiles();
 
           // scan through the segment and find the carbondatafiles and index files.
-          SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(table);
-
           boolean updateSegmentFile = false;
           // deleting of the aborted file scenario.
           if (deleteStaleCarbonDataFiles(segment, allSegmentFiles, updateStatusManager)) {

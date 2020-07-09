@@ -448,10 +448,9 @@ public class SegmentUpdateStatusManager {
           @Override
           public boolean accept(CarbonFile pathName) {
             String fileName = pathName.getName();
-            if (fileName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
-                && pathName.getSize() > 0) {
-              String firstPart = fileName.substring(0, fileName.indexOf('.'));
-              String blkName = firstPart.substring(0, firstPart.lastIndexOf("-"));
+            if (pathName.getSize() > 0
+                && fileName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)) {
+              String blkName = fileName.substring(0, fileName.lastIndexOf("-"));
               long timestamp =
                   Long.parseLong(CarbonTablePath.DataFileUtil.getTimeStampFromFileName(fileName));
               if (blockName.equals(blkName) && (Long.compare(timestamp, deltaEndTimeStamp) <= 0)
