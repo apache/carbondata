@@ -180,8 +180,6 @@ case class CarbonMergeDataSetCommand(
     } else {
       None
     }
-    CarbonProperties.getInstance().addProperty(CarbonLoadOptionConstants
-      .ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH, "false")
 
     CarbonInsertIntoWithDf(
       databaseNameOp = Some(carbonTable.getDatabaseName),
@@ -271,6 +269,10 @@ case class CarbonMergeDataSetCommand(
     val config = SparkSQLUtil.broadCastHadoopConf(sparkSession.sparkContext, job.getConfiguration)
     (frame.rdd.coalesce(DistributionUtil.getConfiguredExecutors(sparkSession.sparkContext)).
       mapPartitionsWithIndex { case (index, iter) =>
+        var directlyWriteDataToHdfs = CarbonProperties.getInstance()
+          .getProperty(CarbonLoadOptionConstants
+            .ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH, CarbonLoadOptionConstants
+            .ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH_DEFAULT)
         CarbonProperties.getInstance().addProperty(CarbonLoadOptionConstants
           .ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH, "true")
         val confB = config.value.value
@@ -283,6 +285,9 @@ case class CarbonMergeDataSetCommand(
           val queue = new util.LinkedList[InternalRow]()
           override def hasNext: Boolean = if (!queue.isEmpty || iter.hasNext) true else {
             writer.close()
+            // revert load direct write to store path after insert
+            CarbonProperties.getInstance().addProperty(CarbonLoadOptionConstants
+              .ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH, directlyWriteDataToHdfs)
             false
           }
 
