@@ -281,12 +281,29 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
         LOGGER.error(e);
       }
     } else {
-      if (currentFileSize == 0) {
-        try {
+      try {
+        if (currentFileSize == 0) {
           handleEmptyDataFile(carbonDataFileStorePath);
-        } catch (IOException e) {
-          LOGGER.error(e);
+        } else {
+          // In case if direct write data to store path is enabled, carbonData files will be written
+          // directly to partition path. Need to add partition path and carbon data file size info
+          // to load metrics
+          if (model.getTableSpec().getCarbonTable().isHivePartitionTable() && model
+              .getCarbonDataDirectoryPath().endsWith(".tmp") && carbonDataFileStorePath
+              .endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
+            if (metrics != null) {
+              // get partition directory path
+              String partitionPath = model.getCarbonDataDirectoryPath()
+                  .substring(0, model.getCarbonDataDirectoryPath().lastIndexOf(File.separator));
+              metrics.addToPartitionPath(partitionPath);
+              String carbonFilePath = partitionPath + carbonDataFileStorePath
+                  .substring(carbonDataFileStorePath.lastIndexOf(File.separator));
+              addOutputFilesInfoToMetrics(carbonFilePath);
+            }
+          }
         }
+      } catch (IOException e) {
+        LOGGER.error(e);
       }
     }
   }
@@ -318,6 +335,13 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     try {
       FileFactory.mkdirs(model.getCarbonDataDirectoryPath());
       if (enableDirectlyWriteDataToStorePath) {
+        if (model.getTableSpec().getCarbonTable().isHivePartitionTable() && model
+            .getCarbonDataDirectoryPath().endsWith(".tmp")) {
+          // set carbonData file store path to partition path instead of tmp directory
+          carbonDataFileStorePath = model.getCarbonDataDirectoryPath()
+              .substring(0, model.getCarbonDataDirectoryPath().lastIndexOf(File.separator))
+              + File.separator + carbonDataFileName;
+        }
         // the block size will be twice the block_size specified by user to make sure that
         // one carbondata file only consists exactly one HDFS block.
         fileOutputStream = FileFactory
@@ -440,7 +464,21 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
           .copyCarbonDataFileToCarbonStorePath(indexFileName, model.getCarbonDataDirectoryPath(),
               fileSizeInBytes, metrics);
       FileFactory.deleteFile(indexFileName);
+    } else if (model.getTableSpec().getCarbonTable().isHivePartitionTable() && model
+        .getCarbonDataDirectoryPath().endsWith(".tmp")) {
+      if (metrics != null) {
+        addOutputFilesInfoToMetrics(indexFileName);
+      }
     }
+  }
+
+  private void addOutputFilesInfoToMetrics(String carbonFilePath) {
+    // Store the number of files written by each task.
+    metrics.incrementCount();
+    // Store the files written by each task to metrics.
+    long targetSize = FileFactory.getCarbonFile(carbonFilePath).getSize();
+    metrics.addToOutputFiles(carbonFilePath + ":" + targetSize);
+    metrics.addOutputBytes(targetSize);
   }
 
   /**
