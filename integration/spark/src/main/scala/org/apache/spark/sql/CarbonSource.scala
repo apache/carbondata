@@ -241,13 +241,13 @@ object CarbonSource {
     } else {
       None
     }
-    val tablePath = CarbonEnv.createTablePath(
+    val tablePath = CarbonUtil.checkAndAppendFileSystemURIScheme(CarbonEnv.createTablePath(
       Some(tableInfo.getDatabaseName),
       tableInfo.getFactTable.getTableName,
       tableInfo.getFactTable.getTableId,
       tableLocation,
       table.tableType == CatalogTableType.EXTERNAL,
-      tableInfo.isTransactionalTable)(sparkSession)
+      tableInfo.isTransactionalTable)(sparkSession))
     tableInfo.setTablePath(tablePath)
     CarbonSparkSqlParserUtil.validateTableProperties(tableInfo)
     val schemaEvolutionEntry = new SchemaEvolutionEntry

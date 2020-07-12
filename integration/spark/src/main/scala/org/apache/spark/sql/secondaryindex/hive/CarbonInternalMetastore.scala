@@ -141,6 +141,10 @@ object CarbonInternalMetastore {
     val indexTableExists = CarbonIndexUtil.isIndexTableExists(carbonTable)
     // check if cg and fg index exists
     val indexExists = CarbonIndexUtil.isIndexExists(carbonTable)
+    // In case of non transactional table, no need to change the table schema.
+    if (!carbonTable.isTransactionalTable) {
+      return
+    }
     // tables created without property "indexTableExists", will return null, for those tables enter
     // into below block, gather the actual data from hive and then set this property to true/false
     // then once the property has a value true/false, make decision based on the property value

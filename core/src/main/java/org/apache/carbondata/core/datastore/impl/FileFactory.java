@@ -620,8 +620,9 @@ public final class FileFactory {
     }
 
     final String lowerPath = path.toLowerCase(Locale.getDefault());
-    return lowerPath.contains("://") || lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)
-        || lowerPath.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) || lowerPath
+    return lowerPath.contains("file:/") || lowerPath.contains("://") || lowerPath
+        .startsWith(CarbonCommonConstants.HDFSURL_PREFIX) || lowerPath
+        .startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) || lowerPath
         .startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX) || lowerPath
         .startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX) || lowerPath
         .startsWith(CarbonCommonConstants.S3N_PREFIX) || lowerPath

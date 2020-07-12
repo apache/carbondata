@@ -383,7 +383,10 @@ object CarbonSparkSqlParserUtil {
     var isTransactionalTable: Boolean = true
     // table must convert database name and table name to lower case
     val identifier = AbsoluteTableIdentifier.from(
-      table.storage.locationUri.map(CatalogUtils.URIToString).getOrElse(""),
+      CarbonUtil.checkAndAppendFileSystemURIScheme(table.storage
+        .locationUri
+        .map(CatalogUtils.URIToString)
+        .getOrElse("")),
       CarbonEnv.getDatabaseName(table.identifier.database)(sparkSession).toLowerCase(),
       table.identifier.table.toLowerCase()
     )
