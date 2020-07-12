@@ -43,7 +43,9 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -917,6 +919,32 @@ public class CarbonUtilTest {
     Assert.assertTrue(map.size() == 4);
     String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
     Assert.assertTrue(schemaString.length() > schema.length());
+  }
+
+  @Test
+  public void testTupeIDInUpdateScenarios() {
+    // Test CarbonTablePath.java
+    String blockId = "Part0/Segment_0/part-0-0_batchno0-0-0-1597409791503.snappy.carbondata";
+    Assert.assertEquals(CarbonTablePath.getShortBlockId(blockId), "0/0-0_0-0-0-1597409791503");
+    blockId = "c3=aa/part-0-100100000100001_batchno0-0-0-1597411003332.snappy.carbondata";
+    Assert.assertEquals(CarbonTablePath.getShortBlockIdForPartitionTable(blockId), "c3=aa/0-100100000100001_0-0-0-1597411003332");
+    // external segment case
+    blockId = "#home#root1#Projects#carbondata#integration#spark#target#warehouse#addsegtest#/Segment_2/part-0-0_batchno0-0-1-1597411388431.snappy.carbondata";
+    Assert.assertEquals(CarbonTablePath.getShortBlockId(blockId), "#home#root1#Projects#carbondata#integration#spark#target#warehouse#addsegtest#/2/0-0_0-0-1-1597411388431");
+    // standard table case
+    String TID = "0/0-0_0-0-0-1597411901991/0/0/0";
+    Assert.assertEquals(CarbonUpdateUtil.getSegmentWithBlockFromTID(TID, false), "0/0-0_0-0-0-1597411901991");
+    // partition table
+    TID = "c3=aa/0-100100000100001_0-0-0-1597412090158/0/0/0";
+    Assert.assertEquals(CarbonUpdateUtil.getSegmentWithBlockFromTID(TID, true), "0-100100000100001_0-0-0-1597412090158");
+    // external segment case
+    TID = "#home#root1#Projects#carbondata#integration#spark#target#warehouse#addsegtest#/2/0-0_0-0-1-1597412329342/0/0/0";
+    Assert.assertEquals(CarbonUpdateUtil.getSegmentWithBlockFromTID(TID, false), "2/0-0_0-0-1-1597412329342");
+    String blockName = "part-0-0_batchno0-0-0-1597412488102.snappy.carbondata";
+    // non partition table
+    Assert.assertEquals(CarbonUpdateUtil.getSegmentBlockNameKey("0", blockName, false), "0/0-0_0-0-0-1597412488102");
+    // partition table
+    Assert.assertEquals(CarbonUpdateUtil.getSegmentBlockNameKey("0", blockName, true), "0-0_0-0-0-1597412488102");
   }
 
   private String generateString(int length) {

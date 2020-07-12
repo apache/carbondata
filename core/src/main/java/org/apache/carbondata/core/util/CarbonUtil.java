@@ -2782,10 +2782,14 @@ public final class CarbonUtil {
         } else {
           // Replace / with # on partition director to support multi level partitioning. And access
           // them all as a single entity.
-          blockId =
-              partitionDir.replace(CarbonCommonConstants.FILE_SEPARATOR, "#")
-                  + CarbonCommonConstants.FILE_SEPARATOR + segmentId
-                  + CarbonCommonConstants.FILE_SEPARATOR + blockName;
+          if (partitionDir.isEmpty()) {
+            blockId = segmentId + CarbonCommonConstants.FILE_SEPARATOR + blockName;
+          } else {
+            blockId = partitionDir.replace(CarbonCommonConstants.FILE_SEPARATOR, "#")
+                + CarbonCommonConstants.FILE_SEPARATOR + segmentId
+                + CarbonCommonConstants.FILE_SEPARATOR + blockName;
+          }
+
         }
       }
     } else {

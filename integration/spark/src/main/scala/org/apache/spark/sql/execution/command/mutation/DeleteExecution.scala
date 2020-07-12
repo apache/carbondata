@@ -35,6 +35,7 @@ import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -190,7 +191,7 @@ object DeleteExecution {
                        isStandardTable,
                        metadataDetails
                          .find(_.getLoadName.equalsIgnoreCase(blockDetails.get(key)))
-                         .get, carbonTable.isHivePartitionTable)
+                         .get, carbonTable)
           }
           result
         }).collect()
@@ -201,20 +202,20 @@ object DeleteExecution {
         timestamp: String,
         rowCountDetailsVO: RowCountDetailsVO,
         isStandardTable: Boolean,
-        load: LoadMetadataDetails, isPartitionTable: Boolean
+        load: LoadMetadataDetails, carbonTable: CarbonTable
     ): Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))] = {
 
       val result = new DeleteDeltaResultImpl()
       var deleteStatus = SegmentStatus.LOAD_FAILURE
       val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
       // here key = segment/blockName
-      val blockName = if (isPartitionTable) {
-        CarbonUpdateUtil.getBlockName(CarbonTablePath.addDataPartPrefix(key))
+      var blockName = if (carbonTable.isHivePartitionTable) {
+        key
       } else {
-        CarbonUpdateUtil
-          .getBlockName(
-            CarbonTablePath.addDataPartPrefix(key.split(CarbonCommonConstants.FILE_SEPARATOR)(1)))
+        key.split(CarbonCommonConstants.FILE_SEPARATOR)(1)
       }
+      blockName = blockName.replace(CarbonCommonConstants.UNDERSCORE, CarbonTablePath.BATCH_PREFIX)
+      blockName = CarbonUpdateUtil.getBlockName(CarbonTablePath.addDataPartPrefix(blockName))
       val deleteDeltaBlockDetails: DeleteDeltaBlockDetails = new DeleteDeltaBlockDetails(blockName)
       val resultIter =
         new Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))] {
@@ -226,13 +227,19 @@ object DeleteExecution {
             val oneRow = iter.next
             TID = oneRow
               .get(oneRow.fieldIndex(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)).toString
-            val (offset, blockletId, pageId) = if (isPartitionTable) {
+            val (offset, blockletId, pageId) = if (carbonTable.isHivePartitionTable) {
               (CarbonUpdateUtil.getRequiredFieldFromTID(TID,
-                TupleIdEnum.OFFSET.getTupleIdIndex - 1),
+                TupleIdEnum.OFFSET.getTupleIdIndex),
                 CarbonUpdateUtil.getRequiredFieldFromTID(TID,
-                  TupleIdEnum.BLOCKLET_ID.getTupleIdIndex - 1),
+                  TupleIdEnum.BLOCKLET_ID.getTupleIdIndex),
                 Integer.parseInt(CarbonUpdateUtil.getRequiredFieldFromTID(TID,
-                  TupleIdEnum.PAGE_ID.getTupleIdIndex - 1)))
+                  TupleIdEnum.PAGE_ID.getTupleIdIndex)))
+            } else if (TID.contains("#")) {
+              // this is in case of the external segment, where the tuple id has external path with#
+              (CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.EXTERNAL_OFFSET),
+                CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.EXTERNAL_BLOCKLET_ID),
+                Integer.parseInt(CarbonUpdateUtil.getRequiredFieldFromTID(TID,
+                  TupleIdEnum.EXTERNAL_PAGE_ID)))
             } else {
               (CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.OFFSET),
                 CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.BLOCKLET_ID),
@@ -253,18 +260,39 @@ object DeleteExecution {
             if (StringUtils.isNotEmpty(load.getPath)) {
               load.getPath
             } else {
-              CarbonUpdateUtil.getTableBlockPath(TID, tablePath, isStandardTable)
+              CarbonUpdateUtil.getTableBlockPath(TID,
+                tablePath,
+                isStandardTable,
+                carbonTable.isHivePartitionTable)
             }
-          val completeBlockName = if (isPartitionTable) {
+
+          // get the compressor name
+          var columnCompressor: String = carbonTable.getTableInfo
+            .getFactTable
+            .getTableProperties
+            .get(CarbonCommonConstants.COMPRESSOR)
+          if (null == columnCompressor) {
+            columnCompressor = CompressorFactory.getInstance.getCompressor.getName
+          }
+          var blockNameFromTupleID =
+            if (TID.contains("#")) {
+              CarbonUpdateUtil.getRequiredFieldFromTID(TID,
+                TupleIdEnum.EXTERNAL_BLOCK_ID)
+            } else {
+              CarbonUpdateUtil.getRequiredFieldFromTID(TID,
+                TupleIdEnum.BLOCK_ID)
+            }
+          blockNameFromTupleID = blockNameFromTupleID.replace(CarbonCommonConstants.UNDERSCORE,
+            CarbonTablePath.BATCH_PREFIX)
+          val completeBlockName = if (carbonTable.isHivePartitionTable) {
             CarbonTablePath
               .addDataPartPrefix(
-                CarbonUpdateUtil.getRequiredFieldFromTID(TID,
-                  TupleIdEnum.BLOCK_ID.getTupleIdIndex - 1) +
+                blockNameFromTupleID + CarbonCommonConstants.POINT + columnCompressor +
                 CarbonCommonConstants.FACT_FILE_EXT)
           } else {
             CarbonTablePath
               .addDataPartPrefix(
-                CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.BLOCK_ID) +
+                blockNameFromTupleID + CarbonCommonConstants.POINT + columnCompressor +
                 CarbonCommonConstants.FACT_FILE_EXT)
           }
           val deleteDeltaPath = CarbonUpdateUtil

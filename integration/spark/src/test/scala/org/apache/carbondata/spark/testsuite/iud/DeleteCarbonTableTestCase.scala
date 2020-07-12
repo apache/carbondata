@@ -257,29 +257,29 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
     val dataframe_part = sql("select getTupleId() as tupleId from iud_db.dest_tuple_part").collect()
     val listOfTupleId_part = dataframe_part.map(df => df.get(0).toString).sorted
-    assert(listOfTupleId_part(0).startsWith("c3=aa/0-100100000100001_batchno0-0-0-") &&
+    assert(listOfTupleId_part(0).startsWith("c3=aa/0-100100000100001_0-0-0-") &&
            listOfTupleId_part(0).endsWith("/0/0/0"))
-    assert(listOfTupleId_part(1).startsWith("c3=bb/0-100100000100002_batchno0-0-0-") &&
+    assert(listOfTupleId_part(1).startsWith("c3=bb/0-100100000100002_0-0-0-") &&
            listOfTupleId_part(1).endsWith("/0/0/0"))
-    assert(listOfTupleId_part(2).startsWith("c3=cc/0-100100000100003_batchno0-0-0-") &&
+    assert(listOfTupleId_part(2).startsWith("c3=cc/0-100100000100003_0-0-0-") &&
            listOfTupleId_part(2).endsWith("/0/0/0"))
-    assert(listOfTupleId_part(3).startsWith("c3=dd/0-100100000100004_batchno0-0-0-") &&
+    assert(listOfTupleId_part(3).startsWith("c3=dd/0-100100000100004_0-0-0-") &&
            listOfTupleId_part(3).endsWith("/0/0/0"))
-    assert(listOfTupleId_part(4).startsWith("c3=ee/0-100100000100005_batchno0-0-0-") &&
+    assert(listOfTupleId_part(4).startsWith("c3=ee/0-100100000100005_0-0-0-") &&
            listOfTupleId_part(4).endsWith("/0/0/0"))
 
     val dataframe = sql("select getTupleId() as tupleId from iud_db.dest_tuple")
     val listOfTupleId = dataframe.collect().map(df => df.get(0).toString).sorted
     assert(
-      listOfTupleId(0).contains("0/0/0-0_batchno0-0-0-") && listOfTupleId(0).endsWith("/0/0/0"))
+      listOfTupleId(0).contains("0/0-0_0-0-0-") && listOfTupleId(0).endsWith("/0/0/0"))
     assert(
-      listOfTupleId(1).contains("0/0/0-0_batchno0-0-0-") && listOfTupleId(1).endsWith("/0/0/1"))
+      listOfTupleId(1).contains("0/0-0_0-0-0-") && listOfTupleId(1).endsWith("/0/0/1"))
     assert(
-      listOfTupleId(2).contains("0/0/0-0_batchno0-0-0-") && listOfTupleId(2).endsWith("/0/0/2"))
+      listOfTupleId(2).contains("0/0-0_0-0-0-") && listOfTupleId(2).endsWith("/0/0/2"))
     assert(
-      listOfTupleId(3).contains("0/0/0-0_batchno0-0-0-") && listOfTupleId(3).endsWith("/0/0/3"))
+      listOfTupleId(3).contains("0/0-0_0-0-0-") && listOfTupleId(3).endsWith("/0/0/3"))
     assert(
-      listOfTupleId(4).contains("0/0/0-0_batchno0-0-0-") && listOfTupleId(4).endsWith("/0/0/4"))
+      listOfTupleId(4).contains("0/0-0_0-0-0-") && listOfTupleId(4).endsWith("/0/0/4"))
 
     val carbonTable_part = CarbonEnv.getInstance(SparkTestQueryExecutor.spark).carbonMetaStore
       .lookupRelation(Option("iud_db"), "dest_tuple_part")(SparkTestQueryExecutor.spark)
@@ -306,16 +306,14 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       carbonTable.isTransactionalTable,
       CarbonUtil.isStandardCarbonTable(carbonTable))
     assert(blockId_part.startsWith("Part0/Segment_0/part-0-100100000100001_batchno0-0-0-"))
-    val segment = Segment.getSegment("0", carbonTable.getTablePath)
     val tableBlockPath = CarbonUpdateUtil
       .getTableBlockPath(listOfTupleId(0),
         carbonTable.getTablePath,
-        CarbonUtil.isStandardCarbonTable(carbonTable))
-    val segment_part = Segment.getSegment("0", carbonTable_part.getTablePath)
+        CarbonUtil.isStandardCarbonTable(carbonTable), true)
     val tableBl0ckPath_part = CarbonUpdateUtil
       .getTableBlockPath(listOfTupleId_part(0),
         carbonTable_part.getTablePath,
-        CarbonUtil.isStandardCarbonTable(carbonTable_part))
+        CarbonUtil.isStandardCarbonTable(carbonTable_part), true)
     assert(tableBl0ckPath_part.endsWith("iud_db.db/dest_tuple_part/c3=aa"))
     assert(tableBlockPath.endsWith("iud_db.db/dest_tuple/Fact/Part0/Segment_0"))
 
