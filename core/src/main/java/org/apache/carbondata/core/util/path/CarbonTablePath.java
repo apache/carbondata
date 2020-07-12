@@ -635,10 +635,22 @@ public class CarbonTablePath {
    * @return shortBlockId
    */
   public static String getShortBlockId(String blockId) {
-    return blockId.replace(PARTITION_PREFIX, "")
-            .replace(SEGMENT_PREFIX, "")
-            .replace(DATA_PART_PREFIX, "")
-            .replace(CARBON_DATA_EXT, "");
+    String blockIdWithCompressorName =
+        blockId.replace(PARTITION_PREFIX, "").replace(SEGMENT_PREFIX, "")
+            .replace(DATA_PART_PREFIX, "").replace(CARBON_DATA_EXT, "");
+    // to remove compressor name
+    if (!blockId.equalsIgnoreCase(blockIdWithCompressorName)) {
+      int index = blockIdWithCompressorName.lastIndexOf(".");
+      if (index != -1) {
+        String replace =
+            blockIdWithCompressorName.replace(blockIdWithCompressorName.substring(index), "");
+        return replace;
+      } else {
+        return blockIdWithCompressorName;
+      }
+    } else {
+      return blockIdWithCompressorName;
+    }
   }
 
   /**
@@ -648,8 +660,19 @@ public class CarbonTablePath {
    * @return shortBlockId
    */
   public static String getShortBlockIdForPartitionTable(String blockId) {
-    return blockId.replace(DATA_PART_PREFIX, "")
+    String blockIdWithCompressorName = blockId.replace(DATA_PART_PREFIX, "")
         .replace(CARBON_DATA_EXT, "");
+    // to remove compressor name
+    if (!blockId.equalsIgnoreCase(blockIdWithCompressorName)) {
+      int index = blockIdWithCompressorName.lastIndexOf(POINT);
+      if (index != -1) {
+        return blockIdWithCompressorName.replace(blockIdWithCompressorName.substring(index), "");
+      } else {
+        return blockIdWithCompressorName;
+      }
+    } else {
+      return blockIdWithCompressorName;
+    }
   }
 
   /**

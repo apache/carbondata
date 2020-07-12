@@ -944,10 +944,22 @@ public class CarbonUpdateUtil {
     String blockNameWithOutPart = blockName
         .substring(blockName.indexOf(CarbonCommonConstants.HYPHEN) + 1,
             blockName.lastIndexOf(CarbonTablePath.getCarbonDataExtension()));
+    // to remove compressor name
+    int index = blockNameWithOutPart.lastIndexOf(CarbonCommonConstants.POINT);
     if (isPartitionTable) {
-      return blockNameWithOutPart;
+      if (index != -1) {
+        return blockNameWithOutPart.replace(blockNameWithOutPart.substring(index), "");
+      } else {
+        return blockNameWithOutPart;
+      }
     }
-    return segID + CarbonCommonConstants.FILE_SEPARATOR + blockNameWithOutPart;
+    if (index != -1) {
+      String blockNameWithoutCompressorName =
+          blockNameWithOutPart.replace(blockNameWithOutPart.substring(index), "");
+      return segID + CarbonCommonConstants.FILE_SEPARATOR + blockNameWithoutCompressorName;
+    } else {
+      return segID + CarbonCommonConstants.FILE_SEPARATOR + blockNameWithOutPart;
+    }
   }
 
   /**
