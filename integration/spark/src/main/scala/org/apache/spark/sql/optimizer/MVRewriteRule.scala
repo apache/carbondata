@@ -28,7 +28,7 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.ThreadLocalSessionInfo
+import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.view.{MVCatalog, MVCatalogFactory}
 import org.apache.carbondata.mv.plans.modular.{ModularPlan, Select}
 import org.apache.carbondata.view.{MVCatalogInSpark, MVManagerInSpark, MVSchemaWrapper}
@@ -98,14 +98,8 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
     if (!canApply) {
       return logicalPlan
     }
-    val sessionInformation = ThreadLocalSessionInfo.getCarbonSessionInfo
-    if (sessionInformation != null && sessionInformation.getThreadParams != null) {
-      val disableViewRewrite = sessionInformation.getThreadParams.getProperty(
-        CarbonCommonConstants.DISABLE_SQL_REWRITE)
-      if (disableViewRewrite != null &&
-        disableViewRewrite.equalsIgnoreCase("true")) {
-        return logicalPlan
-      }
+    if (!CarbonProperties.getInstance().isMVEnabled) {
+      return logicalPlan
     }
     // when first time MVCatalogs are initialized, it stores session info also,
     // but when carbon session is newly created, catalog map will not be cleared,
