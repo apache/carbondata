@@ -82,7 +82,7 @@ public class AbsoluteTableIdentifier implements Serializable {
 
   public String appendWithLocalPrefix(String path) {
     if (tablePath.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX)) {
-      return CarbonCommonConstants.LOCAL_FILE_PREFIX + path;
+      return CarbonCommonConstants.LOCAL_FILE_PREFIX + CarbonCommonConstants.FILE_SEPARATOR + path;
     } else {
       return path;
     }
