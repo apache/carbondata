@@ -187,7 +187,7 @@ case class CarbonLoadDataCommand(databaseNameOp: Option[String],
         LOGGER.error(s"Dataload failure for $dbName.$tableName", preEventEx)
         throw new AnalysisException(preEventEx.getMessage)
       case ex: Exception =>
-        LOGGER.error(ex)
+        LOGGER.error(ex.getMessage, ex)
         // update the load entry in table status file for changing the status to marked for delete
         if (isUpdateTableStatusRequired) {
           CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uuid)

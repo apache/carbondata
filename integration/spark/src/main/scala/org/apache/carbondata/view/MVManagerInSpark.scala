@@ -28,7 +28,7 @@ import org.apache.carbondata.core.view.MVManager
 
 class MVManagerInSpark(session: SparkSession) extends MVManager {
   override def getDatabases: util.List[String] = {
-    CarbonUtils.threadSet(CarbonCommonConstants.DISABLE_SQL_REWRITE, "true")
+    CarbonUtils.threadSet(CarbonCommonConstants.CARBON_ENABLE_MV, "true")
     try {
       val databaseList = session.catalog.listDatabases()
       val databaseNameList = new util.ArrayList[String]()
@@ -37,7 +37,7 @@ class MVManagerInSpark(session: SparkSession) extends MVManager {
       }
       databaseNameList
     } finally {
-      CarbonUtils.threadUnset(CarbonCommonConstants.DISABLE_SQL_REWRITE)
+      CarbonUtils.threadUnset(CarbonCommonConstants.CARBON_ENABLE_MV)
     }
   }
 

@@ -250,6 +250,7 @@ public final class CarbonProperties {
     validateNumberOfColumnPerIORead();
     validateEnableUnsafeSort();
     validateEnableOffHeapSort();
+    validateEnableMV();
     validateCustomBlockDistribution();
     validateEnableVectorReader();
     validateLockType();
@@ -498,6 +499,19 @@ public final class CarbonProperties {
           CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT));
       carbonProperties.setProperty(CARBON_TASK_DISTRIBUTION,
           CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT);
+    }
+  }
+
+  private void validateEnableMV() {
+    String isMVEnabled = carbonProperties.getProperty(CarbonCommonConstants.CARBON_ENABLE_MV);
+    if (!CarbonUtil.validateBoolean(isMVEnabled)) {
+      LOGGER.warn(String.format("The enable mv value \"%s\" is invalid. " +
+              "Using the default value \"%s\"",
+              isMVEnabled,
+          CarbonCommonConstants.CARBON_ENABLE_MV_DEFAULT
+      ));
+      carbonProperties.setProperty(CarbonCommonConstants.CARBON_ENABLE_MV,
+          CarbonCommonConstants.CARBON_ENABLE_MV_DEFAULT);
     }
   }
 
@@ -1760,6 +1774,19 @@ public final class CarbonProperties {
       LOGGER.info("Distributed Index server is enabled for " + dbName + "." + tableName);
     }
     return isServerEnabledByUser;
+  }
+
+  /**
+   * Check whether the MV is enabled by the user or not.
+   */
+  public boolean isMVEnabled() {
+    String mvEnabled = CarbonProperties.getInstance().getProperty(
+            CarbonCommonConstants.CARBON_ENABLE_MV);
+    if (mvEnabled == null || !CarbonUtil.validateBoolean(mvEnabled)) {
+      return Boolean.parseBoolean(CarbonCommonConstants.CARBON_ENABLE_MV_DEFAULT);
+    } else {
+      return mvEnabled.equalsIgnoreCase("true");
+    }
   }
 
   /**

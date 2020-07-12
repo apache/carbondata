@@ -1220,6 +1220,14 @@ public final class CarbonCommonConstants {
   public static final String CARBON_INPUT_SEGMENTS = "carbon.input.segments.";
 
   /**
+   * Materialized view thread context properties
+   */
+  @CarbonProperty(dynamicConfigurable = true)
+  public static final String CARBON_ENABLE_MV = "carbon.enable.mv";
+
+  public static final String CARBON_ENABLE_MV_DEFAULT = "true";
+
+  /**
    * ENABLE_QUERY_STATISTICS
    */
   @CarbonProperty
@@ -2432,12 +2440,6 @@ public final class CarbonCommonConstants {
    * INDEX_STATUS defines the status of index. (Enabled / Disabled)
    */
   public static final String INDEX_STATUS = "index_status";
-
-  /**
-   * Materialized view thread context properties
-   */
-  @CarbonProperty
-  public static final String DISABLE_SQL_REWRITE = "disable_sql_rewrite";
 
   /**
    * property which defines the insert stage flow

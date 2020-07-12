@@ -66,6 +66,22 @@ public class CarbonPropertiesValidationTest extends TestCase {
         CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT.equalsIgnoreCase(valueAfterValidation));
   }
 
+  @Test public void testValidateEnableMV()
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    Method validateMethodType =
+        carbonProperties.getClass().getDeclaredMethod("validateEnableMV");
+    validateMethodType.setAccessible(true);
+    carbonProperties.addProperty(CarbonCommonConstants.CARBON_ENABLE_MV, "xyz");
+    String valueBeforeValidation =
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_ENABLE_MV);
+    validateMethodType.invoke(carbonProperties);
+    String valueAfterValidation =
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_ENABLE_MV);
+    assertTrue(valueBeforeValidation.equals("xyz"));
+    assertTrue(
+        CarbonCommonConstants.CARBON_ENABLE_MV_DEFAULT.equalsIgnoreCase(valueAfterValidation));
+  }
+
   @Test public void testValidateEnableOffHeapSort()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     Method validateMethodType =
