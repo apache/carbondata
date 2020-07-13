@@ -955,9 +955,9 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql(" insert into mvtable1 select 'n4',12,12")
     sql("update mvtable1 set(name) = ('updatedName')").show()
     checkAnswer(sql("select count(*) from mvtable1 where name = 'updatedName'"),Seq(Row(4)))
+    sql(s"drop materialized view MV11")
     sql("drop table if exists mvtable1")
     sql("drop table if exists mvtable2")
-    sql(s"drop materialized view MV11")
   }
 
   test("test create materialized view with streaming table")  {
@@ -1166,8 +1166,8 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val frame = sql("select count(*) from mvtable1")
     assert(!TestUtil.verifyMVHit(frame.queryExecution.optimizedPlan, "MV11"))
     checkAnswer(frame,Seq(Row(1)))
-    sql("drop table if exists mvtable1")
     sql(s"drop materialized view MV11")
+    sql("drop table if exists mvtable1")
   }
 
   test("test mv with duplicate columns in query and constant column") {

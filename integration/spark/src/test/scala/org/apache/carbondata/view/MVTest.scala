@@ -24,6 +24,8 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
@@ -176,6 +178,13 @@ class MVTest extends QueryTest with BeforeAndAfterAll {
     } finally {
       sql("drop table source")
     }
+  }
+
+  test("test drop mv must fail if not exists") {
+    val ex = intercept[MalformedMVCommandException] {
+      sql("drop materialized view MV_notPresent")
+    }
+    assert(ex.getMessage.contains("Materialized view with name default.MV_notPresent does not exists"))
   }
 
   test("test refresh mv on manual") {
