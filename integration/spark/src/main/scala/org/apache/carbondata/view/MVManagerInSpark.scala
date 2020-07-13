@@ -19,6 +19,8 @@ package org.apache.carbondata.view
 
 import java.util
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.{CarbonEnv, CarbonUtils, SparkSession}
 
@@ -52,20 +54,19 @@ object MVManagerInSpark {
     new util.HashMap[SparkSession, MVManagerInSpark]()
 
   def get(session: SparkSession): MVManagerInSpark = {
-    var viewManager = MANAGER_MAP_BY_SESSION.get(session)
-    if (viewManager == null) {
-      MANAGER_MAP_BY_SESSION.synchronized {
-        viewManager = MANAGER_MAP_BY_SESSION.get(session)
-        if (viewManager == null) {
-          viewManager = new MVManagerInSpark(session)
-          MANAGER_MAP_BY_SESSION.put(session, viewManager)
-          session.sparkContext.addSparkListener(new SparkListener {
-            override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
-              CarbonEnv.carbonEnvMap.remove(session)
-              ThreadLocalSessionInfo.unsetAll()
-            }
-          })
-        }
+    var viewManager: MVManagerInSpark = null
+    MANAGER_MAP_BY_SESSION.synchronized {
+      if (MANAGER_MAP_BY_SESSION.isEmpty) {
+        viewManager = new MVManagerInSpark(session)
+        MANAGER_MAP_BY_SESSION.put(session, viewManager)
+        session.sparkContext.addSparkListener(new SparkListener {
+          override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
+            CarbonEnv.carbonEnvMap.remove(session)
+            ThreadLocalSessionInfo.unsetAll()
+          }
+        })
+      } else {
+        viewManager = MANAGER_MAP_BY_SESSION.asScala.head._2
       }
     }
     viewManager
