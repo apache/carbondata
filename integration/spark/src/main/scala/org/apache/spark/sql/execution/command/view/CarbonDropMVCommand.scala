@@ -23,6 +23,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 
+import org.apache.carbondata.common.exceptions.sql.MalformedMVCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
@@ -90,6 +91,13 @@ case class CarbonDropMVCommand(
         }
 
         this.dropTableCommand = dropTableCommand
+      } else {
+        if (!ifExistsSet) {
+          throw new MalformedMVCommandException(
+            s"Materialized view with name ${ databaseName }.${ name } does not exists")
+        } else {
+          return Seq.empty
+        }
       }
     } catch {
       case exception: Exception =>

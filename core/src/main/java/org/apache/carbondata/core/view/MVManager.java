@@ -143,7 +143,7 @@ public abstract class MVManager {
   /**
    * Drops the mv schema from storage
    *
-   * @param viewName index name
+   * @param viewName mv name
    */
   public void deleteSchema(String databaseName, String viewName) throws IOException {
     schemaProvider.dropSchema(this, databaseName, viewName);

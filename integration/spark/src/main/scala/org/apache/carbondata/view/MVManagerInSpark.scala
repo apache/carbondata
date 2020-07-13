@@ -48,23 +48,14 @@ class MVManagerInSpark(session: SparkSession) extends MVManager {
 
 object MVManagerInSpark {
 
-  private val MANAGER_MAP_BY_SESSION =
-    new util.HashMap[SparkSession, MVManagerInSpark]()
+  private var viewManager: MVManagerInSpark = null
 
+  // returns single MVManager instance for all the current sessions.
   def get(session: SparkSession): MVManagerInSpark = {
-    var viewManager = MANAGER_MAP_BY_SESSION.get(session)
     if (viewManager == null) {
-      MANAGER_MAP_BY_SESSION.synchronized {
-        viewManager = MANAGER_MAP_BY_SESSION.get(session)
+      this.synchronized {
         if (viewManager == null) {
           viewManager = new MVManagerInSpark(session)
-          MANAGER_MAP_BY_SESSION.put(session, viewManager)
-          session.sparkContext.addSparkListener(new SparkListener {
-            override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
-              CarbonEnv.carbonEnvMap.remove(session)
-              ThreadLocalSessionInfo.unsetAll()
-            }
-          })
         }
       }
     }
