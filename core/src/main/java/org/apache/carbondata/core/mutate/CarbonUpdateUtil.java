@@ -610,6 +610,7 @@ public class CarbonUpdateUtil {
     List<Segment> segmentFilesToBeUpdatedLatest = new ArrayList<>();
     CarbonFile segmentFilesLocation =
         FileFactory.getCarbonFile(CarbonTablePath.getSegmentFilesLocation(table.getTablePath()));
+    Set<String> segmentFilesNotToDelete = new HashSet<>();
     for (Segment segment : segmentFilesToBeUpdated) {
       SegmentFileStore fileStore =
           new SegmentFileStore(table.getTablePath(), segment.getSegmentFileName());
@@ -618,13 +619,15 @@ public class CarbonUpdateUtil {
           .writeSegmentFile(table, segment.getSegmentNo(), UUID,
               CarbonTablePath.getSegmentPath(table.getTablePath(), segment.getSegmentNo()),
               segment.getSegmentMetaDataInfo());
+      segmentFilesNotToDelete.add(updatedSegmentFile);
       segmentFilesToBeUpdatedLatest.add(new Segment(segment.getSegmentNo(), updatedSegmentFile));
-
+    }
+    if (segmentFilesNotToDelete.size() > 0) {
       // delete the old segment files
       CarbonFile[] invalidSegmentFiles = segmentFilesLocation.listFiles(new CarbonFileFilter() {
         @Override
         public boolean accept(CarbonFile file) {
-          return !file.getName().equalsIgnoreCase(updatedSegmentFile);
+          return !segmentFilesNotToDelete.contains(file.getName());
         }
       });
       for (CarbonFile invalidSegmentFile : invalidSegmentFiles) {
