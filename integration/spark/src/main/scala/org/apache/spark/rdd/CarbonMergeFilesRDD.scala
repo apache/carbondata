@@ -157,21 +157,21 @@ object CarbonMergeFilesRDD {
     if (carbonTable.isHivePartitionTable && !StringUtils.isEmpty(tempFolderPath)) {
       // remove all tmp folder of index files
       val startDelete = System.currentTimeMillis()
-      val numThreads = Math.min(Math.max(partitionInfo.size(), 1), 10)
-      val executorService = Executors.newFixedThreadPool(numThreads)
-      val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
-      partitionInfo
-        .asScala
-        .map { partitionPath =>
-          executorService.submit(new Runnable {
-            override def run(): Unit = {
-              ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
-              FileFactory.deleteAllCarbonFilesOfDir(
-                FileFactory.getCarbonFile(partitionPath + "/" + tempFolderPath))
-            }
-          })
+      val allTmpDirs = partitionInfo
+        .asScala.map { partitionPath =>
+          partitionPath + CarbonCommonConstants.FILE_SEPARATOR + tempFolderPath
         }
-        .map(_.get())
+      val allTmpFiles = allTmpDirs.map { partitionDir =>
+          FileFactory.getCarbonFile(partitionDir).listFiles()
+        }.flatten.map(_.getAbsolutePath)
+      // delete tmp files in parallel
+      sparkSession.sparkContext.parallelize(allTmpFiles).map {
+        FileFactory.getCarbonFile(_).delete()
+      }.collect()
+      // delete tmp dir in parallel
+      sparkSession.sparkContext.parallelize(allTmpDirs).map {
+        FileFactory.getCarbonFile(_).delete()
+      }.collect()
       LOGGER.info("Time taken to remove partition files for all partitions: " +
                   (System.currentTimeMillis() - startDelete))
     } else if (carbonTable.isHivePartitionTable) {
