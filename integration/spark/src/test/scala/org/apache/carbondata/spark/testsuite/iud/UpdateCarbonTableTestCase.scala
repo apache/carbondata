@@ -71,6 +71,21 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table iud.zerorows""")
   }
 
+  test("test update operation with multiple loads and clean files operation") {
+    sql("""drop table if exists iud.zerorows""").show
+    sql("""create table iud.zerorows (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.zerorows""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.zerorows""")
+    sql("""update zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'""").show()
+    sql("""update zerorows d  set (d.c2) = (d.c2 + 1) where d.c1 = 'b'""").show()
+    sql("clean files for table iud.zerorows")
+    checkAnswer(
+      sql("""select c1,c2,c3,c5 from iud.zerorows"""),
+      Seq(Row("a",2,"aa","aaa"),Row("b",3,"bb","bbb"),Row("c",3,"cc","ccc"),Row("d",4,"dd","ddd"),Row("e",5,"ee","eee"),Row("a",2,"aa","aaa"),Row("b",3,"bb","bbb"),Row("c",3,"cc","ccc"),Row("d",4,"dd","ddd"),Row("e",5,"ee","eee"))
+    )
+    sql("""drop table iud.zerorows""")
+  }
+
 
   test("update carbon table[select from source table with where and exist]") {
     sql("""drop table if exists iud.dest11""").show
