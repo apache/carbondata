@@ -147,7 +147,10 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
 
     // check if there no entry present
     if (!poll.hasNext()) {
-      poll.close();
+      // do not close the poll to free the memory of rowPage here
+      // because data in memory will be used in final merge sort
+      // and close in `UnsafeFinalMergePageHolder` in case of `spillDisk`
+      // is false. Please refer method `writeDataToMemory` in this class
       this.recordHolderHeap.poll();
       // change the file counter
       --this.holderCounter;
