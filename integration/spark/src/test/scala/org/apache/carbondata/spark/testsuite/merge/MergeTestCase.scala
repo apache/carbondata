@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.spark.testsuite.merge
 
-import java.io.File
 import java.sql.Date
 import java.time.LocalDateTime
 
@@ -626,7 +625,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  test("check the ccd with partition") {
+  test("check the cdc with partition") {
     sql("drop table if exists target")
 
     val initframe = sqlContext.sparkSession.createDataFrame(Seq(
@@ -643,7 +642,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
     val target = sqlContext.read.format("carbondata").option("tableName", "target").load()
-    var ccd =
+    var cdc =
       sqlContext.sparkSession.createDataFrame(Seq(
         Row("a", "10", false,  0),
         Row("a", null, true, 1),   // a was updated and then deleted
@@ -656,15 +655,15 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
         StructType(Seq(StructField("key", StringType),
           StructField("newValue", StringType),
           StructField("deleted", BooleanType), StructField("time", IntegerType))))
-    ccd.createOrReplaceTempView("changes")
+    cdc.createOrReplaceTempView("changes")
 
-    ccd = sql("SELECT key, latest.newValue as newValue, latest.deleted as deleted FROM ( SELECT key, max(struct(time, newValue, deleted)) as latest FROM changes GROUP BY key)")
+    cdc = sql("SELECT key, latest.newValue as newValue, latest.deleted as deleted FROM ( SELECT key, max(struct(time, newValue, deleted)) as latest FROM changes GROUP BY key)")
 
     val updateMap = Map("key" -> "B.key", "value" -> "B.newValue").asInstanceOf[Map[Any, Any]]
 
     val insertMap = Map("key" -> "B.key", "value" -> "B.newValue").asInstanceOf[Map[Any, Any]]
 
-    target.as("A").merge(ccd.as("B"), "A.key=B.key").
+    target.as("A").merge(cdc.as("B"), "A.key=B.key").
       whenMatched("B.deleted=false").
       updateExpr(updateMap).
       whenNotMatched("B.deleted=false").
@@ -676,7 +675,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from target order by key"), Seq(Row("c", "200"), Row("d", "3"), Row("e", "100")))
   }
 
-  test("check the ccd ") {
+  test("check the cdc ") {
     sql("drop table if exists target")
 
     val initframe = sqlContext.sparkSession.createDataFrame(Seq(
@@ -692,7 +691,7 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
     val target = sqlContext.read.format("carbondata").option("tableName", "target").load()
-    var ccd =
+    var cdc =
       sqlContext.sparkSession.createDataFrame(Seq(
         Row("a", "10", false,  0),
         Row("a", null, true, 1),   // a was updated and then deleted
@@ -705,15 +704,15 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
         StructType(Seq(StructField("key", StringType),
           StructField("newValue", StringType),
           StructField("deleted", BooleanType), StructField("time", IntegerType))))
-    ccd.createOrReplaceTempView("changes")
+    cdc.createOrReplaceTempView("changes")
 
-    ccd = sql("SELECT key, latest.newValue as newValue, latest.deleted as deleted FROM ( SELECT key, max(struct(time, newValue, deleted)) as latest FROM changes GROUP BY key)")
+    cdc = sql("SELECT key, latest.newValue as newValue, latest.deleted as deleted FROM ( SELECT key, max(struct(time, newValue, deleted)) as latest FROM changes GROUP BY key)")
 
     val updateMap = Map("key" -> "B.key", "value" -> "B.newValue").asInstanceOf[Map[Any, Any]]
 
     val insertMap = Map("key" -> "B.key", "value" -> "B.newValue").asInstanceOf[Map[Any, Any]]
 
-    target.as("A").merge(ccd.as("B"), "A.key=B.key").
+    target.as("A").merge(cdc.as("B"), "A.key=B.key").
       whenMatched("B.deleted=false").
       updateExpr(updateMap).
       whenNotMatched("B.deleted=false").
@@ -723,6 +722,47 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     assert(getDeleteDeltaFileCount("target", "0") == 1)
     checkAnswer(sql("select count(*) from target"), Seq(Row(3)))
     checkAnswer(sql("select * from target order by key"), Seq(Row("c", "200"), Row("d", "3"), Row("e", "100")))
+  }
+
+  test("check the cdc delete with partition") {
+    sql("drop table if exists target")
+
+    val initframe = sqlContext.sparkSession.createDataFrame(Seq(
+      Row("a", "0"),
+      Row("a1", "0"),
+      Row("b", "1"),
+      Row("c", "2"),
+      Row("d", "3")
+    ).asJava, StructType(Seq(StructField("key", StringType), StructField("value", StringType))))
+
+    initframe.write
+      .format("carbondata")
+      .option("tableName", "target")
+      .option("partitionColumns", "value")
+      .mode(SaveMode.Overwrite)
+      .save()
+    val target = sqlContext.read.format("carbondata").option("tableName", "target").load()
+    var cdc =
+      sqlContext.sparkSession.createDataFrame(Seq(
+        Row("a", null, true, 1),
+        Row("a1", null, false, 1),
+        Row("b", null, true, 2),
+        Row("c", null, true, 3),
+        Row("e", "100", false, 6)
+      ).asJava,
+        StructType(Seq(StructField("key", StringType),
+          StructField("newValue", StringType),
+          StructField("deleted", BooleanType), StructField("time", IntegerType))))
+    cdc.createOrReplaceTempView("changes")
+
+    cdc = sql("SELECT key, latest.newValue as newValue, latest.deleted as deleted FROM ( SELECT key, max(struct(time, newValue, deleted)) as latest FROM changes GROUP BY key)")
+
+    target.as("A").merge(cdc.as("B"), "A.key=B.key").
+      whenMatched("B.deleted=true").delete().execute()
+
+    assert(getDeleteDeltaFileCount("target", "0") == 1)
+    checkAnswer(sql("select count(*) from target"), Seq(Row(2)))
+    checkAnswer(sql("select * from target order by key"), Seq(Row("a1","0"),Row("d", "3")))
   }
 
   case class Target (id: Int, value: String, remark: String, mdt: String)
@@ -871,8 +911,11 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
 
   private def getDeleteDeltaFileCount(tableName: String, segment: String): Int = {
     val table = CarbonEnv.getCarbonTable(None, tableName)(sqlContext.sparkSession)
-    val path = CarbonTablePath
+    var path = CarbonTablePath
       .getSegmentPath(table.getAbsoluteTableIdentifier.getTablePath, segment)
+    if (table.isHivePartitionTable) {
+      path = table.getAbsoluteTableIdentifier.getTablePath
+    }
     val deleteDeltaFiles = FileFactory.getCarbonFile(path).listFiles(true, new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = file.getName.endsWith(CarbonCommonConstants
         .DELETE_DELTA_FILE_EXT)
