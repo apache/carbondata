@@ -46,9 +46,12 @@ import org.apache.spark.util.{AccumulatorContext, AccumulatorMetadata, LongAccum
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.FailureCauses
 
 /**
@@ -164,7 +167,7 @@ case class CarbonMergeDataSetCommand(
         processedRDD)(sparkSession))
 
     loadDF.cache()
-    loadDF.count()
+    val count = loadDF.count()
     val updateTableModel = if (FileFactory.isFileExist(deltaPath)) {
       val deltaRdd = sparkSession.read.format("carbon").load(deltaPath).rdd
       val tuple = mutationAction.handleAction(deltaRdd, executorErrors, trxMgr)
@@ -174,6 +177,21 @@ case class CarbonMergeDataSetCommand(
         trxMgr.getLatestTrx.toString, false)) {
         LOGGER.error("writing of update status file failed")
         throw new CarbonMergeDataSetException("writing of update status file failed")
+      }
+      if (carbonTable.isHivePartitionTable) {
+        // If load count is 0 and if merge action contains delete operation, update
+        // tableUpdateStatus file name in loadMeta entry
+        if (count == 0 && hasDelAction && !tuple._1.isEmpty) {
+          val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(CarbonTablePath
+            .getTableStatusFilePath(carbonTable.getTablePath))
+          CarbonUpdateUtil.updateTableMetadataStatus(loadMetaDataDetails.map(loadMetadataDetail =>
+            new Segment(loadMetadataDetail.getMergedLoadName,
+              loadMetadataDetail.getSegmentFile)).toSet.asJava,
+            carbonTable,
+            trxMgr.getLatestTrx.toString,
+            true,
+            tuple._2.asJava)
+        }
       }
       Some(UpdateTableModel(true, trxMgr.getLatestTrx,
         executorErrors, tuple._2, true))
