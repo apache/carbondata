@@ -931,7 +931,12 @@ object CommonUtil {
               DataTypes.STRING)
           }
         case d: DecimalType =>
-          data(i) = row.getDecimal(i, d.precision, d.scale).toJavaBigDecimal
+          val decimalValue = row.getDecimal(i, d.precision, d.scale)
+          if (null == decimalValue) {
+            data(i) = null
+          } else {
+            data(i) = decimalValue.toJavaBigDecimal
+          }
         case arrayType: ArrayType =>
           val result = convertSparkComplexTypeToCarbonObject(row.get(i, arrayType), arrayType)
           // convert carbon complex object to byte array
