@@ -19,6 +19,9 @@ package org.apache.carbondata.spark
 
 import scala.util.Try
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 /**
  * Contains all options for Spark data source
  */
@@ -76,6 +79,10 @@ class CarbonOption(options: Map[String, String]) {
 
   lazy val overwriteEnabled: Boolean =
     options.getOrElse("overwrite", "false").toBoolean
+
+  lazy val timestampformat: Option[String] = options.get("timestampformat")
+
+  lazy val dateformat: Option[String] = options.get("dateformat")
 
   def toMap: Map[String, String] = options
 }

@@ -43,7 +43,7 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.{CarbonReflectionUtils, CollectionAccumulator, SparkUtil}
 
-import org.apache.carbondata.common.Strings
+import org.apache.carbondata.common.{Maps, Strings}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants, SortScopeOptions}
@@ -263,6 +263,20 @@ object CommonLoadUtils {
     }
     optionsFinal
       .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options.asJava, table))
+    // If DATEFORMAT is not present in load options, check from table properties.
+    if (optionsFinal.get("dateformat").isEmpty) {
+      optionsFinal.put("dateformat", Maps.getOrDefault(tableProperties,
+        "dateformat", CarbonProperties.getInstance
+          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)))
+    }
+    // If TIMESTAMPFORMAT is not present in load options, check from table properties.
+    if (optionsFinal.get("timestampformat").isEmpty) {
+      optionsFinal.put("timestampformat", Maps.getOrDefault(tableProperties,
+        "timestampformat", CarbonProperties.getInstance
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)))
+    }
     optionsFinal
   }
 

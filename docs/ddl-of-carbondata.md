@@ -109,7 +109,8 @@ CarbonData DDL statements are documented here,which includes:
 | [LOAD_MIN_SIZE_INMB](#load-minimum-data-size)                | Minimum input data size per node for data loading          |
 | [Range Column](#range-column)                                | partition input data by range                              |
 | [INDEX_CACHE_EXPIRATION_TIME_IN_SECONDS](#index-cache-expiration-time-in-seconds)| Table level time-based cache expiration in seconds |
-
+| [DATEFORMAT](#dateformattimestampformat)                                    | Table level date format |
+| [TIMESTAMPFORMAT](#dateformattimestampformat)                          | Table level timestamp format |
  Following are the guidelines for TBLPROPERTIES, CarbonData's additional table options can be set via carbon.properties.
 
    - ##### Local Dictionary Configuration
@@ -517,6 +518,22 @@ CarbonData DDL statements are documented here,which includes:
      ```
       ALTER TABLE [dbName].tableName SET TBLPROPERTIES ('index_cache_expiration_seconds'='3')
 
+   - ##### DATEFORMAT/TIMESTAMPFORMAT:
+   
+     Date and Timestamp format for specified column to set at Table level.
+     
+     ```
+     TBLPROPERTIES('DATEFORMAT' = 'yyyy-MM-dd','TIMESTAMPFORMAT'='yyyy-MM-dd HH:mm:ss')
+     ```
+     After creation of table or on already created tables use the alter table command to configure the DATEFORMAT/TIMESTAMPFORMAT.
+     
+     Syntax:
+     
+     ```
+      ALTER TABLE [dbName].tableName SET TBLPROPERTIES ('DATEFORMAT' = 'yyyy-MM-dd','TIMESTAMPFORMAT'='yyyy-MM-dd HH:mm:ss')
+     ``` 
+     **NOTE:** Date formats are specified by date pattern strings. The date pattern in CarbonData is the same as in JAVA. Refer to [SimpleDateFormat](http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html).
+     
 ## CREATE TABLE AS SELECT
   This function allows user to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.
 

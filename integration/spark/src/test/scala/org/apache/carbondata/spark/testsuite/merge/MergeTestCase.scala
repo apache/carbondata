@@ -17,7 +17,8 @@
 
 package org.apache.carbondata.spark.testsuite.merge
 
-import java.sql.Date
+import java.sql.{Date, Timestamp}
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 
 import scala.collection.JavaConverters._
@@ -154,6 +155,47 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     val dwSelframe = dwframe.as("A")
 
     val odsframe = generateFullCDC(10, 2, 2, 1, 2).as("B")
+    (dwSelframe, odsframe)
+  }
+
+  private def initializeWithDateTimeFormat = {
+    import sqlContext.implicits._
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val initframe = sqlContext.sparkContext.parallelize(1 to 10, 4)
+      .map { x =>
+        ("id" + x, s"order$x", s"customer$x", x * 10, x * 75, 1, new Date(sdf
+          .parse("2015-07-23").getTime), Timestamp.valueOf("2015-03-03 12:25:03.205"))
+      }.toDF("id", "name", "c_name", "quantity", "price", "state", "date", "time")
+    val loadframe = sqlContext.sparkContext.parallelize(11 to 12, 4)
+      .map { x =>
+        ("id" + x, s"order$x", s"customer$x", x * 10, x * 75, 1, new Date(sdf
+          .parse("2020-07-23").getTime), Timestamp.valueOf("2020-04-04 09:40:05.205"))
+      }.toDF("id", "name", "c_name", "quantity", "price", "state", "date", "time")
+    // setting date and timestampformat table level
+    initframe.write
+      .format("carbondata")
+      .option("tableName", "order")
+      .option("dateformat", "yyyy-MM-dd")
+      .option("timestampformat", "yyyy-MM-dd HH:mm")
+      .mode(SaveMode.Overwrite)
+      .save()
+    // setting date and timestampformat for another load option
+    loadframe.write
+      .format("carbondata")
+      .option("tableName", "order")
+      .option("dateformat", "yyyy-MM")
+      .option("timestampformat", "yyyy-MM-dd HH:mm:ss.SSS")
+      .mode(SaveMode.Append)
+      .save()
+    val dwframe = sqlContext.read.format("carbondata").option("tableName", "order").load()
+    val dwSelframe = dwframe.as("A")
+
+    val odsframe = sqlContext.sparkContext.parallelize(1 to 4, 4)
+      .map { x =>
+        ("id" + x, s"order$x", s"customer$x", x * 10, x * 75, 2,
+          new Date(sdf.parse("2015-07-23").getTime), Timestamp.valueOf("2015-05-23 10:30:30"))
+      }.toDS().toDF("id", "name", "c_name", "quantity", "price", "state", "date", "time").as("B")
+
     (dwSelframe, odsframe)
   }
 
@@ -763,6 +805,33 @@ class MergeTestCase extends QueryTest with BeforeAndAfterAll {
     assert(getDeleteDeltaFileCount("target", "0") == 1)
     checkAnswer(sql("select count(*) from target"), Seq(Row(2)))
     checkAnswer(sql("select * from target order by key"), Seq(Row("a1","0"),Row("d", "3")))
+  }
+
+  test("test merge with table level date and timestamp format") {
+    sql("drop table if exists order")
+    val (dwSelframe, odsframe) = initializeWithDateTimeFormat
+    val insertMap = Map("id" -> "B.id",
+      "name" -> "B.name",
+      "c_name" -> "B.c_name",
+      "quantity" -> "B.quantity",
+      "price" -> "B.price",
+      "state" -> "B.state",
+      "date" -> "B.date",
+      "time" -> "B.time").asInstanceOf[Map[Any, Any]]
+    dwSelframe.merge(odsframe, col("A.id").equalTo(col("B.id"))).whenMatched().
+      insertExpr(insertMap).execute()
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    checkAnswer(
+      sql("select date,time from order where id = 'id1'"),
+      Seq(
+        Row(new Date(sdf.parse("2015-07-23").getTime), Timestamp.valueOf("2015-03-03 12:25:00")),
+        Row(new Date(sdf.parse("2015-07-23").getTime), Timestamp.valueOf("2015-05-23 10:30:00"))
+      ))
+    checkAnswer(
+      sql("select date,time from order where id = 'id11'"),
+      Seq(
+        Row(new Date(sdf.parse("2020-07-01").getTime), Timestamp.valueOf("2020-04-04 09:40:05.205"))
+      ))
   }
 
   case class Target (id: Int, value: String, remark: String, mdt: String)

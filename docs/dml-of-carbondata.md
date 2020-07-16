@@ -191,6 +191,12 @@ CarbonData DML statements are documented here,which includes:
     ```
     **NOTE:** Date formats are specified by date pattern strings. The date pattern in CarbonData is the same as in JAVA. Refer to [SimpleDateFormat](http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html).
 
+    Priority order for choosing DATEFORMAT/TIMESTAMPFORMAT is:
+    * Load Data Command
+    * ```carbon.options.date.format/carbon.options.timestamp.format``` session property.
+    * Table level Property
+    * ```carbon.date.format/carbon.timestamp.format``` session property
+    
   - ##### SORT COLUMN BOUNDS:
 
     Range bounds for sort columns.

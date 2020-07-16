@@ -86,7 +86,9 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       "TABLE_BLOCKSIZE" -> options.tableBlockSize,
       "TABLE_BLOCKLET_SIZE" -> options.tableBlockletSize,
       "TABLE_PAGE_SIZE_INMB" -> options.tablePageSizeInMb,
-      "STREAMING" -> Option(options.isStreaming.toString)
+      "STREAMING" -> Option(options.isStreaming.toString),
+      "DATEFORMAT" -> options.dateformat,
+      "TIMESTAMPFORMAT" -> options.timestampformat
     ).filter(_._2.isDefined)
       .map(property => s"'${property._1}' = '${property._2.get}'").mkString(",")
 

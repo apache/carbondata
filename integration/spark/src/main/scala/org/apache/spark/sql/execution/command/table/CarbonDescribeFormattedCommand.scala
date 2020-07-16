@@ -137,6 +137,8 @@ private[sql] case class CarbonDescribeFormattedCommand(
       ("Table Blocklet Size ", carbonTable.getBlockletSizeInMB + " MB", ""),
       ("Comment", tblProps.getOrElse(CarbonCommonConstants.TABLE_COMMENT, ""), ""),
       ("Bad Record Path", tblProps.getOrElse("bad_record_path", ""), ""),
+      ("Date Format", tblProps.getOrElse("dateformat", ""), ""),
+      ("Timestamp Format", tblProps.getOrElse("timestampformat", ""), ""),
       ("Min Input Per Node Per Load",
         Strings.formatSize(
           tblProps.getOrElse(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
