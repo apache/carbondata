@@ -228,24 +228,16 @@ case class CarbonAddLoadCommand(
     model.setTableName(carbonTable.getTableName)
     val operationContext = new OperationContext
     operationContext.setProperty("isLoadOrCompaction", false)
-    val loadTablePreExecutionEvent: LoadTablePreExecutionEvent =
-      new LoadTablePreExecutionEvent(
-        carbonTable.getCarbonTableIdentifier,
-        model)
-    operationContext.setProperty("isOverwrite", false)
-    OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
-    // Add pre event listener for index indexSchema
-    val tableIndexes = IndexStoreManager.getInstance().getAllCGAndFGIndexes(carbonTable)
-    val indexOperationContext = new OperationContext()
-    if (tableIndexes.size() > 0) {
-      val indexNames: mutable.Buffer[String] =
-        tableIndexes.asScala.map(index => index.getIndexSchema.getIndexName)
-      val buildIndexPreExecutionEvent: BuildIndexPreExecutionEvent =
-        BuildIndexPreExecutionEvent(
-          sparkSession, carbonTable.getAbsoluteTableIdentifier, indexNames)
-      OperationListenerBus.getInstance().fireEvent(buildIndexPreExecutionEvent,
-        indexOperationContext)
-    }
+    val (tableIndexes, indexOperationContext) = CommonLoadUtils.firePreLoadEvents(sparkSession,
+      model,
+      "",
+      segmentPath,
+      options.asJava,
+      options.asJava,
+      false,
+      false,
+      None,
+      operationContext)
 
     val newLoadMetaEntry = new LoadMetadataDetails
     model.setFactTimeStamp(CarbonUpdateUtil.readCurrentTime)
@@ -344,17 +336,12 @@ case class CarbonAddLoadCommand(
       }
     }
     viewManager.setStatus(viewSchemas, MVStatus.DISABLED)
-    val loadTablePostExecutionEvent: LoadTablePostExecutionEvent =
-      new LoadTablePostExecutionEvent(
-        carbonTable.getCarbonTableIdentifier,
-        model)
-    OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
-    if (tableIndexes.size() > 0) {
-      val buildIndexPostExecutionEvent = BuildIndexPostExecutionEvent(sparkSession,
-        carbonTable.getAbsoluteTableIdentifier, null, Seq(model.getSegmentId), false)
-      OperationListenerBus.getInstance()
-        .fireEvent(buildIndexPostExecutionEvent, indexOperationContext)
-    }
+    CommonLoadUtils.firePostLoadEvents(sparkSession,
+      model,
+      tableIndexes,
+      indexOperationContext,
+      carbonTable,
+      operationContext)
   }
 
   // extract partition column and value, for example, given
