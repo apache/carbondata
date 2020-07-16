@@ -29,8 +29,9 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.sql.execution.streaming.{CarbonAppendableStreamSink, Sink}
 
+import org.apache.carbondata.common.Maps
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
@@ -174,6 +175,7 @@ object StreamSinkFactory {
       parameters: Map[String, String],
       segmentId: String): CarbonLoadModel = {
     val carbonProperty: CarbonProperties = CarbonProperties.getInstance()
+    val tableProperties = carbonTable.getTableInfo.getFactTable.getTableProperties
     carbonProperty.addProperty("zookeeper.enable.lock", "false")
     val optionsFinal = LoadOption.fillOptionWithDefaultValue(parameters.asJava)
     optionsFinal.put("sort_scope", "no_sort")
@@ -183,6 +185,20 @@ object StreamSinkFactory {
     }
     optionsFinal
       .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(parameters.asJava, carbonTable))
+    // If DATEFORMAT is not present in load options, check from table properties.
+    if (optionsFinal.get("dateformat").isEmpty) {
+      optionsFinal.put("dateformat", Maps.getOrDefault(tableProperties,
+        "dateformat", CarbonProperties.getInstance
+          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)))
+    }
+    // If TIMESTAMPFORMAT is not present in load options, check from table properties.
+    if (optionsFinal.get("timestampformat").isEmpty) {
+      optionsFinal.put("timestampformat", Maps.getOrDefault(tableProperties,
+        "timestampformat", CarbonProperties.getInstance
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)))
+    }
     val carbonLoadModel = new CarbonLoadModel()
     new CarbonLoadModelBuilder(carbonTable).build(
       parameters.asJava,

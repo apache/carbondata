@@ -71,6 +71,7 @@ public class CarbonLoadModelBuilder {
   public CarbonLoadModel build(Map<String, String>  options, long timestamp, String taskNo)
       throws InvalidLoadOptionException, IOException {
     Map<String, String> optionsFinal = LoadOption.fillOptionWithDefaultValue(options);
+    Map<String, String> tableProperties = table.getTableInfo().getFactTable().getTableProperties();
 
     if (!options.containsKey("fileheader")) {
       List<CarbonColumn> csvHeader = table.getCreateOrderColumn();
@@ -93,16 +94,22 @@ public class CarbonLoadModelBuilder {
     // we have provided 'fileheader', so it hadoopConf can be null
     build(options, optionsFinal, model, null);
     String timestampFormat = options.get("timestampformat");
+    // If TIMESTAMPFORMAT is not present in load options, check from table properties.
     if (timestampFormat == null) {
       timestampFormat = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+          .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT,
+              Maps.getOrDefault(tableProperties, "timestampformat", CarbonProperties.getInstance()
+                  .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)));
     }
     String dateFormat = options.get("dateFormat");
+    // If DATEFORMAT is not present in load options, check from table properties.
     if (dateFormat == null) {
       dateFormat = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-              CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+          .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
+              Maps.getOrDefault(tableProperties, "dateformat", CarbonProperties.getInstance()
+                  .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+                      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)));
     }
     model.setDateFormat(dateFormat);
     model.setTimestampFormat(timestampFormat);

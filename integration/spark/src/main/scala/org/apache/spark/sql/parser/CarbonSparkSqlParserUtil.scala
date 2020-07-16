@@ -558,7 +558,8 @@ object CarbonSparkSqlParserUtil {
    * @return returns <true> if lower case conversion is needed else <false>
    */
   def needToConvertToLowerCase(key: String): Boolean = {
-    val noConvertList = Array(CarbonCommonConstants.COMPRESSOR, "PATH", "bad_record_path")
+    val noConvertList = Array(CarbonCommonConstants.COMPRESSOR, "PATH", "bad_record_path",
+      "timestampformat", "dateformat")
     !noConvertList.exists(x => x.equalsIgnoreCase(key))
   }
 

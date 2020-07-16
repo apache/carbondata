@@ -368,12 +368,19 @@ class NewRddIterator(rddIter: Iterator[Row],
     carbonLoadModel: CarbonLoadModel,
     context: TaskContext) extends CarbonIterator[Array[AnyRef]] {
 
-  private val timeStampformatString = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  private var timeStampformatString = carbonLoadModel.getTimestampFormat
+  private var dateFormatString = carbonLoadModel.getDateFormat
+  if (timeStampformatString.isEmpty) {
+    timeStampformatString = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  }
+  if (dateFormatString.isEmpty) {
+    dateFormatString = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+  }
   private val timeStampFormat = new SimpleDateFormat(timeStampformatString)
-  private val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-    .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
   private val dateFormat = new SimpleDateFormat(dateFormatString)
   private val complexDelimiters = carbonLoadModel.getComplexDelimiters
   private val serializationNullFormat =
@@ -430,13 +437,19 @@ class LazyRddIterator(serializer: SerializerInstance,
     carbonLoadModel: CarbonLoadModel,
     context: TaskContext) extends CarbonIterator[Array[AnyRef]] {
 
-  private val timeStampformatString = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  private var timeStampformatString = carbonLoadModel.getTimestampFormat
+  private var dateFormatString = carbonLoadModel.getDateFormat
+  if (timeStampformatString.isEmpty) {
+    timeStampformatString = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  }
+  if (dateFormatString.isEmpty) {
+    dateFormatString = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+  }
   private val timeStampFormat = new SimpleDateFormat(timeStampformatString)
-  private val dateFormatString = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
   private val dateFormat = new SimpleDateFormat(dateFormatString)
   private val complexDelimiters = carbonLoadModel.getComplexDelimiters
   private val serializationNullFormat =
