@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.sql.execution.streaming.{CarbonAppendableStreamSink, Sink}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -37,7 +38,6 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
-import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.model.{CarbonLoadModel, CarbonLoadModelBuilder, LoadOption}
 import org.apache.carbondata.processing.util.CarbonBadRecordUtil
 import org.apache.carbondata.streaming.segment.StreamSegment
@@ -94,16 +94,16 @@ object StreamSinkFactory {
     // fire pre event before streamin is started
     // in case of streaming options and optionsFinal can be same
     val operationContext = new OperationContext
-    val loadTablePreExecutionEvent = new LoadTablePreExecutionEvent(
-      carbonTable.getCarbonTableIdentifier,
+    val (tableIndexes, indexOperationContext) = CommonLoadUtils.firePreLoadEvents(sparkSession,
       carbonLoadModel,
+      "",
       carbonLoadModel.getFactFilePath,
+      parameters.asJava,
+      parameters.asJava,
       false,
-      parameters.asJava,
-      parameters.asJava,
-      false
-    )
-    OperationListenerBus.getInstance().fireEvent(loadTablePreExecutionEvent, operationContext)
+      false,
+      None,
+      operationContext)
     // prepare the stream segment
     val segmentId = getStreamSegmentId(carbonTable)
     carbonLoadModel.setSegmentId(segmentId)
@@ -118,11 +118,12 @@ object StreamSinkFactory {
       operationContext)
 
     // fire post event before streamin is started
-    val loadTablePostExecutionEvent = new LoadTablePostExecutionEvent(
-      carbonTable.getCarbonTableIdentifier,
-      carbonLoadModel
-    )
-    OperationListenerBus.getInstance().fireEvent(loadTablePostExecutionEvent, operationContext)
+    CommonLoadUtils.firePostLoadEvents(sparkSession,
+      carbonLoadModel,
+      tableIndexes,
+      indexOperationContext,
+      carbonTable,
+      operationContext)
     carbonAppendableStreamSink
   }
 

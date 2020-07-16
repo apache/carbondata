@@ -51,12 +51,6 @@ public class LoadEvents {
       this.isOverWriteTable = isOverWriteTable;
     }
 
-    public LoadTablePreExecutionEvent(CarbonTableIdentifier carbonTableIdentifier,
-        CarbonLoadModel carbonLoadModel) {
-      this.carbonTableIdentifier = carbonTableIdentifier;
-      this.carbonLoadModel = carbonLoadModel;
-    }
-
     public CarbonTableIdentifier getCarbonTableIdentifier() {
       return carbonTableIdentifier;
     }
