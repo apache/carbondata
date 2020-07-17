@@ -101,12 +101,9 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
   private ReadCommittedScope readCommittedScope;
 
   /**
-   * {@inheritDoc}
-   * Configurations FileInputFormat.INPUT_DIR
-   * are used to get table path to read.
-   *
-   * @param job
-   * @return List<InputSplit> list of CarbonInputSplit
+   * get list of block/blocklet and make them to CarbonInputSplit
+   * @param job JobContext with Configuration
+   * @return list of CarbonInputSplit
    * @throws IOException
    */
   @Override

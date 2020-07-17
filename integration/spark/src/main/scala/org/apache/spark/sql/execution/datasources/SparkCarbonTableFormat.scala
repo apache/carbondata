@@ -174,7 +174,7 @@ with Serializable {
     // in load status update time
     val updateTimeStamp = options.get("updatetimestamp")
     if (updateTimeStamp.isDefined) {
-      conf.set(CarbonTableOutputFormat.UPADTE_TIMESTAMP, updateTimeStamp.get)
+      conf.set(CarbonTableOutputFormat.UPDATE_TIMESTAMP, updateTimeStamp.get)
     }
     conf.set(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, sparkSession.sparkContext.appName)
     CarbonTableOutputFormat.setLoadModel(conf, model)

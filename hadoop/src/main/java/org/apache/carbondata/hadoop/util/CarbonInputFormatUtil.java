@@ -39,25 +39,6 @@ import org.apache.log4j.Logger;
  * Utility class
  */
 public class CarbonInputFormatUtil {
-
-  /**
-   * Attribute for Carbon LOGGER.
-   */
-  private static final Logger LOGGER =
-      LogServiceFactory.getLogService(CarbonProperties.class.getName());
-
-  public static <V> CarbonFileInputFormat<V> createCarbonFileInputFormat(
-      AbsoluteTableIdentifier identifier, Job job) throws IOException {
-    CarbonFileInputFormat<V> carbonInputFormat = new CarbonFileInputFormat<>();
-    CarbonTableInputFormat.setDatabaseName(job.getConfiguration(),
-        identifier.getCarbonTableIdentifier().getDatabaseName());
-    CarbonTableInputFormat
-        .setTableName(job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
-    FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
-    setIndexJobIfConfigured(job.getConfiguration());
-    return carbonInputFormat;
-  }
-
   public static <V> CarbonTableInputFormat<V> createCarbonInputFormat(
       AbsoluteTableIdentifier identifier,
       Job job) throws IOException {
@@ -87,5 +68,4 @@ public class CarbonInputFormatUtil {
     String jobTrackerID = createJobTrackerID(date);
     return new JobID(jobTrackerID, batch);
   }
-
 }

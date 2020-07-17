@@ -98,7 +98,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
    * Set the update timestamp if user sets in case of update query. It needs to be updated
    * in load status update time
    */
-  public static final String UPADTE_TIMESTAMP = "mapreduce.carbontable.update.timestamp";
+  public static final String UPDATE_TIMESTAMP = "mapreduce.carbontable.update.timestamp";
 
   /**
    * During update query we first delete the old data and then add updated data to new segment, so
@@ -107,11 +107,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
    */
   public static final String SEGMENTS_TO_BE_DELETED =
       "mapreduce.carbontable.segments.to.be.removed";
-
-  /**
-   * It is used only to fire events in case of any child tables to be loaded.
-   */
-  public static final String OPERATION_CONTEXT = "mapreduce.carbontable.operation.context";
 
   private static final Logger LOG =
       LogServiceFactory.getLogService(CarbonTableOutputFormat.class.getName());

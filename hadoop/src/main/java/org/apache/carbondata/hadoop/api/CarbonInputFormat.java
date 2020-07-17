@@ -266,10 +266,6 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return configuration.get(COLUMN_PROJECTION);
   }
 
-  public static void setFgIndexPruning(Configuration configuration, boolean enable) {
-    configuration.set(FG_INDEX_PRUNING, String.valueOf(enable));
-  }
-
   public static boolean isFgIndexPruningEnable(Configuration configuration) {
     String enable = configuration.get(FG_INDEX_PRUNING);
 
@@ -383,12 +379,9 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   /**
-   * {@inheritDoc}
-   * Configurations FileInputFormat.INPUT_DIR
-   * are used to get table path to read.
-   *
-   * @param job
-   * @return List<InputSplit> list of CarbonInputSplit
+   * get list of block/blocklet and make them to CarbonInputSplit
+   * @param job JobContext with Configuration
+   * @return list of CarbonInputSplit
    * @throws IOException
    */
   @Override

@@ -65,7 +65,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
   public CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
     CarbonTable carbonTableTemp;
     if (carbonTable == null) {
-      // carbon table should be created either from deserialize table info (schema saved in
+      // carbon table should be created either from deserialized table info (schema saved in
       // hive metastore) or by reading schema in HDFS (schema saved in HDFS)
       TableInfo tableInfo = getTableInfo(configuration);
       CarbonTable localCarbonTable;
@@ -92,12 +92,9 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
   }
 
   /**
-   * {@inheritDoc}
-   * Configurations FileInputFormat.INPUT_DIR
-   * are used to get table path to read.
-   *
-   * @param job
-   * @return List<InputSplit> list of CarbonInputSplit
+   * get list of block/blocklet and make them to CarbonInputSplit
+   * @param job JobContext with Configuration
+   * @return list of CarbonInputSplit
    * @throws IOException
    */
   @Override
