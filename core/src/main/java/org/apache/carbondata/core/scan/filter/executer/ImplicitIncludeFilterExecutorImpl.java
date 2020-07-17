@@ -17,10 +17,13 @@
 
 package org.apache.carbondata.core.scan.filter.executer;
 
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
@@ -43,12 +46,34 @@ public class ImplicitIncludeFilterExecutorImpl
   @Override
   public BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
       boolean useBitsetPipeline) {
-    BitSetGroup bitSetGroup = new BitSetGroup(
-        rawBlockletColumnChunks.getDataBlock().numberOfPages());
-    for (int i = 0; i < rawBlockletColumnChunks.getDataBlock().numberOfPages(); i++) {
-      bitSetGroup.setBitSet(
-          setBitSetForCompleteDimensionData(
-              rawBlockletColumnChunks.getDataBlock().getPageRowCount(i)), i);
+    DataRefNode dataBlock = rawBlockletColumnChunks.getDataBlock();
+    int numberOfPages = dataBlock.numberOfPages();
+    BitSetGroup bitSetGroup = new BitSetGroup(numberOfPages);
+    String blockId = dataBlock.getTableBlockInfo().getFilePath();
+    String shortBlockId =
+        CarbonTablePath.getShortBlockId(blockId.substring(blockId.lastIndexOf("/Part") + 1));
+    short blockletIndex = dataBlock.blockletIndex();
+    Set<String> blockletPageRowIds =
+        dimColumnEvaluatorInfo.getFilterValues().getImplicitColumnFilterBlockToBlockletsMap()
+            .get(shortBlockId);
+    if (blockletPageRowIds.toArray(new String[blockletPageRowIds.size()])[0]
+        .contains(CarbonCommonConstants.FILE_SEPARATOR)) {
+      for (int i = 0; i < numberOfPages; i++) {
+        List<String> rowIds = new ArrayList<>();
+        for (String blockletPageRowId : blockletPageRowIds) {
+          if (blockletPageRowId
+              .startsWith(blockletIndex + CarbonCommonConstants.FILE_SEPARATOR + i)) {
+            rowIds.add(blockletPageRowId.split(CarbonCommonConstants.FILE_SEPARATOR)[2]);
+          }
+        }
+        bitSetGroup
+            .setBitSet(setBitSetForCompleteDimensionData(dataBlock.getPageRowCount(i), rowIds), i);
+      }
+    } else {
+      for (int i = 0; i < numberOfPages; i++) {
+        bitSetGroup
+            .setBitSet(setBitSetForCompleteDimensionData(dataBlock.getPageRowCount(i), null), i);
+      }
     }
     return bitSetGroup;
   }
@@ -93,13 +118,24 @@ public class ImplicitIncludeFilterExecutorImpl
       // so separating out block id for look up in implicit filter
       String blockId =
           shortBlockId.substring(0, shortBlockId.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
-      Set<Integer> blockletIds =
+      Set<String> blockletIds =
           dimColumnEvaluatorInfo.getFilterValues().getImplicitColumnFilterBlockToBlockletsMap()
               .get(blockId);
       if (null != blockletIds) {
-        int idInUniqueBlockPath = Integer.parseInt(shortBlockId.substring(blockId.length() + 1));
-        if (blockletIds.contains(idInUniqueBlockPath)) {
-          isScanRequired = true;
+        if (blockletIds.toArray(new String[blockletIds.size()])[0]
+            .contains(CarbonCommonConstants.FILE_SEPARATOR)) {
+          String idInUniqueBlockPath = shortBlockId.substring(blockId.length() + 1);
+          for (String blockPageRowIds : blockletIds) {
+            if (blockPageRowIds.split(CarbonCommonConstants.FILE_SEPARATOR)[0]
+                .equalsIgnoreCase(idInUniqueBlockPath)) {
+              isScanRequired = true;
+            }
+          }
+        } else {
+          String idInUniqueBlockPath = shortBlockId.substring(blockId.length() + 1);
+          if (blockletIds.contains(idInUniqueBlockPath)) {
+            isScanRequired = true;
+          }
         }
       }
     }
@@ -112,13 +148,16 @@ public class ImplicitIncludeFilterExecutorImpl
   /**
    * For implicit column filtering, complete data need to be selected. As it is a special case
    * no data need to be discarded, implicit filtering is only for selecting block and blocklets
-   *
-   * @param numberOfRows
-   * @return
    */
-  private BitSet setBitSetForCompleteDimensionData(int numberOfRows) {
+  private BitSet setBitSetForCompleteDimensionData(int numberOfRows, List<String> rows) {
     BitSet bitSet = new BitSet();
-    bitSet.set(0, numberOfRows, true);
+    if (rows == null) {
+      bitSet.set(0, numberOfRows, true);
+    } else {
+      for (String row : rows) {
+        bitSet.set(Integer.parseInt(row));
+      }
+    }
     return bitSet;
   }
 

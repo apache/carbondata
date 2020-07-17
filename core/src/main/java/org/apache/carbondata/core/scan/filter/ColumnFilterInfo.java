@@ -34,7 +34,7 @@ public class ColumnFilterInfo implements Serializable {
    * Implicit column filter values to be used for block and blocklet pruning
    * Contains block id to its blocklet mapping
    */
-  private Map<String, Set<Integer>> implicitColumnFilterBlockToBlockletsMap;
+  private Map<String, Set<String>> implicitColumnFilterBlockToBlockletsMap;
   private List<Integer> excludeFilterList;
   /**
    * maintain the no dictionary filter values list.
@@ -85,12 +85,12 @@ public class ColumnFilterInfo implements Serializable {
     this.excludeFilterList = excludeFilterList;
   }
 
-  public Map<String, Set<Integer>> getImplicitColumnFilterBlockToBlockletsMap() {
+  public Map<String, Set<String>> getImplicitColumnFilterBlockToBlockletsMap() {
     return implicitColumnFilterBlockToBlockletsMap;
   }
 
   public void setImplicitColumnFilterBlockToBlockletsMap(
-      Map<String, Set<Integer>> implicitColumnFilterBlockToBlockletsMap) {
+      Map<String, Set<String>> implicitColumnFilterBlockToBlockletsMap) {
     // this is done to improve the query performance. As the list of size increases time taken to
     // search in list will increase as list contains method uses equals check internally but set
     // will be very fast as it will directly use the has code to find the bucket and search

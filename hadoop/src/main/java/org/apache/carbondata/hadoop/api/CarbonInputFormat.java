@@ -705,9 +705,9 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       CarbonMultiBlockSplit split = (CarbonMultiBlockSplit) inputSplit;
       List<CarbonInputSplit> splits = split.getAllSplits();
       // iterate over all the splits and create block to bblocklet mapping
-      Map<String, Set<Integer>> blockIdToBlockletIdMapping = new HashMap<>();
+      Map<String, Set<String>> blockIdToBlockletIdMapping = new HashMap<>();
       for (CarbonInputSplit carbonInputSplit : splits) {
-        Set<Integer> validBlockletIds = carbonInputSplit.getValidBlockletIds();
+        Set<String> validBlockletIds = carbonInputSplit.getValidBlockletIds();
         if (null != validBlockletIds && !validBlockletIds.isEmpty()) {
           String uniqueBlockPath = carbonInputSplit.getFilePath();
           String shortBlockPath = CarbonTablePath

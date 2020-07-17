@@ -23,14 +23,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
 /**
  * Custom class to handle filter values for Implicit filter
@@ -41,9 +44,15 @@ public class ImplicitExpression extends Expression {
    * map that contains the mapping of block id to the valid blocklets in that block which contain
    * the data as per the applied filter
    */
-  private Map<String, Set<Integer>> blockIdToBlockletIdMapping;
+  private final Map<String, Set<String>> blockIdToBlockletIdMapping;
+
+  /**
+   * checks if implicit filter exceeds complex filter threshold
+   */
+  private boolean isThresholdReached;
 
   public ImplicitExpression(List<Expression> implicitFilterList) {
+    final Logger LOGGER = LogServiceFactory.getLogService(getClass().getName());
     // initialize map with half the size of filter list as one block id can contain
     // multiple blocklets
     blockIdToBlockletIdMapping = new HashMap<>(implicitFilterList.size() / 2);
@@ -51,21 +60,38 @@ public class ImplicitExpression extends Expression {
       String blockletPath = ((LiteralExpression) value).getLiteralExpValue().toString();
       addBlockEntry(blockletPath);
     }
+    int complexFilterThreshold = CarbonProperties.getInstance().getComplexFilterThresholdForSI();
+    isThresholdReached = implicitFilterList.size() > complexFilterThreshold;
+    if (isThresholdReached) {
+      LOGGER.info("Implicit Filter Size: " + implicitFilterList.size() + ", Threshold is: "
+          + complexFilterThreshold);
+    }
   }
 
-  public ImplicitExpression(Map<String, Set<Integer>> blockIdToBlockletIdMapping) {
+  public ImplicitExpression(Map<String, Set<String>> blockIdToBlockletIdMapping) {
     this.blockIdToBlockletIdMapping = blockIdToBlockletIdMapping;
   }
 
   private void addBlockEntry(String blockletPath) {
+    String[] blockletPathSplits = blockletPath.split(CarbonCommonConstants.FILE_SEPARATOR);
     String blockId =
-        blockletPath.substring(0, blockletPath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
-    Set<Integer> blockletIds = blockIdToBlockletIdMapping.get(blockId);
-    if (null == blockletIds) {
-      blockletIds = new HashSet<>();
-      blockIdToBlockletIdMapping.put(blockId, blockletIds);
+        blockletPathSplits[0] + CarbonCommonConstants.FILE_SEPARATOR + blockletPathSplits[1]
+            + CarbonCommonConstants.FILE_SEPARATOR + blockletPathSplits[2];
+    Set<String> blockletIds =
+        blockIdToBlockletIdMapping.computeIfAbsent(blockId, k -> new HashSet<>());
+    if (blockletPathSplits.length > 4 && !isThresholdReached) {
+      // set row id's instead of blocklet id
+      blockletIds.add(
+          blockletPathSplits[3] + CarbonCommonConstants.FILE_SEPARATOR + blockletPathSplits[4]
+              + CarbonCommonConstants.FILE_SEPARATOR + blockletPathSplits[5]);
+    } else if (blockletPathSplits.length > 3) {
+      blockletIds.add(blockletPathSplits[3]);
+    } else {
+      blockId =
+          blockletPath.substring(0, blockletPath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
+      blockletIds = blockIdToBlockletIdMapping.computeIfAbsent(blockId, k -> new HashSet<>());
+      blockletIds.add(blockletPath.substring(blockId.length() + 1));
     }
-    blockletIds.add(Integer.parseInt(blockletPath.substring(blockId.length() + 1)));
   }
 
   @Override
@@ -73,7 +99,7 @@ public class ImplicitExpression extends Expression {
     throw new UnsupportedOperationException("Operation not supported for Implicit expression");
   }
 
-  public Map<String, Set<Integer>> getBlockIdToBlockletIdMapping() {
+  public Map<String, Set<String>> getBlockIdToBlockletIdMapping() {
     return blockIdToBlockletIdMapping;
   }
 
@@ -90,10 +116,10 @@ public class ImplicitExpression extends Expression {
   public String getString() {
     StringBuilder value = new StringBuilder();
     value.append("ImplicitExpression(");
-    for (Map.Entry<String, Set<Integer>> entry : blockIdToBlockletIdMapping.entrySet()) {
+    for (Map.Entry<String, Set<String>> entry : blockIdToBlockletIdMapping.entrySet()) {
       value.append(entry.getKey()).append(" --> ");
       value.append(
-          StringUtils.join(entry.getValue().toArray(new Integer[entry.getValue().size()]), ","))
+          StringUtils.join(entry.getValue().toArray(new String[entry.getValue().size()]), ","))
           .append(";");
       // return maximum of 100 characters in the getString method
       if (value.length() > 100) {

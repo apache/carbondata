@@ -145,9 +145,9 @@ object CarbonHiveIndexMetadataUtil {
   def checkArrayFilter(condition: Expression): Boolean = {
     var arrayFilter = false
     condition transformDown {
-      case a@GetArrayItem(_, _) =>
+      case arrayItem@GetArrayItem(_, _) =>
         arrayFilter = true
-        a
+        arrayItem
     }
     arrayFilter
   }

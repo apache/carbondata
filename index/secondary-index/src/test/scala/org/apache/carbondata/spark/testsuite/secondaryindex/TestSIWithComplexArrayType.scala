@@ -22,9 +22,14 @@ import org.scalatest.BeforeAndAfterEach
 
 import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUtils.isFilterPushedDownToSI
 
-class TestSIwithComplex extends QueryTest with BeforeAndAfterEach {
+class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
 
   override def beforeEach(): Unit = {
+    sql("drop table if exists complextable")
+  }
+
+  override def afterEach(): Unit = {
+    sql("drop index if exists index_1 on complextable")
     sql("drop table if exists complextable")
   }
 
@@ -116,5 +121,6 @@ class TestSIwithComplex extends QueryTest with BeforeAndAfterEach {
     checkAnswer(sql("select count(*) from index_1"), Seq(Row(1)) )
     sql("insert into complextable select 'a', array(null), 'b'")
     checkAnswer(sql("select count(*) from index_1"), Seq(Row(2)) )
+    println("end")
   }
 }

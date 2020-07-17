@@ -263,8 +263,10 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case SIUnaryFilterPushDownOperation(tableName, filterCondition) =>
         val attributeMap = indexTableAttributeMap.get(tableName).get
         var filterAttributes = indexJoinedFilterAttributes
+        var isComplexFilter = false;
         val newFilterCondition = filterCondition transform {
           case ArrayContains(left, right) =>
+            isComplexFilter = true
             EqualTo(left, right)
         }
         val indexTableFilter = newFilterCondition transformDown {
@@ -303,8 +305,12 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
           indexTableDf.logicalPlan
         }
         // Add Group By on PositionReference after join
-        indexTableDf = createDF(sparkSession,
-          Aggregate(positionReference, positionReference, indexLogicalPlan))
+        indexTableDf = if (isComplexFilter) {
+          createDF(sparkSession, Project(positionReference, indexLogicalPlan))
+        } else {
+          createDF(sparkSession,
+            Aggregate(positionReference, positionReference, indexLogicalPlan))
+        }
         // return the data frame
         (indexTableDf, filterAttributes)
       case SIBinaryFilterPushDownOperation(nodeType, leftOperation, rightOperation) =>

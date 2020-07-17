@@ -24,7 +24,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
-import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan, Project}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalogUtil}
 import org.apache.spark.sql.secondaryindex.command.{IndexModel, SecondaryIndexModel}
@@ -197,6 +197,7 @@ object CarbonIndexUtil {
   def checkIsIndexTable(plan: LogicalPlan): Boolean = {
     plan match {
       case Aggregate(_, _, plan) if (isIndexTablesJoin(plan)) => true
+      case Project(_, plan) if (isIndexTablesJoin(plan)) => true
       case _ => false
     }
   }

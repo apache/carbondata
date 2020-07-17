@@ -316,8 +316,7 @@ public abstract class BlockletScannedResult {
         if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
             .equals(columnVectorInfo.dimension.getColumnName())) {
           data = data + CarbonCommonConstants.FILE_SEPARATOR + pageCounter
-              + CarbonCommonConstants.FILE_SEPARATOR + (pageFilteredRowId == null ?
-              j :
+              + CarbonCommonConstants.FILE_SEPARATOR + (pageFilteredRowId == null ? j :
               pageFilteredRowId[pageCounter][j]);
         }
         vector.putByteArray(vectorOffset++,

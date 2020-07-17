@@ -49,7 +49,7 @@ public class ImplicitColumnVisitor implements ResolvedFilterInfoVisitorIntf {
     if (visitableObj instanceof DimColumnResolvedFilterInfo) {
       ColumnFilterInfo resolvedFilterObject = null;
       if (metadata.getExpression() instanceof ImplicitExpression) {
-        Map<String, Set<Integer>> blockIdToBlockletIdMapping =
+        Map<String, Set<String>> blockIdToBlockletIdMapping =
             ((ImplicitExpression) metadata.getExpression()).getBlockIdToBlockletIdMapping();
         resolvedFilterObject = FilterUtil
             .getImplicitColumnFilterList(blockIdToBlockletIdMapping, metadata.isIncludeFilter());

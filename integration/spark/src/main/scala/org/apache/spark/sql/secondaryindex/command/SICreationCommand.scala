@@ -641,7 +641,8 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
 
   def cloneColumnSchema(parentColumnSchema: ColumnSchema, schemaOrdinal: Int): ColumnSchema = {
     val columnSchema = new ColumnSchema()
-    if(DataTypes.isArrayType(parentColumnSchema.getDataType)) {
+    // if data type is arrayType, then store the column as STRING type in SI
+    if (DataTypes.isArrayType(parentColumnSchema.getDataType)) {
       columnSchema.setDataType(DataTypes.STRING)
     } else {
       columnSchema.setDataType(parentColumnSchema.getDataType)
