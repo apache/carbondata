@@ -163,7 +163,7 @@ public class StreamSegment {
         return createNewSegment(table, details);
       } else {
         LOGGER.error(
-            "Not able to acquire the lock for stream table status update for table " + table
+            "Not able to acquire the status update lock for streaming table " + table
                 .getDatabaseName() + "." + table.getTableName());
         throw new IOException("Failed to get stream segment");
       }
