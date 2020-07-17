@@ -194,16 +194,19 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
   private void cleanUpLogs(final String startName, final String folderPath) {
     if (maxBackupIndex > 0) {
       // Clean the logs files
-      Runnable r = () -> {
-        synchronized (ExtendedRollingFileAppender.class) {
-          cleanupInProgress = true;
-          try {
-            cleanLogs(startName, folderPath, maxBackupIndex);
-          } catch (Throwable e) {
-            // ignore any error
-            LogLog.error("Cleaning logs failed", e);
-          } finally {
-            cleanupInProgress = false;
+      Runnable r = new Runnable() {
+
+        public void run() {
+          synchronized (ExtendedRollingFileAppender.class) {
+            cleanupInProgress = true;
+            try {
+              cleanLogs(startName, folderPath, maxBackupIndex);
+            } catch (Throwable e) {
+              // ignore any error
+              LogLog.error("Cleaning logs failed", e);
+            } finally {
+              cleanupInProgress = false;
+            }
           }
         }
       };
