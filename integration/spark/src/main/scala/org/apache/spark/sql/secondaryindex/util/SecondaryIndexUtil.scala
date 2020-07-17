@@ -37,6 +37,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.{TableBlockInfo, TaskBlockInfo}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
+import org.apache.carbondata.core.locks.CarbonLockUtil
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.metadata.datatype.DataType
@@ -223,7 +224,13 @@ object SecondaryIndexUtil {
           val statusLock =
             new SegmentStatusManager(indexCarbonTable.getAbsoluteTableIdentifier).getTableStatusLock
           try {
-            if (statusLock.lockWithRetries()) {
+            val retryCount = CarbonLockUtil
+              .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK,
+                CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK_DEFAULT)
+            val maxTimeout = CarbonLockUtil.
+              getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
+                CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT)
+            if (statusLock.lockWithRetries(retryCount, maxTimeout)) {
               val endTime = System.currentTimeMillis()
               val loadMetadataDetails = SegmentStatusManager
                 .readLoadMetadata(indexCarbonTable.getMetadataPath)
@@ -240,6 +247,10 @@ object SecondaryIndexUtil {
               SegmentStatusManager
                 .writeLoadDetailsIntoFile(CarbonTablePath.getTableStatusFilePath(tablePath),
                   loadMetadataDetails)
+            } else {
+              throw new RuntimeException(
+                "Not able to acquire the lock for table status updation for table " + databaseName +
+                  "." + indexCarbonTable.getTableName)
             }
           } finally {
             if (statusLock != null) {

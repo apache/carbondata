@@ -1063,8 +1063,14 @@ public class SegmentStatusManager {
             CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
         boolean locked = false;
         try {
-          // Update load metadata file after cleaning deleted nodes
-          locked = carbonTableStatusLock.lockWithRetries();
+          int retryCount = CarbonLockUtil
+              .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK,
+                  CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK_DEFAULT);
+          int maxTimeout = CarbonLockUtil
+              .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
+                  CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
+          // Update load metadate file after cleaning deleted nodes
+          locked = carbonTableStatusLock.lockWithRetries(retryCount, maxTimeout);
           if (locked) {
             LOG.info("Table status lock has been successfully acquired.");
             // Again read status and check to verify update required or not.
