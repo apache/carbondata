@@ -69,6 +69,12 @@ class DistributedIndexJob extends AbstractIndexJob {
         if (null != splitFolderPath && !splitFolderPath.deleteFile()) {
           LOGGER.error("Problem while deleting the temp directory:"
             + splitFolderPath.getAbsolutePath)
+        } else {
+          // if the path build with getQueryId already exists,
+          // the splitFolderPath should be null, need delete
+          if (null == splitFolderPath) {
+            CarbonUtil.deleteTempFolderForIndexServer(indexFormat.getQueryId)
+          }
         }
       }
     }

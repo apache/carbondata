@@ -484,4 +484,20 @@ public class LocalCarbonFile implements CarbonFile {
   public int hashCode() {
     return Objects.hash(file.getAbsolutePath());
   }
+
+  @Override
+  public List<CarbonFile> listDirs() throws IOException {
+    if (!file.isDirectory()) {
+      return new ArrayList<CarbonFile>();
+    }
+    File[] files = file.listFiles();
+    if (null == files) {
+      return new ArrayList<CarbonFile>();
+    }
+    List<CarbonFile> carbonFiles = new ArrayList<CarbonFile>();
+    for (File value : files) {
+      carbonFiles.add(new LocalCarbonFile(value));
+    }
+    return carbonFiles;
+  }
 }

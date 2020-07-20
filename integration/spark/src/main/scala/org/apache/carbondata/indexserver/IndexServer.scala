@@ -19,7 +19,7 @@ package org.apache.carbondata.indexserver
 import java.net.InetSocketAddress
 import java.security.PrivilegedAction
 import java.util.UUID
-import java.util.concurrent.{Executors, ExecutorService}
+import java.util.concurrent.{Executors, ExecutorService, ScheduledExecutorService, TimeUnit}
 
 import scala.collection.JavaConverters._
 
@@ -39,7 +39,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.IndexInputFormat
 import org.apache.carbondata.core.indexstore.{ExtendedBlockletWrapperContainer, SegmentWrapperContainer}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.events.{IndexServerEvent, OperationContext, OperationListenerBus}
 
 @ProtocolInfo(protocolName = "org.apache.carbondata.indexserver.ServerInterface",
@@ -101,6 +101,10 @@ object IndexServer extends ServerInterface {
     CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE) != null
   private val operationContext: OperationContext = new OperationContext
+
+  private val agePeriod: String = CarbonProperties.getInstance
+    .getProperty(CarbonCommonConstants.CARBON_INDEXSERVER_TEMPFOLDER_DELETETIME,
+      CarbonCommonConstants.CARBON_INDEXSERVER_TEMPFOLDER_DELETETIME_DEFAULT)
 
   /**
    * Perform the operation 'f' on behalf of the login user.
@@ -269,6 +273,10 @@ object IndexServer extends ServerInterface {
         .CARBON_ENABLE_INDEX_SERVER, "true")
       CarbonProperties.getInstance().addNonSerializableProperty(CarbonCommonConstants
         .IS_DRIVER_INSTANCE, "true")
+      // when restart index service clean the tmp folder
+      CarbonUtil.cleanTempFolderForIndexServer()
+      // create a thread to aging the temp folder
+      indexTempFolderCleanUpScheduleThread()
       LOGGER.info(s"Index cache server running on ${ server.getPort } port")
     }
   }
@@ -315,5 +323,18 @@ object IndexServer extends ServerInterface {
     override def getServices: Array[Service] = {
       Array(new Service("security.indexserver.protocol.acl", classOf[ServerInterface]))
     }
+  }
+
+  def indexTempFolderCleanUpScheduleThread(): Unit = {
+    val runnable = new Runnable() {
+      def run() {
+        val age = System.currentTimeMillis() - agePeriod.toLong
+        CarbonUtil.agingTempFolderForIndexServer(age)
+        LOGGER.info(s"Complete age temp folder ${CarbonUtil.getIndexServerTempPath}")
+      }
+    }
+    val ags: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor
+    ags.scheduleAtFixedRate(runnable, 1000, 3600000, TimeUnit.MILLISECONDS)
+    LOGGER.info("index server temp folders aging thread start")
   }
 }

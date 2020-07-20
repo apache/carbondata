@@ -1,15 +1,33 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.indexserver
 
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
-
+import mockit.{Mock, MockUp}
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
-
-import org.apache.carbondata.core.index.Segment
+import org.apache.carbondata.core.index.{IndexInputFormat, Segment}
 import org.apache.carbondata.core.index.dev.expr.IndexInputSplitWrapper
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexInputSplit
-import org.apache.carbondata.indexserver.DistributedRDDUtils
+import org.apache.carbondata.indexserver.{DistributedIndexJob, DistributedRDDUtils}
+import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 
 class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
 
@@ -18,9 +36,12 @@ class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
 
   val tableCache: ConcurrentHashMap[String, ConcurrentHashMap[String, String]] = DistributedRDDUtils.tableToExecutorMapping
 
+  val indexServerTempFolder = "file:////tmp/indexservertmp/"
+
   override protected def beforeEach(): Unit = {
     executorCache.clear()
     tableCache.clear()
+    FileFactory.deleteFile(indexServerTempFolder)
     buildTestData
   }
 
@@ -111,5 +132,56 @@ class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
     DistributedRDDUtils.executorToCacheSizeMapping.asScala.foreach {
       a => a._2.values().asScala.foreach(size => assert(size > 27500 && size < 28000))
     }
+  }
+
+  test("Test file create and delete when query") {
+    val distributedRDDUtilsTest = new DistributedIndexJob()
+
+    val mockDataMapFormat = new MockUp[IndexInputFormat]() {
+      @Mock
+      def getQueryId: String = {
+        "a885a111-439f-4b91-ad81-f0bd48164b84"
+      }
+    }
+    try{
+      distributedRDDUtilsTest.execute(mockDataMapFormat.getMockInstance)
+    } catch {
+      case ex: Exception =>
+    }
+    val tmpPath = "file:////tmp/indexservertmp/a885a111-439f-4b91-ad81-f0bd48164b84"
+    assert(!FileFactory.isFileExist(tmpPath))
+    assert(FileFactory.isFileExist(indexServerTempFolder))
+  }
+
+  test("Test file create and delete when query the getQueryId path is exists") {
+    val distributedRDDUtilsTest = new DistributedIndexJob()
+    val tmpPath = "file:////tmp/indexservertmp/a885a111-439f-4b91-ad81-f0bd48164b84"
+    val newPath = "file:////tmp/indexservertmp/a885a111-439f-4b91-ad81-f0bd48164b84/ip1"
+    val newFile = "file:////tmp/indexservertmp/a885a111-439f-4b91-ad81-f0bd48164b84/ip1/as1"
+    val tmpPathAnother = "file:////tmp/indexservertmp/a885a111-439f-4b91-ad81-f0bd48164b8412"
+    FileFactory.createDirectoryAndSetPermission(tmpPath, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    FileFactory.createDirectoryAndSetPermission(newPath, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    FileFactory.createNewFile(newFile, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    FileFactory.createDirectoryAndSetPermission(tmpPathAnother, new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+
+    assert(FileFactory.isFileExist(newFile))
+    assert(FileFactory.isFileExist(tmpPath))
+    assert(FileFactory.isFileExist(newPath))
+    assert(FileFactory.isFileExist(tmpPathAnother))
+
+    val mockDataMapFormat = new MockUp[IndexInputFormat]() {
+      @Mock
+      def getQueryId: String = {
+        "a885a111-439f-4b91-ad81-f0bd48164b84"
+      }
+    }
+    try{
+      distributedRDDUtilsTest.execute(mockDataMapFormat.getMockInstance)
+    } catch {
+      case ex: Exception =>
+    }
+    assert(!FileFactory.isFileExist(tmpPath))
+    assert(FileFactory.isFileExist(indexServerTempFolder))
+    assert(FileFactory.isFileExist(tmpPathAnother))
   }
 }

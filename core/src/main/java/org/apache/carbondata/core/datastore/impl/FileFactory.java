@@ -721,4 +721,14 @@ public final class FileFactory {
     FileFactory.createDirectoryAndSetPermission(directory.getCanonicalPath(), permission);
   }
 
+  /**
+   * get the carbon folder list
+   *
+   * @param path folder path
+   * @throws IOException if error occurs
+   */
+  public static List<CarbonFile> getFolderList(String path) throws IOException {
+    return getCarbonFile(path, getConfiguration()).listDirs();
+  }
+
 }
