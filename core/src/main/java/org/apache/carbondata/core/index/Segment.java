@@ -275,6 +275,11 @@ public class Segment implements Serializable, Writable {
     return null;
   }
 
+  public static Segment getSegment(String segmentNo, String segmentFileName,
+      ReadCommittedScope readCommittedScope) {
+    return new Segment(segmentNo, segmentFileName, readCommittedScope);
+  }
+
   public Configuration getConfiguration() {
     return readCommittedScope.getConfiguration();
   }

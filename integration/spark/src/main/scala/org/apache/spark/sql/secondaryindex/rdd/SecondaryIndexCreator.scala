@@ -59,7 +59,7 @@ object SecondaryIndexCreator {
     indexTable: CarbonTable,
     forceAccessSegment: Boolean = false,
     isCompactionCall: Boolean,
-    isLoadToFailedSISegments: Boolean): CarbonTable = {
+    isLoadToFailedSISegments: Boolean): (CarbonTable, ListBuffer[ICarbonLock], OperationContext) = {
     var indexCarbonTable = indexTable
     val sc = secondaryIndexModel.sqlContext
     // get the thread pool size for secondary index creation
@@ -76,7 +76,7 @@ object SecondaryIndexCreator {
       indexCarbonTable = metastore
         .lookupRelation(Some(secondaryIndexModel.carbonLoadModel.getDatabaseName),
           secondaryIndexModel.secondaryIndex.indexName)(secondaryIndexModel.sqlContext
-          .sparkSession).asInstanceOf[CarbonRelation].carbonTable
+          .sparkSession).carbonTable
     }
 
     val operationContext = new OperationContext
@@ -119,6 +119,9 @@ object SecondaryIndexCreator {
       }
 
       validSegmentList = validSegments.asScala.toList
+      if (validSegmentList.isEmpty) {
+        return (indexCarbonTable, segmentLocks, operationContext)
+      }
 
       LOGGER.info(s"${indexCarbonTable.getTableUniqueName}: SI loading is started " +
               s"for segments: $validSegmentList")
@@ -266,13 +269,15 @@ object SecondaryIndexCreator {
           rebuiltSegments)
       }
 
-      // Index PrePriming for SI
-      DistributedRDDUtils.triggerPrepriming(secondaryIndexModel.sqlContext.sparkSession,
-        indexCarbonTable,
-        Seq(),
-        operationContext,
-        FileFactory.getConfiguration,
-        validSegments.asScala.toList)
+      if (!isCompactionCall) {
+        // Index PrePriming for SI
+        DistributedRDDUtils.triggerPrepriming(secondaryIndexModel.sqlContext.sparkSession,
+          indexCarbonTable,
+          Seq(),
+          operationContext,
+          FileFactory.getConfiguration,
+          validSegments.asScala.toList)
+      }
 
       // update the status of all the segments to marked for delete if data load fails, so that
       // next load which is triggered for SI table in post event of main table data load clears
@@ -294,17 +299,24 @@ object SecondaryIndexCreator {
         LOGGER.error("Dataload to secondary index creation has failed")
       }
 
-      val loadTableSIPostExecutionEvent: LoadTableSIPostExecutionEvent =
-        LoadTableSIPostExecutionEvent(sc.sparkSession,
-          indexCarbonTable.getCarbonTableIdentifier,
-          secondaryIndexModel.carbonLoadModel,
-          indexCarbonTable)
-      OperationListenerBus.getInstance
-        .fireEvent(loadTableSIPostExecutionEvent, operationContext)
+      if (!isCompactionCall) {
+        val loadTableSIPostExecutionEvent: LoadTableSIPostExecutionEvent =
+          LoadTableSIPostExecutionEvent(sc.sparkSession,
+            indexCarbonTable.getCarbonTableIdentifier,
+            secondaryIndexModel.carbonLoadModel,
+            indexCarbonTable)
+        OperationListenerBus.getInstance
+          .fireEvent(loadTableSIPostExecutionEvent, operationContext)
+      }
 
-      indexCarbonTable
+      if (isCompactionCall) {
+        (indexCarbonTable, segmentLocks, operationContext)
+      } else {
+        (indexCarbonTable, ListBuffer.empty, operationContext)
+      }
     } catch {
       case ex: Exception =>
+        LOGGER.error("Load to SI table failed", ex)
         FileInternalUtil
           .updateTableStatus(validSegmentList,
             secondaryIndexModel.carbonLoadModel.getDatabaseName,
@@ -316,13 +328,8 @@ object SecondaryIndexCreator {
               String](),
             indexCarbonTable,
             sc.sparkSession)
-        LOGGER.error(ex)
         throw ex
     } finally {
-      // release the segment locks
-      segmentLocks.foreach(segmentLock => {
-        segmentLock.unlock()
-      })
       // if some segments are skipped, disable the SI table so that
       // SILoadEventListenerForFailedSegments will take care to load to these segments in next
       // consecutive load to main table.
@@ -339,7 +346,6 @@ object SecondaryIndexCreator {
         if (!isCompactionCall) {
           SegmentStatusManager
             .deleteLoadsAndUpdateMetadata(indexCarbonTable, false, null)
-          TableProcessingOperations.deletePartialLoadDataIfExist(indexCarbonTable, false)
         }
       } catch {
         case e: Exception =>
@@ -350,6 +356,13 @@ object SecondaryIndexCreator {
       // close the executor service
       if (null != executorService) {
         executorService.shutdownNow()
+      }
+
+      // release the segment locks only for load flow
+      if (!isCompactionCall) {
+        segmentLocks.foreach(segmentLock => {
+          segmentLock.unlock()
+        })
       }
     }
   }

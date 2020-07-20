@@ -933,10 +933,10 @@ public final class CarbonDataMergerUtil {
     for (LoadMetadataDetails segment : loadMetadataDetails) {
       //check if this load is an already merged load.
       if (null != segment.getMergedLoadName()) {
-
-        segments.add(Segment.toSegment(segment.getMergedLoadName(), null));
+        segments
+            .add(Segment.getSegment(segment.getMergedLoadName(), segment.getSegmentFile(), null));
       } else {
-        segments.add(Segment.toSegment(segment.getLoadName(), null));
+        segments.add(Segment.getSegment(segment.getLoadName(), segment.getSegmentFile(), null));
       }
     }
     return segments;

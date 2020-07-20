@@ -19,19 +19,25 @@ package org.apache.spark.sql.secondaryindex.load
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.command.{IndexModel, SecondaryIndexModel}
+import org.apache.spark.sql.secondaryindex.events.LoadTableSIPostExecutionEvent
 import org.apache.spark.sql.secondaryindex.rdd.SecondaryIndexCreator
 import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.locks.ICarbonLock
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.events.OperationListenerBus
+import org.apache.carbondata.indexserver.DistributedRDDUtils
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
 object Compactor {
@@ -60,6 +66,7 @@ object Compactor {
     } else {
       java.util.Collections.emptyIterator()
     }
+    var allSegmentsLock: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer.empty
     while (iterator.hasNext) {
       val index = iterator.next()
       val indexColumns = index.getValue.get(CarbonCommonConstants.INDEX_COLUMNS).split(",").toList
@@ -76,11 +83,12 @@ object Compactor {
       try {
         val segmentToSegmentTimestampMap: util.Map[String, String] = new java.util
         .HashMap[String, String]()
-        val indexCarbonTable = SecondaryIndexCreator
+        val (indexCarbonTable, segmentLocks, operationContext) = SecondaryIndexCreator
           .createSecondaryIndex(secondaryIndexModel,
             segmentToSegmentTimestampMap, null,
             forceAccessSegment, isCompactionCall = true,
             isLoadToFailedSISegments = false)
+        allSegmentsLock ++= segmentLocks
         CarbonInternalLoaderUtil.updateLoadMetadataWithMergeStatus(
           indexCarbonTable,
           loadsToMerge,
@@ -124,6 +132,19 @@ object Compactor {
           segmentIdToLoadStartTimeMapping(validSegments.head),
           SegmentStatus.SUCCESS,
           carbonLoadModelForMergeDataFiles.getFactTimeStamp, rebuiltSegments.toList.asJava)
+
+        // Index PrePriming for SI
+        DistributedRDDUtils.triggerPrepriming(sparkSession, indexCarbonTable, Seq(),
+          operationContext, FileFactory.getConfiguration, validSegments)
+
+        val loadTableSIPostExecutionEvent: LoadTableSIPostExecutionEvent =
+          LoadTableSIPostExecutionEvent(sparkSession,
+            indexCarbonTable.getCarbonTableIdentifier,
+            secondaryIndexModel.carbonLoadModel,
+            indexCarbonTable)
+        OperationListenerBus.getInstance
+          .fireEvent(loadTableSIPostExecutionEvent, operationContext)
+
         siCompactionIndexList ::= indexCarbonTable
       } catch {
         case ex: Exception =>
@@ -138,6 +159,11 @@ object Compactor {
                """.stripMargin).collect()
           }
           throw ex
+      } finally {
+        // once compaction is success, release the segment locks
+        allSegmentsLock.foreach { segmentLock =>
+          segmentLock.unlock()
+        }
       }
     }
   }

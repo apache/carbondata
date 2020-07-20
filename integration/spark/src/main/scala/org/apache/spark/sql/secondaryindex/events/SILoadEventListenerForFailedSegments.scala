@@ -20,6 +20,7 @@ package org.apache.spark.sql.secondaryindex.events
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 
 import org.apache.log4j.Logger
 import org.apache.spark.internal.Logging
@@ -33,7 +34,7 @@ import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
@@ -91,6 +92,7 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
                   SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
                 val siTblLoadMetadataDetails: Array[LoadMetadataDetails] =
                   SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath)
+                var segmentLocks: ListBuffer[ICarbonLock] = ListBuffer.empty
                 if (!isLoadSIForFailedSegments
                     || !CarbonInternalLoaderUtil.checkMainTableSegEqualToSISeg(
                   mainTblLoadMetadataDetails,
@@ -166,8 +168,19 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
                         if (detail(0).getSegmentStatus == SegmentStatus.COMPACTED &&
                             mainTableDetail(0).getSegmentStatus == SegmentStatus.SUCCESS) {
                           detail(0).setSegmentStatus(SegmentStatus.SUCCESS)
-                          LOGGER.error("Added in SILoadFailedSegment " + detail(0).getLoadName)
-                          failedLoadMetadataDetails.add(detail(0))
+                          // in concurrent scenario, if a compaction is going on table, then SI
+                          // segments are updated first in table status and then the main table
+                          // segment, so in any load runs paralley this listener shouldn't consider
+                          // those segments accidentally. So try to take the segment lock.
+                          val segmentLockOfProbableOngngCompactionSeg = CarbonLockFactory
+                            .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
+                              CarbonTablePath.addSegmentPrefix(mainTableDetail(0).getLoadName) +
+                              LockUsage.LOCK)
+                          if (segmentLockOfProbableOngngCompactionSeg.lockWithRetries()) {
+                            segmentLocks += segmentLockOfProbableOngngCompactionSeg
+                            LOGGER.error("Added in SILoadFailedSegment " + detail(0).getLoadName)
+                            failedLoadMetadataDetails.add(detail(0))
+                          }
                         }
                       }
                     })
@@ -221,6 +234,10 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
                       LOGGER.error(s"Load to SI table to $indexTableName is failed " +
                                s"or SI table ENABLE is failed. ", ex)
                       return
+                  } finally {
+                    segmentLocks.foreach {
+                      segmentLock => segmentLock.unlock()
+                    }
                   }
                 }
             }
