@@ -154,182 +154,66 @@ object CastExpressionOptimization {
    */
   def checkIfCastCanBeRemove(expr: Expression): Option[sources.Filter] = {
     expr match {
-      case c@EqualTo(Cast(a: Attribute, _), Literal(v, t)) =>
-        a.dataType match {
-          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c, ts)
-          case i: IntegerType if t.sameType(DoubleType) =>
-            updateFilterForInt(v, c)
-          case s: ShortType if t.sameType(IntegerType) =>
-            updateFilterForShort(v, c)
-          case _ => Some(CastExpr(c))
+      case c@EqualTo(Cast(a: Attribute, _), Literal(v, t)) => updateFilter(c, a, v, t, false)
+      case c@EqualTo(Literal(v, t), Cast(a: Attribute, _)) => updateFilter(c, a, v, t, false)
+      case c@Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) => updateFilter(c, a, v, t, false)
+      case c@Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) => updateFilter(c, a, v, t, false)
+      case c@Not(In(Cast(a: Attribute, _), list)) => updateInFilter(c, a, list)
+      case c@In(Cast(a: Attribute, _), list) => updateInFilter(c, a, list, false)
+      case c@GreaterThan(Cast(a: Attribute, _), Literal(v, t)) => updateFilter(c, a, v, t)
+      case c@GreaterThan(Literal(v, t), Cast(a: Attribute, _)) => updateFilter(c, a, v, t)
+      case c@LessThan(Cast(a: Attribute, _), Literal(v, t)) => updateFilter(c, a, v, t)
+      case c@LessThan(Literal(v, t), Cast(a: Attribute, _)) => updateFilter(c, a, v, t)
+      case c@GreaterThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) => updateFilter(c, a, v, t)
+      case c@GreaterThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) => updateFilter(c, a, v, t)
+      case c@LessThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) => updateFilter(c, a, v, t)
+      case c@LessThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) => updateFilter(c, a, v, t)
+    }
+  }
+
+  private def updateInFilter(c: Expression, a: Attribute, list: scala.Seq[Expression],
+      isNotIn: Boolean = true): Option[Filter] = {
+
+    def update(value: scala.Seq[Expression]): Option[Filter] = {
+      if (!value.equals(list)) {
+        val hSet = value.map(e => e.eval(EmptyRow))
+        if (isNotIn) {
+          Some(sources.Not(sources.In(a.name, hSet.toArray)))
+        } else {
+          Some(sources.In(a.name, hSet.toArray))
         }
-      case c@EqualTo(Literal(v, t), Cast(a: Attribute, _)) =>
-        a.dataType match {
-          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c, ts)
-          case i: IntegerType if t.sameType(DoubleType) =>
-            updateFilterForInt(v, c)
-          case s: ShortType if t.sameType(IntegerType) =>
-            updateFilterForShort(v, c)
-          case _ => Some(CastExpr(c))
+      } else {
+        Some(CastExpr(c))
+      }
+    }
+
+    a.dataType match {
+      case ts@(_: DateType | _: TimestampType) if list.head.dataType.sameType(StringType) =>
+        update(typeCastStringToLongList(list, ts))
+      case i: IntegerType if list.head.dataType.sameType(DoubleType) =>
+        update(typeCastDoubleToIntList(list))
+      case i: ShortType if list.head.dataType.sameType(IntegerType) =>
+        update(typeCastIntToShortList(list))
+      case _ => Some(CastExpr(c))
+    }
+  }
+
+  private def updateFilter(c: Expression, a: Attribute, v: Any, t: DataType,
+      isNotEqual: Boolean = true): Option[Filter] = {
+    a.dataType match {
+      case _: DecimalType if t.isInstanceOf[DecimalType] =>
+        updateFilterBasedOnFilterType(c, v)
+      case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
+        if (isNotEqual) {
+          updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
+        } else {
+          updateFilterForTimeStamp(v, c, ts)
         }
-      case c@Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) =>
-        a.dataType match {
-          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c, ts)
-          case i: IntegerType if t.sameType(DoubleType) =>
-            updateFilterForInt(v, c)
-          case s: ShortType if t.sameType(IntegerType) =>
-            updateFilterForShort(v, c)
-          case _ => Some(CastExpr(c))
-        }
-      case c@Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) =>
-        a.dataType match {
-          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c, ts)
-          case i: IntegerType if t.sameType(DoubleType) =>
-            updateFilterForInt(v, c)
-          case s: ShortType if t.sameType(IntegerType) =>
-            updateFilterForShort(v, c)
-          case _ => Some(CastExpr(c))
-        }
-      case c@Not(In(Cast(a: Attribute, _), list)) =>
-        a.dataType match {
-          case ts@(_: DateType | _: TimestampType) if list.head.dataType.sameType(StringType) =>
-            val value = typeCastStringToLongList(list, ts)
-            if (!value.equals(list)) {
-              val hSet = value.map(e => e.eval(EmptyRow))
-              Some(sources.Not(sources.In(a.name, hSet.toArray)))
-            } else {
-              Some(CastExpr(c))
-            }
-          case i: IntegerType if list.head.dataType.sameType(DoubleType) =>
-            val value = typeCastDoubleToIntList(list)
-            if (!value.equals(list)) {
-              val hSet = value.map(e => e.eval(EmptyRow))
-              Some(sources.Not(sources.In(a.name, hSet.toArray)))
-            } else {
-              Some(CastExpr(c))
-            }
-          case i: ShortType if list.head.dataType.sameType(IntegerType) =>
-            val value = typeCastIntToShortList(list)
-            if (!value.equals(list)) {
-              val hSet = value.map(e => e.eval(EmptyRow))
-              Some(sources.Not(sources.In(a.name, hSet.toArray)))
-            } else {
-              Some(CastExpr(c))
-            }
-          case _ => Some(CastExpr(c))
-        }
-      case c@In(Cast(a: Attribute, _), list) =>
-        a.dataType match {
-          case ts@(_: DateType | _: TimestampType) if list.head.dataType.sameType(StringType) =>
-            val value = typeCastStringToLongList(list, ts)
-            if (!value.equals(list)) {
-              val hSet = value.map(e => e.eval(EmptyRow))
-              Some(sources.In(a.name, hSet.toArray))
-            } else {
-              Some(CastExpr(c))
-            }
-          case i: IntegerType if list.head.dataType.sameType(DoubleType) =>
-            val value = typeCastDoubleToIntList(list)
-            if (!value.equals(list)) {
-              val hSet = value.map(e => e.eval(EmptyRow))
-              Some(sources.In(a.name, hSet.toArray))
-            } else {
-              Some(CastExpr(c))
-            }
-          case s: ShortType if list.head.dataType.sameType(IntegerType) =>
-            val value = typeCastIntToShortList(list)
-            if (!value.equals(list)) {
-              val hSet = value.map(e => e.eval(EmptyRow))
-              Some(sources.In(a.name, hSet.toArray))
-            } else {
-              Some(CastExpr(c))
-            }
-          case _ => Some(CastExpr(c))
-        }
-      case c@GreaterThan(Cast(a: Attribute, _), Literal(v, t)) =>
-        a.dataType match {
-          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
-          case i: IntegerType if t.sameType(DoubleType) =>
-            updateFilterForInt(v, c)
-          case s: ShortType if t.sameType(IntegerType) =>
-            updateFilterForShort(v, c)
-          case _ => Some(CastExpr(c))
-        }
-      case c@GreaterThan(Literal(v, t), Cast(a: Attribute, _)) =>
-        a.dataType match {
-          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
-          case i: IntegerType if t.sameType(DoubleType) =>
-            updateFilterForInt(v, c)
-          case s: ShortType if t.sameType(IntegerType) =>
-            updateFilterForShort(v, c)
-          case _ => Some(CastExpr(c))
-        }
-      case c@LessThan(Cast(a: Attribute, _), Literal(v, t)) =>
-        a.dataType match {
-          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
-          case i: IntegerType if t.sameType(DoubleType) =>
-            updateFilterForInt(v, c)
-          case s: ShortType if t.sameType(IntegerType) =>
-            updateFilterForShort(v, c)
-          case _ => Some(CastExpr(c))
-        }
-      case c@LessThan(Literal(v, t), Cast(a: Attribute, _)) =>
-        a.dataType match {
-          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
-          case i: IntegerType if t.sameType(DoubleType) =>
-            updateFilterForInt(v, c)
-          case s: ShortType if t.sameType(IntegerType) =>
-            updateFilterForShort(v, c)
-          case _ => Some(CastExpr(c))
-        }
-      case c@GreaterThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
-        a.dataType match {
-          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
-          case i: IntegerType if t.sameType(DoubleType) =>
-            updateFilterForInt(v, c)
-          case s: ShortType if t.sameType(IntegerType) =>
-            updateFilterForShort(v, c)
-          case _ => Some(CastExpr(c))
-        }
-      case c@GreaterThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
-        a.dataType match {
-          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
-          case i: IntegerType if t.sameType(DoubleType) =>
-            updateFilterForInt(v, c)
-          case s: ShortType if t.sameType(IntegerType) =>
-            updateFilterForShort(v, c)
-          case _ => Some(CastExpr(c))
-        }
-      case c@LessThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
-        a.dataType match {
-          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
-          case i: IntegerType if t.sameType(DoubleType) =>
-            updateFilterForInt(v, c)
-          case s: ShortType if t.sameType(IntegerType) =>
-            updateFilterForShort(v, c)
-          case _ => Some(CastExpr(c))
-        }
-      case c@LessThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
-        a.dataType match {
-          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
-            updateFilterForNonEqualTimeStamp(v, c, updateFilterForTimeStamp(v, c, ts))
-          case i: IntegerType if t.sameType(DoubleType) =>
-            updateFilterForInt(v, c)
-          case s: ShortType if t.sameType(IntegerType) =>
-            updateFilterForShort(v, c)
-          case _ => Some(CastExpr(c))
-        }
+      case _: IntegerType if t.sameType(DoubleType) =>
+        updateFilterForInt(v, c)
+      case _: ShortType if t.sameType(IntegerType) =>
+        updateFilterForShort(v, c)
+      case _ => Some(CastExpr(c))
     }
   }
 
