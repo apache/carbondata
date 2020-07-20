@@ -26,7 +26,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
-import org.apache.carbondata.core.scan.filter.executer.RowLevelFilterExecuterImpl;
+import org.apache.carbondata.core.scan.filter.executer.RowLevelFilterExecutorImpl;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -35,7 +35,7 @@ import org.apache.carbondata.geo.scan.expression.PolygonExpression;
 /**
  * Polygon filter executor. Prunes Blocks and Blocklets based on the selected ranges of polygon.
  */
-public class PolygonFilterExecutorImpl extends RowLevelFilterExecuterImpl {
+public class PolygonFilterExecutorImpl extends RowLevelFilterExecutorImpl {
   public PolygonFilterExecutorImpl(List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties,

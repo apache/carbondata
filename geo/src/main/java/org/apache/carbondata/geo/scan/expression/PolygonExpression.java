@@ -32,7 +32,7 @@ import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.UnknownExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpression;
-import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.FilterExecutor;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -180,7 +180,7 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
   }
 
   @Override
-  public FilterExecuter getFilterExecuter(FilterResolverIntf resolver,
+  public FilterExecutor getFilterExecutor(FilterResolverIntf resolver,
       SegmentProperties segmentProperties) {
     assert (resolver instanceof RowLevelFilterResolverImpl);
     RowLevelFilterResolverImpl rowLevelResolver = (RowLevelFilterResolverImpl) resolver;
