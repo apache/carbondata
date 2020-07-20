@@ -19,7 +19,7 @@ package org.apache.carbondata.hadoop.api;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -224,23 +224,16 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       }
     }
     String updateTime =
-        context.getConfiguration().get(CarbonTableOutputFormat.UPDATE_TIMESTAMP, null);
+        context.getConfiguration().get(CarbonTableOutputFormat.UPDATE_TIMESTAMP, uniqueId);
     String segmentsToBeDeleted =
         context.getConfiguration().get(CarbonTableOutputFormat.SEGMENTS_TO_BE_DELETED, "");
-    List<Segment> segmentDeleteList = Segment.toSegmentList(segmentsToBeDeleted.split(","), null);
-    Set<Segment> segmentSet = new HashSet<>();
-    if (updateTime != null || uniqueId != null) {
-      segmentSet = new HashSet<>(
-          new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(),
-              context.getConfiguration()).getValidAndInvalidSegments(carbonTable.isMV())
-                  .getValidSegments());
+    List<Segment> segmentDeleteList = Collections.emptyList();
+    if (!segmentsToBeDeleted.trim().isEmpty()) {
+      segmentDeleteList = Segment.toSegmentList(segmentsToBeDeleted.split(","), null);
     }
     if (updateTime != null) {
-      CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, updateTime, true,
-          segmentDeleteList);
-    } else if (uniqueId != null) {
-      CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, uniqueId, true,
-          segmentDeleteList);
+      CarbonUpdateUtil.updateTableMetadataStatus(Collections.singleton(loadModel.getSegment()),
+          carbonTable, updateTime, true, segmentDeleteList);
     }
   }
 
