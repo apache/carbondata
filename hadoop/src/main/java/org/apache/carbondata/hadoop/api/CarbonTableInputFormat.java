@@ -369,6 +369,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         getDataBlocksOfSegment(job, carbonTable, expression, validSegments,
             invalidSegments, segmentsToBeRefreshed);
     numBlocks = dataBlocksOfSegment.size();
+    updateLoadMetaDataDetailsToSegments(validSegments, dataBlocksOfSegment);
     for (org.apache.carbondata.hadoop.CarbonInputSplit inputSplit : dataBlocksOfSegment) {
 
       // Get the UpdateVO for those tables on which IUD operations being performed.
@@ -397,6 +398,21 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       result.add(inputSplit);
     }
     return result;
+  }
+
+  public void updateLoadMetaDataDetailsToSegments(List<Segment> validSegments,
+      List<org.apache.carbondata.hadoop.CarbonInputSplit> prunedSplits) {
+    for (CarbonInputSplit split : prunedSplits) {
+      Segment segment = split.getSegment();
+      if (segment.getLoadMetadataDetails() == null || segment.getReadCommittedScope() == null) {
+        if (validSegments.contains(segment)) {
+          segment.setLoadMetadataDetails(
+              validSegments.get(validSegments.indexOf(segment)).getLoadMetadataDetails());
+          segment.setReadCommittedScope(
+              validSegments.get(validSegments.indexOf(segment)).getReadCommittedScope());
+        }
+      }
+    }
   }
 
   /**
