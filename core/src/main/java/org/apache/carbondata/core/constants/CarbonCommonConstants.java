@@ -2445,4 +2445,16 @@ public final class CarbonCommonConstants {
    * property which defines the insert stage flow
    */
   public static final String IS_INSERT_STAGE = "is_insert_stage";
+
+  /**
+   * index server temp folder aging period
+   */
+  @CarbonProperty
+  public static final String CARBON_INDEXSERVER_TEMPFOLDER_DELETETIME =
+          "carbon.indexserver.tempfolder.deletetime";
+
+  /**
+   * index server temp folder aging period default value 3hours.
+   */
+  public static final String CARBON_INDEXSERVER_TEMPFOLDER_DELETETIME_DEFAULT = "10800000";
 }

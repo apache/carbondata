@@ -25,8 +25,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -604,5 +606,19 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   @Override
   public long getLength() throws IOException {
     return fileSystem.getFileStatus(path).getLen();
+  }
+
+  @Override
+  public List<CarbonFile> listDirs() throws IOException {
+    FileStatus[] listStatus = null;
+    if (null != fileStatus && fileStatus.isDirectory()) {
+      Path path = fileStatus.getPath();
+      listStatus = fileSystem.listStatus(path);
+      CarbonFile[] dirs = getFiles(listStatus);
+      List<CarbonFile> result = new ArrayList<CarbonFile>(Arrays.asList(dirs));
+      return result.stream().filter(x -> x.isDirectory()).collect(Collectors.toList());
+    } else {
+      return new ArrayList<CarbonFile>();
+    }
   }
 }

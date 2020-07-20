@@ -39,6 +39,8 @@ public interface CarbonFile {
 
   List<CarbonFile> listFiles(boolean recursive, CarbonFileFilter fileFilter) throws IOException;
 
+  List<CarbonFile> listDirs() throws IOException;
+
   /**
    * It returns list of files with location details.
    */
