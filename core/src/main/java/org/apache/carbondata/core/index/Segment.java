@@ -309,6 +309,10 @@ public class Segment implements Serializable, Writable {
     return loadMetadataDetails;
   }
 
+  public void setLoadMetadataDetails(LoadMetadataDetails loadMetadataDetails) {
+    this.loadMetadataDetails = loadMetadataDetails;
+  }
+
   public long getIndexSize() {
     return indexSize;
   }
