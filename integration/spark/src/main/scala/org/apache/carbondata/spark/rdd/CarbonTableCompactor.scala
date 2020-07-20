@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.{InputSplit, Job}
@@ -37,6 +38,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.constants.SortScopeOptions.SortScope
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.index.{IndexStoreManager, Segment}
+import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
@@ -93,6 +95,15 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       val lastSegment = sortedSegments.get(sortedSegments.size() - 1)
       deletePartialLoadsInCompaction()
       val compactedLoad = CarbonDataMergerUtil.getMergedLoadName(loadsToMerge)
+      var segmentLocks: ListBuffer[ICarbonLock] = ListBuffer.empty
+      loadsToMerge.asScala.foreach { segmentId =>
+        val segmentLock = CarbonLockFactory
+          .getCarbonLockObj(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+            .getAbsoluteTableIdentifier,
+            CarbonTablePath.addSegmentPrefix(segmentId.getLoadName) + LockUsage.LOCK)
+        segmentLock.lockWithRetries()
+        segmentLocks += segmentLock
+      }
       try {
         scanSegmentsAndSubmitJob(loadsToMerge, compactedSegments, compactedLoad)
       } catch {
@@ -117,6 +128,10 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
                 Array(compactedLoadToClear))
           }
           throw e
+      } finally {
+        segmentLocks.foreach { segmentLock =>
+          segmentLock.unlock()
+        }
       }
 
       // scan again and determine if anything is there to merge again.

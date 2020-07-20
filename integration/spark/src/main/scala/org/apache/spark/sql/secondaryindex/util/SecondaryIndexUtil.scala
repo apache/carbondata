@@ -199,9 +199,11 @@ object SecondaryIndexUtil {
       }
       if (finalMergeStatus) {
         if (null != mergeStatus && mergeStatus.length != 0) {
+          val validSegmentsToUse = validSegments.asScala
+            .filter(segment => mergeStatus.map(_._2).toSet.contains(segment.getSegmentNo))
           deleteOldIndexOrMergeIndexFiles(
             carbonLoadModel.getFactTimeStamp,
-            validSegments,
+            validSegmentsToUse.toList.asJava,
             indexCarbonTable)
           mergedSegments.asScala.map { seg =>
             val file = SegmentFileStore.writeSegmentFile(
