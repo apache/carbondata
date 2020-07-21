@@ -24,6 +24,7 @@ import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -2137,7 +2138,7 @@ public final class CarbonUtil {
     if (fistFilePath == null) {
       // Check if we can infer the schema from the hive metastore.
       LOGGER.error("CarbonData file is not present in the table location");
-      throw new IOException("CarbonData file is not present in the table location");
+      throw new FileNotFoundException("CarbonData file is not present in the table location");
     }
     CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(fistFilePath, configuration);
     List<ColumnSchema> columnSchemaList = carbonHeaderReader.readSchema();
