@@ -21,8 +21,6 @@ import java.io.IOException
 import java.util
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
@@ -32,16 +30,13 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Alias, And, Attribute, AttributeReference, BindReferences, Expression, In, Literal}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression}
 import org.apache.spark.sql.catalyst.plans.JoinType
-import org.apache.spark.sql.execution.{BinaryExecNode, ProjectExec, RowDataSourceScanExec, SparkPlan}
-import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, BuildSide, HashJoin}
+import org.apache.spark.sql.execution.{BinaryExecNode, RowDataSourceScanExec, SparkPlan}
+import org.apache.spark.sql.execution.joins.{BroadCastFilterPushJoin, BuildLeft, BuildRight, BuildSide, HashJoin}
 import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
-import org.apache.spark.sql.optimizer.CarbonFilters
-import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.sql.util.SparkSQLUtil
-import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -135,7 +130,7 @@ case class BroadCastSIFilterPushJoin(
   }
 
   override def doExecute(): RDD[InternalRow] = {
-    BroadCastSIFilterPushJoin.addInFilterToPlan(buildPlan,
+    BroadCastFilterPushJoin.addInFilterToPlan(buildPlan,
       carbonScan,
       inputCopy,
       leftKeys,
@@ -148,114 +143,7 @@ case class BroadCastSIFilterPushJoin(
 
 object BroadCastSIFilterPushJoin {
 
-  val logger: Logger = LogServiceFactory.getLogService(this.getClass.getName)
-
-  def addInFilterToPlan(buildPlan: SparkPlan,
-      carbonScan: SparkPlan,
-      inputCopy: Array[InternalRow],
-      leftKeys: Seq[Expression],
-      rightKeys: Seq[Expression],
-      buildSide: BuildSide,
-      isIndexTable: Boolean = false): Unit = {
-
-    val keys = {
-      buildSide match {
-        case BuildLeft => (leftKeys)
-        case BuildRight => (rightKeys)
-      }
-      }.map { a =>
-      BindReferences.bindReference(a, buildPlan.output)
-    }.toArray
-
-    val filters = keys.map {
-      k =>
-        inputCopy.map(
-          r => {
-            val curr = k.eval(r)
-            curr match {
-              case _: UTF8String => Literal(curr.toString).asInstanceOf[Expression]
-              case _: Long if k.dataType.isInstanceOf[TimestampType] =>
-                Literal(curr, TimestampType).asInstanceOf[Expression]
-              case _ => Literal(curr).asInstanceOf[Expression]
-            }
-          })
-    }
-
-    val filterKey = (buildSide match {
-      case BuildLeft => rightKeys
-      case BuildRight => leftKeys
-    }).collectFirst { case a: Attribute => a }
-
-    def resolveAlias(expressions: Seq[Expression]) = {
-      val aliasMap = new mutable.HashMap[Attribute, Expression]()
-      carbonScan.transformExpressions {
-        case alias: Alias =>
-          aliasMap.put(alias.toAttribute, alias.child)
-          alias
-      }
-      expressions.map {
-        case at: AttributeReference =>
-          // cannot use Map.get() as qualifier is different.
-          aliasMap.find(_._1.semanticEquals(at)) match {
-            case Some(child) => child._2
-            case _ => at
-          }
-        case others => others
-      }
-    }
-
-    val filterKeys = buildSide match {
-      case BuildLeft =>
-        resolveAlias(rightKeys)
-      case BuildRight =>
-        resolveAlias(leftKeys)
-    }
-
-    val tableScan = carbonScan.collectFirst {
-      case ProjectExec(projectList, batchData: CarbonDataSourceScan)
-        if (filterKey.isDefined && (isIndexTable || projectList.exists(x =>
-          x.name.equalsIgnoreCase(filterKey.get.name) &&
-          x.exprId.id == filterKey.get.exprId.id &&
-          x.exprId.jvmId.equals(filterKey.get.exprId.jvmId)))) =>
-        batchData
-      case ProjectExec(projectList, rowData: RowDataSourceScanExec)
-        if (filterKey.isDefined && (isIndexTable || projectList.exists(x =>
-          x.name.equalsIgnoreCase(filterKey.get.name) &&
-          x.exprId.id == filterKey.get.exprId.id &&
-          x.exprId.jvmId.equals(filterKey.get.exprId.jvmId)))) =>
-        rowData
-      case batchData: CarbonDataSourceScan
-        if (filterKey.isDefined && (isIndexTable || batchData.output.attrs.exists(x =>
-          x.name.equalsIgnoreCase(filterKey.get.name) &&
-          x.exprId.id == filterKey.get.exprId.id &&
-          x.exprId.jvmId.equals(filterKey.get.exprId.jvmId)))) =>
-        batchData
-      case rowData: RowDataSourceScanExec
-        if (filterKey.isDefined && (isIndexTable || rowData.output.exists(x =>
-          x.name.equalsIgnoreCase(filterKey.get.name) &&
-          x.exprId.id == filterKey.get.exprId.id &&
-          x.exprId.jvmId.equals(filterKey.get.exprId.jvmId)))) =>
-        rowData
-    }
-    val configuredFilterRecordSize = CarbonProperties.getInstance.getProperty(
-      CarbonCommonConstants.BROADCAST_RECORD_SIZE,
-      CarbonCommonConstants.DEFAULT_BROADCAST_RECORD_SIZE)
-
-    if (tableScan.isDefined && null != filters
-        && filters.length > 0
-        && ((filters(0).length > 0 && filters(0).length <= configuredFilterRecordSize.toInt) ||
-            isIndexTable)) {
-      logger.info("Pushing down filter for broadcast join. Filter size:" + filters(0).length)
-      tableScan.get match {
-        case scan: CarbonDataSourceScan =>
-          addPushdownToCarbonRDD(scan.rdd,
-            addPushdownFilters(filterKeys, filters))
-        case _ =>
-          addPushdownToCarbonRDD(tableScan.get.asInstanceOf[RowDataSourceScanExec].rdd,
-            addPushdownFilters(filterKeys, filters))
-      }
-    }
-  }
+  val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getName)
 
   /**
    * Used to get the valid segments after applying the following conditions.
@@ -311,7 +199,7 @@ object BroadCastSIFilterPushJoin {
         val filteredSegmentToAccessTemp: util.List[Segment] = new util.ArrayList[Segment]
         filteredSegmentToAccessTemp.addAll(filteredSegmentToAccess)
         filteredSegmentToAccessTemp.removeAll(segmentsToAccessSet)
-        logger.info(
+        LOGGER.info(
           "Segments ignored are : " + util.Arrays.toString(filteredSegmentToAccessTemp.toArray))
       }
       // if no valid segments after filteration
@@ -354,7 +242,7 @@ object BroadCastSIFilterPushJoin {
           setSegID.addAll(IndexServer.getClient.getPrunedSegments(indexFormat).getSegments)
         } catch {
           case e: Exception =>
-            logger.warn("Distributed Segment Pruning failed, initiating embedded pruning", e)
+            LOGGER.warn("Distributed Segment Pruning failed, initiating embedded pruning", e)
             try {
               val indexFormat: IndexInputFormat = new IndexInputFormat(
                 carbonTable,
@@ -375,7 +263,7 @@ object BroadCastSIFilterPushJoin {
                 SparkSQLUtil.getTaskGroupId(SparkSQLUtil.getSparkSession))
             } catch {
               case ex: Exception =>
-                logger.warn("Embedded Segment Pruning failed, initiating driver pruning", ex)
+                LOGGER.warn("Embedded Segment Pruning failed, initiating driver pruning", ex)
                 IndexStoreManager.getInstance
                   .refreshSegmentCacheIfRequired(carbonTable,
                     updateStatusManager,
@@ -431,7 +319,7 @@ object BroadCastSIFilterPushJoin {
     val format = carbonScanRdd.prepareInputFormatForDriver(job.getConfiguration)
     val startTime = System.currentTimeMillis()
     val segmentsToAccess = getFilteredSegments(job, format).asScala.toArray
-    logger.info(
+    LOGGER.info(
       "Time taken for getting the Filtered segments"
       + (System.currentTimeMillis - startTime) + " ,Total segments: " + segmentsToAccess.length)
     segmentsToAccess
@@ -501,40 +389,5 @@ object BroadCastSIFilterPushJoin {
       segmentIdtoAccess(i) = segmentToAccess(i).getSegmentNo
     }
     segmentIdtoAccess
-  }
-
-  private def addPushdownToCarbonRDD(rdd: RDD[InternalRow],
-      expressions: Seq[Expression]): Unit = {
-    rdd match {
-      case value: CarbonScanRDD[InternalRow] =>
-        if (expressions.nonEmpty) {
-          val expressionVal = CarbonFilters
-            .transformExpression(CarbonFilters.preProcessExpressions(expressions).head)
-          if (null != expressionVal) {
-            value.setFilterExpression(expressionVal)
-          }
-        }
-      case _ =>
-    }
-  }
-
-  private def addPushdownFilters(keys: Seq[Expression],
-      filters: Array[Array[Expression]]): Seq[Expression] = {
-
-    // TODO Values in the IN filter is duplicate. replace the list with set
-    val buffer = new ArrayBuffer[Expression]
-    keys.zipWithIndex.foreach { a =>
-      buffer += In(a._1, filters(a._2)).asInstanceOf[Expression]
-    }
-
-    // Let's not pushdown condition. Only filter push down is sufficient.
-    // Conditions can be applied on hash join result.
-    val cond = if (buffer.size > 1) {
-      val e = buffer.remove(0)
-      buffer.fold(e)(And)
-    } else {
-      buffer.asJava.get(0)
-    }
-    Seq(cond)
   }
 }

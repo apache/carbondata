@@ -29,13 +29,13 @@ import org.apache.spark.sql.carbondata.execution.datasources.{CarbonFileIndex, C
 import org.apache.spark.sql.catalyst.{expressions, InternalRow}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, _}
 import org.apache.spark.sql.catalyst.planning.{ExtractEquiJoinKeys, PhysicalOperation}
-import org.apache.spark.sql.catalyst.plans.{Inner, LeftSemi}
-import org.apache.spark.sql.catalyst.plans.logical.{Filter => LogicalFilter, _}
+import org.apache.spark.sql.catalyst.plans.{ExistenceJoin, Inner, InnerLike, JoinType, LeftAnti, LeftOuter, LeftSemi, RightOuter}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partitioning, UnknownPartitioning}
 import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, HadoopFsRelation, InMemoryFileIndex, LogicalRelation, SparkCarbonTableFormat}
-import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight}
+import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, BuildSide, RuntimeFilterHelper}
+import org.apache.spark.sql.execution.joins.RuntimeFilterHelper.broadcastSideByHints
 import org.apache.spark.sql.hive.MatchLogicalRelation
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
@@ -104,100 +104,38 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] && driverSideCountStar(l) =>
         val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
         CarbonCountStar(colAttr, relation.carbonTable, SparkSession.getActiveSession.get) :: Nil
-      case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition,
-      left, right)
-        if isCarbonPlan(left) && CarbonIndexUtil.checkIsIndexTable(right) =>
-        LOGGER.info(s"pushing down for ExtractEquiJoinKeys:right")
-        val carbon = apply(left).head
-        // in case of SI Filter push join remove projection list from the physical plan
-        // no need to have the project list in the main table physical plan execution
-        // only join uses the projection list
-        var carbonChild = carbon match {
-          case projectExec: ProjectExec =>
-            projectExec.child
-          case _ =>
-            carbon
+      case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left, right)
+        if RuntimeFilterHelper.canPushDownSIAsFilter(left, right) =>
+        RuntimeFilterHelper.pushDownRSIAsFilter(
+          leftKeys, rightKeys, condition, left, apply(left).head, planLater(right)) :: Nil
+      case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left, right)
+        if RuntimeFilterHelper.canPushDownSIAsFilter(right, left) =>
+        RuntimeFilterHelper.pushDownLSIAsFilter(
+          leftKeys, rightKeys, condition, planLater(left), planLater(right)) :: Nil
+      case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left, right)
+        if RuntimeFilterHelper.canBroadcastByHints(left, right) =>
+        val buildSide = RuntimeFilterHelper.broadcastSideByHints(left, right)
+        if (buildSide.isDefined) {
+          RuntimeFilterHelper.pushDownInnerJoin(leftKeys, rightKeys, condition, buildSide.get,
+            planLater(left), planLater(right)) :: Nil
+        } else {
+          Nil
         }
-        // check if the outer and the inner project are matching, only then remove project
-        if (left.isInstanceOf[Project]) {
-          val leftOutput = left.output
-            .filterNot(attr => attr.name
-              .equalsIgnoreCase(CarbonCommonConstants.POSITION_ID))
-            .map(c => (c.name.toLowerCase, c.dataType))
-          val childOutput = carbonChild.output
-            .filterNot(attr => attr.name
-              .equalsIgnoreCase(CarbonCommonConstants.POSITION_ID))
-            .map(c => (c.name.toLowerCase, c.dataType))
-          if (!leftOutput.equals(childOutput)) {
-            // if the projection list and the scan list are different(in case of alias)
-            // we should not skip the project, so we are taking the original plan with project
-            carbonChild = carbon
-          }
+      case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left, right)
+        if RuntimeFilterHelper.canBroadcastBySizes(left, right) =>
+        val buildSide = RuntimeFilterHelper.broadcastSideBySizes(left, right)
+        if (buildSide.isDefined) {
+          RuntimeFilterHelper.pushDownInnerJoin(leftKeys, rightKeys, condition, buildSide.get,
+            planLater(left), planLater(right)) :: Nil
+        } else {
+          Nil
         }
-        val pushedDownJoin = BroadCastSIFilterPushJoin(
-          leftKeys: Seq[Expression],
-          rightKeys: Seq[Expression],
-          Inner,
-          BuildRight,
-          carbonChild,
-          planLater(right),
-          condition)
-        condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
-      case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left,
-      right)
-        if isCarbonPlan(right) && CarbonIndexUtil.checkIsIndexTable(left) =>
-        LOGGER.info(s"pushing down for ExtractEquiJoinKeys:left")
-        val carbon = planLater(right)
-
-        val pushedDownJoin =
-          BroadCastSIFilterPushJoin(
-            leftKeys: Seq[Expression],
-            rightKeys: Seq[Expression],
-            Inner,
-            BuildLeft,
-            planLater(left),
-            carbon,
-            condition)
-        condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
-      case ExtractEquiJoinKeys(LeftSemi, leftKeys, rightKeys, condition,
-      left, right)
-        if isLeftSemiExistPushDownEnabled &&
-            isAllCarbonPlan(left) && isAllCarbonPlan(right) =>
-        LOGGER.info(s"pushing down for ExtractEquiJoinKeysLeftSemiExist:right")
-        val carbon = planLater(left)
-        val pushedDownJoin = BroadCastSIFilterPushJoin(
-          leftKeys: Seq[Expression],
-          rightKeys: Seq[Expression],
-          LeftSemi,
-          BuildRight,
-          carbon,
-          planLater(right),
-          condition)
-        condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
+      case ExtractEquiJoinKeys(LeftSemi, leftKeys, rightKeys, condition, left, right)
+        if RuntimeFilterHelper.canPushDownLeftSemi(left, right) =>
+        RuntimeFilterHelper.pushDownLeftSemiJoin(
+          leftKeys, rightKeys, condition, planLater(left), planLater(right)) :: Nil
       case _ => Nil
     }
-  }
-
-  private def isAllCarbonPlan(plan: LogicalPlan): Boolean = {
-    val allRelations = plan.collect { case logicalRelation: LogicalRelation => logicalRelation }
-    allRelations.forall(x => x.relation.isInstanceOf[CarbonDatasourceHadoopRelation])
-  }
-
-  private def isCarbonPlan(plan: LogicalPlan): Boolean = {
-    plan match {
-      case PhysicalOperation(_, _,
-      MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, _)) =>
-        true
-      case LogicalFilter(_, MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, _)) =>
-        true
-      case _ => false
-    }
-  }
-
-  private def isLeftSemiExistPushDownEnabled: Boolean = {
-    CarbonProperties.getInstance.getProperty(
-      CarbonCommonConstants.CARBON_PUSH_LEFTSEMIEXIST_JOIN_AS_IN_FILTER,
-      CarbonCommonConstants.CARBON_PUSH_LEFTSEMIEXIST_JOIN_AS_IN_FILTER_DEFAULT).toBoolean
   }
 
   /**
