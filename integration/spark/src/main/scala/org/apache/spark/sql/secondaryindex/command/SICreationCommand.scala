@@ -458,12 +458,19 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
         allColumns = allColumns :+ cloneColumnSchema(colSchema, schemaOrdinal)
       }
     }
+    // validate complex dimensions supported for SI
     complexDimensions.foreach { complexDim =>
       schemaOrdinal += 1
       if (complexDim.getNumberOfChild > 0) {
-        if (complexDim.getListOfChildDimensions.asScala
+        val complexChildDims = complexDim.getListOfChildDimensions.asScala
+        if (complexChildDims
           .exists(col => DataTypes.isArrayType(col.getDataType))) {
           throw new ErrorMessage("SI creation with nested array complex type is not supported yet");
+        }
+        if (complexChildDims.exists(child =>
+          child.getDataType != DataTypes.STRING)) {
+          throw new ErrorMessage(
+            "SI creation with array<string> complex type is only supported currently");
         }
       }
       allColumns = allColumns :+ cloneColumnSchema(complexDim.getColumnSchema, schemaOrdinal)

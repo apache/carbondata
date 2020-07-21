@@ -113,6 +113,17 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     }
   }
 
+  test("test si creation with array") {
+    sql("create table complextable (id int, name string, country array<array<string>>, add array<int>) stored as carbondata")
+    sql("drop index if exists index_1 on complextable")
+    intercept[RuntimeException] {
+      sql("create index index_1 on table complextable(country) as 'carbondata'")
+    }.getMessage.contains("SI creation with nested array complex type is not supported yet")
+    intercept[RuntimeException] {
+      sql("create index index_1 on table complextable(add) as 'carbondata'")
+    }.getMessage.contains("SI creation with array<string> complex type is only supported currently")
+  }
+
   test("test complex with null and empty data") {
     sql("create table complextable (id string, country array<string>, name string) stored as carbondata")
     sql("insert into complextable select 'a', array(), ''")
@@ -121,6 +132,5 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     checkAnswer(sql("select count(*) from index_1"), Seq(Row(1)) )
     sql("insert into complextable select 'a', array(null), 'b'")
     checkAnswer(sql("select count(*) from index_1"), Seq(Row(2)) )
-    println("end")
   }
 }
