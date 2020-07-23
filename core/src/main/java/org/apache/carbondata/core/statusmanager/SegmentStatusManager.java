@@ -1048,24 +1048,24 @@ public class SegmentStatusManager {
 
   public static void deleteLoadsAndUpdateMetadata(CarbonTable carbonTable, boolean isForceDeletion,
       List<PartitionSpec> partitionSpecs) throws IOException {
-    LoadMetadataDetails[] metadataDetails =
-        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
-    // delete the expired segment lock files
-    CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable);
-    if (isLoadDeletionRequired(metadataDetails)) {
-      AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
-      boolean updateCompletionStatus = false;
-      LoadMetadataDetails[] newAddedLoadHistoryList = null;
-      ReturnTuple tuple =
-          isUpdateRequired(isForceDeletion, carbonTable, identifier, metadataDetails);
-      if (tuple.isUpdateRequired) {
-        ICarbonLock carbonTableStatusLock =
-            CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
-        boolean locked = false;
-        try {
-          // Update load metadata file after cleaning deleted nodes
-          locked = carbonTableStatusLock.lockWithRetries();
-          if (locked) {
+    ICarbonLock carbonTableStatusLock = CarbonLockFactory
+        .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier(), LockUsage.TABLE_STATUS_LOCK);
+    boolean locked = false;
+    boolean updateCompletionStatus = false;
+    LoadMetadataDetails[] newAddedLoadHistoryList = null;
+    try {
+      locked = carbonTableStatusLock.lockWithRetries();
+      if (locked) {
+        LoadMetadataDetails[] metadataDetails =
+            SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
+        // delete the expired segment lock files
+        CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable);
+        if (isLoadDeletionRequired(metadataDetails)) {
+          AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
+          ReturnTuple tuple =
+              isUpdateRequired(isForceDeletion, carbonTable, identifier, metadataDetails);
+          if (tuple.isUpdateRequired) {
+            // Update load metadata file after cleaning deleted nodes
             LOG.info("Table status lock has been successfully acquired.");
             // Again read status and check to verify update required or not.
             LoadMetadataDetails[] details =
@@ -1082,8 +1082,8 @@ public class SegmentStatusManager {
             int invisibleSegmentPreserveCnt =
                 CarbonProperties.getInstance().getInvisibleSegmentPreserveCount();
             int maxSegmentId = SegmentStatusManager.getMaxSegmentId(tuple2.details);
-            int invisibleSegmentCnt = SegmentStatusManager.countInvisibleSegments(
-                tuple2.details, maxSegmentId);
+            int invisibleSegmentCnt =
+                SegmentStatusManager.countInvisibleSegments(tuple2.details, maxSegmentId);
             // if execute command 'clean files' or the number of invisible segment info
             // exceeds the value of 'carbon.invisible.segments.preserve.count',
             // it need to append the invisible segment list to 'tablestatus.history' file.
@@ -1111,17 +1111,21 @@ public class SegmentStatusManager {
                   latestStatus.toArray(new LoadMetadataDetails[0]));
             }
             updateCompletionStatus = true;
-          } else {
-            String dbName = identifier.getCarbonTableIdentifier().getDatabaseName();
-            String tableName = identifier.getCarbonTableIdentifier().getTableName();
+          }
+        }
+      } else {
+        String dbName = carbonTable.getDatabaseName();
+        String tableName = carbonTable.getTableName();
             String errorMsg = "Clean files request is failed for " +
                 dbName + "." + tableName +
                 ". Not able to acquire the table status lock due to other operation " +
                 "running in the background.";
-            LOG.error(errorMsg);
+        LOG.error(errorMsg);
             throw new IOException(errorMsg + " Please try after some time.");
           }
-        } finally {
+    } catch (Exception ex) {
+      // no need to do anything
+    } finally {
           if (locked) {
             CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
           }
@@ -1129,8 +1133,6 @@ public class SegmentStatusManager {
             DeleteLoadFolders
                 .physicalFactAndMeasureMetadataDeletion(carbonTable, newAddedLoadHistoryList,
                     isForceDeletion, partitionSpecs);
-          }
-        }
       }
     }
   }

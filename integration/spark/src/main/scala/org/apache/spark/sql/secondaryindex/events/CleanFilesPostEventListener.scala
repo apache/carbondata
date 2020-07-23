@@ -18,18 +18,22 @@
 package org.apache.spark.sql.secondaryindex.events
 
 import scala.collection.JavaConverters._
-
 import org.apache.log4j.Logger
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
-
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
+import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{CleanFilesPostEvent, Event, OperationContext, OperationEventListener}
+import org.apache.spark.sql.secondaryindex.load.CarbonInternalLoaderUtil
 
 class CleanFilesPostEventListener extends OperationEventListener with Logging {
 
@@ -54,7 +58,68 @@ class CleanFilesPostEventListener extends OperationEventListener with Logging {
           SegmentStatusManager.deleteLoadsAndUpdateMetadata(
             indexTable, true, partitions.map(_.asJava).orNull)
           CarbonUpdateUtil.cleanUpDeltaFiles(indexTable, true)
+          cleanUpUnwantedSegmentsOfSIAndUpdateMetadata(indexTable, carbonTable)
         }
+    }
+  }
+
+  /**
+   * This method is added to clean the segments which are successful in SI and maybe compacted or
+   * marked for delete in main table, which can happen in case of concurrent scenarios.
+   */
+  def cleanUpUnwantedSegmentsOfSIAndUpdateMetadata(indexTable: CarbonTable, mainTable: CarbonTable): Unit = {
+    val mainTableStatusLock: ICarbonLock = CarbonLockFactory
+      .getCarbonLockObj(mainTable.getAbsoluteTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
+    val indexTableStatusLock: ICarbonLock = CarbonLockFactory
+      .getCarbonLockObj(indexTable.getAbsoluteTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
+    var mainTableLocked = false
+    var indexTableLocked = false
+    try {
+      mainTableLocked = mainTableStatusLock.lockWithRetries();
+      indexTableLocked = indexTableStatusLock.lockWithRetries()
+      if (mainTableLocked && indexTableLocked) {
+        val mainTableMetadataDetails =
+          SegmentStatusManager.readLoadMetadata(mainTable.getMetadataPath).toSet
+        val indexTableMetadataDetails =
+          SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath).toSet
+        val segToStatusMap = mainTableMetadataDetails
+          .map(detail => detail.getLoadName -> detail.getSegmentStatus).toMap
+
+        val unnecessarySegmentOfSi = indexTableMetadataDetails.filter { indexDetail =>
+          indexDetail.getSegmentStatus.equals(SegmentStatus.SUCCESS) &&
+          segToStatusMap.get(indexDetail.getLoadName).isDefined &&
+            (segToStatusMap(indexDetail.getLoadName).equals(SegmentStatus.COMPACTED) ||
+              segToStatusMap(indexDetail.getLoadName).equals(SegmentStatus.MARKED_FOR_DELETE))
+        }
+        unnecessarySegmentOfSi.foreach{ detail =>
+          val carbonFile = FileFactory
+            .getCarbonFile(CarbonTablePath
+            .getSegmentPath(indexTable.getTablePath, detail.getLoadName))
+          CarbonUtil.deleteFoldersAndFiles(carbonFile)
+        }
+        unnecessarySegmentOfSi.foreach { detail =>
+          detail.setSegmentStatus(segToStatusMap(detail.getLoadName))
+          detail.setVisibility("false")
+        }
+        indexTableStatusLock.unlock()
+        mainTableStatusLock.unlock()
+        CarbonInternalLoaderUtil.recordLoadMetadata(
+          unnecessarySegmentOfSi.toList.asJava,
+          unnecessarySegmentOfSi.map(_.getLoadName).toList.asJava,
+          indexTable,
+          List(indexTable).asJava,
+          indexTable.getDatabaseName,
+          indexTable.getTableName
+        )
+      }
+
+    } catch {
+      case ex: Exception =>
+        LOGGER.error("clean up of unwanted SI segments failed", ex)
+        //ignore the exception
+    } finally {
+      indexTableStatusLock.unlock()
+      mainTableStatusLock.unlock()
     }
   }
 }

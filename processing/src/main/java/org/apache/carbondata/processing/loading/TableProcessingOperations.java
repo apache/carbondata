@@ -27,6 +27,9 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.locks.CarbonLockFactory;
+import org.apache.carbondata.core.locks.ICarbonLock;
+import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
@@ -54,39 +57,54 @@ public class TableProcessingOperations {
   public static void deletePartialLoadDataIfExist(CarbonTable carbonTable,
       final boolean isCompactionFlow) throws IOException {
     String metaDataLocation = carbonTable.getMetadataPath();
-    //delete folder which metadata no exist in tablestatus
-    String partitionPath = CarbonTablePath.getPartitionDir(carbonTable.getTablePath());
-    if (FileFactory.isFileExist(partitionPath)) {
-      final LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
-      CarbonFile carbonFile = FileFactory.getCarbonFile(partitionPath);
-      CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-        @Override
-        public boolean accept(CarbonFile path) {
-          String segmentId =
-              CarbonTablePath.DataFileUtil.getSegmentIdFromPath(path.getAbsolutePath() + "/dummy");
-          boolean found = false;
-          for (int j = 0; j < details.length; j++) {
-            if (details[j].getLoadName().equals(segmentId)) {
-              found = true;
-              break;
+    ICarbonLock carbonTableStatusLock = CarbonLockFactory
+        .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier(),
+            LockUsage.TABLE_STATUS_LOCK);
+    try {
+      if (carbonTableStatusLock.lockWithRetries()) {
+        final LoadMetadataDetails[] details =
+            SegmentStatusManager.readLoadMetadata(metaDataLocation);
+        //delete folder which metadata no exist in tablestatus
+        String partitionPath =
+            CarbonTablePath.getPartitionDir(carbonTable.getTablePath());
+        if (FileFactory.isFileExist(partitionPath)) {
+          CarbonFile carbonFile =
+              FileFactory.getCarbonFile(partitionPath);
+          CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
+            @Override
+            public boolean accept(CarbonFile path) {
+              String segmentId = CarbonTablePath.DataFileUtil
+                  .getSegmentIdFromPath(path.getAbsolutePath() + "/dummy");
+              boolean found = false;
+              for (int j = 0; j < details.length; j++) {
+                if (details[j].getLoadName().equals(segmentId)) {
+                  found = true;
+                  break;
+                }
+              }
+              return !found;
             }
-          }
-          return !found;
-        }
-      });
-      for (int k = 0; k < listFiles.length; k++) {
-        String segmentId = CarbonTablePath.DataFileUtil
-            .getSegmentIdFromPath(listFiles[k].getAbsolutePath() + "/dummy");
-        if (isCompactionFlow) {
-          if (segmentId.contains(".")) {
-            CarbonLoaderUtil.deleteStorePath(listFiles[k].getAbsolutePath());
-          }
-        } else {
-          if (!segmentId.contains(".")) {
-            CarbonLoaderUtil.deleteStorePath(listFiles[k].getAbsolutePath());
+          });
+
+          for (int k = 0; k < listFiles.length; k++) {
+            String segmentId = CarbonTablePath.DataFileUtil.getSegmentIdFromPath((listFiles[k].getAbsolutePath() +
+                "/dummy"));
+            if (isCompactionFlow) {
+              if (segmentId.contains(".")) {
+                LOGGER.info("Deleting the store path: " + listFiles[k].getAbsolutePath());
+                CarbonLoaderUtil.deleteStorePath(listFiles[k].getAbsolutePath());
+              }
+            } else {
+              if (!segmentId.contains(".")) {
+                LOGGER.info("Deleting the store path: " + listFiles[k].getAbsolutePath());
+                CarbonLoaderUtil.deleteStorePath(listFiles[k].getAbsolutePath());
+              }
+            }
           }
         }
       }
+    } finally {
+      carbonTableStatusLock.unlock();
     }
   }
 

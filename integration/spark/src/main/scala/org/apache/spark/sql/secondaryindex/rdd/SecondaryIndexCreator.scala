@@ -305,6 +305,7 @@ object SecondaryIndexCreator {
       indexCarbonTable
     } catch {
       case ex: Exception =>
+        LOGGER.error("load to SI failed", ex)
         FileInternalUtil
           .updateTableStatus(validSegmentList,
             secondaryIndexModel.carbonLoadModel.getDatabaseName,
@@ -316,7 +317,6 @@ object SecondaryIndexCreator {
               String](),
             indexCarbonTable,
             sc.sparkSession)
-        LOGGER.error(ex)
         throw ex
     } finally {
       // release the segment locks
@@ -339,7 +339,6 @@ object SecondaryIndexCreator {
         if (!isCompactionCall) {
           SegmentStatusManager
             .deleteLoadsAndUpdateMetadata(indexCarbonTable, false, null)
-          TableProcessingOperations.deletePartialLoadDataIfExist(indexCarbonTable, false)
         }
       } catch {
         case e: Exception =>
