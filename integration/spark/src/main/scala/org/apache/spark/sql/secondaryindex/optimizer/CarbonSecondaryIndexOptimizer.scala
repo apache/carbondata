@@ -82,7 +82,8 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
    */
   private def rewritePlanForSecondaryIndex(filter: Filter,
       indexableRelation: CarbonDatasourceHadoopRelation, dbName: String,
-      cols: Seq[NamedExpression] = null, limitLiteral: Literal = null): LogicalPlan = {
+      cols: Seq[NamedExpression] = null, limitLiteral: Literal = null,
+      sortNodeForPushDown: Sort = null, pushDownNotNullFilter: Boolean = false): LogicalPlan = {
     var originalFilterAttributes: Set[String] = Set.empty
     var filterAttributes: Set[String] = Set.empty
     var matchingIndexTables: Seq[String] = Seq.empty
@@ -94,7 +95,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
     // Removed is Not Null filter from all filters and other attributes are selected
     // isNotNull filter will return all the unique values except null from table,
     // For High Cardinality columns, this filter is of no use, hence skipping it.
-    removeIsNotNullAttribute(filter.condition) collect {
+    removeIsNotNullAttribute(filter.condition, pushDownNotNullFilter) collect {
       case attr: AttributeReference =>
         filterAttributes = filterAttributes. +(attr.name.toLowerCase)
     }
@@ -184,9 +185,10 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
 
       val filterTree: SIFilterPushDownOperation = null
       val newSIFilterTree = createIndexTableFilterCondition(
-          filterTree,
-          filter.copy(filter.condition, filter.child).condition,
-          indexTableToColumnsMapping)
+        filterTree,
+        filter.copy(filter.condition, filter.child).condition,
+        indexTableToColumnsMapping,
+        pushDownNotNullFilter)
       val indexTablesDF: DataFrame = newSIFilterTree._3 match {
         case Some(tableName) =>
           // flag to check whether apply limit literal on the filter push down condition or not
@@ -203,7 +205,8 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
             indexTableToLogicalRelationMapping,
             originalFilterAttributes,
             limitLiteral,
-            checkAndApplyLimitLiteral)
+            checkAndApplyLimitLiteral,
+            sortNodeForPushDown)
           dataFrameWithAttributes._1
         case _ =>
           null
@@ -258,7 +261,13 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       indexTableToLogicalRelationMapping: mutable.Map[String, LogicalPlan],
       originalFilterAttributes: Set[String],
       limitLiteral: Literal,
-      checkAndAddLimitLiteral: Boolean = false): (DataFrame, Set[String]) = {
+      checkAndAddLimitLiteral: Boolean = false,
+      sortNode: Sort): (DataFrame, Set[String]) = {
+    val sortColumns = if (sortNode != null) {
+      sortNode.order.map(_.child.asInstanceOf[AttributeReference].name.toLowerCase()).toSet
+    } else {
+      Set.empty
+    }
     siFilterPushDownTree match {
       case SIUnaryFilterPushDownOperation(tableName, filterCondition) =>
         val attributeMap = indexTableAttributeMap.get(tableName).get
@@ -284,15 +293,46 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
         // Add Filter on logicalRelation
         var planTransform: LogicalPlan = Filter(indexTableFilter,
           indexTableToLogicalRelationMapping(tableName))
+        var needPushDown = false
+        var addLimit = checkAndAddLimitLiteral
+        if (sortNode != null && (filterAttributes.intersect(originalFilterAttributes)
+                                   .size == originalFilterAttributes.size)) {
+          needPushDown = true
+        } else if (filterAttributes.intersect(originalFilterAttributes)
+                     .size != originalFilterAttributes.size) {
+          addLimit = false
+        }
+        var sortAttr: Seq[AttributeReference] = Seq.empty
+        if (needPushDown) {
+          val plan = indexTableToLogicalRelationMapping(tableName)
+          plan collect {
+            case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
+              sortColumns.foreach { x =>
+                sortAttr = sortAttr :+ attributeMap(x)
+              }
+          }
+          positionReference = positionReference ++ sortAttr
+        }
         // Add PositionReference Projection on Filter
         planTransform = Project(positionReference, planTransform)
+        if (needPushDown) {
+          var newSortOrder: Seq[SortOrder] = Seq.empty
+          var i = 0
+          sortNode.order.foreach { sortOrder =>
+            newSortOrder = newSortOrder :+ SortOrder(sortAttr(i), sortOrder.direction)
+            i = i + 1
+          }
+          planTransform = Limit(limitLiteral, Sort(newSortOrder, sortNode.global, planTransform))
+          // limit is already added, no need to add again.
+          addLimit = false
+        }
         var indexTableDf = createDF(sparkSession, planTransform)
         // When all the filter columns are joined from index table,
         // limit can be pushed down before grouping last index table as the
         // number of records selected will definitely return at least 1 record
         // NOTE: flag checkAndAddLimitLiteral will be true only when the complete filter tree
         // contains only one node which is a unary node
-        val indexLogicalPlan = if (checkAndAddLimitLiteral) {
+        val indexLogicalPlan = if (addLimit) {
           if (limitLiteral != null &&
               filterAttributes.intersect(originalFilterAttributes)
                 .size == originalFilterAttributes.size) {
@@ -315,14 +355,16 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
           indexJoinedFilterAttributes,
           indexTableToLogicalRelationMapping,
           originalFilterAttributes,
-          limitLiteral)
+          limitLiteral,
+          sortNode = sortNode)
         val (rightOperationDataFrame, indexFilterAttributesRight) = createIndexFilterDataFrame(
           rightOperation,
           indexTableAttributeMap,
           indexFilterAttributesLeft,
           indexTableToLogicalRelationMapping,
           originalFilterAttributes,
-          limitLiteral)
+          limitLiteral,
+          sortNode = sortNode)
 
         // create new data frame by applying join or union based on nodeType
         val newDFAfterUnionOrJoin = applyUnionOrJoinOnDataFrames(nodeType,
@@ -399,15 +441,16 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
     allIndexTablesDF
   }
 
-  private def removeIsNotNullAttribute(condition: Expression): Expression = {
+  private def removeIsNotNullAttribute(condition: Expression,
+      pushDownNotNullFilter: Boolean): Expression = {
     val isPartialStringEnabled = CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.ENABLE_SI_LOOKUP_PARTIALSTRING,
         CarbonCommonConstants.ENABLE_SI_LOOKUP_PARTIALSTRING_DEFAULT)
       .equalsIgnoreCase("true")
     condition transform {
-      case IsNotNull(child: AttributeReference) => Literal(true)
       // Like is possible only if user provides _ in between the string
       // _ in like means any single character wild card check.
+      case IsNotNull(child: AttributeReference) => Literal(!pushDownNotNullFilter)
       case plan if (CarbonHiveIndexMetadataUtil.checkNIUDF(plan)) => Literal(true)
       case Like(left: AttributeReference, right: Literal) if (!isPartialStringEnabled) => Literal(
         true)
@@ -456,7 +499,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
    */
   private def isConditionColumnInIndexTable(condition: Expression,
       indexTableColumnsToTableMapping: mutable.Map[String, Set[String]],
-      pushDownRequired: Boolean): Option[String] = {
+      pushDownRequired: Boolean, pushDownNotNullFilter: Boolean): Option[String] = {
     // In case of Like Filter in OR, both the conditions should not be transformed
     // In case of like filter in And, only like filter should be removed and
     // other filter should be transformed with index table
@@ -468,10 +511,10 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
 
     var tableName: Option[String] = None
     val doNotPushToSI = condition match {
+      case IsNotNull(child: AttributeReference) => !pushDownNotNullFilter
       case Not(EqualTo(left: AttributeReference, right: Literal)) => true
       case Not(Like(left: AttributeReference, right: Literal)) => true
       case Not(In(left: AttributeReference, right: Seq[Expression])) => true
-      case IsNotNull(child: AttributeReference) => true
       case Like(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
       case EndsWith(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
       case Contains(left: AttributeReference, right: Literal) if (!pushDownRequired) => true
@@ -514,7 +557,8 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
    */
   private def createIndexTableFilterCondition(filterTree: SIFilterPushDownOperation,
       condition: Expression,
-      indexTableToColumnsMapping: mutable.Map[String, Set[String]]):
+      indexTableToColumnsMapping: mutable.Map[String, Set[String]],
+      pushDownNotNullFilter: Boolean):
   (SIFilterPushDownOperation, Expression, Option[String]) = {
     condition match {
       case or@Or(left, right) =>
@@ -522,12 +566,12 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
           createIndexTableFilterCondition(
             filterTree,
             left,
-            indexTableToColumnsMapping)
+            indexTableToColumnsMapping, pushDownNotNullFilter)
         val (newSIFilterTreeRight, newRight, tableNameRight) =
           createIndexTableFilterCondition(
             filterTree,
             right,
-            indexTableToColumnsMapping)
+            indexTableToColumnsMapping, pushDownNotNullFilter)
 
         (tableNameLeft, tableNameRight) match {
           case (Some(tableLeft), Some(tableRight)) =>
@@ -565,12 +609,14 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
           createIndexTableFilterCondition(
             filterTree,
             left,
-            indexTableToColumnsMapping)
+            indexTableToColumnsMapping,
+            pushDownNotNullFilter)
         val (newSIFilterTreeRight, newRight, tableNameRight) =
           createIndexTableFilterCondition(
             filterTree,
             right,
-            indexTableToColumnsMapping)
+            indexTableToColumnsMapping,
+            pushDownNotNullFilter)
         (tableNameLeft, tableNameRight) match {
           case (Some(tableLeft), Some(tableRight)) =>
             // push down both left and right condition if both left and right columns have index
@@ -605,7 +651,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
         }
         val tableName = isConditionColumnInIndexTable(condition,
           indexTableToColumnsMapping,
-          isPartialStringEnabled)
+          isPartialStringEnabled, pushDownNotNullFilter = pushDownNotNullFilter)
         // create a node if condition can be pushed down else return the same filterTree
         val newFilterTree = tableName match {
           case Some(table) =>
@@ -696,21 +742,71 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       .getBoolean("spark.carbon.pushdown.join.as.filter", defaultValue = true)
     val transformChild = false
     var addProjection = needProjection
+    // to store the sort node per query
+    var sortNodeForPushDown: Sort = null
+    // to store the limit literal per query
+    var limitLiteral: Literal = null
+    // by default do not push down notNull filter,
+    // but for orderby limit push down, push down notNull filter also. Else we get wrong results.
+    var pushDownNotNullFilter: Boolean = false
     val transformedPlan = transformPlan(plan, {
-      case union@Union(children) =>
+      case union@Union(_) =>
         // In case of Union, Extra Project has to be added to the Plan. Because if left table is
         // pushed to SI and right table is not pushed, then Output Attribute mismatch will happen
         addProjection = true
         (union, true)
-      case sort@Sort(order, global, plan) =>
+      case sort@Sort(_, _, _) =>
         addProjection = true
         (sort, true)
-      case filter@Filter(condition, logicalRelation@MatchIndexableRelation(indexableRelation))
+      case limit@Limit(literal: Literal, sort@Sort(_, _, child)) =>
+        child match {
+          case filter: Filter =>
+            if (checkIfPushDownOrderByLimitAndNotNullFilter(literal, sort, filter)) {
+              sortNodeForPushDown = sort
+              limitLiteral = literal
+              pushDownNotNullFilter = true
+            }
+          case p: Project if p.child.isInstanceOf[Filter] =>
+            if (checkIfPushDownOrderByLimitAndNotNullFilter(literal,
+              sort,
+              p.child.asInstanceOf[Filter])) {
+              sortNodeForPushDown = sort
+              limitLiteral = literal
+              pushDownNotNullFilter = true
+            }
+          case _ =>
+        }
+        (limit, transformChild)
+      case limit@Limit(literal: Literal, _@Project(_, sort@Sort(_, _, child))) =>
+        child match {
+          case f: Filter =>
+            if (checkIfPushDownOrderByLimitAndNotNullFilter(literal, sort, f)) {
+              sortNodeForPushDown = sort
+              limitLiteral = literal
+              pushDownNotNullFilter = true
+            }
+          case p: Project if (p.child.isInstanceOf[Filter]) =>
+            if (checkIfPushDownOrderByLimitAndNotNullFilter(literal,
+              sort,
+              p.child.asInstanceOf[Filter])) {
+              sortNodeForPushDown = sort
+              limitLiteral = literal
+              pushDownNotNullFilter = true
+            }
+          case _ =>
+        }
+        (limit, transformChild)
+      case filter@Filter(condition, _@MatchIndexableRelation(indexableRelation))
         if !condition.isInstanceOf[IsNotNull] &&
            CarbonIndexUtil.getSecondaryIndexes(indexableRelation).nonEmpty =>
-        val reWrittenPlan = rewritePlanForSecondaryIndex(filter, indexableRelation,
+        val reWrittenPlan = rewritePlanForSecondaryIndex(
+          filter,
+          indexableRelation,
           filter.child.asInstanceOf[LogicalRelation].relation
-            .asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.databaseName)
+            .asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.databaseName,
+          limitLiteral = limitLiteral,
+          sortNodeForPushDown = sortNodeForPushDown,
+          pushDownNotNullFilter = pushDownNotNullFilter)
         if (reWrittenPlan.isInstanceOf[Join]) {
           if (pushDownJoinEnabled && !addProjection) {
             (reWrittenPlan, transformChild)
@@ -721,12 +817,18 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
           (filter, transformChild)
         }
       case projection@Project(cols, filter@Filter(condition,
-      logicalRelation@MatchIndexableRelation(indexableRelation)))
+      _@MatchIndexableRelation(indexableRelation)))
         if !condition.isInstanceOf[IsNotNull] &&
            CarbonIndexUtil.getSecondaryIndexes(indexableRelation).nonEmpty =>
-        val reWrittenPlan = rewritePlanForSecondaryIndex(filter, indexableRelation,
+        val reWrittenPlan = rewritePlanForSecondaryIndex(
+          filter,
+          indexableRelation,
           filter.child.asInstanceOf[LogicalRelation].relation
-            .asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.databaseName, cols)
+            .asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.databaseName,
+          cols,
+          limitLiteral = limitLiteral,
+          sortNodeForPushDown = sortNodeForPushDown,
+          pushDownNotNullFilter = pushDownNotNullFilter)
         // If Index table is matched, join plan will be returned.
         // Adding projection over join to return only selected columns from query.
         // Else all columns from left & right table will be returned in output columns
@@ -744,7 +846,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       // last index table, as number of records returned after join where unique and it will
       // definitely return at least 1 record.
       case limit@Limit(literal: Literal,
-      filter@Filter(condition, logicalRelation@MatchIndexableRelation(indexableRelation)))
+      filter@Filter(condition, _@MatchIndexableRelation(indexableRelation)))
         if !condition.isInstanceOf[IsNotNull] &&
            CarbonIndexUtil.getSecondaryIndexes(indexableRelation).nonEmpty =>
         val carbonRelation = filter.child.asInstanceOf[LogicalRelation].relation
@@ -771,7 +873,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
           (limit, transformChild)
         }
       case limit@Limit(literal: Literal, projection@Project(cols, filter@Filter(condition,
-      logicalRelation@MatchIndexableRelation(indexableRelation))))
+      _@MatchIndexableRelation(indexableRelation))))
         if !condition.isInstanceOf[IsNotNull] &&
            CarbonIndexUtil.getSecondaryIndexes(indexableRelation).nonEmpty =>
         val carbonRelation = filter.child.asInstanceOf[LogicalRelation].relation
@@ -834,6 +936,40 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
         afterRule
       }
     }
+  }
+
+  private def checkIfPushDownOrderByLimitAndNotNullFilter(literal: Literal, sort: Sort,
+      filter: Filter): Boolean = {
+    val filterAttributes = filter.condition collect {
+      case attr: AttributeReference => attr.name.toLowerCase
+    }
+    val parentTableRelation = MatchIndexableRelation.unapply(filter.child).get
+    val matchingIndexTables = CarbonCostBasedOptimizer.identifyRequiredTables(
+      filterAttributes.toSet.asJava,
+      CarbonIndexUtil.getSecondaryIndexes(parentTableRelation).mapValues(_.toList.asJava).asJava)
+      .asScala
+    val databaseName = parentTableRelation.carbonRelation.databaseName
+    // filter out all the index tables which are disabled
+    val enabledMatchingIndexTables = matchingIndexTables
+      .filter(table => {
+        sparkSession.sessionState.catalog
+          .getTableMetadata(TableIdentifier(table,
+            Some(databaseName))).storage
+          .properties
+          .getOrElse("isSITableEnabled", "true").equalsIgnoreCase("true")
+      })
+    // 1. check if only one SI matches for the filter columns
+    if (enabledMatchingIndexTables.nonEmpty && enabledMatchingIndexTables.size == 1) {
+      // 2. check if all the sort columns is in SI
+      val sortColumns = sort
+        .order
+        .map(_.child.asInstanceOf[AttributeReference].name.toLowerCase())
+        .toSet
+      val indexCarbonTable = CarbonEnv
+        .getCarbonTable(Some(databaseName), enabledMatchingIndexTables.head)(sparkSession)
+      return sortColumns.forall { x => indexCarbonTable.getColumnByName(x) != null }
+    }
+    false
   }
 
 }

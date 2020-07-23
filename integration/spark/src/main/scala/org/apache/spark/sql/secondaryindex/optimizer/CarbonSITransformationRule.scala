@@ -17,7 +17,7 @@
 package org.apache.spark.sql.secondaryindex.optimizer
 
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{CarbonUtils, SparkSession}
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonUtils, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, EqualTo, PredicateHelper}
 import org.apache.spark.sql.catalyst.plans.logical.{Join, LogicalPlan}
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -28,6 +28,7 @@ import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.index.IndexType
 
 /**
  * Rule for rewriting plan if query has a filter on index table column
@@ -41,7 +42,17 @@ class CarbonSITransformationRule(sparkSession: SparkSession)
     new CarbonSecondaryIndexOptimizer(sparkSession)
 
   def apply(plan: LogicalPlan): LogicalPlan = {
-    if (checkIfRuleNeedToBeApplied(plan)) {
+    var hasSecondaryIndexTable = false
+    plan.collect {
+      case l: LogicalRelation if (!hasSecondaryIndexTable &&
+                                  l.relation.isInstanceOf[CarbonDatasourceHadoopRelation]) =>
+        hasSecondaryIndexTable = l.relation
+                       .asInstanceOf[CarbonDatasourceHadoopRelation]
+                       .carbonTable
+                       .getIndexTableNames(IndexType.SI.getIndexProviderName).size() > 0
+
+    }
+    if (hasSecondaryIndexTable && checkIfRuleNeedToBeApplied(plan)) {
       secondaryIndexOptimizer.transformFilterToJoin(plan, isProjectionNeeded(plan))
     } else {
       plan
