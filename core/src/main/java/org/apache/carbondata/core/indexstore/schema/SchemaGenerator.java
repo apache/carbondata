@@ -32,13 +32,10 @@ import org.apache.carbondata.core.util.BlockletIndexUtil;
 public class SchemaGenerator {
 
   /**
-   * Method for creating blocklet Schema. Each blocklet row will share the same schema
-   *
-   * @param segmentProperties
-   * @return
+   * creating blocklet/block Schema. Each blocklet row will share the same schema
    */
-  public static CarbonRowSchema[] createBlockSchema(SegmentProperties segmentProperties,
-      List<CarbonColumn> minMaxCacheColumns) {
+  private static CarbonRowSchema[] createSchema(SegmentProperties segmentProperties,
+      List<CarbonColumn> minMaxCacheColumns, boolean isBlocklet) {
     List<CarbonRowSchema> indexSchemas = new ArrayList<>();
     // get MinMax Schema
     getMinMaxSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
@@ -59,9 +56,28 @@ public class SchemaGenerator {
     // for storing min max flag for each column which reflects whether min max for a column is
     // written in the metadata or not.
     addMinMaxFlagSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
+    if (isBlocklet) {
+      //for blocklet info
+      indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
+      // for number of pages.
+      indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.SHORT));
+      // for relative blocklet id i.e. blocklet id that belongs to a particular part file
+      indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.SHORT));
+    }
     CarbonRowSchema[] schema = indexSchemas.toArray(new CarbonRowSchema[indexSchemas.size()]);
     updateBytePosition(schema);
     return schema;
+  }
+
+  /**
+   * Method for creating blocklet Schema. Each blocklet row will share the same schema
+   *
+   * @param segmentProperties
+   * @return
+   */
+  public static CarbonRowSchema[] createBlockSchema(SegmentProperties segmentProperties,
+      List<CarbonColumn> minMaxCacheColumns) {
+    return createSchema(segmentProperties, minMaxCacheColumns, false);
   }
 
   /**
@@ -139,35 +155,7 @@ public class SchemaGenerator {
    */
   public static CarbonRowSchema[] createBlockletSchema(SegmentProperties segmentProperties,
       List<CarbonColumn> minMaxCacheColumns) {
-    List<CarbonRowSchema> indexSchemas = new ArrayList<>();
-    // get MinMax Schema
-    getMinMaxSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
-    // for number of rows.
-    indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.INT));
-    // for table block path
-    indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
-    // for version number.
-    indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.SHORT));
-    // for schema updated time.
-    indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));
-    // for block footer offset.
-    indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));
-    // for locations
-    indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
-    // for storing block length.
-    indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));
-    // for storing min max flag for each column which reflects whether min max for a column is
-    // written in the metadata or not.
-    addMinMaxFlagSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
-    //for blocklet info
-    indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
-    // for number of pages.
-    indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.SHORT));
-    // for relative blocklet id i.e. blocklet id that belongs to a particular part file
-    indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.SHORT));
-    CarbonRowSchema[] schema = indexSchemas.toArray(new CarbonRowSchema[indexSchemas.size()]);
-    updateBytePosition(schema);
-    return schema;
+    return createSchema(segmentProperties, minMaxCacheColumns, true);
   }
 
   /**

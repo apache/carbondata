@@ -49,7 +49,7 @@ public class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
    * @param nullBits Null row ordinals in the bitset
    * @param isnullBitsExists whether to consider inverted index while setting null bitset or not.
    *                          we are having nullBitset even for dimensions also.
-   *                          But some dimension columns still don't have nullbitset.
+   *                          But some dimension columns still don't have nullBitset.
    *                          So if null bitset does not exist then
    *                          it should not inverted index while setting the null
    */

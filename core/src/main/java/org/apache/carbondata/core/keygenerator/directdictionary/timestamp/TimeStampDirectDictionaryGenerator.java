@@ -23,7 +23,6 @@ import java.util.Date;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -39,12 +38,7 @@ import org.apache.log4j.Logger;
  * The class provides the method to generate dictionary key and getting the actual value from
  * the dictionaryKey for direct dictionary column for TIMESTAMP type.
  */
-public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGenerator {
-
-  private ThreadLocal<SimpleDateFormat> simpleDateFormatLocal = new ThreadLocal<>();
-
-  private String dateFormat;
-
+public class TimeStampDirectDictionaryGenerator extends AbstractDirectDictionaryGenerator {
   /**
    * The value of 1 unit of the SECOND, MINUTE, HOUR, or DAY in millis.
    */
@@ -109,72 +103,12 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
   }
 
   public TimeStampDirectDictionaryGenerator(String dateFormat) {
-    this.dateFormat = dateFormat;
-    initialize();
+    super(dateFormat);
   }
 
   public TimeStampDirectDictionaryGenerator() {
     this(CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
-  }
-
-  /**
-   * The method take member String as input and converts
-   * and returns the dictionary key
-   *
-   * @param memberStr date format string
-   * @return dictionary value
-   */
-  @Override
-  public int generateDirectSurrogateKey(String memberStr) {
-    if (null == memberStr || memberStr.trim().isEmpty() || memberStr
-        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
-    }
-    return getDirectSurrogateForMember(memberStr);
-  }
-
-  /**
-   * The method take member String as input and converts
-   * and returns the dictionary key
-   *
-   * @param memberStr date format string
-   * @return dictionary value
-   */
-  public int generateDirectSurrogateKey(String memberStr, String format) {
-    if (null == format) {
-      return generateDirectSurrogateKeyForNonTimestampType(memberStr);
-    } else {
-      if (null == memberStr || memberStr.trim().isEmpty() || memberStr
-          .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-        return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
-      }
-      return getDirectSurrogateForMember(memberStr);
-    }
-  }
-
-  private int getDirectSurrogateForMember(String memberStr) {
-    Date dateToStr = null;
-    try {
-      SimpleDateFormat simpleDateFormat = simpleDateFormatLocal.get();
-      if (null == simpleDateFormat) {
-        initialize();
-        simpleDateFormat = simpleDateFormatLocal.get();
-      }
-      dateToStr = simpleDateFormat.parse(memberStr);
-    } catch (ParseException e) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Cannot convert value to Time/Long type value. Value considered as null." + e
-            .getMessage());
-      }
-      dateToStr = null;
-    }
-    //adding +2 to reserve the first cutOffDiff value for null or empty date
-    if (null == dateToStr) {
-      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
-    } else {
-      return generateKey(dateToStr.getTime());
-    }
   }
 
   /**
@@ -192,24 +126,6 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     return timeStamp * 1000L;
   }
 
-  private int generateDirectSurrogateKeyForNonTimestampType(String memberStr) {
-    long timeValue = -1;
-    try {
-      timeValue = Long.parseLong(memberStr) / 1000;
-    } catch (NumberFormatException e) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(
-            "Cannot convert " + memberStr + " Long type value. Value considered as null." + e
-                .getMessage());
-      }
-    }
-    if (timeValue == -1) {
-      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
-    } else {
-      return generateKey(timeValue);
-    }
-  }
-
   public int generateKey(long timeValue) {
     long time = (timeValue - cutOffTimeStamp) / granularityFactor;
     int keyValue = -1;
@@ -217,13 +133,6 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
       keyValue = (int) time;
     }
     return keyValue < 0 ? CarbonCommonConstants.DIRECT_DICT_VALUE_NULL : keyValue + 2;
-  }
-
-  public void initialize() {
-    if (simpleDateFormatLocal.get() == null) {
-      simpleDateFormatLocal.set(new SimpleDateFormat(dateFormat));
-      simpleDateFormatLocal.get().setLenient(false);
-    }
   }
 
   @Override

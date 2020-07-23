@@ -47,39 +47,26 @@ public class AndIndexExprWrapper extends IndexExprWrapper {
   }
 
   @Override
-  public List<ExtendedBlocklet> prune(List<Segment> segments, List<PartitionSpec> partitionsToPrune)
-      throws IOException {
-    List<ExtendedBlocklet> leftPrune = left.prune(segments, partitionsToPrune);
-    List<ExtendedBlocklet> rightPrune = right.prune(segments, partitionsToPrune);
-    List<ExtendedBlocklet> andBlocklets = new ArrayList<>();
-    for (ExtendedBlocklet blocklet : leftPrune) {
-      if (rightPrune.contains(blocklet)) {
-        andBlocklets.add(blocklet);
-      }
-    }
-    return andBlocklets;
+  public List<ExtendedBlocklet> prune(List<Segment> segments,
+      List<PartitionSpec> partitionsToPrune) throws IOException {
+    return and(left.prune(segments, partitionsToPrune), right.prune(segments, partitionsToPrune));
   }
 
   @Override
   public List<ExtendedBlocklet> prune(IndexInputSplit distributable,
-      List<PartitionSpec> partitionsToPrune)
-          throws IOException {
-    List<ExtendedBlocklet> leftPrune = left.prune(distributable, partitionsToPrune);
-    List<ExtendedBlocklet> rightPrune = right.prune(distributable, partitionsToPrune);
-    List<ExtendedBlocklet> andBlocklets = new ArrayList<>();
-    for (ExtendedBlocklet blocklet : leftPrune) {
-      if (rightPrune.contains(blocklet)) {
-        andBlocklets.add(blocklet);
-      }
-    }
-    return andBlocklets;
+      List<PartitionSpec> partitionsToPrune) throws IOException {
+    return and(left.prune(distributable, partitionsToPrune),
+        right.prune(distributable, partitionsToPrune));
   }
 
   @Override
   public List<ExtendedBlocklet> pruneBlocklets(List<ExtendedBlocklet> blocklets)
       throws IOException {
-    List<ExtendedBlocklet> leftPrune = left.pruneBlocklets(blocklets);
-    List<ExtendedBlocklet> rightPrune = right.pruneBlocklets(blocklets);
+    return and(left.pruneBlocklets(blocklets), right.pruneBlocklets(blocklets));
+  }
+
+  private List<ExtendedBlocklet> and(List<ExtendedBlocklet> leftPrune,
+      List<ExtendedBlocklet> rightPrune) {
     List<ExtendedBlocklet> andBlocklets = new ArrayList<>();
     for (ExtendedBlocklet blocklet : leftPrune) {
       if (rightPrune.contains(blocklet)) {

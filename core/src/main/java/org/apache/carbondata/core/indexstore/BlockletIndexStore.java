@@ -281,7 +281,7 @@ public class BlockletIndexStore
    * based on task id and will return the map of taskId to table segment
    * map
    *
-   * @return map of taks id to segment mapping
+   * @return map of task id to segment mapping
    * @throws IOException
    */
   private BlockIndex loadAndGetIndex(TableBlockIndexUniqueIdentifier identifier,

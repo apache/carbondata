@@ -101,7 +101,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
    *
    * VD: Read based on below logic
    * if not last variable column schema
-   * X = read actual variable column offset based on byte postion added in CarbonRowSchema
+   * X = read actual variable column offset based on byte position added in CarbonRowSchema
    * Y = read next variable column offset (next 4 bytes)
    * get the length
    * len  = (X-Y)

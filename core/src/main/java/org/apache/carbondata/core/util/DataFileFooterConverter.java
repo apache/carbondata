@@ -66,12 +66,7 @@ public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
       FileFooter footer = reader.readFooter();
       dataFileFooter.setVersionId(ColumnarFormatVersion.valueOf((short) footer.getVersion()));
       dataFileFooter.setNumberOfRows(footer.getNum_rows());
-      List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-      List<org.apache.carbondata.format.ColumnSchema> table_columns = footer.getTable_columns();
-      for (int i = 0; i < table_columns.size(); i++) {
-        columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
-      }
-      dataFileFooter.setColumnInTable(columnSchemaList);
+      dataFileFooter.setColumnInTable(convertColumnSchemaList(footer.getTable_columns()));
 
       List<org.apache.carbondata.format.BlockletIndex> leaf_node_indices_Thrift =
           footer.getBlocklet_index_list();
@@ -116,7 +111,6 @@ public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
   @Override
   public List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException {
     FileReader fileReader = null;
-    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     try {
       long completeBlockLength = tableBlockInfo.getBlockLength();
       long footerPointer = completeBlockLength - 8;
@@ -124,16 +118,11 @@ public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
       long actualFooterOffset = fileReader.readLong(tableBlockInfo.getFilePath(), footerPointer);
       CarbonFooterReader reader =
           new CarbonFooterReader(tableBlockInfo.getFilePath(), actualFooterOffset);
-      FileFooter footer = reader.readFooter();
-      List<org.apache.carbondata.format.ColumnSchema> table_columns = footer.getTable_columns();
-      for (int i = 0; i < table_columns.size(); i++) {
-        columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
-      }
+      return convertColumnSchemaList(reader.readFooter().getTable_columns());
     } finally {
       if (null != fileReader) {
         fileReader.finish();
       }
     }
-    return columnSchemaList;
   }
 }

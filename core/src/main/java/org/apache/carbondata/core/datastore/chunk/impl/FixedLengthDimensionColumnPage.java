@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.datastore.chunk.impl;
 
+import java.util.function.IntUnaryOperator;
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory.DimensionStoreType;
@@ -106,22 +108,15 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
     return chunkIndex + 1;
   }
 
-  /**
-   * Fill the data to vector
-   *
-   * @param vectorInfo
-   * @param chunkIndex
-   * @return next column index
-   */
-  @Override
-  public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex) {
+  private int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex,
+      IntUnaryOperator function) {
     ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
     int offset = columnVectorInfo.offset;
     int vectorOffset = columnVectorInfo.vectorOffset;
     int len = columnVectorInfo.size + offset;
     CarbonColumnVector vector = columnVectorInfo.vector;
     for (int j = offset; j < len; j++) {
-      int dict = dataChunkStore.getSurrogate(j);
+      int dict = dataChunkStore.getSurrogate(function.applyAsInt(j));
       if (columnVectorInfo.directDictionaryGenerator == null) {
         vector.putInt(vectorOffset++, dict);
       } else {
@@ -145,6 +140,19 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
     return chunkIndex + 1;
   }
 
+
+  /**
+   * Fill the data to vector
+   *
+   * @param vectorInfo
+   * @param chunkIndex
+   * @return next column index
+   */
+  @Override
+  public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex) {
+    return fillVector(vectorInfo, chunkIndex, j -> j);
+  }
+
   /**
    * Fill the data to vector
    *
@@ -156,33 +164,6 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
   @Override
   public int fillVector(int[] filteredRowId, ColumnVectorInfo[] vectorInfo,
       int chunkIndex) {
-    ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
-    int offset = columnVectorInfo.offset;
-    int vectorOffset = columnVectorInfo.vectorOffset;
-    int len = columnVectorInfo.size + offset;
-    CarbonColumnVector vector = columnVectorInfo.vector;
-    for (int j = offset; j < len; j++) {
-      int dict = dataChunkStore.getSurrogate(filteredRowId[j]);
-      if (columnVectorInfo.directDictionaryGenerator == null) {
-        vector.putInt(vectorOffset++, dict);
-      } else {
-        Object valueFromSurrogate =
-            columnVectorInfo.directDictionaryGenerator.getValueFromSurrogate(dict);
-        if (valueFromSurrogate == null) {
-          vector.putNull(vectorOffset++);
-        } else {
-          DataType dataType = columnVectorInfo.directDictionaryGenerator.getReturnType();
-          if (dataType == DataTypes.INT) {
-            vector.putInt(vectorOffset++, (int) valueFromSurrogate);
-          } else if (dataType == DataTypes.LONG) {
-            vector.putLong(vectorOffset++, (long) valueFromSurrogate);
-          } else {
-            throw new IllegalArgumentException("unsupported data type: " +
-                columnVectorInfo.directDictionaryGenerator.getReturnType());
-          }
-        }
-      }
-    }
-    return chunkIndex + 1;
+    return fillVector(vectorInfo, chunkIndex, j -> filteredRowId[j]);
   }
 }

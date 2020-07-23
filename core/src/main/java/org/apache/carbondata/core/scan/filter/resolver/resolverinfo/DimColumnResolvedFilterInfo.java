@@ -108,8 +108,8 @@ public class DimColumnResolvedFilterInfo extends ColumnResolvedFilterInfo implem
     return isDimensionExistsInCurrentSlice;
   }
 
-  public void setDimensionExistsInCurrentSlice(boolean isDimensionExistsInCurrentSilce) {
-    this.isDimensionExistsInCurrentSlice = isDimensionExistsInCurrentSilce;
+  public void setDimensionExistsInCurrentSlice(boolean isDimensionExistsInCurrentSlice) {
+    this.isDimensionExistsInCurrentSlice = isDimensionExistsInCurrentSlice;
   }
 
   public void populateFilterInfoBasedOnColumnType(ResolvedFilterInfoVisitorIntf visitor,

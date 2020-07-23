@@ -256,11 +256,11 @@ public class SegmentProperties {
    */
   protected long getFingerPrinter() {
     if (this.fingerPrinter == Long.MAX_VALUE) {
-      long dimensionsFingerPrinter = getFingerprinter(this.dimensions.stream()
+      long dimensionsFingerPrinter = getFingerPrinter(this.dimensions.stream()
               .map(t -> t.getColumnSchema()).collect(Collectors.toList()));
-      long measuresFingerPrinter = getFingerprinter(this.measures.stream()
+      long measuresFingerPrinter = getFingerPrinter(this.measures.stream()
               .map(t -> t.getColumnSchema()).collect(Collectors.toList()));
-      long complexFingerPrinter = getFingerprinter(this.complexDimensions.stream()
+      long complexFingerPrinter = getFingerPrinter(this.complexDimensions.stream()
               .map(t -> t.getColumnSchema()).collect(Collectors.toList()));
       this.fingerPrinter = (dimensionsFingerPrinter >> DIMENSIONS_FINGER_PRINTER_SHIFT)
               ^ (measuresFingerPrinter >> MEASURES_FINGER_PRINTER_SHIFT)
@@ -269,7 +269,7 @@ public class SegmentProperties {
     return this.fingerPrinter;
   }
 
-  private long getFingerprinter(List<ColumnSchema> columns) {
+  private long getFingerPrinter(List<ColumnSchema> columns) {
     int counter = 0;
     ColumnSchema columnSchema = null;
     long fingerprint = Long.MAX_VALUE;

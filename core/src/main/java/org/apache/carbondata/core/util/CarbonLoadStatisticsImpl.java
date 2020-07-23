@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.util;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -114,34 +115,26 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
     return lruCacheLoadTime;
   }
 
-  public void recordDictionaryValuesTotalTime(String partitionID,
-      Long dictionaryValuesTotalTimeTimePoint) {
-    if (null != parDictionaryValuesTotalTimeMap.get(partitionID)) {
-      if (null == parDictionaryValuesTotalTimeMap.get(partitionID)[0]) {
-        parDictionaryValuesTotalTimeMap.get(partitionID)[0] = dictionaryValuesTotalTimeTimePoint;
+  private void recordStatistics(Map<String, Long[]> statMap, String partitionID, Long value) {
+    if (null != statMap.get(partitionID)) {
+      if (null == statMap.get(partitionID)[0]) {
+        statMap.get(partitionID)[0] = value;
       }
-      if (null == parDictionaryValuesTotalTimeMap.get(partitionID)[1] ||
-          dictionaryValuesTotalTimeTimePoint - parDictionaryValuesTotalTimeMap.get(partitionID)[0] >
-              parDictionaryValuesTotalTimeMap.get(partitionID)[1]) {
-        parDictionaryValuesTotalTimeMap.get(partitionID)[1] = dictionaryValuesTotalTimeTimePoint -
-            parDictionaryValuesTotalTimeMap.get(partitionID)[0];
+      if (null == statMap.get(partitionID)[1] ||
+          value - statMap.get(partitionID)[0] > statMap.get(partitionID)[1]) {
+        statMap.get(partitionID)[1] = value - statMap.get(partitionID)[0];
       }
     }
   }
 
-  public void recordCsvInputStepTime(String partitionID,
-      Long csvInputStepTimePoint) {
-    if (null != parCsvInputStepTimeMap.get(partitionID)) {
-      if (null == parCsvInputStepTimeMap.get(partitionID)[0]) {
-        parCsvInputStepTimeMap.get(partitionID)[0] = csvInputStepTimePoint;
-      }
-      if (null == parCsvInputStepTimeMap.get(partitionID)[1] ||
-              csvInputStepTimePoint - parCsvInputStepTimeMap.get(partitionID)[0] >
-                      parCsvInputStepTimeMap.get(partitionID)[1]) {
-        parCsvInputStepTimeMap.get(partitionID)[1] = csvInputStepTimePoint -
-                parCsvInputStepTimeMap.get(partitionID)[0];
-      }
-    }
+  public void recordDictionaryValuesTotalTime(String partitionID,
+      Long dictionaryValuesTotalTimeTimePoint) {
+    recordStatistics(parDictionaryValuesTotalTimeMap, partitionID,
+        dictionaryValuesTotalTimeTimePoint);
+  }
+
+  public void recordCsvInputStepTime(String partitionID, Long csvInputStepTimePoint) {
+    recordStatistics(parCsvInputStepTimeMap, partitionID, csvInputStepTimePoint);
   }
 
   public void recordLruCacheLoadTime(double lruCacheLoadTime) {
@@ -150,68 +143,22 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
 
   public void recordGeneratingDictionaryValuesTime(String partitionID,
       Long generatingDictionaryValuesTimePoint) {
-    if (null != parGeneratingDictionaryValuesTimeMap.get(partitionID)) {
-      if (null == parGeneratingDictionaryValuesTimeMap.get(partitionID)[0]) {
-        parGeneratingDictionaryValuesTimeMap.get(partitionID)[0] =
-                generatingDictionaryValuesTimePoint;
-      }
-      if (null == parGeneratingDictionaryValuesTimeMap.get(partitionID)[1] ||
-              generatingDictionaryValuesTimePoint - parGeneratingDictionaryValuesTimeMap
-                      .get(partitionID)[0] > parGeneratingDictionaryValuesTimeMap
-                      .get(partitionID)[1]) {
-        parGeneratingDictionaryValuesTimeMap.get(partitionID)[1] =
-                generatingDictionaryValuesTimePoint - parGeneratingDictionaryValuesTimeMap
-                        .get(partitionID)[0];
-      }
-    }
+    recordStatistics(parGeneratingDictionaryValuesTimeMap, partitionID,
+        generatingDictionaryValuesTimePoint);
   }
 
-  public void recordSortRowsStepTotalTime(String partitionID,
-                                          Long sortRowsStepTotalTimePoint) {
-    if (null != parSortRowsStepTotalTimeMap.get(partitionID)) {
-      if (null == parSortRowsStepTotalTimeMap.get(partitionID)[0]) {
-        parSortRowsStepTotalTimeMap.get(partitionID)[0] = sortRowsStepTotalTimePoint;
-      }
-      if (null == parSortRowsStepTotalTimeMap.get(partitionID)[1] ||
-              sortRowsStepTotalTimePoint - parSortRowsStepTotalTimeMap.get(partitionID)[0] >
-                      parSortRowsStepTotalTimeMap.get(partitionID)[1]) {
-        parSortRowsStepTotalTimeMap.get(partitionID)[1] = sortRowsStepTotalTimePoint -
-                parSortRowsStepTotalTimeMap.get(partitionID)[0];
-      }
-    }
+  public void recordSortRowsStepTotalTime(String partitionID, Long sortRowsStepTotalTimePoint) {
+    recordStatistics(parSortRowsStepTotalTimeMap, partitionID, sortRowsStepTotalTimePoint);
   }
 
-  public void recordMdkGenerateTotalTime(String partitionID,
-                                         Long mdkGenerateTotalTimePoint) {
-    if (null != parMdkGenerateTotalTimeMap.get(partitionID)) {
-      if (null == parMdkGenerateTotalTimeMap.get(partitionID)[0]) {
-        parMdkGenerateTotalTimeMap.get(partitionID)[0] = mdkGenerateTotalTimePoint;
-      }
-      if (null == parMdkGenerateTotalTimeMap.get(partitionID)[1] ||
-              mdkGenerateTotalTimePoint - parMdkGenerateTotalTimeMap.get(partitionID)[0] >
-                      parMdkGenerateTotalTimeMap.get(partitionID)[1]) {
-        parMdkGenerateTotalTimeMap.get(partitionID)[1] = mdkGenerateTotalTimePoint -
-                parMdkGenerateTotalTimeMap.get(partitionID)[0];
-      }
-    }
+  public void recordMdkGenerateTotalTime(String partitionID, Long mdkGenerateTotalTimePoint) {
+    recordStatistics(parMdkGenerateTotalTimeMap, partitionID, mdkGenerateTotalTimePoint);
   }
 
   public void recordDictionaryValue2MdkAdd2FileTime(String partitionID,
       Long dictionaryValue2MdkAdd2FileTimePoint) {
-    if (null != parDictionaryValue2MdkAdd2FileTime.get(partitionID)) {
-      if (null == parDictionaryValue2MdkAdd2FileTime.get(partitionID)[0]) {
-        parDictionaryValue2MdkAdd2FileTime.get(partitionID)[0] =
-                dictionaryValue2MdkAdd2FileTimePoint;
-      }
-      if (null == parDictionaryValue2MdkAdd2FileTime.get(partitionID)[1] ||
-              dictionaryValue2MdkAdd2FileTimePoint - parDictionaryValue2MdkAdd2FileTime
-                      .get(partitionID)[0] > parDictionaryValue2MdkAdd2FileTime
-                      .get(partitionID)[1]) {
-        parDictionaryValue2MdkAdd2FileTime.get(partitionID)[1] =
-                dictionaryValue2MdkAdd2FileTimePoint - parDictionaryValue2MdkAdd2FileTime
-                        .get(partitionID)[0];
-      }
-    }
+    recordStatistics(parDictionaryValue2MdkAdd2FileTime, partitionID,
+        dictionaryValue2MdkAdd2FileTimePoint);
   }
 
   //Record the node blocks information map

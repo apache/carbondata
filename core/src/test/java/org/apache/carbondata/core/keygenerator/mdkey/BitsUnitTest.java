@@ -40,61 +40,12 @@ public class BitsUnitTest {
     assertThat(result, is(equalTo(expected)));
   }
 
-  @Test public void testGetWithLongKeys() throws Exception {
-    long[] expected = new long[] { 0L, 0L, 103616086028L};
-    long[] keys = new long[] { 24L, 32L, 12L, 64L, 40L };
-    long[] result = bits.get(keys);
-    assertThat(result, is(equalTo(expected)));
-  }
-
   @Test public void testGetKeyByteOffsets() throws Exception {
     int[] lens = new int[] { 64, 64, 64, 64, 64 };
     Bits bits1 = new Bits(lens);
     int index = 2;
     int[] expected = new int[] { 16, 23 };
     int[] result = bits1.getKeyByteOffsets(index);
-    assertThat(result, is(equalTo(expected)));
-  }
-
-  @Test public void testGetKeyArray() throws Exception {
-    int[] lens = new int[] { 8, 32, 24 };
-    Bits bit1 = new Bits(lens);
-    int[] maskByteRanges = new int[] { 1, 3, 5, 6, 4, 8, 9, 2 };
-    byte[] key = new byte[] { 8, 24, 32, 24, 40, 127, 64, 16, 24, 16 };
-    long[] expected = new long[] { 24L, 410992680L, 1576992L };
-    long[] result = bit1.getKeyArray(key, maskByteRanges);
-    assertThat(result, is(equalTo(expected)));
-  }
-
-  @Test public void testGetKeyArrayWithKeyContainsNegativeValueOFByte() throws Exception {
-    int[] lens = new int[] { 8, 32, 24 };
-    Bits bit1 = new Bits(lens);
-    int[] maskByteRanges = new int[] { 1, 3, 5, 6, 4, 8, 9, 2 };
-    byte[] key = new byte[] { -8, 24, 32, -24, 40, -127, 64, 16, -24, 16 };
-    long[] expected = new long[] { 24L, 3900784680L, 15208480L };
-    long[] result = bit1.getKeyArray(key, maskByteRanges);
-    assertThat(result, is(equalTo(expected)));
-  }
-
-  @Test public void testGetKeyArrayWithByteBoundaryValue() throws Exception {
-    int[] lens = new int[] { 127, 127, 127 };
-    Bits bits1= new Bits(lens);
-    int[] maskByteRanges =
-        new int[] { 1, 3, 5, 6, 4, 8, 9, 2, 1, 3, 5, 6, 4, 8, 9, 2, 1, 3, 5, 6, 4, 8, 9, 2, 1, 3, 5,
-            6, 4, 8, 9, 2, 1, 3, 5, 6, 4, 8, 9, 2, 1, 3, 5, 6, 4, 8, 9, 2 };
-    byte[] key = new byte[] { 127, 24, 32, 127, 40, 127, 64, 16, 24, 16 };
-    long[] expected =
-        new long[] { 7061077969919295616L, 3530538984959647808L, 1765269492479823904L };
-    long[] result = bits1.getKeyArray(key, maskByteRanges);
-    assertThat(result, is(equalTo(expected)));
-  }
-
-  @Test public void testGetKeyArrayWithNullValue() throws Exception {
-    int[] lens = new int[] { 20, 35, 10 };
-    Bits bit1 = new Bits(lens);
-    byte[] key = new byte[] { 10, 20, 30, 10, 15, 10, 20, 30, 10, 15 };
-    long[] expected = new long[] { 41200, 10800497927L, 522 };
-    long[] result = bit1.getKeyArray(key, null);
     assertThat(result, is(equalTo(expected)));
   }
 

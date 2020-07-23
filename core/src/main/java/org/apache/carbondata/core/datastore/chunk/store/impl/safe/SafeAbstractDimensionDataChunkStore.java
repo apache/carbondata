@@ -48,10 +48,10 @@ public abstract class SafeAbstractDimensionDataChunkStore implements DimensionDa
   /**
    * Constructor
    *
-   * @param isInvertedIdex is inverted index present
+   * @param isInvertedIndex is inverted index present
    */
-  public SafeAbstractDimensionDataChunkStore(boolean isInvertedIdex) {
-    this.isExplicitSorted = isInvertedIdex;
+  public SafeAbstractDimensionDataChunkStore(boolean isInvertedIndex) {
+    this.isExplicitSorted = isInvertedIndex;
   }
 
   /**

@@ -229,17 +229,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
   }
 
   private static DataType compareMinMaxAndSelectDataType(long value) {
-    if (value <= Byte.MAX_VALUE && value >= Byte.MIN_VALUE) {
-      return DataTypes.BYTE;
-    } else if (value <= Short.MAX_VALUE && value >= Short.MIN_VALUE) {
-      return DataTypes.SHORT;
-    } else if (value <= THREE_BYTES_MAX && value >= THREE_BYTES_MIN) {
-      return DataTypes.SHORT_INT;
-    } else if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
-      return DataTypes.INT;
-    } else {
-      return DataTypes.LONG;
-    }
+    return fitLongMinMax(value, value);
   }
 
   /**
