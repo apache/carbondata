@@ -112,7 +112,7 @@ public final class FilterUtil {
    * @param segmentProperties
    * @param complexDimensionInfoMap
    * @param minMaxCacheColumns
-   * @param isStreamDataFile: whether create filter executer tree for stream data files
+   * @param isStreamDataFile: whether create filter executor tree for stream data files
    * @return FilterExecutor instance
    *
    */

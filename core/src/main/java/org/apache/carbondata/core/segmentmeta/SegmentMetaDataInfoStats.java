@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockIndex;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
@@ -93,9 +94,9 @@ public class SegmentMetaDataInfoStats {
       BlockColumnMetaDataInfo previousBlockColumnMetaInfo =
           this.tableSegmentMetaDataInfoMap.get(tableName).get(segmentId);
       // compare and get updated min and max values
-      byte[][] updatedMin = compareAndUpdateMinMax(previousBlockColumnMetaInfo.getMin(),
+      byte[][] updatedMin = BlockIndex.compareAndUpdateMinMax(previousBlockColumnMetaInfo.getMin(),
           currentBlockColumnMetaInfo.getMin(), true);
-      byte[][] updatedMax = compareAndUpdateMinMax(previousBlockColumnMetaInfo.getMax(),
+      byte[][] updatedMax = BlockIndex.compareAndUpdateMinMax(previousBlockColumnMetaInfo.getMax(),
           currentBlockColumnMetaInfo.getMax(), false);
       // update the segment
       this.tableSegmentMetaDataInfoMap.get(tableName).get(segmentId)
@@ -144,24 +145,4 @@ public class SegmentMetaDataInfoStats {
     }
     return updatedMinMaxValues;
   }
-
-  private synchronized byte[][] compareAndUpdateMinMax(byte[][] minMaxValueCompare1,
-      byte[][] minMaxValueCompare2, boolean isMinValueComparison) {
-    // Compare and update min max values
-    byte[][] updatedMinMaxValues = new byte[minMaxValueCompare1.length][];
-    System.arraycopy(minMaxValueCompare1, 0, updatedMinMaxValues, 0, minMaxValueCompare1.length);
-    for (int i = 0; i < minMaxValueCompare1.length; i++) {
-      int compare = ByteUtil.UnsafeComparer.INSTANCE
-          .compareTo(minMaxValueCompare2[i], minMaxValueCompare1[i]);
-      if (isMinValueComparison) {
-        if (compare < 0) {
-          updatedMinMaxValues[i] = minMaxValueCompare2[i];
-        }
-      } else if (compare > 0) {
-        updatedMinMaxValues[i] = minMaxValueCompare2[i];
-      }
-    }
-    return updatedMinMaxValues;
-  }
-
 }

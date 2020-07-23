@@ -79,11 +79,7 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     } else {
       dataFileFooter.setSorted(null);
     }
-    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-    List<org.apache.carbondata.format.ColumnSchema> table_columns = fileHeader.getColumn_schema();
-    for (int i = 0; i < table_columns.size(); i++) {
-      columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
-    }
+    List<ColumnSchema> columnSchemaList = convertColumnSchemaList(fileHeader.getColumn_schema());
     dataFileFooter.setColumnInTable(columnSchemaList);
     List<org.apache.carbondata.format.BlockletIndex> leaf_node_indices_Thrift =
         footer.getBlocklet_index_list();
@@ -109,13 +105,7 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
   @Override
   public List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException {
     CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(tableBlockInfo.getFilePath());
-    FileHeader fileHeader = carbonHeaderReader.readHeader();
-    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-    List<org.apache.carbondata.format.ColumnSchema> table_columns = fileHeader.getColumn_schema();
-    for (int i = 0; i < table_columns.size(); i++) {
-      columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
-    }
-    return columnSchemaList;
+    return convertColumnSchemaList(carbonHeaderReader.readHeader().getColumn_schema());
   }
 
   /**

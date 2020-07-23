@@ -421,18 +421,18 @@ public class IncludeFilterExecutorImpl implements FilterExecutor {
   }
 
   private BitSet setFilteredIndexToBitSetWithColumnIndex(
-      DimensionColumnPage dimensionColumnPage, int numerOfRows) {
-    BitSet bitSet = new BitSet(numerOfRows);
+      DimensionColumnPage dimensionColumnPage, int numberOfRows) {
+    BitSet bitSet = new BitSet(numberOfRows);
     if (filterValues.length == 0) {
       return bitSet;
     }
     int startIndex = 0;
     for (int i = 0; i < filterValues.length; i++) {
-      if (startIndex >= numerOfRows) {
+      if (startIndex >= numberOfRows) {
         break;
       }
       int[] rangeIndex = CarbonUtil
-          .getRangeIndexUsingBinarySearch(dimensionColumnPage, startIndex, numerOfRows - 1,
+          .getRangeIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
               filterValues[i]);
       for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
         bitSet.set(dimensionColumnPage.getInvertedIndex(j));

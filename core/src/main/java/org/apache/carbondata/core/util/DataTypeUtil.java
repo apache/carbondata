@@ -157,20 +157,7 @@ public final class DataTypeUtil {
     } else if (dataType == DataTypes.BYTE) {
       return Byte.parseByte(dimValue);
     } else if (dataType == DataTypes.TIMESTAMP) {
-      Date dateToStr = null;
-      DateFormat dateFormatter = null;
-      try {
-        if (null != timeStampFormat && !timeStampFormat.trim().isEmpty()) {
-          dateFormatter = new SimpleDateFormat(timeStampFormat);
-          dateFormatter.setLenient(false);
-        } else {
-          dateFormatter = timestampFormatter.get();
-        }
-        dateToStr = dateFormatter.parse(dimValue);
-        return dateToStr.getTime();
-      } catch (ParseException e) {
-        throw new NumberFormatException(e.getMessage());
-      }
+      return parseTimestamp(dimValue, timeStampFormat);
     } else {
       Double parsedValue = Double.valueOf(dimValue);
       if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
@@ -439,23 +426,27 @@ public final class DataTypeUtil {
     } else if (DataTypes.isDecimal(actualDataType)) {
       return new BigDecimal(dimensionValue);
     } else if (actualDataType == DataTypes.TIMESTAMP) {
-      Date dateToStr = null;
-      DateFormat dateFormatter = null;
-      try {
-        if (null != dateFormat && !dateFormat.trim().isEmpty()) {
-          dateFormatter = new SimpleDateFormat(dateFormat);
-          dateFormatter.setLenient(false);
-        } else {
-          dateFormatter = timestampFormatter.get();
-        }
-        dateToStr = dateFormatter.parse(dimensionValue);
-        return dateToStr.getTime();
-      } catch (ParseException e) {
-        throw new NumberFormatException(e.getMessage());
-      }
+      return parseTimestamp(dimensionValue, dateFormat);
     } else {
       // Default action for String/Varchar
       return converter.convertFromStringToUTF8String(dimensionValue);
+    }
+  }
+
+  private static Object parseTimestamp(String dimensionValue, String dateFormat) {
+    Date dateToStr;
+    DateFormat dateFormatter;
+    try {
+      if (null != dateFormat && !dateFormat.trim().isEmpty()) {
+        dateFormatter = new SimpleDateFormat(dateFormat);
+        dateFormatter.setLenient(false);
+      } else {
+        dateFormatter = timestampFormatter.get();
+      }
+      dateToStr = dateFormatter.parse(dimensionValue);
+      return dateToStr.getTime();
+    } catch (ParseException e) {
+      throw new NumberFormatException(e.getMessage());
     }
   }
 
@@ -768,39 +759,6 @@ public final class DataTypeUtil {
   }
 
   /**
-   * This method will parse a given string value corresponding to its data type
-   *
-   * @param value     value to parse
-   * @param dimension dimension to get data type and precision and scale in case of decimal
-   *                  data type
-   * @return
-   */
-  public static String normalizeColumnValueForItsDataType(String value, CarbonColumn dimension) {
-    try {
-      Object parsedValue = null;
-      // validation will not be done for timestamp datatype as for timestamp direct dictionary
-      // is generated. No dictionary file is created for timestamp datatype column
-      DataType dataType = dimension.getDataType();
-      if (DataTypes.isDecimal(dataType)) {
-        return parseStringToBigDecimal(value, dimension);
-      } else if (dataType == DataTypes.SHORT || dataType == DataTypes.INT ||
-          dataType == DataTypes.LONG) {
-        parsedValue = normalizeIntAndLongValues(value, dimension.getDataType());
-      } else if (dataType == DataTypes.DOUBLE) {
-        parsedValue = Double.parseDouble(value);
-      } else {
-        return value;
-      }
-      if (null != parsedValue) {
-        return value;
-      }
-      return null;
-    } catch (Exception e) {
-      return null;
-    }
-  }
-
-  /**
    * This method will parse a value to its datatype if datatype is decimal else will return
    * the value passed
    *
@@ -930,37 +888,6 @@ public final class DataTypeUtil {
       }
     } catch (NumberFormatException ex) {
       LOGGER.error("Problem while converting data type" + data);
-      return null;
-    }
-  }
-
-  /**
-   * This method will parse a given string value corresponding to its data type
-   *
-   * @param value        value to parse
-   * @param columnSchema dimension to get data type and precision and scale in case of decimal
-   *                     data type
-   * @return
-   */
-  public static String normalizeColumnValueForItsDataType(String value, ColumnSchema columnSchema) {
-    try {
-      Object parsedValue = null;
-      DataType dataType = columnSchema.getDataType();
-      if (DataTypes.isDecimal(dataType)) {
-        return parseStringToBigDecimal(value, columnSchema);
-      } else if (dataType == DataTypes.SHORT || dataType == DataTypes.INT ||
-          dataType == DataTypes.LONG) {
-        parsedValue = normalizeIntAndLongValues(value, columnSchema.getDataType());
-      } else if (dataType == DataTypes.DOUBLE) {
-        parsedValue = Double.parseDouble(value);
-      } else {
-        return value;
-      }
-      if (null != parsedValue) {
-        return value;
-      }
-      return null;
-    } catch (Exception e) {
       return null;
     }
   }

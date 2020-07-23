@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -31,13 +30,9 @@ import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.datatype.DecimalType;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
-import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
+import org.apache.carbondata.core.metadata.converter.SchemaConverter;
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -74,12 +69,8 @@ public abstract class AbstractDataFileFooterConverter {
       indexReader.openThriftReader(filePath);
       // get the index header
       org.apache.carbondata.format.IndexHeader readIndexHeader = indexReader.readIndexHeader();
-      List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-      List<org.apache.carbondata.format.ColumnSchema> table_columns =
-          readIndexHeader.getTable_columns();
-      for (int i = 0; i < table_columns.size(); i++) {
-        columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
-      }
+      List<ColumnSchema> columnSchemaList =
+          convertColumnSchemaList(readIndexHeader.getTable_columns());
       // get the segment info
       BlockletIndex blockletIndex = null;
       int counter = 0;
@@ -119,6 +110,16 @@ public abstract class AbstractDataFileFooterConverter {
     return dataFileFooters;
   }
 
+  protected List<ColumnSchema> convertColumnSchemaList(
+      List<org.apache.carbondata.format.ColumnSchema> tableColumns) {
+    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
+    List<ColumnSchema> columnSchemaList = new ArrayList<>();
+    for (org.apache.carbondata.format.ColumnSchema tableColumn : tableColumns) {
+      columnSchemaList.add(schemaConverter.fromExternalToWrapperColumnSchema(tableColumn));
+    }
+    return columnSchemaList;
+  }
+
   /**
    * Below method will be used to get the index info from index file
    *
@@ -148,12 +149,8 @@ public abstract class AbstractDataFileFooterConverter {
       }
       // get the index header
       org.apache.carbondata.format.IndexHeader readIndexHeader = indexReader.readIndexHeader();
-      List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-      List<org.apache.carbondata.format.ColumnSchema> table_columns =
-          readIndexHeader.getTable_columns();
-      for (int i = 0; i < table_columns.size(); i++) {
-        columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
-      }
+      List<ColumnSchema> columnSchemaList =
+          convertColumnSchemaList(readIndexHeader.getTable_columns());
       if (!isTransactionalTable) {
         QueryUtil.updateColumnUniqueIdForNonTransactionTable(columnSchemaList);
       }
@@ -278,88 +275,6 @@ public abstract class AbstractDataFileFooterConverter {
     minMax.setIsMinMaxSet(blockMinMaxFlag);
     blockletIndex.setMinMaxIndex(minMax);
     return blockletIndex;
-  }
-
-  protected ColumnSchema thriftColumnSchemaToWrapperColumnSchema(
-      org.apache.carbondata.format.ColumnSchema externalColumnSchema) {
-    ColumnSchema wrapperColumnSchema = new ColumnSchema();
-    wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
-    wrapperColumnSchema.setColumnName(externalColumnSchema.getColumn_name());
-    DataType dataType = CarbonUtil.thriftDataTypeToWrapperDataType(externalColumnSchema.data_type);
-    if (DataTypes.isDecimal(dataType)) {
-      DecimalType decimalType = (DecimalType) dataType;
-      decimalType.setPrecision(externalColumnSchema.getPrecision());
-      decimalType.setScale(externalColumnSchema.getScale());
-    }
-    wrapperColumnSchema.setDataType(dataType);
-    wrapperColumnSchema.setDimensionColumn(externalColumnSchema.isDimension());
-    List<Encoding> encoders = new ArrayList<Encoding>();
-    for (org.apache.carbondata.format.Encoding encoder : externalColumnSchema.getEncoders()) {
-      encoders.add(fromExternalToWrapperEncoding(encoder));
-    }
-    wrapperColumnSchema.setEncodingList(encoders);
-    wrapperColumnSchema.setNumberOfChild(externalColumnSchema.getNum_child());
-    wrapperColumnSchema.setPrecision(externalColumnSchema.getPrecision());
-    wrapperColumnSchema.setScale(externalColumnSchema.getScale());
-    wrapperColumnSchema.setDefaultValue(externalColumnSchema.getDefault_value());
-    Map<String, String> properties = externalColumnSchema.getColumnProperties();
-    if (properties != null) {
-      if (properties.get(CarbonCommonConstants.SORT_COLUMNS) != null) {
-        wrapperColumnSchema.setSortColumn(true);
-      }
-    }
-    wrapperColumnSchema.setSpatialColumn(externalColumnSchema.isSpatialColumn());
-    wrapperColumnSchema.setFunction(externalColumnSchema.getAggregate_function());
-    List<org.apache.carbondata.format.ParentColumnTableRelation> parentColumnTableRelation =
-        externalColumnSchema.getParentColumnTableRelations();
-    if (null != parentColumnTableRelation) {
-      wrapperColumnSchema.setParentColumnTableRelations(
-          fromThriftToWrapperParentTableColumnRelations(parentColumnTableRelation));
-    }
-    return wrapperColumnSchema;
-  }
-
-  private List<ParentColumnTableRelation> fromThriftToWrapperParentTableColumnRelations(
-      List<org.apache.carbondata.format.ParentColumnTableRelation> thriftParentColumnRelation) {
-    List<ParentColumnTableRelation> parentColumnTableRelationList = new ArrayList<>();
-    for (org.apache.carbondata.format.ParentColumnTableRelation carbonTableRelation :
-        thriftParentColumnRelation) {
-      RelationIdentifier relationIdentifier =
-          new RelationIdentifier(carbonTableRelation.getRelationIdentifier().getDatabaseName(),
-              carbonTableRelation.getRelationIdentifier().getTableName(),
-              carbonTableRelation.getRelationIdentifier().getTableId());
-      ParentColumnTableRelation parentColumnTableRelation =
-          new ParentColumnTableRelation(relationIdentifier, carbonTableRelation.getColumnId(),
-              carbonTableRelation.getColumnName());
-      parentColumnTableRelationList.add(parentColumnTableRelation);
-    }
-    return parentColumnTableRelationList;
-  }
-
-  /**
-   * Below method is convert the thrift encoding to wrapper encoding
-   *
-   * @param encoderThrift thrift encoding
-   * @return wrapper encoding
-   */
-  protected Encoding fromExternalToWrapperEncoding(
-      org.apache.carbondata.format.Encoding encoderThrift) {
-    switch (encoderThrift) {
-      case DICTIONARY:
-        return Encoding.DICTIONARY;
-      case DELTA:
-        return Encoding.DELTA;
-      case RLE:
-        return Encoding.RLE;
-      case INVERTED_INDEX:
-        return Encoding.INVERTED_INDEX;
-      case BIT_PACKED:
-        return Encoding.BIT_PACKED;
-      case DIRECT_DICTIONARY:
-        return Encoding.DIRECT_DICTIONARY;
-      default:
-        throw new IllegalArgumentException(encoderThrift.toString() + " is not supported");
-    }
   }
 
   /**

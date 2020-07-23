@@ -37,8 +37,8 @@ public class TrueConditionalResolverImpl extends ConditionalFilterResolverImpl {
 
   /**
    * This method will provide the executor type to the callee inorder to identify
-   * the executer type for the filter resolution, Row level filter executer is a
-   * special executer since it get all the rows of the specified filter dimension
+   * the executor type for the filter resolution, Row level filter executor is a
+   * special executor since it get all the rows of the specified filter dimension
    * and will be send to the spark for processing
    */
   @Override

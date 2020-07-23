@@ -246,21 +246,21 @@ public class IndexUtil {
         TableIndex index = IndexStoreManager.getInstance()
             .getIndex(table, wrapper.getDistributable().getIndexSchema());
         List<Index> indices = index.getTableIndexes(wrapper.getDistributable());
-        List<ExtendedBlocklet> prunnedBlocklet = new ArrayList<>();
+        List<ExtendedBlocklet> prunedBlocklet = new ArrayList<>();
         if (table.isTransactionalTable()) {
-          prunnedBlocklet.addAll(index.prune(indices, wrapper.getDistributable(),
+          prunedBlocklet.addAll(index.prune(indices, wrapper.getDistributable(),
               indexExprWrapper.getFilterResolverIntf(wrapper.getUniqueId()), partitions));
         } else {
-          prunnedBlocklet
+          prunedBlocklet
               .addAll(index.prune(segmentsToLoad, new IndexFilter(filterResolverIntf),
                   partitions));
         }
         // For all blocklets initialize the detail info so that it can be serialized to the driver.
-        for (ExtendedBlocklet blocklet : prunnedBlocklet) {
+        for (ExtendedBlocklet blocklet : prunedBlocklet) {
           blocklet.getDetailInfo();
           blocklet.setIndexUniqueId(wrapper.getUniqueId());
         }
-        extendedBlocklets.addAll(prunnedBlocklet);
+        extendedBlocklets.addAll(prunedBlocklet);
       }
       return indexExprWrapper.pruneBlocklets(extendedBlocklets);
     }
@@ -329,20 +329,4 @@ public class IndexUtil {
     }
     return segmentList;
   }
-
-  public static String getMaxSegmentID(List<String> segmentList) {
-    double[] segment = new double[segmentList.size()];
-    int i = 0;
-    for (String id : segmentList) {
-      segment[i] = Double.parseDouble(id);
-      i++;
-    }
-    Arrays.sort(segment);
-    String maxId = Double.toString(segment[segmentList.size() - 1]);
-    if (maxId.endsWith(".0")) {
-      maxId = maxId.substring(0, maxId.indexOf("."));
-    }
-    return maxId;
-  }
-
 }

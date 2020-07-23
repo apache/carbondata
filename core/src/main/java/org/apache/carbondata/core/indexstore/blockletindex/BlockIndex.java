@@ -525,7 +525,7 @@ public class BlockIndex extends CoarseGrainIndex
    * @param minMaxValueCompare2
    * @param isMinValueComparison
    */
-  private byte[][] compareAndUpdateMinMax(byte[][] minMaxValueCompare1,
+  public static byte[][] compareAndUpdateMinMax(byte[][] minMaxValueCompare1,
       byte[][] minMaxValueCompare2, boolean isMinValueComparison) {
     // Compare and update min max values
     byte[][] updatedMinMaxValues = new byte[minMaxValueCompare1.length][];

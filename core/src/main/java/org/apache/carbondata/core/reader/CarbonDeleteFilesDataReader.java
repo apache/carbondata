@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -30,7 +29,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
 import org.apache.carbondata.core.mutate.DeleteDeltaBlockletDetails;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
@@ -68,50 +66,6 @@ public class CarbonDeleteFilesDataReader {
    */
   private void initThreadPoolSize() {
     thread_pool_size = CarbonProperties.getInstance().getNumberOfLoadingCores();
-  }
-
-  /**
-   * Returns all deleted records from all specified delta files
-   *
-   * @param deltaFiles
-   * @return
-   * @throws Exception
-   */
-  public Map<Integer, Integer[]> getDeleteDataFromAllFiles(List<String> deltaFiles,
-      String blockletId) throws Exception {
-
-    List<Future<DeleteDeltaBlockDetails>> taskSubmitList = new ArrayList<>();
-    ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
-    for (final String deltaFile : deltaFiles) {
-      taskSubmitList.add(executorService.submit(new DeleteDeltaFileReaderCallable(deltaFile)));
-    }
-    try {
-      executorService.shutdown();
-      executorService.awaitTermination(30, TimeUnit.MINUTES);
-    } catch (InterruptedException e) {
-      LOGGER.error("Error while reading the delete delta files : " + e.getMessage(), e);
-    }
-
-    Map<Integer, Integer[]> pageIdDeleteRowsMap =
-        new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    for (int i = 0; i < taskSubmitList.size(); i++) {
-      try {
-        List<DeleteDeltaBlockletDetails> blockletDetails =
-            taskSubmitList.get(i).get().getBlockletDetails();
-        for (DeleteDeltaBlockletDetails eachBlockletDetails : blockletDetails) {
-          Integer pageId = eachBlockletDetails.getPageId();
-          Set<Integer> rows = blockletDetails
-              .get(blockletDetails.indexOf(new DeleteDeltaBlockletDetails(blockletId, pageId)))
-              .getDeletedRows();
-          pageIdDeleteRowsMap.put(pageId, rows.toArray(new Integer[rows.size()]));
-        }
-
-      } catch (Throwable e) {
-        LOGGER.error(e.getMessage(), e);
-        throw new Exception(e);
-      }
-    }
-    return pageIdDeleteRowsMap;
   }
 
   /**

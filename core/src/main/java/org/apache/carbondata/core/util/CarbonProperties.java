@@ -619,20 +619,21 @@ public final class CarbonProperties {
   }
 
   private void validateEnableAutoHandoff() {
-    String offHeapSortStr = carbonProperties.getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT);
-    if (offHeapSortStr == null) {
-      carbonProperties.setProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
-          CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT);
-      offHeapSortStr = carbonProperties.getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT);
+    String autoHandoffString =
+        carbonProperties.getProperty(CarbonCommonConstants.ENABLE_AUTO_HANDOFF);
+    if (autoHandoffString == null) {
+      carbonProperties.setProperty(CarbonCommonConstants.ENABLE_AUTO_HANDOFF,
+          CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT);
+      autoHandoffString = carbonProperties.getProperty(CarbonCommonConstants.ENABLE_AUTO_HANDOFF);
     }
-    boolean isValidBooleanValue = CarbonUtil.validateBoolean(offHeapSortStr);
+    boolean isValidBooleanValue = CarbonUtil.validateBoolean(autoHandoffString);
     if (!isValidBooleanValue) {
-      LOGGER.warn(String.format("The enable off heap sort value \"%s\" is invalid. " +
+      LOGGER.warn(String.format("The enable auto handoff value \"%s\" is invalid. " +
               "Using the default value \"%s\"",
-          offHeapSortStr,
-          CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
-      carbonProperties.setProperty(ENABLE_OFFHEAP_SORT,
-          CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT);
+          autoHandoffString,
+          CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT));
+      carbonProperties.setProperty(ENABLE_AUTO_HANDOFF,
+          CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT);
     }
   }
 

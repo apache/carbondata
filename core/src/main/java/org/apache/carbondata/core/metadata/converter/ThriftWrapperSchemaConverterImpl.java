@@ -264,7 +264,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
   }
 
   /* (non-Javadoc)
-   * convert from wrapper to external tableschema
+   * convert from wrapper to external table schema
    */
   @Override
   public org.apache.carbondata.format.TableSchema fromWrapperToExternalTableSchema(
@@ -304,7 +304,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
   }
 
   /* (non-Javadoc)
-   * convert from wrapper to external tableinfo
+   * convert from wrapper to external table info
    */
   @Override
   public org.apache.carbondata.format.TableInfo fromWrapperToExternalTableInfo(

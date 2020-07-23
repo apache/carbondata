@@ -69,10 +69,10 @@ public interface FilterResolverIntf extends Serializable {
   MeasureColumnResolvedFilterInfo getMsrColResolvedFilterInfo();
 
   /**
-   * API will return the filter executer type which will be used to evaluate
+   * API will return the filter executor type which will be used to evaluate
    * the resolved filter while query execution
    *
-   * @return FilterExecuterType.
+   * @return FilterExecutorType.
    */
   FilterExecutorType getFilterExecutorType();
 

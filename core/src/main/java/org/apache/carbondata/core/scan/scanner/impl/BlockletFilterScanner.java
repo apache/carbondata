@@ -182,21 +182,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     if (bitSetGroup.isEmpty()) {
       CarbonUtil.freeMemory(rawBlockletColumnChunks.getDimensionRawColumnChunks(),
           rawBlockletColumnChunks.getMeasureRawColumnChunks());
-
-      QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
-          .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
-      scanTime.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKlET_TIME,
-          scanTime.getCount() + (System.currentTimeMillis() - startTime));
-
-      QueryStatistic scannedBlocklets = queryStatisticsModel.getStatisticsTypeAndObjMap()
-          .get(QueryStatisticsConstants.BLOCKLET_SCANNED_NUM);
-      scannedBlocklets.addCountStatistic(QueryStatisticsConstants.BLOCKLET_SCANNED_NUM,
-          scannedBlocklets.getCount() + 1);
-
-      QueryStatistic scannedPages = queryStatisticsModel.getStatisticsTypeAndObjMap()
-          .get(QueryStatisticsConstants.PAGE_SCANNED);
-      scannedPages.addCountStatistic(QueryStatisticsConstants.PAGE_SCANNED,
-          scannedPages.getCount() + bitSetGroup.getScannedPages());
+      addQueryStatistic(startTime, bitSetGroup.getScannedPages());
       return createEmptyResult();
     }
 
@@ -367,21 +353,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     if (pages.isEmpty()) {
       CarbonUtil.freeMemory(rawBlockletColumnChunks.getDimensionRawColumnChunks(),
           rawBlockletColumnChunks.getMeasureRawColumnChunks());
-
-      QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
-          .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
-      scanTime.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKlET_TIME,
-          scanTime.getCount() + (System.currentTimeMillis() - startTime));
-
-      QueryStatistic scannedBlocklets = queryStatisticsModel.getStatisticsTypeAndObjMap()
-          .get(QueryStatisticsConstants.BLOCKLET_SCANNED_NUM);
-      scannedBlocklets.addCountStatistic(QueryStatisticsConstants.BLOCKLET_SCANNED_NUM,
-          scannedBlocklets.getCount() + 1);
-
-      QueryStatistic scannedPages = queryStatisticsModel.getStatisticsTypeAndObjMap()
-          .get(QueryStatisticsConstants.PAGE_SCANNED);
-      scannedPages
-          .addCountStatistic(QueryStatisticsConstants.PAGE_SCANNED, scannedPages.getCount());
+      addQueryStatistic(startTime, 0L);
       return createEmptyResult();
     }
 
@@ -460,5 +432,22 @@ public class BlockletFilterScanner extends BlockletFullScanner {
         scanTime.getCount() + (System.currentTimeMillis() - startTime));
 
     return scannedResult;
+  }
+
+  private void addQueryStatistic(long startTime, long numberOfPages) {
+    QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
+    scanTime.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKlET_TIME,
+        scanTime.getCount() + (System.currentTimeMillis() - startTime));
+
+    QueryStatistic scannedBlocklets = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.BLOCKLET_SCANNED_NUM);
+    scannedBlocklets.addCountStatistic(QueryStatisticsConstants.BLOCKLET_SCANNED_NUM,
+        scannedBlocklets.getCount() + 1);
+
+    QueryStatistic scannedPages = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.PAGE_SCANNED);
+    scannedPages.addCountStatistic(QueryStatisticsConstants.PAGE_SCANNED,
+        scannedPages.getCount() + numberOfPages);
   }
 }

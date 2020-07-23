@@ -30,9 +30,9 @@ public class AndFilterExecutorImpl implements FilterExecutor, ImplicitColumnFilt
   private FilterExecutor leftExecutor;
   private FilterExecutor rightExecutor;
 
-  public AndFilterExecutorImpl(FilterExecutor leftExecutor, FilterExecutor rightExecuter) {
+  public AndFilterExecutorImpl(FilterExecutor leftExecutor, FilterExecutor rightExecutor) {
     this.leftExecutor = leftExecutor;
-    this.rightExecutor = rightExecuter;
+    this.rightExecutor = rightExecutor;
   }
 
   @Override

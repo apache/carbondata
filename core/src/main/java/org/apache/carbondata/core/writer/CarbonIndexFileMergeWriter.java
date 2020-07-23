@@ -136,17 +136,8 @@ public class CarbonIndexFileMergeWriter {
     if (null != partitionPath && !partitionTempPath.isEmpty()) {
       fileStore.readAllIIndexOfSegment(partitionTempPath);
     }
-    Map<String, byte[]> indexMap = fileStore.getCarbonIndexMapWithFullPath();
-    Map<String, Map<String, byte[]>> indexLocationMap = new HashMap<>();
-    for (Map.Entry<String, byte[]> entry : indexMap.entrySet()) {
-      Path path = new Path(entry.getKey());
-      Map<String, byte[]> map = indexLocationMap.get(path.getParent().toString());
-      if (map == null) {
-        map = new HashMap<>();
-        indexLocationMap.put(path.getParent().toString(), map);
-      }
-      map.put(path.getName(), entry.getValue());
-    }
+    Map<String, Map<String, byte[]>> indexLocationMap =
+        groupIndexesBySegment(fileStore.getCarbonIndexMapWithFullPath());
     SegmentFileStore.FolderDetails folderDetails = null;
     for (Map.Entry<String, Map<String, byte[]>> entry : indexLocationMap.entrySet()) {
       String mergeIndexFile = writeMergeIndexFile(null, partitionPath, entry.getValue(), segmentId);
@@ -182,6 +173,17 @@ public class CarbonIndexFileMergeWriter {
     return folderDetails;
   }
 
+  private Map<String, Map<String, byte[]>> groupIndexesBySegment(Map<String, byte[]> indexMap) {
+    Map<String, Map<String, byte[]>> indexLocationMap = new HashMap<>();
+    for (Map.Entry<String, byte[]> entry : indexMap.entrySet()) {
+      Path path = new Path(entry.getKey());
+      indexLocationMap
+          .computeIfAbsent(path.getParent().toString(), k -> new HashMap<>())
+          .put(path.getName(), entry.getValue());
+    }
+    return indexLocationMap;
+  }
+
   private String writeMergeIndexFileBasedOnSegmentFolder(List<String> indexFileNamesTobeAdded,
       boolean readFileFooterFromCarbonDataFile, String segmentPath, CarbonFile[] indexFiles,
       String segmentId) throws IOException {
@@ -215,17 +217,8 @@ public class CarbonIndexFileMergeWriter {
       fileStore.readAllIIndexOfSegment(segmentFileStore.getSegmentFile(),
           segmentFileStore.getTablePath(), SegmentStatus.SUCCESS, true);
     }
-    Map<String, byte[]> indexMap = fileStore.getCarbonIndexMapWithFullPath();
-    Map<String, Map<String, byte[]>> indexLocationMap = new HashMap<>();
-    for (Map.Entry<String, byte[]> entry: indexMap.entrySet()) {
-      Path path = new Path(entry.getKey());
-      Map<String, byte[]> map = indexLocationMap.get(path.getParent().toString());
-      if (map == null) {
-        map = new HashMap<>();
-        indexLocationMap.put(path.getParent().toString(), map);
-      }
-      map.put(path.getName(), entry.getValue());
-    }
+    Map<String, Map<String, byte[]>> indexLocationMap =
+        groupIndexesBySegment(fileStore.getCarbonIndexMapWithFullPath());
     List<PartitionSpec> partitionSpecs = SegmentFileStore
         .getPartitionSpecs(segmentId, table.getTablePath(), SegmentStatusManager
             .readLoadMetadata(CarbonTablePath.getMetadataPath(table.getTablePath())));
