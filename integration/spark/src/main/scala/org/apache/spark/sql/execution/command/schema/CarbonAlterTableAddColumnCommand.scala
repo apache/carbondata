@@ -93,7 +93,7 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
         .collect { case carbonColumn if !carbonColumn.isInvisible => carbonColumn.getColumnSchema }
       // sort the new columns based on schema order
       val sortedColsBasedActualSchemaOrder = newCols.sortBy(a => a.getSchemaOrdinal)
-      val (tableIdentifier, schemaParts) = AlterTableUtil.updateSchemaInfo(
+      val tableIdentifier = AlterTableUtil.updateSchemaInfo(
           carbonTable,
           schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
           thriftTable)(sparkSession)
@@ -110,7 +110,7 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
       } else {
         Some(carbonColumns ++ sortedColsBasedActualSchemaOrder)
       }
-      CarbonSessionCatalogUtil.alterAddColumns(tableIdentifier, schemaParts, cols, sparkSession)
+      CarbonSessionCatalogUtil.alterAddColumns(tableIdentifier, cols, sparkSession)
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
       val alterTablePostExecutionEvent: AlterTableAddColumnPostEvent =
         AlterTableAddColumnPostEvent(sparkSession, carbonTable, alterTableAddColumnsModel)

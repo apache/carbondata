@@ -125,12 +125,10 @@ object CarbonSessionUtil {
    * @param tableIdentifier tableIdentifier for table
    * @param cols            all the column of table, which are updated with datatype change of
    *                        new column name
-   * @param schemaParts     schemaParts
    * @param sparkSession    sparkSession
    */
   def alterExternalCatalogForTableWithUpdatedSchema(tableIdentifier: TableIdentifier,
       cols: Option[Seq[ColumnSchema]],
-      schemaParts: String,
       sparkSession: SparkSession): Unit = {
     val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
     val colArray: scala.collection.mutable.ArrayBuffer[StructField] = ArrayBuffer()

@@ -112,25 +112,6 @@ class CarbonHiveSessionCatalog(
     CarbonSessionCatalogUtil.getClient(sparkSession)
   }
 
-  override def alterAddColumns(tableIdentifier: TableIdentifier,
-      schemaParts: String,
-      cols: Option[Seq[ColumnSchema]]): Unit = {
-    CarbonSessionCatalogUtil.alterAddColumns(tableIdentifier, schemaParts, cols, sparkSession)
-  }
-
-  override def alterDropColumns(tableIdentifier: TableIdentifier,
-      schemaParts: String,
-      cols: Option[Seq[ColumnSchema]]): Unit = {
-    CarbonSessionCatalogUtil.alterDropColumns(tableIdentifier, schemaParts, cols, sparkSession)
-  }
-
-  override def alterColumnChangeDataTypeOrRename(tableIdentifier: TableIdentifier,
-      schemaParts: String,
-      cols: Option[Seq[ColumnSchema]]): Unit = {
-    CarbonSessionCatalogUtil.alterColumnChangeDataTypeOrRename(
-      tableIdentifier, schemaParts, cols, sparkSession)
-  }
-
   /**
    * This is alternate way of getting partition information. It first fetches all partitions from
    * hive and then apply filter instead of querying hive along with filters.
