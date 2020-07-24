@@ -358,10 +358,9 @@ object CarbonIndexUtil {
           tblPropertiesMap.put(property._1, property._2)
         }
       }
-      val (tableIdentifier, schemaParts) = AlterTableUtil.updateSchemaInfo(
+      val tableIdentifier = AlterTableUtil.updateSchemaInfo(
         carbonTable = carbonTable,
         thriftTable = thriftTable)(sparkSession)
-      CarbonSessionCatalogUtil.alterTable(tableIdentifier, schemaParts, None, sparkSession)
       // remove from the cache so that the table will be loaded again with the new table properties
       CarbonInternalMetastore
         .removeTableFromMetadataCache(carbonTable.getDatabaseName, tableName)(sparkSession)

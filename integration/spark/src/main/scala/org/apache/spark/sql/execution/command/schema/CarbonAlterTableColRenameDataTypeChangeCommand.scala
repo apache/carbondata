@@ -313,10 +313,10 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
     } else {
       Some(carbonColumns)
     }
-    val (tableIdentifier, schemaParts) = AlterTableUtil.updateSchemaInfo(
+    val tableIdentifier = AlterTableUtil.updateSchemaInfo(
       carbonTable, schemaEvolutionEntry, tableInfo)(sparkSession)
     CarbonSessionCatalogUtil.alterColumnChangeDataTypeOrRename(
-      tableIdentifier, schemaParts, columns, sparkSession)
+      tableIdentifier, columns, sparkSession)
     sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
   }
 

@@ -69,34 +69,4 @@ trait CarbonSessionCatalog {
       storage: CatalogStorageFormat,
       newTableName: String,
       dbName: String): CatalogStorageFormat
-
-  /**
-   * Below method will be used to add new column
-   * @param tableIdentifier table identifier
-   * @param schemaParts schema parts
-   * @param cols cols
-   */
-  def alterAddColumns(tableIdentifier: TableIdentifier,
-      schemaParts: String,
-      cols: Option[Seq[ColumnSchema]]): Unit
-
-  /**
-   * Below method will be used to drop column
-   * @param tableIdentifier table identifier
-   * @param schemaParts schema parts
-   * @param cols cols
-   */
-  def alterDropColumns(tableIdentifier: TableIdentifier,
-      schemaParts: String,
-      cols: Option[Seq[ColumnSchema]]): Unit
-
-  /**
-   * Below method will be used to alter data type of column in schema
-   * @param tableIdentifier table identifier
-   * @param schemaParts schema parts
-   * @param cols cols
-   */
-  def alterColumnChangeDataTypeOrRename(tableIdentifier: TableIdentifier,
-      schemaParts: String,
-      cols: Option[Seq[ColumnSchema]]): Unit
 }

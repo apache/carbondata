@@ -19,7 +19,9 @@ package org.apache.spark.carbondata.restructure
 
 import java.io.File
 
+import mockit.{Mock, MockUp}
 import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.hive.MockClassForAlterRevertTests
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -30,6 +32,13 @@ import org.apache.carbondata.spark.exception.ProcessMetaDataException
 class AlterTableRevertTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll() {
+    new MockUp[MockClassForAlterRevertTests]() {
+      @Mock
+      @throws[ProcessMetaDataException]
+      def mockForAlterRevertTest(): Unit = {
+        throw new ProcessMetaDataException("default", "reverttest", "thrown in mock")
+      }
+    }
     sql("drop table if exists reverttest")
     sql(
       "CREATE TABLE reverttest(intField int,stringField string,timestampField timestamp," +
@@ -40,11 +49,9 @@ class AlterTableRevertTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test to revert new added columns on failure") {
     intercept[ProcessMetaDataException] {
-      hiveClient.runSqlHive("set hive.security.authorization.enabled=true")
       sql(
         "Alter table reverttest add columns(newField string) TBLPROPERTIES" +
         "('DEFAULT.VALUE.newField'='def')")
-      hiveClient.runSqlHive("set hive.security.authorization.enabled=false")
       intercept[AnalysisException] {
         sql("select newField from reverttest")
       }
@@ -64,18 +71,14 @@ class AlterTableRevertTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test to revert drop columns on failure") {
     intercept[ProcessMetaDataException] {
-      hiveClient.runSqlHive("set hive.security.authorization.enabled=true")
       sql("Alter table reverttest drop columns(decimalField)")
-      hiveClient.runSqlHive("set hive.security.authorization.enabled=false")
     }
     assert(sql("select decimalField from reverttest").count().equals(1L))
   }
 
   test("test to revert changed datatype on failure") {
     intercept[ProcessMetaDataException] {
-      hiveClient.runSqlHive("set hive.security.authorization.enabled=true")
       sql("Alter table reverttest change intField intfield bigint")
-      hiveClient.runSqlHive("set hive.security.authorization.enabled=false")
     }
     assert(
       sql("select intfield from reverttest").schema.fields.apply(0).dataType.simpleString == "int")
@@ -83,11 +86,9 @@ class AlterTableRevertTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test to check if dictionary files are deleted for new column if query fails") {
     intercept[ProcessMetaDataException] {
-      hiveClient.runSqlHive("set hive.security.authorization.enabled=true")
       sql(
         "Alter table reverttest add columns(newField string) TBLPROPERTIES" +
         "('DEFAULT.VALUE.newField'='def')")
-      hiveClient.runSqlHive("set hive.security.authorization.enabled=false")
       intercept[AnalysisException] {
         sql("select newField from reverttest")
       }
@@ -98,7 +99,11 @@ class AlterTableRevertTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll() {
-    hiveClient.runSqlHive("set hive.security.authorization.enabled=false")
+    new MockUp[MockClassForAlterRevertTests]() {
+      @Mock
+      def mockForAlterRevertTest(): Unit = {
+      }
+    }
     sql("drop table if exists reverttest")
     sql("drop table if exists reverttest_fail")
   }

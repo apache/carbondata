@@ -61,21 +61,6 @@ object CarbonSessionCatalogUtil {
       s"'dbName'='${ newTableIdentifier.database.get }', 'tablePath'='${ newTablePath }')")
   }
 
-  /**
-   * Below method will be used to update serde properties
-   * @param tableIdentifier table identifier
-   * @param schemaParts schema parts
-   * @param cols cols
-   */
-  def alterTable(tableIdentifier: TableIdentifier,
-      schemaParts: String,
-      cols: Option[Seq[ColumnSchema]],
-      sparkSession: SparkSession): Unit = {
-    getClient(sparkSession)
-      .runSqlHive(s"ALTER TABLE `${tableIdentifier.database.get}`.`${tableIdentifier.table}` " +
-                  s"SET TBLPROPERTIES($schemaParts)")
-  }
-
   def alterTableProperties(
       sparkSession: SparkSession,
       tableIdentifier: TableIdentifier,
@@ -85,11 +70,11 @@ object CarbonSessionCatalogUtil {
     val catalog = sparkSession.sessionState.catalog
     val table = catalog.getTableMetadata(tableIdentifier)
     var newProperties = table.storage.properties
-    if (!propKeys.isEmpty) {
+    if (propKeys.nonEmpty) {
       val updatedPropKeys = propKeys.map(_.toLowerCase)
       newProperties = newProperties.filter { case (k, _) => !updatedPropKeys.contains(k) }
     }
-    if (!properties.isEmpty) {
+    if (properties.nonEmpty) {
       newProperties = newProperties ++ CarbonSparkSqlParserUtil.normalizeProperties(properties)
     }
     val newTable = table.copy(
@@ -113,21 +98,18 @@ object CarbonSessionCatalogUtil {
   }
 
   def alterAddColumns(tableIdentifier: TableIdentifier,
-      schemaParts: String,
       cols: Option[Seq[ColumnSchema]], sparkSession: SparkSession): Unit = {
-    updateCatalogTableForAlter(tableIdentifier, schemaParts, cols, sparkSession)
+    updateCatalogTableForAlter(tableIdentifier, cols, sparkSession)
   }
 
   def alterDropColumns(tableIdentifier: TableIdentifier,
-      schemaParts: String,
       cols: Option[Seq[ColumnSchema]], sparkSession: SparkSession): Unit = {
-    updateCatalogTableForAlter(tableIdentifier, schemaParts, cols, sparkSession)
+    updateCatalogTableForAlter(tableIdentifier, cols, sparkSession)
   }
 
   def alterColumnChangeDataTypeOrRename(tableIdentifier: TableIdentifier,
-      schemaParts: String,
       cols: Option[Seq[ColumnSchema]], sparkSession: SparkSession): Unit = {
-    updateCatalogTableForAlter(tableIdentifier, schemaParts, cols, sparkSession)
+    updateCatalogTableForAlter(tableIdentifier, cols, sparkSession)
   }
 
   /**
@@ -135,16 +117,14 @@ object CarbonSessionCatalogUtil {
    * schema for all the alter operations like add column, drop column, change datatype or rename
    * column
    * @param tableIdentifier
-   * @param schemaParts
    * @param cols
    */
   private def updateCatalogTableForAlter(tableIdentifier: TableIdentifier,
-      schemaParts: String,
       cols: Option[Seq[ColumnSchema]],
       sparkSession: SparkSession): Unit = {
-    alterTable(tableIdentifier, schemaParts, cols, sparkSession)
+    new MockClassForAlterRevertTests().mockForAlterRevertTest()
     CarbonSessionUtil.alterExternalCatalogForTableWithUpdatedSchema(
-      tableIdentifier, cols, schemaParts, sparkSession)
+      tableIdentifier, cols, sparkSession)
   }
 
   /**
@@ -171,5 +151,11 @@ object CarbonSessionCatalogUtil {
       newTableName: String,
       dbName: String): CatalogStorageFormat = {
     storage.copy(locationUri = Some(path.toUri))
+  }
+}
+
+// This class is a dummy class to test the alter table scenarios in failure cases.
+class MockClassForAlterRevertTests {
+  def mockForAlterRevertTest(): Unit = {
   }
 }

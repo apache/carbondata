@@ -196,7 +196,7 @@ object AlterTableUtil {
   def updateSchemaInfo(carbonTable: CarbonTable,
       schemaEvolutionEntry: SchemaEvolutionEntry = null,
       thriftTable: TableInfo)
-    (sparkSession: SparkSession): (TableIdentifier, String) = {
+    (sparkSession: SparkSession): TableIdentifier = {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getTableName
     CarbonEnv.getInstance(sparkSession).carbonMetaStore
@@ -206,35 +206,9 @@ object AlterTableUtil {
         schemaEvolutionEntry,
         carbonTable.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
     val tableIdentifier = TableIdentifier(tableName, Some(dbName))
-    sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
-    val schema = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-      .lookupRelation(tableIdentifier)(sparkSession).schema.json
-    val schemaParts = prepareSchemaJsonForAlterTable(sparkSession.sparkContext.getConf, schema)
-    (tableIdentifier, schemaParts)
-  }
-
-  /**
-   * This method will split schema string into multiple parts of configured size and
-   * registers the parts as keys in tableProperties which will be read by spark to prepare
-   * Carbon Table fields
-   *
-   * @param sparkConf
-   * @param schemaJsonString
-   * @return
-   */
-  def prepareSchemaJsonForAlterTable(sparkConf: SparkConf,
-      schemaJsonString: String): String = {
-    val threshold = sparkConf
-      .getInt(CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD,
-        CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT)
-    // Split the JSON string.
-    val parts = schemaJsonString.grouped(threshold).toSeq
-    var schemaParts: Seq[String] = Seq.empty
-    schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_NUMPARTS'='${ parts.size }'"
-    parts.zipWithIndex.foreach { case (part, index) =>
-      schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_PART_PREFIX$index'='$part'"
-    }
-    schemaParts.mkString(",")
+    CarbonEnv.getInstance(sparkSession).carbonMetaStore
+      .lookupRelation(tableIdentifier)(sparkSession)
+    tableIdentifier
   }
 
   /**
@@ -522,11 +496,10 @@ object AlterTableUtil {
         // check if duplicate columns are present in both local dictionary include and exclude
         CarbonScalaUtil.validateDuplicateColumnsForLocalDict(tblPropertiesMap)
       }
-      val (tableIdentifier, schemaParts) = updateSchemaInfo(
+      val tableIdentifier = updateSchemaInfo(
         carbonTable = carbonTable,
         schemaEvolutionEntry,
         thriftTable = thriftTable)(sparkSession)
-      CarbonSessionCatalogUtil.alterTable(tableIdentifier, schemaParts, None, sparkSession)
       CarbonSessionCatalogUtil.alterTableProperties(
         sparkSession, tableIdentifier, lowerCasePropertiesMap.toMap, propKeys)
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
