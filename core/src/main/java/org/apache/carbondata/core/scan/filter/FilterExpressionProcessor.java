@@ -19,7 +19,6 @@ package org.apache.carbondata.core.scan.filter;
 
 import java.util.BitSet;
 
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -46,8 +45,6 @@ import org.apache.carbondata.core.scan.filter.resolver.RowLevelFilterResolverImp
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelRangeFilterResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.FalseConditionalResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.TrueConditionalResolverImpl;
-
-import org.apache.log4j.Logger;
 
 public class FilterExpressionProcessor implements FilterProcessor {
   /**
