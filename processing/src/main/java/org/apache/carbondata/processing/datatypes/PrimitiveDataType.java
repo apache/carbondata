@@ -40,7 +40,6 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.converter.impl.binary.BinaryDecoder;
 import org.apache.carbondata.processing.loading.dictionary.DirectDictionary;
-import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
@@ -301,8 +300,10 @@ public class PrimitiveDataType implements GenericDataType<Object> {
           }
           if (this.carbonDimension.getDataType() == DataTypes.STRING
               && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
-            throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
-                + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+            logHolder.setReason(String.format(CarbonCommonConstants.STRING_LENGTH_EXCEEDED_MESSAGE,
+                input.toString(), this.carbonDimension.getColName()));
+            updateNullValue(dataOutputStream, logHolder);
+            return;
           }
         }
         updateValueToByteStream(dataOutputStream, value);
@@ -336,15 +337,19 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     if (isWithoutConverter) {
       if (this.carbonDimension.getDataType() == DataTypes.STRING && input instanceof String
           && ((String)input).length() > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
-        throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
-            + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+        logHolder.setReason(String.format(CarbonCommonConstants.STRING_LENGTH_EXCEEDED_MESSAGE,
+            input.toString(), this.carbonDimension.getColName()));
+        updateNullValue(dataOutputStream, logHolder);
+        return;
       }
       updateValueToByteStream(dataOutputStream, value);
     } else {
       if (this.carbonDimension.getDataType() == DataTypes.STRING
           && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
-        throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
-            + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+        logHolder.setReason(String.format(CarbonCommonConstants.STRING_LENGTH_EXCEEDED_MESSAGE,
+            input.toString(), this.carbonDimension.getColName()));
+        updateNullValue(dataOutputStream, logHolder);
+        return;
       }
       if (parsedValue.length() > 0) {
         updateValueToByteStream(dataOutputStream,

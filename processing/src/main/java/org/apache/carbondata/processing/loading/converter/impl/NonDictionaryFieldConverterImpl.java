@@ -82,10 +82,8 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
               .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType, dateFormat);
           if (dataType == DataTypes.STRING
               && parsedValue.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
-            throw new CarbonDataLoadingException(String.format(
-                "Dataload failed, String size cannot exceed %d bytes,"
-                    + " please consider long string data type",
-                CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT));
+            logHolder.setReason(CarbonCommonConstants.STRING_LENGTH_EXCEEDED_MESSAGE);
+            return getNullValue();
           }
           return parsedValue;
         } else {
@@ -93,10 +91,8 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
               .getDataDataTypeForNoDictionaryColumn(dimensionValue, dataType, dateFormat);
           if (dataType == DataTypes.STRING && parsedValue.toString().length()
               > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
-            throw new CarbonDataLoadingException(String.format(
-                "Dataload failed, String size cannot exceed %d bytes,"
-                    + " please consider long string data type",
-                CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT));
+            logHolder.setReason(CarbonCommonConstants.STRING_LENGTH_EXCEEDED_MESSAGE);
+            return getNullValue();
           }
           return parsedValue;
         }
