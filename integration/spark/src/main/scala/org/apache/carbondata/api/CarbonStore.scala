@@ -125,6 +125,7 @@ object CarbonStore {
     if (dir.exists()) {
       // 1. List all files in the stage dictionary.
       val allFiles = dir.listFiles()
+      val allFileNames = allFiles.map(file => file.getName)
 
       // 2. Get StageFile list.
       // Firstly, get the stage files in the stage dictionary.
@@ -135,17 +136,17 @@ object CarbonStore {
       }.filterNot { file =>
         file.getName.endsWith(CarbonTablePath.LOADING_FILE_SUFFIX)
       }.filter { file =>
-        allFiles.contains(file.getName + CarbonTablePath.SUCCESS_FILE_SUFFIX)
+        allFileNames.contains(file.getName + CarbonTablePath.SUCCESS_FILE_SUFFIX)
       }.sortWith {
         (file1, file2) => file1.getLastModifiedTime > file2.getLastModifiedTime
       }
       // 3. Get the unloaded stage files, which haven't loading tag.
       val unloadedFiles = stageFiles.filterNot { file =>
-        allFiles.contains(file.getName + CarbonTablePath.LOADING_FILE_SUFFIX)
+        allFileNames.contains(file.getName + CarbonTablePath.LOADING_FILE_SUFFIX)
       }
       // 4. Get the loading stage files, which have loading tag.
       val loadingFiles = stageFiles.filter { file =>
-        allFiles.contains(file.getName + CarbonTablePath.LOADING_FILE_SUFFIX)
+        allFileNames.contains(file.getName + CarbonTablePath.LOADING_FILE_SUFFIX)
       }
       (unloadedFiles, loadingFiles)
     } else {

@@ -83,6 +83,7 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
       // 1. Test "SHOW SEGMENT ON $tableanme WITH STAGE"
       var rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE").collect()
       var unloadedStageCount = CarbonStore.listStageFiles(tableStagePath)._1.length
+      assert(unloadedStageCount > 0)
       assert(rows.length == unloadedStageCount)
       for (index <- 0 until unloadedStageCount) {
         assert(rows(index).getString(0) == null)
@@ -98,6 +99,7 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
 
       // 2. Test "SHOW SEGMENT FOR TABLE $tableanme"
       val rowsfortable = sql(s"SHOW SEGMENTS FOR TABLE $tableName WITH STAGE").collect()
+      assert(rowsfortable.length > 0)
       assert(rowsfortable.length == rows.length)
       for (index <- 0 until unloadedStageCount) {
         assert(rows(index).toString() == rowsfortable(index).toString())
@@ -106,6 +108,7 @@ class TestCarbonPartitionWriter extends QueryTest with BeforeAndAfterAll{
       // 3. Test "SHOW SEGMENT ON $tableanme WITH STAGE AS (QUERY)"
       rows = sql(s"SHOW SEGMENTS ON $tableName WITH STAGE AS " +
         s"(SELECT * FROM $tableName" + "_segments)").collect()
+      assert(rows.length > 0)
       for (index <- 0 until unloadedStageCount) {
         val row = rows(index)
         assert(rows(index).getString(0) == null)
