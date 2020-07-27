@@ -75,10 +75,10 @@ object CarbonScalaUtil {
         carbonLoadModel.getBinaryDecoder)
     } catch {
       case e: Exception =>
-        if (e.getMessage.startsWith(FieldConverter.stringLengthExceedErrorMsg)) {
-          val msg = s"Column ${carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-            .getCreateOrderColumn.get(idx).getColName} is too long," +
-            s" consider to use 'long_string_columns' table property."
+        if (e.getMessage.startsWith(CarbonCommonConstants.STRING_LENGTH_EXCEEDED_MESSAGE)) {
+          val msg = CarbonCommonConstants.STRING_LENGTH_EXCEEDED_MESSAGE.format(row,
+              carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCreateOrderColumn
+                .get(idx).getColName)
           LOGGER.error(msg, e)
           throw new Exception(msg, e)
         } else {

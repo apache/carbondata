@@ -194,11 +194,10 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     // query should pass
     checkAnswer(sql("select * from testlongstring"),
       Seq(Row(1, "ab", "cool"), Row(1, "ab1", longChar), Row(1, "abc", longChar)))
-    // insert long string should fail as unset is done
-    val e = intercept[Exception] {
-      sql(s""" insert into testlongstring select 1, 'abc', '$longChar'""")
-    }
-    assert(e.getMessage.contains("DataLoad failure: Column description is too long"))
+    // insert long string will be handled as bad record as unset is done
+    sql(s""" insert into testlongstring select 1, 'abc', '$longChar'""")
+    checkAnswer(sql("select * from testlongstring"),
+      Seq(Row(1, "ab", "cool"), Row(1, "ab1", longChar), Row(1, "abc", longChar), Row(1, "abc", null)))
     sql("ALTER TABLE testlongstring SET TBLPROPERTIES('long_String_columns'='description')")
     sql(s""" insert into testlongstring select 1, 'ab1', '$longChar'""")
     sql("drop table if exists testlongstring")

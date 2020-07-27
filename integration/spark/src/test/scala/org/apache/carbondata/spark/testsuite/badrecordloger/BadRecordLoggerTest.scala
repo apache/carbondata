@@ -17,17 +17,13 @@
 
 package org.apache.carbondata.spark.testsuite.badrecordloger
 
-import java.io.{File, FileFilter}
-
-import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.{CarbonCommonConstants}
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.util.BadRecordUtil
 import org.apache.spark.sql.test.util.QueryTest
-
-import org.apache.carbondata.core.datastore.impl.FileFactory
 
 /**
  * Test Class for detailed query on timestamp datatypes
@@ -247,7 +243,7 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("validate redirected data") {
-    cleanBadRecordPath("default", "sales_test")
+    BadRecordUtil.cleanBadRecordPath("default", "sales_test")
     val csvFilePath = s"$resourcesPath/badrecords/datasample.csv"
     sql(
       """CREATE TABLE IF NOT EXISTS sales_test(ID BigInt, date long, country int,
@@ -264,8 +260,8 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
         assert(true)
       }
     }
-    val redirectCsvPath = getRedirectCsvPath("default", "sales_test", "0", "0")
-    assert(checkRedirectedCsvContentAvailableInSource(csvFilePath, redirectCsvPath))
+    val redirectCsvPath = BadRecordUtil.getRedirectCsvPath("default", "sales_test", "0", "0")
+    assert(BadRecordUtil.checkRedirectedCsvContentAvailableInSource(csvFilePath, redirectCsvPath))
   }
 
   test("test load ddl command with improper value") {
@@ -301,44 +297,6 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
     } finally {
       sql("drop table IF EXISTS dataLoadOptionTests")
     }
-  }
-
-  def getRedirectCsvPath(dbName: String, tableName: String, segment: String, task: String) = {
-    var badRecordLocation = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC)
-    badRecordLocation = badRecordLocation + "/" + dbName + "/" + tableName + "/" + segment + "/" +
-                        task
-    val listFiles = new File(badRecordLocation).listFiles(new FileFilter {
-      override def accept(pathname: File): Boolean = {
-        pathname.getPath.endsWith(".csv")
-      }
-    })
-    listFiles(0)
-  }
-
-  /**
-   *
-   * @param csvFilePath
-   * @param redirectCsvPath
-   */
-  def checkRedirectedCsvContentAvailableInSource(csvFilePath: String,
-      redirectCsvPath: File): Boolean = {
-    val origFileLineList = FileUtils.readLines(new File(csvFilePath))
-    val redirectedFileLineList = FileUtils.readLines(redirectCsvPath)
-    val iterator = redirectedFileLineList.iterator()
-    while (iterator.hasNext) {
-      if (!origFileLineList.contains(iterator.next())) {
-        return false;
-      }
-    }
-    return true
-  }
-
-  def cleanBadRecordPath(dbName: String, tableName: String) = {
-    var badRecordLocation = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC)
-    badRecordLocation = badRecordLocation + "/" + dbName + "/" + tableName
-    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(badRecordLocation))
   }
 
   override def afterAll {
