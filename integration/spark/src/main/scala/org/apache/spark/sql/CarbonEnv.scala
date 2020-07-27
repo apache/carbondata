@@ -19,6 +19,7 @@ package org.apache.spark.sql
 
 import java.util.concurrent.ConcurrentHashMap
 
+import org.apache.spark.internal.config.ConfigEntry
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
@@ -113,12 +114,8 @@ class CarbonEnv {
     ThreadLocalSessionInfo.setCarbonSessionInfo(threadLevelCarbonSessionInfo)
     ThreadLocalSessionInfo.setConfigurationToCurrentThread(
       sparkSession.sessionState.newHadoopConf())
-    val config = new CarbonSQLConf(sparkSession)
-    if (sparkSession.conf.getOption(CarbonCommonConstants.ENABLE_UNSAFE_SORT).isEmpty) {
-      config.addDefaultCarbonParams()
-    }
-    // add session params after adding DefaultCarbonParams
-    config.addDefaultCarbonSessionParams()
+    // add default dynamic session params
+    CarbonSQLConf.addDefaultSessionParams(sparkSession);
     carbonMetaStore = {
       // trigger event for CarbonEnv create
       val operationContext = new OperationContext
