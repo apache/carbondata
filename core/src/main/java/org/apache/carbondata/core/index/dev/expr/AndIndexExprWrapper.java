@@ -59,22 +59,14 @@ public class AndIndexExprWrapper extends IndexExprWrapper {
         right.prune(distributable, partitionsToPrune));
   }
 
-  private List<ExtendedBlocklet> and(List<ExtendedBlocklet> leftPrune,
-      List<ExtendedBlocklet> rightPrune) {
-    List<ExtendedBlocklet> andBlocklets = new ArrayList<>();
-    for (ExtendedBlocklet blocklet : leftPrune) {
-      if (rightPrune.contains(blocklet)) {
-        andBlocklets.add(blocklet);
-      }
-    }
-    return andBlocklets;
-  }
-
   @Override
   public List<ExtendedBlocklet> pruneBlocklets(List<ExtendedBlocklet> blocklets)
       throws IOException {
-    List<ExtendedBlocklet> leftPrune = left.pruneBlocklets(blocklets);
-    List<ExtendedBlocklet> rightPrune = right.pruneBlocklets(blocklets);
+    return and(left.pruneBlocklets(blocklets), right.pruneBlocklets(blocklets));
+  }
+
+  private List<ExtendedBlocklet> and(List<ExtendedBlocklet> leftPrune,
+      List<ExtendedBlocklet> rightPrune) {
     List<ExtendedBlocklet> andBlocklets = new ArrayList<>();
     for (ExtendedBlocklet blocklet : leftPrune) {
       if (rightPrune.contains(blocklet)) {

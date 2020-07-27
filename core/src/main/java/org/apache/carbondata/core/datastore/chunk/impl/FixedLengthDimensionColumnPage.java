@@ -131,9 +131,8 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
           } else if (dataType == DataTypes.LONG) {
             vector.putLong(vectorOffset++, (long) valueFromSurrogate);
           } else {
-            throw new IllegalArgumentException(
-                "unsupported data type: " + columnVectorInfo.directDictionaryGenerator
-                    .getReturnType());
+            throw new IllegalArgumentException("unsupported data type: " +
+                columnVectorInfo.directDictionaryGenerator.getReturnType());
           }
         }
       }
