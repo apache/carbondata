@@ -198,11 +198,11 @@ public class TableSpec {
    */
   public DimensionSpec[] getNoDictAndComplexDimensions() {
     List<DimensionSpec> noDictAndComplexDimensions = new ArrayList<>();
-    for (int i = 0; i < dimensionSpec.length; i++) {
-      if (dimensionSpec[i].getColumnType() == ColumnType.PLAIN_VALUE
-          || dimensionSpec[i].getColumnType() == ColumnType.COMPLEX_PRIMITIVE
-          || dimensionSpec[i].getColumnType() == ColumnType.COMPLEX) {
-        noDictAndComplexDimensions.add(dimensionSpec[i]);
+    for (DimensionSpec spec : dimensionSpec) {
+      if (spec.getColumnType() == ColumnType.PLAIN_VALUE
+          || spec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE
+          || spec.getColumnType() == ColumnType.COMPLEX) {
+        noDictAndComplexDimensions.add(spec);
       }
     }
     return noDictAndComplexDimensions.toArray(new DimensionSpec[noDictAndComplexDimensions.size()]);

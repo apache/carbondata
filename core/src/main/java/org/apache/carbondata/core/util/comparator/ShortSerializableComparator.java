@@ -27,12 +27,6 @@ public class ShortSerializableComparator implements SerializableComparator {
     } else if (key2 == null) {
       return 1;
     }
-    if ((short) key1 < (short) key2) {
-      return -1;
-    } else if ((short) key1 > (short) key2) {
-      return 1;
-    } else {
-      return 0;
-    }
+    return Short.compare((short) key1, (short) key2);
   }
 }

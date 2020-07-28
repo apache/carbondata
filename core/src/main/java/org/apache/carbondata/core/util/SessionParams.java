@@ -195,14 +195,10 @@ public class SessionParams implements Serializable, Cloneable {
         }
         break;
       // no validation needed while set for CARBON_OPTIONS_DATEFORMAT
-      case CARBON_OPTIONS_DATEFORMAT:
-        isValid = true;
-        break;
       // no validation needed while set for CARBON_OPTIONS_TIMESTAMPFORMAT
-      case CARBON_OPTIONS_TIMESTAMPFORMAT:
-        isValid = true;
-        break;
       // no validation needed while set for CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT
+      case CARBON_OPTIONS_DATEFORMAT:
+      case CARBON_OPTIONS_TIMESTAMPFORMAT:
       case CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT:
         isValid = true;
         break;

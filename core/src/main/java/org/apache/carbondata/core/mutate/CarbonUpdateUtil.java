@@ -364,9 +364,7 @@ public class CarbonUpdateUtil {
       // deleting the files of a segment.
       try {
         CarbonUtil.deleteFoldersAndFilesSilent(toBeDeleted);
-      } catch (IOException e) {
-        LOGGER.error("Exception in deleting the delta files." + e);
-      } catch (InterruptedException e) {
+      } catch (IOException | InterruptedException e) {
         LOGGER.error("Exception in deleting the delta files." + e);
       }
     }
@@ -449,11 +447,7 @@ public class CarbonUpdateUtil {
       CarbonFile[] carbonDataFiles = segmentDir.listFiles(new CarbonFileFilter() {
         @Override
         public boolean accept(CarbonFile file) {
-
-          if (file.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
-            return true;
-          }
-          return false;
+          return file.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
         }
       });
       for (CarbonFile carbonDataFile : carbonDataFiles) {
@@ -710,9 +704,7 @@ public class CarbonUpdateUtil {
           try {
             LOGGER.info("Deleting the invalid file : " + file.getName());
             CarbonUtil.deleteFoldersAndFiles(file);
-          } catch (IOException e) {
-            LOGGER.error("Error in clean up of merged files." + e.getMessage(), e);
-          } catch (InterruptedException e) {
+          } catch (IOException | InterruptedException e) {
             LOGGER.error("Error in clean up of merged files." + e.getMessage(), e);
           }
         }

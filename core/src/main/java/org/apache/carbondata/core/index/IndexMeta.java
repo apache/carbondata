@@ -78,7 +78,7 @@ public class IndexMeta {
     return new StringBuilder("IndexMeta{")
         .append("indexName='").append(indexName).append('\'')
         .append(", indexedColumns=[")
-        .append(StringUtils.join(getIndexedColumnNames(), ", ")).append("]\'")
+        .append(StringUtils.join(getIndexedColumnNames(), ", ")).append("]'")
         .append(", optimizedOperation=").append(optimizedOperation)
         .append('}')
         .toString();

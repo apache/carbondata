@@ -142,7 +142,7 @@ public class BlockIndex extends CoarseGrainIndex
     } else {
       filePath = new byte[0];
     }
-    byte[] fileName = path.substring(path.lastIndexOf("/") + 1, path.length())
+    byte[] fileName = path.substring(path.lastIndexOf("/") + 1)
         .getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
     byte[] segmentId =
         blockletIndexModel.getSegmentId().getBytes(CarbonCommonConstants.DEFAULT_CHARSET);
@@ -568,10 +568,7 @@ public class BlockIndex extends CoarseGrainIndex
         .isScanRequired(filterExecutor, getMinMaxValue(unsafeRow, TASK_MAX_VALUES_INDEX),
             getMinMaxValue(unsafeRow, TASK_MIN_VALUES_INDEX),
             getMinMaxFlag(unsafeRow, TASK_MIN_MAX_FLAG));
-    if (isScanRequired) {
-      return true;
-    }
-    return false;
+    return isScanRequired;
   }
 
   protected List<CarbonColumn> getMinMaxCacheColumns() {
@@ -815,11 +812,7 @@ public class BlockIndex extends CoarseGrainIndex
     } else {
       bitSet = filterExecutor.isScanRequired(maxValue, minValue, minMaxFlag);
     }
-    if (!bitSet.isEmpty()) {
-      return true;
-    } else {
-      return false;
-    }
+    return !bitSet.isEmpty();
   }
 
   public ExtendedBlocklet getDetailedBlocklet(String blockletId) {

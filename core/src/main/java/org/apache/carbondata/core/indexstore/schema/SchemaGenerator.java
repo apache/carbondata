@@ -90,47 +90,41 @@ public class SchemaGenerator {
     int currentSize;
     int bytePosition = 0;
     // First assign byte position to all the fixed length schema
-    for (int i = 0; i < schema.length; i++) {
-      switch (schema[i].getSchemaType()) {
-        case STRUCT:
-          CarbonRowSchema[] childSchemas =
-              ((CarbonRowSchema.StructCarbonRowSchema) schema[i]).getChildSchemas();
-          for (int j = 0; j < childSchemas.length; j++) {
-            currentSize = getSchemaSize(childSchemas[j]);
-            if (currentSize != -1) {
-              childSchemas[j].setBytePosition(bytePosition);
-              bytePosition += currentSize;
-            }
-          }
-          break;
-        default:
-          currentSize = getSchemaSize(schema[i]);
+    for (CarbonRowSchema carbonRowSchema : schema) {
+      if (carbonRowSchema.getSchemaType() == CarbonRowSchema.IndexSchemaType.STRUCT) {
+        CarbonRowSchema[] childSchemas =
+            ((CarbonRowSchema.StructCarbonRowSchema) carbonRowSchema).getChildSchemas();
+        for (CarbonRowSchema childSchema : childSchemas) {
+          currentSize = getSchemaSize(childSchema);
           if (currentSize != -1) {
-            schema[i].setBytePosition(bytePosition);
+            childSchema.setBytePosition(bytePosition);
             bytePosition += currentSize;
           }
-          break;
+        }
+      } else {
+        currentSize = getSchemaSize(carbonRowSchema);
+        if (currentSize != -1) {
+          carbonRowSchema.setBytePosition(bytePosition);
+          bytePosition += currentSize;
+        }
       }
     }
     // adding byte position for storing offset in case of variable length columns
-    for (int i = 0; i < schema.length; i++) {
-      switch (schema[i].getSchemaType()) {
-        case STRUCT:
-          CarbonRowSchema[] childSchemas =
-              ((CarbonRowSchema.StructCarbonRowSchema) schema[i]).getChildSchemas();
-          for (int j = 0; j < childSchemas.length; j++) {
-            if (childSchemas[j].getBytePosition() == -1) {
-              childSchemas[j].setBytePosition(bytePosition);
-              bytePosition += CarbonCommonConstants.INT_SIZE_IN_BYTE;
-            }
-          }
-          break;
-        default:
-          if (schema[i].getBytePosition() == -1) {
-            schema[i].setBytePosition(bytePosition);
+    for (CarbonRowSchema carbonRowSchema : schema) {
+      if (carbonRowSchema.getSchemaType() == CarbonRowSchema.IndexSchemaType.STRUCT) {
+        CarbonRowSchema[] childSchemas =
+            ((CarbonRowSchema.StructCarbonRowSchema) carbonRowSchema).getChildSchemas();
+        for (CarbonRowSchema childSchema : childSchemas) {
+          if (childSchema.getBytePosition() == -1) {
+            childSchema.setBytePosition(bytePosition);
             bytePosition += CarbonCommonConstants.INT_SIZE_IN_BYTE;
           }
-          break;
+        }
+      } else {
+        if (carbonRowSchema.getBytePosition() == -1) {
+          carbonRowSchema.setBytePosition(bytePosition);
+          bytePosition += CarbonCommonConstants.INT_SIZE_IN_BYTE;
+        }
       }
     }
   }

@@ -31,8 +31,8 @@ public final class UnBlockIndexer {
     if (indexMap.length == 0) {
       return indexData;
     }
-    for (int i = 0; i < mapLength; i++) {
-      actualSize += indexData[indexMap[i] + 1] - indexData[indexMap[i]] - 1;
+    for (int value : indexMap) {
+      actualSize += indexData[value + 1] - indexData[value] - 1;
     }
     int[] indexes = new int[actualSize];
     int k = 0;

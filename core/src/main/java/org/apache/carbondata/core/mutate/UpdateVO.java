@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.mutate;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * VO class for storing details related to Update operation.
@@ -62,20 +63,13 @@ public class UpdateVO implements Serializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     UpdateVO updateVO = (UpdateVO) o;
-    if (factTimestamp != null ?
-        !factTimestamp.equals(updateVO.factTimestamp) :
-        updateVO.factTimestamp != null) {
+    if (!Objects.equals(factTimestamp, updateVO.factTimestamp)) {
       return false;
     }
-    if (updateDeltaStartTimestamp != null ?
-        !updateDeltaStartTimestamp.equals(updateVO.updateDeltaStartTimestamp) :
-        updateVO.updateDeltaStartTimestamp != null) {
+    if (!Objects.equals(updateDeltaStartTimestamp, updateVO.updateDeltaStartTimestamp)) {
       return false;
     }
-    return latestUpdateTimestamp != null ?
-        latestUpdateTimestamp.equals(updateVO.latestUpdateTimestamp) :
-        updateVO.latestUpdateTimestamp == null;
-
+    return Objects.equals(latestUpdateTimestamp, updateVO.latestUpdateTimestamp);
   }
 
   @Override

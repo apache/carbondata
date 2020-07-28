@@ -22,7 +22,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -306,7 +305,7 @@ public class CarbonTable implements Serializable, Writable {
       }
     }
     columns.addAll(visibleMeasures);
-    Collections.sort(columns, new Comparator<CarbonColumn>() {
+    columns.sort(new Comparator<CarbonColumn>() {
 
       @Override
       public int compare(CarbonColumn o1, CarbonColumn o2) {
@@ -638,9 +637,7 @@ public class CarbonTable implements Serializable, Writable {
    */
   public CarbonColumn getColumnByName(String columnName) {
     List<CarbonColumn> columns = createOrderColumn;
-    Iterator<CarbonColumn> colItr = columns.iterator();
-    while (colItr.hasNext()) {
-      CarbonColumn col = colItr.next();
+    for (CarbonColumn col : columns) {
       if (col.getColName().equalsIgnoreCase(columnName)) {
         return col;
       }
@@ -722,15 +719,11 @@ public class CarbonTable implements Serializable, Writable {
   public String getBucketHashMethod() {
     String configuredMethod = tableInfo.getFactTable().getTableProperties()
         .get(CarbonCommonConstants.BUCKET_HASH_METHOD);
-    if (configuredMethod == null) {
-      return CarbonCommonConstants.BUCKET_HASH_METHOD_DEFAULT;
-    } else {
-      if (CarbonCommonConstants.BUCKET_HASH_METHOD_NATIVE.equals(configuredMethod)) {
-        return CarbonCommonConstants.BUCKET_HASH_METHOD_NATIVE;
-      }
-      // by default we use spark_hash_expression hash method
-      return CarbonCommonConstants.BUCKET_HASH_METHOD_DEFAULT;
+    if (CarbonCommonConstants.BUCKET_HASH_METHOD_NATIVE.equals(configuredMethod)) {
+      return CarbonCommonConstants.BUCKET_HASH_METHOD_NATIVE;
     }
+    // by default we use spark_hash_expression hash method
+    return CarbonCommonConstants.BUCKET_HASH_METHOD_DEFAULT;
   }
 
   /**

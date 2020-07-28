@@ -136,10 +136,8 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         }
         if (DataTypes.isDecimal(meta.getSchemaDataType())) {
           TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
-          DecimalConverterFactory.DecimalConverter decimalConverter =
-              DecimalConverterFactory.INSTANCE
-                  .getDecimalConverter(columnSpec.getPrecision(), columnSpec.getScale());
-          vectorInfo.decimalConverter = decimalConverter;
+          vectorInfo.decimalConverter = DecimalConverterFactory.INSTANCE
+              .getDecimalConverter(columnSpec.getPrecision(), columnSpec.getScale());
         }
         converter.decodeAndFillVector(unCompressData, vectorInfo, nullBits, meta.getStoreDataType(),
             pageSize);
@@ -200,7 +198,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       } else if (targetDataType == DataTypes.INT) {
         encodedPage.putInt(rowId, (int) value);
       } else if (targetDataType == DataTypes.LONG) {
-        encodedPage.putLong(rowId, (long) value);
+        encodedPage.putLong(rowId, value);
       } else {
         throw new RuntimeException("internal error: " + debugInfo());
       }
@@ -311,11 +309,11 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
         if (vectorDataType == DataTypes.SHORT) {
           for (int i = 0; i < pageSize; i++) {
-            vector.putShort(i, (short) pageData[i]);
+            vector.putShort(i, pageData[i]);
           }
         } else if (vectorDataType == DataTypes.INT) {
           for (int i = 0; i < pageSize; i++) {
-            vector.putInt(i, (int) pageData[i]);
+            vector.putInt(i, pageData[i]);
           }
         } else if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {

@@ -189,7 +189,7 @@ public class SegmentFileStore {
       if (carbonFiles != null && carbonFiles.length > 0) {
         boolean isRelative = false;
         if (location.startsWith(tablePath)) {
-          location = location.substring(tablePath.length(), location.length());
+          location = location.substring(tablePath.length());
           isRelative = true;
         }
         SegmentFile segmentFile = new SegmentFile();
@@ -278,14 +278,13 @@ public class SegmentFileStore {
    */
   public static CarbonFile[] getListOfCarbonIndexFiles(String segmentPath) {
     CarbonFile segmentFolder = FileFactory.getCarbonFile(segmentPath);
-    CarbonFile[] indexFiles = segmentFolder.listFiles(new CarbonFileFilter() {
+    return segmentFolder.listFiles(new CarbonFileFilter() {
       @Override
       public boolean accept(CarbonFile file) {
         return (file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) ||
             file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
       }
     });
-    return indexFiles;
   }
 
   /**
@@ -687,7 +686,7 @@ public class SegmentFileStore {
       if (listFiles != null && listFiles.length > 0) {
         boolean isRelative = false;
         if (location.startsWith(tablePath)) {
-          location = location.substring(tablePath.length(), location.length());
+          location = location.substring(tablePath.length());
           isRelative = true;
         }
         SegmentFile localSegmentFile = new SegmentFile();
@@ -814,8 +813,7 @@ public class SegmentFileStore {
       for (Map.Entry<String, List<String>> mergeFile : indexFileStore
           .getCarbonMergeFileToIndexFilesMap().entrySet()) {
         if (mergeFile.getValue().contains(entry.getKey()
-            .substring(entry.getKey().lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR) + 1,
-                entry.getKey().length()))) {
+            .substring(entry.getKey().lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR) + 1))) {
           indexOrMergeFiles.add(mergeFile.getKey());
           added = true;
           break;

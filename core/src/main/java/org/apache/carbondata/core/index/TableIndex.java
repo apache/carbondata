@@ -165,9 +165,7 @@ public final class TableIndex extends OperationEventListener {
       return pruneWithFilter(segments, filter, partitionLocations, blocklets, indexes);
     }
     // handle by multi-thread
-    List<ExtendedBlocklet> extendedBlocklets = pruneMultiThread(
-        segments, filter, blocklets, indexes, totalFiles);
-    return extendedBlocklets;
+    return pruneMultiThread(segments, filter, blocklets, indexes, totalFiles);
   }
 
   private List<Segment> getCarbonSegments(List<Segment> allSegments) {
@@ -476,8 +474,7 @@ public final class TableIndex extends OperationEventListener {
     return distributableList;
   }
 
-  public IndexInputSplitWrapper toDistributableSegment(Segment segment, String uniqueId)
-      throws IOException {
+  public IndexInputSplitWrapper toDistributableSegment(Segment segment, String uniqueId) {
     return indexFactory.toDistributableSegment(segment, indexSchema, identifier, uniqueId);
   }
 

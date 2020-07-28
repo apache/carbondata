@@ -139,8 +139,7 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
       return null;
     } else {
       //      childLength = dataBuffer.getShort();
-      Object field = getDataBasedOnDataType(dataBuffer);
-      return field;
+      return getDataBasedOnDataType(dataBuffer);
     }
   }
 
@@ -153,13 +152,11 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
       if (presentColumn.getNumberOfChild() > 0) {
         // This is complex Column. And all its child will be present in the corresponding data
         // buffer.
-        Object field = getDataBasedOnDataType(childBuffer.get(presentColumn));
-        return field;
+        return getDataBasedOnDataType(childBuffer.get(presentColumn));
       } else {
         // This is a child column with with primitive data type.
-        Object field = children.get(0)
+        return children.get(0)
             .getDataBasedOnColumn(childBuffer.get(presentColumn), presentColumn, presentColumn);
-        return field;
       }
     } else {
       int childLength;

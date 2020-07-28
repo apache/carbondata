@@ -123,21 +123,19 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
     ensureSize(rowSize);
     int pointer = runningLength;
     int bytePosition = 0;
-    for (int i = 0; i < schema.length; i++) {
-      switch (schema[i].getSchemaType()) {
-        case STRUCT:
-          CarbonRowSchema[] childSchemas =
-              ((CarbonRowSchema.StructCarbonRowSchema) schema[i]).getChildSchemas();
-          for (int j = 0; j < childSchemas.length; j++) {
-            if (childSchemas[j].getBytePosition() > bytePosition) {
-              bytePosition = childSchemas[j].getBytePosition();
-            }
+    for (CarbonRowSchema carbonRowSchema : schema) {
+      if (carbonRowSchema.getSchemaType() == CarbonRowSchema.IndexSchemaType.STRUCT) {
+        CarbonRowSchema[] childSchemas =
+            ((CarbonRowSchema.StructCarbonRowSchema) carbonRowSchema).getChildSchemas();
+        for (int j = 0; j < childSchemas.length; j++) {
+          if (childSchemas[j].getBytePosition() > bytePosition) {
+            bytePosition = childSchemas[j].getBytePosition();
           }
-          break;
-        default:
-          if (schema[i].getBytePosition() > bytePosition) {
-            bytePosition = schema[i].getBytePosition();
-          }
+        }
+      } else {
+        if (carbonRowSchema.getBytePosition() > bytePosition) {
+          bytePosition = carbonRowSchema.getBytePosition();
+        }
       }
     }
     // byte position of Last offset

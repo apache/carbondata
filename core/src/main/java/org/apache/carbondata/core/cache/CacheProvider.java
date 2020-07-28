@@ -130,7 +130,7 @@ public class CacheProvider {
    */
   private void createBlockletIndexCache(CacheType cacheType) {
     Cache cacheObject = null;
-    if (cacheType.equals(cacheType.DRIVER_BLOCKLET_INDEX)) {
+    if (cacheType.equals(CacheType.DRIVER_BLOCKLET_INDEX)) {
       cacheObject = new BlockletIndexStore(carbonLRUCache);
     }
     cacheTypeToCacheMap.put(cacheType, cacheObject);

@@ -102,10 +102,8 @@ public class OrIndexExprWrapper extends IndexExprWrapper {
     FilterResolverIntf rightExp = right.getFilterResolverIntf(uniqueId);
     if (leftExp != null) {
       return leftExp;
-    } else if (rightExp != null) {
-      return rightExp;
     }
-    return null;
+    return rightExp;
   }
 
   @Override

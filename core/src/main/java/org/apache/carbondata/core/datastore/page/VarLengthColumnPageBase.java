@@ -244,17 +244,14 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
       int offset, String compressorName) {
     int lvEncodedOffset;
     int length;
-    int numRows = rowId;
 
     VarLengthColumnPageBase page;
-    int inputDataLength = offset;
     if (unsafe) {
       page = new UnsafeDecimalColumnPage(
-          new ColumnPageEncoderMeta(columnSpec, dataType, compressorName), numRows,
-          inputDataLength);
+          new ColumnPageEncoderMeta(columnSpec, dataType, compressorName), rowId, offset);
     } else {
       page = new SafeDecimalColumnPage(
-          new ColumnPageEncoderMeta(columnSpec, dataType, compressorName), numRows);
+          new ColumnPageEncoderMeta(columnSpec, dataType, compressorName), rowId);
     }
 
     // set total length and rowOffset in page
@@ -264,7 +261,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
     // set data in page
     lvEncodedOffset = 0;
-    for (int i = 0; i < numRows; i++) {
+    for (int i = 0; i < rowId; i++) {
       length = rowOffset.getInt(i + 1) - rowOffset.getInt(i);
       page.putBytes(i, lvEncodedBytes, lvEncodedOffset + lvLength, length);
       lvEncodedOffset += lvLength + length;

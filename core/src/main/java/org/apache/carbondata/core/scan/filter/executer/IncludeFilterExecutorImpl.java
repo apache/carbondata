@@ -250,23 +250,23 @@ public class IncludeFilterExecutorImpl implements FilterExecutor {
     if (isDimensionPresentInCurrentBlock) {
       byte[][] filterValues = dimColumnExecutorInfo.getFilterKeys();
       byte[] col = (byte[])value.getVal(dimColumnEvaluatorInfo.getDimension().getOrdinal());
-      for (int i = 0; i < filterValues.length; i++) {
-        if (0 == ByteUtil.UnsafeComparer.INSTANCE.compareTo(col, 0, col.length,
-            filterValues[i], 0, filterValues[i].length)) {
+      for (byte[] filterValue : filterValues) {
+        if (0 == ByteUtil.UnsafeComparer.INSTANCE.compareTo(
+            col, 0, col.length, filterValue, 0, filterValue.length)) {
           return true;
         }
       }
     } else if (isMeasurePresentInCurrentBlock) {
       Object[] filterValues = msrColumnExecutorInfo.getFilterKeys();
       Object col = value.getVal(msrColumnEvaluatorInfo.getMeasure().getOrdinal() + dimOrdinalMax);
-      for (int i = 0; i < filterValues.length; i++) {
-        if (filterValues[i] == null) {
+      for (Object filterValue : filterValues) {
+        if (filterValue == null) {
           if (null == col) {
             return true;
           }
           continue;
         }
-        if (comparator.compare(col, filterValues[i]) == 0) {
+        if (comparator.compare(col, filterValue) == 0) {
           return true;
         }
       }
@@ -323,8 +323,8 @@ public class IncludeFilterExecutorImpl implements FilterExecutor {
     BitSet nullBitSet = measureColumnPage.getNullBits();
     BitSet prvPageBitSet = prvBitSetGroup.getBitSet(pageNumber);
     SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrDataType);
-    for (int i = 0; i < filterValues.length; i++) {
-      if (filterValues[i] == null) {
+    for (Object filterValue : filterValues) {
+      if (filterValue == null) {
         for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
           bitSet.set(j);
         }
@@ -334,11 +334,10 @@ public class IncludeFilterExecutorImpl implements FilterExecutor {
            index >= 0; index = prvPageBitSet.nextSetBit(index + 1)) {
         if (!nullBitSet.get(index)) {
           // Check if filterValue[i] matches with measure Values.
-          Object msrValue = DataTypeUtil
-              .getMeasureObjectBasedOnDataType(measureColumnPage, index,
-                  msrDataType, msrColumnEvaluatorInfo.getMeasure());
+          Object msrValue = DataTypeUtil.getMeasureObjectBasedOnDataType(measureColumnPage, index,
+              msrDataType, msrColumnEvaluatorInfo.getMeasure());
 
-          if (comparator.compare(msrValue, filterValues[i]) == 0) {
+          if (comparator.compare(msrValue, filterValue) == 0) {
             // This is a match.
             bitSet.set(index);
           }
@@ -431,9 +430,8 @@ public class IncludeFilterExecutorImpl implements FilterExecutor {
       if (startIndex >= numberOfRows) {
         break;
       }
-      int[] rangeIndex = CarbonUtil
-          .getRangeIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
-              filterValues[i]);
+      int[] rangeIndex = CarbonUtil.getRangeIndexUsingBinarySearch(dimensionColumnPage,
+          startIndex, numberOfRows - 1, filterValues[i]);
       for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
         bitSet.set(dimensionColumnPage.getInvertedIndex(j));
       }
@@ -458,9 +456,8 @@ public class IncludeFilterExecutorImpl implements FilterExecutor {
         if (startIndex >= numberOfRows) {
           break;
         }
-        int[] rangeIndex = CarbonUtil
-            .getRangeIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
-                filterValues[i]);
+        int[] rangeIndex = CarbonUtil.getRangeIndexUsingBinarySearch(dimensionColumnPage,
+            startIndex, numberOfRows - 1, filterValues[i]);
         for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
           bitSet.set(j);
         }
@@ -531,15 +528,13 @@ public class IncludeFilterExecutorImpl implements FilterExecutor {
       return true;
     }
     boolean isScanRequired = false;
-    for (int k = 0; k < filterValues.length; k++) {
+    for (byte[] filterValue : filterValues) {
       // filter value should be in range of max and min value i.e
       // max>filterValue>min
       // so filter-max should be negative
-      int maxCompare =
-          ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blkMaxVal);
+      int maxCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValue, blkMaxVal);
       // and filter-min should be positive
-      int minCompare =
-          ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blkMinVal);
+      int minCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValue, blkMinVal);
 
       // if any filter value is in range than this block needs to be
       // scanned
@@ -556,16 +551,16 @@ public class IncludeFilterExecutorImpl implements FilterExecutor {
     boolean isScanRequired = false;
     Object minValue = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(blkMinVal, dataType);
     Object maxValue = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(blkMaxVal, dataType);
-    for (int k = 0; k < filterValues.length; k++) {
+    for (byte[] filterValue : filterValues) {
       if (ByteUtil.UnsafeComparer.INSTANCE
-          .compareTo(filterValues[k], CarbonCommonConstants.EMPTY_BYTE_ARRAY) == 0) {
+          .compareTo(filterValue, CarbonCommonConstants.EMPTY_BYTE_ARRAY) == 0) {
         return true;
       }
       // filter value should be in range of max and min value i.e
       // max>filterValue>min
       // so filter-max should be negative
       Object data =
-          DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(filterValues[k], dataType);
+          DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(filterValue, dataType);
       SerializableComparator comparator = Comparator.getComparator(dataType);
       int maxCompare = comparator.compare(data, maxValue);
       int minCompare = comparator.compare(data, minValue);
@@ -583,13 +578,12 @@ public class IncludeFilterExecutorImpl implements FilterExecutor {
       DataType dataType) {
     Object maxObject = DataTypeUtil.getMeasureObjectFromDataType(maxValue, dataType);
     Object minObject = DataTypeUtil.getMeasureObjectFromDataType(minValue, dataType);
-    for (int i = 0; i < filterValue.length; i++) {
+    for (Object o : filterValue) {
       // TODO handle min and max for null values.
-      if (filterValue[i] == null) {
+      if (o == null) {
         return true;
       }
-      if (comparator.compare(filterValue[i], maxObject) <= 0
-          && comparator.compare(filterValue[i], minObject) >= 0) {
+      if (comparator.compare(o, maxObject) <= 0 && comparator.compare(o, minObject) >= 0) {
         return true;
       }
     }

@@ -78,12 +78,11 @@ public class ColumnDriftRawResultIterator extends RawResultIterator {
     noDictMap = new int[noDictCount];
     measureDataTypes = new DataType[noDictCount];
     List<CarbonMeasure> sourceMeasures = sourceSegProperties.getMeasures();
-    int tableMeasureCount = sourceMeasures.size();
     for (int i = 0; i < noDictCount; i++) {
-      for (int j = 0; j < tableMeasureCount; j++) {
-        if (RestructureUtil.isColumnMatches(true, noDictDims.get(i), sourceMeasures.get(j))) {
+      for (CarbonMeasure sourceMeasure : sourceMeasures) {
+        if (RestructureUtil.isColumnMatches(true, noDictDims.get(i), sourceMeasure)) {
           isColumnDrift[i] = true;
-          measureDataTypes[i] = sourceMeasures.get(j).getDataType();
+          measureDataTypes[i] = sourceMeasure.getDataType();
           break;
         }
       }

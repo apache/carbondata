@@ -172,12 +172,12 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
       }
       if (indexStorage.getRowIdPageLengthInBytes() > 0) {
         out.writeInt(indexStorage.getRowIdPageLengthInBytes());
-        short[] rowIdPage = (short[]) indexStorage.getRowIdPage();
+        short[] rowIdPage = indexStorage.getRowIdPage();
         for (short rowId : rowIdPage) {
           out.writeShort(rowId);
         }
         if (indexStorage.getRowIdRlePageLengthInBytes() > 0) {
-          short[] rowIdRlePage = (short[]) indexStorage.getRowIdRlePage();
+          short[] rowIdRlePage = indexStorage.getRowIdRlePage();
           for (short rowIdRle : rowIdRlePage) {
             out.writeShort(rowIdRle);
           }

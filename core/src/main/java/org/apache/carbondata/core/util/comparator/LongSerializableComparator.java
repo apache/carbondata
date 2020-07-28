@@ -27,12 +27,6 @@ public class LongSerializableComparator implements SerializableComparator {
     } else if (key2 == null) {
       return 1;
     }
-    if ((long) key1 < (long) key2) {
-      return -1;
-    } else if ((long) key1 > (long) key2) {
-      return 1;
-    } else {
-      return 0;
-    }
+    return Long.compare((long) key1, (long) key2);
   }
 }

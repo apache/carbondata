@@ -252,7 +252,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
           columnIndexRange[1] + 1 - columnIndexRange[0]);
     }
 
-    /**
+    /*
      * Below code is to read the dimension which is not read as part of filter or projection
      * for example in case of or filter if first filter matches all the rows then it will not read
      * second filter column and if it is present as part of projection, so needs to be read
@@ -293,7 +293,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
       System.arraycopy(projectionListMeasureChunk, columnIndexRange[0], measureRawColumnChunks,
           columnIndexRange[0], columnIndexRange[1] + 1 - columnIndexRange[0]);
     }
-    /**
+    /*
      * Below code is to read the measure which is not read as part of filter or projection
      * for example in case of or filter if first filter matches all the rows then it will not read
      * second filter column and if it is present as part of projection, so needs to be read

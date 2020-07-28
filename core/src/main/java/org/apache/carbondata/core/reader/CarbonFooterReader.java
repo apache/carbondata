@@ -21,8 +21,6 @@ import java.io.IOException;
 
 import org.apache.carbondata.format.FileFooter;
 
-import org.apache.thrift.TBase;
-
 /**
  * Reads the metadata from fact file in org.apache.carbondata.format.FileFooter thrift object
  */
@@ -64,13 +62,7 @@ public class CarbonFooterReader {
    * @throws IOException
    */
   private ThriftReader openThriftReader(String filePath) {
-
-    return new ThriftReader(filePath, new ThriftReader.TBaseCreator() {
-      @Override
-      public TBase create() {
-        return new FileFooter();
-      }
-    });
+    return new ThriftReader(filePath, FileFooter::new);
   }
 
 }

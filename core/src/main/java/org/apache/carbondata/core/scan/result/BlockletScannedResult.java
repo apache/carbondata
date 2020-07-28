@@ -266,18 +266,18 @@ public abstract class BlockletScannedResult {
     ReUsableByteArrayDataOutputStream reusableDataOutput =
         new ReUsableByteArrayDataOutputStream(byteStream);
     boolean isExceptionThrown = false;
-    for (int i = 0; i < vectorInfos.length; i++) {
-      int offset = vectorInfos[i].offset;
-      int len = offset + vectorInfos[i].size;
-      int vectorOffset = vectorInfos[i].vectorOffset;
-      CarbonColumnVector vector = vectorInfos[i].vector;
+    for (ColumnVectorInfo vectorInfo : vectorInfos) {
+      int offset = vectorInfo.offset;
+      int len = offset + vectorInfo.size;
+      int vectorOffset = vectorInfo.vectorOffset;
+      CarbonColumnVector vector = vectorInfo.vector;
       for (int j = offset; j < len; j++) {
         try {
-          vectorInfos[i].genericQueryType
+          vectorInfo.genericQueryType
               .parseBlocksAndReturnComplexColumnByteArray(dimRawColumnChunks, dimensionColumnPages,
                   pageFilteredRowId == null ? j : pageFilteredRowId[pageCounter][j], pageCounter,
                   reusableDataOutput);
-          Object data = vectorInfos[i].genericQueryType
+          Object data = vectorInfo.genericQueryType
               .getDataBasedOnDataType(ByteBuffer.wrap(reusableDataOutput.getByteArray()));
           vector.putObject(vectorOffset++, data);
           reusableDataOutput.reset();

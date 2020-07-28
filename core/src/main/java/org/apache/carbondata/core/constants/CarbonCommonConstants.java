@@ -1190,10 +1190,10 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_ENABLE_RANGE_COMPACTION_DEFAULT = "true";
 
-  @CarbonProperty
   /**
    * size based threshold for local dictionary in mb.
    */
+  @CarbonProperty
   public static final String CARBON_LOCAL_DICTIONARY_SIZE_THRESHOLD_IN_MB =
       "carbon.local.dictionary.size.threshold.inmb";
 
@@ -2279,14 +2279,13 @@ public final class CarbonCommonConstants {
   public static final String CARBON_INDEX_SERVER_JOBNAME_LENGTH =
           "carbon.index.server.max.jobname.length";
 
-  public static final String CARBON_INDEX_SERVER_JOBNAME_LENGTH_DEFAULT =
-          "50";
+  public static final String CARBON_INDEX_SERVER_JOBNAME_LENGTH_DEFAULT = "50";
 
-  @CarbonProperty
   /**
    * Max in memory serialization size after reaching threshold data will
    * be written to file
    */
+  @CarbonProperty
   public static final String CARBON_INDEX_SERVER_SERIALIZATION_THRESHOLD =
       "carbon.index.server.inmemory.serialization.threshold.inKB";
 

@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -150,9 +149,7 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
       throws IOException {
     stream.writeInt(extendedBlockletList.size());
     String[] uniqueLoc = new String[uniqueLocation.size()];
-    Iterator<Map.Entry<String, Short>> iterator = uniqueLocation.entrySet().iterator();
-    while (iterator.hasNext()) {
-      final Map.Entry<String, Short> next = iterator.next();
+    for (Map.Entry<String, Short> next : uniqueLocation.entrySet()) {
       uniqueLoc[next.getValue()] = next.getKey();
     }
     stream.writeShort((short) uniqueLoc.length);

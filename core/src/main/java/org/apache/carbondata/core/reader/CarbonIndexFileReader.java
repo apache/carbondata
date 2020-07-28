@@ -23,7 +23,6 @@ import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.IndexHeader;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.thrift.TBase;
 
 /**
  * Reader class which will be used to read the index file
@@ -52,12 +51,7 @@ public class CarbonIndexFileReader {
    * @throws IOException if any problem  while reader the header
    */
   public IndexHeader readIndexHeader() throws IOException {
-    return (IndexHeader) thriftReader.read(new ThriftReader.TBaseCreator() {
-      @Override
-      public TBase create() {
-        return new IndexHeader();
-      }
-    });
+    return (IndexHeader) thriftReader.read(IndexHeader::new);
   }
 
   /**
@@ -74,12 +68,7 @@ public class CarbonIndexFileReader {
    * @throws IOException if problem while reading the block index
    */
   public BlockIndex readBlockIndexInfo() throws IOException {
-    return (BlockIndex) thriftReader.read(new ThriftReader.TBaseCreator() {
-      @Override
-      public TBase create() {
-        return new BlockIndex();
-      }
-    });
+    return (BlockIndex) thriftReader.read(BlockIndex::new);
   }
 
   /**

@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.mutate;
 
 import java.util.BitSet;
-import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -43,9 +42,8 @@ public class DeleteDeltaVo {
    * @param data
    */
   public void insertData(Set<Integer> data) {
-    Iterator<Integer> iterator = data.iterator();
-    while (iterator.hasNext()) {
-      bitSet.set(iterator.next());
+    for (Integer datum : data) {
+      bitSet.set(datum);
     }
   }
 

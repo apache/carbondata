@@ -38,10 +38,8 @@ public class SegmentMetaDataInfoStats {
   public static synchronized SegmentMetaDataInfoStats getInstance() {
     if (null == segmentMetaDataInfoStats) {
       segmentMetaDataInfoStats = new SegmentMetaDataInfoStats();
-      return segmentMetaDataInfoStats;
-    } else {
-      return segmentMetaDataInfoStats;
     }
+    return segmentMetaDataInfoStats;
   }
 
   private Map<String, Map<String, BlockColumnMetaDataInfo>> tableSegmentMetaDataInfoMap;

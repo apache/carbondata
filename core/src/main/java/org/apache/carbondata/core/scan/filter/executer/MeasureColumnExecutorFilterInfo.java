@@ -68,9 +68,9 @@ public class MeasureColumnExecutorFilterInfo {
     } else {
       throw new IllegalArgumentException("Invalid data type");
     }
-    for (int i = 0; i < filterKeys.length; i++) {
-      if (null != filterKeys[i]) {
-        filterSet.add(filterKeys[i]);
+    for (Object filterKey : filterKeys) {
+      if (null != filterKey) {
+        filterSet.add(filterKey);
       }
     }
   }

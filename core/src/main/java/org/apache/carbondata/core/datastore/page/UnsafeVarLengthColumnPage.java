@@ -39,7 +39,7 @@ public class UnsafeVarLengthColumnPage extends UnsafeVarLengthColumnPageBase {
     } else {
       capacity = (int) (pageSize * DEFAULT_ROW_SIZE * FACTOR);
     }
-    memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
+    memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, capacity);
     baseAddress = memoryBlock.getBaseObject();
     baseOffset = memoryBlock.getBaseOffset();
   }

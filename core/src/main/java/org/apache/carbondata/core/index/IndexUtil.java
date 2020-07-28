@@ -186,10 +186,9 @@ public class IndexUtil {
    @param carbonTable
    @param indexExprWrapper
    @param validSegments
-   @throws IOException
    */
   public static void loadIndexes(CarbonTable carbonTable, IndexExprWrapper indexExprWrapper,
-      List<Segment> validSegments) throws IOException {
+      List<Segment> validSegments) {
     if (!CarbonProperties.getInstance()
         .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName())
         && BlockletIndexUtil.loadIndexesParallel(carbonTable)) {

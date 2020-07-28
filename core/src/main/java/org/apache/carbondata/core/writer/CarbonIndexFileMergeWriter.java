@@ -144,10 +144,9 @@ public class CarbonIndexFileMergeWriter {
       folderDetails = new SegmentFileStore.FolderDetails();
       folderDetails.setMergeFileName(mergeIndexFile);
       folderDetails.setStatus("Success");
-      List<String> partitions = new ArrayList<>();
       if (partitionPath.startsWith(tablePath)) {
-        partitionPath = partitionPath.substring(tablePath.length() + 1, partitionPath.length());
-        partitions.addAll(Arrays.asList(partitionPath.split("/")));
+        partitionPath = partitionPath.substring(tablePath.length() + 1);
+        List<String> partitions = new ArrayList<>(Arrays.asList(partitionPath.split("/")));
 
         folderDetails.setPartitions(partitions);
         folderDetails.setRelative(true);

@@ -99,7 +99,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
             if (null != defaultValue) {
               defaultValueAsLong = ((Integer) defaultValue).longValue();
             } else {
-              defaultValueAsLong = (long) CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
+              defaultValueAsLong = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
             }
             keyArrayWithNewAddedColumns[newKeyArrayIndex++] = defaultValueAsLong;
           }

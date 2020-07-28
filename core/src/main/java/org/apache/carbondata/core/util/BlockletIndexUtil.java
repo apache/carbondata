@@ -71,8 +71,7 @@ public class BlockletIndexUtil {
   private static final Logger LOG =
       LogServiceFactory.getLogService(BlockletIndexUtil.class.getName());
 
-  public static Set<TableBlockIndexUniqueIdentifier> getSegmentUniqueIdentifiers(Segment segment)
-      throws IOException {
+  public static Set<TableBlockIndexUniqueIdentifier> getSegmentUniqueIdentifiers(Segment segment) {
     Set<TableBlockIndexUniqueIdentifier> set = new HashSet<>();
     set.add(new TableBlockIndexUniqueIdentifier(segment.getSegmentNo()));
     return set;
@@ -265,10 +264,7 @@ public class BlockletIndexUtil {
   public static boolean isCacheLevelBlock(CarbonTable carbonTable) {
     String cacheLevel = carbonTable.getTableInfo().getFactTable().getTableProperties()
         .get(CarbonCommonConstants.CACHE_LEVEL);
-    if (BlockletIndexFactory.CACHE_LEVEL_BLOCKLET.equals(cacheLevel)) {
-      return false;
-    }
-    return true;
+    return !BlockletIndexFactory.CACHE_LEVEL_BLOCKLET.equals(cacheLevel);
   }
 
   /**
@@ -278,23 +274,20 @@ public class BlockletIndexUtil {
   public static boolean isSameColumnAndDifferentDatatypeInSchema(
       List<ColumnSchema> indexFileColumnList, List<ColumnSchema> tableColumnList)
       throws IOException {
-    for (int i = 0; i < tableColumnList.size(); i++) {
-      for (int j = 0; j < indexFileColumnList.size(); j++) {
-        if (indexFileColumnList.get(j).getColumnName()
-            .equalsIgnoreCase(tableColumnList.get(i).getColumnName()) && !indexFileColumnList.get(j)
-            .getDataType().getName()
-            .equalsIgnoreCase(tableColumnList.get(i).getDataType().getName())) {
-          if ("varchar".equalsIgnoreCase(indexFileColumnList.get(j).getDataType().getName()) &&
-              "string".equalsIgnoreCase(tableColumnList.get(i).getDataType().getName())) {
-            throw new IOException("Datatype of the Column "
-                + indexFileColumnList.get(j).getDataType().getName()
-                + " present in index file, is varchar and not same as datatype of the column " +
-                "with same name present in table, " +
-                "because carbon convert varchar of carbon to string of spark, " +
-                "please set long_string_columns for varchar column: "
-                + tableColumnList.get(i).getColumnName());
+    for (ColumnSchema columnSchema : tableColumnList) {
+      for (ColumnSchema schema : indexFileColumnList) {
+        if (schema.getColumnName().equalsIgnoreCase(columnSchema.getColumnName()) && !schema
+            .getDataType().getName().equalsIgnoreCase(columnSchema.getDataType().getName())) {
+          if ("varchar".equalsIgnoreCase(schema.getDataType().getName()) && "string"
+              .equalsIgnoreCase(columnSchema.getDataType().getName())) {
+            throw new IOException("Datatype of the Column " + schema.getDataType().getName()
+                + " present in index file, is varchar and not same as datatype of the column "
+                + "with same name present in table, "
+                + "because carbon convert varchar of carbon to string of spark, "
+                + "please set long_string_columns for varchar column: " + columnSchema
+                .getColumnName());
           }
-          LOG.error("Datatype of the Column " + indexFileColumnList.get(j).getColumnName()
+          LOG.error("Datatype of the Column " + schema.getColumnName()
               + " present in index file, is not same as datatype of the column with same name"
               + "present in table");
           return false;

@@ -72,14 +72,6 @@ public class CarbonDataWriterException extends RuntimeException {
   }
 
   /**
-   * getLocalizedMessage
-   */
-  @Override
-  public String getLocalizedMessage() {
-    return super.getLocalizedMessage();
-  }
-
-  /**
    * getMessage
    */
   public String getMessage() {

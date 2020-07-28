@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -341,7 +342,7 @@ public class IndexChooser {
       IndexTuple that = (IndexTuple) o;
 
       if (order != that.order) return false;
-      return index != null ? index.equals(that.index) : that.index == null;
+      return Objects.equals(index, that.index);
     }
 
     @Override

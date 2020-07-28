@@ -19,7 +19,7 @@ package org.apache.carbondata.core.stats;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -97,7 +97,7 @@ public class TaskStatistics implements Serializable {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    printStatisticTable(Arrays.asList(this), builder, "");
+    printStatisticTable(Collections.singletonList(this), builder, "");
     return builder.toString();
   }
 
@@ -126,7 +126,7 @@ public class TaskStatistics implements Serializable {
     valueStrings[0] = queryId;
     for (int i = 1; i < numOfColumns; i++) {
       if (columns[i].isDuration) {
-        valueStrings[i] = String.valueOf(values[i]) + "ms";
+        valueStrings[i] = values[i] + "ms";
       } else {
         valueStrings[i] = String.valueOf(values[i]);
       }

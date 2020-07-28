@@ -52,7 +52,6 @@ import org.apache.carbondata.format.MergedBlockIndexHeader;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
-import org.apache.thrift.TBase;
 
 /**
  * This class manages reading of index files with in the segment. The files it read can be
@@ -104,11 +103,11 @@ public class SegmentIndexFileStore {
    */
   public void readAllIIndexOfSegment(String segmentPath) throws IOException {
     CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentPath, configuration);
-    for (int i = 0; i < carbonIndexFiles.length; i++) {
-      if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-        readMergeFile(carbonIndexFiles[i].getCanonicalPath());
-      } else if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
-        readIndexFile(carbonIndexFiles[i]);
+    for (CarbonFile carbonIndexFile : carbonIndexFiles) {
+      if (carbonIndexFile.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        readMergeFile(carbonIndexFile.getCanonicalPath());
+      } else if (carbonIndexFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        readIndexFile(carbonIndexFile);
       }
     }
   }
@@ -153,11 +152,11 @@ public class SegmentIndexFileStore {
         }
       }
     }
-    for (int i = 0; i < carbonIndexFiles.size(); i++) {
-      if (carbonIndexFiles.get(i).getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-        readMergeFile(carbonIndexFiles.get(i).getCanonicalPath());
-      } else if (carbonIndexFiles.get(i).getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
-        readIndexFile(carbonIndexFiles.get(i));
+    for (CarbonFile carbonIndexFile : carbonIndexFiles) {
+      if (carbonIndexFile.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        readMergeFile(carbonIndexFile.getCanonicalPath());
+      } else if (carbonIndexFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        readIndexFile(carbonIndexFile);
       }
     }
   }
@@ -171,11 +170,11 @@ public class SegmentIndexFileStore {
   public void readAllIndexAndFillBlockletInfo(String segmentPath) throws IOException {
     CarbonFile[] carbonIndexFiles =
         getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
-    for (int i = 0; i < carbonIndexFiles.length; i++) {
-      if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-        readMergeFile(carbonIndexFiles[i].getCanonicalPath());
-      } else if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
-        readIndexAndFillBlockletInfo(carbonIndexFiles[i]);
+    for (CarbonFile carbonIndexFile : carbonIndexFiles) {
+      if (carbonIndexFile.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        readMergeFile(carbonIndexFile.getCanonicalPath());
+      } else if (carbonIndexFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        readIndexAndFillBlockletInfo(carbonIndexFile);
       }
     }
   }
@@ -188,11 +187,11 @@ public class SegmentIndexFileStore {
    */
   public void readAllIIndexOfSegment(CarbonFile[] carbonFiles) throws IOException {
     CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(carbonFiles);
-    for (int i = 0; i < carbonIndexFiles.length; i++) {
-      if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-        readMergeFile(carbonIndexFiles[i].getCanonicalPath());
-      } else if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
-        readIndexFile(carbonIndexFiles[i]);
+    for (CarbonFile carbonIndexFile : carbonIndexFiles) {
+      if (carbonIndexFile.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        readMergeFile(carbonIndexFile.getCanonicalPath());
+      } else if (carbonIndexFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        readIndexFile(carbonIndexFile);
       }
     }
   }
@@ -208,16 +207,16 @@ public class SegmentIndexFileStore {
     CarbonFile[] carbonIndexFiles =
         getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
     Map<String, String> indexFiles = new HashMap<>();
-    for (int i = 0; i < carbonIndexFiles.length; i++) {
-      if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+    for (CarbonFile carbonIndexFile : carbonIndexFiles) {
+      if (carbonIndexFile.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
         List<String> indexFilesFromMergeFile =
-            getIndexFilesFromMergeFile(carbonIndexFiles[i].getCanonicalPath());
-        for (String file: indexFilesFromMergeFile) {
-          indexFiles.put(carbonIndexFiles[i].getParentFile().getAbsolutePath()
-              + CarbonCommonConstants.FILE_SEPARATOR + file, carbonIndexFiles[i].getName());
+            getIndexFilesFromMergeFile(carbonIndexFile.getCanonicalPath());
+        for (String file : indexFilesFromMergeFile) {
+          indexFiles.put(carbonIndexFile.getParentFile().getAbsolutePath()
+              + CarbonCommonConstants.FILE_SEPARATOR + file, carbonIndexFile.getName());
         }
-      } else if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
-        indexFiles.put(carbonIndexFiles[i].getAbsolutePath(), null);
+      } else if (carbonIndexFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        indexFiles.put(carbonIndexFile.getAbsolutePath(), null);
       }
     }
     return indexFiles;
@@ -233,12 +232,11 @@ public class SegmentIndexFileStore {
     CarbonFile[] carbonIndexFiles =
         getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
     Map<String, String> indexFiles = new HashMap<>();
-    for (int i = 0; i < carbonIndexFiles.length; i++) {
-      if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
-        indexFiles
-            .put(carbonIndexFiles[i].getAbsolutePath(), carbonIndexFiles[i].getAbsolutePath());
-      } else if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
-        indexFiles.put(carbonIndexFiles[i].getAbsolutePath(), null);
+    for (CarbonFile carbonIndexFile : carbonIndexFiles) {
+      if (carbonIndexFile.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        indexFiles.put(carbonIndexFile.getAbsolutePath(), carbonIndexFile.getAbsolutePath());
+      } else if (carbonIndexFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        indexFiles.put(carbonIndexFile.getAbsolutePath(), null);
       }
     }
     return indexFiles;
@@ -297,35 +295,22 @@ public class SegmentIndexFileStore {
    */
   public void readIndexFile(CarbonFile indexFile) throws IOException {
     String indexFilePath = indexFile.getCanonicalPath();
-    DataInputStream dataInputStream = FileFactory
-        .getDataInputStream(indexFilePath, configuration);
-    byte[] bytes = new byte[(int) indexFile.getSize()];
-    try {
+    try (DataInputStream dataInputStream =
+        FileFactory.getDataInputStream(indexFilePath, configuration)) {
+      byte[] bytes = new byte[(int) indexFile.getSize()];
       dataInputStream.readFully(bytes);
       carbonIndexMap.put(indexFile.getName(), bytes);
       carbonIndexMapWithFullPath.put(indexFile.getAbsolutePath(), bytes);
-    } finally {
-      dataInputStream.close();
     }
   }
 
   private MergedBlockIndexHeader readMergeBlockIndexHeader(ThriftReader thriftReader)
       throws IOException {
-    return (MergedBlockIndexHeader) thriftReader.read(new ThriftReader.TBaseCreator() {
-      @Override
-      public TBase create() {
-        return new MergedBlockIndexHeader();
-      }
-    });
+    return (MergedBlockIndexHeader) thriftReader.read(MergedBlockIndexHeader::new);
   }
 
   private MergedBlockIndex readMergeBlockIndex(ThriftReader thriftReader) throws IOException {
-    return (MergedBlockIndex) thriftReader.read(new ThriftReader.TBaseCreator() {
-      @Override
-      public TBase create() {
-        return new MergedBlockIndex();
-      }
-    });
+    return (MergedBlockIndex) thriftReader.read(MergedBlockIndex::new);
   }
 
   /**
@@ -462,13 +447,12 @@ public class SegmentIndexFileStore {
         // the current code, the number of entries in the index file is equal to the total number
         // of blocklets in all part files for 1 task. So to make it compatible with new structure,
         // the same entry with different blocklet info need to be repeated
-        for (int i = 0; i < blockletInfoList.size(); i++) {
+        for (BlockletInfo info : blockletInfoList) {
           BlockIndex blockIndexReplica = blockIndex.deepCopy();
-          BlockletInfo blockletInfo = blockletInfoList.get(i);
+          BlockletInfo blockletInfo = info;
           blockIndexReplica
               .setBlock_index(CarbonMetadataUtil.getBlockletIndex(blockletInfo.getBlockletIndex()));
-          blockIndexReplica
-              .setBlocklet_info(CarbonMetadataUtil.getBlockletInfo3(blockletInfo));
+          blockIndexReplica.setBlocklet_info(CarbonMetadataUtil.getBlockletInfo3(blockletInfo));
           blockIndexThrift.add(blockIndexReplica);
         }
       }
