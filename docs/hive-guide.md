@@ -52,16 +52,11 @@ $HADOOP_HOME/bin/hadoop fs -put sample.csv <hdfs store path>/sample.csv
 ```
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.CarbonSession._
-val rootPath = "hdfs:///user/hadoop/carbon"
-val storeLocation = s"$rootPath/store"
-val warehouse = s"$rootPath/warehouse"
-val metaStoreDB = s"$rootPath/metastore_db"
-
-val carbon = SparkSession.builder().enableHiveSupport().config("spark.sql.warehouse.dir", warehouse).config(org.apache.carbondata.core.constants.CarbonCommonConstants.STORE_LOCATION, storeLocation).getOrCreateCarbonSession(storeLocation, metaStoreDB)
-
-carbon.sql("create table hive_carbon(id int, name string, scale decimal, country string, salary double) STORED AS carbondata")
-carbon.sql("LOAD DATA INPATH '<hdfs store path>/sample.csv' INTO TABLE hive_carbon")
-scala>carbon.sql("SELECT * FROM hive_carbon").show()
+val newSpark = SparkSession.builder().config(sc.getConf).enableHiveSupport.config("spark.sql.extensions","org.apache.spark.sql.CarbonExtensions").getOrCreate()
+newSpark.sql("drop table if exists hive_carbon")
+newSpark.sql("create table hive_carbon(id int, name string, scale decimal, country string, salary double) STORED AS carbondata")
+newSpark.sql("LOAD DATA INPATH '<hdfs store path>/sample.csv' INTO TABLE hive_carbon")
+newSpark.sql("SELECT * FROM hive_carbon").show()
 ```
 
 ## Configure Carbon in Hive
