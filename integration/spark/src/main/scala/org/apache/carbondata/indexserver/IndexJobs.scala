@@ -52,7 +52,7 @@ class DistributedIndexJob extends AbstractIndexJob {
       .createTempFolderForIndexServer(indexFormat.getQueryId)
     LOGGER
       .info("Temp folder path for Query ID: " + indexFormat.getQueryId + " is " + splitFolderPath)
-    val (resonse, time) = logTime {
+    val (response, time) = logTime {
       try {
         val spark = SparkSQLUtil.getSparkSession
         indexFormat.setTaskGroupId(SparkSQLUtil.getTaskGroupId(spark))
@@ -73,34 +73,33 @@ class DistributedIndexJob extends AbstractIndexJob {
       }
     }
     LOGGER.info(s"Time taken to get response from server: $time ms")
-    resonse
+    response
   }
 
   /**
-   * Iterate over FiltersReslover,
-   *   a. Change only RowLevelFilterResolverImpl because SparkUnkown is part of it
-   * and others FilterReslover like ConditionalFilterResolverImpl so directly return.
-   *     b. Change SparkUnkownExpression to TrueExpression so that isScanRequired
+   * Iterate over FilterResolver,
+   * a. Change only RowLevelFilterResolverImpl because SparkUnknown is part of it
+   * and other FilterResolver like ConditionalFilterResolverImpl so directly return.
+   * b. Change SparkUnknownExpression to TrueExpression so that isScanRequired
    * selects block/blocklet.
    *
-   * @param filterInf       FiltersReslover to be changed
-   * @param tableIdentifer  AbsoluteTableIdentifier object
-   * @param filterProcessor changed FiltersReslover.
-   * @return
+   * @param filterInf       FilterResolver to be changed
+   * @param tableIdentifier AbsoluteTableIdentifier object
+   * @param filterProcessor FilterExpressionProcessor
+   * @return changed FilterResolver.
    */
-  def removeSparkUnknown(filterInf: FilterResolverIntf,
-      tableIdentifer: AbsoluteTableIdentifier,
-                         filterProcessor: FilterExpressionProcessor): FilterResolverIntf = {
+  def removeSparkUnknown(filterInf: FilterResolverIntf, tableIdentifier: AbsoluteTableIdentifier,
+      filterProcessor: FilterExpressionProcessor): FilterResolverIntf = {
     if (filterInf.isInstanceOf[LogicalFilterResolverImpl]) {
       return new LogicalFilterResolverImpl(
-        removeSparkUnknown(filterInf.getLeft, tableIdentifer, filterProcessor),
-        removeSparkUnknown(filterInf.getRight, tableIdentifer, filterProcessor),
+        removeSparkUnknown(filterInf.getLeft, tableIdentifier, filterProcessor),
+        removeSparkUnknown(filterInf.getRight, tableIdentifier, filterProcessor),
         filterProcessor.removeUnknownExpression(filterInf.getFilterExpression).
           asInstanceOf[BinaryExpression])
     }
     if (filterInf.isInstanceOf[RowLevelFilterResolverImpl] &&
         filterInf.getFilterExpression.getFilterExpressionType == ExpressionType.UNKNOWN) {
-      return filterProcessor.changeUnknownResolverToTrue(tableIdentifer)
+      return filterProcessor.changeUnknownResolverToTrue(tableIdentifier)
     }
     filterInf
   }

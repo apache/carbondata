@@ -56,7 +56,7 @@ object HistoryTableLoadHelper {
         .find(_.isInstanceOf[InsertInHistoryTableAction])
         .get
         .asInstanceOf[InsertInHistoryTableAction]
-      // Get the history table dataframe.
+      // Get the history table DataFrame.
       val histDataFrame: Dataset[Row] = sparkSession.table(insert.historyTable)
       // check if the user wants to insert update history records into history table.
       val updateDataFrame = if (trxMgr.getUpdateTrx != -1) {
@@ -66,7 +66,7 @@ object HistoryTableLoadHelper {
           f.getActions.exists(_.isInstanceOf[UpdateAction])
         }.head.getActions.filter(_.isInstanceOf[InsertInHistoryTableAction]).head.
           asInstanceOf[InsertInHistoryTableAction]
-        // Create the dataframe to fetch history updated records.
+        // Create the DataFrame to fetch history updated records.
         Some(createHistoryDataFrame(sparkSession, rltn, carbonTable, insertHist,
           histDataFrame, trxMgr.getUpdateTrx))
       } else {
@@ -102,7 +102,7 @@ object HistoryTableLoadHelper {
   }
 
   /**
-   * It creates the dataframe to fetch deleted/updated records in the particular transaction.
+   * It creates the DataFrame to fetch deleted/updated records in the particular transaction.
    */
   private def createHistoryDataFrame(sparkSession: SparkSession,
       rltn: CarbonDatasourceHadoopRelation,

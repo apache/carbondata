@@ -248,11 +248,11 @@ object BroadCastSIFilterPushJoin {
       logger.info("Pushing down filter for broadcast join. Filter size:" + filters(0).length)
       tableScan.get match {
         case scan: CarbonDataSourceScan =>
-          addPushdownToCarbonRDD(scan.rdd,
-            addPushdownFilters(filterKeys, filters))
+          addPushDownToCarbonRDD(scan.rdd,
+            addPushDownFilters(filterKeys, filters))
         case _ =>
-          addPushdownToCarbonRDD(tableScan.get.asInstanceOf[RowDataSourceScanExec].rdd,
-            addPushdownFilters(filterKeys, filters))
+          addPushDownToCarbonRDD(tableScan.get.asInstanceOf[RowDataSourceScanExec].rdd,
+            addPushDownFilters(filterKeys, filters))
       }
     }
   }
@@ -314,7 +314,7 @@ object BroadCastSIFilterPushJoin {
         logger.info(
           "Segments ignored are : " + util.Arrays.toString(filteredSegmentToAccessTemp.toArray))
       }
-      // if no valid segments after filteration
+      // if no valid segments after filter
       if (filteredSegmentToAccess.size == 0) {
         return new util.ArrayList[Segment](0)
       } else {
@@ -496,14 +496,14 @@ object BroadCastSIFilterPushJoin {
           throw new UnsupportedOperationException(ex.getMessage)
       }
     val segmentToAccess = getFilteredSegments(scanRDD.head)
-    val segmentIdtoAccess = new Array[String](segmentToAccess.length)
+    val segmentIdToAccess = new Array[String](segmentToAccess.length)
     for (i <- segmentToAccess.indices) {
-      segmentIdtoAccess(i) = segmentToAccess(i).getSegmentNo
+      segmentIdToAccess(i) = segmentToAccess(i).getSegmentNo
     }
-    segmentIdtoAccess
+    segmentIdToAccess
   }
 
-  private def addPushdownToCarbonRDD(rdd: RDD[InternalRow],
+  private def addPushDownToCarbonRDD(rdd: RDD[InternalRow],
       expressions: Seq[Expression]): Unit = {
     rdd match {
       case value: CarbonScanRDD[InternalRow] =>
@@ -518,7 +518,7 @@ object BroadCastSIFilterPushJoin {
     }
   }
 
-  private def addPushdownFilters(keys: Seq[Expression],
+  private def addPushDownFilters(keys: Seq[Expression],
       filters: Array[Array[Expression]]): Seq[Expression] = {
 
     // TODO Values in the IN filter is duplicate. replace the list with set
@@ -527,7 +527,7 @@ object BroadCastSIFilterPushJoin {
       buffer += In(a._1, filters(a._2)).asInstanceOf[Expression]
     }
 
-    // Let's not pushdown condition. Only filter push down is sufficient.
+    // Let's not push down condition. Only filter push down is sufficient.
     // Conditions can be applied on hash join result.
     val cond = if (buffer.size > 1) {
       val e = buffer.remove(0)

@@ -48,7 +48,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
 
   //TODO fix this test case
   test("Update operation on carbon table with insert into") {
-    sql(s"create database carbon2 location '$dblocation'")
+    sql(s"create database carbon2 location '$dbLocation'")
     sql("use carbon2")
     sql("""create table carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
@@ -64,14 +64,14 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   test("create and drop database test") {
-    sql(s"create database carbon location '$dblocation'")
+    sql(s"create database carbon location '$dbLocation'")
     sql("drop database if exists carbon cascade")
   }
 
   test("create two databases at same table") {
-    sql(s"create database carbon location '$dblocation'")
+    sql(s"create database carbon location '$dbLocation'")
     try {
-      sql(s"create database carbon1 location '$dblocation'")
+      sql(s"create database carbon1 location '$dbLocation'")
     } catch {
       case e: AnalysisException =>
         assert(true)
@@ -79,7 +79,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   test("create table and load data") {
-    sql(s"create database carbon location '$dblocation'")
+    sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/dblocation/test.csv' INTO table carbon.carbontable""")
@@ -87,7 +87,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   test("create table and insert data") {
-    sql(s"create database carbon location '$dblocation'")
+    sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
@@ -96,7 +96,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   test("create table and 2 times data load") {
-    sql(s"create database carbon location '$dblocation'")
+    sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
@@ -107,7 +107,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
 
 
   test("Update operation on carbon table") {
-    sql(s"create database carbon1 location '$dblocation'")
+    sql(s"create database carbon1 location '$dbLocation'")
     sql("use carbon1")
     sql(
       """
@@ -126,7 +126,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   test("Delete operation on carbon table") {
-    sql(s"create database carbon1 location '$dblocation'")
+    sql(s"create database carbon1 location '$dbLocation'")
     sql("use carbon1")
     sql("""create table carbon1.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
@@ -141,7 +141,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   test("Alter table add column test") {
-    sql(s"create database carbon location '$dblocation'")
+    sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
@@ -156,7 +156,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   test("Alter table change column datatype test") {
-    sql(s"create database carbon location '$dblocation'")
+    sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
@@ -170,7 +170,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   test("Alter table change dataType with sort column after adding measure column test"){
-    sql(s"create database carbon location '$dblocation'")
+    sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
     sql(
       """create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string)
@@ -189,7 +189,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   test("Alter table change dataType with sort column after adding date datatype with default value test"){
-    sql(s"create database carbon location '$dblocation'")
+    sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
     sql(
       """create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string)
@@ -208,7 +208,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   test("Alter table change dataType with sort column after adding dimension column with default value test"){
-    sql(s"create database carbon location '$dblocation'")
+    sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
     sql(
       """create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string)
@@ -227,7 +227,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   test("Alter table change dataType with sort column after rename test"){
-    sql(s"create database carbon location '$dblocation'")
+    sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
     sql(
       """create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string)
@@ -248,7 +248,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   test("Alter table drop column test") {
-    sql(s"create database carbon location '$dblocation'")
+    sql(s"create database carbon location '$dbLocation'")
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED AS carbondata""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")

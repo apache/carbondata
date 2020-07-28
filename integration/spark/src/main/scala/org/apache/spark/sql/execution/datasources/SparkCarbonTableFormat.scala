@@ -580,7 +580,7 @@ private class CarbonOutputWriter(path: String,
     }.getRecordWriter(context).asInstanceOf[CarbonRecordWriter]
   }
 
-  // TODO Implement writesupport interface to support writing Row directly to recordwriter
+  // TODO Implement write support interface to support writing Row directly to record writer
   def writeCarbon(row: InternalRow): Unit = {
     val numOfColumns = nonPartitionFieldTypes.length + partitionData.length
     val data: Array[AnyRef] = CommonUtil.getObjectArrayFromInternalRowAndConvertComplexType(
@@ -660,13 +660,13 @@ object CarbonOutputWriter {
       }
       if (staticPartition != null && staticPartition.get(col.getColumnName.toLowerCase)) {
         // TODO: why not use CarbonScalaUtil.convertToDateAndTimeFormats ?
-        val converetedVal =
+        val convertedValue =
           CarbonScalaUtil.convertStaticPartitions(partitionData(index), col)
         if (col.getDataType.equals(DataTypes.DATE)) {
-          converetedVal.toInt.asInstanceOf[AnyRef]
+          convertedValue.toInt.asInstanceOf[AnyRef]
         } else {
           DataTypeUtil.getDataBasedOnDataType(
-            converetedVal,
+            convertedValue,
             dataType,
             converter)
         }
@@ -686,11 +686,11 @@ object CarbonOutputWriter {
       val formattedPartitions = CarbonScalaUtil.updatePartitions(
         updatedPartitions.asInstanceOf[mutable.LinkedHashMap[String, String]],
         model.getCarbonDataLoadSchema.getCarbonTable)
-      val partitionstr = formattedPartitions.map { p =>
+      val partitionString = formattedPartitions.map { p =>
         ExternalCatalogUtils.escapePathName(p._1) + "=" + ExternalCatalogUtils.escapePathName(p._2)
       }.mkString(CarbonCommonConstants.FILE_SEPARATOR)
       model.getCarbonDataLoadSchema.getCarbonTable.getTablePath +
-      CarbonCommonConstants.FILE_SEPARATOR + partitionstr
+      CarbonCommonConstants.FILE_SEPARATOR + partitionString
     } else {
       var updatedPath = FileFactory.getUpdatedFilePath(path)
       updatedPath.substring(0, updatedPath.lastIndexOf("/"))

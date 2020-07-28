@@ -80,7 +80,7 @@ object StreamJobManager {
    * @param sourceTable stream source table
    * @param sinkTable sink table to insert to
    * @param query query string
-   * @param streamDf dataframe that containing the query from stream source table
+   * @param streamDf DataFrame that containing the query from stream source table
    * @param options options provided by user
    * @return Job ID
    */

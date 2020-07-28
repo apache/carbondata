@@ -140,11 +140,11 @@ object SparkTypeConverter {
     }.mkString(",")
   }
 
-  def addDecimalScaleAndPrecision(dimval: CarbonColumn, dataType: String): String = {
+  def addDecimalScaleAndPrecision(dimension: CarbonColumn, dataType: String): String = {
     var dType = dataType
-    if (CarbonDataTypes.isDecimal(dimval.getDataType)) {
+    if (CarbonDataTypes.isDecimal(dimension.getDataType)) {
       dType +=
-      "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema.getScale + ")"
+      "(" + dimension.getColumnSchema.getPrecision + "," + dimension.getColumnSchema.getScale + ")"
     }
     dType
   }

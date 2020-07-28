@@ -141,7 +141,7 @@ trait AlterTableHivePartitionInfo {
 /**
  * event for DeleteSegmentById
  */
-trait DeleteSegmentbyIdEventInfo {
+trait DeleteSegmentByIdEventInfo {
   val carbonTable: CarbonTable
   val loadIds: Seq[String]
 }
@@ -149,7 +149,7 @@ trait DeleteSegmentbyIdEventInfo {
 /**
  * event for DeleteSegmentByDate
  */
-trait DeleteSegmentbyDateEventInfo {
+trait DeleteSegmentByDateEventInfo {
   val carbonTable: CarbonTable
   val loadDates: String
 }
@@ -208,7 +208,7 @@ trait BuildIndexEventsInfo {
 }
 
 /**
- * EventInfo for prepriming on IndexServer. This event is used to
+ * EventInfo for pre-priming on IndexServer. This event is used to
  * fire a call to the index server when the load is complete.
  */
 trait IndexServerEventInfo {

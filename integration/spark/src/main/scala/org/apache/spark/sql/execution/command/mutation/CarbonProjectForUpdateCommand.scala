@@ -120,7 +120,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
         logInfo("Successfully able to get the table metadata file lock")
       }
       else {
-        throw new Exception("Table is locked for updation. Please try after some time")
+        throw new Exception("Table is locked for update. Please try after some time")
       }
 
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
@@ -180,7 +180,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
             executionErrors,
             segmentsToBeDeleted)
 
-          // prepriming for update command
+          // pre-priming for update command
           DeleteExecution.reloadDistributedSegmentCache(carbonTable,
             segmentsToBeDeleted, operationContext)(sparkSession)
 

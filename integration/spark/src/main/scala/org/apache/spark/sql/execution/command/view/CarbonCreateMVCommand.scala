@@ -459,7 +459,7 @@ case class CarbonCreateMVCommand(
               Seq.empty
             }
           } else {
-            // if not found then countinue search for the rest of the elements. Because the rest
+            // if not found then continue search for the rest of the elements. Because the rest
             // of the elements can also decide if the table has to be partitioned or not.
             generatePartitionerField(tail, partitionerFields)
           }
@@ -472,7 +472,7 @@ case class CarbonCreateMVCommand(
   }
 
   private def checkQuery(logicalPlan: LogicalPlan): ModularPlan = {
-    // if there is limit in query string, throw exception, as its not a valid usecase
+    // if there is limit in query string, throw exception, as its not a valid use case
     logicalPlan match {
       case Limit(_, _) =>
         throw new MalformedCarbonCommandException("Materialized view does not support the query " +
@@ -589,7 +589,7 @@ case class CarbonCreateMVCommand(
         }.isDefined || needFullRefresh
         expression
     }
-    // TODO:- Remove this case when incremental datalaoding is supported for multiple tables
+    // TODO:- Remove this case when incremental data loading is supported for multiple tables
     logicalPlan.transformDown {
       case join@Join(_, _, _, _) =>
         needFullRefresh = true

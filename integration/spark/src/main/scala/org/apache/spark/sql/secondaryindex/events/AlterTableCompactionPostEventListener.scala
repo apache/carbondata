@@ -55,7 +55,7 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
         val carbonLoadModel = alterTableCompactionPostEvent.carbonLoadModel
         val sQLContext = alterTableCompactionPostEvent.sparkSession.sqlContext
         val compactionType: CompactionType = alterTableCompactionPostEvent.carbonMergerMapping
-          .campactionType
+          .compactionType
         if (compactionType.toString
           .equalsIgnoreCase(CompactionType.SEGMENT_INDEX.toString)) {
           val carbonMainTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable

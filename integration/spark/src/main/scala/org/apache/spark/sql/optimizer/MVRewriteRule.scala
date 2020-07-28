@@ -81,7 +81,7 @@ class MVRewriteRule(session: SparkSession) extends Rule[LogicalPlan] {
     }
     logicalPlan.transform {
       case Aggregate(groupBy, aggregations, child) =>
-        // check for if plan is for dataload for preaggregate table, then skip applying mv
+        // check for if plan is for data load for pre-aggregate table, then skip applying mv
         val haveDummyFunction = aggregations.exists {
           aggregation =>
             if (aggregation.isInstanceOf[UnresolvedAlias]) {

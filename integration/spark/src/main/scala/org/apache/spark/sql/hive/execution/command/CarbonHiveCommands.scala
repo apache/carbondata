@@ -125,7 +125,7 @@ object CarbonSetCommand {
       else {
         throw new MalformedCarbonCommandException(
           "property should be in \" carbon.table.load.sort.scope.<database_name>" +
-          ".<table_name>=<sort_sope> \" format.")
+          ".<table_name>=<sort_scope> \" format.")
       }
     } else if (key.startsWith(CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER)) {
       val keySplits = key.split("\\.")

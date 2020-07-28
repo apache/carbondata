@@ -52,7 +52,7 @@ case class CarbonFileIndex(
   extends FileIndex with AbstractCarbonFileIndex {
 
   // When this flag is set it just returns empty files during pruning. It is needed for carbon
-  // session partition flow as we handle directly through indexSchema pruining.
+  // session partition flow as we handle directly through indexSchema pruning.
   private var actAsDummy = false
 
   override def rootPaths: Seq[Path] = fileIndex.rootPaths

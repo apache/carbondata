@@ -40,7 +40,7 @@ object SparkUtil {
    * Version passed should be of format x.y  e.g 2.2 ,2.3 , SPARK_VERSION
    * will be of format x.y.z e.g 2.3.0,2.2.1
    */
-  def isSparkVersionXandAbove(xVersion: String, isEqualComparision: Boolean = false): Boolean = {
+  def isSparkVersionXAndAbove(xVersion: String, isEqualComparision: Boolean = false): Boolean = {
     val tmpArray = SPARK_VERSION.split("\\.")
     // convert to float
     val sparkVersion = if (tmpArray.length >= 2) {
@@ -57,13 +57,13 @@ object SparkUtil {
   }
 
   def isSparkVersionEqualTo(xVersion: String): Boolean = {
-    isSparkVersionXandAbove(xVersion, true)
+    isSparkVersionXAndAbove(xVersion, true)
   }
 
   def setNullExecutionId(sparkSession: SparkSession): Unit = {
     // "spark.sql.execution.id is already set" exception will be
     // thrown if not set to null in spark2.2 and below versions
-    if (!SparkUtil.isSparkVersionXandAbove("2.3")) {
+    if (!SparkUtil.isSparkVersionXAndAbove("2.3")) {
       sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
     }
   }

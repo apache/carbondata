@@ -36,7 +36,7 @@ case class CarbonExplainCommand(
     setAuditInfo(Map("query" -> explainCommand.logicalPlan.simpleString))
     val isCommand = explainCommand.logicalPlan match {
       case _: Command => true
-      case Union(childern) if childern.forall(_.isInstanceOf[Command]) => true
+      case Union(children) if children.forall(_.isInstanceOf[Command]) => true
       case _ => false
     }
 
@@ -76,7 +76,7 @@ object CarbonExplainCommand {
           sparkSession.sessionState.executePlan(explain.logicalPlan)
         queryExecution.toRdd.partitions
         // For count(*) queries the explain collector will be disabled, so profiler
-        // informations not required in such scenarios.
+        // information not required in such scenarios.
         if (null == ExplainCollector.getFormattedOutput) {
           Seq.empty
         }

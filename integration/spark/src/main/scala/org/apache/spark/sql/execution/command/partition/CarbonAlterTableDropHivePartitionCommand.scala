@@ -41,7 +41,7 @@ import org.apache.carbondata.spark.rdd.CarbonDropPartitionRDD
 /**
  * Drop the partitions from hive and carbon store. It drops the partitions in following steps
  * 1. Drop the partitions from carbon store, it just create one new mapper file in each segment
- * with uniqueid.
+ * with unique id.
  * 2. Drop partitions from hive.
  * 3. In any above step fails then roll back the newly created files
  * 4. After success of steps 1 and 2 , it commits the files by removing the old fails.

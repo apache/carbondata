@@ -152,9 +152,9 @@ case class CarbonInsertFromStageCommand(
       }
 
       // We add a tag 'loading' to the stages in process.
-      // different insertstage processes can load different data separately
+      // different insert stage processes can load different data separately
       // by choose the stages without 'loading' tag or stages loaded timeout.
-      // which avoid loading the same data between concurrent insertstage processes.
+      // which avoid loading the same data between concurrent insert stage processes.
       // The 'loading' tag is actually an empty file with
       // '.loading' suffix filename
       val numThreads = Math.min(Math.max(stageFiles.length, 1), 10)
@@ -512,7 +512,7 @@ case class CarbonInsertFromStageCommand(
           // make isFailed to be true if createNewFile return false.
           // the reason can be file exists or exceptions.
           var isFailed = !stageLoadingFile.createNewFile()
-          // if file exists, modify the lastmodifiedtime of the file.
+          // if file exists, modify the lastModifiedTime of the file.
           if (isFailed) {
             // make isFailed to be true if setLastModifiedTime return false.
             isFailed = !stageLoadingFile.setLastModifiedTime(System.currentTimeMillis());
@@ -523,7 +523,7 @@ case class CarbonInsertFromStageCommand(
     }.map { future =>
       future.get()
     }.filter { files =>
-      // keep the files when isFailed is ture. so we can retry on these files.
+      // keep the files when isFailed is true. so we can retry on these files.
       files._3
     }.map { files =>
       (files._1, files._2)
@@ -568,7 +568,7 @@ case class CarbonInsertFromStageCommand(
               + CarbonTablePath.LOADING_FILE_SUFFIX);
           var isFailed = false
           // If delete() return false, maybe the reason is FileNotFount or FileFailedClean.
-          // Considering FileNotFound means FileCleanSucessfully.
+          // Considering FileNotFound means file clean successfully.
           // We need double check the file exists or not when delete() return false.
           if (!(files._1.delete() && files._2.delete() && stageLoadingFile.delete())) {
             // If the file still exists,  make isFailed to be true
@@ -581,7 +581,7 @@ case class CarbonInsertFromStageCommand(
     }.map { future =>
       future.get()
     }.filter { files =>
-      // keep the files when isFailed is ture. so we can retry on these files.
+      // keep the files when isFailed is true. so we can retry on these files.
       files._3
     }.map { files =>
       (files._1, files._2)
@@ -620,7 +620,7 @@ case class CarbonInsertFromStageCommand(
       snapshotFilePath: String): Boolean = {
     val snapshotFile = FileFactory.getCarbonFile(snapshotFilePath)
     // If delete() return false, maybe the reason is FileNotFount or FileFailedClean.
-    // Considering FileNotFound means FileCleanSucessfully.
+    // Considering FileNotFound means file clean successfully.
     // We need double check the file exists or not when delete() return false.
     if (!snapshotFile.delete()) {
       return snapshotFile.exists()
@@ -662,9 +662,9 @@ case class CarbonInsertFromStageCommand(
         (file.getName.substring(0, file.getName.indexOf(".")), file)
       }.toMap
 
-      // different insertstage processes can load different data separately
+      // different insert stage processes can load different data separately
       // by choose the stages without 'loading' tag or stages loaded timeout.
-      // which avoid loading the same data between concurrent insertstage processes.
+      // which avoid loading the same data between concurrent insert stage processes.
       // Overall, There are two conditions to choose stages to process:
       // 1) stages never loaded, choose the stages without '.loading' tag.
       // 2) stages loaded timeout, the timeout threshold depends on INSERT_STAGE_TIMEOUT

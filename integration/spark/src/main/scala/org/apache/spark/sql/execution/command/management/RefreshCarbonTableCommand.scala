@@ -103,7 +103,7 @@ case class RefreshCarbonTableCommand(
   /**
    * Refresh the sort_column flag in column schema in case of old store. Before V3, sort_column
    * option is not set but by default all dimension columns should be treated
-   * as sort columns if SORT_COLUMNS property is not defined in tblproperties
+   * as sort columns if SORT_COLUMNS property is not defined in table properties
    *
    * @param tableInfo
    */
@@ -163,7 +163,7 @@ case class RefreshCarbonTableCommand(
       val refreshTablePreExecutionEvent: RefreshTablePreExecutionEvent =
         new RefreshTablePreExecutionEvent(sparkSession,
           tableInfo.getOrCreateAbsoluteTableIdentifier())
-      if (SparkUtil.isSparkVersionXandAbove("2.4")) {
+      if (SparkUtil.isSparkVersionXAndAbove("2.4")) {
         // During refresh table, when this option is set to true, creating managed tables with
         // nonempty location is allowed. Otherwise, an analysis exception is thrown.
         // https://kb.databricks.com/jobs/spark-overwrite-cancel.html
@@ -178,7 +178,7 @@ case class RefreshCarbonTableCommand(
       case e: AnalysisException => throw e
       case e: Exception => throw e
     } finally {
-      if (SparkUtil.isSparkVersionXandAbove("2.4")) {
+      if (SparkUtil.isSparkVersionXAndAbove("2.4")) {
         // Set it back to default
         sparkSession.sessionState.conf
           .setConfString(allowCreateTableNonEmptyLocationConf, allowCreateTableNonEmptyLocation)

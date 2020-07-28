@@ -65,8 +65,8 @@ object CastExpressionOptimization {
         } catch {
           case e: ParseException =>
             try {
-              val parsenew: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSz")
-              parsenew.parse(v.toString).getTime() * 1000L
+              val format: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSz")
+              format.parse(v.toString).getTime() * 1000L
             } catch {
               case e: ParseException =>
                 val gmtDay = new SimpleDateFormat("yyyy-MM-dd", Locale.US)
@@ -140,7 +140,8 @@ object CastExpressionOptimization {
 
   /**
    * This routines tries to apply rules on Cast Filter Predicates and if the rules applied and the
-   * values can be toss back to native datatypes the cast is removed. Current two rules are applied
+   * values can be toss back to native data types the cast is removed.
+   * Current two rules are applied
    * a) Left : timestamp column      Right : String Value
    * Input from Spark : cast (col as string) <> 'String Literal'
    * Change to        : Column <> 'Long value of Timestamp String'
@@ -394,7 +395,7 @@ object CastExpressionOptimization {
 
   /**
    * Spark compares data based on double also.
-   * Ex. slect * ...where time >0 , this will return all data
+   * Ex. select * ...where time >0 , this will return all data
    * So better  give to Spark as Cast Expression.
    *
    * @param numericTimeValue

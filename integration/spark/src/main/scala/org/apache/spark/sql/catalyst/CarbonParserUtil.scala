@@ -302,7 +302,7 @@ object CarbonParserUtil {
       }
 
       // validate if both local dictionary include and exclude contains same column
-      CarbonScalaUtil.validateDuplicateLocalDictIncludeExcludeColmns(tableProperties)
+      CarbonScalaUtil.validateDuplicateColumnsForLocalDict(tableProperties)
     }
 
     // get no inverted index columns from table properties.
@@ -375,12 +375,12 @@ object CarbonParserUtil {
     }
     // long_string_columns columns cannot be in no_inverted_index columns
     var longStringColumns = varcharColumns.map(_.toUpperCase)
-    var noInvColIntersecLongStrCols = longStringColumns
+    var noInvColIntersectLongStrCols = longStringColumns
       .intersect(noInvertedIdxCols.map(_.toUpperCase))
-    if (!noInvColIntersecLongStrCols.isEmpty) {
+    if (!noInvColIntersectLongStrCols.isEmpty) {
       throw new MalformedCarbonCommandException(
         s"Column(s): ${
-          noInvColIntersecLongStrCols.mkString(",")
+          noInvColIntersectLongStrCols.mkString(",")
         } both in no_inverted_index and long_string_columns which is not allowed.")
     }
     // long_string_columns columns cannot be in partition columns
@@ -644,7 +644,7 @@ object CarbonParserUtil {
       validateLongStringColumns(fields, varcharCols)
     }
 
-    // All columns in sortkey should be there in create table cols
+    // All columns in sort_columns should be there in create table cols
     var sortKeyOption = tableProperties.get(CarbonCommonConstants.SORT_COLUMNS)
     if (!sortKeyOption.isDefined) {
       // default no columns are selected for sorting in no_sort scope
@@ -710,7 +710,7 @@ object CarbonParserUtil {
         dimFields += field
       } else if (isDetectAsDimensionDataType(field.dataType.get)) {
         dimFields += field
-        // consider all String and binary cols as noDicitonaryDims by default
+        // consider all String and binary cols as noDictionaryDims by default
         if ((DataTypes.STRING.getName.equalsIgnoreCase(field.dataType.get)) ||
             (DataTypes.BINARY.getName.equalsIgnoreCase(field.dataType.get))) {
           noDictionaryDims :+= field.column

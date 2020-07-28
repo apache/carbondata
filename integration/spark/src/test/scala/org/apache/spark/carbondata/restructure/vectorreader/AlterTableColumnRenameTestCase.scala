@@ -297,7 +297,7 @@ class AlterTableColumnRenameTestCase extends QueryTest with BeforeAndAfterAll {
     sql("alter table rename change deptno classno bigint")
     if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       checkExistence(sql("describe formatted rename"), false, "This column has comment ")
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       checkExistence(sql("describe formatted rename"), true, "This column has comment ")
     }
   }

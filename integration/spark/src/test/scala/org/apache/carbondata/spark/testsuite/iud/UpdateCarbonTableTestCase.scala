@@ -629,7 +629,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE, "false")
     sql("drop database if exists carbon1 cascade")
-    sql(s"create database carbon1 location '$dblocation'")
+    sql(s"create database carbon1 location '$dbLocation'")
     sql("use carbon1")
     sql("""CREATE TABLE carbontable(id int, name string, city string, age int)
          STORED AS carbondata""")
@@ -760,13 +760,13 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("delete from t where c3 = 2").show()
     sql("update t set(c4) = ('yyy') where c3 = 3").show()
     checkAnswer(sql("select count(*) from t where c4 = 'yyy'"), Seq(Row(1)))
-    val f = new File(dblocation + CarbonCommonConstants.FILE_SEPARATOR +
+    val f = new File(dbLocation + CarbonCommonConstants.FILE_SEPARATOR +
                      CarbonCommonConstants.FILE_SEPARATOR + "t" +
                      CarbonCommonConstants.FILE_SEPARATOR + "Fact" +
                      CarbonCommonConstants.FILE_SEPARATOR + "Part0")
     if (!FileFactory.isFileExist(
       CarbonTablePath.getSegmentFilesLocation(
-        dblocation + CarbonCommonConstants.FILE_SEPARATOR +
+        dbLocation + CarbonCommonConstants.FILE_SEPARATOR +
         CarbonCommonConstants.FILE_SEPARATOR + "t"))) {
       assert(f.list().length == 2)
     }

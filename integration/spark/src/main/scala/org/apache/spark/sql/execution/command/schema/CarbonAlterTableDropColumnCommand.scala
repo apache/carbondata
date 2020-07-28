@@ -104,7 +104,7 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
 
       var dictionaryColumns = Seq[org.apache.carbondata.core.metadata.schema.table.column
       .ColumnSchema]()
-      // TODO: if deleted column list includes bucketted column throw an error
+      // TODO: if deleted column list includes bucketed column throw an error
       alterTableDropColumnModel.columns.foreach { column =>
         var columnExist = false
         tableColumns.foreach { tableColumn =>

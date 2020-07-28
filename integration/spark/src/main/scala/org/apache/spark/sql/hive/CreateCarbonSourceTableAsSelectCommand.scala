@@ -117,7 +117,7 @@ case class CreateCarbonSourceTableAsSelectCommand(
 
     try {
       val physicalPlan = session.sessionState.executePlan(data).executedPlan
-      CarbonReflectionUtils.invokewriteAndReadMethod(dataSource,
+      CarbonReflectionUtils.invokeWriteAndReadMethod(dataSource,
         Dataset.ofRows(session, query),
         data,
         session,

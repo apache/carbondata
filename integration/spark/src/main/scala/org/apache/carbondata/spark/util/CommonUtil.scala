@@ -668,7 +668,7 @@ object CommonUtil {
     } else {
       val trimmedCacheLevel = cacheLevel.trim.toUpperCase
       if (!supportedCacheLevel.contains(trimmedCacheLevel)) {
-        val errorMessage = s"Invalid value: Allowed vaLues for ${
+        val errorMessage = s"Invalid value: Allowed values for ${
           CarbonCommonConstants.CACHE_LEVEL} are BLOCK AND BLOCKLET"
         throw new MalformedCarbonCommandException(errorMessage)
       }
@@ -702,7 +702,7 @@ object CommonUtil {
   }
 
   /**
-   * Validate the column_meta_cache option in tableproperties
+   * Validate the column_meta_cache option in table properties
    *
    * @param tableIdentifier
    * @param databaseName

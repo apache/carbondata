@@ -110,7 +110,7 @@ private[profiler] class StatementSummary(
 
   override def toString: String = {
     if (isCommand) {
-      buildForComand()
+      buildForCommand()
     } else {
       buildForQuery()
     }
@@ -142,7 +142,7 @@ private[profiler] class StatementSummary(
    *   |__ 3.execution taken: 1051 ms
    *   |__ ...
    */
-  private def buildForComand(): String = {
+  private def buildForCommand(): String = {
     val builder = new JavaStringBuilder(1000)
     builder.append(s"\n[statement id]: ${ statementId }")
     builder.append(s"\n[sql text]:\n")

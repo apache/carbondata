@@ -92,7 +92,7 @@ object StreamSinkFactory {
       carbonTable,
       parameters,
       "")
-    // fire pre event before streamin is started
+    // fire pre event before streaming is started
     // in case of streaming options and optionsFinal can be same
     val operationContext = new OperationContext
     val (tableIndexes, indexOperationContext) = CommonLoadUtils.firePreLoadEvents(sparkSession,
@@ -118,7 +118,7 @@ object StreamSinkFactory {
       carbonLoadModel,
       operationContext)
 
-    // fire post event before streamin is started
+    // fire post event before streaming is started
     CommonLoadUtils.firePostLoadEvents(sparkSession,
       carbonLoadModel,
       tableIndexes,

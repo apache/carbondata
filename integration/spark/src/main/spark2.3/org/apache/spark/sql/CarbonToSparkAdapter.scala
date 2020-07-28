@@ -118,7 +118,7 @@ object CarbonToSparkAdapter {
 
   /**
    * As a part of SPARK-24085 Hive tables supports scala subquery for
-   * parition tables,so Carbon also needs to supports
+   * the partitioned tables,so Carbon also needs to supports
    * @param partitionSet
    * @param filterPredicates
    * @return

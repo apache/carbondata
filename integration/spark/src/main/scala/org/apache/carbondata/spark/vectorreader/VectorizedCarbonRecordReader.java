@@ -85,7 +85,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
   private boolean[] isNoDictStringField;
 
   /**
-   * The default config on whether columnarBatch should be onheap.
+   * The default config on whether columnarBatch should be on-heap.
    */
   private static final MemoryMode DEFAULT_MEMORY_MODE = MemoryMode.ON_HEAP;
 

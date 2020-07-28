@@ -61,9 +61,9 @@ object IUDCommonUtil {
             .getDatabaseName + "." +
           logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
             .getTableName
-        val sementProperty = carbonProperties
+        val segmentProperty = carbonProperties
           .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS + dbAndTb, "")
-        if (!(sementProperty.equals("") || sementProperty.trim.equals("*"))) {
+        if (!(segmentProperty.equals("") || segmentProperty.trim.equals("*"))) {
           throw new MalformedCarbonCommandException("carbon.input.segments." + dbAndTb +
                                                     "should not be set for table used in UPDATE " +
                                                     "query. Please reset the property to carbon" +

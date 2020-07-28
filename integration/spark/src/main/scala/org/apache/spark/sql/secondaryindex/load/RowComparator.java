@@ -24,24 +24,24 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
 /**
- * This class is for comparing the two mdkeys in no kettle flow.
+ * This class is for comparing the two MDKeys in no kettle flow.
  */
-public class RowComparatorWithOutKettle implements Comparator<Object[]> {
+public class RowComparator implements Comparator<Object[]> {
 
   /**
    * noDictionaryColMaping mapping of dictionary dimensions and no dictionary dimensions.
    */
-  private boolean[] noDictionaryColMaping;
+  private boolean[] noDictionaryColMapping;
 
   private DataType[] noDicDataTypes;
 
-  public RowComparatorWithOutKettle(boolean[] noDictionaryColMaping, DataType[] noDicDataTypes) {
-    this.noDictionaryColMaping = noDictionaryColMaping;
+  public RowComparator(boolean[] noDictionaryColMapping, DataType[] noDicDataTypes) {
+    this.noDictionaryColMapping = noDictionaryColMapping;
     this.noDicDataTypes = noDicDataTypes;
   }
 
   /**
-   * Below method will be used to compare two mdkeys
+   * Below method will be used to compare two MDKeys
    */
   public int compare(Object[] rowA, Object[] rowB) {
     int diff = 0;
@@ -52,7 +52,7 @@ public class RowComparatorWithOutKettle implements Comparator<Object[]> {
     int[] rightMdkArray = (int[]) rowB[0];
     Object[] leftNonDictArray = (Object[]) rowA[1];
     Object[] rightNonDictArray = (Object[]) rowB[1];
-    for (boolean isNoDictionary : noDictionaryColMaping) {
+    for (boolean isNoDictionary : noDictionaryColMapping) {
       if (isNoDictionary) {
         if (DataTypeUtil.isPrimitiveColumn(noDicDataTypes[dataTypeIdx])) {
           // use data types based comparator for the no dictionary measure columns

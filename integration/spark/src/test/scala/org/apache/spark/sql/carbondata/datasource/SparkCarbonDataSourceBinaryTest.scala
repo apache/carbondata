@@ -208,7 +208,7 @@ class SparkCarbonDataSourceBinaryTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Don't support insert into partition table") {
-    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       sql("DROP TABLE IF EXISTS binaryCarbon")
       sql("DROP TABLE IF EXISTS binaryCarbon2")
       sql("DROP TABLE IF EXISTS binaryCarbon3")

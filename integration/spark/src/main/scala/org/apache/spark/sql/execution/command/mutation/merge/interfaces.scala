@@ -23,7 +23,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.util.LongAccumulator
 
 /**
- * It describes the type of match like whenmatched or whennotmatched etc., it holds all the actions
+ * It describes the type of match like whenMatched or whenNotMatched etc., it holds all the actions
  * to be done when this match passes.
  */
 abstract class MergeMatch extends Serializable {

@@ -42,13 +42,13 @@ object TableLoader {
     val path = new Path(propertiesFile)
     val fs = path.getFileSystem(FileFactory.getConfiguration)
     props.load(fs.open(path))
-    val elments = props.entrySet().iterator()
+    val elements = props.entrySet().iterator()
     val map = new mutable.HashMap[String, String]()
     System.out.println("properties file:")
-    while (elments.hasNext) {
-      val elment = elments.next()
-      System.out.println(s"${elment.getKey}=${elment.getValue}")
-      map.put(elment.getKey.asInstanceOf[String], elment.getValue.asInstanceOf[String])
+    while (elements.hasNext) {
+      val element = elements.next()
+      System.out.println(s"${element.getKey}=${element.getValue}")
+      map.put(element.getKey.asInstanceOf[String], element.getValue.asInstanceOf[String])
     }
 
     immutable.Map(map.toSeq: _*)

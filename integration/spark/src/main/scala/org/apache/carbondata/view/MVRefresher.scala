@@ -68,19 +68,19 @@ object MVRefresher {
     // Clean up the old invalid segment data before creating a new entry for new load.
     SegmentStatusManager.deleteLoadsAndUpdateMetadata(viewTable, false, null)
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(viewTableIdentifier)
-    // Acquire table status lock to handle concurrent dataloading
+    // Acquire table status lock to handle concurrent data loading
     val lock: ICarbonLock = segmentStatusManager.getTableStatusLock
     val segmentMapping: util.Map[String, util.List[String]] =
       new util.HashMap[String, util.List[String]]
     val viewManager = MVManagerInSpark.get(session)
     try if (lock.lockWithRetries) {
-      LOGGER.info("Acquired lock for mv " + viewIdentifier + " for table status updation")
+      LOGGER.info("Acquired lock for mv " + viewIdentifier + " for table status update")
       val viewTableMetadataPath: String =
         CarbonTablePath.getMetadataPath(viewIdentifier.getTablePath)
       val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(viewTableMetadataPath)
       val loadMetadataDetailList: util.List[LoadMetadataDetails] =
         new util.ArrayList[LoadMetadataDetails](CarbonCommonConstants.DEFAULT_COLLECTION_SIZE)
-      // Mark for delete all stale loadMetadetail
+      // Mark for delete all stale loadMetataDetail
       for (loadMetadataDetail <- loadMetadataDetails) {
         if (((loadMetadataDetail.getSegmentStatus eq SegmentStatus.INSERT_IN_PROGRESS) ||
              (loadMetadataDetail.getSegmentStatus eq SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS)) &&
@@ -122,7 +122,7 @@ object MVRefresher {
           }
         }
       segmentMap = new Gson().toJson(segmentMapping)
-      // To handle concurrent dataloading to mv, create new loadMetaEntry and
+      // To handle concurrent data loading to mv, create new loadMetaEntry and
       // set segmentMap to new loadMetaEntry and pass new segmentId with load command
       val loadMetadataDetail: LoadMetadataDetails = new LoadMetadataDetails
       val segmentId: String = String.valueOf(
@@ -137,21 +137,21 @@ object MVRefresher {
         loadMetadataDetailList.toArray(new Array[LoadMetadataDetails](loadMetadataDetailList
           .size)))
     } else {
-      LOGGER.error("Not able to acquire the lock for Table status updation for table " +
+      LOGGER.error("Not able to acquire the lock for table status update for table " +
                    viewSchema.getIdentifier.getDatabaseName + "." +
                    viewSchema.getIdentifier.getTableName)
       viewManager.setStatus(viewSchema.getIdentifier, MVStatus.DISABLED)
       return false
     } finally {
       if (lock.unlock) {
-        LOGGER.info("Table unlocked successfully after table status updation" +
+        LOGGER.info("Table unlocked successfully after table status update" +
                     viewSchema.getIdentifier.getDatabaseName + "." +
                     viewSchema.getIdentifier.getTableName)
       } else {
         LOGGER.error("Unable to unlock Table lock for table" +
                      viewSchema.getIdentifier.getDatabaseName + "." +
                      viewSchema.getIdentifier.getTableName +
-                     " during table status updation")
+                     " during table status update")
       }
     }
     refreshInternal(viewManager, viewSchema, viewTable, newLoadName, segmentMapping, session)

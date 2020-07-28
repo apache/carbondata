@@ -362,7 +362,7 @@ object AlterTableUtil {
   /**
    * This method modifies the table properties if column rename happened
    * @param tableProperties tableProperties of the table
-   * @param oldColumnName old COlumnname before rename
+   * @param oldColumnName old Column name before rename
    * @param newColumnName new column name to rename
    */
   def modifyTablePropertiesAfterColumnRename(
@@ -494,7 +494,7 @@ object AlterTableUtil {
           }
         }
         // check if duplicate columns are present in both local dictionary include and exclude
-        CarbonScalaUtil.validateDuplicateLocalDictIncludeExcludeColmns(tblPropertiesMap)
+        CarbonScalaUtil.validateDuplicateColumnsForLocalDict(tblPropertiesMap)
       } else {
         // This removes the comment parameter from thriftTable
         // since thriftTable also holds comment as its property.
@@ -528,13 +528,13 @@ object AlterTableUtil {
           }
         }
         // check if duplicate columns are present in both local dictionary include and exclude
-        CarbonScalaUtil.validateDuplicateLocalDictIncludeExcludeColmns(tblPropertiesMap)
+        CarbonScalaUtil.validateDuplicateColumnsForLocalDict(tblPropertiesMap)
       }
-      val (tableIdentifier, schemParts) = updateSchemaInfo(
+      val (tableIdentifier, schemaParts) = updateSchemaInfo(
         carbonTable = carbonTable,
         schemaEvolutionEntry,
         thriftTable = thriftTable)(sparkSession)
-      CarbonSessionCatalogUtil.alterTable(tableIdentifier, schemParts, None, sparkSession)
+      CarbonSessionCatalogUtil.alterTable(tableIdentifier, schemaParts, None, sparkSession)
       CarbonSessionCatalogUtil.alterTableProperties(
         sparkSession, tableIdentifier, lowerCasePropertiesMap.toMap, propKeys)
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
@@ -577,7 +577,7 @@ object AlterTableUtil {
   }
 
   /**
-   * this method validates the local dictioanry properties for alter set
+   * this method validates the local dictionary properties for alter set
    *
    * @param lowerCasePropertiesMap
    * @param tblPropertiesMap
@@ -734,7 +734,7 @@ object AlterTableUtil {
     val newCompactionLevelThreshold =
       propertiesMap.get(CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD)
     if (newCompactionLevelThreshold.isDefined) {
-      // check compactionlevelthreshold is in the specified range and in the format of number
+      // check compaction level threshold is in the specified range and in the format of number
       if (CarbonProperties.getInstance().getIntArray(newCompactionLevelThreshold.get).length == 0) {
         throw new InvalidConfigurationException(
           s"Cannot set COMPACTION_LEVEL_THRESHOLD as ${newCompactionLevelThreshold.get}")
@@ -1009,10 +1009,10 @@ object AlterTableUtil {
     // varchar dataType column
     if (property._1.equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)) {
       // Validate whether any of the child columns of complex dataType column is a string column
-      localDictColumns.foreach { dictColm =>
+      localDictColumns.foreach { dictColumn =>
         for (elem <- allColumns.indices) {
           var column = allColumns(elem)
-          if (column.getColumnName.equalsIgnoreCase(dictColm) && column.getNumberOfChild > 0 &&
+          if (column.getColumnName.equalsIgnoreCase(dictColumn) && column.getNumberOfChild > 0 &&
               !validateChildColumns(allColumns, column.getNumberOfChild, elem. +(1))) {
             val errMsg =
               "None of the child columns specified in the complex dataType column(s) in " +

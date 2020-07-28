@@ -276,7 +276,7 @@ case class CarbonAddLoadCommand(
         model.getSegmentId)
       // when this event is triggered, SI load listener will be called for all the SI tables under
       // this main table, no need to load the SI tables for add load command, so add this property
-      // to check in SI loadevent listener to avoid loading to SI.
+      // to check in SI load event listener to avoid loading to SI.
       operationContext.setProperty("isAddLoad", "true")
       val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
         new LoadTablePreStatusUpdateEvent(
@@ -325,8 +325,8 @@ case class CarbonAddLoadCommand(
       FileFactory.deleteFile(segmentFile)
       clearIndexFiles(carbonTable, model.getSegmentId)
       LOGGER.info("********clean up done**********")
-      LOGGER.error("Data load failed due to failure in table status updation.")
-      throw new Exception("Data load failed due to failure in table status updation.")
+      LOGGER.error("Data load failed due to failure in table status update.")
+      throw new Exception("Data load failed due to failure in table status update.")
     }
     val viewManager = MVManagerInSpark.get(sparkSession)
     val viewSchemas = new util.ArrayList[MVSchema]()

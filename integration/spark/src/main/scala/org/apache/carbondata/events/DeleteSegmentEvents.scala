@@ -27,7 +27,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
  * @param sparkSession
  */
 case class DeleteSegmentByIdPreEvent(carbonTable: CarbonTable, loadIds: Seq[String],
-    sparkSession: SparkSession) extends Event with DeleteSegmentbyIdEventInfo
+    sparkSession: SparkSession) extends Event with DeleteSegmentByIdEventInfo
 
 
 /**
@@ -37,7 +37,7 @@ case class DeleteSegmentByIdPreEvent(carbonTable: CarbonTable, loadIds: Seq[Stri
  * @param sparkSession
  */
 case class DeleteSegmentByIdPostEvent(carbonTable: CarbonTable, loadIds: Seq[String],
-    sparkSession: SparkSession) extends Event with DeleteSegmentbyIdEventInfo
+    sparkSession: SparkSession) extends Event with DeleteSegmentByIdEventInfo
 
 
 /**
@@ -47,7 +47,7 @@ case class DeleteSegmentByIdPostEvent(carbonTable: CarbonTable, loadIds: Seq[Str
  * @param sparkSession
  */
 case class DeleteSegmentByIdAbortEvent(carbonTable: CarbonTable, loadIds: Seq[String],
-    sparkSession: SparkSession) extends Event with DeleteSegmentbyIdEventInfo
+    sparkSession: SparkSession) extends Event with DeleteSegmentByIdEventInfo
 
 /**
  *
@@ -56,7 +56,7 @@ case class DeleteSegmentByIdAbortEvent(carbonTable: CarbonTable, loadIds: Seq[St
  * @param sparkSession
  */
 case class DeleteSegmentByDatePreEvent(carbonTable: CarbonTable, loadDates: String,
-    sparkSession: SparkSession) extends Event with DeleteSegmentbyDateEventInfo
+    sparkSession: SparkSession) extends Event with DeleteSegmentByDateEventInfo
 
 /**
  *
@@ -65,7 +65,7 @@ case class DeleteSegmentByDatePreEvent(carbonTable: CarbonTable, loadDates: Stri
  * @param sparkSession
  */
 case class DeleteSegmentByDatePostEvent(carbonTable: CarbonTable, loadDates: String,
-    sparkSession: SparkSession) extends Event with DeleteSegmentbyDateEventInfo
+    sparkSession: SparkSession) extends Event with DeleteSegmentByDateEventInfo
 
 /**
  *
@@ -74,4 +74,4 @@ case class DeleteSegmentByDatePostEvent(carbonTable: CarbonTable, loadDates: Str
  * @param sparkSession
  */
 case class DeleteSegmentByDateAbortEvent(carbonTable: CarbonTable, loadDates: String,
-    sparkSession: SparkSession) extends Event with DeleteSegmentbyDateEventInfo
+    sparkSession: SparkSession) extends Event with DeleteSegmentByDateEventInfo

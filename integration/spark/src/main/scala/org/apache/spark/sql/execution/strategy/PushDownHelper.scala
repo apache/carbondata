@@ -31,9 +31,9 @@ object PushDownHelper {
       projects: Seq[NamedExpression],
       projection: CarbonProjection
   ): Unit = {
-    // In case of Struct or StructofStruct Complex type, get the project column for given
-    // parent/child field and pushdown the corresponding project column. In case of Array, Map,
-    // ArrayofStruct, StructofArray, MapOfStruct or StructOfMap, pushdown parent column
+    // In case of Struct or StructOfStruct Complex type, get the project column for given
+    // parent/child field and push down the corresponding project column. In case of Array, Map,
+    // ArrayOfStruct, StructOfArray, MapOfStruct or StructOfMap, push down parent column
     val output = ArrayBuffer[String]()
     projects.foreach(PushDownHelper.collectColumns(_, output))
     if (output.isEmpty) {

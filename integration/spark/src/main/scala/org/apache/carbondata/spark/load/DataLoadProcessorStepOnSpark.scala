@@ -165,7 +165,7 @@ object DataLoadProcessorStepOnSpark {
     }
   }
 
-  def inputAndconvertFunc(
+  def inputAndConvertFunc(
       rows: Iterator[Array[AnyRef]],
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
@@ -467,7 +467,7 @@ object DataLoadProcessorStepOnSpark {
 class NewInputProcessorStepImpl(configuration: CarbonDataLoadConfiguration,
     rows: Iterator[CarbonRow]) extends AbstractDataLoadProcessorStep(configuration, null) {
   /**
-   * Tranform the data as per the implementation.
+   * Transform the data as per the implementation.
    *
    * @return Array of Iterator with data. It can be processed parallel if implementation class wants
    * @throws CarbonDataLoadingException

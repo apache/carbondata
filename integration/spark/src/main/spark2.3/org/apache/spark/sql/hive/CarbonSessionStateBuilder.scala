@@ -37,7 +37,7 @@ import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 
 /**
- * This class will have carbon catalog and refresh the relation from cache if the carbontable in
+ * This class will have carbon catalog and refresh the relation from cache if the carbon table in
  * carbon catalog is not same as cached carbon relation's carbon table
  *
  * @param externalCatalog
@@ -145,7 +145,7 @@ class CarbonHiveSessionCatalog(
   }
 
   /**
-   * Update the storageformat with new location information
+   * Update the storage format with new location information
    */
   override def updateStorageLocation(
       path: Path,

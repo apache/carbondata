@@ -126,7 +126,7 @@ class QueryTest extends PlanTest {
   val resourcesPath = TestQueryExecutor.resourcesPath
   val target = TestQueryExecutor.target
   val integrationPath = TestQueryExecutor.integrationPath
-  val dblocation = TestQueryExecutor.location
+  val dbLocation = TestQueryExecutor.location
   val defaultParallelism = sqlContext.sparkContext.defaultParallelism
   val targetTestClass = System.getProperty("user.dir") + "/target/test-classes"
 

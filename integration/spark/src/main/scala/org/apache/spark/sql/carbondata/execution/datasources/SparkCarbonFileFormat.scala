@@ -32,7 +32,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.memory.MemoryMode
 import org.apache.spark.sql._
-import org.apache.spark.sql.carbondata.execution.datasources.readsupport.SparkUnsafeRowReadSuport
+import org.apache.spark.sql.carbondata.execution.datasources.readsupport.SparkUnsafeRowReadSupport
 import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.{CarbonLoadTaskCompletionListenerImpl, CarbonQueryTaskCompletionListenerImpl}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.JoinedRow
@@ -435,7 +435,7 @@ class SparkCarbonFileFormat extends FileFormat
           vectorizedReader
         } else {
           val reader = new CarbonRecordReader(model,
-            new SparkUnsafeRowReadSuport(requiredSchema), broadcastedHadoopConf.value.value)
+            new SparkUnsafeRowReadSupport(requiredSchema), broadcastedHadoopConf.value.value)
           reader.initialize(split, hadoopAttemptContext)
           reader
         }

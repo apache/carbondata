@@ -278,7 +278,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
 
         val thriftTableInfo: TableInfo = if (tblInfoFromCache != null) {
           // In case the TableInfo is present in the Carbon Metadata Cache
-          // then get the tableinfo from the cache rather than infering from
+          // then get the table info from the cache rather than inferring from
           // the CarbonData file.
           schemaConverter
             .fromWrapperToExternalTableInfo(tblInfoFromCache, dbName, tableName)

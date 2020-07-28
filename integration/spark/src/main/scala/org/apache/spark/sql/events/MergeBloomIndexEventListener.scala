@@ -61,14 +61,14 @@ class MergeBloomIndexEventListener extends OperationEventListener with Logging {
         if (index.size > 0 && segmentIds.size > 0) {
           // we extract bloom indexSchema name and index columns here
           // because TableIndex is not serializable
-          val bloomDMnames = ListBuffer.empty[String]
+          val bloomIndexNames = ListBuffer.empty[String]
           val bloomIndexColumns = ListBuffer.empty[Seq[String]]
           index.foreach( dm => {
-            bloomDMnames += dm.getIndexSchema.getIndexName
+            bloomIndexNames += dm.getIndexSchema.getIndexName
             bloomIndexColumns += dm.getIndexSchema.getIndexColumns.map(_.trim.toLowerCase)
           })
           new CarbonMergeBloomIndexFilesRDD(sparkSession, carbonTable,
-            segmentIds, bloomDMnames, bloomIndexColumns).collect()
+            segmentIds, bloomIndexNames, bloomIndexColumns).collect()
         }
     }
   }

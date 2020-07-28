@@ -62,7 +62,7 @@ object CarbonSessionCatalogUtil {
   }
 
   /**
-   * Below method will be used to update serd properties
+   * Below method will be used to update serde properties
    * @param tableIdentifier table identifier
    * @param schemaParts schema parts
    * @param cols cols
@@ -107,7 +107,7 @@ object CarbonSessionCatalogUtil {
     //    For Spark2.2 we need to use unified Spark thrift server instead of carbon thrift
     //    server. CarbonSession is not available anymore so HiveClient is created directly
     //    using sparkSession.sharedState which internally contains all required carbon rules,
-    //    optimizers pluged-in through SessionStateBuilder in spark-defaults.conf.
+    //    optimizers plug-in through SessionStateBuilder in spark-defaults.conf.
     //    spark.sql.session.state.builder=org.apache.spark.sql.hive.CarbonSessionStateBuilder
     CarbonToSparkAdapter.getHiveExternalCatalog(sparkSession).client
   }
@@ -163,7 +163,7 @@ object CarbonSessionCatalogUtil {
   }
 
   /**
-   * Update the storageformat with new location information
+   * Update the storage format with new location information
    */
   def updateStorageLocation(
       path: Path,

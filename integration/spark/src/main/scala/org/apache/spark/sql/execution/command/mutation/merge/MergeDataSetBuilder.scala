@@ -126,7 +126,7 @@ class MergeDataSetBuilder(existingDsOri: Dataset[Row], currDs: Dataset[Row],
 
   private def checkBuilder(): Unit = {
     if (matchList.size() == 0) {
-      throw new AnalysisException("Atleast one matcher should be called before calling an action")
+      throw new AnalysisException("At least one matcher should be called before calling an action")
     }
   }
 

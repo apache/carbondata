@@ -191,7 +191,7 @@ object CommonLoadUtils {
       .addProperty(CarbonCommonConstants.NUM_CORES_LOADING, numCoresLoading)
   }
 
-  def getCurrentParitions(sparkSession: SparkSession,
+  def getCurrentPartitions(sparkSession: SparkSession,
       table: CarbonTable): util.List[PartitionSpec] = {
     val currPartitions = if (table.isHivePartitionTable) {
       CarbonFilters.getCurrentPartitions(
@@ -392,7 +392,7 @@ object CommonLoadUtils {
     val finalRDD = convertRDD.mapPartitionsWithIndex { case(index, rows) =>
       DataTypeUtil.setDataTypeConverter(new SparkDataTypeConverterImpl)
       ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
-      DataLoadProcessorStepOnSpark.inputAndconvertFunc(
+      DataLoadProcessorStepOnSpark.inputAndConvertFunc(
         rows,
         index,
         modelBroadcast,
@@ -405,7 +405,7 @@ object CommonLoadUtils {
   }
 
   /**
-   * Transform the rdd to logical plan as per the sortscope. If it is global sort scope then it
+   * Transform the rdd to logical plan as per the sort_scope. If it is global sort scope then it
    * will convert to sort logical plan otherwise project plan.
    */
   def transformQueryWithRow(rdd: RDD[Row],
@@ -453,7 +453,7 @@ object CommonLoadUtils {
       catalogAttributes.find(_.name.equalsIgnoreCase(a.name)).get
     })
     attributes = attributes.map { attr =>
-      // Update attribute datatypes in case of dictionary columns, in case of dictionary columns
+      // Update attribute data types in case of dictionary columns, in case of dictionary columns
       // datatype is always int
       val column = table.getColumnByName(attr.name)
       val updatedDataType = if (column.getDataType ==
@@ -505,7 +505,7 @@ object CommonLoadUtils {
     }
     val partitionsLen = updatedRdd.partitions.length
 
-    // If it is global sort scope then appl sort logical plan on the sort columns
+    // If it is global sort scope then apply sort logical plan on the sort columns
     if (sortScope == SortScopeOptions.SortScope.GLOBAL_SORT) {
       // Because if the number of partitions greater than 1, there will be action operator(sample)
       // in sortBy operator. So here we cache the rdd to avoid do input and convert again.
@@ -558,7 +558,7 @@ object CommonLoadUtils {
   }
 
   /**
-   * Transform the rdd to logical plan as per the sortscope. If it is global sort scope then it
+   * Transform the rdd to logical plan as per the sort_scope. If it is global sort scope then it
    * will convert to sort logical plan otherwise project plan.
    */
   def transformQueryWithInternalRow(rdd: RDD[InternalRow],
@@ -615,7 +615,7 @@ object CommonLoadUtils {
       df: DataFrame,
       carbonLoadModel: CarbonLoadModel): LogicalPlan = {
     SparkUtil.setNullExecutionId(sparkSession)
-    // In case of update, we don't need the segmrntid column in case of partitioning
+    // In case of update, we don't need the segmentId column in case of partitioning
     val dropAttributes = df.logicalPlan.output.dropRight(1)
     val finalOutput = catalogTable.schema.map { attr =>
       dropAttributes.find { d =>
@@ -808,11 +808,11 @@ object CommonLoadUtils {
 
   def getTimeAndDateFormatFromLoadModel(loadModel: CarbonLoadModel): (SimpleDateFormat,
     SimpleDateFormat) = {
-    var timeStampformatString = loadModel.getTimestampFormat
-    if (timeStampformatString.isEmpty) {
-      timeStampformatString = loadModel.getDefaultTimestampFormat
+    var timestampFormatString = loadModel.getTimestampFormat
+    if (timestampFormatString.isEmpty) {
+      timestampFormatString = loadModel.getDefaultTimestampFormat
     }
-    val timeStampFormat = new SimpleDateFormat(timeStampformatString)
+    val timeStampFormat = new SimpleDateFormat(timestampFormatString)
     var dateFormatString = loadModel.getDateFormat
     if (dateFormatString.isEmpty) {
       dateFormatString = loadModel.getDefaultDateFormat
@@ -1082,7 +1082,7 @@ object CommonLoadUtils {
         }
       }
 
-      // Prepriming for Partition table here
+      // Pre-priming for Partition table here
       if (!StringUtils.isEmpty(loadParams.carbonLoadModel.getSegmentId)) {
         DistributedRDDUtils.triggerPrepriming(loadParams.sparkSession,
           table,

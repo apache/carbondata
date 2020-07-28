@@ -48,8 +48,8 @@ object CarbonHiveIndexMetadataUtil {
       tableName: String,
       sparkSession: SparkSession): Unit = {
     try {
-      val tabelIdentifier = TableIdentifier(tableName, Some(databaseName))
-      sparkSession.sessionState.catalog.dropTable(tabelIdentifier, true, false)
+      val tableIdentifier = TableIdentifier(tableName, Some(databaseName))
+      sparkSession.sessionState.catalog.dropTable(tableIdentifier, true, false)
     } catch {
       case e: Exception =>
         LOGGER.error(

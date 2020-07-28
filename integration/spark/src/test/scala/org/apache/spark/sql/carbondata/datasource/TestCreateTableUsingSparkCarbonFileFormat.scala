@@ -118,7 +118,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       //data source file format
       sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       //data source file format
       sql(
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
@@ -166,7 +166,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       //data source file format
       sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       //data source file format
       sql(
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
@@ -197,7 +197,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
       if (SparkUtil.isSparkVersionEqualTo("2.1")) {
         //data source file format
         sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
-      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
         //data source file format
         sql(
           s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
@@ -227,7 +227,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
       if (SparkUtil.isSparkVersionEqualTo("2.1")) {
         //data source file format
         sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
-      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
         //data source file format
         sql(
           s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
@@ -257,7 +257,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       //data source file format
       sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       //data source file format
       sql(
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
@@ -306,7 +306,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     sql("DROP TABLE IF EXISTS test_json")
     if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       sql(s"""CREATE TABLE test_json USING carbon OPTIONS (PATH '$path') """)
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       sql(
         s"""CREATE TABLE test_json USING carbon LOCATION
            |'$path' """.stripMargin)
@@ -326,7 +326,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       //data source file format
       sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       //data source file format
       sql(
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION

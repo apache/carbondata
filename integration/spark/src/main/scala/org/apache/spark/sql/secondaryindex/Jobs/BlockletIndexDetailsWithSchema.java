@@ -27,7 +27,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
  * class that holds indexes, column cardinality, columnSchema and other related information for
- * BlockletIndexInputFormate return value
+ * BlockletIndexInputFormat return value
  * TODO: When this code is moved to open source, this class can be removed and the required code
  * can be added to BlockletIndexWrapper class
  */

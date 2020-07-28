@@ -332,7 +332,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
 
       val endTime = System.nanoTime()
       LOGGER.info(s"time taken to merge $mergedLoadName is ${ endTime - startTime }")
-      val statusFileUpdation =
+      val statusFileUpdate =
         ((compactionType == CompactionType.IUD_UPDDEL_DELTA) &&
          CarbonDataMergerUtil
            .updateLoadMetadataIUDUpdateDeltaMergeStatus(loadsToMerge,
@@ -374,10 +374,10 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         true
       }
       // here either of the conditions can be true, when delete segment is fired after compaction
-      // has started, statusFileUpdation will be false , but at the same time commitComplete can be
+      // has started, statusFileUpdate will be false , but at the same time commitComplete can be
       // true because compaction for all indexes will be finished at a time to the maximum level
       // possible (level 1, 2 etc). so we need to check for either condition
-      if (!statusFileUpdation || !commitComplete) {
+      if (!statusFileUpdate || !commitComplete) {
         LOGGER.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
                      s"${ carbonLoadModel.getTableName }")
         throw new Exception(s"Compaction failed to update metadata for table" +
@@ -387,7 +387,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         LOGGER.info(s"Compaction request completed for table " +
                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
 
-        // Prepriming index for compaction
+        // Pre-priming index for compaction
         val segmentsForPriming = if (compactionType.equals(CompactionType.IUD_DELETE_DELTA) ||
             compactionType.equals(CompactionType.IUD_UPDDEL_DELTA)) {
             validSegments.asScala.map(_.getSegmentNo).toList

@@ -202,7 +202,7 @@ class CarbonSIRebuildRDD[K, V](
         try {
           // As the tableBlockInfoList is sorted take the ColCardinality from the last
           // Block of the sorted list as it will have the last updated cardinality.
-          // Blocks are sorted by order of updation using TableBlockInfo.compare method so
+          // Blocks are sorted by order of the update using TableBlockInfo.compare method so
           // the last block after the sort will be the latest one.
           dataFileFooter = CarbonUtil
             .readMetadataFile(tableBlockInfoList.get(tableBlockInfoList.size() - 1))
@@ -286,7 +286,7 @@ class CarbonSIRebuildRDD[K, V](
             segmentProperties,
             tempStoreLoc,
             carbonLoadModelCopy,
-            carbonMergerMapping.campactionType,
+            carbonMergerMapping.compactionType,
             null)
 
         } else {
@@ -296,7 +296,7 @@ class CarbonSIRebuildRDD[K, V](
             carbonLoadModelCopy,
             indexTable,
             segmentProperties,
-            carbonMergerMapping.campactionType,
+            carbonMergerMapping.compactionType,
             indexTableName,
             null)
 

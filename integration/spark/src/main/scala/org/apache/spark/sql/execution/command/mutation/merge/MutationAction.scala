@@ -36,7 +36,7 @@ import org.apache.carbondata.processing.loading.FailureCauses
 abstract class MutationAction(sparkSession: SparkSession, carbonTable: CarbonTable) {
 
   /**
-   * The RDD of tupleids and delta status will be processed here to write the delta on store
+   * The RDD of tupleIds and delta status will be processed here to write the delta on store
    */
   def handleAction(dataRDD: RDD[Row],
       executorErrors: ExecutionErrors,
@@ -141,12 +141,12 @@ object MutationActionFactory {
       carbonTable: CarbonTable,
       hasDelAction: Boolean,
       hasUpAction: Boolean,
-      hasInsrtHistUpd: Boolean,
-      hasInsrtHistDel: Boolean): MutationAction = {
+      hasInsertHistUpd: Boolean,
+      hasInsertHistDel: Boolean): MutationAction = {
     var actions = Seq.empty[MutationAction]
     // If the merge has history insert action then write the delete delta in two separate actions.
     // As it is needed to know which are deleted records and which are insert records.
-    if (hasInsrtHistDel || hasInsrtHistUpd) {
+    if (hasInsertHistDel || hasInsertHistUpd) {
       if (hasUpAction) {
         actions ++= Seq(HandleUpdateAction(sparkSession, carbonTable))
       }
@@ -166,7 +166,7 @@ object MutationActionFactory {
   }
 
   def checkErrors(executorErrors: ExecutionErrors): Unit = {
-    // Check for any failures occured during delete delta execution
+    // Check for any failures occurred during delete delta execution
     if (executorErrors.failureCauses != FailureCauses.NONE) {
       throw new CarbonMergeDataSetException(executorErrors.errorMsg)
     }

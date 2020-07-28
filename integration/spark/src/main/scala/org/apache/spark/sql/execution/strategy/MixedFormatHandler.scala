@@ -133,7 +133,7 @@ object MixedFormatHandler {
   }
 
   /**
-   * Generates the RDD for non carbon segments. It uses the spark underlying fileformats and
+   * Generates the RDD for non carbon segments. It uses the spark underlying file formats and
    * generates the RDD in its native format without changing any of its flow to keep the original
    * performance and features.
    *
@@ -145,10 +145,10 @@ object MixedFormatHandler {
       projects: Seq[NamedExpression],
       filters: Seq[Expression],
       readCommittedScope: ReadCommittedScope,
-      identier: AbsoluteTableIdentifier,
+      identifier: AbsoluteTableIdentifier,
       supportBatch: Boolean = true): Option[(RDD[InternalRow], Boolean)] = {
     val loadMetadataDetails = readCommittedScope.getSegmentList
-    val segsToAccess = getSegmentsToAccess(identier)
+    val segsToAccess = getSegmentsToAccess(identifier)
     val rdds = loadMetadataDetails.filter(metaDetail =>
       (metaDetail.getSegmentStatus.equals(SegmentStatus.SUCCESS) ||
        metaDetail.getSegmentStatus.equals(SegmentStatus.LOAD_PARTIAL_SUCCESS)))
@@ -157,9 +157,9 @@ object MixedFormatHandler {
         currLoad.getFileFormat.equals(FileFormatName.ROW_V1))
       .filter(l => segsToAccess.isEmpty || segsToAccess.contains(l.getLoadName))
       .groupBy(_.getFileFormat)
-      .map { case (format, detailses) =>
+      .map { case (format, details) =>
         // collect paths as input to scan RDD
-        val paths = detailses. flatMap { d =>
+        val paths = details. flatMap { d =>
           val segmentFile = SegmentFileStore.readSegmentFile(
             CarbonTablePath.getSegmentFilePath(readCommittedScope.getFilePath, d.getSegmentFile))
 
@@ -189,7 +189,7 @@ object MixedFormatHandler {
         Some(rdds.head)
       } else {
         if (supportBatch && rdds.exists(!_._2)) {
-          extraRDD(l, projects, filters, readCommittedScope, identier, false)
+          extraRDD(l, projects, filters, readCommittedScope, identifier, false)
         } else {
           var rdd: RDD[InternalRow] = null
           rdds.foreach { r =>
@@ -236,7 +236,7 @@ object MixedFormatHandler {
   }
 
   /**
-   * Generates the RDD using the spark fileformat.
+   * Generates the RDD using the spark file format.
    */
   private def getRDDForExternalSegments(l: LogicalRelation,
       projects: Seq[NamedExpression],

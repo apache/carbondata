@@ -205,7 +205,7 @@ object DDLHelper {
       table.table.toLowerCase)(sparkSession)
     if (carbonTable != null && carbonTable.isFileLevelFormat) {
       throw new MalformedCarbonCommandException(
-        "Unsupported alter operation on Carbon external fileformat table")
+        "Unsupported alter operation on Carbon external file format table")
     } else if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException(
         "Unsupported operation on non transactional table")
@@ -225,7 +225,7 @@ object DDLHelper {
         Map.empty[String, String],
         tableModel.dimCols,
         tableModel.msrCols,
-        tableModel.highcardinalitydims.getOrElse(Seq.empty))
+        tableModel.highCardinalityDims.getOrElse(Seq.empty))
       CarbonAlterTableAddColumnCommand(alterTableAddColumnsModel)
     }
   }
@@ -240,7 +240,7 @@ object DDLHelper {
       tableName.table.toLowerCase)(sparkSession)
     if (carbonTable != null && carbonTable.isFileLevelFormat) {
       throw new MalformedCarbonCommandException(
-        "Unsupported alter operation on Carbon external fileformat table")
+        "Unsupported alter operation on Carbon external file format table")
     } else if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException(
         "Unsupported operation on non transactional table")
@@ -427,7 +427,7 @@ object DDLHelper {
   ): Seq[SparkPlan] = {
     val isCommand = explainCommand.logicalPlan match {
       case _: Command => true
-      case Union(childern) if childern.forall(_.isInstanceOf[Command]) => true
+      case Union(children) if children.forall(_.isInstanceOf[Command]) => true
       case _ => false
     }
     if (explainCommand.logicalPlan.isStreaming || isCommand) {

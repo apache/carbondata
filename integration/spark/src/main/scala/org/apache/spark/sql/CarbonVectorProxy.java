@@ -50,7 +50,7 @@ public class CarbonVectorProxy {
    * handles the complexity of spark 2.3 version related api changes since
    * spark ColumnVector and ColumnarBatch interfaces are still evolving.
    *
-   * @param memMode       which represent the type onheap or offheap vector.
+   * @param memMode       which represent the type on-heap or off-heap vector.
    * @param outputSchema, metadata related to current schema of table.
    * @param rowNum        rows number for vector reading
    * @param useLazyLoad   Whether to use lazy load while getting the data.
@@ -79,7 +79,7 @@ public class CarbonVectorProxy {
     }
 
     /**
-     * This API will return a columnvector from a batch of column vector rows
+     * This API will return a column vector from a batch of column vector rows
      * based on the ordinal
      *
      * @param ordinal
