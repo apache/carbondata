@@ -51,7 +51,7 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.apache.log4j.Logger;
 import org.apache.spark.sql.secondaryindex.exception.SecondaryIndexException;
-import org.apache.spark.sql.secondaryindex.load.RowComparatorWithOutKettle;
+import org.apache.spark.sql.secondaryindex.load.RowComparator;
 import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil;
 
 /**
@@ -74,7 +74,7 @@ public class SecondaryIndexQueryResultProcessor {
    */
   private SortDataRows sortDataRows;
   /**
-   * segment proeprties which contains required information for a segment
+   * segment properties which contains required information for a segment
    */
   private SegmentProperties segmentProperties;
   /**
@@ -297,7 +297,7 @@ public class SecondaryIndexQueryResultProcessor {
       Object[] previousRow = null;
       // comparator for grouping the similar data, means every record
       // should be unique in index table
-      RowComparatorWithOutKettle comparator = new RowComparatorWithOutKettle(noDictionaryColMapping,
+      RowComparator comparator = new RowComparator(noDictionaryColMapping,
           SecondaryIndexUtil.getNoDictDataTypes(indexTable));
       intermediateFileMerger.finish();
       sortDataRows = null;

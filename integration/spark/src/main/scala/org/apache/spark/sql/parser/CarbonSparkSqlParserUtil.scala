@@ -109,7 +109,7 @@ object CarbonSparkSqlParserUtil {
         tableInfo.getFactTable.getTableName, "Table should have at least one column.")
     }
 
-    // Add validatation for column compressor when create table
+    // Add validation for column compressor when create table
     val columnCompressor = tableInfo.getFactTable.getTableProperties.get(
       CarbonCommonConstants.COMPRESSOR)
     try {
@@ -131,7 +131,7 @@ object CarbonSparkSqlParserUtil {
    *                         TablePropertyListContext,
    *                         LocationSpecContext, Option[String], TerminalNode, QueryContext,
    *                         String)
-   * @param extraTableTuple  A tupple of (Seq[StructField], Boolean, TableIdentifier, Boolean,
+   * @param extraTableTuple  A tuple of (Seq[StructField], Boolean, TableIdentifier, Boolean,
    *                         Seq[String],
    *                         Option[String], mutable.Map[String, String], Map[String, String],
    *                         Seq[StructField],
@@ -259,15 +259,15 @@ object CarbonSparkSqlParserUtil {
         .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)
       if (CarbonScalaUtil.validateLocalDictionaryEnable(isLocalDic_enabled) &&
           isLocalDic_enabled.toBoolean) {
-        val allcolumns = table.getFactTable.getListOfColumns
-        for (i <- 0 until allcolumns.size()) {
-          val cols = allcolumns.get(i)
+        val allColumns = table.getFactTable.getListOfColumns
+        for (i <- 0 until allColumns.size()) {
+          val cols = allColumns.get(i)
           if (cols.getDataType == DataTypes.STRING || cols.getDataType == DataTypes.VARCHAR) {
             cols.setLocalDictColumn(true)
           }
-          allcolumns.set(i, cols)
+          allColumns.set(i, cols)
         }
-        table.getFactTable.setListOfColumns(allcolumns)
+        table.getFactTable.setListOfColumns(allColumns)
       }
       table
     } else {
@@ -451,14 +451,14 @@ object CarbonSparkSqlParserUtil {
         .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)
       if (CarbonScalaUtil.validateLocalDictionaryEnable(isLocalDic_enabled) &&
           isLocalDic_enabled.toBoolean) {
-        val allcolumns = tableInfo.getFactTable.getListOfColumns
-        for (i <- 0 until allcolumns.size()) {
-          val cols = allcolumns.get(i)
+        val allColumns = tableInfo.getFactTable.getListOfColumns
+        for (i <- 0 until allColumns.size()) {
+          val cols = allColumns.get(i)
           if (cols.getDataType == DataTypes.STRING || cols.getDataType == DataTypes.VARCHAR) {
             cols.setLocalDictColumn(true)
           }
         }
-        tableInfo.getFactTable.setListOfColumns(allcolumns)
+        tableInfo.getFactTable.setListOfColumns(allColumns)
       }
       tableInfo
     } else {
@@ -738,7 +738,7 @@ object CarbonSparkSqlParserUtil {
       tableProps.toMap,
       tableModel.dimCols,
       tableModel.msrCols,
-      tableModel.highcardinalitydims.getOrElse(Seq.empty))
+      tableModel.highCardinalityDims.getOrElse(Seq.empty))
     CarbonAlterTableAddColumnCommand(alterTableAddColumnsModel)
   }
 

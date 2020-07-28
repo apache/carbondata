@@ -36,7 +36,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.spark.load.PrimtiveOrdering
+import org.apache.carbondata.spark.load.PrimitiveOrdering
 
 class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   var filePath: String = s"$resourcesPath/globalsort"
@@ -727,7 +727,7 @@ class TestRangeColumnDataLoad extends QueryTest with BeforeAndAfterEach with Bef
   test("DataSkewRangePartitioner.combineDataSkew") {
     val partitioner =
       new DataSkewRangePartitioner(1, null,
-        false)(new PrimtiveOrdering(DataTypes.STRING),
+        false)(new PrimitiveOrdering(DataTypes.STRING),
         classTag[Object])
 
     testCombineDataSkew(

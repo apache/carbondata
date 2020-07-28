@@ -169,7 +169,7 @@ class CarbonScanRDD[T: ClassTag](
       val batchPartitions = distributeColumnarSplits(columnarSplits)
       distributeEndTime = System.currentTimeMillis()
       // check and remove InExpression from filterExpression
-      checkAndRemoveInExpressinFromFilterExpression(batchPartitions)
+      checkAndRemoveInExpressionFromFilter(batchPartitions)
       if (streamSplits.isEmpty) {
         partitions = batchPartitions.toArray
       } else {
@@ -195,7 +195,7 @@ class CarbonScanRDD[T: ClassTag](
              | Identified no.of.streaming splits/tasks: ${ streamPartitions.size },
              | no.of.streaming files: ${format.getHitStreamFiles},
              | no.of.total streaming files: ${format.getNumStreamFiles},
-             | no.of.total streaming segement: ${format.getNumStreamSegments}
+             | no.of.total streaming segment: ${format.getNumStreamSegments}
           """.stripMargin)
 
       }
@@ -576,7 +576,7 @@ class CarbonScanRDD[T: ClassTag](
     model.setFreeUnsafeMemory(!isAdded)
     // add task completion before calling initialize as initialize method will internally
     // call for usage of unsafe method for processing of one blocklet and if there is any
-    // exceptionwhile doing that the unsafe memory occupied for that task will not
+    // exception while doing that the unsafe memory occupied for that task will not
     // get cleared
     context.addTaskCompletionListener {
       new QueryTaskCompletionListener(!isAdded,
@@ -685,7 +685,7 @@ class CarbonScanRDD[T: ClassTag](
    *
    * @param identifiedPartitions
    */
-  private def checkAndRemoveInExpressinFromFilterExpression(
+  private def checkAndRemoveInExpressionFromFilter(
       identifiedPartitions: mutable.Buffer[Partition]) = {
     if (null != indexFilter) {
       if (identifiedPartitions.nonEmpty &&

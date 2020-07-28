@@ -146,7 +146,8 @@ case class CarbonCreateTableCommand(
           }
         } catch {
           case e: AnalysisException =>
-            // AnalysisException thrown with table already exists msg incase of conurrent drivers
+            // AnalysisException thrown with table already exists message in case of
+            // concurrent drivers
             if (e.getMessage().contains("already exists")) {
 
               // Clear the cache first

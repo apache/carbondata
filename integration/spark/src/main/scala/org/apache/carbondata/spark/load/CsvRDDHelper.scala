@@ -50,7 +50,7 @@ object CsvRDDHelper {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   /**
-   * createsw a RDD that does reading of multiple CSV files
+   * create a RDD that does reading of multiple CSV files
    */
   def csvFileScanRDD(
       spark: SparkSession,

@@ -241,7 +241,7 @@ private[sql] case class DropIndexCommand(
   }
 
   /**
-   * AcquireLock and remove indexInfo from parent tabe
+   * AcquireLock and remove indexInfo from parent table
    */
   private def removeIndexInfoFromParentTable(sparkSession: SparkSession,
       dbName: String,

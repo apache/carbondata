@@ -149,7 +149,7 @@ case class CarbonCreateIndexCommand(
                   column.getColName
                 }")
             }
-            // For bloomfilter, the index column datatype cannot be complex type
+            // For bloom filter, the index column datatype cannot be complex type
             if (column.isComplex) {
               throw new MalformedIndexCommandException(
                 s"BloomFilter does not support complex datatype column: ${

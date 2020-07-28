@@ -82,7 +82,7 @@ trait SqlAstBuilderHelper extends SparkSqlAstBuilder {
       tblProperties.toMap,
       tableModel.dimCols,
       tableModel.msrCols,
-      tableModel.highcardinalitydims.getOrElse(Seq.empty))
+      tableModel.highCardinalityDims.getOrElse(Seq.empty))
 
     CarbonAlterTableAddColumnCommand(alterTableAddColumnsModel)
   }

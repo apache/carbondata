@@ -57,7 +57,7 @@ object SparkSQLUtil {
     logicalPlanObj.stats
   }
 
-  def invokeQueryPlannormalizeExprId(r: NamedExpression, input: AttributeSeq)
+  def invokeQueryPlanNormalizeExprId(r: NamedExpression, input: AttributeSeq)
       : NamedExpression = {
     QueryPlan.normalizeExprId(r, input)
   }
@@ -86,7 +86,7 @@ object SparkSQLUtil {
     EliminateView
   }
 
-  def getPullupCorrelatedPredicatesObj(): Rule[LogicalPlan] = {
+  def getPullUpCorrelatedPredicatesObj(): Rule[LogicalPlan] = {
     PullupCorrelatedPredicates
   }
 
@@ -162,10 +162,10 @@ object SparkSQLUtil {
       carbonTable: CarbonTable): DataFrame = {
     /**
      * [[org.apache.spark.sql.catalyst.expressions.objects.ValidateExternalType]] validates the
-     * datatype of column data and corresponding datatype in schema provided to create dataframe.
+     * datatype of column data and corresponding datatype in schema provided to create DataFrame.
      * Since carbonScanRDD gives Long data for timestamp column and corresponding column datatype in
      * schema is Timestamp, this validation fails if we use createDataFrame API which takes rdd as
-     * input. Hence, using below API which creates dataframe from qualified tablename.
+     * input. Hence, using below API which creates DataFrame from qualified table name.
      */
     sparkSession.sqlContext.table(carbonTable.getDatabaseName + "." + carbonTable.getTableName)
   }

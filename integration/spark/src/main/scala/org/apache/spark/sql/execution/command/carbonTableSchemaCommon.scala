@@ -56,9 +56,9 @@ case class TableModel(
     msrCols: Seq[Field],
     sortKeyDims: Option[Seq[String]],
     varcharCols: Option[Seq[String]],
-    highcardinalitydims: Option[Seq[String]],
+    highCardinalityDims: Option[Seq[String]],
     noInvertedIdxCols: Option[Seq[String]],
-    innvertedIdxCols: Option[Seq[String]],
+    invertedIdxCols: Option[Seq[String]],
     colProps: Option[util.Map[String, util.List[ColumnProperty]]] = None,
     bucketFields: Option[BucketFields],
     partitionInfo: Option[PartitionInfo],
@@ -100,7 +100,7 @@ case class CarbonMergerMapping(
     factTableName: String,
     validSegments: Array[Segment],
     tableId: String,
-    campactionType: CompactionType,
+    compactionType: CompactionType,
     // maxSegmentColumnSchemaList is list of column schema of last segment of compaction
     var maxSegmentColumnSchemaList: List[ColumnSchema],
     @transient currentPartitions: Option[Seq[PartitionSpec]])
@@ -238,9 +238,9 @@ class AlterTableColumnSchemaGenerator(
       (x.isDimensionColumn && !x.getDataType.isComplexType()
           && x.getSchemaOrdinal != -1 && (x.getDataType != DataTypes.VARCHAR)))
     var newCols = Seq[ColumnSchema]()
-    var invertedIndxCols: Array[String] = Array[String]()
+    var invertedIndexCols: Array[String] = Array[String]()
     if (alterTableModel.tableProperties.get(CarbonCommonConstants.INVERTED_INDEX).isDefined) {
-      invertedIndxCols = alterTableModel.tableProperties(CarbonCommonConstants.INVERTED_INDEX)
+      invertedIndexCols = alterTableModel.tableProperties(CarbonCommonConstants.INVERTED_INDEX)
         .split(',').map(_.trim)
     }
 
@@ -294,9 +294,9 @@ class AlterTableColumnSchemaGenerator(
       newCols ++= Seq(columnSchema)
     })
 
-    if (invertedIndxCols.nonEmpty) {
+    if (invertedIndexCols.nonEmpty) {
       for (column <- newCols) {
-        if (invertedIndxCols.contains(column.getColumnName) && column.isDimensionColumn) {
+        if (invertedIndexCols.contains(column.getColumnName) && column.isDimensionColumn) {
           column.setUseInvertedIndex(true)
         }
       }
@@ -441,7 +441,7 @@ class AlterTableColumnSchemaGenerator(
       }
 
       // validate if both local dictionary include and exclude contains same column
-      CarbonScalaUtil.validateDuplicateLocalDictIncludeExcludeColmns(alterMutableTblProperties)
+      CarbonScalaUtil.validateDuplicateColumnsForLocalDict(alterMutableTblProperties)
 
       CarbonUtil
         .setLocalDictColumnsToWrapperSchema(newCols.asJava,
@@ -627,7 +627,7 @@ class TableNewProcessor(cm: TableModel) {
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
-    val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
+    val highCardinalityDims = cm.highCardinalityDims.getOrElse(Seq())
     if (highCardinalityDims.contains(colName)) {
       encoders.remove(Encoding.DICTIONARY)
     }
@@ -719,10 +719,10 @@ class TableNewProcessor(cm: TableModel) {
           cm.tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE))
     }
     cm.msrCols.foreach { field =>
-      // if aggregate function is defined in case of preaggregate and agg function is sum or avg
+      // if aggregate function is defined in case of pre-aggregate and agg function is sum or avg
       // then it can be stored as measure
       var isAggFunPresent = false
-      // getting the encoder from maintable so whatever encoding is applied in maintable
+      // getting the encoder from main table so whatever encoding is applied in main table
       // same encoder can be applied on aggregate table
       val encoders = new java.util.ArrayList[Encoding]()
 
@@ -750,7 +750,7 @@ class TableNewProcessor(cm: TableModel) {
       }
     }
 
-    val invertedIndexCols = cm.innvertedIdxCols.getOrElse(Seq())
+    val invertedIndexCols = cm.invertedIdxCols.getOrElse(Seq())
     for (column <- allColumns) {
       // When the column is measure or the specified no inverted index column in DDL,
       // set useInvertedIndex to false, otherwise true.
@@ -863,12 +863,12 @@ class TableNewProcessor(cm: TableModel) {
   }
 
   //  For checking if the specified col group columns are specified in fields list.
-  protected def checkColGroupsValidity(colGrps: Seq[String],
+  protected def checkColGroupsValidity(columnGroups: Seq[String],
       allCols: Seq[ColumnSchema],
       highCardCols: Seq[String]): Unit = {
-    if (null != colGrps) {
-      colGrps.foreach(columngroup => {
-        val rowCols = columngroup.split(",")
+    if (null != columnGroups) {
+      columnGroups.foreach(columnGroup => {
+        val rowCols = columnGroup.split(",")
         rowCols.foreach(colForGrouping => {
           var found: Boolean = false
           // check for dimensions + measures
@@ -877,7 +877,7 @@ class TableNewProcessor(cm: TableModel) {
               found = true
             }
           })
-          // check for No Dicitonary dimensions
+          // check for No Dictionary dimensions
           highCardCols.foreach(noDicCol => {
             if (colForGrouping.trim.equalsIgnoreCase(noDicCol)) {
               found = true

@@ -35,7 +35,7 @@ object GlobalSortHelper {
    *
    * @param loadModel       Carbon load model instance
    * @param badRecordsAccum Accumulator to maintain the load state if 0 then success id !0 then
-   *                        partial successfull
+   *                        partial successful
    * @param hasBadRecord    if <code>true<code> then load bad records vice versa.
    */
   def badRecordsLogger(loadModel: CarbonLoadModel,

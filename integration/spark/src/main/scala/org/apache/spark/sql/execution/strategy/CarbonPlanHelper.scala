@@ -68,7 +68,7 @@ object CarbonPlanHelper {
         ExecutedCommandExec(addColumnCommand) :: Nil
       }
       // TODO: remove this else if check once the 2.1 version is unsupported by carbon
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       val structField = (alterTableAddColumnsModel.dimCols ++ alterTableAddColumnsModel.msrCols)
         .map { f =>
           val structField = StructField(f.column,

@@ -28,7 +28,7 @@ import org.apache.spark.sql.types.DataType
 /**
  * This class contains the wrappers of all the case classes which are common
  * across spark version 2.1 and 2.2 but have change in parameter list.
- * Below are the overriden unapply methods in order to make it work
+ * Below are the overridden unapply methods in order to make it work
  * across both the version of spark2.1 and spark 2.2
  */
 object CarbonExpressions {
@@ -86,7 +86,7 @@ object CarbonExpressions {
   }
 
   /**
-   * uapply method of UnresolvedRelation
+   * unapply method of UnresolvedRelation
    */
   object CarbonUnresolvedRelation {
     def unapply(plan: LogicalPlan): Option[(TableIdentifier)] = {

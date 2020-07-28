@@ -107,7 +107,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
     FileUtils.deleteDirectory(new File(writerOutputPath))
     val num = 10000
     buildTestData(num, List("stringField", "intField"))
-    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       sql("DROP TABLE IF EXISTS carbontable_varchar")
       sql("DROP TABLE IF EXISTS carbontable_varchar2")
       sql(s"CREATE TABLE carbontable_varchar USING CARBON LOCATION '$writerOutputPath'")
@@ -196,7 +196,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       case e: Exception =>
         if (SparkUtil.isSparkVersionEqualTo("2.1")) {
           assert(e.getMessage.contains("Operation not allowed: ALTER TABLE ADD COLUMNS"))
-        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+        } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
           assert(e.getMessage
             .contains("ALTER ADD COLUMNS does not support datasource table with type carbon."))
         }
@@ -339,7 +339,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       case e: Exception =>
         if (SparkUtil.isSparkVersionEqualTo("2.1")) {
           assert(e.getMessage.contains("Operation not allowed: ALTER TABLE change"))
-        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+        } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
           assert(e.getMessage
             .contains("ALTER TABLE CHANGE COLUMN is not supported for changing column"))
         }
@@ -373,7 +373,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       case e: Exception =>
         if (SparkUtil.isSparkVersionEqualTo("2.1")) {
           assert(e.getMessage.contains("ALTER TABLE test_parquet ADD COLUMNS"))
-        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+        } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
           e.printStackTrace()
           assert(false)
         }
@@ -458,7 +458,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       case e: Exception =>
         if (SparkUtil.isSparkVersionEqualTo("2.1")) {
           assert(e.getMessage.contains("Operation not allowed: ALTER TABLE CHANGE"))
-        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+        } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
           e.printStackTrace()
           assert(false)
         }
@@ -485,7 +485,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       case e: Exception =>
         if (SparkUtil.isSparkVersionEqualTo("2.1")) {
           assert(e.getMessage.contains("Operation not allowed: ALTER TABLE CHANGE"))
-        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+        } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
           assert(e.getMessage
             .contains("ALTER TABLE CHANGE COLUMN is not supported for changing column"))
         }
@@ -502,7 +502,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       case e: Exception =>
         if (SparkUtil.isSparkVersionEqualTo("2.1")) {
           assert(e.getMessage.contains("Operation not allowed: ALTER TABLE CHANGE"))
-        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+        } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
           assert(e.getMessage
             .contains("ALTER TABLE CHANGE COLUMN is not supported for changing column"))
         }
@@ -1582,7 +1582,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
         sql("create table complextable (stringfield string, structfield struct<bytefield: " +
             "byte, floatfield: float>) " +
             s"using carbon options(path '$path')")
-      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
         sql("create table complextable (stringfield string, structfield struct<bytefield: " +
             "byte, floatfield: float>) " +
             s"using carbon location '$path'")
@@ -1657,7 +1657,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
             s"string," +
             s"salary long, bytefield byte) using parquet options(path " +
             s"'$path2')")
-      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
         sql(s"create table sort_table (age int, height double, name string, address string," +
             s" salary long, bytefield byte) using carbon location '$path'")
         FileFactory
@@ -1718,7 +1718,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
             s"array<byte>, floatarray array<float>) using carbon " +
             s"options( path " +
             s"'$path')")
-      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
         sql(s"create table complextable (stringfield string, bytearray " +
             s"array<byte>, floatarray array<float>) using carbon " +
             s"location " +
@@ -1755,7 +1755,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
       sql(s"create table par_table(male boolean, age int, height double, name string, address " +
           s"string," +
           s"salary long, floatField float, bytefield byte) using parquet options(path '$path')")
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       sql(s"create table par_table(male boolean, age int, height double, name string, address " +
           s"string," +
           s"salary long, floatField float, bytefield byte) using parquet location '$path'")
@@ -1933,7 +1933,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
           new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
       }
       sql(s"create table carbon_external using carbon options(path '$writerPath')")
-    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       sql(s"create table carbon_external using carbon location '$writerPath'")
     }
     assert(sql("select * from carbon_external").count() == rowCount)
@@ -1973,7 +1973,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
         }
         sql(s"create table multi_page (a string, b float, c byte) using carbon options(path " +
             s"'$path')")
-      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
         sql(s"create table multi_page (a string, b float, c byte) using carbon location " +
             s"'$path'")
       }
@@ -2132,7 +2132,7 @@ class SparkCarbonDataSourceTest extends QueryTest with BeforeAndAfterAll {
 
   test("Don't support load for datasource") {
     sql("DROP TABLE IF EXISTS binaryCarbon")
-    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       sql(
         s"""
            | CREATE TABLE binaryCarbon(

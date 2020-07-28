@@ -125,7 +125,7 @@ case class CarbonShowSegmentsAsSelectCommand(
       segments: Array[LoadMetadataDetails],
       rows: Seq[SegmentRow]): Unit = {
 
-    // populate a dataframe containing all segment information
+    // populate a DataFrame containing all segment information
     val tablePath = carbonTable.getTablePath
     val segmentRowView = rows ++ segments.toSeq.map { segment =>
       val mergedToId = CarbonStore.getMergeTo(segment)
@@ -150,7 +150,7 @@ case class CarbonShowSegmentsAsSelectCommand(
         if (segment.getSegmentFile == null) "NA" else segment.getSegmentFile)
     }
 
-    // create a temp view using the populated dataframe and execute the query on it
+    // create a temp view using the populated DataFrame and execute the query on it
     val df = sparkSession.createDataFrame(segmentRowView)
     checkIfTableExist(sparkSession, tempViewName)
     df.createOrReplaceTempView(tempViewName)

@@ -55,8 +55,8 @@ case class CarbonRelation(
       .filterNot(_.isSpatialColumn)
       .asJava)
     sett.asScala.toSeq.map(dim => {
-      val dimval = carbonTable.getDimensionByName(dim.getColName)
-      val output: DataType = dimval.getDataType.getName.toLowerCase match {
+      val dimension = carbonTable.getDimensionByName(dim.getColName)
+      val output: DataType = dimension.getDataType.getName.toLowerCase match {
         case "array" =>
           CarbonMetastoreTypes.toDataType(
             s"array<${SparkTypeConverter.getArrayChildren(carbonTable, dim.getColName)}>")
@@ -67,7 +67,7 @@ case class CarbonRelation(
           CarbonMetastoreTypes.toDataType(
             s"map<${SparkTypeConverter.getMapChildren(carbonTable, dim.getColName)}>")
         case dType =>
-          val dataType = addDecimalScaleAndPrecision(dimval, dType)
+          val dataType = addDecimalScaleAndPrecision(dimension, dType)
           CarbonMetastoreTypes.toDataType(dataType)
       }
 
@@ -171,11 +171,11 @@ case class CarbonRelation(
     }
   }
 
-  def addDecimalScaleAndPrecision(dimval: CarbonDimension, dataType: String): String = {
+  def addDecimalScaleAndPrecision(dimension: CarbonDimension, dataType: String): String = {
     var dType = dataType
-    if (DataTypes.isDecimal(dimval.getDataType)) {
+    if (DataTypes.isDecimal(dimension.getDataType)) {
       dType +=
-      "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema.getScale + ")"
+      "(" + dimension.getColumnSchema.getPrecision + "," + dimension.getColumnSchema.getScale + ")"
     }
     dType
   }

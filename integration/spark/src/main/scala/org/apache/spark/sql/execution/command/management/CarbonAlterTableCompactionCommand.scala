@@ -124,7 +124,7 @@ case class CarbonAlterTableCompactionCommand(
             .getTableStatusFilePath(table.getTablePath), loadMetaDataDetails)
         } else {
           throw new ConcurrentOperationException(table.getDatabaseName,
-            table.getTableName, "table status updation", "upgrade segments")
+            table.getTableName, "table status update", "upgrade segments")
         }
       } finally {
         tableStatusLock.unlock()

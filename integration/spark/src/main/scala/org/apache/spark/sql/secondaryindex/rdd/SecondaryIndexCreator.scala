@@ -67,7 +67,7 @@ object SecondaryIndexCreator {
     LOGGER
       .info(s"Configured thread pool size for distributing segments in secondary index creation " +
             s"is $threadPoolSize")
-    // create executor service to parallely run the segments
+    // create executor service to parallel run the segments
     val executorService = java.util.concurrent.Executors.newFixedThreadPool(threadPoolSize)
     if (null == indexCarbonTable) {
       // avoid more lookupRelation to table
@@ -200,10 +200,10 @@ object SecondaryIndexCreator {
 
       if (hasFailedSegments) {
         // if the call is from compaction, we need to fail the main table compaction also, and if
-        // the load is called from SIloadEventListener, which is for corresponding main table
+        // the load is called from SILoadEventListener, which is for corresponding main table
         // segment, then if SI load fails, we need to fail main table load also, so throw exception,
         // if load is called from SI creation or SILoadEventListenerForFailedSegments, no need to
-        // fail, just make the segement as marked for delete, so that next load to main table will
+        // fail, just make the segment as marked for delete, so that next load to main table will
         // take care
         if (isCompactionCall || !isLoadToFailedSISegments) {
           throw new Exception("Secondary index creation failed")
@@ -281,7 +281,7 @@ object SecondaryIndexCreator {
 
       // update the status of all the segments to marked for delete if data load fails, so that
       // next load which is triggered for SI table in post event of main table data load clears
-      // all the segments of marked for delete and retriggers the load to same segments again in
+      // all the segments of marked for delete and re-triggers the load to same segments again in
       // that event
       if (failedSISegments.nonEmpty && !isCompactionCall) {
         tableStatusUpdateForFailure = FileInternalUtil.updateTableStatus(
@@ -392,7 +392,7 @@ object SecondaryIndexCreator {
   }
 
   /**
-   * This method will get the configuration for thread pool size which will decide the numbe rof
+   * This method will get the configuration for thread pool size which will decide the number of
    * segments to run in parallel for secondary index creation
    *
    */

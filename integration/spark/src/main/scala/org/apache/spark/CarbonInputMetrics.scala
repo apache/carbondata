@@ -33,7 +33,7 @@ import org.apache.carbondata.spark.InitInputMetrics
 class CarbonInputMetrics extends InitInputMetrics{
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     var inputMetrics: InputMetrics = _
-    // bytes read before compute by other map rdds in lineage
+    // bytes read before compute by other map RDDs in lineage
     var existingBytesRead: Long = _
     var recordCount: Long = _
     var inputMetricsInterval: Long = _

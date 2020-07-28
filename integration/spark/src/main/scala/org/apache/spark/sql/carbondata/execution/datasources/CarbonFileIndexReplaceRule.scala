@@ -87,7 +87,7 @@ class CarbonFileIndexReplaceRule extends Rule[LogicalPlan] {
   }
 
   /**
-   * Get datafolders recursively
+   * Get data folders recursively
    */
   private def getDataFolders(
       tableFolder: CarbonFile,

@@ -364,7 +364,7 @@ object SecondaryIndexUtil {
     val taskBlockInfo = new TaskBlockInfo
     tableBlockInfoList.asScala.foreach { info =>
       val taskNo = CarbonTablePath.DataFileUtil.getTaskNo(info.getFilePath)
-      groupCorrespodingInfoBasedOnTask(info, taskBlockInfo, taskNo)
+      groupCorrespondingInfoBasedOnTask(info, taskBlockInfo, taskNo)
     }
     taskBlockInfo
   }
@@ -373,7 +373,7 @@ object SecondaryIndexUtil {
    * Grouping the taskNumber and list of TableBlockInfo.
    *
    */
-  private def groupCorrespodingInfoBasedOnTask(info: TableBlockInfo,
+  private def groupCorrespondingInfoBasedOnTask(info: TableBlockInfo,
       taskBlockMapping: TaskBlockInfo,
       taskNo: String): Unit = {
     // get the corresponding list from task mapping.
@@ -562,7 +562,7 @@ object SecondaryIndexUtil {
       CarbonDataMergerUtil.getMergedLoadName(sortedSegments)
     } else {
       throw new UnsupportedOperationException(
-        "Compaction requires atleast 2 segments to be merged.But the input list size is " +
+        "Compaction requires at least 2 segments to be merged.But the input list size is " +
         list.size())
     }
   }

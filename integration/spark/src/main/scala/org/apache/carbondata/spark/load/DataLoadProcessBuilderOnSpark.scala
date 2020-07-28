@@ -174,7 +174,7 @@ object DataLoadProcessBuilderOnSpark {
 
     // clean cache only if persisted and keeping unpersist non-blocking as non-blocking call will
     // not have any functional impact as spark automatically monitors the cache usage on each node
-    // and drops out old data partiotions in a least-recently used (LRU) fashion.
+    // and drops out old data partitions in a least-recently used (LRU) fashion.
     if (numPartitions > 1) {
       convertRDD.unpersist(false)
     }
@@ -267,7 +267,7 @@ object DataLoadProcessBuilderOnSpark {
     })
     // clean cache only if persisted and keeping unpersist non-blocking as non-blocking call will
     // not have any functional impact as spark automatically monitors the cache usage on each node
-    // and drops out old data partiotions in a least-recently used (LRU) fashion.
+    // and drops out old data partitions in a least-recently used (LRU) fashion.
     if (numPartitions > 1) {
       rdd.unpersist(false)
     }
@@ -382,7 +382,7 @@ object DataLoadProcessBuilderOnSpark {
 
   /**
    * provide RDD for sample
-   * CSVRecordReader(univocity parser) will output only one column
+   * CSVRecordReader(Univocity parser) will output only one column
    */
   private def getSampleRDD(
       sparkSession: SparkSession,
@@ -446,13 +446,13 @@ object DataLoadProcessBuilderOnSpark {
         // better to generate a CarbonData file for each partition
         val totalSize = model.getTotalSize.toDouble
         val table = model.getCarbonDataLoadSchema.getCarbonTable
-        numPartitions = getNumPatitionsBasedOnSize(totalSize, table, model, false)
+        numPartitions = getNumPartitionsBasedOnSize(totalSize, table, model, false)
       }
     }
     numPartitions
   }
 
-  def getNumPatitionsBasedOnSize(totalSize: Double,
+  def getNumPartitionsBasedOnSize(totalSize: Double,
       table: CarbonTable,
       model: CarbonLoadModel,
       mergerFlag: Boolean): Int = {
@@ -482,16 +482,16 @@ object DataLoadProcessBuilderOnSpark {
     if (column.isDimension) {
       val dimension = column.asInstanceOf[CarbonDimension]
       if (dimension.getDataType == DataTypes.DATE) {
-        new PrimtiveOrdering(DataTypes.INT)
+        new PrimitiveOrdering(DataTypes.INT)
       } else {
         if (DataTypeUtil.isPrimitiveColumn(column.getDataType)) {
-          new PrimtiveOrdering(column.getDataType)
+          new PrimitiveOrdering(column.getDataType)
         } else {
           new ByteArrayOrdering()
         }
       }
     } else {
-      new PrimtiveOrdering(column.getDataType)
+      new PrimitiveOrdering(column.getDataType)
     }
   }
 
@@ -574,7 +574,7 @@ object DataLoadProcessBuilderOnSpark {
   }
 }
 
-class PrimtiveOrdering(dataType: DataType) extends Ordering[Object] {
+class PrimitiveOrdering(dataType: DataType) extends Ordering[Object] {
   val comparator = org.apache.carbondata.core.util.comparator.Comparator
     .getComparator(dataType)
 

@@ -192,8 +192,8 @@ object IndexServer extends ServerInterface {
       val sparkSession = SparkSQLUtil.getSparkSession
       val databaseName = carbonTable.getDatabaseName
       val tableName = carbonTable.getTableName
-      val jobgroup: String = " Invalided Segment Cache for " + databaseName + "." + tableName
-      sparkSession.sparkContext.setLocalProperty("spark.job.description", jobgroup)
+      val jobGroup: String = " Invalided Segment Cache for " + databaseName + "." + tableName
+      sparkSession.sparkContext.setLocalProperty("spark.job.description", jobGroup)
       sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", jobGroupId)
       if (!isFallBack) {
         val indexServerEvent = IndexServerEvent(sparkSession,
@@ -213,7 +213,7 @@ object IndexServer extends ServerInterface {
 
   override def showCache(tableId: String = "", executorCache: Boolean): Array[String] = {
     doAs {
-      val jobgroup: String = "Show Cache " + (tableId match {
+      val jobGroup: String = "Show Cache " + (tableId match {
         case "" =>
           if (executorCache) {
             "for all the Executors."
@@ -224,7 +224,7 @@ object IndexServer extends ServerInterface {
       })
       val sparkSession = SparkSQLUtil.getSparkSession
       sparkSession.sparkContext.setLocalProperty("spark.jobGroup.id", UUID.randomUUID().toString)
-      sparkSession.sparkContext.setLocalProperty("spark.job.description", jobgroup)
+      sparkSession.sparkContext.setLocalProperty("spark.job.description", jobGroup)
       new DistributedShowCacheRDD(sparkSession, tableId, executorCache).collect()
     }
   }
@@ -306,7 +306,7 @@ object IndexServer extends ServerInterface {
   }
 
   /**
-   * This class to define the acl for indexserver ,similar to HDFSPolicyProvider.
+   * This class to define the acl for index server ,similar to HDFSPolicyProvider.
    * key in Service can be configured in hadoop-policy.xml or in  Configuration().This ACL
    * will be used for Authorization in
    * org.apache.hadoop.security.authorize.ServiceAuthorizationManager#authorize

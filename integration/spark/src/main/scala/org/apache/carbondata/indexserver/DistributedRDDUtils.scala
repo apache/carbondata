@@ -350,7 +350,7 @@ object DistributedRDDUtils {
   }
 
   /**
-   * This function creates an event for prepriming of the index server
+   * This function creates an event for pre-priming of the index server
    */
   def triggerPrepriming(sparkSession: SparkSession,
       carbonTable: CarbonTable,

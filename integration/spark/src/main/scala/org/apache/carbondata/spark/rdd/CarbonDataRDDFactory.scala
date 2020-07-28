@@ -206,7 +206,7 @@ object CarbonDataRDDFactory {
               val compactionSize = CarbonDataMergerUtil
                 .getCompactionSize(CompactionType.MAJOR, carbonLoadModel)
 
-              val newcompactionModel = CompactionModel(
+              val newCompactionModel = CompactionModel(
                 compactionSize,
                 compactionType,
                 table,
@@ -218,7 +218,7 @@ object CarbonDataRDDFactory {
               try {
                 CompactionFactory.getCompactor(
                   newCarbonLoadModel,
-                  newcompactionModel,
+                  newCompactionModel,
                   executor,
                   sqlContext,
                   storeLocation,
@@ -484,7 +484,7 @@ object CarbonDataRDDFactory {
         LOGGER.error(ex)
     }
     try {
-      // handle the status file updation for the update cmd.
+      // handle the status file update for the update cmd.
       if (updateModel.isDefined && !updateModel.get.loadAsNewSegment) {
         if (loadStatus == SegmentStatus.LOAD_FAILURE) {
           CarbonScalaUtil.updateErrorInUpdateModel(updateModel.get, executorMessage)
@@ -494,7 +494,7 @@ object CarbonDataRDDFactory {
                    carbonLoadModel.getBadRecordsAction.split(",")(1) == LoggerAction.FAIL.name) {
           return null
         } else {
-          // in success case handle updation of the table status file.
+          // in success case handle update of the table status file.
           // success case.
           val segmentDetails = new util.HashSet[Segment]()
           var resultSize = 0
@@ -520,7 +520,7 @@ object CarbonDataRDDFactory {
             segmentMetaDataInfoMap.asJava)
 
           // this means that the update doesnt have any records to update so no need to do table
-          // status file updation.
+          // status file update.
           if (resultSize == 0) {
             return null
           }
@@ -531,7 +531,7 @@ object CarbonDataRDDFactory {
             true,
             new util.ArrayList[Segment](0),
             new util.ArrayList[Segment](segmentFiles), "")) {
-            LOGGER.error("Data update failed due to failure in table status updation.")
+            LOGGER.error("Data update failed due to failure in table status update.")
             updateModel.get.executorErrors.errorMsg = errorMessage
             updateModel.get.executorErrors.failureCauses = FailureCauses
               .STATUS_FILE_UPDATION_FAILURE
@@ -652,8 +652,8 @@ object CarbonDataRDDFactory {
             clearIndexFiles(carbonTable, carbonLoadModel.getSegmentId)
           }
           LOGGER.info("********clean up done**********")
-          LOGGER.error("Data load failed due to failure in table status updation.")
-          throw new Exception("Data load failed due to failure in table status updation.")
+          LOGGER.error("Data load failed due to failure in table status update.")
+          throw new Exception("Data load failed due to failure in table status update.")
         }
         if (SegmentStatus.LOAD_PARTIAL_SUCCESS == loadStatus) {
           LOGGER.info("Data load is partially successful for " +
@@ -714,8 +714,8 @@ object CarbonDataRDDFactory {
   }
   /**
    * Add and update the segment files. In case of update scenario the carbonindex files are written
-   * to the same segment so we need to update old segment file. So this ethod writes the latest data
-   * to new segment file and merges this file old file to get latest updated files.
+   * to the same segment so we need to update old segment file. So this method writes the latest
+   * data to new segment file and merges this file old file to get latest updated files.
    * @param carbonTable
    * @param segmentDetails
    * @return
@@ -1064,10 +1064,10 @@ object CarbonDataRDDFactory {
   }
 
   /**
-   * Execute load process to load from input dataframe
+   * Execute load process to load from input DataFrame
    *
    * @param sqlContext sql context
-   * @param dataFrame optional dataframe for insert
+   * @param dataFrame optional DataFrame for insert
    * @param scanResultRDD optional internal row rdd for direct insert
    * @param carbonLoadModel load model
    * @return Return an array that contains all of the elements in NewDataFrameLoaderRDD.
@@ -1194,8 +1194,8 @@ object CarbonDataRDDFactory {
       str = str + "#Node: " + entry._1 + ", no.of.blocks: " + tableBlock.size() +
             f", totalsize.of.blocks: ${totalSize * 0.1 * 10 / 1024 /1024}%.2fMB"
       tableBlock.asScala.foreach(tableBlockInfo =>
-        if (!tableBlockInfo.getLocations.exists(hostentry =>
-          hostentry.equalsIgnoreCase(entry._1)
+        if (!tableBlockInfo.getLocations.exists(hostEntry =>
+          hostEntry.equalsIgnoreCase(entry._1)
         )) {
           str = str + " , mismatch locations: " + tableBlockInfo.getLocations
             .foldLeft("")((a, b) => a + "," + b)

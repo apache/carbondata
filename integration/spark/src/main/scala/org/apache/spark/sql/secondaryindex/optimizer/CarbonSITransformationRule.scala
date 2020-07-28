@@ -95,7 +95,7 @@ class CarbonSITransformationRule(sparkSession: SparkSession)
    */
   private def isProjectionNeeded(plan: LogicalPlan): Boolean = {
     var needProjection = false
-    if (SparkUtil.isSparkVersionXandAbove("2.3")) {
+    if (SparkUtil.isSparkVersionXAndAbove("2.3")) {
       plan collect {
         case create: CreateHiveTableAsSelectCommand =>
           needProjection = true
@@ -115,7 +115,7 @@ class CarbonSITransformationRule(sparkSession: SparkSession)
 
   private def isCreateTableAsSelect(plan: LogicalPlan): Boolean = {
     var isCreateTableAsSelectFlow = false
-    if (SparkUtil.isSparkVersionXandAbove("2.3")) {
+    if (SparkUtil.isSparkVersionXAndAbove("2.3")) {
       plan collect {
         case CreateHiveTableAsSelectCommand(_, _, _, _) =>
           isCreateTableAsSelectFlow = true

@@ -28,7 +28,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 object CompactionFactory {
 
   /**
-   *  Returns appropriate Compactable object.
+   *  Returns appropriate Compactor object.
    */
   def getCompactor(carbonLoadModel: CarbonLoadModel,
       compactionModel: CompactionModel,

@@ -47,7 +47,7 @@ object DataGenerator {
    * generate DataFrame with above table schema
    *
    * @param spark SparkSession
-   * @return Dataframe of test data
+   * @return DataFrame of test data
    */
   def generateDataFrame(spark: SparkSession, totalNum: Int): DataFrame = {
     val rdd = spark.sparkContext

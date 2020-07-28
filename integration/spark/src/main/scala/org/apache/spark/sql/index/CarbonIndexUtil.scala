@@ -211,7 +211,7 @@ object CarbonIndexUtil {
   }
 
   /**
-   * Get the column compressor for the index table. Check first in the index table tableproperties
+   * Get the column compressor for the index table. Check first in the index table properties
    * and then fall back to main table at last to the default compressor
    */
   def getCompressorForIndexTable(
@@ -375,7 +375,7 @@ object CarbonIndexUtil {
         carbonTable = carbonTable,
         thriftTable = thriftTable)(sparkSession)
       CarbonSessionCatalogUtil.alterTable(tableIdentifier, schemaParts, None, sparkSession)
-      // remove from the cache so that the table will be loaded again with the new tableproperties
+      // remove from the cache so that the table will be loaded again with the new table properties
       CarbonInternalMetastore
         .removeTableFromMetadataCache(carbonTable.getDatabaseName, tableName)(sparkSession)
       // refresh the parent table relation

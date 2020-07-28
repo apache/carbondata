@@ -71,7 +71,7 @@ case class CarbonInsertIntoWithDf(databaseNameOp: Option[String],
     val hadoopConf = sparkSession.sessionState.newHadoopConf()
     CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
     val factPath = ""
-    val currPartitions = CommonLoadUtils.getCurrentParitions(sparkSession, table)
+    val currPartitions = CommonLoadUtils.getCurrentPartitions(sparkSession, table)
     CommonLoadUtils.setNumberOfCoresWhileLoading(sparkSession)
     val optionsFinal: util.Map[String, String] =
       CommonLoadUtils.getFinalLoadOptions(table, options)

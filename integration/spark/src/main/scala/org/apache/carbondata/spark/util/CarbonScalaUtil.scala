@@ -92,7 +92,7 @@ object CarbonScalaUtil {
    *
    * @param value           Input value to convert
    * @param dataType        Datatype to convert and then convert to String
-   * @param timeStampFormat Timestamp format to convert in case of timestamp datatypes
+   * @param timeStampFormat Timestamp format to convert in case of timestamp data types
    * @param dateFormat      DataFormat to convert in case of DateType datatype
    * @return converted String
    */
@@ -145,7 +145,7 @@ object CarbonScalaUtil {
    *
    * @param value           Input value to convert
    * @param dataType        Datatype to convert and then convert to String
-   * @param timeStampFormat Timestamp format to convert in case of timestamp datatypes
+   * @param timeStampFormat Timestamp format to convert in case of timestamp data types
    * @param dateFormat      DataFormat to convert in case of DateType datatype
    * @return converted String
    */
@@ -344,7 +344,7 @@ object CarbonScalaUtil {
           specLinkedMap,
           table).toMap
       f.copy(spec = changedSpec)
-    }.groupBy(p => p.spec).map(f => f._2.head).toSeq // Avoid duplicates by do groupby
+    }.groupBy(p => p.spec).map(f => f._2.head).toSeq // Avoid duplicates by do group by
   }
 
   /**
@@ -399,7 +399,7 @@ object CarbonScalaUtil {
       } else {
         finalProperties.put("tableName", dbAndTableName(0))
       }
-      // Overriding the tablePath in case tablepath already exists. This will happen when old
+      // Overriding the 'tablePath' in case 'tablepath' already exists. This will happen when old
       // table schema is updated by the new code then both `path` and `tablepath` will exist. In
       // this case use tablepath
       parameters.get("tablepath") match {
@@ -599,8 +599,7 @@ object CarbonScalaUtil {
    *
    * @param tableProperties
    */
-  def validateDuplicateLocalDictIncludeExcludeColmns(tableProperties: mutable.Map[String,
-    String]): Unit = {
+  def validateDuplicateColumnsForLocalDict(tableProperties: mutable.Map[String, String]): Unit = {
     val isLocalDictIncludeDefined = tableProperties
       .get(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)
       .isDefined
@@ -666,24 +665,24 @@ object CarbonScalaUtil {
     }
 
     // check if column is other than STRING or VARCHAR datatype
-    localDictColumns.foreach { dictColm =>
+    localDictColumns.foreach { dictColumn =>
       if (fields
-        .exists(x => x.column.equalsIgnoreCase(dictColm) &&
+        .exists(x => x.column.equalsIgnoreCase(dictColumn) &&
                      !x.dataType.get.equalsIgnoreCase("STRING") &&
                      !x.dataType.get.equalsIgnoreCase("VARCHAR") &&
                      !x.dataType.get.equalsIgnoreCase("STRUCT") &&
                      !x.dataType.get.equalsIgnoreCase("MAP") &&
                      !x.dataType.get.equalsIgnoreCase("ARRAY"))) {
-        if (fields.exists(x => x.column.equalsIgnoreCase(dictColm)
+        if (fields.exists(x => x.column.equalsIgnoreCase(dictColumn)
                 && x.dataType.get.equalsIgnoreCase("BINARY"))
                 && tableProperties.get("local_dictionary_exclude").nonEmpty
-                && tableProperties.get("local_dictionary_exclude").get.contains(dictColm)
+                && tableProperties.get("local_dictionary_exclude").get.contains(dictColumn)
                 && (tableProperties.get("local_dictionary_include").isEmpty
-                || (!tableProperties.get("local_dictionary_include").get.contains(dictColm)))) {
+                || (!tableProperties.get("local_dictionary_include").get.contains(dictColumn)))) {
           LOGGER.info("Local_dictionary_exclude supports binary")
         } else {
           val errorMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
-                  dictColm.trim +
+                  dictColumn.trim +
                   " is not a string/complex/varchar datatype column. LOCAL_DICTIONARY_COLUMN" +
                   " should be no dictionary string/complex/varchar datatype column." +
                   "Please check the DDL."
@@ -693,13 +692,12 @@ object CarbonScalaUtil {
     }
 
     // Validate whether any of the child columns of complex dataType column is a string column
-    localDictColumns.foreach { dictColm =>
+    localDictColumns.foreach { dictColumn =>
       if (fields
-        .exists(x => x.column.equalsIgnoreCase(dictColm) && x.children.isDefined &&
-                     null != x.children.get &&
-                     !validateChildColumnsRecursively(x))) {
+        .exists(x => x.column.equalsIgnoreCase(dictColumn) && x.children.isDefined &&
+                     null != x.children.get && !validateChildColumnsRecursively(x))) {
         val errMsg =
-          s"None of the child columns of complex dataType column $dictColm specified in " +
+          s"None of the child columns of complex dataType column $dictColumn specified in " +
           "local_dictionary_include are not of string dataType."
         throw new MalformedCarbonCommandException(errMsg)
       }

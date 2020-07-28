@@ -143,7 +143,7 @@ private abstract class MVMatchPattern extends Logging {
     }
     if (aliasMapMain.size == 1) {
       val subsumerName: Option[String] = aliasMapMain.get(0)
-      // Replace all compensation1 attributes with refrences of subsumer attributeset
+      // Replace all compensation1 attributes with refrences of subsumer attribute set
       val compensationFinal = compensation1.transformExpressions {
         case ref: Attribute if subqueryAttributeSet.contains(ref) =>
           CarbonToSparkAdapter.createAttributeReference(
@@ -174,8 +174,8 @@ private abstract class MVMatchPattern extends Logging {
     //                /      \
     //   AttributeReference   Literal
     subsume match {
-      case Alias(funcction: ScalaUDF, _) if funcction.function.isInstanceOf[TimeSeriesFunction] =>
-        val children = funcction.children
+      case Alias(function: ScalaUDF, _) if function.function.isInstanceOf[TimeSeriesFunction] =>
+        val children = function.children
         val subsumerTimeSeriesFunctions = subsumerList.filter(
           expression =>
             expression.isInstanceOf[Alias] &&
@@ -210,7 +210,7 @@ private abstract class MVMatchPattern extends Logging {
           }
         )
       case expression: Expression =>
-        val transformedExpwithLowerCase = expression.transform {
+        val transformedExpWithLowerCase = expression.transform {
           case function: ScalaUDF if function.function.isInstanceOf[TimeSeriesFunction] =>
             getTransformedTimeSeriesFunction(function)
           case other => other
@@ -223,14 +223,14 @@ private abstract class MVMatchPattern extends Logging {
               case other => other
             }
         }
-        transformedExprListWithLowerCase.exists(_.semanticEquals(transformedExpwithLowerCase))
+        transformedExprListWithLowerCase.exists(_.semanticEquals(transformedExpWithLowerCase))
       case _ => false
     }
   }
 
   /**
    * Check if expr1 and expr2 matches TimeSeriesUDF function. If both expressions are
-   * timeseries udf functions, then check it's childrens are same irrespective of case.
+   * timeseries udf functions, then check it's children are same irrespective of case.
    */
   protected def isExpressionMatches(expression1: Expression, expression2: Expression): Boolean = {
     (expression1, expression2) match {
@@ -292,7 +292,7 @@ private abstract class MVMatchPattern extends Logging {
                                alias_m(alias.toAttribute).child.isInstanceOf[AggregateExpression] &&
                                alias_m(alias.toAttribute).child.asInstanceOf[AggregateExpression]
                                  .aggregateFunction.isInstanceOf[Count] =>
-            // case for groupby
+            // case for group by
             val cnt_a = alias_m(alias.toAttribute).child.asInstanceOf[AggregateExpression]
             val exprs_a = cnt_a.aggregateFunction.asInstanceOf[Count].children
             if (cnt_a.isDistinct != cnt_q.isDistinct || exprs_q.length != exprs_a.length) {
@@ -429,7 +429,7 @@ private abstract class MVMatchPattern extends Logging {
           case alias: Alias if alias_m.contains(alias.toAttribute) &&
                                alias_m(alias.toAttribute).child.isInstanceOf[AggregateExpression] &&
                                alias_m(alias.toAttribute).child.asInstanceOf[AggregateExpression]
-                                 .aggregateFunction.isInstanceOf[Count] => // case for groupby
+                                 .aggregateFunction.isInstanceOf[Count] => // case for group by
             val cnt_a = alias_m(alias.toAttribute).child.asInstanceOf[AggregateExpression]
             val exprs_a = cnt_a.aggregateFunction.asInstanceOf[Count].children
             if (!cnt_a.isDistinct && exprs_a.sameElements(Set(expr_q))) {
@@ -677,12 +677,12 @@ private object SelectSelectNoChildDelta extends MVMatchPattern with PredicateHel
         if (isUniqueRmE.isEmpty && isUniqueEmR.isEmpty && extrajoin.isEmpty && isPredicateRmE &&
             isPredicateEmdR && isOutputEdR) {
           val mappings = sel_1a.children.zipWithIndex.map {
-            case (childr, fromIdx) if sel_1q.children.contains(childr) =>
-              val toIndx = sel_1q.children.indexWhere{
-                case relation: ModularRelation => relation.fineEquals(childr)
-                case other => other == childr
+            case (child, fromIndex) if sel_1q.children.contains(child) =>
+              val toIndex = sel_1q.children.indexWhere{
+                case relation: ModularRelation => relation.fineEquals(child)
+                case other => other == child
               }
-              (toIndx -> fromIdx)
+              (toIndex -> fromIndex)
 
           }
           val e2r = mappings.toMap
@@ -748,10 +748,10 @@ private object SelectSelectNoChildDelta extends MVMatchPattern with PredicateHel
               tAliasMap += (tChildren.indexOf(usel_1a) -> generator.newSubsumerName())
 
               sel_1q.children.zipWithIndex.foreach {
-                case (childe, idx) =>
+                case (child, idx) =>
                   if (e2r.get(idx).isEmpty) {
-                    tChildren += childe
-                    sel_1q.aliasMap.get(idx).map(x => tAliasMap += (tChildren.indexOf(childe) -> x))
+                    tChildren += child
+                    sel_1q.aliasMap.get(idx).map(x => tAliasMap += (tChildren.indexOf(child) -> x))
                   }
               }
 
@@ -920,7 +920,7 @@ private object GroupbyGroupbyNoChildDelta extends MVMatchPattern {
             tryMatch(
               gb_2a, gb_2q, aliasMap).flatMap {
               case g: GroupBy =>
-                // Check any agg function exists on outputlist, in case of expressions like
+                // Check any agg function exists on output list, in case of expressions like
                 // sum(a), then create new alias and copy to group by node
                 val aggFunExists = g.outputList.exists { f =>
                   f.find {
@@ -990,8 +990,8 @@ private object GroupbyGroupbySelectOnlyChildDelta
 
   /**
    * org.apache.carbondata.mv.plans.MorePredicateHelper#canEvaluate will be checking the
-   * exprE.references as subset of AttibuteSet(exprListR), which will just take the column name from
-   * UDF, so it will be always false for ScalaUDF.
+   * exprE.references as subset of AttributeSet(exprListR), which will just take the column name
+   * from UDF, so it will be always false for ScalaUDF.
    * This method takes care of checking whether the exprE references can be derived form list
    *
    * Example:
@@ -1080,16 +1080,16 @@ private object GroupbyGroupbySelectOnlyChildDelta
         val needRegrouping = !gb_2a.predicateList
           .forall(f => gb_2q.predicateList.contains(f) ||
                        isExpressionMatches(f, gb_2q.predicateList))
-        val canPullup = sel_1c1.predicateList.forall(expr =>
+        val canPullUp = sel_1c1.predicateList.forall(expr =>
           isDerivable(expr, gb_2a.predicateList ++ rejoinOutputList, gb_2q, gb_2a, compensation))
         val isAggEmR = gb_2q.outputList.collect {
           case agg: aggregate.AggregateExpression =>
             gb_2a.outputList.exists(_.semanticEquals(agg))
         }.forall(identity)
 
-        if (isGroupingEdR && ((!needRegrouping && isAggEmR) || needRegrouping) && canPullup) {
+        if (isGroupingEdR && ((!needRegrouping && isAggEmR) || needRegrouping) && canPullUp) {
           // pull up
-          val pullupOutputList = gb_2a.outputList.map(_.toAttribute) ++ rejoinOutputList
+          val pullUpOutputList = gb_2a.outputList.map(_.toAttribute) ++ rejoinOutputList
           val myOutputList = gb_2a.outputList.filter {
             case alias: Alias =>
               val aliasList = gb_2q.outputList.filter(_.isInstanceOf[Alias])
@@ -1101,18 +1101,18 @@ private object GroupbyGroupbySelectOnlyChildDelta
           // TODO: find out if we really need to check needRegrouping or just use myOutputList
           val sel_2c1 = if (needRegrouping) {
             sel_1c1
-              .copy(outputList = pullupOutputList,
-                inputList = pullupOutputList,
+              .copy(outputList = pullUpOutputList,
+                inputList = pullUpOutputList,
                 children = sel_1c1.children
                   .map { case _: modular.Select => gb_2a; case other => other })
           } else {
             sel_1c1
               .copy(outputList = myOutputList,
-                inputList = pullupOutputList,
+                inputList = pullUpOutputList,
                 children = sel_1c1.children
                   .map { case _: modular.Select => gb_2a; case other => other })
           }
-          // sel_1c1.copy(outputList = pullupOutputList, inputList = pullupOutputList, children =
+          // sel_1c1.copy(outputList = pullUpOutputList, inputList = pullUpOutputList, children =
           // sel_1c1.children.map { _ match { case s: modular.Select => gb_2a; case other =>
           // other } })
 
@@ -1124,10 +1124,10 @@ private object GroupbyGroupbySelectOnlyChildDelta
               tryMatch(gb_2a, gb_2q, aliasMap).flatMap {
                 case g: GroupBy =>
 
-                  // Check any agg function exists on outputlist,
+                  // Check any agg function exists on output list,
                   // in case of expressions like sum(a)+sum(b) ,
                   // output list directly replaces with alias with in place of function
-                  // so we should remove the groupby clause in those cases.
+                  // so we should remove the group by clause in those cases.
                   val aggFunExists = g.outputList.exists { f =>
                     f.find {
                       case _: AggregateExpression => true
@@ -1254,7 +1254,7 @@ private object SelectSelectGroupbyChildDelta
    * top of subsumer
    *
    * To simplify this we assume in subsumer outputList of top select 1-1 corresponds to the
-   * outputList of groupby
+   * outputList of group by
    * note that subsumer outputList is list of attributes and that of groupby is list of aliases
    *
    */
@@ -1266,7 +1266,7 @@ private object SelectSelectGroupbyChildDelta
     (subsumer, subsumee, compensation) match {
       // top selects whose children do not match exactly
       // for simplicity, we assume outputList of subsumer is 1-1 corresponding to that of its
-      // immediately groupby child
+      // immediately group by child
       case (
         _@modular.Select(
         _, _, _, _, _,
@@ -1446,7 +1446,7 @@ private object SelectSelectGroupbyChildDelta
               sel_3a,
               compensation))
 
-        val canSELPullup = gb_2c.child.isInstanceOf[Select] &&
+        val canSELPullUp = gb_2c.child.isInstanceOf[Select] &&
                            gb_2c.child.asInstanceOf[Select].predicateList
                              .forall(expr =>
                                isDerivable(
@@ -1455,7 +1455,7 @@ private object SelectSelectGroupbyChildDelta
                                  sel_3q,
                                  sel_3a,
                                  compensation))
-        val canGBPullup = gb_2c.predicateList
+        val canGBPullUp = gb_2c.predicateList
           .forall(expr =>
             isDerivable(
               expr,
@@ -1467,8 +1467,8 @@ private object SelectSelectGroupbyChildDelta
         if (extrajoin.isEmpty && isPredicateRmE &&
             isPredicateEmdR &&
             isOutputEdR &&
-            canSELPullup &&
-            canGBPullup) {
+            canSELPullUp &&
+            canGBPullUp) {
           gb_2c.child match {
             case s: Select =>
               val sel_3c1 = s.withNewChildren(

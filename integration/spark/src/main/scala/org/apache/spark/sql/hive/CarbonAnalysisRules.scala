@@ -234,9 +234,9 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
       System.currentTimeMillis().toString)
   }
 
-  override def apply(logicalplan: LogicalPlan): LogicalPlan = {
+  override def apply(logicalPlan: LogicalPlan): LogicalPlan = {
 
-    logicalplan transform {
+    logicalPlan transform {
       case UpdateTable(t, cols, sel, alias, where) => processUpdateQuery(t, cols, sel, alias, where)
       case DeleteRecords(statement, alias, table) =>
         processDeleteRecordsQuery(

@@ -49,7 +49,7 @@ public class CarbonBlockLoaderHelper {
     return carbonBlockLoaderHelper;
   }
 
-  private Set<String> getTableblocks(AbsoluteTableIdentifier absoluteTableIdentifier) {
+  private Set<String> getTableBlocks(AbsoluteTableIdentifier absoluteTableIdentifier) {
     CopyOnWriteArraySet<String> blockSet = tableBlockMap.get(absoluteTableIdentifier);
     if (null == blockSet) {
       CopyOnWriteArraySet<String> newBlockSet = new CopyOnWriteArraySet<String>();
@@ -71,7 +71,7 @@ public class CarbonBlockLoaderHelper {
    */
   public Boolean checkAlreadySubmittedBlock(final AbsoluteTableIdentifier absoluteTableIdentifier,
       final String uniqueBlockId) {
-    Set<String> tableBlocks = getTableblocks(absoluteTableIdentifier);
+    Set<String> tableBlocks = getTableBlocks(absoluteTableIdentifier);
     // tableBlocks is a type of CopyOnWriteArraySet, so avoided taking lock during write/add
     return tableBlocks.add(uniqueBlockId);
   }

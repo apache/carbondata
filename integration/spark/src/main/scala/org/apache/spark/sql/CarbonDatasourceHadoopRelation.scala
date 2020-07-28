@@ -79,8 +79,8 @@ case class CarbonDatasourceHadoopRelation(
 
     val projection = new CarbonProjection
 
-    // As Filter pushdown for Complex datatype is not supported, if filter is applied on complex
-    // column, then Projection pushdown on Complex Columns will not take effect. Hence, check if
+    // As Filter push down for Complex datatype is not supported, if filter is applied on complex
+    // column, then Projection push down on Complex Columns will not take effect. Hence, check if
     // filter contains Struct Complex Column.
     val complexFilterExists = filterComplex.map(col =>
       col.map(_.isInstanceOf[GetStructField]))

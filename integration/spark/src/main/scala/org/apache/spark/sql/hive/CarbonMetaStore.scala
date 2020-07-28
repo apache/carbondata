@@ -30,7 +30,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.format.SchemaEvolutionEntry
 
 /**
- * Interface for Carbonmetastore
+ * Interface for CarbonMetastore
  */
 trait CarbonMetaStore {
 
@@ -44,7 +44,7 @@ trait CarbonMetaStore {
     (sparkSession: SparkSession): LogicalPlan
 
   /**
-   * Create spark session from paramters.
+   * Create spark session from parameters.
    *
    * @param parameters
    * @param absIdentifier

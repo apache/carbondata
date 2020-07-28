@@ -64,7 +64,7 @@ case class MergeProjection(
     }
     if (colsMap != null) {
       val output = new Array[Expression](tableCols.length)
-      val expecOutput = new Array[Expression](tableCols.length)
+      val expectOutput = new Array[Expression](tableCols.length)
       colsMap.foreach { case (k, v) =>
         val tableIndex = tableCols.indexOf(k.toString().toLowerCase)
         if (tableIndex < 0) {
@@ -75,7 +75,7 @@ case class MergeProjection(
             ds.queryExecution.analyzed.resolveQuoted(a.name,
               sparkSession.sessionState.analyzer.resolver).get
         }
-        expecOutput(tableIndex) =
+        expectOutput(tableIndex) =
           existingDsOutput.find(_.name.equalsIgnoreCase(tableCols(tableIndex))).get
       }
       if (output.contains(null)) {
@@ -84,7 +84,7 @@ case class MergeProjection(
       (new InterpretedMutableProjection(output++Seq(
         ds.queryExecution.analyzed.resolveQuoted(statusCol,
         sparkSession.sessionState.analyzer.resolver).get),
-        ds.queryExecution.analyzed.output), expecOutput)
+        ds.queryExecution.analyzed.output), expectOutput)
     } else {
       (null, null)
     }

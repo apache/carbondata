@@ -33,14 +33,14 @@ import org.apache.carbondata.format.SchemaEvolutionEntry
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 /**
- * Metastore to store carbonschema in hive
+ * Metastore to store carbon schema in hive
  */
 class CarbonHiveMetaStore extends CarbonFileMetastore {
 
   override def isReadFromHiveMetaStore: Boolean = true
 
   /**
-   * Create spark session from paramters.
+   * Create spark session from parameters.
    *
    * @param parameters
    * @param absIdentifier

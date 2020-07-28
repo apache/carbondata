@@ -28,7 +28,7 @@ import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 /**
  * Read support class which converts carbon row array format to sparks Internal row.
  */
-class SparkUnsafeRowReadSuport(requiredSchema: StructType) extends CarbonReadSupport[InternalRow] {
+class SparkUnsafeRowReadSupport(requiredSchema: StructType) extends CarbonReadSupport[InternalRow] {
   private val unsafeProjection = UnsafeProjection.create(requiredSchema)
   override def initialize(carbonColumns: Array[CarbonColumn],
       carbonTable: CarbonTable): Unit = {

@@ -155,14 +155,14 @@ object CarbonSession {
 
   private val statementId = new AtomicLong(0)
 
-  private var enableInMemCatlog: Boolean = false
+  private var isInMemoryCatalog: Boolean = false
 
   private[sql] val threadStatementId = new ThreadLocal[Long]()
 
   implicit class CarbonBuilder(builder: Builder) {
 
     def enableInMemoryCatalog(): Builder = {
-      enableInMemCatlog = true
+      isInMemoryCatalog = true
       builder
     }
     def getOrCreateCarbonSession(): SparkSession = {
@@ -177,7 +177,7 @@ object CarbonSession {
 
     def getOrCreateCarbonSession(storePath: String,
         metaStorePath: String): SparkSession = synchronized {
-      if (!enableInMemCatlog) {
+      if (!isInMemoryCatalog) {
         builder.enableHiveSupport()
       }
       val options =
@@ -252,7 +252,7 @@ object CarbonSession {
           sc
         }
 
-        session = new CarbonSession(sparkContext, None, !enableInMemCatlog)
+        session = new CarbonSession(sparkContext, None, !isInMemoryCatalog)
 
         val carbonProperties = CarbonProperties.getInstance()
         if (StringUtils.isNotBlank(storePath)) {

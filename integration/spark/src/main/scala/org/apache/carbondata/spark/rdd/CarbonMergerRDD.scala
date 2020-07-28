@@ -67,7 +67,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger._
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.MergeResult
-import org.apache.carbondata.spark.load.{DataLoadProcessBuilderOnSpark, PrimtiveOrdering, StringOrdering}
+import org.apache.carbondata.spark.load.{DataLoadProcessBuilderOnSpark, PrimitiveOrdering, StringOrdering}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
 
 class CarbonMergerRDD[K, V](
@@ -141,12 +141,12 @@ class CarbonMergerRDD[K, V](
 
         // During UPDATE DELTA COMPACTION case all the blocks received in compute belongs to
         // one segment, so max cardinality will be calculated from first block of segment
-        if (CompactionType.IUD_UPDDEL_DELTA == carbonMergerMapping.campactionType) {
+        if (CompactionType.IUD_UPDDEL_DELTA == carbonMergerMapping.compactionType) {
           var dataFileFooter: DataFileFooter = null
           try {
             // As the tableBlockInfoList is sorted take the ColCardinality from the last
             // Block of the sorted list as it will have the last updated cardinality.
-            // Blocks are sorted by order of updation using TableBlockInfo.compare method so
+            // Blocks are sorted by order of the update using TableBlockInfo.compare method so
             // the last block after the sort will be the latest one.
             dataFileFooter = CarbonUtil
               .readMetadataFile(tableBlockInfoList.get(tableBlockInfoList.size() - 1))
@@ -160,7 +160,7 @@ class CarbonMergerRDD[K, V](
           carbonMergerMapping.maxSegmentColumnSchemaList = dataFileFooter.getColumnInTable.asScala
             .toList
         }
-        mergeNumber = if (CompactionType.IUD_UPDDEL_DELTA == carbonMergerMapping.campactionType) {
+        mergeNumber = if (CompactionType.IUD_UPDDEL_DELTA == carbonMergerMapping.compactionType) {
           tableBlockInfoList.get(0).getSegment.toString
         } else {
           mergedLoadName.substring(
@@ -247,7 +247,7 @@ class CarbonMergerRDD[K, V](
             segmentProperties,
             tempStoreLoc,
             carbonLoadModel,
-            carbonMergerMapping.campactionType,
+            carbonMergerMapping.compactionType,
             partitionSpec)
 
         } else {
@@ -257,7 +257,7 @@ class CarbonMergerRDD[K, V](
             carbonLoadModel,
             carbonTable,
             segmentProperties,
-            carbonMergerMapping.campactionType,
+            carbonMergerMapping.compactionType,
             factTableName,
             partitionSpec)
 
@@ -408,7 +408,7 @@ class CarbonMergerRDD[K, V](
       val numOfPartitions = Math
         .max(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL.toInt,
           Math.min(totalTaskCount, DataLoadProcessBuilderOnSpark
-            .getNumPatitionsBasedOnSize(totalSize, carbonTable, carbonLoadModel, true)))
+            .getNumPartitionsBasedOnSize(totalSize, carbonTable, carbonLoadModel, true)))
       val colName = rangeColumn.getColName
       LOGGER.info(s"Compacting on range column: $colName")
       allRanges = getRangesFromRDD(rangeColumn,
@@ -524,7 +524,7 @@ class CarbonMergerRDD[K, V](
               // Creating FilterExpression for the range column
               var minVal: Object = null
               var maxVal: Object = null
-              // For first task we will create an Or Filter and also accomodate null values
+              // For first task we will create an Or Filter and also accommodate null values
               // For last task we will take as GreaterThan Expression of last value
               if (i != 0) {
                 minVal = newRanges(i - 1)
@@ -688,16 +688,16 @@ class CarbonMergerRDD[K, V](
     if (column.isDimension) {
       val dimension = column.asInstanceOf[CarbonDimension]
       if (dimension.getDataType == DataTypes.DATE) {
-        new PrimtiveOrdering(DataTypes.INT)
+        new PrimitiveOrdering(DataTypes.INT)
       } else {
         if (DataTypeUtil.isPrimitiveColumn(column.getDataType)) {
-          new PrimtiveOrdering(column.getDataType)
+          new PrimitiveOrdering(column.getDataType)
         } else {
           new StringOrdering()
         }
       }
     } else {
-      new PrimtiveOrdering(column.getDataType)
+      new PrimitiveOrdering(column.getDataType)
     }
   }
 

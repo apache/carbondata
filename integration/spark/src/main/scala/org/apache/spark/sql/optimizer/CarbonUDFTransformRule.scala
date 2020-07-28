@@ -34,7 +34,7 @@ class CarbonUDFTransformRule extends Rule[LogicalPlan] with PredicateHelper {
   private def pushDownUDFToJoinLeftRelation(plan: LogicalPlan): LogicalPlan = {
     val output = plan.transform {
       case proj@Project(cols, Join(
-      left, right, jointype: org.apache.spark.sql.catalyst.plans.JoinType, condition)) =>
+      left, right, joinType: org.apache.spark.sql.catalyst.plans.JoinType, condition)) =>
         var projectionToBeAdded: Seq[org.apache.spark.sql.catalyst.expressions.Alias] = Seq.empty
         var udfExists = false
         val newCols = cols.map {
@@ -56,7 +56,7 @@ class CarbonUDFTransformRule extends Rule[LogicalPlan] with PredicateHelper {
               Project(relation.output ++ projectionToBeAdded, relation)
             case other => other
           }
-          Project(newCols, Join(newLeft, right, jointype, condition))
+          Project(newCols, Join(newLeft, right, joinType, condition))
         } else {
           proj
         }

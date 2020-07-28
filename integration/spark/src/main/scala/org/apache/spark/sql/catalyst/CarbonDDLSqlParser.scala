@@ -192,9 +192,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       .map(_.invoke(this).asInstanceOf[Keyword].str)
 
   override val lexical = {
-    val sqllex = new SqlLexical()
-    sqllex.initialize(newReservedWords)
-    sqllex
+    val sqlLex = new SqlLexical()
+    sqlLex.initialize(newReservedWords)
+    sqlLex
 
   }
 
@@ -229,7 +229,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
   protected lazy val options: Parser[(String, String)] =
     (stringLit <~ "=") ~ stringLit ^^ {
-      case opt ~ optvalue => (opt.trim.toLowerCase(), optvalue)
+      case opt ~ optValue => (opt.trim.toLowerCase(), optValue)
       case _ => ("", "")
     }
 
@@ -242,19 +242,19 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
   protected lazy val partitions: Parser[(String, Option[String])] =
     (ident <~ "=".?) ~ stringLit.? ^^ {
-      case opt ~ optvalue => (opt.trim, optvalue)
+      case opt ~ optValue => (opt.trim, optValue)
       case _ => ("", None)
     }
 
   protected lazy val valueOptions: Parser[(Int, Int)] =
     (numericLit <~ ",") ~ numericLit ^^ {
-      case opt ~ optvalue => (opt.toInt, optvalue.toInt)
+      case opt ~ optValue => (opt.toInt, optValue.toInt)
       case _ => (0, 0)
     }
 
   protected lazy val columnOptions: Parser[(String, String)] =
     (stringLit <~ ",") ~ stringLit ^^ {
-      case opt ~ optvalue => (opt, optvalue)
+      case opt ~ optValue => (opt, optValue)
       case _ =>
         throw new MalformedCarbonCommandException(s"value cannot be empty")
     }

@@ -98,20 +98,20 @@ object CarbonReflectionUtils {
 
 
   def getOverWriteOption[T: TypeTag : reflect.ClassTag](name: String, obj: T): Boolean = {
-    var overwriteboolean: Boolean = false
+    var isOverwriteBoolean: Boolean = false
     val im = rm.reflect(obj)
     for (m <- typeOf[T].members.filter(!_.isMethod)) {
       if (m.toString.contains("overwrite")) {
         val typ = m.typeSignature
         if (typ.toString.contains("Boolean")) {
           // Spark2.2
-          overwriteboolean = im.reflectField(m.asTerm).get.asInstanceOf[Boolean]
+          isOverwriteBoolean = im.reflectField(m.asTerm).get.asInstanceOf[Boolean]
         } else {
-          overwriteboolean = getOverWrite("enabled", im.reflectField(m.asTerm).get)
+          isOverwriteBoolean = getOverWrite("enabled", im.reflectField(m.asTerm).get)
         }
       }
     }
-    overwriteboolean
+    isOverwriteBoolean
   }
 
   private def getOverWrite[T: TypeTag : reflect.ClassTag](name: String, obj: T): Boolean = {
@@ -189,7 +189,7 @@ object CarbonReflectionUtils {
       relation.catalogTable.map(_.identifier))
   }
 
-  def invokewriteAndReadMethod(dataSourceObj: DataSource,
+  def invokeWriteAndReadMethod(dataSourceObj: DataSource,
       dataFrame: DataFrame,
       data: LogicalPlan,
       session: SparkSession,

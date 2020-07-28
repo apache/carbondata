@@ -33,7 +33,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 
 /**
- * This class refresh the relation from cache if the carbontable in
+ * This class refresh the relation from cache if the carbon table in
  * carbon catalog is not same as cached carbon relation's carbon table.
  */
 object CarbonSessionUtil {
@@ -53,7 +53,7 @@ object CarbonSessionUtil {
     var isRelationRefreshed = false
 
     /**
-     * Set the stats to none in case of carbontable
+     * Set the stats to none in case of carbon table
      */
     def setStatsNone(catalogTable: CatalogTable): Unit = {
       if (CarbonSource.isCarbonDataSource(catalogTable)) {

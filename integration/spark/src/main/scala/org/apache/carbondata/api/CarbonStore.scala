@@ -117,7 +117,7 @@ object CarbonStore {
 
   /*
    * Collect all stage files and matched success files and loading files.
-   * return unloaded stagefiles and loading stagefiles in the end.
+   * return unloaded stage files and loading stage files in the end.
    */
   def listStageFiles(
         loadDetailsDir: String): (Array[CarbonFile], Array[CarbonFile]) = {
@@ -343,7 +343,7 @@ object CarbonStore {
         if (metadataDetail.getSegmentStatus.equals(SegmentStatus.MARKED_FOR_DELETE) &&
             metadataDetail.getSegmentFile == null) {
           val loadStartTime: Long = metadataDetail.getLoadStartTime
-          // delete all files of @loadStartTime from tablepath
+          // delete all files of @loadStartTime from table path
           cleanCarbonFilesInFolder(listOfDefaultPartFilesIterator, loadStartTime)
           partitionSpecList.foreach {
             partitionSpec =>
@@ -352,7 +352,7 @@ object CarbonStore {
               if (!partitionLocation.toString.startsWith(carbonTable.getTablePath)) {
                 val partitionCarbonFile = FileFactory
                   .getCarbonFile(partitionLocation.toString)
-                // list all files from partitionLoacation
+                // list all files from partitionLocation
                 val listOfExternalPartFilesIterator = partitionCarbonFile.listFiles(true)
                 // delete all files of @loadStartTime from externalPath
                 cleanCarbonFilesInFolder(listOfExternalPartFilesIterator, loadStartTime)
@@ -382,8 +382,8 @@ object CarbonStore {
   }
 
   // validates load ids
-  private def validateLoadIds(loadids: Seq[String]): Unit = {
-    if (loadids.isEmpty) {
+  private def validateLoadIds(loadIds: Seq[String]): Unit = {
+    if (loadIds.isEmpty) {
       val errorMessage = "Error: Segment id(s) should not be empty."
       throw new MalformedCarbonCommandException(errorMessage)
     }
@@ -391,20 +391,20 @@ object CarbonStore {
 
   // TODO: move dbName and tableName to caller, caller should handle the log and error
   def deleteLoadById(
-      loadids: Seq[String],
+      loadIds: Seq[String],
       dbName: String,
       tableName: String,
       carbonTable: CarbonTable): Unit = {
 
-    validateLoadIds(loadids)
+    validateLoadIds(loadIds)
 
     val path = carbonTable.getMetadataPath
 
     try {
       val invalidLoadIds = SegmentStatusManager.updateDeletionStatus(
-        carbonTable.getAbsoluteTableIdentifier, loadids.asJava, path).asScala
+        carbonTable.getAbsoluteTableIdentifier, loadIds.asJava, path).asScala
       if (invalidLoadIds.isEmpty) {
-        LOGGER.info(s"Delete segment by Id is successfull for $dbName.$tableName.")
+        LOGGER.info(s"Delete segment by Id is successful for $dbName.$tableName.")
       } else {
         sys.error(s"Delete segment by Id is failed. Invalid ID is: ${invalidLoadIds.mkString(",")}")
       }

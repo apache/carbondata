@@ -136,7 +136,7 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
     if (!isDistributedPruningEnabled) {
       // Block here. this feature is only with index server enabled
       throw new UnsupportedOperationException(
-        "Show Executor Metacache is only avalable with Index Server Enabled")
+        "Show Executor MetaCache is only available with Index Server Enabled")
     } else {
       // get all the executor details from the index server
       try {

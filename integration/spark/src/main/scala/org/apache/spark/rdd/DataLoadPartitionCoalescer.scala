@@ -28,7 +28,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 /**
  * DataLoadPartitionCoalescer
  * Repartition the partitions of rdd to few partitions, one partition per node.
- * exmaple:
+ * example:
  * blk_hst  host1 host2 host3 host4 host5
  * block1   host1 host2 host3
  * block2         host2       host4 host5
@@ -106,7 +106,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) {
         // if a partition has no location, add to noLocalityPartitions
         tmpNoLocalityPartitions += p.index
       } else {
-        // add partion to hostMapPartitionIds and partitionIdMapHosts
+        // add partition to hostMapPartitionIds and partitionIdMapHosts
         locs.foreach { loc =>
           val host = loc.host
           hostMapPartitionIds.get(host) match {
@@ -265,14 +265,14 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) {
   private def repartitionNoLocality(): Array[Partition] = {
     // no locality repartition
     LOGGER.info("no locality partition")
-    val prevPartIndexs = new Array[ArrayBuffer[Int]](numOfParts)
+    val prevPartIndexes = new Array[ArrayBuffer[Int]](numOfParts)
     for (i <- 0 until numOfParts) {
-      prevPartIndexs(i) = new ArrayBuffer[Int]
+      prevPartIndexes(i) = new ArrayBuffer[Int]
     }
     for (i <- 0 until prevPartitions.length) {
-      prevPartIndexs(i % numOfParts) += prevPartitions(i).index
+      prevPartIndexes(i % numOfParts) += prevPartitions(i).index
     }
-    prevPartIndexs.filter(_.nonEmpty).zipWithIndex.map { x =>
+    prevPartIndexes.filter(_.nonEmpty).zipWithIndex.map { x =>
       CoalescedRDDPartition(x._2, prev, x._1.toArray, getLocation(x._2))
     }
   }
@@ -289,16 +289,16 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) {
     // sort host and partitions
     tempNoEmptyHosts = sortHostAndPartitions(tempNoEmptyHosts)
     // assign locality partition to non empty hosts
-    val templocalityResult = assignPartitionNodeLocality(tempNoEmptyHosts)
+    val tempLocalityResult = assignPartitionNodeLocality(tempNoEmptyHosts)
     // collect non empty hosts and empty hosts
     val noEmptyHosts = mutable.Buffer[String]()
     val localityResult = mutable.Buffer[ArrayBuffer[Int]]()
-    for(index <- 0 until templocalityResult.size) {
-      if (templocalityResult(index).isEmpty) {
+    for(index <- 0 until tempLocalityResult.size) {
+      if (tempLocalityResult(index).isEmpty) {
         emptyHosts += tempNoEmptyHosts(index)._1
       } else {
         noEmptyHosts += tempNoEmptyHosts(index)._1
-        localityResult += templocalityResult(index)
+        localityResult += tempLocalityResult(index)
       }
     }
     // 2. do no locality repartition

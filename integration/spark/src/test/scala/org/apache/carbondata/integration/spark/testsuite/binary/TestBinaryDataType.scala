@@ -1642,7 +1642,7 @@ class TestBinaryDataType extends QueryTest with BeforeAndAfterAll {
             assert(e2.getMessage.contains(message_2_3))
             assert(e3.getMessage.contains(message_2_3))
         }
-        else if (SparkUtil.isSparkVersionXandAbove("2.4")) {
+        else if (SparkUtil.isSparkVersionXAndAbove("2.4")) {
             assert(e1.getMessage.contains(message_2_4))
             assert(e2.getMessage.contains(message_2_4))
             assert(e3.getMessage.contains(message_2_4))

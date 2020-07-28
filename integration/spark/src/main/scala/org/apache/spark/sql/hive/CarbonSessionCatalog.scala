@@ -62,7 +62,7 @@ trait CarbonSessionCatalog {
       identifier: TableIdentifier): Seq[CatalogTablePartition]
 
   /**
-   * Update the storageformat with new location information
+   * Update the storage format with new location information
    */
   def updateStorageLocation(
       path: Path,

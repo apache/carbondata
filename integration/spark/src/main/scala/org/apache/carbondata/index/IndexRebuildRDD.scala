@@ -196,7 +196,7 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
    */
   override def readRow(data: Array[Object]): Array[Object] = {
 
-    val surrogatKeys = if (segmentProperties.getNumberOfDictDimensions > 0) {
+    val surrogateKeys = if (segmentProperties.getNumberOfDictDimensions > 0) {
       ByteUtil.convertBytesToLongArray(
         data(0).asInstanceOf[ByteArrayWrapper].getDictionaryKey)
     } else {
@@ -207,7 +207,7 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
     val rtn = new Array[Object](indexColumns.length + 3)
     indexColumns.zipWithIndex.foreach { case (col, i) =>
       rtn(i) = if (indexCol2IdxInDictArray.contains(col.getColName)) {
-        surrogatKeys(indexCol2IdxInDictArray(col.getColName)).toInt.asInstanceOf[Integer]
+        surrogateKeys(indexCol2IdxInDictArray(col.getColName)).toInt.asInstanceOf[Integer]
       } else if (indexCol2IdxInNoDictArray.contains(col.getColName)) {
         val bytes = data(0).asInstanceOf[ByteArrayWrapper].getNoDictionaryKeyByIndex(
           indexCol2IdxInNoDictArray(col.getColName))
@@ -316,7 +316,7 @@ class IndexRebuildRDD[K, V](
         reader = new CarbonRecordReader[Array[Object]](model, readSupport, inputMetrics,
           attemptContext.getConfiguration)
         reader.initialize(inputSplit, attemptContext)
-        // skip clear indexSchema and we will do this adter rebuild
+        // skip clear indexSchema and we will do this after rebuild
         reader.setSkipClearIndexAtClose(true)
 
         // Note that indexSchema rebuilding is based on query, the blockletId in rowWithPosition

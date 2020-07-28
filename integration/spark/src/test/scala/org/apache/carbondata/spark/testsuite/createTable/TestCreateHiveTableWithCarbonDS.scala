@@ -48,7 +48,7 @@ class TestCreateHiveTableWithCarbonDS extends QueryTest with BeforeAndAfterAll {
   }
 
   private def verifyTable = {
-    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+    if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       val table = CarbonSessionCatalogUtil
         .getClient(sqlContext.sparkSession).getTable("default", "source")
       assertResult(table.schema.fields.length)(3)

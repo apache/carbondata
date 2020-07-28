@@ -106,7 +106,7 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
 
                   var details = SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath)
                   // If it empty, then no need to do further computations because the
-                  // tabletstatus might not have been created and hence next load will take care
+                  // tablet status might not have been created and hence next load will take care
                   if (details.isEmpty) {
                     return
                   }
@@ -170,14 +170,14 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
                           detail(0).setSegmentStatus(SegmentStatus.SUCCESS)
                           // in concurrent scenario, if a compaction is going on table, then SI
                           // segments are updated first in table status and then the main table
-                          // segment, so in any load runs paralley this listener shouldn't consider
+                          // segment, so in any load runs parallel this listener shouldn't consider
                           // those segments accidentally. So try to take the segment lock.
-                          val segmentLockOfProbableOngngCompactionSeg = CarbonLockFactory
+                          val segmentLockOfProbableOnCompactionSeg = CarbonLockFactory
                             .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
                               CarbonTablePath.addSegmentPrefix(mainTableDetail(0).getLoadName) +
                               LockUsage.LOCK)
-                          if (segmentLockOfProbableOngngCompactionSeg.lockWithRetries()) {
-                            segmentLocks += segmentLockOfProbableOngngCompactionSeg
+                          if (segmentLockOfProbableOnCompactionSeg.lockWithRetries()) {
+                            segmentLocks += segmentLockOfProbableOnCompactionSeg
                             LOGGER.error("Added in SILoadFailedSegment " + detail(0).getLoadName)
                             failedLoadMetadataDetails.add(detail(0))
                           }
@@ -189,7 +189,7 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
                       // in the case when in SI table a segment is deleted and it's entry is
                       // deleted from the tablestatus file, the corresponding .segment file from
                       // the metadata folder should also be deleted as it contains the
-                      // mergefilename which does not exist anymore as the segment is deleted.
+                      // merge file name which does not exist anymore as the segment is deleted.
                       deleteStaleSegmentFileIfPresent(carbonLoadModel,
                         indexTable,
                         failedLoadMetadataDetails)
@@ -213,7 +213,7 @@ class SILoadEventListenerForFailedSegments extends OperationEventListener with L
 
                     // check if main table has load in progress and SI table has no load
                     // in progress entry, then no need to enable the SI table
-                    // Only if the valid segments of maintable match the valid segments of SI
+                    // Only if the valid segments of main table match the valid segments of SI
                     // table then we can enable the SI for query
                     if (CarbonInternalLoaderUtil
                           .checkMainTableSegEqualToSISeg(mainTblLoadMetadataDetails,

@@ -21,11 +21,11 @@ import org.apache.spark.sql.SparkSession
 import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
-// Event for Prepriming in cache
+// Event for Pre-priming in cache
 case class IndexServerLoadEvent(sparkSession: SparkSession,
     carbonTable: CarbonTable,
     segment: List[Segment],
-    invalidsegment: List[String]) extends Event with IndexServerEventInfo
+    invalidSegment: List[String]) extends Event with IndexServerEventInfo
 
 case class IndexServerEvent(sparkSession: SparkSession,
     carbonTable: CarbonTable,

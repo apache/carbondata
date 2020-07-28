@@ -102,14 +102,14 @@ class CarbonEnv {
     sparkSession.udf.register(MVFunctions.TIME_SERIES_FUNCTION, new TimeSeriesFunction)
 
     // update carbon session parameters , preserve thread parameters
-    val currentThreadSesssionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    val currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
     carbonSessionInfo = new CarbonSessionInfo()
     // We should not corrupt the information in carbonSessionInfo object which is at the
     // session level. Instead create a new object and in that set the user specified values in
     // thread/session params
     val threadLevelCarbonSessionInfo = new CarbonSessionInfo()
-    if (currentThreadSesssionInfo != null) {
-      threadLevelCarbonSessionInfo.setThreadParams(currentThreadSesssionInfo.getThreadParams)
+    if (currentThreadSessionInfo != null) {
+      threadLevelCarbonSessionInfo.setThreadParams(currentThreadSessionInfo.getThreadParams)
     }
     ThreadLocalSessionInfo.setCarbonSessionInfo(threadLevelCarbonSessionInfo)
     ThreadLocalSessionInfo.setConfigurationToCurrentThread(

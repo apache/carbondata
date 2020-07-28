@@ -60,12 +60,12 @@ class ErrorMessage(message: String) extends Exception(message) {
 /**
  * Command for index table creation
  *
- * @param indexModel        SecondaryIndex model holding the index infomation
+ * @param indexModel        SecondaryIndex model holding the index information
  * @param tableProperties   SI table properties
  * @param ifNotExists       true if IF NOT EXISTS is set
  * @param isDeferredRefresh true if WITH DEFERRED REFRESH is set
- * @param isCreateSIndex    if false then will not create index table schema in the carbonstore
- *                          and will avoid dataload for SI creation.
+ * @param isCreateSIndex    if false then will not create index table schema in the carbon store
+ *                          and will avoid data load for SI creation.
  */
 private[sql] case class CarbonCreateSecondaryIndexCommand(
     indexModel: IndexModel,
@@ -383,7 +383,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
 
       CarbonHiveIndexMetadataUtil.refreshTable(databaseName, tableName, sparkSession)
 
-      // refersh the parent table relation
+      // refresh the parent table relation
       sparkSession.sessionState.catalog.refreshTable(identifier)
       // load data for secondary index
       if (isCreateSIndex) {
@@ -395,10 +395,10 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
         SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
       val siTblLoadMetadataDetails: Array[LoadMetadataDetails] =
         SegmentStatusManager.readLoadMetadata(indexTablePath)
-      val isMaintableSegEqualToSISegs = CarbonInternalLoaderUtil
+      val isMainTableSegEqualToSISegs = CarbonInternalLoaderUtil
         .checkMainTableSegEqualToSISeg(mainTblLoadMetadataDetails,
           siTblLoadMetadataDetails)
-      if (isMaintableSegEqualToSISegs) {
+      if (isMainTableSegEqualToSISegs) {
         // enable the SI table
         sparkSession.sql(
           s"""ALTER TABLE $databaseName.$indexTableName SET
@@ -452,7 +452,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       0,
       0,
       schemaOrdinal)
-    // sort column proeprty should be true for implicit no dictionary column position reference
+    // sort column property should be true for implicit no dictionary column position reference
     // as there exist a same behavior for no dictionary columns by default
     blockletId.setSortColumn(true)
     // set the blockletId column as local dict column implicit no dictionary column position
@@ -518,12 +518,12 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
   def setLocalDictionaryConfigs(indexTblPropertiesMap: java.util.HashMap[String, String],
       parentTblPropertiesMap: java.util.Map[String, String],
       allColumns: List[ColumnSchema]): Unit = {
-    val isLocalDictEnabledFormainTable = parentTblPropertiesMap
+    val isLocalDictEnabledForMainTable = parentTblPropertiesMap
       .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)
     indexTblPropertiesMap
       .put(
         CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
-        isLocalDictEnabledFormainTable)
+        isLocalDictEnabledForMainTable)
     indexTblPropertiesMap
       .put(
         CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
@@ -537,7 +537,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
         localDictColumns :+= column.getColumnName
       }
     )
-    if (isLocalDictEnabledFormainTable != null && isLocalDictEnabledFormainTable.toBoolean) {
+    if (isLocalDictEnabledForMainTable != null && isLocalDictEnabledForMainTable.toBoolean) {
       indexTblPropertiesMap
         .put(
           CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE,

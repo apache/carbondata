@@ -150,7 +150,7 @@ object CarbonInternalMetastore {
     // then once the property has a value true/false, make decision based on the property value
     if (null != carbonTable && (null == indexTableExists || indexTableExists.toBoolean)) {
       // When Index information is not loaded in main table, then it will fetch
-      // index info from hivemetastore and set it in the carbon table.
+      // index info from hive metastore and set it in the carbon table.
       val indexTableMap =
       new ConcurrentHashMap[String, java.util.Map[String, java.util.Map[String, String]]]
       try {

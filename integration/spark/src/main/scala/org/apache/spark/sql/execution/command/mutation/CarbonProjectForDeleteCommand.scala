@@ -120,7 +120,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
         isUpdateOperation = false,
         executorErrors)
 
-      // Check for any failures occured during delete delta execution
+      // Check for any failures occurred during delete delta execution
       if (executorErrors.failureCauses != FailureCauses.NONE) {
         throw new Exception(executorErrors.errorMsg)
       }
@@ -136,7 +136,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
         viewManager.onTruncate(viewSchemas)
       }
 
-      // prepriming for delete command
+      // pre-priming for delete command
       DeleteExecution.reloadDistributedSegmentCache(carbonTable,
         deletedSegments, operationContext)(sparkSession)
 
