@@ -55,7 +55,7 @@ public class ListExpression extends Expression {
 
   @Override
   public String getString() {
-    StringBuffer value = new StringBuffer();
+    StringBuilder value = new StringBuilder();
     value.append("ListExpression(");
     for (Expression expr : children) {
       value.append(expr.getString()).append(";");
@@ -67,7 +67,7 @@ public class ListExpression extends Expression {
 
   @Override
   public String getStatement() {
-    StringBuffer value = new StringBuffer();
+    StringBuilder value = new StringBuilder();
     value.append("(");
     for (Expression expr : children) {
       value.append(expr.getString()).append(";");

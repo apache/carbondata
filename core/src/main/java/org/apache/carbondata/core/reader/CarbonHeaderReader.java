@@ -28,7 +28,6 @@ import org.apache.carbondata.format.FileHeader;
 import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.thrift.TBase;
 
 /**
  * Below class to read file header of version3
@@ -73,12 +72,7 @@ public class CarbonHeaderReader {
    */
   private ThriftReader openThriftReader(String filePath) {
     Configuration conf = configuration != null ? configuration : FileFactory.getConfiguration();
-    return new ThriftReader(filePath, new ThriftReader.TBaseCreator() {
-      @Override
-      public TBase create() {
-        return new FileHeader();
-      }
-    }, conf);
+    return new ThriftReader(filePath, FileHeader::new, conf);
   }
 
   /**

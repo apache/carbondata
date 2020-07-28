@@ -95,11 +95,9 @@ public class DimensionChunkPageReaderV3 extends DimensionChunkReaderV3 {
     }
     // get the data chunk which will have all the details about the data pages
     DataChunk3 dataChunk = CarbonUtil.readDataChunk3(new ByteArrayInputStream(buffer.array()));
-    DimensionRawColumnChunk rawColumnChunk =
-        getDimensionRawColumnChunk(fileReader, blockletColumnIndex, currentDimensionOffset, length,
-            null, dataChunk);
 
-    return rawColumnChunk;
+    return getDimensionRawColumnChunk(fileReader, blockletColumnIndex, currentDimensionOffset,
+        length, null, dataChunk);
   }
 
   /**

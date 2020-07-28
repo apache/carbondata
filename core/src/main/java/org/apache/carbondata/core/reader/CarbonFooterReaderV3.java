@@ -21,8 +21,6 @@ import java.io.IOException;
 
 import org.apache.carbondata.format.FileFooter3;
 
-import org.apache.thrift.TBase;
-
 /**
  * Below class to read file footer of version3
  * carbon data file
@@ -65,13 +63,7 @@ public class CarbonFooterReaderV3 {
    * @throws IOException
    */
   private ThriftReader openThriftReader(String filePath) {
-
-    return new ThriftReader(filePath, new ThriftReader.TBaseCreator() {
-      @Override
-      public TBase create() {
-        return new FileFooter3();
-      }
-    });
+    return new ThriftReader(filePath, FileFooter3::new);
   }
 
 }

@@ -186,7 +186,7 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
       } else if (targetDataType == DataTypes.INT) {
         encodedPage.putInt(rowId, (int) Math.round(value * factor));
       } else if (targetDataType == DataTypes.LONG) {
-        encodedPage.putLong(rowId, (long) Math.round(value * factor));
+        encodedPage.putLong(rowId, Math.round(value * factor));
       } else if (targetDataType == DataTypes.DOUBLE) {
         encodedPage.putDouble(rowId, value);
       } else {

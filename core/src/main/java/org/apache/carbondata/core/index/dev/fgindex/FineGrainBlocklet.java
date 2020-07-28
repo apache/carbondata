@@ -102,8 +102,8 @@ public class FineGrainBlocklet extends Blocklet implements Serializable {
 
   public BitSetGroup getBitSetGroup(int numberOfPages) {
     BitSetGroup bitSetGroup = new BitSetGroup(numberOfPages);
-    for (int i = 0; i < pages.size(); i++) {
-      bitSetGroup.setBitSet(pages.get(i).getBitSet(), pages.get(i).pageId);
+    for (Page page : pages) {
+      bitSetGroup.setBitSet(page.getBitSet(), page.pageId);
     }
     return bitSetGroup;
   }

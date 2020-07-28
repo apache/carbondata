@@ -19,7 +19,6 @@ package org.apache.carbondata.core.mutate;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,9 +70,8 @@ public class DeleteDeltaBlockDetails implements Serializable {
     if (null != blockletDetailsMap) {
       Set<Map.Entry<String, DeleteDeltaBlockletDetails>> entries = blockletDetailsMap.entrySet();
       if (null != entries && !entries.isEmpty()) {
-        Iterator<Map.Entry<String, DeleteDeltaBlockletDetails>> iterator = entries.iterator();
-        while (iterator.hasNext()) {
-          deleteDeltaBlockletDetailsList.add(iterator.next().getValue());
+        for (Map.Entry<String, DeleteDeltaBlockletDetails> entry : entries) {
+          deleteDeltaBlockletDetailsList.add(entry.getValue());
         }
       }
     }

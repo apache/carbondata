@@ -150,18 +150,14 @@ public class BlockletDataRefNode implements DataRefNode {
   public MeasureRawColumnChunk[] readMeasureChunks(FileReader fileReader, int[][] columnIndexRange)
       throws IOException {
     MeasureColumnChunkReader measureColumnChunkReader = getMeasureColumnChunkReader(fileReader);
-    MeasureRawColumnChunk[] measureRawColumnChunks =
-        measureColumnChunkReader.readRawMeasureChunks(fileReader, columnIndexRange);
-    return measureRawColumnChunks;
+    return measureColumnChunkReader.readRawMeasureChunks(fileReader, columnIndexRange);
   }
 
   @Override
   public MeasureRawColumnChunk readMeasureChunk(FileReader fileReader, int columnIndex)
       throws IOException {
     MeasureColumnChunkReader measureColumnChunkReader = getMeasureColumnChunkReader(fileReader);
-    MeasureRawColumnChunk measureRawColumnChunk =
-        measureColumnChunkReader.readRawMeasureChunk(fileReader, columnIndex);
-    return measureRawColumnChunk;
+    return measureColumnChunkReader.readRawMeasureChunk(fileReader, columnIndex);
   }
 
   private DimensionColumnChunkReader getDimensionColumnChunkReader(FileReader fileReader) {

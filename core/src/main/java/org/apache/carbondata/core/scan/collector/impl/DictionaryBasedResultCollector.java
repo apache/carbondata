@@ -350,9 +350,9 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
 
   void initDimensionAndMeasureIndexesForFillingData() {
     List<Integer> dictionaryIndexes = new ArrayList<Integer>();
-    for (int i = 0; i < queryDimensions.length; i++) {
-      if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
-        dictionaryIndexes.add(queryDimensions[i].getDimension().getOrdinal());
+    for (ProjectionDimension queryDimension : queryDimensions) {
+      if (queryDimension.getDimension().getDataType() == DataTypes.DATE) {
+        dictionaryIndexes.add(queryDimension.getDimension().getOrdinal());
       }
     }
     int[] primitive =
@@ -366,25 +366,25 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
 
     parentToChildColumnsMap.clear();
     queryDimensionToComplexParentOrdinal.clear();
-    for (int i = 0; i < queryDimensions.length; i++) {
-      if (queryDimensions[i].getDimension().getDataType() == DataTypes.DATE) {
+    for (ProjectionDimension queryDimension : queryDimensions) {
+      if (queryDimension.getDimension().getDataType() == DataTypes.DATE) {
         actualIndexInSurrogateKey[index++] =
-            Arrays.binarySearch(primitive, queryDimensions[i].getDimension().getOrdinal());
+            Arrays.binarySearch(primitive, queryDimension.getDimension().getOrdinal());
       }
-      if (null != queryDimensions[i].getDimension().getComplexParentDimension()) {
+      if (null != queryDimension.getDimension().getComplexParentDimension()) {
         // Add the parent and the child ordinal to the parentToChildColumnsMap
         int complexParentOrdinal =
-            queryDimensions[i].getDimension().getComplexParentDimension().getOrdinal();
+            queryDimension.getDimension().getComplexParentDimension().getOrdinal();
         queryDimensionToComplexParentOrdinal.add(complexParentOrdinal);
         if (parentToChildColumnsMap.get(complexParentOrdinal) == null) {
           // Add the parent and child ordinal in the map
           List<Integer> childOrdinals = new ArrayList<>();
-          childOrdinals.add(queryDimensions[i].getDimension().getOrdinal());
+          childOrdinals.add(queryDimension.getDimension().getOrdinal());
           parentToChildColumnsMap.put(complexParentOrdinal, childOrdinals);
 
         } else {
           List<Integer> childOrdinals = parentToChildColumnsMap.get(complexParentOrdinal);
-          childOrdinals.add(queryDimensions[i].getDimension().getOrdinal());
+          childOrdinals.add(queryDimension.getDimension().getOrdinal());
           parentToChildColumnsMap.put(complexParentOrdinal, childOrdinals);
         }
       } else {

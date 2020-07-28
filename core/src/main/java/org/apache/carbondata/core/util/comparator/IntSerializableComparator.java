@@ -27,12 +27,6 @@ public class IntSerializableComparator implements SerializableComparator {
     } else if (key2 == null) {
       return 1;
     }
-    if ((int) key1 < (int) key2) {
-      return -1;
-    } else if ((int) key1 > (int) key2) {
-      return 1;
-    } else {
-      return 0;
-    }
+    return Integer.compare((int) key1, (int) key2);
   }
 }

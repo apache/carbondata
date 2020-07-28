@@ -163,6 +163,7 @@ public final class CarbonProperties {
         validateCarbonCSVReadBufferSizeByte();
         break;
       case HANDOFF_SIZE:
+      case ENABLE_AUTO_HANDOFF:
         validateHandoffSize();
         break;
       case CARBON_TASK_DISTRIBUTION:
@@ -184,9 +185,6 @@ public final class CarbonProperties {
         break;
       case SORT_INTERMEDIATE_FILES_LIMIT:
         validateSortIntermediateFilesLimit();
-        break;
-      case ENABLE_AUTO_HANDOFF:
-        validateHandoffSize();
         break;
       case CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO:
         validateSchedulerMinRegisteredRatio();
@@ -1193,7 +1191,7 @@ public final class CarbonProperties {
   }
 
   public long getHandoffSize() {
-    Long handoffSize;
+    long handoffSize;
     try {
       handoffSize = Long.parseLong(
           CarbonProperties.getInstance().getProperty(
@@ -1743,7 +1741,6 @@ public final class CarbonProperties {
     } else {
       switch (provider.toUpperCase()) {
         case CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DISK:
-          break;
         case  CarbonCommonConstants.CARBON_INDEX_SCHEMA_STORAGE_DATABASE:
           break;
         default:

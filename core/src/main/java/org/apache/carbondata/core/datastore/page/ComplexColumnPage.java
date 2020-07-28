@@ -113,21 +113,17 @@ public class ComplexColumnPage {
 
   private boolean isColumnPageBasedOnDataType(int columnPageIndex) {
     DataType dataType = complexColumnInfoList.get(columnPageIndex).getColumnDataTypes();
-    if ((complexColumnInfoList.get(columnPageIndex).isNoDictionary() &&
-        !((DataTypes.isStructType(dataType) ||
-            DataTypes.isArrayType(dataType) ||
-            DataTypes.isMapType(dataType) ||
-            (dataType == DataTypes.STRING) ||
-            (dataType == DataTypes.VARCHAR) ||
-            (dataType == DataTypes.BINARY) ||
-            (dataType == DataTypes.DATE) ||
-            DataTypes.isDecimal(dataType))))) {
-      // For all these above condition the ColumnPage should be Taken as BYTE_ARRAY
-      // for all other cases make Column Page Based on each DataType.
-      return true;
-    } else {
-      return false;
-    }
+    // For all these above condition the ColumnPage should be Taken as BYTE_ARRAY
+    // for all other cases make Column Page Based on each DataType.
+    return complexColumnInfoList.get(columnPageIndex).isNoDictionary()
+        && !((DataTypes.isStructType(dataType)
+            || DataTypes.isArrayType(dataType)
+            || DataTypes.isMapType(dataType)
+            || (dataType == DataTypes.STRING)
+            || (dataType == DataTypes.VARCHAR)
+            || (dataType == DataTypes.BINARY)
+            || (dataType == DataTypes.DATE)
+            || DataTypes.isDecimal(dataType)));
   }
 
   /**

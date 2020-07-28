@@ -159,22 +159,18 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
     } else {
       segName = segment.getSegmentFileName();
     }
-    SegmentRefreshInfo segmentRefreshInfo = snapShot.get(segName);
-    return segmentRefreshInfo;
+    return snapShot.get(segName);
   }
 
-  private String getSegmentID(String carbonIndexFileName, String indexFilePath) {
+  private String getSegmentID(String indexFileName, String indexFilePath) {
     if (indexFilePath.contains("/Fact/Part0/Segment_")) {
       // This is CarbonFile case where the Index files are present inside the Segment Folder
       // So the Segment has to be extracted from the path not from the CarbonIndex file.
       String segString = indexFilePath.substring(0, indexFilePath.lastIndexOf("/") + 1);
-      String segName =
-          segString.substring(segString.lastIndexOf("_") + 1, segString.lastIndexOf("/"));
-      return segName;
+      return segString.substring(segString.lastIndexOf("_") + 1, segString.lastIndexOf("/"));
     } else {
-      String fileName = carbonIndexFileName;
-      String segId = fileName.substring(fileName.lastIndexOf("-") + 1, fileName.lastIndexOf("."));
-      return segId;
+      return indexFileName.substring(indexFileName.lastIndexOf("-") + 1,
+          indexFileName.lastIndexOf("."));
     }
   }
 
@@ -206,21 +202,19 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
   private void takeCarbonIndexFileSnapShot(CarbonFile[] carbonIndexFiles) {
     Map<String, List<String>> indexFileStore = new HashMap<>();
     Map<String, SegmentRefreshInfo> segmentTimestampUpdaterMap = new HashMap<>();
-    for (int i = 0; i < carbonIndexFiles.length; i++) {
+    for (CarbonFile carbonIndexFile : carbonIndexFiles) {
       // TODO. Nested File Paths.
-      if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)
-          || carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+      if (carbonIndexFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || carbonIndexFile
+          .getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
         // Get Segment Name from the IndexFile.
-        String indexFilePath =
-            FileFactory.getUpdatedFilePath(carbonIndexFiles[i].getAbsolutePath());
-        String timestamp = getSegmentID(carbonIndexFiles[i].getName(), indexFilePath);
+        String indexFilePath = FileFactory.getUpdatedFilePath(carbonIndexFile.getAbsolutePath());
+        String timestamp = getSegmentID(carbonIndexFile.getName(), indexFilePath);
         // TODO. During Partition table handling, place Segment File Name.
         List<String> indexList;
         SegmentRefreshInfo segmentRefreshInfo;
         if (indexFileStore.get(timestamp) == null) {
           indexList = new ArrayList<>(1);
-          segmentRefreshInfo =
-              new SegmentRefreshInfo(carbonIndexFiles[i].getLastModifiedTime(), 0, 0L);
+          segmentRefreshInfo = new SegmentRefreshInfo(carbonIndexFile.getLastModifiedTime(), 0, 0L);
           segmentTimestampUpdaterMap.put(timestamp, segmentRefreshInfo);
         } else {
           // Entry is already present.
@@ -228,18 +222,16 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
           segmentRefreshInfo = segmentTimestampUpdaterMap.get(timestamp);
         }
         indexList.add(indexFilePath);
-        if (segmentRefreshInfo.getSegmentUpdatedTimestamp() < carbonIndexFiles[i]
+        if (segmentRefreshInfo.getSegmentUpdatedTimestamp() < carbonIndexFile
             .getLastModifiedTime()) {
-          segmentRefreshInfo
-              .setSegmentUpdatedTimestamp(carbonIndexFiles[i].getLastModifiedTime());
+          segmentRefreshInfo.setSegmentUpdatedTimestamp(carbonIndexFile.getLastModifiedTime());
         }
         indexFileStore.put(timestamp, indexList);
         segmentRefreshInfo.setCountOfFileInSegment(indexList.size());
       }
     }
-    ReadCommittedIndexFileSnapShot readCommittedIndexFileSnapShot =
+    this.readCommittedIndexFileSnapShot =
         new ReadCommittedIndexFileSnapShot(indexFileStore, segmentTimestampUpdaterMap);
-    this.readCommittedIndexFileSnapShot = readCommittedIndexFileSnapShot;
     prepareLoadMetadata();
   }
 

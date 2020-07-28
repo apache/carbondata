@@ -20,7 +20,6 @@ package org.apache.carbondata.core.index;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -573,11 +572,9 @@ public final class IndexStoreManager {
     List<TableIndex> indexes = getAllCGAndFGIndexes(carbonTable);
     List<TableIndex> remainingIndexes = new ArrayList<>();
     if (StringUtils.isNotEmpty(indexToClear)) {
-      Iterator<TableIndex> indexIterator = indexes.iterator();
-      while (indexIterator.hasNext()) {
-        TableIndex tableIndex = indexIterator.next();
+      for (TableIndex tableIndex : indexes) {
         if (indexToClear.equalsIgnoreCase(tableIndex.getIndexSchema().getIndexName())) {
-          for (String segment: segmentNos) {
+          for (String segment : segmentNos) {
             tableIndex.deleteSegmentIndexData(segment);
           }
           tableIndex.clear();

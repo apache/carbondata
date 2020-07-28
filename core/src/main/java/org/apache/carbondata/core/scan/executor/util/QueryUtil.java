@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.executor.util;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -75,23 +74,22 @@ public class QueryUtil {
     Set<Integer> dimensionChunkIndex = new HashSet<Integer>();
     Set<Integer> filterDimensionOrdinal = getFilterDimensionOrdinal(filterDimensions);
     int chunkIndex = 0;
-    for (int i = 0; i < queryDimensions.size(); i++) {
-      if (queryDimensions.get(i).getDimension().hasEncoding(Encoding.IMPLICIT)) {
+    for (ProjectionDimension queryDimension : queryDimensions) {
+      if (queryDimension.getDimension().hasEncoding(Encoding.IMPLICIT)) {
         continue;
       }
 
-      Integer dimensionOrdinal = queryDimensions.get(i).getDimension().getOrdinal();
+      Integer dimensionOrdinal = queryDimension.getDimension().getOrdinal();
       allProjectionListDimensionIndexes.add(dimensionOrdinalToChunkMapping.get(dimensionOrdinal));
-      if (queryDimensions.get(i).getDimension().getNumberOfChild() > 0) {
-        addChildrenBlockIndex(allProjectionListDimensionIndexes,
-            queryDimensions.get(i).getDimension());
+      if (queryDimension.getDimension().getNumberOfChild() > 0) {
+        addChildrenBlockIndex(allProjectionListDimensionIndexes, queryDimension.getDimension());
       }
 
       if (!filterDimensionOrdinal.contains(dimensionOrdinal)) {
         chunkIndex = dimensionOrdinalToChunkMapping.get(dimensionOrdinal);
         dimensionChunkIndex.add(chunkIndex);
-        if (queryDimensions.get(i).getDimension().getNumberOfChild() > 0) {
-          addChildrenBlockIndex(dimensionChunkIndex, queryDimensions.get(i).getDimension());
+        if (queryDimension.getDimension().getNumberOfChild() > 0) {
+          addChildrenBlockIndex(dimensionChunkIndex, queryDimension.getDimension());
         }
       }
     }
@@ -341,14 +339,8 @@ public class QueryUtil {
     if (null == filterResolverTree) {
       return;
     }
-    List<ColumnExpression> dimensionResolvedInfos = new ArrayList<ColumnExpression>();
     Expression filterExpression = filterResolverTree.getFilterExpression();
     addColumnDimensions(filterExpression, filterDimensions, filterMeasure);
-    for (ColumnExpression info : dimensionResolvedInfos) {
-      if (info.isDimension() && info.getDimension().getNumberOfChild() > 0) {
-        filterDimensions.add(info.getDimension());
-      }
-    }
   }
 
   /**
@@ -364,7 +356,6 @@ public class QueryUtil {
       } else {
         filterMeasure.add((CarbonMeasure) ((ColumnExpression) expression).getCarbonColumn());
       }
-      return;
     } else if (null != expression) {
       for (Expression child : expression.getChildren()) {
         addColumnDimensions(child, filterDimensions, filterMeasure);
@@ -431,8 +422,7 @@ public class QueryUtil {
       // In case of complex types only add the name after removing parent names.
       int index = columnSchema.getColumnName().lastIndexOf(".");
       if (index >= 0) {
-        columnSchema.setColumnUniqueId(columnSchema.getColumnName()
-            .substring(index + 1, columnSchema.getColumnName().length()));
+        columnSchema.setColumnUniqueId(columnSchema.getColumnName().substring(index + 1));
       } else {
         columnSchema.setColumnUniqueId(columnSchema.getColumnName());
       }

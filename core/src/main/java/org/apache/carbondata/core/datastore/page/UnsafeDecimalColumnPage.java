@@ -51,9 +51,9 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
       int size = pageSize * 3;
       memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
     } else if (DataTypes.isDecimal(columnPageEncoderMeta.getStoreDataType())) {
-      memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
+      memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, capacity);
     } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE_ARRAY) {
-      memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
+      memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, capacity);
     } else {
       throw new UnsupportedOperationException(
           "invalid data type: " + columnPageEncoderMeta.getStoreDataType());

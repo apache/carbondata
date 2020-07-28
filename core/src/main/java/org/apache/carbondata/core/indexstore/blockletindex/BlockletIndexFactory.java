@@ -596,7 +596,7 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
     List<TableBlockIndexUniqueIdentifierWrapper> identifiersWrapper = new ArrayList<>();
     String parent = indexFilePath.substring(0, indexFilePath.lastIndexOf("/"));
     String name =
-        indexFilePath.substring(indexFilePath.lastIndexOf("/") + 1, indexFilePath.length());
+        indexFilePath.substring(indexFilePath.lastIndexOf("/") + 1);
     if (indexFilePath.endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
       identifiersWrapper.add(new TableBlockIndexUniqueIdentifierWrapper(
           new TableBlockIndexUniqueIdentifier(parent, name, null, segmentId),

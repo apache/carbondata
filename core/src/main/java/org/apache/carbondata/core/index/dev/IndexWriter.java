@@ -114,8 +114,7 @@ public abstract class IndexWriter {
           "index file " + indexFile + " is not written in provided directory path "
               + indexPath);
     }
-    String indexFileName =
-        indexFile.substring(indexPath.length(), indexFile.length());
+    String indexFileName = indexFile.substring(indexPath.length());
     String carbonFilePath = indexFileName.substring(0, indexFileName.lastIndexOf("/"));
     String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
     if (carbonFilePath.length() > 0) {

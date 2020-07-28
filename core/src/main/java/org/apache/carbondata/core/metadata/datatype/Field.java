@@ -38,7 +38,6 @@ public class Field {
   private DataType type;
   private List<StructField> children;
   private String parent;
-  private String storeType = "columnar";
   private int schemaOrdinal = -1;
   private int precision = 0;
   private int scale = 0;
@@ -192,10 +191,6 @@ public class Field {
     this.parent = parent;
   }
 
-  public String getStoreType() {
-    return storeType;
-  }
-
   public int getSchemaOrdinal() {
     return schemaOrdinal;
   }
@@ -313,15 +308,11 @@ public class Field {
   public boolean equals(Object obj) {
     if (obj instanceof Field) {
       Field field = (Field) obj;
-      if ((!this.getDataType().equals(field.getDataType()))
-          || (!this.getFieldName().equals(field.getFieldName()))
-          || (!(this.getSchemaOrdinal() == (field.getSchemaOrdinal())))
-          ) {
-        return false;
-      }
+      return (this.getDataType().equals(field.getDataType()))
+          && (this.getFieldName().equals(field.getFieldName()))
+          && (this.getSchemaOrdinal() == (field.getSchemaOrdinal()));
     } else {
       return false;
     }
-    return true;
   }
 }

@@ -22,6 +22,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
@@ -73,9 +74,7 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   @Override
   public void setByteArrayPage(byte[][] byteArray) {
-    for (byte[] data : byteArray) {
-      byteArrayData.add(data);
-    }
+    byteArrayData.addAll(Arrays.asList(byteArray));
   }
 
   @Override

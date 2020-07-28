@@ -283,8 +283,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   @Override
   public byte[][] getByteArrayPage() {
     byte[][] data = new byte[arrayElementCount][];
-    for (int i = 0; i < arrayElementCount; i++) {
-      data[i] = fixedLengthData[i];
+    if (arrayElementCount > 0) {
+      System.arraycopy(fixedLengthData, 0, data, 0, arrayElementCount);
     }
     return data;
   }

@@ -95,14 +95,13 @@ public final class FileFactory {
   public static FileReader getFileHolder(FileFactory.FileType fileType,
       Configuration configuration) {
     switch (fileType) {
-      case LOCAL:
-        return new FileReaderImpl();
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
       case S3:
       case HDFS_LOCAL:
         return new DFSFileReaderImpl(configuration);
+      case LOCAL:
       default:
         return new FileReaderImpl();
     }
@@ -401,7 +400,6 @@ public final class FileFactory {
             fileChannel.close();
           }
         }
-        return;
     }
   }
 

@@ -337,7 +337,7 @@ public class RestructureUtil {
         measureDefaultValue = decimal;
       } else {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-        Double parsedValue = Double.valueOf(value);
+        double parsedValue = Double.parseDouble(value);
         if (!Double.isInfinite(parsedValue) && !Double.isNaN(parsedValue)) {
           measureDefaultValue = parsedValue;
         }
@@ -379,7 +379,7 @@ public class RestructureUtil {
         measureDefaultValue = decimal;
       } else {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-        Double parsedValue = Double.valueOf(value);
+        double parsedValue = Double.parseDouble(value);
         if (!Double.isInfinite(parsedValue) && !Double.isNaN(parsedValue)) {
           measureDefaultValue = parsedValue;
         }

@@ -39,8 +39,7 @@ public class FalseFilterExecutor implements FilterExecutor {
   @Override
   public BitSet prunePages(RawBlockletColumnChunks rawChunks) {
     int numberOfPages = rawChunks.getDataBlock().numberOfPages();
-    BitSet set = new BitSet(numberOfPages);
-    return set;
+    return new BitSet(numberOfPages);
   }
 
   @Override

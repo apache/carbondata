@@ -75,12 +75,13 @@ public class IndexMeta {
 
   @Override
   public String toString() {
-    return new StringBuilder("IndexMeta{")
-        .append("indexName='").append(indexName).append('\'')
-        .append(", indexedColumns=[")
-        .append(StringUtils.join(getIndexedColumnNames(), ", ")).append("]\'")
-        .append(", optimizedOperation=").append(optimizedOperation)
-        .append('}')
+    return new StringBuilder("IndexMeta{indexName='")
+        .append(indexName)
+        .append("', indexedColumns='[")
+        .append(StringUtils.join(getIndexedColumnNames(), ", "))
+        .append("]', optimizedOperation='")
+        .append(optimizedOperation)
+        .append("'}")
         .toString();
   }
 }

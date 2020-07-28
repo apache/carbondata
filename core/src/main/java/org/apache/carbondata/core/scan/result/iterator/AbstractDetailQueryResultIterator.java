@@ -201,11 +201,8 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   public boolean hasNext() {
     if ((dataBlockIterator != null && dataBlockIterator.hasNext())) {
       return true;
-    } else if (blockExecutionInfos.size() > 0) {
-      return true;
-    } else {
-      return false;
     }
+    return blockExecutionInfos.size() > 0;
   }
 
   void updateDataBlockIterator() {

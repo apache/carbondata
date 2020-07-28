@@ -149,8 +149,7 @@ public class IndexMetadata implements Serializable {
   }
 
   public String serialize() throws IOException {
-    String serializedIndexMeta = ObjectSerializationUtil.convertObjectToString(this);
-    return serializedIndexMeta;
+    return ObjectSerializationUtil.convertObjectToString(this);
   }
 
   public static IndexMetadata deserialize(String serializedIndexMeta) throws IOException {

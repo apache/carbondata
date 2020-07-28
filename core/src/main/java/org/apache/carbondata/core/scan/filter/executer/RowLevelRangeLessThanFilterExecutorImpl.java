@@ -197,12 +197,12 @@ public class RowLevelRangeLessThanFilterExecutorImpl extends RowLevelFilterExecu
   private boolean isScanRequired(byte[] minValue, Object[] filterValue,
       DataType dataType) {
     Object value = DataTypeUtil.getMeasureObjectFromDataType(minValue, dataType);
-    for (int i = 0; i < filterValue.length; i++) {
+    for (Object o : filterValue) {
       // TODO handle min and max for null values.
-      if (filterValue[i] == null) {
+      if (o == null) {
         return true;
       }
-      if (comparator.compare(filterValue[i], value) > 0) {
+      if (comparator.compare(o, value) > 0) {
         return true;
       }
     }
@@ -395,8 +395,8 @@ public class RowLevelRangeLessThanFilterExecutorImpl extends RowLevelFilterExecu
     DataType msrType = msrColEvalutorInfoList.get(0).getType();
     SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
     BitSet nullBitSet = columnPage.getNullBits();
-    for (int i = 0; i < filterValues.length; i++) {
-      if (filterValues[i] == null) {
+    for (Object filterValue : filterValues) {
+      if (filterValue == null) {
         for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
           bitSet.set(j);
         }
@@ -405,10 +405,10 @@ public class RowLevelRangeLessThanFilterExecutorImpl extends RowLevelFilterExecu
       for (int startIndex = 0; startIndex < numberOfRows; startIndex++) {
         if (!nullBitSet.get(startIndex)) {
           Object msrValue = DataTypeUtil
-              .getMeasureObjectBasedOnDataType(columnPage, startIndex,
-                  msrType, msrColEvalutorInfoList.get(0).getMeasure());
+              .getMeasureObjectBasedOnDataType(columnPage, startIndex, msrType,
+                  msrColEvalutorInfoList.get(0).getMeasure());
 
-          if (comparator.compare(msrValue, filterValues[i]) < 0) {
+          if (comparator.compare(msrValue, filterValue) < 0) {
             // This is a match.
             bitSet.set(startIndex);
           }
@@ -484,17 +484,16 @@ public class RowLevelRangeLessThanFilterExecutorImpl extends RowLevelFilterExecu
       startIndex = skip;
     }
 
-    for (int i = 0; i < filterValues.length; i++) {
+    for (byte[] filterValue : filterValues) {
       start = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
-              filterValues[i], false);
+              filterValue, false);
       if (start >= 0) {
         // Logic will handle the case where the range filter member is not present in block
         // in this case the binary search will return the index from where the bit sets will be
         // set inorder to apply filters. this is Lesser than filter so the range will be taken
         // from the prev element which is Lesser than filter member.
-        start =
-            CarbonUtil.nextLesserValueToTarget(start, dimensionColumnPage, filterValues[i]);
+        start = CarbonUtil.nextLesserValueToTarget(start, dimensionColumnPage, filterValue);
       }
       if (start < 0) {
         start = -(start + 1);
@@ -504,9 +503,8 @@ public class RowLevelRangeLessThanFilterExecutorImpl extends RowLevelFilterExecu
         // When negative value of start is returned from getFirstIndexUsingBinarySearch the Start
         // will be pointing to the next consecutive position. So compare it again and point to the
         // previous value returned from getFirstIndexUsingBinarySearch.
-        if (ByteUtil.compare(filterValues[i],
-            dimensionColumnPage.getChunkData(dimensionColumnPage.getInvertedIndex(start)))
-            < 0) {
+        if (ByteUtil.compare(filterValue,
+            dimensionColumnPage.getChunkData(dimensionColumnPage.getInvertedIndex(start))) < 0) {
           start = start - 1;
         }
       }
@@ -561,13 +559,12 @@ public class RowLevelRangeLessThanFilterExecutorImpl extends RowLevelFilterExecu
         }
         startIndex = skip;
       }
-      for (int k = 0; k < filterValues.length; k++) {
+      for (byte[] filterValue : filterValues) {
         start = CarbonUtil
-            .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex,
-                numberOfRows - 1, filterValues[k], false);
+            .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
+                filterValue, false);
         if (start >= 0) {
-          start =
-              CarbonUtil.nextLesserValueToTarget(start, dimensionColumnPage, filterValues[k]);
+          start = CarbonUtil.nextLesserValueToTarget(start, dimensionColumnPage, filterValue);
         }
         if (start < 0) {
           start = -(start + 1);
@@ -578,7 +575,7 @@ public class RowLevelRangeLessThanFilterExecutorImpl extends RowLevelFilterExecu
           // When negative value of start is returned from getFirstIndexUsingBinarySearch the Start
           // will be pointing to the next consecutive position. So compare it again and point to the
           // previous value returned from getFirstIndexUsingBinarySearch.
-          if (ByteUtil.compare(filterValues[k], dimensionColumnPage.getChunkData(start)) < 0) {
+          if (ByteUtil.compare(filterValue, dimensionColumnPage.getChunkData(start)) < 0) {
             start = start - 1;
           }
         }

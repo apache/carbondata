@@ -125,8 +125,7 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
           defaultValue =
               DataTypeUtil.getDataTypeConverter().convertFromBigDecimalToDecimal(defaultValue);
         }
-        for (short j = 0; j < rows.size(); j++) {
-          Object[] rowValues = rows.get(j);
+        for (Object[] rowValues : rows) {
           rowValues[i + offset] = defaultValue;
         }
       }

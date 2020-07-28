@@ -21,6 +21,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Objects;
 
 import org.apache.hadoop.io.Writable;
 
@@ -105,24 +106,23 @@ public class Blocklet implements Writable, Serializable {
 
     Blocklet blocklet = (Blocklet) o;
 
-    if (filePath != null ? !filePath.equals(blocklet.filePath) : blocklet.filePath != null) {
+    if (!Objects.equals(filePath, blocklet.filePath)) {
       return false;
     }
     if (!compareBlockletIdForObjectMatching) {
       return true;
     }
-    return blockletId != null ?
-        blockletId.equals(blocklet.blockletId) :
-        blocklet.blockletId == null;
+    return Objects.equals(blockletId, blocklet.blockletId);
   }
 
   @Override
   public String toString() {
-    final StringBuffer sb = new StringBuffer("Blocklet{");
-    sb.append("filePath='").append(filePath).append('\'');
-    sb.append(", blockletId='").append(blockletId).append('\'');
-    sb.append('}');
-    return sb.toString();
+    return new StringBuilder("Blocklet{filePath='")
+        .append(filePath)
+        .append("', blockletId='")
+        .append(blockletId)
+        .append("'}")
+        .toString();
   }
 
   @Override

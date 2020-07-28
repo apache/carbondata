@@ -252,17 +252,11 @@ public class SegmentUpdateStatusManager {
           String firstPart = fileName.substring(0, fileName.indexOf('.'));
 
           long timestamp = Long.parseLong(firstPart
-              .substring(firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1,
-                  firstPart.length()));
-          if (Long.compare(timestamp, endTimeStampFinal) <= 0
-              && Long.compare(timestamp, startTimeStampFinal) >= 0) {
+              .substring(firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1));
+          if (timestamp <= endTimeStampFinal && timestamp >= startTimeStampFinal) {
 
             // if marked for delete then it is invalid.
-            if (!isBlockValid(segmentId, fileName)) {
-              return false;
-            }
-
-            return true;
+            return isBlockValid(segmentId, fileName);
           }
         }
         return false;
@@ -390,10 +384,7 @@ public class SegmentUpdateStatusManager {
         @Override
         public boolean accept(CarbonFile pathName) {
           String fileName = pathName.getName();
-          if (fileName.endsWith(extension) && pathName.getSize() > 0) {
-            return true;
-          }
-          return false;
+          return fileName.endsWith(extension) && pathName.getSize() > 0;
         }
       });
       deltaList = new ArrayList<>(files.length);
@@ -412,8 +403,8 @@ public class SegmentUpdateStatusManager {
       // It compares whether this delta file belongs to this block or not. And also checks that
       // corresponding delta file is valid or not by considering its load start and end time with
       // the file timestamp.
-      if (blockNameFromTuple.equals(blockName) && ((Long.compare(timestamp, deltaEndTimeStamp) <= 0)
-          && (Long.compare(timestamp, deltaStartTimestamp) >= 0))) {
+      if (blockNameFromTuple.equals(blockName) && ((timestamp <= deltaEndTimeStamp)
+          && (timestamp >= deltaStartTimestamp))) {
         if (null == deleteFileList) {
           deleteFileList = new ArrayList<String>();
         }
@@ -453,10 +444,8 @@ public class SegmentUpdateStatusManager {
               String blkName = fileName.substring(0, fileName.lastIndexOf("-"));
               long timestamp =
                   Long.parseLong(CarbonTablePath.DataFileUtil.getTimeStampFromFileName(fileName));
-              if (blockName.equals(blkName) && (Long.compare(timestamp, deltaEndTimeStamp) <= 0)
-                  && (Long.compare(timestamp, deltaStartTimestamp) >= 0)) {
-                return true;
-              }
+              return blockName.equals(blkName) && timestamp <= deltaEndTimeStamp
+                  && timestamp >= deltaStartTimestamp;
             }
             return false;
           }
@@ -508,24 +497,24 @@ public class SegmentUpdateStatusManager {
             Long.parseLong(CarbonTablePath.DataFileUtil.getTimeStampFromFileName(fileName));
 
         if (excludeOriginalFact) {
-          if (Long.compare(factTimeStampFinal, timestamp) == 0) {
+          if (factTimeStampFinal == timestamp) {
             continue;
           }
         }
 
         if (validUpdateFiles) {
-          if (Long.compare(timestamp, endTimeStampFinal) <= 0
-              && Long.compare(timestamp, startTimeStampFinal) >= 0) {
+          if (timestamp <= endTimeStampFinal
+              && timestamp >= startTimeStampFinal) {
             listOfCarbonFiles.add(eachFile);
           }
         } else {
           // invalid cases.
           if (isAbortedFile) {
-            if (Long.compare(timestamp, endTimeStampFinal) > 0) {
+            if (timestamp > endTimeStampFinal) {
               listOfCarbonFiles.add(eachFile);
             }
-          } else if (Long.compare(timestamp, startTimeStampFinal) < 0
-              || Long.compare(timestamp, endTimeStampFinal) > 0) {
+          } else if (timestamp < startTimeStampFinal
+              || timestamp > endTimeStampFinal) {
             listOfCarbonFiles.add(eachFile);
           }
         }
@@ -583,18 +572,17 @@ public class SegmentUpdateStatusManager {
         String firstPart = fileName.substring(0, fileName.indexOf('.'));
 
         long timestamp = Long.parseLong(firstPart
-            .substring(firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1,
-                firstPart.length()));
+            .substring(firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1));
 
         if (excludeOriginalFact) {
-          if (Long.compare(factTimeStampFinal, timestamp) == 0) {
+          if (factTimeStampFinal == timestamp) {
             continue;
           }
         }
 
         if (validUpdateFiles) {
-          if (Long.compare(timestamp, endTimeStampFinal) <= 0
-              && Long.compare(timestamp, startTimeStampFinal) >= 0) {
+          if (timestamp <= endTimeStampFinal
+              && timestamp >= startTimeStampFinal) {
 
             boolean validBlock = true;
 
@@ -612,7 +600,7 @@ public class SegmentUpdateStatusManager {
           }
         } else {
           // invalid cases.
-          if (Long.compare(timestamp, startTimeStampFinal) < 0) {
+          if (timestamp < startTimeStampFinal) {
             listOfCarbonFiles.add(eachFile);
           }
         }
@@ -837,11 +825,11 @@ public class SegmentUpdateStatusManager {
         if (block.getBlockName().equalsIgnoreCase(blkName)) {
 
           if (isAbortedFile) {
-            if (Long.compare(timestamp, deltaEndTimestamp) > 0) {
+            if (timestamp > deltaEndTimestamp) {
               files.add(eachFile);
             }
-          } else if (Long.compare(timestamp, deltaStartTimestamp) < 0
-              || Long.compare(timestamp, deltaEndTimestamp) > 0) {
+          } else if (timestamp < deltaStartTimestamp
+              || timestamp > deltaEndTimestamp) {
             files.add(eachFile);
           }
         }

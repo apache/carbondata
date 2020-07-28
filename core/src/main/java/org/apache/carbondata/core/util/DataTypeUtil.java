@@ -119,7 +119,7 @@ public final class DataTypeUtil {
     } else if (dataType == DataTypes.BYTE) {
       return Byte.parseByte(msrValue);
     } else {
-      Double parsedValue = Double.valueOf(msrValue);
+      double parsedValue = Double.parseDouble(msrValue);
       if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
         return null;
       }
@@ -159,7 +159,7 @@ public final class DataTypeUtil {
     } else if (dataType == DataTypes.TIMESTAMP) {
       return parseTimestamp(dimValue, timeStampFormat);
     } else {
-      Double parsedValue = Double.valueOf(dimValue);
+      double parsedValue = Double.parseDouble(dimValue);
       if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
         return null;
       }
@@ -508,7 +508,7 @@ public final class DataTypeUtil {
       }
     }
     if (actualDataType == DataTypes.BOOLEAN) {
-      return ByteUtil.toBytes(Boolean.valueOf(ByteUtil.toBoolean((byte) dimensionValue)));
+      return ByteUtil.toBytes(ByteUtil.toBoolean((byte) dimensionValue));
     } else if (actualDataType == DataTypes.SHORT) {
       return ByteUtil.toXorBytes((Short) dimensionValue);
     } else if (actualDataType == DataTypes.INT) {
@@ -529,14 +529,10 @@ public final class DataTypeUtil {
    * @return
    */
   public static boolean isFixedSizeDataType(DataType dataType) {
-    if (dataType == DataTypes.STRING ||
-        dataType == DataTypes.VARCHAR ||
-        dataType == DataTypes.BINARY ||
-        DataTypes.isDecimal(dataType)) {
-      return false;
-    } else {
-      return true;
-    }
+    return dataType != DataTypes.STRING
+        && dataType != DataTypes.VARCHAR
+        && dataType != DataTypes.BINARY
+        && !DataTypes.isDecimal(dataType);
   }
 
   /**
@@ -838,11 +834,11 @@ public final class DataTypeUtil {
       long parsedIntVal = 0;
       DataType dataType = columnSchema.getDataType();
       if (dataType == DataTypes.INT) {
-        parsedIntVal = (long) Integer.parseInt(data);
+        parsedIntVal = Integer.parseInt(data);
         return String.valueOf(parsedIntVal)
             .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
       } else if (dataType == DataTypes.SHORT) {
-        parsedIntVal = (long) Short.parseShort(data);
+        parsedIntVal = Short.parseShort(data);
         return String.valueOf(parsedIntVal)
             .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
       } else if (dataType == DataTypes.DOUBLE) {
@@ -1014,13 +1010,15 @@ public final class DataTypeUtil {
    * @return
    */
   public static boolean isPrimitiveColumn(DataType dataType) {
-    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE || dataType == DataTypes.SHORT
-        || dataType == DataTypes.INT || dataType == DataTypes.LONG
-        || dataType == DataTypes.TIMESTAMP || DataTypes.isDecimal(dataType)
-        || dataType == DataTypes.FLOAT || dataType == DataTypes.DOUBLE) {
-      return true;
-    }
-    return false;
+    return dataType == DataTypes.BOOLEAN
+        || dataType == DataTypes.BYTE
+        || dataType == DataTypes.SHORT
+        || dataType == DataTypes.INT
+        || dataType == DataTypes.LONG
+        || dataType == DataTypes.TIMESTAMP
+        || DataTypes.isDecimal(dataType)
+        || dataType == DataTypes.FLOAT
+        || dataType == DataTypes.DOUBLE;
   }
 
   /**

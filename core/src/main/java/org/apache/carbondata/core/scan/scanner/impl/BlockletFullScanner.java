@@ -100,9 +100,9 @@ public class BlockletFullScanner implements BlockletScanner {
     scannedResult.setMsrRawColumnChunks(measureRawColumnChunks);
     int[] numberOfRows = null;
     if (blockExecutionInfo.getAllSelectedDimensionColumnIndexRange().length > 0) {
-      for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
-        if (dimensionRawColumnChunks[i] != null) {
-          numberOfRows = dimensionRawColumnChunks[i].getRowCount();
+      for (DimensionRawColumnChunk dimensionRawColumnChunk : dimensionRawColumnChunks) {
+        if (dimensionRawColumnChunk != null) {
+          numberOfRows = dimensionRawColumnChunk.getRowCount();
           break;
         }
       }

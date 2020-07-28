@@ -233,11 +233,8 @@ public class QueryModelBuilder {
       CarbonDimension childDimension) {
     if (parentDimension.getColName().equals(childDimension.getColName())) {
       return false;
-    } else if (checkForChildColumns(parentDimension, childDimension)) {
-      return true;
-    } else {
-      return false;
     }
+    return checkForChildColumns(parentDimension, childDimension);
   }
 
   private boolean checkForChildColumns(CarbonDimension parentDimension,

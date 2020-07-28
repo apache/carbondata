@@ -23,7 +23,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -567,16 +566,10 @@ public final class FilterUtil {
       throw new FilterUnsupportedException("Unsupported Filter condition: " + result, ex);
     }
 
-    java.util.Comparator<byte[]> filterNoDictValueComparator = new java.util.Comparator<byte[]>() {
-
-      @Override
-      public int compare(byte[] filterMember1, byte[] filterMember2) {
-        // TODO Auto-generated method stub
-        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterMember1, filterMember2);
-      }
-
-    };
-    Collections.sort(filterValuesList, filterNoDictValueComparator);
+    // TODO Auto-generated method stub
+    java.util.Comparator<byte[]> filterNoDictValueComparator =
+        ByteUtil.UnsafeComparer.INSTANCE::compareTo;
+    filterValuesList.sort(filterNoDictValueComparator);
     ColumnFilterInfo columnFilterInfo = null;
     if (filterValuesList.size() > 0) {
       columnFilterInfo = new ColumnFilterInfo();
@@ -620,7 +613,7 @@ public final class FilterUtil {
 
     SerializableComparator filterMeasureComparator =
         Comparator.getComparatorByDataTypeForMeasure(dataType);
-    Collections.sort(filterValuesList, filterMeasureComparator);
+    filterValuesList.sort(filterMeasureComparator);
     ColumnFilterInfo columnFilterInfo = null;
     if (filterValuesList.size() > 0) {
       columnFilterInfo = new ColumnFilterInfo();
@@ -835,9 +828,6 @@ public final class FilterUtil {
         return Double.compare((Double.parseDouble(dictionaryVal)), (Double.parseDouble(memberVal)));
       } else if (dataType == DataTypes.LONG) {
         return Long.compare((Long.parseLong(dictionaryVal)), (Long.parseLong(memberVal)));
-      } else if (dataType == DataTypes.BOOLEAN) {
-        return Boolean.compare(
-            (Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
       } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
         String format = CarbonUtil.getFormatFromProperty(dataType);
         SimpleDateFormat parser = new SimpleDateFormat(format);
@@ -1130,13 +1120,9 @@ public final class FilterUtil {
    * @return sorted encoded filter values
    */
   private static byte[][] getSortedEncodedFilters(List<byte[]> encodedFilters) {
-    java.util.Comparator<byte[]> filterNoDictValueComparator = new java.util.Comparator<byte[]>() {
-      @Override
-      public int compare(byte[] filterMember1, byte[] filterMember2) {
-        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterMember1, filterMember2);
-      }
-    };
-    Collections.sort(encodedFilters, filterNoDictValueComparator);
+    java.util.Comparator<byte[]> filterNoDictValueComparator =
+        ByteUtil.UnsafeComparer.INSTANCE::compareTo;
+    encodedFilters.sort(filterNoDictValueComparator);
     return encodedFilters.toArray(new byte[encodedFilters.size()][]);
   }
 

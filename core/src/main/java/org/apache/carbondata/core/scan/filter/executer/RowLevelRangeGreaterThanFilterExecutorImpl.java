@@ -258,12 +258,12 @@ public class RowLevelRangeGreaterThanFilterExecutorImpl extends RowLevelFilterEx
   private boolean isScanRequired(byte[] maxValue, Object[] filterValue,
       DataType dataType) {
     Object value = DataTypeUtil.getMeasureObjectFromDataType(maxValue, dataType);
-    for (int i = 0; i < filterValue.length; i++) {
+    for (Object o : filterValue) {
       // TODO handle min and max for null values.
-      if (filterValue[i] == null) {
+      if (o == null) {
         return true;
       }
-      if (comparator.compare(filterValue[i], value) < 0) {
+      if (comparator.compare(o, value) < 0) {
         return true;
       }
     }
@@ -419,8 +419,8 @@ public class RowLevelRangeGreaterThanFilterExecutorImpl extends RowLevelFilterEx
     DataType msrType = msrColEvalutorInfoList.get(0).getType();
     SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
     BitSet nullBitSet = columnPage.getNullBits();
-    for (int i = 0; i < filterValues.length; i++) {
-      if (filterValues[i] == null) {
+    for (Object filterValue : filterValues) {
+      if (filterValue == null) {
         for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
           bitSet.set(j);
         }
@@ -428,11 +428,10 @@ public class RowLevelRangeGreaterThanFilterExecutorImpl extends RowLevelFilterEx
       }
       for (int startIndex = 0; startIndex < numberOfRows; startIndex++) {
         if (!nullBitSet.get(startIndex)) {
-          Object msrValue = DataTypeUtil
-              .getMeasureObjectBasedOnDataType(columnPage, startIndex,
-                  msrType, msrColEvalutorInfoList.get(0).getMeasure());
+          Object msrValue = DataTypeUtil.getMeasureObjectBasedOnDataType(columnPage, startIndex,
+              msrType, msrColEvalutorInfoList.get(0).getMeasure());
 
-          if (comparator.compare(msrValue, filterValues[i]) > 0) {
+          if (comparator.compare(msrValue, filterValue) > 0) {
             // This is a match.
             bitSet.set(startIndex);
           }
@@ -483,14 +482,13 @@ public class RowLevelRangeGreaterThanFilterExecutorImpl extends RowLevelFilterEx
     int last = 0;
     int startIndex = 0;
     byte[][] filterValues = this.filterRangeValues;
-    for (int i = 0; i < filterValues.length; i++) {
+    for (byte[] filterValue : filterValues) {
       start = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
-              filterValues[i], true);
+              filterValue, true);
       if (start >= 0) {
         start = CarbonUtil
-            .nextGreaterValueToTarget(start, dimensionColumnPage, filterValues[i],
-                numberOfRows);
+            .nextGreaterValueToTarget(start, dimensionColumnPage, filterValue, numberOfRows);
       }
       // Logic will handle the case where the range filter member is not present in block
       // in this case the binary search will return the index from where the bit sets will be
@@ -504,9 +502,8 @@ public class RowLevelRangeGreaterThanFilterExecutorImpl extends RowLevelFilterEx
         // Method will compare the tentative index value after binary search, this tentative
         // index needs to be compared by the filter member if its > filter then from that
         // index the bitset will be considered for filtering process.
-        if (ByteUtil.compare(filterValues[i],
-            dimensionColumnPage.getChunkData(dimensionColumnPage.getInvertedIndex(start)))
-            > 0) {
+        if (ByteUtil.compare(filterValue,
+            dimensionColumnPage.getChunkData(dimensionColumnPage.getInvertedIndex(start))) > 0) {
           start = start + 1;
         }
       }
@@ -544,14 +541,12 @@ public class RowLevelRangeGreaterThanFilterExecutorImpl extends RowLevelFilterEx
       int start = 0;
       int last = 0;
       int startIndex = 0;
-      for (int k = 0; k < filterValues.length; k++) {
-        start = CarbonUtil
-            .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex,
-                numberOfRows - 1, filterValues[k], true);
+      for (byte[] filterValue : filterValues) {
+        start = CarbonUtil.getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex,
+            numberOfRows - 1, filterValue, true);
         if (start >= 0) {
           start = CarbonUtil
-              .nextGreaterValueToTarget(start, dimensionColumnPage, filterValues[k],
-                  numberOfRows);
+              .nextGreaterValueToTarget(start, dimensionColumnPage, filterValue, numberOfRows);
         }
         if (start < 0) {
           start = -(start + 1);
@@ -561,7 +556,7 @@ public class RowLevelRangeGreaterThanFilterExecutorImpl extends RowLevelFilterEx
           // Method will compare the tentative index value after binary search, this tentative
           // index needs to be compared by the filter member if its > filter then from that
           // index the bitset will be considered for filtering process.
-          if (ByteUtil.compare(filterValues[k], dimensionColumnPage.getChunkData(start)) > 0) {
+          if (ByteUtil.compare(filterValue, dimensionColumnPage.getChunkData(start)) > 0) {
             start = start + 1;
           }
         }

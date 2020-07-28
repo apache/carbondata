@@ -39,10 +39,6 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
 
   private String filePath;
 
-  private DataInputStream dataInputStream = null;
-
-  private InputStreamReader inputStream = null;
-
   private static final int DEFAULT_BUFFER_SIZE = 258;
 
   /**
@@ -66,14 +62,15 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
     // Configure Buffer based on our requirement
     char[] buffer = new char[DEFAULT_BUFFER_SIZE];
     StringWriter sw = new StringWriter();
-    dataInputStream = FileFactory.getDataInputStream(filePath);
-    inputStream = new InputStreamReader(dataInputStream,
-        CarbonCommonConstants.DEFAULT_CHARSET);
-    int n = 0;
-    while (-1 != (n = inputStream.read(buffer))) {
-      sw.write(buffer, 0, n);
+    try (DataInputStream dataInputStream = FileFactory.getDataInputStream(filePath);
+        InputStreamReader inputStream = new InputStreamReader(dataInputStream,
+            CarbonCommonConstants.DEFAULT_CHARSET)) {
+      int n = 0;
+      while (-1 != (n = inputStream.read(buffer))) {
+        sw.write(buffer, 0, n);
+      }
+      return sw.toString();
     }
-    return sw.toString();
   }
 
   /**

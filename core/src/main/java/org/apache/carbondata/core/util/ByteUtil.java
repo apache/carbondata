@@ -667,9 +667,9 @@ public final class ByteUtil {
     }
     byte[] flattenedData = new byte[totalSize];
     int pos = 0;
-    for (int i = 0; i < input.length; i++) {
-      System.arraycopy(input[i], 0, flattenedData, pos, input[i].length);
-      pos += input[i].length;
+    for (byte[] bytes : input) {
+      System.arraycopy(bytes, 0, flattenedData, pos, bytes.length);
+      pos += bytes.length;
     }
     return flattenedData;
   }

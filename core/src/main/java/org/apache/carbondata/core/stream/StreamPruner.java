@@ -97,11 +97,7 @@ public class StreamPruner {
     byte[][] minValue = streamFile.getMinMaxIndex().getMinValues();
     BitSet bitSet = filterExecutor
         .isScanRequired(maxValue, minValue, streamFile.getMinMaxIndex().getIsMinMaxSet());
-    if (!bitSet.isEmpty()) {
-      return true;
-    } else {
-      return false;
-    }
+    return !bitSet.isEmpty();
   }
 
   // TODO optimize and move the code to StreamSegment , but it's in the streaming module.

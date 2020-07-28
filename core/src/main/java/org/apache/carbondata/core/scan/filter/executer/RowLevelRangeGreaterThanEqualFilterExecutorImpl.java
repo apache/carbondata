@@ -200,12 +200,12 @@ public class RowLevelRangeGreaterThanEqualFilterExecutorImpl extends RowLevelFil
   private boolean isScanRequired(byte[] maxValue, Object[] filterValue,
       DataType dataType) {
     Object value = DataTypeUtil.getMeasureObjectFromDataType(maxValue, dataType);
-    for (int i = 0; i < filterValue.length; i++) {
+    for (Object o : filterValue) {
       // TODO handle min and max for null values.
-      if (filterValue[i] == null) {
+      if (o == null) {
         return true;
       }
-      if (comparator.compare(filterValue[i], value) <= 0) {
+      if (comparator.compare(o, value) <= 0) {
         return true;
       }
     }

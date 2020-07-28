@@ -47,7 +47,6 @@ public class CarbonTableBuilder {
   }
 
   public CarbonTableBuilder isTransactionalTable(boolean isTransactionalTable) {
-    Objects.requireNonNull(isTransactionalTable, "Transactional Table should not be null");
     this.isTransactionalTable = isTransactionalTable;
     return this;
   }
@@ -61,8 +60,6 @@ public class CarbonTableBuilder {
   public CarbonTable build() {
     Objects.requireNonNull(tablePath, "tablePath should not be null");
     Objects.requireNonNull(tableSchema, "tableSchema should not be null");
-    Objects.requireNonNull(isTransactionalTable, "Transactional Table should not be null");
-
 
     TableInfo tableInfo = new TableInfo();
     tableInfo.setDatabaseName(databaseName);

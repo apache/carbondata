@@ -83,11 +83,11 @@ public class ExtendedBlockletWrapperContainer implements Writable {
       int start = 0;
       int end = 0;
       List<Future<List<ExtendedBlocklet>>> futures = new ArrayList<>();
-      for (int i = 0; i < split.length; i++) {
-        end += split[i];
+      for (int value : split) {
+        end += value;
         futures.add(executorService.submit(
             new ExtendedBlockletDeserializerThread(start, end, tablePath, queryId, isCountJob)));
-        start += split[i];
+        start += value;
       }
       executorService.shutdown();
       try {

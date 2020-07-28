@@ -31,10 +31,5 @@ public class ConcurrentOperationException extends MalformedCarbonCommandExceptio
   public ConcurrentOperationException(CarbonTable table, String command1, String command2) {
     this(table.getDatabaseName(), table.getTableName(), command1, command2);
   }
-
-  public String getMessage() {
-    return super.getMessage();
-  }
-
 }
 

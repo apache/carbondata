@@ -177,18 +177,10 @@ public class TableSchemaBuilder {
       newColumn.setColumnName(field.getFieldName());
     }
     newColumn.setDataType(field.getDataType());
-    if (isSortColumn ||
-        field.getDataType() == DataTypes.STRING ||
-        field.getDataType() == DataTypes.VARCHAR ||
-        field.getDataType() == DataTypes.DATE ||
-        field.getDataType() == DataTypes.TIMESTAMP ||
-        field.getDataType() == DataTypes.BINARY ||
-        field.getDataType().isComplexType() ||
-        (isComplexChild))  {
-      newColumn.setDimensionColumn(true);
-    } else {
-      newColumn.setDimensionColumn(false);
-    }
+    newColumn.setDimensionColumn(isSortColumn || field.getDataType() == DataTypes.STRING
+        || field.getDataType() == DataTypes.VARCHAR || field.getDataType() == DataTypes.DATE
+        || field.getDataType() == DataTypes.TIMESTAMP || field.getDataType() == DataTypes.BINARY
+        || field.getDataType().isComplexType() || (isComplexChild));
     if (!isComplexChild) {
       newColumn.setSchemaOrdinal(ordinal++);
     } else {

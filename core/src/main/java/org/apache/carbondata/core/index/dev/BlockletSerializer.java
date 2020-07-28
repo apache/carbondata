@@ -40,12 +40,8 @@ public class BlockletSerializer {
    */
   public void serializeBlocklet(FineGrainBlocklet grainBlocklet, String writePath)
       throws IOException {
-    DataOutputStream dataOutputStream =
-        FileFactory.getDataOutputStream(writePath);
-    try {
+    try (DataOutputStream dataOutputStream = FileFactory.getDataOutputStream(writePath)) {
       grainBlocklet.write(dataOutputStream);
-    } finally {
-      dataOutputStream.close();
     }
   }
 

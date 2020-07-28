@@ -27,12 +27,6 @@ public class BooleanSerializableComparator implements SerializableComparator {
     } else if (key2 == null) {
       return 1;
     }
-    if (Boolean.compare((boolean) key1, (boolean) key2) < 0) {
-      return -1;
-    } else if (Boolean.compare((boolean) key1, (boolean) key2) > 0) {
-      return 1;
-    } else {
-      return 0;
-    }
+    return Boolean.compare((boolean) key1, (boolean) key2);
   }
 }

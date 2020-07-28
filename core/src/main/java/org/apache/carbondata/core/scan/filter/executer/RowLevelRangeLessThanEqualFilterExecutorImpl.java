@@ -200,12 +200,12 @@ public class RowLevelRangeLessThanEqualFilterExecutorImpl extends RowLevelFilter
       DataType dataType) {
     Object value =
         DataTypeUtil.getMeasureObjectFromDataType(minValue, dataType);
-    for (int i = 0; i < filterValue.length; i++) {
+    for (Object o : filterValue) {
       // TODO handle min and max for null values.
-      if (filterValue[i] == null) {
+      if (o == null) {
         return true;
       }
-      if (comparator.compare(filterValue[i], value) >= 0) {
+      if (comparator.compare(o, value) >= 0) {
         return true;
       }
     }
@@ -487,10 +487,9 @@ public class RowLevelRangeLessThanEqualFilterExecutorImpl extends RowLevelFilter
       }
       startIndex = skip;
     }
-    for (int i = 0; i < filterValues.length; i++) {
-      start = CarbonUtil
-          .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex, numberOfRows - 1,
-              filterValues[i], true);
+    for (byte[] filterValue : filterValues) {
+      start = CarbonUtil.getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex,
+          numberOfRows - 1, filterValue, true);
       if (start < 0) {
         start = -(start + 1);
         if (start >= numberOfRows) {
@@ -499,9 +498,8 @@ public class RowLevelRangeLessThanEqualFilterExecutorImpl extends RowLevelFilter
         // When negative value of start is returned from getFirstIndexUsingBinarySearch the Start
         // will be pointing to the next consecutive position. So compare it again and point to the
         // previous value returned from getFirstIndexUsingBinarySearch.
-        if (ByteUtil.compare(filterValues[i],
-            dimensionColumnPage.getChunkData(dimensionColumnPage.getInvertedIndex(start)))
-            < 0) {
+        if (ByteUtil.compare(filterValue,
+            dimensionColumnPage.getChunkData(dimensionColumnPage.getInvertedIndex(start))) < 0) {
           start = start - 1;
         }
       }
@@ -557,10 +555,9 @@ public class RowLevelRangeLessThanEqualFilterExecutorImpl extends RowLevelFilter
         }
         startIndex = skip;
       }
-      for (int k = 0; k < filterValues.length; k++) {
-        start = CarbonUtil
-            .getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex,
-                numberOfRows - 1, filterValues[k], true);
+      for (byte[] filterValue : filterValues) {
+        start = CarbonUtil.getFirstIndexUsingBinarySearch(dimensionColumnPage, startIndex,
+            numberOfRows - 1, filterValue, true);
         if (start < 0) {
           start = -(start + 1);
           if (start >= numberOfRows) {
@@ -569,7 +566,7 @@ public class RowLevelRangeLessThanEqualFilterExecutorImpl extends RowLevelFilter
           // When negative value of start is returned from getFirstIndexUsingBinarySearch the Start
           // will be pointing to the next consecutive position. So compare it again and point to the
           // previous value returned from getFirstIndexUsingBinarySearch.
-          if (ByteUtil.compare(filterValues[k], dimensionColumnPage.getChunkData(start)) < 0) {
+          if (ByteUtil.compare(filterValue, dimensionColumnPage.getChunkData(start)) < 0) {
             start = start - 1;
           }
         }

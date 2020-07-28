@@ -163,8 +163,7 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   @Override
-  public CarbonFile[] listFiles(boolean recursive, int maxCount)
-      throws IOException {
+  public CarbonFile[] listFiles(boolean recursive, int maxCount) {
     // ignore the maxCount for local filesystem
     return listFiles();
   }

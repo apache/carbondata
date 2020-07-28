@@ -87,8 +87,8 @@ public class BitSetGroup {
    */
   public int getValidPages() {
     int numberOfPages = 0;
-    for (int i = 0; i < bitSets.length; i++) {
-      numberOfPages += (bitSets[i] != null && !bitSets[i].isEmpty()) ? 1 : 0;
+    for (BitSet bitSet : bitSets) {
+      numberOfPages += (bitSet != null && !bitSet.isEmpty()) ? 1 : 0;
     }
     return numberOfPages;
   }
