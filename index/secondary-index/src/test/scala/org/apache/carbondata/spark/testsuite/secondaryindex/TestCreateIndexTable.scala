@@ -370,6 +370,26 @@ class TestCreateIndexTable extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("index creation on long string columns") {
+    sql("drop table if exists si_table")
+    sql(
+      s"""
+         | CREATE TABLE si_table(
+         | name STRING,
+         | longstr STRING
+         | )
+         | STORED AS carbondata
+         | TBLPROPERTIES(
+         | 'LONG_STRING_COLUMNS'='longstr')
+         | """.stripMargin)
+
+    sql("drop index if exists temp_ind on si_table")
+    val thrown = intercept[Exception] {
+      sql("create index temp_ind on table si_table (longstr) AS 'carbondata'")
+    }
+    assert(thrown.getMessage.contains("one or more index columns specified contains long string column in table default.si_table. SI cannot be created on long string columns."))
+  }
+
   test("drop index on temp table") {
     sql(
       "CREATE temporary table dropindextemptable(id int,name string,city string,age int) using " +

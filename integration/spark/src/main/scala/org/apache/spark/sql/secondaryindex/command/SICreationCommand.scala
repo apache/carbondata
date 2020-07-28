@@ -261,6 +261,16 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
         throw new ErrorMessage(
           s"Table [$tableName] under database [$databaseName] is already an index table")
       }
+      // creation of index on long string columns are not supported
+      if (dims.filter(dimension => indexModel.columnNames
+        .contains(dimension.getColName))
+        .map(_.getDataType)
+        .exists(dataType => dataType.equals(DataTypes.VARCHAR))) {
+        throw new ErrorMessage(
+          s"one or more index columns specified contains long string column" +
+          s" in table $databaseName.$tableName. SI cannot be created on long string columns.")
+      }
+
       // Check whether index table column order is same as another index table column order
       oldIndexInfo = carbonTable.getIndexInfo
       if (null == oldIndexInfo) {
