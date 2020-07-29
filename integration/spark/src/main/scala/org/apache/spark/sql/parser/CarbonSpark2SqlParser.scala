@@ -29,7 +29,7 @@ import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRe
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.cache.{CarbonDropCacheCommand, CarbonShowCacheCommand}
-import org.apache.spark.sql.execution.command.index.{CarbonCreateIndexCommand, CarbonRefreshIndexCommand, DropIndexCommand, ShowIndexesCommand}
+import org.apache.spark.sql.execution.command.index.{CarbonCreateIndexCommand, CarbonRefreshIndexCommand, DropIndexCommand, IndexRepairCommand, ShowIndexesCommand}
 import org.apache.spark.sql.execution.command.management._
 import org.apache.spark.sql.execution.command.schema.CarbonAlterTableDropColumnCommand
 import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
@@ -97,7 +97,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     createMV | dropMV | showMV | refreshMV
 
   protected lazy val indexCommands: Parser[LogicalPlan] =
-    createIndex | dropIndex | showIndexes | registerIndexes | refreshIndex
+    createIndex | dropIndex | showIndexes | registerIndexes | refreshIndex | repairIndex |
+      repairIndexDatabase
 
   protected lazy val alterTable: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (COMPACT ~ stringLit) ~
@@ -668,6 +669,34 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         ShowIndexesCommand(table.database, table.table)
     }
 
+  /**
+   * REINDEX INDEX TABLE index_name
+   * ON [db_name.]table_name
+   * [WHERE SEGMENT.ID IN (segment_id, ...)] or
+   *
+   * REINDEX ON [db_name.]table_name
+   * [WHERE SEGMENT.ID IN (segment_id, ...)]
+   */
+  protected lazy val repairIndex: Parser[LogicalPlan] =
+    REINDEX ~> opt(INDEX ~> TABLE ~> ident)  ~ ontable ~
+      (WHERE ~> (SEGMENT ~ "." ~ ID) ~> IN ~> "(" ~> repsep(segmentId, ",") <~ ")").? <~
+    opt(";") ^^ {
+      case indexName ~ tableIdent ~ segments =>
+        IndexRepairCommand(indexName, tableIdent, null, segments)
+    }
+
+  /**
+   * REINDEX DATABASEON db_name
+   * [WHERE SEGMENT.ID IN (segment_id, ...)]
+   */
+  protected lazy val repairIndexDatabase: Parser[LogicalPlan] =
+    REINDEX ~> DATABASE ~> ident ~
+      (WHERE ~> (SEGMENT ~ "." ~ ID) ~> IN ~> "(" ~> repsep(segmentId, ",") <~ ")").? <~
+      opt(";") ^^ {
+      case dbName ~ segments =>
+        IndexRepairCommand(None, null, dbName, segments)
+    }
+
   protected lazy val registerIndexes: Parser[LogicalPlan] =
     REGISTER ~> INDEX ~> TABLE ~> ident ~ ontable <~ opt(";") ^^ {
       case indexTable ~ table =>
@@ -676,7 +705,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   /**
    * REFRESH INDEX index_name
-   * ON [db_name.]table_ame
+   * ON [db_name.]table_name
    * [WHERE SEGMENT.ID IN (segment_id, ...)]
    */
   protected lazy val refreshIndex: Parser[LogicalPlan] =
