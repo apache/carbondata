@@ -613,7 +613,7 @@ public class BlockIndex extends CoarseGrainIndex
       Map<String, Long> blockletToRowCountMap = new HashMap<>();
       // if it has partitioned index but there is no partitioned information stored, it means
       // partitions are dropped so return empty list.
-      if (partitions != null) {
+      if (partitions != null && !partitions.isEmpty()) {
         if (validatePartitionInfo(partitions)) {
           return totalRowCount;
         }

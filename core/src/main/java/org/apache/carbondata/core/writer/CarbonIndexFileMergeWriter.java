@@ -221,6 +221,7 @@ public class CarbonIndexFileMergeWriter {
     List<PartitionSpec> partitionSpecs = SegmentFileStore
         .getPartitionSpecs(segmentId, table.getTablePath(), SegmentStatusManager
             .readLoadMetadata(CarbonTablePath.getMetadataPath(table.getTablePath())));
+    List<String> mergeIndexFiles = new ArrayList<>();
     for (Map.Entry<String, Map<String, byte[]>> entry : indexLocationMap.entrySet()) {
       String mergeIndexFile =
           writeMergeIndexFile(indexFileNamesTobeAdded, entry.getKey(), entry.getValue(), segmentId);
@@ -233,15 +234,27 @@ public class CarbonIndexFileMergeWriter {
         }
         if (FileFactory.getCarbonFile(entry.getKey()).equals(FileFactory.getCarbonFile(location))) {
           segment.getValue().setMergeFileName(mergeIndexFile);
-          segment.getValue().setFiles(new HashSet<String>());
+          mergeIndexFiles
+              .add(entry.getKey() + CarbonCommonConstants.FILE_SEPARATOR + mergeIndexFile);
+          segment.getValue().setFiles(new HashSet<>());
           break;
         }
       }
       if (table.isHivePartitionTable()) {
         for (PartitionSpec partitionSpec : partitionSpecs) {
           if (partitionSpec.getLocation().toString().equals(partitionPath)) {
-            SegmentFileStore.writeSegmentFile(table.getTablePath(), mergeIndexFile, partitionPath,
-                segmentId + "_" + uuid + "", partitionSpec.getPartitions(), true);
+            try {
+              SegmentFileStore.writeSegmentFile(table.getTablePath(), mergeIndexFile, partitionPath,
+                  segmentId + CarbonCommonConstants.UNDERSCORE + uuid + "",
+                  partitionSpec.getPartitions(), true);
+            } catch (Exception ex) {
+              // delete merge index file if created,
+              // keep only index files as segment file writing is failed
+              FileFactory.getCarbonFile(mergeIndexFile).delete();
+              LOGGER.error(
+                  "unable to write segment file during merge index writing: " + ex.getMessage());
+              throw ex;
+            }
           }
         }
       }
@@ -251,9 +264,30 @@ public class CarbonIndexFileMergeWriter {
     String path = CarbonTablePath.getSegmentFilesLocation(table.getTablePath())
         + CarbonCommonConstants.FILE_SEPARATOR + newSegmentFileName;
     if (!table.isHivePartitionTable()) {
-      SegmentFileStore.writeSegmentFile(segmentFileStore.getSegmentFile(), path);
-      SegmentFileStore.updateTableStatusFile(table, segmentId, newSegmentFileName,
+      String content = SegmentStatusManager.readFileAsString(path);
+      try {
+        SegmentFileStore.writeSegmentFile(segmentFileStore.getSegmentFile(), path);
+      } catch (Exception ex) {
+        // delete merge index file if created,
+        // keep only index files as segment file writing is failed
+        for (String mergeIndexFile : mergeIndexFiles) {
+          FileFactory.getCarbonFile(mergeIndexFile).delete();
+        }
+        LOGGER.error("unable to write segment file during merge index writing: " + ex.getMessage());
+        throw ex;
+      }
+      boolean status = SegmentFileStore.updateTableStatusFile(table, segmentId, newSegmentFileName,
           table.getCarbonTableIdentifier().getTableId(), segmentFileStore);
+      if (!status) {
+        // revert to original segment file as the table status update has failed.
+        SegmentStatusManager.writeStringIntoFile(path, content);
+        // delete merge index file.
+        for (String file : mergeIndexFiles) {
+          FileFactory.getCarbonFile(file).delete();
+        }
+        // no need to delete index files, so return from here.
+        return uuid;
+      }
     }
     for (CarbonFile file : indexFiles) {
       file.delete();

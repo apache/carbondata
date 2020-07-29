@@ -347,6 +347,15 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           segmentFileName,
           MVManagerInSpark.get(sc.sparkSession))
 
+      if (!statusFileUpdate) {
+        // no need to call merge index if table status update has failed
+        LOGGER.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
+                     s"${ carbonLoadModel.getTableName }")
+        throw new Exception(s"Compaction failed to update metadata for table" +
+                            s" ${ carbonLoadModel.getDatabaseName }." +
+                            s"${ carbonLoadModel.getTableName }")
+      }
+
       if (compactionType != CompactionType.IUD_DELETE_DELTA &&
           compactionType != CompactionType.IUD_UPDDEL_DELTA) {
         MergeIndexUtil.mergeIndexFilesOnCompaction(compactionCallableModel)
@@ -372,11 +381,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       } else {
         true
       }
-      // here either of the conditions can be true, when delete segment is fired after compaction
-      // has started, statusFileUpdate will be false , but at the same time commitComplete can be
-      // true because compaction for all indexes will be finished at a time to the maximum level
-      // possible (level 1, 2 etc). so we need to check for either condition
-      if (!statusFileUpdate || !commitComplete) {
+      if (!commitComplete) {
         LOGGER.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
                      s"${ carbonLoadModel.getTableName }")
         throw new Exception(s"Compaction failed to update metadata for table" +
