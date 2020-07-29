@@ -28,6 +28,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.locks.CarbonLockUtil;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
@@ -89,7 +90,13 @@ public class CarbonInternalLoaderUtil {
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     try {
-      if (carbonLock.lockWithRetries()) {
+      int retryCount = CarbonLockUtil
+          .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
+              CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT);
+      int maxTimeout = CarbonLockUtil
+          .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
+              CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
+      if (carbonLock.lockWithRetries(retryCount, maxTimeout)) {
         LOGGER.info("Acquired lock for table" + databaseName + "." + tableName
             + " for table status update");
 
@@ -170,6 +177,9 @@ public class CarbonInternalLoaderUtil {
       } else {
         LOGGER.error(
             "Not able to acquire the lock for Table status update for table " + databaseName + "."
+                + tableName);
+        throw new RuntimeException(
+            "Not able to acquire the lock for Table status updation for table " + databaseName + "."
                 + tableName);
       }
     } catch (IOException e) {

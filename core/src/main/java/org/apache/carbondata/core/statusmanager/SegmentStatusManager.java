@@ -291,7 +291,7 @@ public class SegmentStatusManager {
    * @return file content, null is file does not exist
    * @throws IOException if IO errors
    */
-  private static String readFileAsString(String tableStatusPath) throws IOException {
+  public static String readFileAsString(String tableStatusPath) throws IOException {
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
     InputStreamReader inStream = null;
@@ -632,7 +632,7 @@ public class SegmentStatusManager {
    * @param content content to write
    * @throws IOException if IO errors
    */
-  private static void writeStringIntoFile(String filePath, String content) throws IOException {
+  public static void writeStringIntoFile(String filePath, String content) throws IOException {
     AtomicFileOperations fileWrite = AtomicFileOperationFactory.getAtomicFileOperations(filePath);
     BufferedWriter brWriter = null;
     DataOutputStream dataOutputStream = null;
@@ -1065,8 +1065,14 @@ public class SegmentStatusManager {
             CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
         boolean locked = false;
         try {
+          int retryCount = CarbonLockUtil
+              .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
+                  CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT);
+          int maxTimeout = CarbonLockUtil
+              .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
+                  CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
           // Update load metadata file after cleaning deleted nodes
-          locked = carbonTableStatusLock.lockWithRetries();
+          locked = carbonTableStatusLock.lockWithRetries(retryCount, maxTimeout);
           if (locked) {
             LOG.info("Table status lock has been successfully acquired.");
             // Again read status and check to verify update required or not.

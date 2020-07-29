@@ -607,7 +607,7 @@ public final class TableIndex extends OperationEventListener {
     for (Segment segment : segments) {
       List<CoarseGrainIndex> indexes = defaultIndex.getIndexFactory().getIndexes(segment);
       for (CoarseGrainIndex index : indexes) {
-        if (null != partitions) {
+        if (null != partitions && !partitions.isEmpty()) {
           // if it has partitioned index but there is no partitioned information stored, it means
           // partitions are dropped so return empty list.
           if (index.validatePartitionInfo(partitions)) {

@@ -42,6 +42,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.Segment;
+import org.apache.carbondata.core.locks.CarbonLockUtil;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -311,7 +312,13 @@ public final class CarbonDataMergerUtil {
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
 
     try {
-      if (carbonLock.lockWithRetries()) {
+      int retryCount = CarbonLockUtil
+          .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
+              CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT);
+      int maxTimeout = CarbonLockUtil
+          .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
+              CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
+      if (carbonLock.lockWithRetries(retryCount, maxTimeout)) {
         LOGGER.info("Acquired lock for the table " + carbonLoadModel.getDatabaseName() + "."
             + carbonLoadModel.getTableName() + " for table status updation ");
 
@@ -795,29 +802,35 @@ public final class CarbonDataMergerUtil {
       }
       String segName = segment.getLoadName();
 
-      // if a segment is already merged 2 levels then it s name will become .2
+      // if a segment is already merged 2 or more levels (possible from custom compaction),
       // need to exclude those segments from minor compaction.
       // if a segment is major compacted then should not be considered for minor.
-      if (segName.endsWith(CarbonCommonConstants.LEVEL2_COMPACTION_INDEX) || (
-          segment.isMajorCompacted() != null && segment.isMajorCompacted()
-              .equalsIgnoreCase("true"))) {
+      boolean isMoreThanOrEqualsToLevel2 = false;
+      if (segName.contains(".")) {
+        if (Integer.parseInt(segName.substring(segName.lastIndexOf(".") + 1)) >= 2) {
+          isMoreThanOrEqualsToLevel2 = true;
+        }
+      }
+      if (isMoreThanOrEqualsToLevel2 || (segment.isMajorCompacted() != null && segment
+          .isMajorCompacted().equalsIgnoreCase("true"))) {
         continue;
       }
-
-      // check if the segment is merged or not
-
-      if (!isMergedSegment(segName)) {
-        //if it is an unmerged segment then increment counter
-        unMergeCounter++;
-        unMergedSegments.add(segment);
-        if (unMergeCounter == (level1Size)) {
-          return unMergedSegments;
-        }
-      } else {
-        mergeCounter++;
-        mergedSegments.add(segment);
-        if (mergeCounter == (level2Size)) {
-          return mergedSegments;
+      // check if the segment is merged or not, consider only non-compacted segments for merge.
+      if ((segment.getSegmentStatus() == SegmentStatus.SUCCESS) || (segment.getSegmentStatus()
+          == SegmentStatus.LOAD_PARTIAL_SUCCESS)) {
+        if (!isMergedSegment(segName)) {
+          //if it is an unmerged segment then increment counter
+          unMergeCounter++;
+          unMergedSegments.add(segment);
+          if (unMergeCounter == (level1Size)) {
+            return unMergedSegments;
+          }
+        } else {
+          mergeCounter++;
+          mergedSegments.add(segment);
+          if (mergeCounter == (level2Size)) {
+            return mergedSegments;
+          }
         }
       }
     }
