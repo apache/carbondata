@@ -20,10 +20,8 @@ package org.apache.carbondata.examples
 import java.io.File
 import java.util.Random
 
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.SparkSession
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.util.ExampleUtils
 
 /**
@@ -42,7 +40,7 @@ object MVExample {
   def exampleBody(spark: SparkSession): Unit = {
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
-    val testData = s"$rootPath/integration/spark-common-test/src/test/resources/sample.csv"
+    val testData = s"$rootPath/integration/spark/src/test/resources/sample.csv"
 
     spark.sql("DROP TABLE IF EXISTS mainTable")
     spark.sql("DROP TABLE IF EXISTS dimtable")

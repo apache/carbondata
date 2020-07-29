@@ -32,7 +32,7 @@ class CarbonAnalyzer(catalog: SessionCatalog,
 
   val mvPlan = try {
     CarbonReflectionUtils.createObject(
-      "org.apache.carbondata.mv.extension.MVAnalyzerRule",
+      "org.apache.spark.sql.optimizer.MVRewriteRule",
       sparkSession)._1.asInstanceOf[Rule[LogicalPlan]]
   } catch {
     case e: Exception =>
