@@ -119,9 +119,6 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     intercept[RuntimeException] {
       sql("create index index_1 on table complextable(country) as 'carbondata'")
     }.getMessage.contains("SI creation with nested array complex type is not supported yet")
-    intercept[RuntimeException] {
-      sql("create index index_1 on table complextable(add) as 'carbondata'")
-    }.getMessage.contains("SI creation with array<string> complex type is only supported currently")
   }
 
   test("test complex with null and empty data") {
@@ -133,4 +130,93 @@ class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
     sql("insert into complextable select 'a', array(null), 'b'")
     checkAnswer(sql("select count(*) from index_1"), Seq(Row(2)) )
   }
+
+  test("test array<date> on secondary index") {
+    sql("drop table if exists complextable")
+    sql("create table complextable (name string, time date, projectdate array<date>) stored as carbondata")
+    sql("drop index if exists index_1 on complextable")
+    sql("insert into complextable select 'b', '2017-02-01',array('2017-02-01','2018-02-01')")
+    val result = sql(" select * from complextable where array_contains(projectdate,cast('2017-02-01' as date))")
+    sql("create index index_1 on table complextable(projectdate) as 'carbondata'")
+    checkAnswer(sql("select count(*) from index_1"), Seq(Row(2)))
+    val df =  sql(" select * from complextable where array_contains(projectdate,cast('2017-02-01' as date))")
+    if (!isFilterPushedDownToSI(df.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    checkAnswer(result, df)
+  }
+
+  test("test array<timestamp> on secondary index") {
+    sql("drop table if exists complextable")
+    sql("create table complextable (name string, time date, projectdate array<timestamp>) stored as carbondata")
+    sql("drop index if exists index_1 on complextable")
+    sql("insert into complextable select 'b', '2017-02-01',array('2017-02-01 00:01:00','2018-02-01 02:00:00')")
+    val result = sql(" select * from complextable where array_contains(projectdate,cast('2017-02-01 00:01:00' as timestamp))")
+    sql("create index index_1 on table complextable(projectdate) as 'carbondata'")
+    checkAnswer(sql("select count(*) from index_1"), Seq(Row(2)))
+    val df =  sql(" select * from complextable where array_contains(projectdate,cast('2017-02-01 00:01:00' as timestamp))")
+    if (!isFilterPushedDownToSI(df.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    checkAnswer(result, df)
+  }
+
+  test("test array<varchar> and varchar as index columns on secondary index") {
+    sql("create table complextable (id int, country array<varchar(10)>, name string) stored as carbondata")
+    sql("insert into complextable select 1, array('china', 'us'), 'b'")
+    sql("insert into complextable select 2, array('pak'), 'v'")
+    sql("insert into complextable select 3, array('china'), 'f'")
+    sql("insert into complextable select 4, array('india'),'g'")
+    val result =  sql(" select * from complextable where array_contains(country,'china') and name='f'")
+    sql("drop index if exists index_1 on complextable")
+    sql("create index index_1 on table complextable(country, name) as 'carbondata'")
+    sql("describe formatted index_1").show(false)
+    sql("select * from index_1").show(false)
+    val df =  sql(" select * from complextable where array_contains(country,'china') and name='f'")
+    if (!isFilterPushedDownToSI(df.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    checkAnswer(result, df)
+  }
+
+  test("test multiple SI with array and primitive type") {
+    sql("create table complextable (id int, country array<varchar(10)>, name string, addr string) stored as carbondata")
+    sql("insert into complextable select 1, array('china', 'us'), 'b', 'b1'")
+    sql("insert into complextable select 2, array('pak', 'india'), 'v', 'v'")
+    val result1 = sql("select * from complextable where addr='v' and array_contains(country,'pak')")
+    sql("drop index if exists index_1 on complextable")
+    sql("create index index_1 on table complextable(country, name) as 'carbondata'")
+    sql("drop index if exists index_2 on complextable")
+    sql("create index index_2 on table complextable(addr) as 'carbondata'")
+    val df1 =  sql("select * from complextable where addr='v' and array_contains(country,'pak')")
+    if (!isFilterPushedDownToSI(df1.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    checkAnswer(result1, df1)
+  }
+
+  test("test SI complex with multiple array contains") {
+    sql("create table complextable (id int, country array<varchar(10)>, name string, addr string) stored as carbondata")
+    sql("insert into complextable select 1, array('china', 'us'), 'b', 'b1'")
+    sql("insert into complextable select 2, array('pak', 'india'), 'v', 'v'")
+    val result1 = sql("select * from complextable where array_contains(country,'india') and array_contains(country,'pak')")
+    sql("drop index if exists index_1 on complextable")
+    sql("create index index_1 on table complextable(country, name) as 'carbondata'")
+    val df1 =  sql("select * from complextable where array_contains(country,'india') and array_contains(country,'pak')")
+    if (isFilterPushedDownToSI(df1.queryExecution.sparkPlan)) {
+      assert(false)
+    } else {
+      assert(true)
+    }
+    checkAnswer(result1, df1)
+  }
+
 }

@@ -20,7 +20,6 @@ package org.apache.spark.sql.secondaryindex.query;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -30,14 +29,13 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.scan.complextypes.ArrayQueryType;
-import org.apache.carbondata.core.scan.complextypes.PrimitiveQueryType;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.result.RowBatch;
@@ -60,13 +58,10 @@ import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
-import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec;
 import org.apache.log4j.Logger;
 import org.apache.spark.sql.secondaryindex.exception.SecondaryIndexException;
 import org.apache.spark.sql.secondaryindex.load.RowComparator;
 import org.apache.spark.sql.secondaryindex.util.SecondaryIndexUtil;
-import org.apache.spark.unsafe.types.UTF8String;
 
 /**
  * This class will process the query result and convert the data
@@ -235,15 +230,15 @@ public class SecondaryIndexQueryResultProcessor {
   private void processResult(List<CarbonIterator<RowBatch>> detailQueryResultIteratorList)
       throws SecondaryIndexException {
     for (CarbonIterator<RowBatch> detailQueryIterator : detailQueryResultIteratorList) {
+      DetailQueryResultIterator queryIterator = (DetailQueryResultIterator) detailQueryIterator;
+      BlockExecutionInfo blockExecutionInfo = queryIterator.getBlockExecutionInfo();
+      // get complex dimension info map from block execution info
+      Map<Integer, GenericQueryType> complexDimensionInfoMap =
+          blockExecutionInfo.getComplexDimensionInfoMap();
+      int[] complexColumnParentBlockIndexes =
+          blockExecutionInfo.getComplexColumnParentBlockIndexes();
       while (detailQueryIterator.hasNext()) {
         RowBatch batchResult = detailQueryIterator.next();
-        DetailQueryResultIterator queryIterator = (DetailQueryResultIterator) detailQueryIterator;
-        BlockExecutionInfo blockExecutionInfo = queryIterator.getBlockExecutionInfo();
-        // get complex dimension info map from block execution info
-        Map<Integer, GenericQueryType> complexDimensionInfoMap =
-            blockExecutionInfo.getComplexDimensionInfoMap();
-        int[] complexColumnParentBlockIndexes =
-            blockExecutionInfo.getComplexColumnParentBlockIndexes();
         while (batchResult.hasNext()) {
           addRowForSorting(prepareRowObjectForSorting(batchResult.next(), complexDimensionInfoMap,
               complexColumnParentBlockIndexes));
@@ -269,7 +264,7 @@ public class SecondaryIndexQueryResultProcessor {
       throws SecondaryIndexException {
     ByteArrayWrapper wrapper = (ByteArrayWrapper) row[0];
     byte[] implicitColumnByteArray = wrapper.getImplicitColumnByteArray();
-    if(row.length > 1) {
+    if (row.length > 1) {
       String blockletPath = new String(implicitColumnByteArray, Charset.defaultCharset())
           + CarbonCommonConstants.FILE_SEPARATOR + row[row.length - 2]
           + CarbonCommonConstants.FILE_SEPARATOR + row[row.length - 1];
@@ -309,6 +304,7 @@ public class SecondaryIndexQueryResultProcessor {
     if (!complexDimensionInfoMap.isEmpty() && complexColumnParentBlockIndexes.length > 0) {
       // In case of complex array type, flatten the data and add for sorting
       // TODO: Handle for nested array and other complex types
+      CarbonDimension dims = dimensions.get(i);
       for (int k = 0; k < wrapper.getComplexTypesKeys().length; k++) {
         byte[] complexKeyByIndex = wrapper.getComplexKeyByIndex(k);
         ByteBuffer byteArrayInput = ByteBuffer.wrap(complexKeyByIndex);
@@ -319,15 +315,14 @@ public class SecondaryIndexQueryResultProcessor {
         Object[] data = genericQueryType.getObjectArrayDataBasedOnDataType(byteArrayInput);
         if (length != 1) {
           for (int j = 1; j < length; j++) {
-            preparedRow[i] = getData(data, j);
+            preparedRow[i] = getData(data, j, dims.getColumnSchema().getDataType());
             preparedRow[i + 1] = implicitColumnByteArray;
             addRowForSorting(preparedRow.clone());
           }
           // add first row
-          preparedRow[i] = getData(data, 0);
-        } else {
-          preparedRow[i] = getData(data, 0);
+          preparedRow[i] = getData(data, 0, dims.getColumnSchema().getDataType());
         }
+        preparedRow[i] = getData(data, 0, dims.getColumnSchema().getDataType());
         i++;
       }
     }
@@ -336,13 +331,18 @@ public class SecondaryIndexQueryResultProcessor {
     return preparedRow;
   }
 
-  private byte[] getData(Object[] data, int index) {
+  private Object getData(Object[] data, int index, DataType dataType) {
     if (data.length == 0) {
       return new byte[0];
     } else if (data[0] == null) {
       return CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
     }
-    return (byte[]) data[index];
+    if (dataType == DataTypes.TIMESTAMP && null != data[index]) {
+      return (long) data[index] / 1000L;
+    } else if (dataType == DataTypes.DATE) {
+      return (int) data[index] + DateDirectDictionaryGenerator.cutOffDate;
+    }
+    return data[index];
   }
 
   /**

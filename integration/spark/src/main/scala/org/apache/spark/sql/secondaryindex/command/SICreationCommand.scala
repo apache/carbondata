@@ -455,7 +455,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       if (!dimension.isComplex) {
         val colSchema = dimension.getColumnSchema
         schemaOrdinal += 1
-        allColumns = allColumns :+ cloneColumnSchema(colSchema, schemaOrdinal)
+        allColumns = allColumns :+ cloneColumnSchema(colSchema, schemaOrdinal, null)
       }
     }
     // validate complex dimensions supported for SI
@@ -467,13 +467,10 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
           .exists(col => DataTypes.isArrayType(col.getDataType))) {
           throw new ErrorMessage("SI creation with nested array complex type is not supported yet");
         }
-        if (complexChildDims.exists(child =>
-          child.getDataType != DataTypes.STRING)) {
-          throw new ErrorMessage(
-            "SI creation with array<string> complex type is only supported currently");
-        }
       }
-      allColumns = allColumns :+ cloneColumnSchema(complexDim.getColumnSchema, schemaOrdinal)
+      allColumns = allColumns :+ cloneColumnSchema(complexDim.getColumnSchema,
+        schemaOrdinal,
+        complexDim.getListOfChildDimensions.get(0).getColumnSchema.getDataType)
     }
     // Setting TRUE on all sort columns
     allColumns.foreach(f => f.setSortColumn(true))
@@ -646,17 +643,24 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
     columnSchema
   }
 
-  def cloneColumnSchema(parentColumnSchema: ColumnSchema, schemaOrdinal: Int): ColumnSchema = {
+  def cloneColumnSchema(parentColumnSchema: ColumnSchema,
+      schemaOrdinal: Int,
+      dataType: DataType): ColumnSchema = {
     val columnSchema = new ColumnSchema()
-    // if data type is arrayType, then store the column as STRING type in SI
+    val encodingList = parentColumnSchema.getEncodingList
+    // if data type is arrayType, then store the column as its CHILD data type in SI
     if (DataTypes.isArrayType(parentColumnSchema.getDataType)) {
-      columnSchema.setDataType(DataTypes.STRING)
+      columnSchema.setDataType(dataType)
+      if (dataType == DataTypes.DATE) {
+        encodingList.add(Encoding.DIRECT_DICTIONARY)
+        encodingList.add(Encoding.DICTIONARY)
+      }
     } else {
       columnSchema.setDataType(parentColumnSchema.getDataType)
     }
     columnSchema.setColumnName(parentColumnSchema.getColumnName)
     columnSchema.setColumnProperties(parentColumnSchema.getColumnProperties)
-    columnSchema.setEncodingList(parentColumnSchema.getEncodingList)
+    columnSchema.setEncodingList(encodingList)
     columnSchema.setColumnUniqueId(parentColumnSchema.getColumnUniqueId)
     columnSchema.setColumnReferenceId(parentColumnSchema.getColumnReferenceId)
     columnSchema.setDimensionColumn(parentColumnSchema.isDimensionColumn)

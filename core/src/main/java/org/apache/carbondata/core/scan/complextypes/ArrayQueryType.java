@@ -111,11 +111,7 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
 
   @Override
   public Object[] getObjectArrayDataBasedOnDataType(ByteBuffer dataBuffer) {
-    Object[] data = fillData(dataBuffer, true);
-    if (data == null) {
-      return null;
-    }
-    return data;
+    return fillData(dataBuffer, true);
   }
 
   protected Object[] fillData(ByteBuffer dataBuffer, boolean getBytesData) {
