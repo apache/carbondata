@@ -246,6 +246,19 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
     assert(errorMessage.contains("Index [uniqdataidxtable] already exists under database [default]"))
   }
 
+  test("test date type with SI table") {
+    sql("drop table if exists maintable")
+    sql("CREATE TABLE maintable (id int,name string,salary float,dob date,address string) STORED AS carbondata")
+    sql("insert into maintable values(1,'aa',23423.334,'2009-09-06','df'),(1,'aa',23423.334,'2009-09-07','df')")
+    sql("insert into maintable select 2,'bb',4454.454,'2009-09-09','bang'")
+    sql("drop index if exists index_date on maintable")
+    sql("create index index_date on table maintable(dob) AS 'carbondata'")
+    val df = sql("select id,name,dob from maintable where dob = '2009-09-07'")
+    assert(isFilterPushedDownToSI(df.queryExecution.sparkPlan))
+    checkAnswer(df, Seq(Row(1,"aa", java.sql.Date.valueOf("2009-09-07"))))
+    sql("drop table if exists maintable")
+  }
+
   override def afterAll {
     sql("drop index si_altercolumn on table_WithSIAndAlter")
     sql("drop table if exists table_WithSIAndAlter")

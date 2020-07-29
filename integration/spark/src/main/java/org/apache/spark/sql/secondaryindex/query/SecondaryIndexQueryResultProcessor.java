@@ -34,6 +34,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.result.RowBatch;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -164,14 +165,13 @@ public class SecondaryIndexQueryResultProcessor {
 
   public SecondaryIndexQueryResultProcessor(CarbonLoadModel carbonLoadModel,
       int[] columnCardinality, String segmentId, CarbonTable indexTable,
-      int[] factToIndexColumnMapping, int[] factToIndexDictColumnMapping) {
+      int[] factToIndexColumnMapping) {
     this.carbonLoadModel = carbonLoadModel;
     this.columnCardinality = columnCardinality;
     this.segmentId = segmentId;
     this.indexTable = indexTable;
     this.databaseName = carbonLoadModel.getDatabaseName();
     this.factToIndexColumnMapping = factToIndexColumnMapping;
-    this.factToIndexDictColumnMapping = factToIndexDictColumnMapping;
     initSegmentProperties();
   }
 
@@ -247,9 +247,12 @@ public class SecondaryIndexQueryResultProcessor {
   private Object[] prepareRowObjectForSorting(Object[] row) {
     ByteArrayWrapper wrapper = (ByteArrayWrapper) row[0];
     // ByteBuffer[] noDictionaryBuffer = new ByteBuffer[noDictionaryCount];
-
     List<CarbonDimension> dimensions = segmentProperties.getDimensions();
     Object[] preparedRow = new Object[dimensions.size() + measureCount];
+
+    // get dictionary values for date type
+    byte[] dictionaryKey = wrapper.getDictionaryKey();
+    int[] dictionaryValues = ByteUtil.convertBytesToIntArray(dictionaryKey);
 
     int noDictionaryIndex = 0;
     int dictionaryIndex = 0;
@@ -259,7 +262,7 @@ public class SecondaryIndexQueryResultProcessor {
       CarbonDimension dims = dimensions.get(i);
       if (dims.hasEncoding(Encoding.DICTIONARY)) {
         // dictionary
-        preparedRow[i] = factToIndexDictColumnMapping[dictionaryIndex++];
+        preparedRow[i] = dictionaryValues[dictionaryIndex++];
       } else {
         // no dictionary dims
         byte[] noDictionaryKeyByIndex = wrapper.getNoDictionaryKeyByIndex(noDictionaryIndex++);
