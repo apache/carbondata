@@ -781,14 +781,6 @@ public final class ByteUtil {
     return 4;
   }
 
-  public static int[] convertBytesToIntArray(byte[] input) {
-    int[] output = new int[input.length / 4];
-    for (int i = 0; i < output.length; i++) {
-      output[i] = convertBytesToInt(input, i * 4);
-    }
-    return output;
-  }
-
   public static long[] convertBytesToLongArray(byte[] input) {
     long[] output = new long[input.length / 4];
     for (int i = 0; i < output.length; i++) {

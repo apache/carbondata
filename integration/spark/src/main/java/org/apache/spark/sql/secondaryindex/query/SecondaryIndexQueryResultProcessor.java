@@ -164,14 +164,13 @@ public class SecondaryIndexQueryResultProcessor {
 
   public SecondaryIndexQueryResultProcessor(CarbonLoadModel carbonLoadModel,
       int[] columnCardinality, String segmentId, CarbonTable indexTable,
-      int[] factToIndexColumnMapping, int[] factToIndexDictColumnMapping) {
+      int[] factToIndexColumnMapping) {
     this.carbonLoadModel = carbonLoadModel;
     this.columnCardinality = columnCardinality;
     this.segmentId = segmentId;
     this.indexTable = indexTable;
     this.databaseName = carbonLoadModel.getDatabaseName();
     this.factToIndexColumnMapping = factToIndexColumnMapping;
-    this.factToIndexDictColumnMapping = factToIndexDictColumnMapping;
     initSegmentProperties();
   }
 
@@ -259,7 +258,7 @@ public class SecondaryIndexQueryResultProcessor {
       CarbonDimension dims = dimensions.get(i);
       if (dims.hasEncoding(Encoding.DICTIONARY)) {
         // dictionary
-        preparedRow[i] = factToIndexDictColumnMapping[dictionaryIndex++];
+        preparedRow[i] = wrapper.getDictionaryKeyByIndex(dictionaryIndex++);
       } else {
         // no dictionary dims
         byte[] noDictionaryKeyByIndex = wrapper.getNoDictionaryKeyByIndex(noDictionaryIndex++);

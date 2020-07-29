@@ -86,9 +86,6 @@ class CarbonSecondaryIndexRDD[K, V](
   val factToIndexColumnMapping: Array[Int] = SecondaryIndexUtil
     .prepareColumnMappingOfFactToIndexTable(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
       indexTable, isDictColsAlone = false)
-  val factToIndexDictColumnMapping: Array[Int] = SecondaryIndexUtil
-    .prepareColumnMappingOfFactToIndexTable(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
-      indexTable, isDictColsAlone = true)
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -148,8 +145,7 @@ class CarbonSecondaryIndexRDD[K, V](
               columnCardinality,
               segmentId,
               indexCarbonTable,
-              factToIndexColumnMapping,
-              factToIndexDictColumnMapping)
+              factToIndexColumnMapping)
         context.addTaskCompletionListener { context =>
           if (null != secondaryIndexQueryResultProcessor) {
             secondaryIndexQueryResultProcessor.close()
