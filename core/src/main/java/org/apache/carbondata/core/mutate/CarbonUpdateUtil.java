@@ -84,7 +84,7 @@ public class CarbonUpdateUtil {
    */
   public static String getSegmentWithBlockFromTID(String Tid, boolean isPartitionTable) {
     if (isPartitionTable) {
-      return getRequiredFieldFromTID(Tid, TupleIdEnum.SEGMENT_ID);
+      return getRequiredFieldFromTID(Tid, TupleIdEnum.PARTITION_SEGMENT_ID);
     }
     return getRequiredFieldFromTID(Tid, TupleIdEnum.SEGMENT_ID)
         + CarbonCommonConstants.FILE_SEPARATOR + getRequiredFieldFromTID(Tid, TupleIdEnum.BLOCK_ID);
@@ -93,11 +93,16 @@ public class CarbonUpdateUtil {
   /**
    * Returns block path from tuple id
    */
-  public static String getTableBlockPath(String tid, String tablePath, boolean isStandardTable) {
-    String partField = getRequiredFieldFromTID(tid, TupleIdEnum.PART_ID);
+  public static String getTableBlockPath(String tid, String tablePath, boolean isStandardTable, boolean isPartitionTable) {
+    String partField = "0";
     // If it has segment file then part field can be appended directly to table path
     if (!isStandardTable) {
-      return tablePath + CarbonCommonConstants.FILE_SEPARATOR + partField.replace("#", "/");
+      if (isPartitionTable) {
+        partField = getRequiredFieldFromTID(tid, TupleIdEnum.PARTITION_PART_ID);
+        return tablePath + CarbonCommonConstants.FILE_SEPARATOR + partField.replace("#", "/");
+      } else {
+        return tablePath;
+      }
     }
     String part = CarbonTablePath.addPartPrefix(partField);
     String segment =
@@ -941,25 +946,36 @@ public class CarbonUpdateUtil {
    */
   public static String getSegmentBlockNameKey(String segID, String blockName,
       boolean isPartitionTable) {
-    String blockNameWithOutPart = blockName
+    String blockNameWithOutPartAndBatchNo = blockName
         .substring(blockName.indexOf(CarbonCommonConstants.HYPHEN) + 1,
-            blockName.lastIndexOf(CarbonTablePath.getCarbonDataExtension()));
+            blockName.lastIndexOf(CarbonTablePath.getCarbonDataExtension()))
+        .replace(CarbonTablePath.BATCH_PREFIX, CarbonCommonConstants.UNDERSCORE);
     // to remove compressor name
-    int index = blockNameWithOutPart.lastIndexOf(CarbonCommonConstants.POINT);
-    if (isPartitionTable) {
-      if (index != -1) {
-        return blockNameWithOutPart.replace(blockNameWithOutPart.substring(index), "");
-      } else {
-        return blockNameWithOutPart;
-      }
-    }
+    int index = blockNameWithOutPartAndBatchNo.lastIndexOf(CarbonCommonConstants.POINT);
     if (index != -1) {
-      String blockNameWithoutCompressorName =
-          blockNameWithOutPart.replace(blockNameWithOutPart.substring(index), "");
-      return segID + CarbonCommonConstants.FILE_SEPARATOR + blockNameWithoutCompressorName;
-    } else {
-      return segID + CarbonCommonConstants.FILE_SEPARATOR + blockNameWithOutPart;
+      blockNameWithOutPartAndBatchNo = blockNameWithOutPartAndBatchNo
+          .replace(blockNameWithOutPartAndBatchNo.substring(index), "");
     }
+    if (isPartitionTable) {
+      return blockNameWithOutPartAndBatchNo;
+    } else {
+      return segID + CarbonCommonConstants.FILE_SEPARATOR + blockNameWithOutPartAndBatchNo;
+    }
+    //    if (isPartitionTable) {
+//      if (index != -1) {
+//        return blockNameWithOutPartAndBatchNo
+//            .replace(blockNameWithOutPartAndBatchNo.substring(index), "");
+//      } else {
+//        return blockNameWithOutPartAndBatchNo;
+//      }
+//    }
+//    if (index != -1) {
+//      String blockNameWithoutCompressorName = blockNameWithOutPartAndBatchNo
+//          .replace(blockNameWithOutPartAndBatchNo.substring(index), "");
+//      return segID + CarbonCommonConstants.FILE_SEPARATOR + blockNameWithoutCompressorName;
+//    } else {
+//      return segID + CarbonCommonConstants.FILE_SEPARATOR + blockNameWithOutPartAndBatchNo;
+//    }
   }
 
   /**

@@ -919,6 +919,12 @@ public class CarbonUtilTest {
     Assert.assertTrue(schemaString.length() > schema.length());
   }
 
+  @Test
+  public void testTupeIDInUpdateScenarios() {
+    String blockName = "";
+    
+  }
+
   private String generateString(int length) {
     StringBuilder builder = new StringBuilder();
     for (int i = 0; i < length; i++) {

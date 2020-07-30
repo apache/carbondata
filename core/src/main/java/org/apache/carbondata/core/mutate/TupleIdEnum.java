@@ -21,12 +21,13 @@ package org.apache.carbondata.core.mutate;
  * Enum class for tupleID.
  */
 public enum TupleIdEnum {
-  PART_ID(0),
-  SEGMENT_ID(1),
-  BLOCK_ID(2),
-  BLOCKLET_ID(3),
-  PAGE_ID(4),
-  OFFSET(5);
+  PARTITION_PART_ID(0),
+  SEGMENT_ID(0),
+  PARTITION_SEGMENT_ID(1),
+  BLOCK_ID(1),
+  BLOCKLET_ID(2),
+  PAGE_ID(3),
+  OFFSET(4);
 
   private int index;
 

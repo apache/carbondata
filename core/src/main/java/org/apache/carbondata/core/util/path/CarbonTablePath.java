@@ -44,7 +44,7 @@ public class CarbonTablePath {
   private static final String SEGMENT_PREFIX = "Segment_";
   private static final String PARTITION_PREFIX = "Part";
   private static final String DATA_PART_PREFIX = "part-";
-  private static final String BATCH_PREFIX = "_batchno";
+  public static final String BATCH_PREFIX = "_batchno";
   private static final String LOCK_DIR = "LockFiles";
 
   public static final String TABLE_STATUS_FILE = "tablestatus";
@@ -636,7 +636,8 @@ public class CarbonTablePath {
    */
   public static String getShortBlockId(String blockId) {
     String blockIdWithCompressorName =
-        blockId.replace(PARTITION_PREFIX, "").replace(SEGMENT_PREFIX, "")
+        blockId.replace(PARTITION_PREFIX + "0" + CarbonCommonConstants.FILE_SEPARATOR, "")
+            .replace(SEGMENT_PREFIX, "").replace(BATCH_PREFIX, CarbonCommonConstants.UNDERSCORE)
             .replace(DATA_PART_PREFIX, "").replace(CARBON_DATA_EXT, "");
     // to remove compressor name
     if (!blockId.equalsIgnoreCase(blockIdWithCompressorName)) {
@@ -661,7 +662,7 @@ public class CarbonTablePath {
    */
   public static String getShortBlockIdForPartitionTable(String blockId) {
     String blockIdWithCompressorName = blockId.replace(DATA_PART_PREFIX, "")
-        .replace(CARBON_DATA_EXT, "");
+        .replace(BATCH_PREFIX, CarbonCommonConstants.UNDERSCORE).replace(CARBON_DATA_EXT, "");
     // to remove compressor name
     if (!blockId.equalsIgnoreCase(blockIdWithCompressorName)) {
       int index = blockIdWithCompressorName.lastIndexOf(POINT);
