@@ -191,11 +191,6 @@ public class Field {
     this.parent = parent;
   }
 
-  public String getStoreType() {
-    String storeType = "columnar";
-    return storeType;
-  }
-
   public int getSchemaOrdinal() {
     return schemaOrdinal;
   }

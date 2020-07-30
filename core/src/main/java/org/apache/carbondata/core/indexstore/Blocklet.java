@@ -117,11 +117,12 @@ public class Blocklet implements Writable, Serializable {
 
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder("Blocklet{");
-    sb.append("filePath='").append(filePath).append('\'');
-    sb.append(", blockletId='").append(blockletId).append('\'');
-    sb.append('}');
-    return sb.toString();
+    return new StringBuilder("Blocklet{filePath='")
+        .append(filePath)
+        .append("', blockletId='")
+        .append(blockletId)
+        .append("'}")
+        .toString();
   }
 
   @Override
