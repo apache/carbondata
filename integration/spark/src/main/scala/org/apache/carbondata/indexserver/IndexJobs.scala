@@ -77,16 +77,16 @@ class DistributedIndexJob extends AbstractIndexJob {
   }
 
   /**
-   * Iterate over FiltersResolver,
-   *   a. Change only RowLevelFilterResolverImpl because SparkUnknown is part of it
-   * and others FilterResolver like ConditionalFilterResolverImpl so directly return.
-   *     b. Change SparkUnknownExpression to TrueExpression so that isScanRequired
+   * Iterate over FilterResolver,
+   * a. Change only RowLevelFilterResolverImpl because SparkUnknown is part of it
+   * and other FilterResolver like ConditionalFilterResolverImpl so directly return.
+   * b. Change SparkUnknownExpression to TrueExpression so that isScanRequired
    * selects block/blocklet.
    *
-   * @param filterInf       FiltersResolver to be changed
-   * @param tableIdentifier  AbsoluteTableIdentifier object
-   * @param filterProcessor changed FiltersResolver.
-   * @return
+   * @param filterInf       FilterResolver to be changed
+   * @param tableIdentifier AbsoluteTableIdentifier object
+   * @param filterProcessor FilterExpressionProcessor
+   * @return changed FilterResolver.
    */
   def removeSparkUnknown(filterInf: FilterResolverIntf, tableIdentifier: AbsoluteTableIdentifier,
       filterProcessor: FilterExpressionProcessor): FilterResolverIntf = {
