@@ -50,7 +50,7 @@ import org.apache.carbondata.events.{IndexServerLoadEvent, OperationContext, Ope
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.processing.exception.MultipleMatchingException
 import org.apache.carbondata.processing.loading.FailureCauses
-import org.apache.carbondata.spark.DeleteDelateResultImpl
+import org.apache.carbondata.spark.DeleteDeltaResultImpl
 
 object DeleteExecution {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -203,7 +203,7 @@ object DeleteExecution {
         load: LoadMetadataDetails, isPartitionTable: Boolean
     ): Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors, Long))] = {
 
-      val result = new DeleteDelateResultImpl()
+      val result = new DeleteDeltaResultImpl()
       var deleteStatus = SegmentStatus.LOAD_FAILURE
       val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
       // here key = segment/blockName
@@ -266,9 +266,9 @@ object DeleteExecution {
                 CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.BLOCK_ID) +
                 CarbonCommonConstants.FACT_FILE_EXT)
           }
-          val deleteDeletePath = CarbonUpdateUtil
+          val deleteDeltaPath = CarbonUpdateUtil
             .getDeleteDeltaFilePath(blockPath, blockName, timestamp)
-          val carbonDeleteWriter = new CarbonDeleteDeltaWriterImpl(deleteDeletePath)
+          val carbonDeleteWriter = new CarbonDeleteDeltaWriterImpl(deleteDeltaPath)
 
 
 

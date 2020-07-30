@@ -74,7 +74,7 @@ object MVRefresher {
       new util.HashMap[String, util.List[String]]
     val viewManager = MVManagerInSpark.get(session)
     try if (lock.lockWithRetries) {
-      LOGGER.info("Acquired lock for mv " + viewIdentifier + " for table status te")
+      LOGGER.info("Acquired lock for mv " + viewIdentifier + " for table status update")
       val viewTableMetadataPath: String =
         CarbonTablePath.getMetadataPath(viewIdentifier.getTablePath)
       val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(viewTableMetadataPath)

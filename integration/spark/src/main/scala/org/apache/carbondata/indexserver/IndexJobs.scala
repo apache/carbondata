@@ -88,9 +88,8 @@ class DistributedIndexJob extends AbstractIndexJob {
    * @param filterProcessor changed FiltersResolver.
    * @return
    */
-  def removeSparkUnknown(filterInf: FilterResolverIntf,
-      tableIdentifier: AbsoluteTableIdentifier,
-                         filterProcessor: FilterExpressionProcessor): FilterResolverIntf = {
+  def removeSparkUnknown(filterInf: FilterResolverIntf, tableIdentifier: AbsoluteTableIdentifier,
+      filterProcessor: FilterExpressionProcessor): FilterResolverIntf = {
     if (filterInf.isInstanceOf[LogicalFilterResolverImpl]) {
       return new LogicalFilterResolverImpl(
         removeSparkUnknown(filterInf.getLeft, tableIdentifier, filterProcessor),

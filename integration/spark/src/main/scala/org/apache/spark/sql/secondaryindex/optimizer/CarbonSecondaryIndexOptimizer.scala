@@ -81,7 +81,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
    * @return transformed logical plan
    */
   private def rewritePlanForSecondaryIndex(filter: Filter,
-      indexTableRelation: CarbonDatasourceHadoopRelation, dbName: String,
+      indexableRelation: CarbonDatasourceHadoopRelation, dbName: String,
       cols: Seq[NamedExpression] = null, limitLiteral: Literal = null): LogicalPlan = {
     var originalFilterAttributes: Set[String] = Set.empty
     var filterAttributes: Set[String] = Set.empty
@@ -101,7 +101,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
 
     matchingIndexTables = CarbonCostBasedOptimizer.identifyRequiredTables(
       filterAttributes.asJava,
-      CarbonIndexUtil.getSecondaryIndexes(indexTableRelation).mapValues(_.toList.asJava).asJava)
+      CarbonIndexUtil.getSecondaryIndexes(indexableRelation).mapValues(_.toList.asJava).asJava)
       .asScala
 
     // filter out all the index tables which are disabled
@@ -147,7 +147,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
         // This property will be reflected across sessions as it is directly added to tblProperties.
         // So concurrent query run with getPositionID() UDF will have issue.
         // But getPositionID() UDF is restricted to testing purpose.
-        indexTableRelation.carbonTable.getTableInfo.getFactTable.getTableProperties
+        indexableRelation.carbonTable.getTableInfo.getFactTable.getTableProperties
           .put("isPositionIDRequested", "true")
       }
 
@@ -162,7 +162,7 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       val indexTableAttributeMap: mutable.Map[String, Map[String, AttributeReference]] =
         new mutable.HashMap[String, Map[String, AttributeReference]]()
       // mapping of all the index tables and its columns created on the main table
-      val allIndexTableToColumnMapping = CarbonIndexUtil.getSecondaryIndexes(indexTableRelation)
+      val allIndexTableToColumnMapping = CarbonIndexUtil.getSecondaryIndexes(indexableRelation)
 
       enabledMatchingIndexTables.foreach { matchedTable =>
         // create index table to index column mapping
@@ -693,10 +693,10 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       case sort@Sort(order, global, plan) =>
         addProjection = true
         (sort, true)
-      case filter@Filter(condition, logicalRelation@MatchIndexTableRelation(indexTableRelation))
+      case filter@Filter(condition, logicalRelation@MatchIndexableRelation(indexableRelation))
         if !condition.isInstanceOf[IsNotNull] &&
-           CarbonIndexUtil.getSecondaryIndexes(indexTableRelation).nonEmpty =>
-        val reWrittenPlan = rewritePlanForSecondaryIndex(filter, indexTableRelation,
+           CarbonIndexUtil.getSecondaryIndexes(indexableRelation).nonEmpty =>
+        val reWrittenPlan = rewritePlanForSecondaryIndex(filter, indexableRelation,
           filter.child.asInstanceOf[LogicalRelation].relation
             .asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.databaseName)
         if (reWrittenPlan.isInstanceOf[Join]) {
@@ -709,10 +709,10 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
           (filter, transformChild)
         }
       case projection@Project(cols, filter@Filter(condition,
-      logicalRelation@MatchIndexTableRelation(indexTableRelation)))
+      logicalRelation@MatchIndexableRelation(indexableRelation)))
         if !condition.isInstanceOf[IsNotNull] &&
-           CarbonIndexUtil.getSecondaryIndexes(indexTableRelation).nonEmpty =>
-        val reWrittenPlan = rewritePlanForSecondaryIndex(filter, indexTableRelation,
+           CarbonIndexUtil.getSecondaryIndexes(indexableRelation).nonEmpty =>
+        val reWrittenPlan = rewritePlanForSecondaryIndex(filter, indexableRelation,
           filter.child.asInstanceOf[LogicalRelation].relation
             .asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.databaseName, cols)
         // If Index table is matched, join plan will be returned.
@@ -732,9 +732,9 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
       // last index table, as number of records returned after join where unique and it will
       // definitely return at least 1 record.
       case limit@Limit(literal: Literal,
-      filter@Filter(condition, logicalRelation@MatchIndexTableRelation(indexTableRelation)))
+      filter@Filter(condition, logicalRelation@MatchIndexableRelation(indexableRelation)))
         if !condition.isInstanceOf[IsNotNull] &&
-           CarbonIndexUtil.getSecondaryIndexes(indexTableRelation).nonEmpty =>
+           CarbonIndexUtil.getSecondaryIndexes(indexableRelation).nonEmpty =>
         val carbonRelation = filter.child.asInstanceOf[LogicalRelation].relation
           .asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation
         val uniqueTableName = s"${ carbonRelation.databaseName }.${ carbonRelation.tableName }"
@@ -743,10 +743,10 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
           isRowDeletedInTableMap.put(uniqueTableName, isLimitPushDownRequired(carbonRelation))
         }
         val reWrittenPlan = if (isRowDeletedInTableMap(uniqueTableName)) {
-          rewritePlanForSecondaryIndex(filter, indexTableRelation,
+          rewritePlanForSecondaryIndex(filter, indexableRelation,
             carbonRelation.databaseName, limitLiteral = literal)
         } else {
-          rewritePlanForSecondaryIndex(filter, indexTableRelation,
+          rewritePlanForSecondaryIndex(filter, indexableRelation,
             carbonRelation.databaseName)
         }
         if (reWrittenPlan.isInstanceOf[Join]) {
@@ -759,9 +759,9 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
           (limit, transformChild)
         }
       case limit@Limit(literal: Literal, projection@Project(cols, filter@Filter(condition,
-      logicalRelation@MatchIndexTableRelation(indexTableRelation))))
+      logicalRelation@MatchIndexableRelation(indexableRelation))))
         if !condition.isInstanceOf[IsNotNull] &&
-           CarbonIndexUtil.getSecondaryIndexes(indexTableRelation).nonEmpty =>
+           CarbonIndexUtil.getSecondaryIndexes(indexableRelation).nonEmpty =>
         val carbonRelation = filter.child.asInstanceOf[LogicalRelation].relation
           .asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation
         val uniqueTableName = s"${ carbonRelation.databaseName }.${ carbonRelation.tableName }"
@@ -770,10 +770,10 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
           isRowDeletedInTableMap.put(uniqueTableName, isLimitPushDownRequired(carbonRelation))
         }
         val reWrittenPlan = if (isRowDeletedInTableMap(uniqueTableName)) {
-          rewritePlanForSecondaryIndex(filter, indexTableRelation,
+          rewritePlanForSecondaryIndex(filter, indexableRelation,
             carbonRelation.databaseName, cols, limitLiteral = literal)
         } else {
-          rewritePlanForSecondaryIndex(filter, indexTableRelation,
+          rewritePlanForSecondaryIndex(filter, indexableRelation,
             carbonRelation.databaseName, cols)
         }
         if (reWrittenPlan.isInstanceOf[Join]) {
@@ -826,13 +826,10 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
 
 }
 
-object MatchIndexTableRelation {
-
-  type ReturnType = (CarbonDatasourceHadoopRelation)
-
-  def unapply(plan: LogicalPlan): Option[ReturnType] = {
+object MatchIndexableRelation {
+  def unapply(plan: LogicalPlan): Option[CarbonDatasourceHadoopRelation] = {
     plan match {
-      case l: LogicalRelation if (l.relation.isInstanceOf[CarbonDatasourceHadoopRelation]) =>
+      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
         Some(l.relation.asInstanceOf[CarbonDatasourceHadoopRelation])
       case _ => None
     }
