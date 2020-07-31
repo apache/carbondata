@@ -1155,6 +1155,8 @@ object CommonLoadUtils {
       segmentId: String,
       metaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]])
   : SegmentMetaDataInfo = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    LOGGER.error("Inside getSegmentMetaDataInfoFromAccumulator API")
     var segmentMetaDataInfo: SegmentMetaDataInfo = null
     if (!metaDataAccumulator.isZero) {
       val segmentMetaData = metaDataAccumulator.value.asScala

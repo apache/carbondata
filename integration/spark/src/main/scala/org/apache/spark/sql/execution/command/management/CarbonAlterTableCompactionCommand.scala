@@ -92,6 +92,9 @@ case class CarbonAlterTableCompactionCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
+    val LOGGER = LogServiceFactory
+      .getLogService(this.getClass.getCanonicalName)
+    LOGGER.error("Inside processData API")
     if (SegmentStatusManager.isOverwriteInProgressInTable(table)) {
       throw new ConcurrentOperationException(table, "insert overwrite", "compaction")
     }
@@ -213,6 +216,7 @@ case class CarbonAlterTableCompactionCommand(
       compactedSegments: java.util.List[String],
       operationContext: OperationContext): Unit = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    LOGGER.error("Inside alterTableForCompaction API")
     val compactionType = CompactionType.valueOf(alterTableModel.compactionType.toUpperCase)
     val compactionSize = CarbonDataMergerUtil.getCompactionSize(compactionType, carbonLoadModel)
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable

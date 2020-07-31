@@ -92,6 +92,7 @@ object CarbonDataRDDFactory {
       compactionModel: CompactionModel,
       operationContext: OperationContext): Unit = {
     // taking system level lock at the mdt file location
+    LOGGER.error("inside handleCompactionForSystemLocking")
     var configuredMdtPath = CarbonProperties.getInstance().getProperty(
       CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
       CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER_DEFAULT).trim
@@ -150,6 +151,8 @@ object CarbonDataRDDFactory {
       compactionLock: ICarbonLock,
       compactedSegments: java.util.List[String],
       operationContext: OperationContext): Unit = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    LOGGER.error("Inside startCompactionThreads API")
     val executor: ExecutorService = Executors.newFixedThreadPool(1)
     // update the updated table status.
     if (compactionModel.compactionType != CompactionType.IUD_UPDDEL_DELTA) {
@@ -168,6 +171,8 @@ object CarbonDataRDDFactory {
           storeLocation,
           compactedSegments,
           operationContext)
+        val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+        LOGGER.error("Inside run API")
         try {
           // compaction status of the table which is triggered by the user.
           var triggeredCompactionStatus = false
@@ -913,6 +918,7 @@ object CarbonDataRDDFactory {
       carbonTable: CarbonTable,
       compactedSegments: java.util.List[String],
       operationContext: OperationContext): Unit = {
+    LOGGER.error("Inside handleSegmentMerging")
     LOGGER.info(s"compaction need status is" +
                 s" ${ CarbonDataMergerUtil.checkIfAutoLoadMergingRequired(carbonTable) }")
     if (CarbonDataMergerUtil.checkIfAutoLoadMergingRequired(carbonTable)) {
@@ -940,7 +946,7 @@ object CarbonDataRDDFactory {
         CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
         CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
       ).equalsIgnoreCase("true")
-
+      LOGGER.error("isConcurrentCompactionAllowed: " + isConcurrentCompactionAllowed)
       if (!isConcurrentCompactionAllowed) {
         handleCompactionForSystemLocking(sqlContext,
           carbonLoadModel,

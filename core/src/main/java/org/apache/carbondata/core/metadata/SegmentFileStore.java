@@ -401,6 +401,7 @@ public class SegmentFileStore {
   public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID,
       final String currentLoadTimeStamp, String absSegPath, SegmentMetaDataInfo segmentMetaDataInfo)
       throws IOException {
+    LOGGER.error("Inside writeSegmentFile API");
     String tablePath = carbonTable.getTablePath();
     boolean supportFlatFolder = carbonTable.isSupportFlatFolder();
     String segmentPath = absSegPath;

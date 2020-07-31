@@ -42,6 +42,7 @@ abstract class Compactor(carbonLoadModel: CarbonLoadModel,
   def executeCompaction(): Unit
 
   def identifySegmentsToBeMerged(): java.util.List[LoadMetadataDetails] = {
+    LOGGER.error("inside identifySegmentsToBeMerged")
     val customSegmentIds: util.List[String] = if (compactionModel.customSegmentIds.isDefined) {
       compactionModel.customSegmentIds.get.asJava
     } else {

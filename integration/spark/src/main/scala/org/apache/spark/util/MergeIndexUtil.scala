@@ -37,6 +37,7 @@ object MergeIndexUtil {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   def mergeIndexFilesOnCompaction(compactionCallableModel: CompactionCallableModel): Unit = {
+    LOGGER.error("Inside mergeIndexFilesOnCompaction API")
     val carbonTable = compactionCallableModel.carbonTable
     LOGGER.info(s"Merge index for compaction is called on table ${carbonTable.getTableUniqueName}")
     val mergedLoads = compactionCallableModel.compactedSegments

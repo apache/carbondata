@@ -21,6 +21,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 
+import org.apache.log4j.Logger
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.junit.Assert
@@ -37,6 +38,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.common.logging.LogServiceFactory
 
 class CarbonIndexFileMergeTestCase
   extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -535,7 +537,10 @@ class CarbonIndexFileMergeTestCase
         }
       })
     }
+    val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     if (carbonFiles != null) {
+      LOGGER.info(carbonFiles.size())
+      LOGGER.error(carbonFiles.size())
       carbonFiles.size()
     } else {
       0

@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.writer;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -78,6 +79,7 @@ public class CarbonIndexFileMergeWriter {
   private String mergeCarbonIndexFilesOfSegment(String segmentId,
       String tablePath, List<String> indexFileNamesTobeAdded,
       boolean readFileFooterFromCarbonDataFile, String uuid, String partitionPath) {
+    LOGGER.error("Inside mergeCarbonIndexFilesOfSegment API");
     try {
       Segment segment = Segment.getSegment(segmentId, tablePath);
       String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
@@ -207,6 +209,7 @@ public class CarbonIndexFileMergeWriter {
   public String writeMergeIndexFileBasedOnSegmentFile(String segmentId,
       List<String> indexFileNamesTobeAdded, SegmentFileStore segmentFileStore,
       CarbonFile[] indexFiles, String uuid, String partitionPath) throws IOException {
+    LOGGER.error("Inside writeMergeIndexFileBasedOnSegmentFile API");
     SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
     // in case of partition table, merge index file to be created for each partition
     if (null != partitionPath) {
@@ -256,8 +259,22 @@ public class CarbonIndexFileMergeWriter {
       SegmentFileStore.updateTableStatusFile(table, segmentId, newSegmentFileName,
           table.getCarbonTableIdentifier().getTableId(), segmentFileStore);
     }
+    LOGGER.error("Number of index files before delete: " + indexFiles.length);
     for (CarbonFile file : indexFiles) {
+      LOGGER.error("Deleting File: " + file.getAbsolutePath());
       file.delete();
+    }
+    String pathOfIndexFiles = CarbonTablePath.getSegmentPath(table.getTablePath(), segmentId);
+    File[] indexFilesAfterDelete = new File(pathOfIndexFiles).listFiles((dir, name) -> {
+      if (name == null) {
+        return false;
+      }
+      return name.endsWith(CarbonCommonConstants.UPDATE_INDEX_FILE_EXT);
+    });
+    if (indexFilesAfterDelete != null) {
+      LOGGER.error("Number of index files after delete: " + indexFilesAfterDelete.length);
+    } else {
+      LOGGER.error("Number of index files after delete: 0");
     }
     return uuid;
   }

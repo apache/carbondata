@@ -34,6 +34,7 @@ import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.{CollectionAccumulator, MergeIndexUtil}
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.constants.SortScopeOptions.SortScope
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -82,16 +83,20 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
   }
 
   override def executeCompaction(): Unit = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    LOGGER.error("Inside executeCompaction API")
     val sortedSegments: util.List[LoadMetadataDetails] = new util.ArrayList[LoadMetadataDetails](
       carbonLoadModel.getLoadMetadataDetails.asScala.filter(_.isCarbonFormat).asJava
     )
     CarbonDataMergerUtil.sortSegments(sortedSegments)
 
     var loadsToMerge = identifySegmentsToBeMerged()
+    LOGGER.error("Length of loadsToMerge: " + loadsToMerge.size())
 
     while (loadsToMerge.size() > 1 || needSortSingleSegment(loadsToMerge) ||
            (CompactionType.IUD_UPDDEL_DELTA == compactionModel.compactionType &&
             loadsToMerge.size() > 0)) {
+      LOGGER.error("Inside While loop")
       val lastSegment = sortedSegments.get(sortedSegments.size() - 1)
       deletePartialLoadsInCompaction()
       val compactedLoad = CarbonDataMergerUtil.getMergedLoadName(loadsToMerge)
@@ -167,6 +172,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
    */
   def scanSegmentsAndSubmitJob(loadsToMerge: util.List[LoadMetadataDetails],
       compactedSegments: List[String], mergedLoadName: String): Unit = {
+    LOGGER.error("Inside sacanSegmentsAndSubmitJob")
     loadsToMerge.asScala.foreach { seg =>
       LOGGER.info("loads identified for merge is " + seg.getLoadName)
     }
@@ -183,6 +189,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
 
   private def triggerCompaction(compactionCallableModel: CompactionCallableModel,
       mergedLoadName: String): Unit = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    LOGGER.error("Inside triggerCompaction API")
     val carbonTable = compactionCallableModel.carbonTable
     val loadsToMerge = compactionCallableModel.loadsToMerge
     val sc = compactionCallableModel.sqlContext
@@ -421,6 +429,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       carbonMergerMapping: CarbonMergerMapping,
       segmentMetaDataAccumulator: CollectionAccumulator[Map[String, SegmentMetaDataInfo]])
   : Array[(String, Boolean)] = {
+    LOGGER.error("inside compactSegmentsByGlobalSort API")
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val splits = splitsOfSegments(
       sparkSession,

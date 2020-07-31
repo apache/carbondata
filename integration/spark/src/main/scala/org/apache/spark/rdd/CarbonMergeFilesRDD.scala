@@ -77,6 +77,9 @@ object CarbonMergeFilesRDD {
       readFileFooterFromCarbonDataFile: Boolean = false,
       currPartitionSpec: Option[String] = None
   ): Long = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    LOGGER.error("Inside mergeIndexFiles API")
+    LOGGER.error("Value of MergeIndex Property: " + mergeIndexProperty)
     var mergeIndexSize = 0L
     if (mergeIndexProperty) {
       new CarbonMergeFilesRDD(
@@ -90,6 +93,10 @@ object CarbonMergeFilesRDD {
         tempFolderPath).collect()
     } else {
       try {
+        val mergePropertyValue = isPropertySet(
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)
+        LOGGER.error("value of MergeIndexInSegment: " + mergePropertyValue)
         if (isPropertySet(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
           CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)) {
           val mergeFilesRDD = new CarbonMergeFilesRDD(
@@ -266,8 +273,11 @@ class CarbonMergeFilesRDD(
 
   override def internalCompute(theSplit: Partition,
       context: TaskContext): Iterator[(String, SegmentFileStore.SegmentFile)] = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    LOGGER.error("Inside internalCompute API")
     val tablePath = carbonTable.getTablePath
     val iter = new Iterator[(String, SegmentFileStore.SegmentFile)] {
+
       val split = theSplit.asInstanceOf[CarbonMergeFilePartition]
       logInfo("Merging carbon index files of segment : " +
               CarbonTablePath.getSegmentPath(tablePath, split.segmentId))
