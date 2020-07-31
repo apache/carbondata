@@ -47,7 +47,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CompactionResultSortProcessor, CompactionType}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.{HandoffResult, HandoffResultImpl}
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CarbonSparkUtil, CommonUtil}
 
 
 /**
@@ -192,7 +192,7 @@ class StreamHandoffRDD[K, V](
    * get the partitions of the handoff segment
    */
   override protected def internalGetPartitions: Array[Partition] = {
-    val job = Job.getInstance(FileFactory.getConfiguration)
+    val job = CarbonSparkUtil.createHadoopJob()
     val inputFormat = new CarbonTableInputFormat[Array[Object]]()
     val segmentList = new util.ArrayList[Segment](1)
     segmentList.add(Segment.toSegment(handOffSegmentId, null))

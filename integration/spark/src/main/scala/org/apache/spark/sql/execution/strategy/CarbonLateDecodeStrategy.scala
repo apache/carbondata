@@ -121,12 +121,10 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         // check if the outer and the inner project are matching, only then remove project
         if (left.isInstanceOf[Project]) {
           val leftOutput = left.output
-            .filterNot(attr => attr.name
-              .equalsIgnoreCase(CarbonCommonConstants.POSITION_ID))
+            .filterNot(_.name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID))
             .map(c => (c.name.toLowerCase, c.dataType))
           val childOutput = carbonChild.output
-            .filterNot(attr => attr.name
-              .equalsIgnoreCase(CarbonCommonConstants.POSITION_ID))
+            .filterNot(_.name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID))
             .map(c => (c.name.toLowerCase, c.dataType))
           if (!leftOutput.equals(childOutput)) {
             // if the projection list and the scan list are different(in case of alias)

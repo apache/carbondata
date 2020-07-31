@@ -115,7 +115,7 @@ object CommonUtil {
       case "integertype" =>
         scala.util.Try(value.toInt).isSuccess
       case "stringtype" =>
-        scala.util.Try(value.toString).isSuccess
+        scala.util.Try(value).isSuccess
       case "longtype" =>
         scala.util.Try(value.toLong).isSuccess
       case "floattype" =>
@@ -131,27 +131,18 @@ object CommonUtil {
       case "shorttype" =>
         scala.util.Try(value.toShort).isSuccess
       case FIXED_DECIMALTYPE(_, _) =>
-        val parField = partitionerField.dataType.get.split(",")
-        val precision = parField(0).substring(12).toInt
-        val scale = parField(1).substring(0, parField(1).length - 1).toInt
-        val pattern = "^([-]?[0-9]{0," + (precision - scale) +
-                      "})([.][0-9]{1," + scale + "})?$"
-        value.matches(pattern)
+        validateDecimal(partitionerField, value, 12)
       case "timestamptype" =>
-        val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
-        scala.util.Try(timeStampFormat.parse(value)).isSuccess
+        validateDateAndTimestamp(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          value, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
       case "datetype" =>
-        val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
-        scala.util.Try(dateFormat.parse(value)).isSuccess
+        validateDateAndTimestamp(CarbonCommonConstants.CARBON_DATE_FORMAT,
+          value, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
       case others =>
        if (others != null && others.startsWith("char")) {
-         scala.util.Try(value.toString).isSuccess
+         scala.util.Try(value).isSuccess
         } else if (others != null && others.startsWith("varchar")) {
-         scala.util.Try(value.toString).isSuccess
+         scala.util.Try(value).isSuccess
         } else {
           throw new MalformedCarbonCommandException(
             "UnSupported partition type: " + partitionerField.dataType)
@@ -165,7 +156,7 @@ object CommonUtil {
       case "int" =>
         scala.util.Try(value.toInt).isSuccess
       case "string" =>
-        scala.util.Try(value.toString).isSuccess
+        scala.util.Try(value).isSuccess
       case "bigint" =>
         scala.util.Try(value.toLong).isSuccess
       case "long" =>
@@ -183,22 +174,13 @@ object CommonUtil {
       case "boolean" =>
         scala.util.Try(value.toBoolean).isSuccess
       case FIXED_DECIMAL(_, _) =>
-        val parField = partitionerField.dataType.get.split(",")
-        val precision = parField(0).substring(8).toInt
-        val scale = parField(1).substring(0, parField(1).length - 1).toInt
-        val pattern = "^([-]?[0-9]{0," + (precision - scale) +
-                      "})([.][0-9]{1," + scale + "})?$"
-        value.matches(pattern)
+        validateDecimal(partitionerField, value, 8)
       case "timestamp" =>
-        val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
-        scala.util.Try(timeStampFormat.parse(value)).isSuccess
+        validateDateAndTimestamp(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          value, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
       case "date" =>
-        val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
-        scala.util.Try(dateFormat.parse(value)).isSuccess
+        validateDateAndTimestamp(CarbonCommonConstants.CARBON_DATE_FORMAT,
+          value, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
       case _ =>
         validateTypeConvertForSpark2(partitionerField, value)
     }
@@ -209,6 +191,22 @@ object CommonUtil {
     } else {
       result
     }
+  }
+
+  private def validateDecimal(partitionerField: PartitionerField,
+      value: String, precisionIndex: Int) = {
+    val parField = partitionerField.dataType.get.split(",")
+    val precision = parField(0).substring(precisionIndex).toInt
+    val scale = parField(1).substring(0, parField(1).length - 1).toInt
+    val pattern = "^([-]?[0-9]{0," + (precision - scale) +
+                  "})([.][0-9]{1," + scale + "})?$"
+    value.matches(pattern)
+  }
+
+  private def validateDateAndTimestamp(key: String, value: String, defaultValue: String) = {
+    val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
+      .getProperty(key, defaultValue))
+    scala.util.Try(dateFormat.parse(value)).isSuccess
   }
 
   def validateFields(key: String, fields: Seq[Field]): Boolean = {
@@ -293,6 +291,17 @@ object CommonUtil {
     }
   }
 
+  private def validateBoolean(tableProperties: Map[String, String], property: String): Unit = {
+    if (tableProperties.get(property).isDefined) {
+      val trimStr = tableProperties(property).trim
+      if (!trimStr.equalsIgnoreCase("true") && !trimStr.equalsIgnoreCase("false")) {
+        throw new MalformedCarbonCommandException(s"Invalid $property value found: " +
+                                                  s"$trimStr, only true|false is supported.")
+      }
+      tableProperties.put(property, trimStr)
+    }
+  }
+
   /**
    * This method will validate the auto merge load property specified by the user
    * the property is used while doing minor compaction
@@ -300,15 +309,7 @@ object CommonUtil {
    * @param tableProperties
    */
   def validateAutoLoadMerge(tableProperties: Map[String, String]): Unit = {
-    val tblPropName = CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE
-    if (tableProperties.get(tblPropName).isDefined) {
-      val trimStr = tableProperties(tblPropName).trim
-      if (!trimStr.equalsIgnoreCase("true") && !trimStr.equalsIgnoreCase("false")) {
-        throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
-          s"$trimStr, only true|false is supported.")
-      }
-      tableProperties.put(tblPropName, trimStr)
-    }
+    validateBoolean(tableProperties, CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE)
   }
 
   /**
@@ -317,15 +318,7 @@ object CommonUtil {
    * @param tableProperties
    */
   def validateFlatFolder(tableProperties: Map[String, String]): Unit = {
-    val tblPropName = CarbonCommonConstants.FLAT_FOLDER
-    if (tableProperties.get(tblPropName).isDefined) {
-      val trimStr = tableProperties(tblPropName).trim
-      if (!trimStr.equalsIgnoreCase("true") && !trimStr.equalsIgnoreCase("false")) {
-        throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
-                                                  s"$trimStr, only true|false is supported.")
-      }
-      tableProperties.put(tblPropName, trimStr)
-    }
+    validateBoolean(tableProperties, CarbonCommonConstants.FLAT_FOLDER)
   }
 
   /**
@@ -961,8 +954,8 @@ object CommonUtil {
           } else {
             data(i) = decimalValue.toJavaBigDecimal
           }
-        case arrayType: ArrayType =>
-          val result = convertSparkComplexTypeToCarbonObject(row.get(i, arrayType), arrayType)
+        case dataType@(_: ArrayType | _: MapType) =>
+          val result = convertSparkComplexTypeToCarbonObject(row.get(i, dataType), dataType)
           // convert carbon complex object to byte array
           val byteArray: ByteArrayOutputStream = new ByteArrayOutputStream()
           val dataOutputStream: DataOutputStream = new DataOutputStream(byteArray)
@@ -980,18 +973,6 @@ object CommonUtil {
           val dataOutputStream: DataOutputStream = new DataOutputStream(byteArray)
           dataFieldsWithComplexDataType(fields(i).name).asInstanceOf[StructDataType]
             .writeByteArray(result.asInstanceOf[StructObject],
-              dataOutputStream,
-              badRecordLogHolder,
-              true)
-          dataOutputStream.close()
-          data(i) = byteArray.toByteArray.asInstanceOf[AnyRef]
-        case mapType: MapType =>
-          val result = convertSparkComplexTypeToCarbonObject(row.get(i, mapType), mapType)
-          // convert carbon complex object to byte array
-          val byteArray: ByteArrayOutputStream = new ByteArrayOutputStream()
-          val dataOutputStream: DataOutputStream = new DataOutputStream(byteArray)
-          dataFieldsWithComplexDataType(fields(i).name).asInstanceOf[ArrayDataType]
-            .writeByteArray(result.asInstanceOf[ArrayObject],
               dataOutputStream,
               badRecordLogHolder,
               true)

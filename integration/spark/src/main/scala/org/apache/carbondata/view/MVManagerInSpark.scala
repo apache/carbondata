@@ -19,12 +19,13 @@ package org.apache.carbondata.view
 
 import java.util
 
-import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.{CarbonEnv, CarbonUtils, SparkSession}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.ThreadLocalSessionInfo
-import org.apache.carbondata.core.view.MVManager
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.view.{MVManager, MVSchema, MVStatus}
 
 class MVManagerInSpark(session: SparkSession) extends MVManager {
   override def getDatabases: util.List[String] = {
@@ -62,4 +63,24 @@ object MVManagerInSpark {
     viewManager
   }
 
+  def disableMVOnTable(sparkSession: SparkSession,
+      carbonTable: CarbonTable,
+      isOverwriteTable: Boolean = false): Unit = {
+    if (carbonTable == null) {
+      return
+    }
+    val viewManager = MVManagerInSpark.get(sparkSession)
+    val viewSchemas = new util.ArrayList[MVSchema]()
+    for (viewSchema <- viewManager.getSchemasOnTable(carbonTable).asScala) {
+      if (viewSchema.isRefreshOnManual) {
+        viewSchemas.add(viewSchema)
+      }
+    }
+    viewManager.setStatus(viewSchemas, MVStatus.DISABLED)
+    if (isOverwriteTable) {
+      if (!viewSchemas.isEmpty) {
+        viewManager.onTruncate(viewSchemas)
+      }
+    }
+  }
 }

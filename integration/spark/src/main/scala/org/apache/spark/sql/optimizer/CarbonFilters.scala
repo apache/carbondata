@@ -59,7 +59,12 @@ object CarbonFilters {
   def createCarbonFilter(schema: StructType,
       predicate: sources.Filter,
       tableProperties: mutable.Map[String, String]): Option[CarbonExpression] = {
-    val dataTypeOf = schema.map(f => f.name -> f.dataType).toMap
+    val dataTypeOf = schema.map { f =>
+      f.dataType match {
+        case arrayType: ArrayType => f.name -> arrayType.elementType
+        case _ => f.name -> f.dataType
+      }
+    }.toMap
 
     def createFilter(predicate: sources.Filter): Option[CarbonExpression] = {
       predicate match {
@@ -123,19 +128,9 @@ object CarbonFilters {
           Some(new StartsWithExpression(getCarbonExpression(name),
             getCarbonLiteralExpression(name, value)))
         case CarbonEndsWith(expr: Expression) =>
-          Some(new SparkUnknownExpression(expr.transform {
-            case AttributeReference(name, dataType, _, _) =>
-              CarbonBoundReference(new CarbonColumnExpression(name.toString,
-                CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(dataType)),
-                dataType, expr.nullable)
-          }, ExpressionType.ENDSWITH))
+          Some(getSparkUnknownExpression(expr, ExpressionType.ENDSWITH))
         case CarbonContainsWith(expr: Expression) =>
-          Some(new SparkUnknownExpression(expr.transform {
-            case AttributeReference(name, dataType, _, _) =>
-              CarbonBoundReference(new CarbonColumnExpression(name.toString,
-                CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(dataType)),
-                dataType, expr.nullable)
-          }, ExpressionType.CONTAINSWITH))
+          Some(getSparkUnknownExpression(expr, ExpressionType.CONTAINSWITH))
         case CastExpr(expr: Expression) =>
           Some(transformExpression(expr))
         case FalseExpr() =>
@@ -151,24 +146,23 @@ object CarbonFilters {
       }
     }
 
+    def getSparkUnknownExpression(expr: Expression, exprType: ExpressionType) = {
+      new SparkUnknownExpression(expr.transform {
+        case AttributeReference(name, dataType, _, _) =>
+          CarbonBoundReference(new CarbonColumnExpression(name.toString,
+            CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(dataType)),
+            dataType, expr.nullable)
+      }, exprType)
+    }
+
     def getCarbonExpression(name: String) = {
       var sparkDatatype = dataTypeOf(name)
-      sparkDatatype match {
-        case arrayType: ArrayType =>
-          sparkDatatype = arrayType.elementType
-        case _ =>
-      }
       new CarbonColumnExpression(name,
         CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(sparkDatatype))
     }
 
     def getCarbonLiteralExpression(name: String, value: Any): CarbonExpression = {
       var sparkDatatype = dataTypeOf(name)
-      sparkDatatype match {
-        case arrayType: ArrayType =>
-          sparkDatatype = arrayType.elementType
-        case _ =>
-      }
       val dataTypeOfAttribute =
         CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(sparkDatatype)
       val dataType = if (Option(value).isDefined

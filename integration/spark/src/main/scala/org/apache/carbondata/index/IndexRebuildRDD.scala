@@ -56,6 +56,7 @@ import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 import org.apache.carbondata.index.bloom.DataConvertUtil
 import org.apache.carbondata.spark.{RefreshResult, RefreshResultImpl}
 import org.apache.carbondata.spark.rdd.{CarbonRDDWithTableInfo, CarbonSparkPartition}
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 
 /**
@@ -408,10 +409,7 @@ class IndexRebuildRDD[K, V](
     if (!indexSchema.isIndex) {
       throw new UnsupportedOperationException
     }
-    val conf = FileFactory.getConfiguration
-    val jobConf = new JobConf(conf)
-    SparkHadoopUtil.get.addCredentials(jobConf)
-    val job = Job.getInstance(jobConf)
+    val job = CarbonSparkUtil.createHadoopJob()
     job.getConfiguration.set("query.id", queryId)
 
     val format = new CarbonTableInputFormat[Object]

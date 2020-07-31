@@ -67,7 +67,7 @@ import org.apache.carbondata.hadoop.stream.CarbonStreamInputFormat
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.InitInputMetrics
-import org.apache.carbondata.spark.util.Util
+import org.apache.carbondata.spark.util.{CarbonSparkUtil, Util}
 
 /**
  * This RDD is used to perform query on CarbonData file. Before sending tasks to scan
@@ -116,10 +116,7 @@ class CarbonScanRDD[T: ClassTag](
     var numBlocks = 0
 
     try {
-      val conf = FileFactory.getConfiguration
-      val jobConf = new JobConf(conf)
-      SparkHadoopUtil.get.addCredentials(jobConf)
-      val job = Job.getInstance(jobConf)
+      val job = CarbonSparkUtil.createHadoopJob()
       val fileLevelExternal = tableInfo.getFactTable().getTableProperties().get("_filelevelformat")
       val format = if (fileLevelExternal != null && fileLevelExternal.equalsIgnoreCase("true")) {
         prepareFileInputFormatForDriver(job.getConfiguration)

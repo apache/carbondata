@@ -42,48 +42,40 @@ object MergeIndexUtil {
     val mergedLoads = compactionCallableModel.compactedSegments
     val sparkSession = compactionCallableModel.sqlContext.sparkSession
     if (!carbonTable.isStreamingSink) {
-      val mergedSegmentIds = new util.ArrayList[String]()
-      mergedLoads.asScala.foreach(mergedLoad => {
-        val loadName = mergedLoad
-          .substring(mergedLoad.indexOf(CarbonCommonConstants.LOAD_FOLDER) +
-                     CarbonCommonConstants.LOAD_FOLDER.length)
-        mergedSegmentIds.add(loadName)
-      })
-      val loadFolderDetailsArray = SegmentStatusManager
-        .readLoadMetadata(carbonTable.getMetadataPath)
-      val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String, String]()
-      loadFolderDetailsArray.foreach(loadMetadataDetails => {
-        segmentFileNameMap
-          .put(loadMetadataDetails.getLoadName,
-            String.valueOf(loadMetadataDetails.getLoadStartTime))
-      })
+      val mergedSegmentIds = getMergedSegmentIds(mergedLoads)
+      val segmentFileNameMap = getSegmentFileMap(carbonTable)
       CarbonMergeFilesRDD.mergeIndexFiles(sparkSession,
-        mergedSegmentIds.asScala,
+        mergedSegmentIds,
         segmentFileNameMap,
         carbonTable.getTablePath,
         carbonTable, false)
     }
   }
 
+  private def getMergedSegmentIds(mergedLoads: util.List[String]) = {
+    mergedLoads.asScala.map { mergedLoad =>
+      mergedLoad.substring(mergedLoad.indexOf(CarbonCommonConstants.LOAD_FOLDER) +
+                           CarbonCommonConstants.LOAD_FOLDER.length)
+    }
+  }
+
+  private def getSegmentFileMap(carbonTable: CarbonTable) = {
+    SegmentStatusManager
+      .readLoadMetadata(carbonTable.getMetadataPath)
+      .map { loadMetadataDetails =>
+        loadMetadataDetails.getLoadName -> String.valueOf(loadMetadataDetails.getLoadStartTime)
+      }
+      .toMap
+      .asJava
+  }
+
   def mergeIndexFilesForCompactedSegments(sparkSession: SparkSession,
-    carbonTable: CarbonTable,
-    mergedLoads: util.List[String]): Unit = {
+      carbonTable: CarbonTable,
+      mergedLoads: util.List[String]): Unit = {
     // get only the valid segments of the table
     val validSegments = CarbonDataMergerUtil.getValidSegmentList(carbonTable).asScala
-    val mergedSegmentIds = new util.ArrayList[String]()
-    mergedLoads.asScala.foreach(mergedLoad => {
-      val loadName = mergedLoad
-        .substring(mergedLoad.indexOf(CarbonCommonConstants.LOAD_FOLDER) +
-                   CarbonCommonConstants.LOAD_FOLDER.length)
-      mergedSegmentIds.add(loadName)
-    })
-    val loadFolderDetailsArray = SegmentStatusManager
-      .readLoadMetadata(carbonTable.getMetadataPath)
-    val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String, String]()
-    loadFolderDetailsArray.foreach(loadMetadataDetails => {
-      segmentFileNameMap
-        .put(loadMetadataDetails.getLoadName, String.valueOf(loadMetadataDetails.getLoadStartTime))
-    })
+    val mergedSegmentIds = getMergedSegmentIds(mergedLoads)
+    val segmentFileNameMap = getSegmentFileMap(carbonTable)
     // filter out only the valid segments from the list of compacted segments
     // Example: say compacted segments list contains 0.1, 3.1, 6.1, 0.2.
     // In this list 0.1, 3.1 and 6.1 are compacted to 0.2 in the level 2 compaction.

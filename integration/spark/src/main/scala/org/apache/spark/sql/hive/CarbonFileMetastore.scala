@@ -180,8 +180,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
 
   override def lookupRelation(tableIdentifier: TableIdentifier)
     (sparkSession: SparkSession): CarbonRelation = {
-    val database = tableIdentifier.database.getOrElse(
-      sparkSession.catalog.currentDatabase)
+    val database = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
     val relation = sparkSession.sessionState.catalog.lookupRelation(tableIdentifier) match {
       case SubqueryAlias(_,
       MatchLogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _)) =>

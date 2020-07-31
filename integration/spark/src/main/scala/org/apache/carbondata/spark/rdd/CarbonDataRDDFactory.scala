@@ -1046,19 +1046,7 @@ object CarbonDataRDDFactory {
       LOGGER.error(errorMessage)
       throw new Exception(errorMessage)
     } else {
-      val viewManager = MVManagerInSpark.get(session)
-      val viewSchemas = new util.ArrayList[MVSchema]()
-      for (viewSchema <- viewManager.getSchemasOnTable(carbonTable).asScala) {
-        if (viewSchema.isRefreshOnManual) {
-          viewSchemas.add(viewSchema)
-        }
-      }
-      viewManager.setStatus(viewSchemas, MVStatus.DISABLED)
-      if (overwriteTable) {
-        if (!viewSchemas.isEmpty) {
-          viewManager.onTruncate(viewSchemas)
-        }
-      }
+      MVManagerInSpark.disableMVOnTable(session, carbonTable, overwriteTable)
     }
     (done, metadataDetails)
   }

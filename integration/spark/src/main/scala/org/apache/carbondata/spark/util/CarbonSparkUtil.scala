@@ -20,12 +20,17 @@ package org.apache.carbondata.spark.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
+import org.apache.hadoop.mapred.JobConf
+import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.types.{ArrayType, DataType, DataTypes, FloatType, MapType, StructField, StructType}
 import org.apache.spark.SparkConf
+import org.apache.spark.deploy.SparkHadoopUtil
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
 
@@ -76,18 +81,14 @@ object CarbonSparkUtil {
       .filter(cSchema => !cSchema.isInvisible && cSchema.getSchemaOrdinal != -1)
       .sortWith(_.getSchemaOrdinal < _.getSchemaOrdinal)
     val columnList = columnSchemas.toList.asJava
-    carbonRelation.dimensionsAttr.foreach(attr => {
-      val carbonColumn = carbonTable.getColumnByName(attr.name)
-      val columnComment = getColumnComment(carbonColumn)
-      fields(columnList.indexOf(carbonColumn.getColumnSchema)) =
-        '`' + attr.name + '`' + ' ' + attr.dataType.catalogString + columnComment
-    })
-    carbonRelation.measureAttr.foreach(msrAtrr => {
-      val carbonColumn = carbonTable.getColumnByName(msrAtrr.name)
-      val columnComment = getColumnComment(carbonColumn)
-      fields(columnList.indexOf(carbonColumn.getColumnSchema)) =
-        '`' + msrAtrr.name + '`' + ' ' + msrAtrr.dataType.catalogString + columnComment
-    })
+    Seq(carbonRelation.dimensionsAttr, carbonRelation.measureAttr).foreach { attributes =>
+      attributes.foreach { attr =>
+        val carbonColumn = carbonTable.getColumnByName(attr.name)
+        val columnComment = getColumnComment(carbonColumn)
+        fields(columnList.indexOf(carbonColumn.getColumnSchema)) =
+          '`' + attr.name + '`' + ' ' + attr.dataType.catalogString + columnComment
+      }
+    }
     fields.mkString(",")
   }
 
@@ -163,5 +164,14 @@ object CarbonSparkUtil {
       case map: MapType => updateMap(map)
       case _ => dataType
     }
+  }
+
+  /**
+   * create Hadoop Job by using the specified Configuration
+   */
+  def createHadoopJob(conf: Configuration = FileFactory.getConfiguration): Job = {
+    val jobConf = new JobConf(conf)
+    SparkHadoopUtil.get.addCredentials(jobConf)
+    Job.getInstance(jobConf)
   }
 }

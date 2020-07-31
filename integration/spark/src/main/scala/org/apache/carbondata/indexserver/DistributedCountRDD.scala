@@ -18,6 +18,7 @@ package org.apache.carbondata.indexserver
 
 import java.util.concurrent.Executors
 
+import scala.annotation.meta.param
 import scala.collection.JavaConverters._
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.Duration

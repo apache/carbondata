@@ -258,7 +258,7 @@ object AlterTableUtil {
       val evolutionEntryList = tableInfo.fact_table.schema_evolution.schema_evolution_history
       val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
       if (updatedTime == timeStamp) {
-        LOGGER.error(s"Reverting changes for $database.${oldCarbonTable.getTableName}")
+        LOGGER.info(s"Reverting changes for $database.${oldCarbonTable.getTableName}")
         val absoluteTableIdentifier = AbsoluteTableIdentifier.from(
           tablePath,
           newCarbonTableIdentifier)
@@ -266,6 +266,24 @@ object AlterTableUtil {
           tableInfo, absoluteTableIdentifier)(sparkSession)
         metastore.removeTableFromMetadata(database, newTableName)
       }
+    }
+  }
+
+  private def revertSchema(dbName: String,
+      tableName: String,
+      timeStamp: Long,
+      sparkSession: SparkSession)
+    (operation: (TableInfo, util.List[SchemaEvolutionEntry]) => Unit): Unit = {
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
+    val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+    val thriftTable: TableInfo = metastore.getThriftTableInfo(carbonTable)
+    val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
+    val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
+    if (updatedTime == timeStamp) {
+      LOGGER.info(s"Reverting changes for $dbName.$tableName")
+      operation(thriftTable, evolutionEntryList)
+      metastore.revertTableSchemaInAlterFailure(carbonTable.getCarbonTableIdentifier,
+        thriftTable, carbonTable.getAbsoluteTableIdentifier)(sparkSession)
     }
   }
 
@@ -279,18 +297,9 @@ object AlterTableUtil {
    */
   def revertAddColumnChanges(dbName: String, tableName: String, timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
-    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-    val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
-    val thriftTable: TableInfo = metastore.getThriftTableInfo(carbonTable)
-    val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
-    val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
-    if (updatedTime == timeStamp) {
-      LOGGER.info(s"Reverting changes for $dbName.$tableName")
+    revertSchema(dbName, tableName, timeStamp, sparkSession) { (thriftTable, evolutionEntryList) =>
       val addedSchemas = evolutionEntryList.get(evolutionEntryList.size() - 1).added
       thriftTable.fact_table.table_columns.removeAll(addedSchemas)
-      metastore
-        .revertTableSchemaInAlterFailure(carbonTable.getCarbonTableIdentifier,
-          thriftTable, carbonTable.getAbsoluteTableIdentifier)(sparkSession)
     }
   }
 
@@ -304,13 +313,7 @@ object AlterTableUtil {
    */
   def revertDropColumnChanges(dbName: String, tableName: String, timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
-    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-    val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
-    val thriftTable: TableInfo = metastore.getThriftTableInfo(carbonTable)
-    val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
-    val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
-    if (updatedTime == timeStamp) {
-      LOGGER.error(s"Reverting changes for $dbName.$tableName")
+    revertSchema(dbName, tableName, timeStamp, sparkSession) { (thriftTable, evolutionEntryList) =>
       val removedSchemas = evolutionEntryList.get(evolutionEntryList.size() - 1).removed
       thriftTable.fact_table.table_columns.asScala.foreach { columnSchema =>
         removedSchemas.asScala.foreach { removedSchemas =>
@@ -319,9 +322,6 @@ object AlterTableUtil {
           }
         }
       }
-      metastore
-        .revertTableSchemaInAlterFailure(carbonTable.getCarbonTableIdentifier,
-          thriftTable, carbonTable.getAbsoluteTableIdentifier)(sparkSession)
     }
   }
 
@@ -335,13 +335,7 @@ object AlterTableUtil {
    */
   def revertColumnRenameAndDataTypeChanges(dbName: String, tableName: String, timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
-    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-    val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
-    val thriftTable: TableInfo = metaStore.getThriftTableInfo(carbonTable)
-    val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
-    val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
-    if (updatedTime == timeStamp) {
-      LOGGER.error(s"Reverting changes for $dbName.$tableName")
+    revertSchema(dbName, tableName, timeStamp, sparkSession) { (thriftTable, evolutionEntryList) =>
       val removedColumns = evolutionEntryList.get(evolutionEntryList.size() - 1).removed
       thriftTable.fact_table.table_columns.asScala.foreach { columnSchema =>
         removedColumns.asScala.foreach { removedColumn =>
@@ -353,9 +347,6 @@ object AlterTableUtil {
           }
         }
       }
-      metaStore
-        .revertTableSchemaInAlterFailure(carbonTable.getCarbonTableIdentifier,
-          thriftTable, carbonTable.getAbsoluteTableIdentifier)(sparkSession)
     }
   }
 

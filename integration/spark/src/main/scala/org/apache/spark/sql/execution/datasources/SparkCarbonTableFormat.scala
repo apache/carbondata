@@ -170,10 +170,9 @@ with Serializable {
       conf.set("carbon.currentpartition", currPartition)
     }
     // Update with the current in progress load.
-    val currEntry = options.getOrElse("currentloadentry", null)
-    if (currEntry != null) {
-      val loadEntry =
-        ObjectSerializationUtil.convertStringToObject(currEntry).asInstanceOf[LoadMetadataDetails]
+    val loadEntryOption = CarbonOutputWriter.getObjectFromMap[LoadMetadataDetails](options,
+      "currentloadentry")
+    loadEntryOption.foreach { loadEntry =>
       model.setSegmentId(loadEntry.getLoadName)
       model.setFactTimeStamp(loadEntry.getLoadStartTime)
       if (!isLoadDetailsContainTheCurrentEntry(
@@ -276,7 +275,7 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
           .flatMap { taskCommit =>
             taskCommit.obj match {
               case (map: Map[String, String], _) =>
-                val partition = map.get("carbon.partitions")
+
                 val size = map.get("carbon.datasize")
                 if (size.isDefined) {
                   dataSize = dataSize + java.lang.Long.parseLong(size.get)
@@ -285,11 +284,9 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
                 if (indexSize.isDefined) {
                   indexLen = indexLen + java.lang.Long.parseLong(indexSize.get)
                 }
-                val indexFiles = map.get("carbon.index.files.name")
-                if (indexFiles.isDefined) {
-                  val indexMap = ObjectSerializationUtil
-                    .convertStringToObject(indexFiles.get)
-                    .asInstanceOf[util.HashMap[String, Set[String]]]
+                val indexMapOption = CarbonOutputWriter.getObjectFromMap[util.HashMap[String,
+                  Set[String]]](map, "carbon.index.files.name")
+                indexMapOption.foreach { indexMap =>
                   indexMap.asScala.foreach { e =>
                     var values: util.Set[String] = indexFileNameMap.get(e._1)
                     if (values == null) {
@@ -299,14 +296,10 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
                     values.addAll(e._2.asInstanceOf[util.Set[String]])
                   }
                 }
-                if (partition.isDefined) {
-                  ObjectSerializationUtil
-                    .convertStringToObject(partition.get)
-                    .asInstanceOf[util.ArrayList[String]]
-                    .asScala
-                } else {
-                  Array.empty[String]
-                }
+                CarbonOutputWriter
+                  .getObjectFromMap[util.ArrayList[String]](map, "carbon.partitions")
+                  .map(_.asScala.toArray)
+                  .getOrElse(Array.empty[String])
               case _ => Array.empty[String]
             }
           }
@@ -314,14 +307,12 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
           .toList
           .asJava
 
-      jobContext.getConfiguration.set(
-        "carbon.output.partitions.name",
+      jobContext.getConfiguration.set("carbon.output.partitions.name",
         ObjectSerializationUtil.convertObjectToString(partitions))
       jobContext.getConfiguration.set("carbon.datasize", dataSize.toString)
       jobContext.getConfiguration.set("carbon.indexsize", indexLen.toString)
-      jobContext.getConfiguration
-        .set("carbon.index.files.name",
-          ObjectSerializationUtil.convertObjectToString(indexFileNameMap))
+      jobContext.getConfiguration.set("carbon.index.files.name",
+        ObjectSerializationUtil.convertObjectToString(indexFileNameMap))
       val newTaskCommits = taskCommits.map { taskCommit =>
         taskCommit.obj match {
           case (map: Map[String, String], set) =>
@@ -334,11 +325,9 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
           case _ => taskCommit
         }
       }
-      super
-        .commitJob(jobContext, newTaskCommits)
+      super.commitJob(jobContext, newTaskCommits)
     } else {
-      super
-        .commitJob(jobContext, taskCommits)
+      super.commitJob(jobContext, taskCommits)
     }
   }
 
@@ -352,7 +341,6 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
     if (isCarbonDataFlow(taskContext.getConfiguration)) {
       ThreadLocalSessionInfo.unsetAll()
       val partitions: String = taskContext.getConfiguration.get("carbon.output.partitions.name", "")
-      val files = taskContext.getConfiguration.get("carbon.output.files.name", "")
       val indexFileNameMap = new util.HashMap[String, util.Set[String]]()
       var sum = 0L
       var indexSize = 0L
@@ -361,12 +349,10 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
           .convertStringToObject(partitions)
           .asInstanceOf[util.ArrayList[String]]
           .asScala
-        if (!StringUtils.isEmpty(files)) {
-          val filesList = ObjectSerializationUtil
-            .convertStringToObject(files)
-            .asInstanceOf[util.ArrayList[String]]
-            .asScala
-          for (file <- filesList) {
+        val filesListOption = CarbonOutputWriter.getObjectFromContext[util.ArrayList[String]](
+          taskContext, "carbon.output.files.name")
+        filesListOption.foreach { filesList =>
+          filesList.asScala.foreach { file =>
             if (file.contains(".carbondata")) {
               sum += java.lang.Long.parseLong(file.substring(file.lastIndexOf(":") + 1))
             } else if (file.contains(".carbonindex")) {
@@ -405,13 +391,10 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
   override def abortTask(taskContext: TaskAttemptContext): Unit = {
     super.abortTask(taskContext)
     if (isCarbonDataFlow(taskContext.getConfiguration)) {
-      val files = taskContext.getConfiguration.get("carbon.output.files.name", "")
-      if (!StringUtils.isEmpty(files)) {
-        val filesList = ObjectSerializationUtil
-          .convertStringToObject(files)
-          .asInstanceOf[util.ArrayList[String]]
-          .asScala
-        for (file <- filesList) {
+      val filesListOption = CarbonOutputWriter.getObjectFromContext[util.ArrayList[String]](
+        taskContext, "carbon.output.files.name")
+      filesListOption.foreach { filesList =>
+        filesList.asScala.foreach { file =>
           val outputFile: String = file.substring(0, file.lastIndexOf(":"))
           if (outputFile.endsWith(CarbonTablePath.CARBON_DATA_EXT)) {
             FileFactory
@@ -449,35 +432,15 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
       val model = CarbonTableOutputFormat.getLoadModel(taskContext.getConfiguration)
       val partitions = CarbonOutputWriter.getPartitionsFromPath(
         path, taskContext, model).map(ExternalCatalogUtils.unescapePathName)
-      val staticPartition: util.HashMap[String, Boolean] = {
-        val staticPart = taskContext.getConfiguration.get("carbon.staticpartition")
-        if (staticPart != null) {
-          ObjectSerializationUtil.convertStringToObject(
-            staticPart).asInstanceOf[util.HashMap[String, Boolean]]
-        } else {
-          null
-        }
-      }
-      val converter = new DataTypeConverterImpl
-      var (updatedPartitions, partitionData) = if (partitions.nonEmpty) {
+      val updatedPartitions = if (partitions.nonEmpty) {
         val linkedMap = mutable.LinkedHashMap[String, String]()
         val updatedPartitions = partitions.map(CarbonOutputWriter.splitPartition)
         updatedPartitions.foreach {
           case (k, v) => linkedMap.put(k, v)
         }
-        (linkedMap, CarbonOutputWriter.updatePartitions(
-          updatedPartitions.map(_._2), model, staticPartition, converter))
+        linkedMap
       } else {
-        (mutable.LinkedHashMap.empty[String, String], Array.empty)
-      }
-      val currPartitions: util.List[indexstore.PartitionSpec] = {
-        val currParts = taskContext.getConfiguration.get("carbon.currentpartition")
-        if (currParts != null) {
-          ObjectSerializationUtil.convertStringToObject(
-            currParts).asInstanceOf[util.List[indexstore.PartitionSpec]]
-        } else {
-          new util.ArrayList[indexstore.PartitionSpec]()
-        }
+        mutable.LinkedHashMap.empty[String, String]
       }
       val writePath =
         CarbonOutputWriter.getPartitionPath(path, taskContext, model, updatedPartitions)
@@ -521,26 +484,18 @@ private class CarbonOutputWriter(path: String,
   var tmpPath = context.getConfiguration.get("carbon.newTaskTempFile.path", actualPath)
   val converter = new DataTypeConverterImpl
 
-  val partitions = CarbonOutputWriter.getPartitionsFromPath(
-    tmpPath, context, model).map(ExternalCatalogUtils.unescapePathName)
-  val staticPartition: util.HashMap[String, Boolean] = {
-    val staticPart = context.getConfiguration.get("carbon.staticpartition")
-    if (staticPart != null) {
-      ObjectSerializationUtil.convertStringToObject(
-        staticPart).asInstanceOf[util.HashMap[String, Boolean]]
-    } else {
-      null
-    }
-  }
-  val currPartitions: util.List[indexstore.PartitionSpec] = {
-    val currParts = context.getConfiguration.get("carbon.currentpartition")
-    if (currParts != null) {
-      ObjectSerializationUtil.convertStringToObject(
-        currParts).asInstanceOf[util.List[indexstore.PartitionSpec]]
-    } else {
-      new util.ArrayList[indexstore.PartitionSpec]()
-    }
-  }
+  val partitions = CarbonOutputWriter
+    .getPartitionsFromPath(tmpPath, context, model)
+    .map(ExternalCatalogUtils.unescapePathName)
+
+  val staticPartition = CarbonOutputWriter
+    .getObjectFromContext[util.HashMap[String, Boolean]](context, "carbon.staticpartition")
+    .getOrElse(null)
+
+  val currPartitions = CarbonOutputWriter
+    .getObjectFromContext[util.List[indexstore.PartitionSpec]](context, "carbon.currentpartition")
+    .getOrElse(new util.ArrayList[indexstore.PartitionSpec]())
+
   var (updatedPartitions, partitionData) = if (partitions.nonEmpty) {
     val linkedMap = mutable.LinkedHashMap[String, String]()
     val updatedPartitions = partitions.map(CarbonOutputWriter.splitPartition)
@@ -606,6 +561,24 @@ private class CarbonOutputWriter(path: String,
 
 
 object CarbonOutputWriter {
+
+  def  getObjectFromContext[T](context: TaskAttemptContext, key: String): Option[T] = {
+    val config = context.getConfiguration.get(key)
+    if (!StringUtils.isEmpty(config)) {
+      Option(ObjectSerializationUtil.convertStringToObject(config).asInstanceOf[T])
+    } else {
+      None
+    }
+  }
+
+  def getObjectFromMap[T](map: Map[String, String], key: String): Option[T] = {
+    val config = map.get(key)
+    if (config.isDefined) {
+      Option(ObjectSerializationUtil.convertStringToObject(config.get).asInstanceOf[T])
+    } else {
+      None
+    }
+  }
 
   def getPartitionsFromPath(
       path: String,

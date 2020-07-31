@@ -51,22 +51,11 @@ object CarbonPlanHelper {
       sparkSession: SparkSession
   ): Seq[SparkPlan] = {
     val alterTableAddColumnsModel = addColumnCommand.alterTableAddColumnsModel
-    if (isCarbonTable(
-      TableIdentifier(
-        alterTableAddColumnsModel.tableName,
-        alterTableAddColumnsModel.databaseName),
-      sparkSession)) {
-      val carbonTable = CarbonEnv.getCarbonTable(alterTableAddColumnsModel.databaseName,
-        alterTableAddColumnsModel.tableName)(sparkSession)
-      if (carbonTable != null && carbonTable.isFileLevelFormat) {
-        throw new MalformedCarbonCommandException(
-          "Unsupported alter operation on Carbon external fileformat table")
-      } else if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
-        throw new MalformedCarbonCommandException(
-          "Unsupported operation on non transactional table")
-      } else {
-        ExecutedCommandExec(addColumnCommand) :: Nil
-      }
+    if (isCarbonTable(TableIdentifier(alterTableAddColumnsModel.tableName,
+      alterTableAddColumnsModel.databaseName), sparkSession)) {
+      requireTransactionalTable(alterTableAddColumnsModel.databaseName,
+        alterTableAddColumnsModel.tableName, sparkSession)
+      ExecutedCommandExec(addColumnCommand) :: Nil
       // TODO: remove this else if check once the 2.1 version is unsupported by carbon
     } else if (SparkUtil.isSparkVersionXAndAbove("2.2")) {
       val structField = (alterTableAddColumnsModel.dimCols ++ alterTableAddColumnsModel.msrCols)
@@ -98,17 +87,8 @@ object CarbonPlanHelper {
   ): Seq[SparkPlan] = {
     val model = changeColumnCommand.alterTableColRenameAndDataTypeChangeModel
     if (isCarbonTable(TableIdentifier(model.tableName, model.databaseName), sparkSession)) {
-      val carbonTable =
-        CarbonEnv.getCarbonTable(model.databaseName, model.tableName)(sparkSession)
-      if (carbonTable != null && carbonTable.isFileLevelFormat) {
-        throw new MalformedCarbonCommandException(
-          "Unsupported alter operation on Carbon external fileformat table")
-      } else if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
-        throw new MalformedCarbonCommandException(
-          "Unsupported operation on non transactional table")
-      } else {
-        ExecutedCommandExec(changeColumnCommand) :: Nil
-      }
+      requireTransactionalTable(model.databaseName, model.tableName, sparkSession)
+      ExecutedCommandExec(changeColumnCommand) :: Nil
     } else {
       throw new MalformedCarbonCommandException(
         String.format("Table or view '%s' not found in database '%s' or not carbon fileformat",
@@ -122,17 +102,9 @@ object CarbonPlanHelper {
       sparkSession: SparkSession
   ): Seq[SparkPlan] = {
     val alterTableDropColumnModel = dropColumnCommand.alterTableDropColumnModel
-    val carbonTable = CarbonEnv.getCarbonTable(alterTableDropColumnModel.databaseName,
-      alterTableDropColumnModel.tableName)(sparkSession)
-    if (carbonTable != null && carbonTable.isFileLevelFormat) {
-      throw new MalformedCarbonCommandException(
-        "Unsupported alter operation on Carbon external fileformat table")
-    } else if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
-      throw new MalformedCarbonCommandException(
-        "Unsupported operation on non transactional table")
-    } else {
-      ExecutedCommandExec(dropColumnCommand) :: Nil
-    }
+    requireTransactionalTable(alterTableDropColumnModel.databaseName,
+      alterTableDropColumnModel.tableName, sparkSession)
+    ExecutedCommandExec(dropColumnCommand) :: Nil
   }
 
   def compact(
@@ -164,6 +136,21 @@ object CarbonPlanHelper {
     val dbOption = tableIdent.database.map(_.toLowerCase)
     val tableIdentifier = TableIdentifier(tableIdent.table.toLowerCase(), dbOption)
     sparkSession.sessionState.catalog.tableExists(tableIdentifier)
+  }
+
+  /**
+   * only carbon transaction table support: drop column, add column, change column
+   */
+  def requireTransactionalTable(databaseName: Option[String], tableName: String,
+      sparkSession: SparkSession): Unit = {
+    val carbonTable = CarbonEnv.getCarbonTable(databaseName, tableName)(sparkSession)
+    if (carbonTable != null && carbonTable.isFileLevelFormat) {
+      throw new MalformedCarbonCommandException(
+        "Unsupported alter operation on Carbon external fileformat table")
+    } else if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
+      throw new MalformedCarbonCommandException(
+        "Unsupported operation on non transactional table")
+    }
   }
 
   def validateCarbonTable(

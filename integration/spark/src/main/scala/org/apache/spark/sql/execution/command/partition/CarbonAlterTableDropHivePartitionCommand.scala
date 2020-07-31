@@ -64,6 +64,12 @@ case class CarbonAlterTableDropHivePartitionCommand(
   var carbonPartitionsTobeDropped : util.List[PartitionSpec] = _
   var table: CarbonTable = _
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+  lazy val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
+    LockUsage.COMPACTION_LOCK,
+    LockUsage.DELETE_SEGMENT_LOCK,
+    LockUsage.DROP_TABLE_LOCK,
+    LockUsage.CLEAN_FILES_LOCK,
+    LockUsage.ALTER_PARTITION_LOCK)
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
@@ -72,12 +78,6 @@ case class CarbonAlterTableDropHivePartitionCommand(
     if (table.isHivePartitionTable) {
       var locks = List.empty[ICarbonLock]
       try {
-        val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
-          LockUsage.COMPACTION_LOCK,
-          LockUsage.DELETE_SEGMENT_LOCK,
-          LockUsage.DROP_TABLE_LOCK,
-          LockUsage.CLEAN_FILES_LOCK,
-          LockUsage.ALTER_PARTITION_LOCK)
         locks = AlterTableUtil.validateTableAndAcquireLock(
           table.getDatabaseName,
           table.getTableName,
@@ -148,12 +148,6 @@ case class CarbonAlterTableDropHivePartitionCommand(
     var locks = List.empty[ICarbonLock]
     val uniqueId = System.currentTimeMillis().toString
     try {
-      val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
-        LockUsage.COMPACTION_LOCK,
-        LockUsage.DELETE_SEGMENT_LOCK,
-        LockUsage.DROP_TABLE_LOCK,
-        LockUsage.CLEAN_FILES_LOCK,
-        LockUsage.ALTER_PARTITION_LOCK)
       locks = AlterTableUtil.validateTableAndAcquireLock(
         table.getDatabaseName,
         table.getTableName,

@@ -78,7 +78,6 @@ class AlterTableColumnRenameEventListener extends OperationEventListener with Lo
         val carbonColumns = carbonTable
           .getCreateOrderColumn.asScala
           .filter(!_.isInvisible)
-        val carbonColumn = carbonColumns.filter(_.getColName.equalsIgnoreCase(oldColumnName))
         var indexTablesToRenameColumn: Seq[String] = Seq.empty
         val secondaryIndexMap =
           carbonTable.getIndexesMap.get(IndexType.SI.getIndexProviderName)

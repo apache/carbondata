@@ -83,14 +83,13 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
               val indexCarbonTable = metastore
                 .lookupRelation(Some(carbonLoadModel.getDatabaseName),
                   secondaryIndex.indexName)(sQLContext
-                  .sparkSession).asInstanceOf[CarbonRelation].carbonTable
+                  .sparkSession).carbonTable
 
-              val validSegments: mutable.Buffer[Segment] = CarbonDataMergerUtil.getValidSegmentList(
-                carbonMainTable).asScala
-              val validSegmentIds: mutable.Buffer[String] = mutable.Buffer[String]()
-              validSegments.foreach { segment =>
-                validSegmentIds += segment.getSegmentNo
-              }
+              val validSegmentIds =
+                CarbonDataMergerUtil
+                  .getValidSegmentList(carbonMainTable)
+                  .asScala
+                  .map(_.getSegmentNo)
               // Just launch job to merge index for all index tables
               CarbonMergeFilesRDD.mergeIndexFiles(
                 sQLContext.sparkSession,
@@ -102,15 +101,12 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
             }
           }
         } else {
+          val loadsToMerge =
+            alterTableCompactionPostEvent
+              .carbonMergerMapping
+              .validSegments
+              .map(_.getSegmentNo)
           val mergedLoadName = alterTableCompactionPostEvent.mergedLoadName
-          val loadMetadataDetails = new LoadMetadataDetails
-          loadMetadataDetails.setLoadName(mergedLoadName)
-          val validSegments: Array[Segment] = alterTableCompactionPostEvent.carbonMergerMapping
-            .validSegments
-          val loadsToMerge: mutable.Buffer[String] = mutable.Buffer[String]()
-          validSegments.foreach { segment =>
-            loadsToMerge += segment.getSegmentNo
-          }
           val loadName = mergedLoadName
             .substring(mergedLoadName.indexOf(CarbonCommonConstants.LOAD_FOLDER) +
                        CarbonCommonConstants.LOAD_FOLDER.length)
@@ -125,7 +121,7 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
           Compactor.createSecondaryIndexAfterCompaction(sQLContext,
             carbonLoadModel,
             List(loadName),
-            loadsToMerge.toArray,
+            loadsToMerge,
             segmentIdToLoadStartTimeMapping, forceAccessSegment = true)
         }
       case _ =>

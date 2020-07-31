@@ -38,7 +38,7 @@ import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.schema.table.TableInfo
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.util.DataTypeConverterUtil
 import org.apache.carbondata.view.MVManagerInSpark
@@ -308,18 +308,24 @@ object DDLHelper {
       refreshTable.tableIdent.table)
   }
 
+  private def getTable(tableName: TableIdentifier,
+      sparkSession: SparkSession): CarbonTable = {
+    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
+      .lookupRelation(tableName)(sparkSession).carbonTable
+    if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
+      throw new MalformedCarbonCommandException(
+        "Unsupported operation on non transactional table")
+    }
+    carbonTable
+  }
+
   def showPartitions(
       showPartitionsCommand: ShowPartitionsCommand,
       sparkSession: SparkSession
   ): RunnableCommand = {
     val tableName = showPartitionsCommand.tableName
     val cols = showPartitionsCommand.spec
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-      .lookupRelation(tableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
-    if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
-      throw new MalformedCarbonCommandException(
-        "Unsupported operation on non transactional table")
-    }
+    val carbonTable = getTable(tableName, sparkSession)
     if (!carbonTable.isHivePartitionTable) {
       showPartitionsCommand
     } else {
@@ -358,12 +364,7 @@ object DDLHelper {
       sparkSession: SparkSession
   ): CarbonAlterTableSetCommand = {
     val tableName = setProperties.tableName
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-      .lookupRelation(tableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
-    if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
-      throw new MalformedCarbonCommandException(
-        "Unsupported operation on non transactional table")
-    }
+    val carbonTable = getTable(tableName, sparkSession)
 
     // TODO remove this limitation later
     val properties = setProperties.properties

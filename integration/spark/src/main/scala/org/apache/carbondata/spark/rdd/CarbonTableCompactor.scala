@@ -25,10 +25,8 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.{InputSplit, Job}
-import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.sql.{CarbonUtils, SparkSession, SQLContext}
+import org.apache.hadoop.mapreduce.InputSplit
+import org.apache.spark.sql.{CarbonUtils, SQLContext, SparkSession}
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
 import org.apache.spark.sql.execution.command.management.CommonLoadUtils
 import org.apache.spark.sql.util.SparkSQLUtil
@@ -54,6 +52,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
 import org.apache.carbondata.spark.MergeResultImpl
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 import org.apache.carbondata.view.MVManagerInSpark
 
 /**
@@ -469,9 +468,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       carbonTable: CarbonTable,
       segments: Array[Segment]
   ): java.util.List[InputSplit] = {
-    val jobConf = new JobConf(SparkSQLUtil.sessionState(sparkSession).newHadoopConf())
-    SparkHadoopUtil.get.addCredentials(jobConf)
-    val job = Job.getInstance(jobConf)
+    val job = CarbonSparkUtil.createHadoopJob()
     val conf = job.getConfiguration
     CarbonInputFormat.setTablePath(conf, carbonTable.getTablePath)
     CarbonInputFormat.setTableInfo(conf, carbonTable.getTableInfo)

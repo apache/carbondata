@@ -39,6 +39,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat}
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 /**
  * Its a custom implementation which uses carbon's driver pruning feature to prune carbondata files
@@ -133,9 +134,7 @@ case class CarbonFileIndex(
         case None => None
       }
       val format: CarbonFileInputFormat[Object] = new CarbonFileInputFormat[Object]
-      val jobConf = new JobConf(hadoopConf)
-      SparkHadoopUtil.get.addCredentials(jobConf)
-      val splits = format.getSplits(Job.getInstance(jobConf))
+      val splits = format.getSplits(CarbonSparkUtil.createHadoopJob(hadoopConf))
         .asInstanceOf[util.List[CarbonInputSplit]].asScala
       val prunedDirs = directories.map { dir =>
         val files = dir.files

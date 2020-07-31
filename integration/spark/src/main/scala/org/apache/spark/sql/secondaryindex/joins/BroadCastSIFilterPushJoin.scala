@@ -32,7 +32,7 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Alias, And, Attribute, AttributeReference, BindReferences, Expression, In, Literal}
+import org.apache.spark.sql.catalyst.expressions.{Alias, And, Attribute, AttributeReference, BindReferences, Expression, In, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.JoinType
 import org.apache.spark.sql.execution.{BinaryExecNode, ProjectExec, RowDataSourceScanExec, SparkPlan}
 import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, BuildSide, HashJoin}
@@ -56,6 +56,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.indexserver.IndexServer
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 case class BroadCastSIFilterPushJoin(
     leftKeys: Seq[Expression],
@@ -81,24 +82,14 @@ case class BroadCastSIFilterPushJoin(
     Array.empty[Segment]
   }
 
-  val secondaryIndexRDD: Seq[RDD[InternalRow]] = buildPlan.collect {
+  lazy val secondaryIndexRDD: Seq[RDD[InternalRow]] = buildPlan.collect {
     case batchData: CarbonDataSourceScan =>
       batchData.rdd
     case rowData: RowDataSourceScanExec =>
       rowData.rdd
   }
 
-  private lazy val (input: Array[InternalRow], inputCopy: Array[InternalRow]) = {
-    val numBuildRows = buildSide match {
-      case BuildLeft => longMetric("numLeftRows")
-      case BuildRight => longMetric("numRightRows")
-    }
-    val secondaryIndexRDD = buildPlan.collect {
-      case batchData: CarbonDataSourceScan =>
-        batchData.rdd
-      case rowData: RowDataSourceScanExec =>
-        rowData.rdd
-    }
+  private lazy val inputCopy: Array[InternalRow] = {
     if (partitions.nonEmpty && secondaryIndexRDD.nonEmpty) {
       secondaryIndexRDD.foreach {
         case value: CarbonScanRDD[InternalRow] =>
@@ -116,17 +107,17 @@ case class BroadCastSIFilterPushJoin(
     // If the partitions that are recognized from the main table are empty then no need to
     // execute the SI plan.
     if (partitions.nonEmpty) {
-      val input: Array[InternalRow] = buildPlan.execute.map(_.copy()).collect()
-      val inputCopy: Array[InternalRow] = input.clone()
-      (input, inputCopy)
+      buildPlan.execute.map(_.copy()).collect().clone()
     } else {
-      (Array.empty[InternalRow], Array.empty[InternalRow])
+      Array.empty[InternalRow]
     }
   }
+
   val carbonScan: SparkPlan = buildSide match {
     case BuildLeft => right
     case BuildRight => left
   }
+
   val mainTableRDD: Option[RDD[InternalRow]] = carbonScan.collectFirst {
     case batchData: CarbonDataSourceScan =>
       batchData.rdd
@@ -211,30 +202,25 @@ object BroadCastSIFilterPushJoin {
         resolveAlias(leftKeys)
     }
 
+    def matchScan(projectList: Seq[NamedExpression]): Boolean = {
+      filterKey.isDefined && (isIndexTable || projectList.exists(x =>
+        x.name.equalsIgnoreCase(filterKey.get.name) &&
+        x.exprId.id == filterKey.get.exprId.id &&
+        x.exprId.jvmId.equals(filterKey.get.exprId.jvmId)))
+    }
+
     val tableScan = carbonScan.collectFirst {
       case ProjectExec(projectList, batchData: CarbonDataSourceScan)
-        if (filterKey.isDefined && (isIndexTable || projectList.exists(x =>
-          x.name.equalsIgnoreCase(filterKey.get.name) &&
-          x.exprId.id == filterKey.get.exprId.id &&
-          x.exprId.jvmId.equals(filterKey.get.exprId.jvmId)))) =>
+        if matchScan(projectList) =>
         batchData
       case ProjectExec(projectList, rowData: RowDataSourceScanExec)
-        if (filterKey.isDefined && (isIndexTable || projectList.exists(x =>
-          x.name.equalsIgnoreCase(filterKey.get.name) &&
-          x.exprId.id == filterKey.get.exprId.id &&
-          x.exprId.jvmId.equals(filterKey.get.exprId.jvmId)))) =>
+        if matchScan(projectList) =>
         rowData
       case batchData: CarbonDataSourceScan
-        if (filterKey.isDefined && (isIndexTable || batchData.output.attrs.exists(x =>
-          x.name.equalsIgnoreCase(filterKey.get.name) &&
-          x.exprId.id == filterKey.get.exprId.id &&
-          x.exprId.jvmId.equals(filterKey.get.exprId.jvmId)))) =>
+        if matchScan(batchData.output.attrs) =>
         batchData
       case rowData: RowDataSourceScanExec
-        if (filterKey.isDefined && (isIndexTable || rowData.output.exists(x =>
-          x.name.equalsIgnoreCase(filterKey.get.name) &&
-          x.exprId.id == filterKey.get.exprId.id &&
-          x.exprId.jvmId.equals(filterKey.get.exprId.jvmId)))) =>
+        if matchScan(rowData.output) =>
         rowData
     }
     val configuredFilterRecordSize = CarbonProperties.getInstance.getProperty(
@@ -424,10 +410,7 @@ object BroadCastSIFilterPushJoin {
    * @return Array of valid segments
    */
   def getFilteredSegments(carbonScanRdd: CarbonScanRDD[InternalRow]): Array[Segment] = {
-    val conf = new Configuration()
-    val jobConf = new JobConf(conf)
-    SparkHadoopUtil.get.addCredentials(jobConf)
-    val job = Job.getInstance(jobConf)
+    val job = CarbonSparkUtil.createHadoopJob()
     val format = carbonScanRdd.prepareInputFormatForDriver(job.getConfiguration)
     val startTime = System.currentTimeMillis()
     val segmentsToAccess = getFilteredSegments(job, format).asScala.toArray
