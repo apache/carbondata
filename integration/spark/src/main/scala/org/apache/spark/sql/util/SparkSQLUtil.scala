@@ -28,7 +28,7 @@ import org.apache.spark.sql.catalyst.analysis.EliminateView
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap, AttributeSeq, NamedExpression}
 import org.apache.spark.sql.catalyst.optimizer.{CheckCartesianProducts, EliminateOuterJoin, NullPropagation, PullupCorrelatedPredicates, RemoveRedundantAliases, ReorderJoin}
 import org.apache.spark.sql.catalyst.plans.{logical, QueryPlan}
-import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, LogicalPlan, Statistics}
+import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, Command, LogicalPlan, Statistics, Union}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.internal.{SessionState, SQLConf}
@@ -175,5 +175,17 @@ object SparkSQLUtil {
       outputMetrics.setBytesWritten(dataLoadMetrics.getNumOutputBytes)
       outputMetrics.setRecordsWritten(dataLoadMetrics.getNumOutputRows)
     }
+  }
+
+  def isCommand(logicalPlan: LogicalPlan): Boolean = logicalPlan match {
+    case _: Command => true
+    case Union(children) if children.forall(_.isInstanceOf[Command]) => true
+    case _ => false
+  }
+
+  def isRelation(className: String): Boolean = {
+    className.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
+    className.equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
+    className.equals("org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")
   }
 }

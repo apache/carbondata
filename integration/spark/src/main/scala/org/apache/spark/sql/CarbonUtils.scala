@@ -17,80 +17,41 @@
 
 package org.apache.spark.sql
 
-import java.util.concurrent.atomic.AtomicLong
-
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.execution.QueryExecution
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
-import org.apache.spark.sql.profiler.{Profiler, SQLStart}
 
 import org.apache.carbondata.core.util.{CarbonSessionInfo, ThreadLocalSessionInfo}
 
 object CarbonUtils {
 
-  private val statementId = new AtomicLong(0)
-
   private[sql] val threadStatementId = new ThreadLocal[Long]
 
-  private def withProfiler(sparkSession: SparkSession,
-      sqlText: String,
-      generateDF: (QueryExecution, SQLStart) => DataFrame): DataFrame = {
-    val sse = SQLStart(sqlText, CarbonUtils.statementId.getAndIncrement())
-    CarbonUtils.threadStatementId.set(sse.statementId)
-    sse.startTime = System.currentTimeMillis()
-
-    try {
-      val logicalPlan = sparkSession.sessionState.sqlParser.parsePlan(sqlText)
-      sse.parseEnd = System.currentTimeMillis()
-
-      val qe = sparkSession.sessionState.executePlan(logicalPlan)
-      qe.assertAnalyzed()
-      sse.isCommand = qe.analyzed match {
-        case c: Command => true
-        case u @ Union(children) if children.forall(_.isInstanceOf[Command]) => true
-        case _ => false
-      }
-      sse.analyzerEnd = System.currentTimeMillis()
-      generateDF(qe, sse)
-    } finally {
-      Profiler.invokeIfEnable {
-        if (sse.isCommand) {
-          sse.endTime = System.currentTimeMillis()
-          Profiler.send(sse)
-        } else {
-          Profiler.addStatementMessage(sse.statementId, sse)
-        }
-      }
+  /**
+   * set CarbonSessionInfo of ThreadLocal
+   * @param f change CarbonSessionInfo
+   */
+  private def threadSet(f: CarbonSessionInfo => Unit): Unit = {
+    var currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (currentThreadSessionInfo == null) {
+      currentThreadSessionInfo = new CarbonSessionInfo()
+    } else {
+      currentThreadSessionInfo = currentThreadSessionInfo.clone()
     }
+    f(currentThreadSessionInfo)
+    ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
   }
 
   def threadSet(key: String, value: String): Unit = {
-    var currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
-    if (currentThreadSessionInfo == null) {
-      currentThreadSessionInfo = new CarbonSessionInfo()
+    threadSet { carbonSessionInfo =>
+      CarbonSetCommand.validateAndSetValue(carbonSessionInfo.getThreadParams, key, value)
     }
-    else {
-      currentThreadSessionInfo = currentThreadSessionInfo.clone()
-    }
-    val threadParams = currentThreadSessionInfo.getThreadParams
-    CarbonSetCommand.validateAndSetValue(threadParams, key, value)
-    ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
   }
 
-
   def threadSet(key: String, value: Object): Unit = {
-    var currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
-    if (currentThreadSessionInfo == null) {
-      currentThreadSessionInfo = new CarbonSessionInfo()
-    }
-    else {
-      currentThreadSessionInfo = currentThreadSessionInfo.clone()
-    }
-    currentThreadSessionInfo.getThreadParams.setExtraInfo(key, value)
-    ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
+    threadSet(_.getThreadParams.setExtraInfo(key, value))
   }
 
   def threadUnset(key: String): Unit = {

@@ -38,7 +38,7 @@ import org.apache.carbondata.core.index.dev.expr.IndexInputSplitWrapper
 import org.apache.carbondata.core.indexstore.{ExtendedBlocklet, ExtendedBlockletWrapper}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonThreadFactory}
 import org.apache.carbondata.spark.rdd.CarbonRDD
-import org.apache.carbondata.spark.util.CarbonScalaUtil
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonSparkUtil}
 
 class IndexRDDPartition(rddId: Int,
     idx: Int,
@@ -70,9 +70,6 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
       id, TaskType.MAP, split.index, 0)
     val attemptContext = new TaskAttemptContextImpl(FileFactory.getConfiguration, attemptId)
     val inputSplits = split.asInstanceOf[IndexRDDPartition].inputSplit
-    val executorIP = s"${ SparkEnv.get.blockManager.blockManagerId.host }_${
-      SparkEnv.get.blockManager.blockManagerId.executorId
-    }"
     if (indexInputFormat.isJobToClearIndexes) {
       // if job is to clear indexes just clear indexes from cache and pass empty iterator
       IndexStoreManager.getInstance().clearInvalidIndex(indexInputFormat.getCarbonTable,
@@ -159,7 +156,7 @@ private[indexserver] class DistributedPruneRDD(@transient private val ss: SparkS
   }
 
   override protected def internalGetPartitions: Array[Partition] = {
-    val job = Job.getInstance(FileFactory.getConfiguration)
+    val job = CarbonSparkUtil.createHadoopJob()
     val splits = indexInputFormat.getSplits(job).asScala
     val isDistributedPruningEnabled = CarbonProperties.getInstance()
       .isDistributedPruningEnabled(indexInputFormat.getCarbonTable.getDatabaseName,

@@ -53,6 +53,7 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.FailureCauses
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 /**
  * This command will merge the data of source dataset to target dataset backed by carbon table.
@@ -262,7 +263,6 @@ case class CarbonMergeDataSetCommand(
       projections: Seq[Seq[MergeProjection]],
       targetSchema: StructType,
       stats: Stats) = {
-    val conf = SparkSQLUtil.sessionState(sparkSession).newHadoopConf()
     val frameCols = frame.queryExecution.analyzed.output
     val status = frameCols.length - 1
     val tupleId = frameCols.zipWithIndex
@@ -270,7 +270,7 @@ case class CarbonMergeDataSetCommand(
     val insertedRows = stats.insertedRows
     val updatedRows = stats.updatedRows
     val deletedRows = stats.deletedRows
-    val job = Job.getInstance(conf)
+    val job = CarbonSparkUtil.createHadoopJob()
     job.setOutputKeyClass(classOf[Void])
     job.setOutputValueClass(classOf[InternalRow])
     val uuid = UUID.randomUUID.toString
@@ -539,13 +539,6 @@ case class CarbonMergeDataSetCommand(
           null
         }
     }.filter(_ != null)
-  }
-
-  private def collectCarbonRelation(plan: LogicalPlan): Seq[CarbonDatasourceHadoopRelation] = {
-    plan collect {
-      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-    }
   }
 
   private def getInsertHistoryStatus(mergeMatches: MergeDataSetMatches) = {

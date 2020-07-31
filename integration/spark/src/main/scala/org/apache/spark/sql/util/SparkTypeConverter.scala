@@ -91,7 +91,7 @@ object SparkTypeConverter {
     }
   }
 
-  def getArrayChildren(table: CarbonTable, dimName: String): String = {
+  def getArrayChildrenSeq(table: CarbonTable, dimName: String): Seq[String] = {
     table.getChildren(dimName).asScala.map(childDim => {
       childDim.getDataType.getName.toLowerCase match {
         case "array" => s"array<${ getArrayChildren(table, childDim.getColName) }>"
@@ -99,7 +99,11 @@ object SparkTypeConverter {
         case "map" => s"map<${ getMapChildren(table, childDim.getColName) }>"
         case dType => addDecimalScaleAndPrecision(childDim, dType)
       }
-    }).mkString(",")
+    })
+  }
+
+  def getArrayChildren(table: CarbonTable, dimName: String): String = {
+    getArrayChildrenSeq(table, dimName).mkString(",")
   }
 
   def getStructChildren(table: CarbonTable, dimName: String): String = {
@@ -128,15 +132,7 @@ object SparkTypeConverter {
       // and stored as Array<Struct<String, String>> in the actual data storage. So while parsing
       // the map dataType we can ignore the struct child and directly get the children of struct
       // which are actual children of map
-      val structChildren = table.getChildren(childDim.getColName).asScala
-      structChildren.map { structChild =>
-        structChild.getDataType.getName.toLowerCase match {
-          case "array" => s"array<${ getArrayChildren(table, structChild.getColName) }>"
-          case "struct" => s"struct<${ getStructChildren(table, structChild.getColName) }>"
-          case "map" => s"map<${ getMapChildren(table, structChild.getColName) }>"
-          case dType => addDecimalScaleAndPrecision(structChild, dType)
-        }
-      }
+      getArrayChildrenSeq(table, childDim.getColName)
     }.mkString(",")
   }
 

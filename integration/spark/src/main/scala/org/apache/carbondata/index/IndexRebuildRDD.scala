@@ -18,18 +18,14 @@
 package org.apache.carbondata.index
 
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.{Job, TaskAttemptID, TaskType}
+import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{CarbonInputMetrics, Partition, TaskContext}
-import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.Decimal
 
@@ -53,9 +49,11 @@ import org.apache.carbondata.events.{BuildIndexPostExecutionEvent, BuildIndexPre
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection, CarbonRecordReader}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.index.bloom.DataConvertUtil
 import org.apache.carbondata.spark.{RefreshResult, RefreshResultImpl}
 import org.apache.carbondata.spark.rdd.{CarbonRDDWithTableInfo, CarbonSparkPartition}
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 
 /**
@@ -264,10 +262,7 @@ class IndexRebuildRDD[K, V](
   extends CarbonRDDWithTableInfo[(K, V)](session, Nil, tableInfo.serialize()) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
-  private val jobTrackerId: String = {
-    val formatter = new SimpleDateFormat("yyyyMMddHHmm")
-    formatter.format(new util.Date())
-  }
+  private val jobTrackerId = CarbonInputFormatUtil.createJobTrackerID()
 
   private var readCommittedScope: ReadCommittedScope = _
 
@@ -408,10 +403,7 @@ class IndexRebuildRDD[K, V](
     if (!indexSchema.isIndex) {
       throw new UnsupportedOperationException
     }
-    val conf = FileFactory.getConfiguration
-    val jobConf = new JobConf(conf)
-    SparkHadoopUtil.get.addCredentials(jobConf)
-    val job = Job.getInstance(jobConf)
+    val job = CarbonSparkUtil.createHadoopJob()
     job.getConfiguration.set("query.id", queryId)
 
     val format = new CarbonTableInputFormat[Object]

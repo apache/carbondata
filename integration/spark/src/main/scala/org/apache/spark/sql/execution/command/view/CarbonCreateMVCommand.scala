@@ -95,19 +95,8 @@ case class CarbonCreateMVCommand(
       CreateMVPreExecutionEvent(session, systemDirectoryPath, identifier),
       operationContext)
 
-    val catalogFactory = new MVCatalogFactory[MVSchemaWrapper] {
-      override def newCatalog(): MVCatalog[MVSchemaWrapper] = {
-        new MVCatalogInSpark(session)
-      }
-    }
-
     // get mv catalog
-    var viewCatalog = viewManager.getCatalog(catalogFactory, false)
-      .asInstanceOf[MVCatalogInSpark]
-    if (!viewCatalog.session.equals(session)) {
-      viewCatalog = viewManager.getCatalog(catalogFactory, true)
-        .asInstanceOf[MVCatalogInSpark]
-    }
+    val viewCatalog = MVManagerInSpark.getOrReloadMVCatalog(session)
     val schema = doCreate(session, identifier, viewManager, viewCatalog)
 
     try {
@@ -417,9 +406,9 @@ case class CarbonCreateMVCommand(
   }
 
   private def getViewColumns(
-                              relatedTableColumns: Array[String],
-                              fieldsMap: scala.collection.mutable.LinkedHashMap[Field, MVField],
-                              viewSchema: Seq[Field]) = {
+      relatedTableColumns: Array[String],
+      fieldsMap: scala.collection.mutable.LinkedHashMap[Field, MVField],
+      viewSchema: Seq[Field]) = {
     val viewColumns = relatedTableColumns.flatMap(
       relatedTableColumn =>
         viewSchema.collect {
@@ -722,26 +711,13 @@ case class CarbonCreateMVCommand(
       fieldsMap: scala.collection.mutable.LinkedHashMap[Field, MVField],
       viewSchema: Seq[Field],
       viewProperties: mutable.Map[String, String]): Unit = {
-    var viewTableOrder = Seq[String]()
-    val relatedTableOrder = relatedTable.getSortColumns.asScala
-    val relatedTableProperties =
-      relatedTable.getTableInfo.getFactTable.getTableProperties.asScala
-    relatedTableOrder.foreach(
-      relatedTableField =>
-        viewSchema.filter(
-          viewField =>
-            fieldsMap(viewField).aggregateFunction.isEmpty &&
-            fieldsMap(viewField).relatedFieldList.size == 1 &&
-            fieldsMap(viewField).relatedFieldList.head.fieldName.equalsIgnoreCase(
-                relatedTableField))
-          .map(viewField => viewTableOrder :+= viewField.column))
+    val sortColumns = relatedTable.getSortColumns.toArray(new Array[String](0))
+    val viewTableOrder = getViewColumns(sortColumns, fieldsMap, viewSchema)
     if (viewTableOrder.nonEmpty) {
       viewProperties.put(CarbonCommonConstants.SORT_COLUMNS, viewTableOrder.mkString(","))
     }
-    val sortScope = relatedTableProperties.get("sort_scope")
-    if (sortScope.isDefined) {
-      viewProperties.put("sort_scope", sortScope.get)
-    }
+    val relatedTableProperties = relatedTable.getTableInfo.getFactTable.getTableProperties.asScala
+    relatedTableProperties.get("sort_scope").foreach(x => viewProperties.put("sort_scope", x))
     viewProperties
       .put(CarbonCommonConstants.TABLE_BLOCKSIZE, relatedTable.getBlockSizeInMB.toString)
     viewProperties.put(CarbonCommonConstants.FLAT_FOLDER,

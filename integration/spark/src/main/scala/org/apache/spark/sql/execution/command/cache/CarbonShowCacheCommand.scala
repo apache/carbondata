@@ -98,35 +98,27 @@ case class CarbonShowCacheCommand(showExecutorCache: Boolean,
       /**
        * Assemble result for table
        */
+      Checker.validateTableExists(tableIdentifier.get.database,
+        tableIdentifier.get.table, sparkSession)
       val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier.get)(sparkSession)
-      Checker
-        .validateTableExists(tableIdentifier.get.database, tableIdentifier.get.table, sparkSession)
       val numberOfIndexFiles = CacheUtil.getAllIndexFiles(carbonTable)(sparkSession).size
-      val driverRawResults = getTableCacheFromDriver(sparkSession, carbonTable, numberOfIndexFiles)
-      val indexRawResults = if (CarbonProperties.getInstance().isDistributedPruningEnabled
-      (tableIdentifier.get.database.getOrElse(sparkSession.catalog.currentDatabase),
-        tableIdentifier.get.table)) {
+      val driverCache = getTableCacheFromDriver(sparkSession, carbonTable, numberOfIndexFiles)
+      val serverCache = if (CarbonProperties.getInstance().isDistributedPruningEnabled(
+        carbonTable.getDatabaseName, carbonTable.getTableName)) {
         getTableCacheFromIndexServer(carbonTable,
           numberOfIndexFiles)(showExecutorCache)(sparkSession)
-      } else { Seq() }
-      val result = driverRawResults.slice(0, 1) ++
-                   driverRawResults.drop(1).map { row =>
-                     Row(row.get(0), row.getLong(1) + row.getLong(2), row.get(3))
-                   }
-      val serverResults = indexRawResults.slice(0, 1) ++
-                          indexRawResults.drop(1).map { row =>
-                            Row(row.get(0), row.getLong(1) + row.getLong(2), row.get(3))
-                          }
-      result.map {
-        row =>
-          Row(row.get(0), bytesToDisplaySize(row.getLong(1)), row.get(2), "DRIVER")
-      } ++ (serverResults match {
-        case Nil => Seq()
-        case list =>
-          list.map {
-          row => Row(row.get(0), bytesToDisplaySize(row.getLong(1)), row.get(2), "INDEX SERVER")
+      } else {
+        Seq.empty[Row]
+      }
+      Seq(driverCache -> "DRIVER", serverCache -> "INDEX SERVER").flatMap { case (cache, loc) =>
+        cache.zipWithIndex.map { case (row, index) =>
+          if (index == 0) {
+            Row(row.get(0), bytesToDisplaySize(row.getLong(1)), row.get(2), loc)
+          } else {
+            Row(row.get(0), bytesToDisplaySize(row.getLong(1) + row.getLong(2)), row.get(3), loc)
+          }
         }
-      })
+      }
     }
   }
 

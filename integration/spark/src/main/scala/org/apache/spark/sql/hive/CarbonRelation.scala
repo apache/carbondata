@@ -117,36 +117,31 @@ case class CarbonRelation(
 
     // convert each column to Attribute
     (otherColumns ++= partitionColumns).filter(!_.isInvisible).map { column: CarbonColumn =>
-      if (column.isDimension()) {
-        val output: DataType = column.getDataType.getName.toLowerCase match {
+      val dataTypeStatement = if (column.isDimension()) {
+        column.getDataType.getName.toLowerCase match {
           case "array" =>
-            CarbonMetastoreTypes.toDataType(
-              s"array<${SparkTypeConverter.getArrayChildren(carbonTable, column.getColName)}>")
+            s"array<${ SparkTypeConverter.getArrayChildren(carbonTable, column.getColName) }>"
           case "struct" =>
-            CarbonMetastoreTypes.toDataType(
-              s"struct<${SparkTypeConverter.getStructChildren(carbonTable, column.getColName)}>")
+            s"struct<${ SparkTypeConverter.getStructChildren(carbonTable, column.getColName) }>"
           case "map" =>
-            CarbonMetastoreTypes.toDataType(
-              s"map<${SparkTypeConverter.getMapChildren(carbonTable, column.getColName)}>")
+            s"map<${ SparkTypeConverter.getMapChildren(carbonTable, column.getColName) }>"
           case dType =>
-            val dataType = SparkTypeConverter.addDecimalScaleAndPrecision(column, dType)
-            CarbonMetastoreTypes.toDataType(dataType)
+            SparkTypeConverter.addDecimalScaleAndPrecision(column, dType)
         }
-        CarbonToSparkAdapter.createAttributeReference(
-          column.getColName, output, nullable = true, getColumnMetaData(column),
-          NamedExpression.newExprId, qualifier = Option(tableName + "." + column.getColName))
       } else {
-        val output = CarbonMetastoreTypes.toDataType {
-          column.getDataType.getName.toLowerCase match {
-            case "decimal" => "decimal(" + column.getColumnSchema.getPrecision + "," + column
-              .getColumnSchema.getScale + ")"
-            case others => others
-          }
+        column.getDataType.getName.toLowerCase match {
+          case "decimal" => "decimal(" + column.getColumnSchema.getPrecision + "," + column
+            .getColumnSchema.getScale + ")"
+          case others => others
         }
-        CarbonToSparkAdapter.createAttributeReference(
-          column.getColName, output, nullable = true, getColumnMetaData(column),
-          NamedExpression.newExprId, qualifier = Option(tableName + "." + column.getColName))
       }
+      CarbonToSparkAdapter.createAttributeReference(
+        column.getColName,
+        CarbonMetastoreTypes.toDataType(dataTypeStatement),
+        nullable = true,
+        getColumnMetaData(column),
+        NamedExpression.newExprId,
+        qualifier = Option(tableName + "." + column.getColName))
     }
   }
 

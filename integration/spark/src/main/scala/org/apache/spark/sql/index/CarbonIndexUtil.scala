@@ -38,7 +38,7 @@ import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.index.IndexType
-import org.apache.carbondata.core.metadata.schema.indextable.{IndexMetadata, IndexTableInfo}
+import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
@@ -311,11 +311,9 @@ object CarbonIndexUtil {
         segmentIdToLoadStartTimeMapping)
     }
 
-    val segmentToSegmentTimestampMap: java.util.Map[String, String] = new java.util
-    .HashMap[String, String]()
     SecondaryIndexCreator
       .createSecondaryIndex(secondaryIndexModel,
-        segmentToSegmentTimestampMap,
+        new java.util.HashMap[String, String](),
         indexTable,
         forceAccessSegment = true,
         isCompactionCall = false,
@@ -346,24 +344,13 @@ object CarbonIndexUtil {
           AlterTableUtil.releaseLocks(locks.asScala.toList)
           throw e
       }
-      val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
       val lowerCasePropertiesMap: mutable.Map[String, String] = mutable.Map.empty
       // convert all the keys to lower case
       properties.foreach { entry =>
         lowerCasePropertiesMap.put(entry._1.toLowerCase, entry._2)
       }
-
-      val thriftTableInfo: TableInfo = metaStore.getThriftTableInfo(carbonTable)
-      val schemaConverter = new ThriftWrapperSchemaConverterImpl()
-      val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
-        thriftTableInfo,
-        dbName,
-        tableName,
-        carbonTable.getTablePath)
-      val thriftTable = schemaConverter.fromWrapperToExternalTableInfo(
-        wrapperTableInfo, dbName, tableName)
-      val tblPropertiesMap: mutable.Map[String, String] =
-        thriftTable.fact_table.getTableProperties.asScala
+      val thriftTable = AlterTableUtil.readLatestTableSchema(carbonTable)(sparkSession)
+      val tblPropertiesMap = thriftTable.fact_table.getTableProperties.asScala
 
       // This overrides/add the newProperties of thriftTable
       lowerCasePropertiesMap.foreach { property =>

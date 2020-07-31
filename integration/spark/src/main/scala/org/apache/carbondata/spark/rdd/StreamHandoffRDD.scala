@@ -17,9 +17,8 @@
 
 package org.apache.carbondata.spark.rdd
 
-import java.text.SimpleDateFormat
 import java.util
-import java.util.{Date, UUID}
+import java.util.UUID
 
 import org.apache.hadoop.mapreduce.{Job, RecordReader, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
@@ -42,12 +41,13 @@ import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.stream.CarbonStreamInputFormat
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostStatusUpdateEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CompactionResultSortProcessor, CompactionType}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.{HandoffResult, HandoffResultImpl}
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CarbonSparkUtil, CommonUtil}
 
 
 /**
@@ -101,10 +101,7 @@ class StreamHandoffRDD[K, V](
     carbonLoadModel: CarbonLoadModel,
     handOffSegmentId: String) extends CarbonRDD[(K, V)](ss, Nil) {
 
-  private val jobTrackerId: String = {
-    val formatter = new SimpleDateFormat("yyyyMMddHHmm")
-    formatter.format(new Date())
-  }
+  private val jobTrackerId = CarbonInputFormatUtil.createJobTrackerID()
 
   override def internalCompute(
       split: Partition,
@@ -192,7 +189,7 @@ class StreamHandoffRDD[K, V](
    * get the partitions of the handoff segment
    */
   override protected def internalGetPartitions: Array[Partition] = {
-    val job = Job.getInstance(FileFactory.getConfiguration)
+    val job = CarbonSparkUtil.createHadoopJob()
     val inputFormat = new CarbonTableInputFormat[Array[Object]]()
     val segmentList = new util.ArrayList[Segment](1)
     segmentList.add(Segment.toSegment(handOffSegmentId, null))

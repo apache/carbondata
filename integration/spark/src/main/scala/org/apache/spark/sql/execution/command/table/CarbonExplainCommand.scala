@@ -22,6 +22,7 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan, Union}
 import org.apache.spark.sql.execution.command.{ExplainCommand, MetadataCommand}
 import org.apache.spark.sql.types.StringType
+import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.core.profiler.ExplainCollector
 
@@ -34,12 +35,7 @@ case class CarbonExplainCommand(
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val explainCommand = child.asInstanceOf[ExplainCommand]
     setAuditInfo(Map("query" -> explainCommand.logicalPlan.simpleString))
-    val isCommand = explainCommand.logicalPlan match {
-      case _: Command => true
-      case Union(children) if children.forall(_.isInstanceOf[Command]) => true
-      case _ => false
-    }
-
+    val isCommand = SparkSQLUtil.isCommand(explainCommand.logicalPlan)
     if (explainCommand.logicalPlan.isStreaming || isCommand) {
       explainCommand.run(sparkSession)
     } else {

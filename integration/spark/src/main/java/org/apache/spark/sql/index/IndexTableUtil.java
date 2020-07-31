@@ -17,13 +17,17 @@
 
 package org.apache.spark.sql.index;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.index.IndexType;
+import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata;
 import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
 import org.apache.spark.sql.secondaryindex.exception.IndexTableExistException;
 
@@ -62,5 +66,22 @@ public class IndexTableUtil {
     }
     indexTables.add(newIndexTable);
     return IndexTableInfo.toGson(indexTables.toArray(new IndexTableInfo[0]));
+  }
+
+  public static void addIndexInfoToParentTable(CarbonTable parentTable, String indexProviderName,
+      String indexName, Map<String, String> indexProperties) throws IOException {
+    // set index information in parent table
+    IndexMetadata parentIndexMetadata;
+    Map<String, String> tableProperties =
+        parentTable.getTableInfo().getFactTable().getTableProperties();
+    if (tableProperties.get(parentTable.getCarbonTableIdentifier().getTableId()) != null) {
+      parentIndexMetadata = parentTable.getIndexMetadata();
+    } else {
+      parentIndexMetadata = new IndexMetadata(false);
+    }
+    parentIndexMetadata.addIndexTableInfo(indexProviderName, indexName, indexProperties);
+
+    tableProperties.put(parentTable.getCarbonTableIdentifier().getTableId(),
+        parentIndexMetadata.serialize());
   }
 }

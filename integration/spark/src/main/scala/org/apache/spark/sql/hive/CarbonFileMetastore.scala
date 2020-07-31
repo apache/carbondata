@@ -32,6 +32,7 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 import org.apache.spark.sql.sources.BaseRelation
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -51,7 +52,6 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.events.{CreateCarbonRelationPostEvent, LookupRelationPostEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 object MatchLogicalRelation {
   def unapply(
@@ -180,8 +180,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
 
   override def lookupRelation(tableIdentifier: TableIdentifier)
     (sparkSession: SparkSession): CarbonRelation = {
-    val database = tableIdentifier.database.getOrElse(
-      sparkSession.catalog.currentDatabase)
+    val database = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
     val relation = sparkSession.sessionState.catalog.lookupRelation(tableIdentifier) match {
       case SubqueryAlias(_,
       MatchLogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _)) =>
@@ -189,11 +188,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       case MatchLogicalRelation(
       carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
         carbonDatasourceHadoopRelation.carbonRelation
-      case SubqueryAlias(_, c)
-        if (c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
-            c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
-            c.getClass.getName.equals(
-              "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")) =>
+      case SubqueryAlias(_, c) if SparkSQLUtil.isRelation(c.getClass.getName) =>
         val catalogTable =
           CarbonReflectionUtils.getFieldOfCatalogTable("tableMeta", c).asInstanceOf[CatalogTable]
         if (!CarbonSource.isCarbonDataSource(catalogTable)) {
@@ -225,11 +220,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val tableIdentifier = new TableIdentifier(tableName, dbName)
     val rawRelation = sparkSession.sessionState.catalog.lookupRelation(tableIdentifier)
     rawRelation match {
-      case SubqueryAlias(_, c)
-        if (c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
-            c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
-            c.getClass.getName.equals(
-              "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")) =>
+      case SubqueryAlias(_, c) if SparkSQLUtil.isRelation(c.getClass.getName) =>
         var catalogTable =
           CarbonReflectionUtils.getFieldOfCatalogTable("tableMeta", c).asInstanceOf[CatalogTable]
         // Here, catalogTable will have spatial column in schema which is used to build carbon
@@ -542,12 +533,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       case MatchLogicalRelation(
       carbonDataSourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
         carbonDataSourceHadoopRelation
-      case SubqueryAlias(_, c)
-        if (c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
-            c.getClass.getName
-              .equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
-            c.getClass.getName.equals(
-              "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")) =>
+      case SubqueryAlias(_, c) if SparkSQLUtil.isRelation(c.getClass.getName) =>
         val catalogTable =
           CarbonReflectionUtils.getFieldOfCatalogTable("tableMeta", c).asInstanceOf[CatalogTable]
         if (!CarbonSource.isCarbonDataSource(catalogTable)) {

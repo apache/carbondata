@@ -188,7 +188,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           // validate column_meta_cache property if defined
           validateColumnMetaCacheAndCacheLevelProperties(
             table.database, indexName.toLowerCase, tableColumns, properties)
-          validateColumnCompressorProperty(
+          CarbonSparkSqlParserUtil.validateColumnCompressorProperty(
             properties.getOrElse(CarbonCommonConstants.COMPRESSOR, null))
           CarbonCreateSecondaryIndexCommand(
             indexModel,
@@ -628,18 +628,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       CommonUtil.validateCacheLevel(
         tableProperties(CarbonCommonConstants.CACHE_LEVEL),
         tableProperties)
-    }
-  }
-
-  private def validateColumnCompressorProperty(columnCompressor: String): Unit = {
-    // Add validation for column compressor when creating index table
-    try {
-      if (null != columnCompressor) {
-        CompressorFactory.getInstance().getCompressor(columnCompressor)
-      }
-    } catch {
-      case ex: UnsupportedOperationException =>
-        throw new InvalidConfigurationException(ex.getMessage)
     }
   }
 

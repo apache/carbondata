@@ -80,16 +80,21 @@ object Profiler {
     Profiler.setupEndpointRef.send(message)
   }
 
+  private def addMessage(map: util.HashMap[Long, ArrayBuffer[ProfilerMessage]],
+      id: Long, message: ProfilerMessage): Unit = {
+    val profilerMessages = map.get(id)
+    if (profilerMessages == null) {
+      map.put(id, ArrayBuffer[ProfilerMessage](message))
+    } else {
+      profilerMessages += message
+    }
+  }
+
   /**
    * add message to statementMap
    */
   def addStatementMessage(statementId: Long, message: ProfilerMessage): Unit = this.synchronized {
-    val profilerMessages = statementMap.get(statementId)
-    if (profilerMessages == null) {
-      statementMap.put(statementId, ArrayBuffer[ProfilerMessage](message))
-    } else {
-      profilerMessages += message
-    }
+    addMessage(statementMap, statementId, message)
   }
 
   /**
@@ -103,12 +108,7 @@ object Profiler {
    * add message to executionMap
    */
   def addExecutionMessage(executionId: Long, message: ProfilerMessage): Unit = this.synchronized {
-    val profilerMessages = executionMap.get(executionId)
-    if (profilerMessages == null) {
-      executionMap.put(executionId, ArrayBuffer[ProfilerMessage](message))
-    } else {
-      profilerMessages += message
-    }
+    addMessage(executionMap, executionId, message)
   }
 
   /**

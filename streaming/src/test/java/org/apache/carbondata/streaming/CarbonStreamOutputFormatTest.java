@@ -52,7 +52,7 @@ public class CarbonStreamOutputFormatTest extends TestCase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    JobID jobId = CarbonInputFormatUtil.getJobId(new Date(), 0);
+    JobID jobId = CarbonInputFormatUtil.getJobId(0);
     TaskID taskId = new TaskID(jobId, TaskType.MAP, 0);
     taskAttemptId = new TaskAttemptID(taskId, 0);
 

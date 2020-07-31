@@ -49,7 +49,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
  * Utility class to validate the create table and CTAS command,
@@ -112,12 +112,17 @@ object CarbonSparkSqlParserUtil {
     // Add validation for column compressor when create table
     val columnCompressor = tableInfo.getFactTable.getTableProperties.get(
       CarbonCommonConstants.COMPRESSOR)
+    validateColumnCompressorProperty(columnCompressor)
+  }
+
+  def validateColumnCompressorProperty(columnCompressor: String): Unit = {
+    // Add validation for column compressor when creating index table
     try {
       if (null != columnCompressor) {
         CompressorFactory.getInstance().getCompressor(columnCompressor)
       }
     } catch {
-      case ex : UnsupportedOperationException =>
+      case ex: UnsupportedOperationException =>
         throw new InvalidConfigurationException(ex.getMessage)
     }
   }
@@ -265,7 +270,6 @@ object CarbonSparkSqlParserUtil {
           if (cols.getDataType == DataTypes.STRING || cols.getDataType == DataTypes.VARCHAR) {
             cols.setLocalDictColumn(true)
           }
-          allColumns.set(i, cols)
         }
         table.getFactTable.setListOfColumns(allColumns)
       }
@@ -657,11 +661,7 @@ object CarbonSparkSqlParserUtil {
       dataType: String,
       values: Option[List[(Int, Int)]]
   ): CarbonAlterTableColRenameDataTypeChangeCommand = {
-    var isColumnRename = false
-    // If both the column name are not same, then its a call for column rename
-    if (!columnName.equalsIgnoreCase(columnNameCopy)) {
-      isColumnRename = true
-    }
+    val isColumnRename = !columnName.equalsIgnoreCase(columnNameCopy)
     val alterTableColRenameAndDataTypeChangeModel =
       AlterTableDataTypeChangeModel(
         CarbonParserUtil.parseDataType(dataType.toLowerCase,

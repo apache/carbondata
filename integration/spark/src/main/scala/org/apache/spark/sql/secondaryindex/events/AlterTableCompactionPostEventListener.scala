@@ -60,14 +60,6 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
           .equalsIgnoreCase(CompactionType.SEGMENT_INDEX.toString)) {
           val carbonMainTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
           val indexProviderMap = carbonMainTable.getIndexesMap
-          val loadFolderDetailsArray = SegmentStatusManager
-            .readLoadMetadata(carbonMainTable.getMetadataPath)
-          val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String, String]()
-          loadFolderDetailsArray.foreach(loadMetadataDetails => {
-            segmentFileNameMap
-              .put(loadMetadataDetails.getLoadName,
-                String.valueOf(loadMetadataDetails.getLoadStartTime))
-          })
           if (!indexProviderMap.isEmpty &&
               null != indexProviderMap.get(IndexType.SI.getIndexProviderName)) {
             val iterator = indexProviderMap.get(IndexType.SI.getIndexProviderName)
@@ -83,34 +75,30 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
               val indexCarbonTable = metastore
                 .lookupRelation(Some(carbonLoadModel.getDatabaseName),
                   secondaryIndex.indexName)(sQLContext
-                  .sparkSession).asInstanceOf[CarbonRelation].carbonTable
+                  .sparkSession).carbonTable
 
-              val validSegments: mutable.Buffer[Segment] = CarbonDataMergerUtil.getValidSegmentList(
-                carbonMainTable).asScala
-              val validSegmentIds: mutable.Buffer[String] = mutable.Buffer[String]()
-              validSegments.foreach { segment =>
-                validSegmentIds += segment.getSegmentNo
-              }
+              val validSegmentIds =
+                CarbonDataMergerUtil
+                  .getValidSegmentList(carbonMainTable)
+                  .asScala
+                  .map(_.getSegmentNo)
               // Just launch job to merge index for all index tables
               CarbonMergeFilesRDD.mergeIndexFiles(
                 sQLContext.sparkSession,
                 validSegmentIds,
-                segmentFileNameMap,
+                SegmentStatusManager.mapSegmentToStartTime(carbonMainTable),
                 indexCarbonTable.getTablePath,
                 indexCarbonTable,
                 mergeIndexProperty = true)
             }
           }
         } else {
+          val loadsToMerge =
+            alterTableCompactionPostEvent
+              .carbonMergerMapping
+              .validSegments
+              .map(_.getSegmentNo)
           val mergedLoadName = alterTableCompactionPostEvent.mergedLoadName
-          val loadMetadataDetails = new LoadMetadataDetails
-          loadMetadataDetails.setLoadName(mergedLoadName)
-          val validSegments: Array[Segment] = alterTableCompactionPostEvent.carbonMergerMapping
-            .validSegments
-          val loadsToMerge: mutable.Buffer[String] = mutable.Buffer[String]()
-          validSegments.foreach { segment =>
-            loadsToMerge += segment.getSegmentNo
-          }
           val loadName = mergedLoadName
             .substring(mergedLoadName.indexOf(CarbonCommonConstants.LOAD_FOLDER) +
                        CarbonCommonConstants.LOAD_FOLDER.length)
@@ -125,7 +113,7 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
           Compactor.createSecondaryIndexAfterCompaction(sQLContext,
             carbonLoadModel,
             List(loadName),
-            loadsToMerge.toArray,
+            loadsToMerge,
             segmentIdToLoadStartTimeMapping, forceAccessSegment = true)
         }
       case _ =>

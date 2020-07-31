@@ -187,8 +187,6 @@ case class CarbonCreateTableCommand(
               case _: Exception => // No operation
             }
             throw e
-            val msg = s"Create table'$tableName' in database '$dbName' failed"
-            throwMetadataException(dbName, tableName, s"$msg, ${e.getMessage}")
         }
       }
       val createTablePostExecutionEvent: CreateTablePostExecutionEvent =

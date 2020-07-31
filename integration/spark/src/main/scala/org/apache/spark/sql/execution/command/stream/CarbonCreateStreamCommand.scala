@@ -192,45 +192,32 @@ case class CarbonCreateStreamCommand(
       case plan: LogicalPlan => plan
     }
 
+    // replace attribute with the collected ExprId
+    def replaceAttribute(expr: Expression): Expression = expr transform {
+      case attribute: Attribute =>
+        val exprId: ExprId = aliasMap.get(attribute.name)
+        if (exprId != null) {
+          if (exprId.id != attribute.exprId.id) {
+            AttributeReference(
+              attribute.name, attribute.dataType, attribute.nullable,
+              attribute.metadata)(exprId, attribute.qualifier)
+          } else {
+            attribute
+          }
+        } else {
+          attribute
+        }
+    }
+
     // transform the stream plan to replace all attribute with the collected ExprId
     val transFormedPlan = updatedQuery transform {
-      case p@Project(projectList: Seq[NamedExpression], child) =>
+      case Project(projectList: Seq[NamedExpression], child) =>
         val newProjectList = projectList.map { expr =>
-          val newExpr = expr transform {
-            case attribute: Attribute =>
-              val exprId: ExprId = aliasMap.get(attribute.name)
-              if (exprId != null) {
-                if (exprId.id != attribute.exprId.id) {
-                  AttributeReference(
-                    attribute.name, attribute.dataType, attribute.nullable,
-                    attribute.metadata)(exprId, attribute.qualifier)
-                } else {
-                  attribute
-                }
-              } else {
-                attribute
-              }
-          }
-          newExpr.asInstanceOf[NamedExpression]
+          replaceAttribute(expr).asInstanceOf[NamedExpression]
         }
         Project(newProjectList, child)
-      case f@Filter(condition: Expression, child) =>
-        val newCondition = condition transform {
-          case attribute: Attribute =>
-            val exprId: ExprId = aliasMap.get(attribute.name)
-            if (exprId != null) {
-              if (exprId.id != attribute.exprId.id) {
-                AttributeReference(
-                  attribute.name, attribute.dataType, attribute.nullable,
-                  attribute.metadata)(exprId, attribute.qualifier)
-              } else {
-                attribute
-              }
-            } else {
-              attribute
-            }
-        }
-        Filter(newCondition, child)
+      case Filter(condition: Expression, child) =>
+        Filter(replaceAttribute(condition), child)
     }
     transFormedPlan
   }

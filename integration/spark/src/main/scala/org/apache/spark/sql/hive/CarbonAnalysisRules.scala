@@ -43,6 +43,12 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
   private lazy val optimizer = sparkSession.sessionState.optimizer
   private lazy val analyzer = sparkSession.sessionState.analyzer
 
+  private def projectionWithTupleId(alias: Option[String]): Seq[UnresolvedAlias] = {
+    val tupleId = UnresolvedAlias(Alias(UnresolvedFunction("getTupleId",
+      Seq.empty, isDistinct = false), "tupleId")())
+    Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
+  }
+
   private def processUpdateQuery(
       table: UnresolvedRelation,
       columns: List[String],
@@ -59,23 +65,9 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
     var addedTupleId = false
 
     def prepareTargetRelation(relation: UnresolvedRelation): SubqueryAlias = {
-      val tupleId = UnresolvedAlias(Alias(UnresolvedFunction("getTupleId",
-        Seq.empty, isDistinct = false), "tupleId")())
-
-      val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
+      val projList = projectionWithTupleId(alias)
       val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
-      if (carbonTable != null) {
-        val viewManager = MVManagerInSpark.get(sparkSession)
-        val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
-        if (!viewSchemas.isEmpty) {
-          viewSchemas.asScala.foreach { schema =>
-            viewManager.setStatus(
-              schema.getIdentifier,
-              MVStatus.DISABLED
-            )
-          }
-        }
-      }
+      MVManagerInSpark.disableMVOnTable(sparkSession, carbonTable)
       val tableRelation =
         alias match {
           case Some(_) =>
@@ -194,26 +186,14 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
       case relation: UnresolvedRelation
         if table.tableIdentifier == relation.tableIdentifier && !addedTupleId =>
         addedTupleId = true
-        val tupleId = UnresolvedAlias(Alias(UnresolvedFunction("getTupleId",
-          Seq.empty, isDistinct = false), "tupleId")())
-
-        val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
+        val projList = projectionWithTupleId(alias)
         val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
         if (carbonTable != null) {
           if (carbonTable.isMV) {
             throw new UnsupportedOperationException(
               "Delete operation is not supported for indexSchema table")
           }
-          val viewManager = MVManagerInSpark.get(sparkSession)
-          val viewSchemas = viewManager.getSchemasOnTable(carbonTable)
-          if (!viewSchemas.isEmpty) {
-            viewSchemas.asScala.foreach { schema =>
-              viewManager.setStatus(
-                schema.getIdentifier,
-                MVStatus.DISABLED
-              )
-            }
-          }
+          MVManagerInSpark.disableMVOnTable(sparkSession, carbonTable)
         }
         // include tuple id in subquery
         alias match {

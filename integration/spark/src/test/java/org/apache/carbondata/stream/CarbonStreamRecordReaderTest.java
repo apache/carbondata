@@ -64,7 +64,7 @@ public class CarbonStreamRecordReaderTest extends TestCase {
         tablePath,
         new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
 
-    JobID jobId = CarbonInputFormatUtil.getJobId(new Date(), 0);
+    JobID jobId = CarbonInputFormatUtil.getJobId(0);
     TaskID taskId = new TaskID(jobId, TaskType.MAP, 0);
     taskAttemptId = new TaskAttemptID(taskId, 0);
 

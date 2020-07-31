@@ -50,7 +50,7 @@ import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.rdd.StreamHandoffRDD
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CarbonSparkUtil, CommonUtil}
 import org.apache.carbondata.streaming.{CarbonStreamException, CarbonStreamOutputFormat}
 import org.apache.carbondata.streaming.index.StreamFileIndex
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
@@ -240,10 +240,10 @@ object CarbonAppendableStreamSink {
       msrDataTypes: Array[DataType]): Unit = {
 
     // create job
-    val job = Job.getInstance(hadoopConf)
+    val job = CarbonSparkUtil.createHadoopJob(hadoopConf)
     job.setOutputKeyClass(classOf[Void])
     job.setOutputValueClass(classOf[InternalRow])
-    val jobId = CarbonInputFormatUtil.getJobId(new Date, batchId.toInt)
+    val jobId = CarbonInputFormatUtil.getJobId(batchId.toInt)
     job.setJobID(jobId)
 
     val description = WriteDataFileJobDescription(
@@ -317,7 +317,7 @@ object CarbonAppendableStreamSink {
       rowSchema: StructType,
       isVarcharTypeMapping: Array[Boolean]): (TaskCommitMessage, StreamFileIndex) = {
 
-    val jobId = CarbonInputFormatUtil.getJobId(new Date, sparkStageId)
+    val jobId = CarbonInputFormatUtil.getJobId(sparkStageId)
     val taskId = new TaskID(jobId, TaskType.MAP, sparkPartitionId)
     val taskAttemptId = new TaskAttemptID(taskId, sparkAttemptNumber)
 

@@ -29,16 +29,15 @@ import org.apache.spark.sql.execution.command.management.RefreshCarbonTableComma
 import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableAddHivePartitionCommand, CarbonAlterTableDropHivePartitionCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableColRenameDataTypeChangeCommand, CarbonAlterTableRenameCommand, CarbonAlterTableSetCommand, CarbonAlterTableUnsetCommand}
 import org.apache.spark.sql.execution.datasources.{LogicalRelation, RefreshResource, RefreshTable}
-import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand
 import org.apache.spark.sql.parser.{CarbonSpark2SqlParser, CarbonSparkSqlParserUtil}
 import org.apache.spark.sql.types.DecimalType
+import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.schema.table.TableInfo
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.util.DataTypeConverterUtil
 import org.apache.carbondata.view.MVManagerInSpark
@@ -49,8 +48,7 @@ object DDLHelper {
 
   def createDatabase(
       createDatabaseCommand: CreateDatabaseCommand,
-      sparkSession: SparkSession
-  ): CreateDatabaseCommand = {
+      sparkSession: SparkSession): CreateDatabaseCommand = {
     ThreadLocalSessionInfo
       .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
     if (!EnvHelper.isLegacy(sparkSession)) {
@@ -69,9 +67,7 @@ object DDLHelper {
 
   private def createDataSourceTable(
       table: CatalogTable,
-      ignoreIfExists: Boolean,
-      sparkSession: SparkSession
-  ): CarbonCreateDataSourceTableCommand = {
+      ignoreIfExists: Boolean): CarbonCreateDataSourceTableCommand = {
     CarbonCreateDataSourceTableCommand(table, ignoreIfExists)
   }
 
@@ -79,64 +75,50 @@ object DDLHelper {
    * create table stored as carbondata
    */
   def createHiveTable(
-      createTableCommand: CreateTableCommand,
-      sparkSession: SparkSession
-  ): CarbonCreateDataSourceTableCommand = {
+      createTableCommand: CreateTableCommand): CarbonCreateDataSourceTableCommand = {
     createDataSourceTable(
       createTableCommand.table.copy(provider = Option("carbondata")),
-      createTableCommand.ignoreIfExists,
-      sparkSession
-    )
+      createTableCommand.ignoreIfExists)
   }
 
   /**
    * create table using carbondata
    */
   def createDataSourceTable(
-      createTable: org.apache.spark.sql.execution.datasources.CreateTable,
-      sparkSession: SparkSession
+      createTable: org.apache.spark.sql.execution.datasources.CreateTable
   ): CarbonCreateDataSourceTableCommand = {
     createDataSourceTable(
       createTable.tableDesc,
-      createTable.mode == SaveMode.Ignore,
-      sparkSession
-    )
+      createTable.mode == SaveMode.Ignore)
   }
 
   /**
    * create table using carbondata
    */
   def createDataSourceTable(
-      createTable: CreateDataSourceTableCommand,
-      sparkSession: SparkSession
-  ): CarbonCreateDataSourceTableCommand = {
+      createTable: CreateDataSourceTableCommand): CarbonCreateDataSourceTableCommand = {
     createDataSourceTable(
       createTable.table,
-      createTable.ignoreIfExists,
-      sparkSession
-    )
+      createTable.ignoreIfExists)
   }
 
   def createTableAsSelect(
       tableDesc: CatalogTable,
       query: LogicalPlan,
       mode: SaveMode,
-      sparkSession: SparkSession
-  ): CarbonCreateTableAsSelectCommand = {
+      sparkSession: SparkSession): CarbonCreateTableAsSelectCommand = {
     val tableInfo: TableInfo =
       CarbonSparkSqlParserUtil
         .buildTableInfoFromCatalogTable(
           tableDesc,
           mode == SaveMode.Ignore,
           sparkSession,
-          Some(query)
-        )
+          Some(query))
     CarbonCreateTableAsSelectCommand(
       tableInfo,
       query,
       mode == SaveMode.Ignore,
-      tableDesc.storage.locationUri.map(CatalogUtils.URIToString)
-    )
+      tableDesc.storage.locationUri.map(CatalogUtils.URIToString))
   }
 
   /**
@@ -144,24 +126,18 @@ object DDLHelper {
    */
   def createHiveTableAsSelect(
       ctas: CreateHiveTableAsSelectCommand,
-      sparkSession: SparkSession
-  ): CarbonCreateTableAsSelectCommand = {
+      sparkSession: SparkSession): CarbonCreateTableAsSelectCommand = {
     createTableAsSelect(
       ctas.tableDesc,
       ctas.query,
       ctas.mode,
-      sparkSession
-    )
+      sparkSession)
   }
 
   def createCarbonFileHiveTableAsSelect(
-      ctas: CreateHiveTableAsSelectCommand,
-      sparkSession: SparkSession
-  ): CreateDataSourceTableAsSelectCommand = {
+      ctas: CreateHiveTableAsSelectCommand): CreateDataSourceTableAsSelectCommand = {
     CreateDataSourceTableAsSelectCommand(
-      ctas.tableDesc.copy(
-        provider = Option("carbon")
-      ),
+      ctas.tableDesc.copy(provider = Option("carbon")),
       ctas.mode,
       ctas.query,
       ctas.outputColumnNames
@@ -175,8 +151,7 @@ object DDLHelper {
       table: CatalogTable,
       query: LogicalPlan,
       mode: SaveMode,
-      sparkSession: SparkSession
-  ) : CarbonCreateTableAsSelectCommand = {
+      sparkSession: SparkSession): CarbonCreateTableAsSelectCommand = {
     createTableAsSelect(
       table,
       query,
@@ -185,9 +160,7 @@ object DDLHelper {
     )
   }
 
-  def renameTable(
-      renameTableCommand: AlterTableRenameCommand
-  ): CarbonAlterTableRenameCommand = {
+  def renameTable(renameTableCommand: AlterTableRenameCommand): CarbonAlterTableRenameCommand = {
     val dbOption = renameTableCommand.oldName.database.map(_.toLowerCase)
     val tableIdentifier =
       TableIdentifier(renameTableCommand.oldName.table.toLowerCase(), dbOption)
@@ -197,8 +170,7 @@ object DDLHelper {
 
   def addColumns(
       addColumnsCommand: AlterTableAddColumnsCommand,
-      sparkSession: SparkSession
-  ): CarbonAlterTableAddColumnCommand = {
+      sparkSession: SparkSession): CarbonAlterTableAddColumnCommand = {
     val table = addColumnsCommand.table
     val carbonTable = CarbonEnv.getCarbonTable(
       CarbonParserUtil.convertDbNameToLowerCase(table.database),
@@ -232,8 +204,7 @@ object DDLHelper {
 
   def changeColumn(
       changeColumnCommand: AlterTableChangeColumnCommand,
-      sparkSession: SparkSession
-  ): CarbonAlterTableColRenameDataTypeChangeCommand = {
+      sparkSession: SparkSession): CarbonAlterTableColRenameDataTypeChangeCommand = {
     val tableName = changeColumnCommand.tableName
     val carbonTable = CarbonEnv.getCarbonTable(
       CarbonParserUtil.convertDbNameToLowerCase(tableName.database),
@@ -247,11 +218,7 @@ object DDLHelper {
     } else {
       val columnName = changeColumnCommand.columnName
       val newColumn = changeColumnCommand.newColumn
-      var isColumnRename = false
-      // If both the column name are not same, then its a call for column rename
-      if (!columnName.equalsIgnoreCase(newColumn.name)) {
-        isColumnRename = true
-      }
+      val isColumnRename = !columnName.equalsIgnoreCase(newColumn.name)
       val values = newColumn.dataType match {
         case d: DecimalType => Some(List((d.precision, d.scale)))
         case _ => None
@@ -280,8 +247,7 @@ object DDLHelper {
 
   def describeTable(
       describeCommand: DescribeTableCommand,
-      sparkSession: SparkSession
-  ): RunnableCommand = {
+      sparkSession: SparkSession): RunnableCommand = {
     val isFormatted: Boolean = if (sparkSession.version.startsWith("2.1")) {
       CarbonReflectionUtils.getDescribeTableFormattedField(describeCommand)
     } else {
@@ -300,26 +266,28 @@ object DDLHelper {
     }
   }
 
-  def refreshTable(
-      refreshTable: RefreshTable
-  ): RefreshCarbonTableCommand = {
+  def refreshTable(refreshTable: RefreshTable): RefreshCarbonTableCommand = {
     RefreshCarbonTableCommand(
       refreshTable.tableIdent.database,
       refreshTable.tableIdent.table)
   }
 
-  def showPartitions(
-      showPartitionsCommand: ShowPartitionsCommand,
-      sparkSession: SparkSession
-  ): RunnableCommand = {
-    val tableName = showPartitionsCommand.tableName
-    val cols = showPartitionsCommand.spec
+  private def getTable(tableName: TableIdentifier, sparkSession: SparkSession): CarbonTable = {
     val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-      .lookupRelation(tableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
+      .lookupRelation(tableName)(sparkSession).carbonTable
     if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException(
         "Unsupported operation on non transactional table")
     }
+    carbonTable
+  }
+
+  def showPartitions(
+      showPartitionsCommand: ShowPartitionsCommand,
+      sparkSession: SparkSession): RunnableCommand = {
+    val tableName = showPartitionsCommand.tableName
+    val cols = showPartitionsCommand.spec
+    val carbonTable = getTable(tableName, sparkSession)
     if (!carbonTable.isHivePartitionTable) {
       showPartitionsCommand
     } else {
@@ -343,8 +311,7 @@ object DDLHelper {
 
   def dropPartition(
       dropPartitionCommand: AlterTableDropPartitionCommand,
-      sparkSession: SparkSession
-  ): CarbonAlterTableDropHivePartitionCommand = {
+      sparkSession: SparkSession): CarbonAlterTableDropHivePartitionCommand = {
     CarbonAlterTableDropHivePartitionCommand(
       dropPartitionCommand.tableName,
       dropPartitionCommand.specs,
@@ -355,15 +322,9 @@ object DDLHelper {
 
   def setProperties(
       setProperties: AlterTableSetPropertiesCommand,
-      sparkSession: SparkSession
-  ): CarbonAlterTableSetCommand = {
+      sparkSession: SparkSession): CarbonAlterTableSetCommand = {
     val tableName = setProperties.tableName
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-      .lookupRelation(tableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
-    if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
-      throw new MalformedCarbonCommandException(
-        "Unsupported operation on non transactional table")
-    }
+    val carbonTable = getTable(tableName, sparkSession)
 
     // TODO remove this limitation later
     val properties = setProperties.properties
@@ -394,8 +355,7 @@ object DDLHelper {
   }
 
   def unsetProperties(
-      unsetPropertiesCommand: AlterTableUnsetPropertiesCommand
-  ): CarbonAlterTableUnsetCommand = {
+      unsetPropertiesCommand: AlterTableUnsetPropertiesCommand): CarbonAlterTableUnsetCommand = {
     // TODO remove this limitation later
     if (unsetPropertiesCommand.propKeys.exists(_.equalsIgnoreCase("streaming"))) {
       throw new MalformedCarbonCommandException(
@@ -408,9 +368,7 @@ object DDLHelper {
       unsetPropertiesCommand.isView)
   }
 
-  def refreshResource(
-      refreshResource: RefreshResource
-  ): Seq[SparkPlan] = {
+  def refreshResource(refreshResource: RefreshResource): Seq[SparkPlan] = {
     try {
       val plan = new CarbonSpark2SqlParser().parse(s"REFRESH ${ refreshResource.path }")
       ExecutedCommandExec(plan.asInstanceOf[RunnableCommand]) :: Nil
@@ -421,21 +379,14 @@ object DDLHelper {
     }
   }
 
-  def explain(
-      explainCommand: ExplainCommand,
-      sparkSession: SparkSession
-  ): Seq[SparkPlan] = {
-    val isCommand = explainCommand.logicalPlan match {
-      case _: Command => true
-      case Union(children) if children.forall(_.isInstanceOf[Command]) => true
-      case _ => false
-    }
+  def explain(explainCommand: ExplainCommand, sparkSession: SparkSession): Seq[SparkPlan] = {
+    val isCommand = SparkSQLUtil.isCommand(explainCommand.logicalPlan)
     if (explainCommand.logicalPlan.isStreaming || isCommand) {
       Nil
     } else {
       val qe = sparkSession.sessionState.executePlan(explainCommand.logicalPlan)
       val hasCarbonTable = qe.analyzed collectFirst {
-        case l: LogicalRelation if (l.relation.isInstanceOf[CarbonDatasourceHadoopRelation]) =>
+        case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
           true
       }
       if (hasCarbonTable.isDefined) {
@@ -446,27 +397,19 @@ object DDLHelper {
     }
   }
 
-  def showTables(
-      showTablesCommand: ShowTablesCommand,
-      sparkSession: SparkSession
-  ): Seq[SparkPlan] = {
+  def showTables(showTablesCommand: ShowTablesCommand): Seq[SparkPlan] = {
     ExecutedCommandExec(CarbonShowTablesCommand(
       showTablesCommand.databaseName,
-      showTablesCommand.tableIdentifierPattern
-    )) :: Nil
+      showTablesCommand.tableIdentifierPattern)) :: Nil
   }
 
   //////////////////////////////////////////////////////////////////////////////////
   // carbon file
   /////////////////////////////////////////////////////////////////////////////////
   def createCarbonFileHiveTable(
-      createTableCommand: CreateTableCommand,
-      sparkSession: SparkSession
-  ): CreateDataSourceTableCommand = {
+      createTableCommand: CreateTableCommand): CreateDataSourceTableCommand = {
     CreateDataSourceTableCommand(
-      createTableCommand.table.copy(
-        provider = Option("carbon")
-      ),
+      createTableCommand.table.copy(provider = Option("carbon")),
       createTableCommand.ignoreIfExists)
   }
 }

@@ -64,14 +64,6 @@ class AlterTableMergeIndexSIEventListener
           LOGGER.info("Acquired the compaction lock for table" +
                       s" ${carbonMainTable.getDatabaseName}.${carbonMainTable.getTableName}")
           val indexProviderMap = carbonMainTable.getIndexesMap
-          val loadFolderDetailsArray = SegmentStatusManager
-            .readLoadMetadata(carbonMainTable.getMetadataPath)
-          val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String, String]()
-          loadFolderDetailsArray.foreach(loadMetadataDetails => {
-            segmentFileNameMap
-              .put(loadMetadataDetails.getLoadName,
-                String.valueOf(loadMetadataDetails.getLoadStartTime))
-          })
           if (!indexProviderMap.isEmpty) {
             if (null != indexProviderMap.get(IndexType.SI.getIndexProviderName)) {
               val secondaryIndexIterator = indexProviderMap
@@ -102,7 +94,7 @@ class AlterTableMergeIndexSIEventListener
                 CarbonMergeFilesRDD.mergeIndexFiles(
                   sparkSession,
                   validSegmentIds,
-                  segmentFileNameMap,
+                  SegmentStatusManager.mapSegmentToStartTime(carbonMainTable),
                   indexCarbonTable.getTablePath,
                   indexCarbonTable,
                   mergeIndexProperty = true)

@@ -173,6 +173,16 @@ object MVHelper {
     fieldsMap
   }
 
+  private def checkComplexDataType(alias: Alias): Unit = {
+    if (alias.child.isInstanceOf[GetMapValue] ||
+        alias.child.isInstanceOf[GetStructField] ||
+        alias.child.isInstanceOf[GetArrayItem]) {
+      throw new UnsupportedOperationException(
+        s"MV is not supported for complex datatype child columns and complex datatype " +
+        s"return types of function :" + alias.child.simpleString)
+    }
+  }
+
   private def getFieldsMapFromProject(
       relationList: Seq[LogicalRelation],
       projectList: Seq[NamedExpression],
@@ -187,12 +197,10 @@ object MVHelper {
         findDuplicateColumns(fieldColumnsMap, reference.sql, columns, false)
         val relation = getRelation(relationList, reference)
         if (null != relation) {
-          val relatedFields: ArrayBuffer[RelatedFieldWrapper] =
-            new ArrayBuffer[RelatedFieldWrapper]()
-          relatedFields += RelatedFieldWrapper(
-              relation.database,
-              relation.identifier.table,
-              reference.name)
+          val relatedFields = Seq(RelatedFieldWrapper(
+            relation.database,
+            relation.identifier.table,
+            reference.name))
           var qualifier: Option[String] = None
           if (reference.qualifier.nonEmpty) {
             qualifier = if (reference.qualifier.headOption.get.startsWith("gen_sub")) {
@@ -219,12 +227,10 @@ object MVHelper {
         findDuplicateColumns(fieldColumnsMap, a.sql, columns, true)
         val relation = getRelation(relationList, reference)
         if (null != relation) {
-          val relatedFields: ArrayBuffer[RelatedFieldWrapper] =
-            new ArrayBuffer[RelatedFieldWrapper]()
-          relatedFields += RelatedFieldWrapper(
+          val relatedFields = Seq(RelatedFieldWrapper(
             relation.database,
             relation.identifier.table,
-            reference.name)
+            reference.name))
           fieldsMap.put(
             newField(
               "",
@@ -238,13 +244,7 @@ object MVHelper {
         }
 
       case alias@Alias(agg: AggregateExpression, _) =>
-        if (alias.child.isInstanceOf[GetMapValue] ||
-            alias.child.isInstanceOf[GetStructField] ||
-            alias.child.isInstanceOf[GetArrayItem]) {
-          throw new UnsupportedOperationException(
-            s"MV is not supported for complex datatype child columns and complex datatype " +
-            s"return types of function :" + alias.child.simpleString)
-        }
+        checkComplexDataType(alias)
         val relatedFields: ArrayBuffer[RelatedFieldWrapper] =
           new ArrayBuffer[RelatedFieldWrapper]()
         val columns = new util.ArrayList[String]()
@@ -272,13 +272,7 @@ object MVHelper {
         )
 
       case alias@Alias(_, _) =>
-        if (alias.child.isInstanceOf[GetMapValue] ||
-            alias.child.isInstanceOf[GetStructField] ||
-            alias.child.isInstanceOf[GetArrayItem]) {
-          throw new UnsupportedOperationException(
-            s"MV is not supported for complex datatype child columns and complex datatype " +
-            s"return types of function :" + alias.child.simpleString)
-        }
+        checkComplexDataType(alias)
         val relatedFields: ArrayBuffer[RelatedFieldWrapper] =
           new ArrayBuffer[RelatedFieldWrapper]()
         val columns = new util.ArrayList[String]()

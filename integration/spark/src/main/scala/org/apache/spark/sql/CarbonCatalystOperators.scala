@@ -101,24 +101,21 @@ object CountStarPlan {
  private def fillCountStarAttribute(
      expr: Expression,
      outputColumns: mutable.MutableList[Attribute]) {
+
+   def fillOutput(alias: Alias, expression: Expression): Unit = expression match {
+       case count: Count if count.children.head.isInstanceOf[Literal] =>
+         outputColumns += alias.toAttribute
+       case _ =>
+   }
+
    expr match {
      case par@Alias(cast: Cast, _) =>
        if (cast.child.isInstanceOf[AggregateExpression]) {
-         val head = cast.child.children.head
-         head match {
-           case count: Count if count.children.head.isInstanceOf[Literal] =>
-             outputColumns += par.toAttribute
-           case _ =>
-         }
+         fillOutput(par, cast.child.children.head)
        }
      case par@Alias(child, _) =>
        if (child.isInstanceOf[AggregateExpression]) {
-         val head = child.children.head
-         head match {
-           case count: Count if count.children.head.isInstanceOf[Literal] =>
-             outputColumns += par.toAttribute
-           case _ =>
-         }
+         fillOutput(par, child.children.head)
        }
    }
  }

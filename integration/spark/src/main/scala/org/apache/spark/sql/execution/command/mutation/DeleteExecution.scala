@@ -51,6 +51,7 @@ import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputForm
 import org.apache.carbondata.processing.exception.MultipleMatchingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.spark.DeleteDeltaResultImpl
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 object DeleteExecution {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -471,8 +472,7 @@ object DeleteExecution {
   private def createCarbonInputFormat(absoluteTableIdentifier: AbsoluteTableIdentifier) :
   (CarbonTableInputFormat[Array[Object]], Job) = {
     val carbonInputFormat = new CarbonTableInputFormat[Array[Object]]()
-    val jobConf: JobConf = new JobConf(FileFactory.getConfiguration)
-    val job: Job = new Job(jobConf)
+    val job: Job = CarbonSparkUtil.createHadoopJob()
     FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getTablePath))
     (carbonInputFormat, job)
   }

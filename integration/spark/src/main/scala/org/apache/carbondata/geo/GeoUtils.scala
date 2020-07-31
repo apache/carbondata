@@ -23,7 +23,6 @@ import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CustomIndex
-import org.apache.carbondata.geo.GeoConstants
 
 object GeoUtils {
   def getGeoHashHandler(tableProperties: mutable.Map[String, String])

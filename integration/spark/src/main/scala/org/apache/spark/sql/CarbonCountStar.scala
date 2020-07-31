@@ -20,10 +20,8 @@ package org.apache.spark.sql
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
-import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions._
@@ -32,7 +30,6 @@ import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.types.StringType
 import org.apache.spark.unsafe.types.UTF8String
 
-import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
@@ -41,6 +38,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.spark.load.DataLoadProcessBuilderOnSpark
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 case class CarbonCountStar(
     attributesRaw: Seq[Attribute],
@@ -94,18 +92,15 @@ case class CarbonCountStar(
     attributesRaw
   }
 
-  private def createCarbonInputFormat(absoluteTableIdentifier: AbsoluteTableIdentifier
+  private def createCarbonInputFormat(
+      absoluteTableIdentifier: AbsoluteTableIdentifier
   ): (Job, CarbonTableInputFormat[Array[Object]]) = {
-    val carbonInputFormat = new CarbonTableInputFormat[Array[Object]]()
-    val jobConf: JobConf = new JobConf(FileFactory.getConfiguration)
-    SparkHadoopUtil.get.addCredentials(jobConf)
-    CarbonInputFormat.setTableInfo(jobConf, carbonTable.getTableInfo)
-    val job = new Job(jobConf)
+    val job = CarbonSparkUtil.createHadoopJob()
+    CarbonInputFormat.setTableInfo(job.getConfiguration, carbonTable.getTableInfo)
     FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getTablePath))
-    CarbonInputFormat
-      .setTransactionalTable(job.getConfiguration,
-        carbonTable.getTableInfo.isTransactionalTable)
+    CarbonInputFormat.setTransactionalTable(job.getConfiguration,
+      carbonTable.getTableInfo.isTransactionalTable)
     CarbonInputFormatUtil.setIndexJobIfConfigured(job.getConfiguration)
-    (job, carbonInputFormat)
+    (job, new CarbonTableInputFormat[Array[Object]]())
   }
 }

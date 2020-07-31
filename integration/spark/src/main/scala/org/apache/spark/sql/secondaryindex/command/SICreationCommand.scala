@@ -318,18 +318,10 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       tableInfo.getFactTable.getTableProperties
         .put(tableInfo.getFactTable.getTableId, indexTableMeta.serialize)
       // set index information in parent table
-      val parentIndexMetadata = if (
-        carbonTable.getTableInfo.getFactTable.getTableProperties
-          .get(carbonTable.getCarbonTableIdentifier.getTableId) != null) {
-        carbonTable.getIndexMetadata
-      } else {
-        new IndexMetadata(false)
-      }
-      parentIndexMetadata.addIndexTableInfo(IndexType.SI.getIndexProviderName,
+      IndexTableUtil.addIndexInfoToParentTable(carbonTable,
+        IndexType.SI.getIndexProviderName,
         indexTableName,
         indexProperties)
-      carbonTable.getTableInfo.getFactTable.getTableProperties
-        .put(carbonTable.getCarbonTableIdentifier.getTableId, parentIndexMetadata.serialize)
 
       val cols = tableInfo.getFactTable.getListOfColumns.asScala.filter(!_.isInvisible)
       val fields = new Array[String](cols.size)

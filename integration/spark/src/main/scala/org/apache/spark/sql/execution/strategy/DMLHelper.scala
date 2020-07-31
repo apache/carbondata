@@ -17,17 +17,13 @@
 
 package org.apache.spark.sql.execution.strategy
 
-import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.command.LoadDataCommand
 import org.apache.spark.sql.execution.command.management.{CarbonInsertIntoHadoopFsRelationCommand, CarbonLoadDataCommand}
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
 import org.apache.spark.sql.parser.CarbonSparkSqlParserUtil
 
 object DMLHelper {
-  def loadData(
-      loadDataCommand: LoadDataCommand,
-      sparkSession: SparkSession
-  ): CarbonLoadDataCommand = {
+  def loadData(loadDataCommand: LoadDataCommand): CarbonLoadDataCommand = {
     val loadOptions = Map.empty[String, String]
     CarbonLoadDataCommand(
       databaseNameOp = loadDataCommand.table.database,
