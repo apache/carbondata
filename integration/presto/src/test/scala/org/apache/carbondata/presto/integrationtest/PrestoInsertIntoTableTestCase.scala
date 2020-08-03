@@ -30,8 +30,8 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
-import org.apache.carbondata.core.metadata.schema.SchemaReader
-import org.apache.carbondata.core.metadata.schema.table.TableSchema
+import org.apache.carbondata.core.metadata.schema.{PartitionInfo, SchemaReader}
+import org.apache.carbondata.core.metadata.schema.table.{TableSchema, TableSchemaBuilder}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -49,6 +49,7 @@ class PrestoInsertIntoTableTestCase
   private val storePath = s"$rootPath/integration/presto/target/store"
   private val prestoServer = new PrestoServer
   private val executorService = Executors.newFixedThreadPool(1)
+  lazy val schemaBuilder = CarbonDataStoreCreator.getSchemaBuilder(Array(6, 1, 8, 6, 5, 3), true)
 
   override def beforeAll: Unit = {
     val map = new util.HashMap[String, String]()
@@ -65,39 +66,7 @@ class PrestoInsertIntoTableTestCase
                 "phonetype varchar, serialname varchar,salary decimal(6,1), bonus decimal(8,6), " +
                 "monthlyBonus decimal(5,3), dob timestamp, shortField smallint, iscurrentemployee" +
                 " boolean) with(format='CARBONDATA') "
-    val schema = CarbonDataStoreCreator.getCarbonTableSchemaForDecimal(getAbsoluteIdentifier(
-      "testdb",
-      "testtable"))
-    createTable(query, "testdb", "testtable", schema)
-  }
-
-  private def createTable(query: String,
-      databaseName: String,
-      tableName: String,
-      customSchema: TableSchema = null): Unit = {
-    prestoServer.execute(s"drop table if exists ${ databaseName }.${ tableName }")
-    prestoServer.execute(query)
-    logger.info("Creating The Carbon Store")
-    val absoluteTableIdentifier: AbsoluteTableIdentifier = getAbsoluteIdentifier(databaseName,
-      tableName)
-    val schema = if (customSchema == null) {
-      CarbonDataStoreCreator.getCarbonTableSchema(absoluteTableIdentifier)
-    } else {
-      customSchema
-    }
-    CarbonDataStoreCreator.createTable(absoluteTableIdentifier,
-      schema, true)
-    logger.info(s"\nCarbon store is created at location: $storePath")
-  }
-
-  private def getAbsoluteIdentifier(dbName: String,
-      tableName: String) = {
-    val absoluteTableIdentifier = AbsoluteTableIdentifier.from(
-      storePath + "/" + dbName + "/" + tableName,
-      new CarbonTableIdentifier(dbName,
-        tableName,
-        UUID.randomUUID().toString))
-    absoluteTableIdentifier
+    PrestoUtil.createTable(prestoServer, query, "testdb", "testtable", schemaBuilder, null)
   }
 
   test("test insert with different storage format names") {
@@ -113,20 +82,23 @@ class PrestoInsertIntoTableTestCase
                  " phonetype varchar, serialname varchar,salary decimal(6,1), bonus decimal(8,6)," +
                  " monthlyBonus decimal(5,3), dob timestamp, shortField smallint, " +
                  "iscurrentemployee boolean) with(format='ORG.APACHE.CARBONDATA.FORMAT') "
-    createTable(query1, "testdb", "testtable")
+    PrestoUtil.createTable(prestoServer, query1, "testdb", "testtable", schemaBuilder, null)
     prestoServer.execute(
       "insert into testdb.testtable values(10, current_date, 'INDIA', 'Chandler', 'qwerty', " +
       "'usn20392',10000.0,16.234567,25.678,timestamp '1994-06-14 05:00:09',smallint '23', true)")
-    createTable(query2, "testdb", "testtable")
+    PrestoUtil.createTable(prestoServer, query2, "testdb", "testtable", schemaBuilder, null)
     prestoServer.execute(
       "insert into testdb.testtable values(10, current_date, 'INDIA', 'Chandler', 'qwerty', " +
       "'usn20392',10000.0,16.234567,25.678,timestamp '1994-06-14 05:00:09',smallint '23', true)")
-    createTable(query3, "testdb", "testtable")
+    PrestoUtil.createTable(prestoServer, query3, "testdb", "testtable", schemaBuilder, null)
     prestoServer.execute(
       "insert into testdb.testtable values(10, current_date, 'INDIA', 'Chandler', 'qwerty', " +
       "'usn20392',10000.0,16.234567,25.678,timestamp '1994-06-14 05:00:09',smallint '23', true)")
-    val absoluteTableIdentifier: AbsoluteTableIdentifier = getAbsoluteIdentifier("testdb",
-      "testtable")
+    prestoServer.execute(
+      "insert into testdb.testtable values(10, current_date, 'INDIA', 'Chandler', 'qwerty', " +
+      "'usn20392',10000.0,16.234567,25.678,timestamp '1994-06-14 05:00:09',smallint '23', true)")
+    val absoluteTableIdentifier: AbsoluteTableIdentifier = PrestoUtil
+      .getAbsoluteIdentifier("testdb", "testtable")
     val carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier)
     val segmentPath = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, "0")
     assert(FileFactory.getCarbonFile(segmentPath).isFileExist)
@@ -139,8 +111,8 @@ class PrestoInsertIntoTableTestCase
     prestoServer.execute(
       "insert into testdb.testtable values(10, current_date, 'INDIA', 'Chandler', 'qwerty', " +
       "'usn20392',10000.0,16.234567,25.678,timestamp '1994-06-14 05:00:09',smallint '23', true)")
-    val absoluteTableIdentifier: AbsoluteTableIdentifier = getAbsoluteIdentifier("testdb",
-      "testtable")
+    val absoluteTableIdentifier: AbsoluteTableIdentifier = PrestoUtil
+      .getAbsoluteIdentifier("testdb", "testtable")
     val carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier)
     val tablePath = carbonTable.getTablePath
     val segment0Path = CarbonTablePath.getSegmentPath(tablePath, "0")
@@ -185,8 +157,8 @@ class PrestoInsertIntoTableTestCase
     prestoServer.execute(
       "insert into testdb.testtable values(10, current_date, 'INDIA', 'Chandler', 'qwerty', " +
       "'usn20392',10000.0,16.234567,25.678,timestamp '1998-12-16 10:12:09',smallint '23', true)")
-    val absoluteTableIdentifier: AbsoluteTableIdentifier = getAbsoluteIdentifier("testdb",
-      "testtable")
+    val absoluteTableIdentifier: AbsoluteTableIdentifier = PrestoUtil
+      .getAbsoluteIdentifier("testdb", "testtable")
     val carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier)
     val segmentFoldersLocation = CarbonTablePath.getPartitionDir(carbonTable.getTablePath)
     assert(FileFactory.getCarbonFile(segmentFoldersLocation).listFiles(false).size() == 8)
@@ -207,8 +179,8 @@ class PrestoInsertIntoTableTestCase
     prestoServer.execute(
       "insert into testdb.testtable values(10, current_date, 'INDIA', 'Chandler', 'qwerty', " +
       "'usn20392',10000.0,16.234567,25.678,timestamp '1994-06-14 05:00:09',smallint '23', true)")
-    val absoluteTableIdentifier: AbsoluteTableIdentifier = getAbsoluteIdentifier("testdb",
-      "testtable")
+    val absoluteTableIdentifier: AbsoluteTableIdentifier = PrestoUtil
+      .getAbsoluteIdentifier("testdb", "testtable")
     val carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier)
     val ssm = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
     ssm.getValidAndInvalidSegments.getValidSegments.asScala.foreach { segment =>
@@ -242,10 +214,8 @@ class PrestoInsertIntoTableTestCase
                 "monthlyBonus decimal(5,3),dob timestamp, shortField smallint, finalSalary " +
                 "double, bigintfield bigint,tinyfield tinyint, iscurrentemployee" +
                 " boolean) with(format='CARBONDATA') "
-    val schema = CarbonDataStoreCreator.getCarbonTableSchemaForAllPrimitive(getAbsoluteIdentifier(
-      "testdb",
-      "testtablealldatatype"))
-    createTable(query, "testdb", "testtablealldatatype", schema)
+    val schemaBuilder = CarbonDataStoreCreator.getCarbonTableSchemaForAllPrimitive
+    PrestoUtil.createTable(prestoServer, query, "testdb", "testtablealldatatype", schemaBuilder, null)
     prestoServer.execute(
       "insert into testdb.testtablealldatatype values(10,date '2020-10-21', 'Chandler',1000.0, " +
       "16.234567,'test_str_0',25.678,timestamp '2019-03-10 18:23:37.0',smallint '-999'," +
@@ -299,4 +269,41 @@ class PrestoInsertIntoTableTestCase
     CarbonUtil.deleteFoldersAndFiles(FileFactory.getCarbonFile(storePath))
     executorService.shutdownNow()
   }
+}
+
+object PrestoUtil {
+
+  private val logger = LogServiceFactory
+    .getLogService(classOf[PrestoAllDataTypeTest].getCanonicalName)
+
+  private val rootPath = new File(this.getClass.getResource("/").getPath
+                                  + "../../../..").getCanonicalPath
+
+  private val storePath = s"$rootPath/integration/presto/target/store"
+
+  def createTable(prestoServer: PrestoServer,
+      query: String,
+      databaseName: String,
+      tableName: String,
+      schemaBuilder: TableSchemaBuilder,
+      partitionInfo: PartitionInfo): Unit = {
+    prestoServer.execute(s"drop table if exists ${ databaseName }.${ tableName }")
+    prestoServer.execute(query)
+    logger.info("Creating The Carbon Store")
+    val absoluteTableIdentifier: AbsoluteTableIdentifier = getAbsoluteIdentifier(databaseName,
+      tableName)
+    CarbonDataStoreCreator.createTable(absoluteTableIdentifier, true, schemaBuilder, partitionInfo)
+    logger.info(s"\nCarbon store is created at location: $storePath")
+  }
+
+  def getAbsoluteIdentifier(dbName: String,
+      tableName: String): AbsoluteTableIdentifier = {
+    val absoluteTableIdentifier = AbsoluteTableIdentifier.from(
+      storePath + "/" + dbName + "/" + tableName,
+      new CarbonTableIdentifier(dbName,
+        tableName,
+        UUID.randomUUID().toString))
+    absoluteTableIdentifier
+  }
+
 }

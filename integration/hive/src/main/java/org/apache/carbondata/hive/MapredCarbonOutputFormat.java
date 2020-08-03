@@ -115,9 +115,20 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getPartitionInfo();
     final int partitionColumn =
         partitionInfo != null ? partitionInfo.getColumnSchemaList().size() : 0;
+    final String finalOutputPath;
     if (carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().isHivePartitionTable()) {
-      carbonLoadModel.getMetrics().addToPartitionPath(finalOutPath.toString());
-      context.getConfiguration().set("carbon.outputformat.writepath", finalOutPath.toString());
+      String[] outputPathSplits = finalOutPath.toString().split("/");
+      StringBuilder partitionDirs = new StringBuilder();
+      for (int i = partitionColumn; i > 0;  i--) {
+        partitionDirs.append(CarbonCommonConstants.FILE_SEPARATOR)
+            .append(outputPathSplits[outputPathSplits.length - i]);
+      }
+      finalOutputPath = carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getTablePath() +
+          partitionDirs;
+      carbonLoadModel.getMetrics().addToPartitionPath(finalOutputPath);
+      context.getConfiguration().set("carbon.outputformat.writepath", finalOutputPath);
+    } else {
+      finalOutputPath = finalOutPath.toString();
     }
     CarbonTableOutputFormat.setLoadModel(jc, carbonLoadModel);
     org.apache.hadoop.mapreduce.RecordWriter<NullWritable, ObjectArrayWritable> re =
@@ -130,7 +141,7 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
           if (isHivePartitionedTable) {
             Object[] actualRow = ((CarbonHiveRow) writable).getData();
             Object[] newData = Arrays.copyOf(actualRow, actualRow.length + partitionColumn);
-            String[] partitionValues = finalOutPath.toString().substring(tablePath.length())
+            String[] partitionValues = finalOutputPath.toString().substring(tablePath.length())
                 .split("/");
             for (int j = 0, i = actualRow.length; j < partitionValues.length; j++) {
               if (partitionValues[j].contains("=")) {
