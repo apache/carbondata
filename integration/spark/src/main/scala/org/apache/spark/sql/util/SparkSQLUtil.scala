@@ -182,4 +182,10 @@ object SparkSQLUtil {
     case Union(children) if children.forall(_.isInstanceOf[Command]) => true
     case _ => false
   }
+
+  def isRelation(className: String): Boolean = {
+    className.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
+    className.equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
+    className.equals("org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")
+  }
 }
