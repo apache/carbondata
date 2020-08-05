@@ -131,7 +131,6 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
 
   test("test materialized view with spatial column") {
     createTable()
-    loadData()
     val exception = intercept[MalformedCarbonCommandException](sql(
       s"CREATE MATERIALIZED VIEW view1 AS SELECT longitude, mygeohash FROM $table1"))
     assert(exception.getMessage.contains(
@@ -141,7 +140,6 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
 
   test("test geo table create index on spatial column") {
     createTable()
-    loadData()
     val exception = intercept[MalformedIndexCommandException](sql(
       s"""
          | CREATE INDEX bloom_index ON TABLE $table1 (mygeohash)
@@ -152,9 +150,8 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
       s"Spatial Index column is not supported, column 'mygeohash' is spatial column"))
   }
 
-  test("test geo table create and load and check describe formatted") {
+  test("test geo table create with spark session and check describe formatted") {
     createTable()
-    loadData()
     // Test if spatial index column is added as a sort column
     val descTable = sql(s"describe formatted $table1").collect
     descTable.find(_.get(0).toString.contains("Sort Scope")) match {
@@ -165,11 +162,42 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
       case Some(row) => assert(row.get(1).toString.contains("mygeohash"))
       case None => assert(false)
     }
+    // Test if spatial index column is added to column schema
+    descTable.find(_.get(0).toString.contains("mygeohash")) match {
+      case Some(row) => assert(row.get(1).toString.contains("bigint"))
+      case None => assert(false)
+    }
+  }
+
+  test("test create geo table with spark session having syntax: using carbondata") {
+    sql(
+      s"""
+         | CREATE TABLE $table1(
+         | timevalue BIGINT,
+         | longitude LONG,
+         | latitude LONG)
+         | using carbondata
+         | options ('SPATIAL_INDEX'='mygeohash',
+         | 'SPATIAL_INDEX.mygeohash.type'='geohash',
+         | 'SPATIAL_INDEX.mygeohash.sourcecolumns'='longitude, latitude',
+         | 'SPATIAL_INDEX.mygeohash.originLatitude'='39.832277',
+         | 'SPATIAL_INDEX.mygeohash.gridSize'='50',
+         | 'SPATIAL_INDEX.mygeohash.minLongitude'='115.811865',
+         | 'SPATIAL_INDEX.mygeohash.maxLongitude'='116.782233',
+         | 'SPATIAL_INDEX.mygeohash.minLatitude'='39.832277',
+         | 'SPATIAL_INDEX.mygeohash.maxLatitude'='40.225281',
+         | 'SPATIAL_INDEX.mygeohash.conversionRatio'='1000000')
+       """.stripMargin)
+    val descTable = sql(s"describe formatted $table1").collect
+    // Test if spatial index column is added to column schema
+    descTable.find(_.get(0).toString.contains("mygeohash")) match {
+      case Some(row) => assert(row.get(1).toString.contains("bigint"))
+      case None => assert(false)
+    }
   }
 
   test("test geo table drop spatial index column") {
     createTable()
-    loadData()
     val exception = intercept[MalformedCarbonCommandException](
       sql(s"alter table $table1 drop columns(mygeohash)"))
     assert(exception.getMessage.contains(
@@ -179,7 +207,6 @@ class GeoTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
 
   test("test geo table alter spatial index column") {
     createTable()
-    loadData()
     val exception = intercept[MalformedCarbonCommandException](
       sql(s"update $table1 set (mygeohash)=(111111) where longitude=116285807 "))
     assert(exception.getMessage.contains(
