@@ -18,8 +18,6 @@
 package org.apache.spark.sql.secondaryindex.jobs
 
 import java.{lang, util}
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.concurrent.{Callable, Executors, ExecutorService, TimeUnit}
 
 import scala.collection.JavaConverters._
@@ -39,6 +37,7 @@ import org.apache.carbondata.core.indexstore.{BlockletIndexWrapper, TableBlockIn
 import org.apache.carbondata.core.indexstore.blockletindex.BlockIndex
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.spark.rdd.CarbonRDD
 
 class SparkBlockletIndexLoaderJob extends AbstractIndexJob {
@@ -141,10 +140,7 @@ class IndexLoaderRDD(
     indexFormat: BlockletIndexInputFormat)
   extends CarbonRDD[(TableBlockIndexUniqueIdentifier, BlockletIndexDetailsWithSchema)](ss, Nil) {
 
-  private val jobTrackerId: String = {
-    val formatter = new SimpleDateFormat("yyyyMMddHHmm")
-    formatter.format(new Date())
-  }
+  private val jobTrackerId = CarbonInputFormatUtil.createJobTrackerID()
 
   override def internalGetPartitions: Array[Partition] = {
     val job = Job.getInstance(new Configuration())

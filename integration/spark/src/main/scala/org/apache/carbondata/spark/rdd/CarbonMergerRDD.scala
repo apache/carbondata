@@ -68,7 +68,7 @@ import org.apache.carbondata.processing.merger._
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.MergeResult
 import org.apache.carbondata.spark.load.{DataLoadProcessBuilderOnSpark, PrimitiveOrdering, StringOrdering}
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonSparkUtil, CommonUtil}
 
 class CarbonMergerRDD[K, V](
     @transient private val ss: SparkSession,
@@ -308,9 +308,7 @@ class CarbonMergerRDD[K, V](
                             rangeColumn.asInstanceOf[CarbonDimension].isSortColumn
     val updateStatusManager: SegmentUpdateStatusManager = new SegmentUpdateStatusManager(
       carbonTable)
-    val jobConf: JobConf = new JobConf(getConf)
-    SparkHadoopUtil.get.addCredentials(jobConf)
-    val job: Job = new Job(jobConf)
+    val job: Job = CarbonSparkUtil.createHadoopJob(getConf)
     val format = CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)
     CarbonInputFormat.setPartitionsToPrune(
       job.getConfiguration,

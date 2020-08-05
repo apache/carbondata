@@ -58,7 +58,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       // load data / insert into
       case loadData: LoadDataCommand
         if isCarbonTable(loadData.table) =>
-        ExecutedCommandExec(DMLHelper.loadData(loadData, sparkSession)) :: Nil
+        ExecutedCommandExec(DMLHelper.loadData(loadData)) :: Nil
       case insert: InsertIntoCarbonTable =>
         ExecutedCommandExec(CarbonPlanHelper.insertInto(insert)) :: Nil
       case insert: InsertIntoHadoopFsRelationCommand
@@ -119,21 +119,19 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       case createTable: CreateTableCommand
         if isCarbonHiveTable(createTable.table) =>
         // CREATE TABLE STORED AS carbondata
-        ExecutedCommandExec(DDLHelper.createHiveTable(createTable, sparkSession)) :: Nil
+        ExecutedCommandExec(DDLHelper.createHiveTable(createTable)) :: Nil
       case createTable: CreateTableCommand
         if isCarbonFileHiveTable(createTable.table) =>
         // CREATE TABLE STORED AS carbon
         if (EnvHelper.isLegacy(sparkSession)) {
           Nil
         } else {
-          ExecutedCommandExec(DDLHelper.createCarbonFileHiveTable(createTable, sparkSession)) :: Nil
+          ExecutedCommandExec(DDLHelper.createCarbonFileHiveTable(createTable)) :: Nil
         }
       case ctas: CreateHiveTableAsSelectCommand
         if isCarbonHiveTable(ctas.tableDesc) =>
         // CREATE TABLE STORED AS carbondata AS SELECT
-        ExecutedCommandExec(
-          DDLHelper.createHiveTableAsSelect(ctas, sparkSession)
-        ) :: Nil
+        ExecutedCommandExec(DDLHelper.createHiveTableAsSelect(ctas, sparkSession)) :: Nil
       case ctas: CreateHiveTableAsSelectCommand
         if isCarbonFileHiveTable(ctas.tableDesc) =>
         // CREATE TABLE STORED AS carbon AS SELECT
@@ -141,9 +139,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           Nil
         } else {
           DataWritingCommandExec(
-            DDLHelper.createCarbonFileHiveTableAsSelect(ctas, sparkSession),
-            planLater(ctas.query)
-          ) :: Nil
+            DDLHelper.createCarbonFileHiveTableAsSelect(ctas),
+            planLater(ctas.query)) :: Nil
         }
       case showCreateTable: ShowCreateTableCommand
         if isCarbonTable(showCreateTable.table) =>
@@ -158,7 +155,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       case createTable@org.apache.spark.sql.execution.datasources.CreateTable(_, _, None)
         if CarbonSource.isCarbonDataSource(createTable.tableDesc) =>
         // CREATE TABLE USING carbondata
-        ExecutedCommandExec(DDLHelper.createDataSourceTable(createTable, sparkSession)) :: Nil
+        ExecutedCommandExec(DDLHelper.createDataSourceTable(createTable)) :: Nil
       case MatchCreateDataSourceTable(tableDesc, mode, query)
         if CarbonSource.isCarbonDataSource(tableDesc) =>
         // CREATE TABLE USING carbondata AS SELECT
@@ -174,9 +171,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       case createTable@CreateDataSourceTableCommand(table, _)
         if CarbonSource.isCarbonDataSource(table) =>
         // CREATE TABLE USING carbondata
-        ExecutedCommandExec(
-          DDLHelper.createDataSourceTable(createTable, sparkSession)
-        ) :: Nil
+        ExecutedCommandExec(DDLHelper.createDataSourceTable(createTable)) :: Nil
       case desc: DescribeTableCommand if isCarbonTable(desc.table) =>
         ExecutedCommandExec(DDLHelper.describeTable(desc, sparkSession)) :: Nil
       case DropTableCommand(identifier, ifNotExists, _, _)
@@ -199,7 +194,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       case explain: ExplainCommand =>
         DDLHelper.explain(explain, sparkSession)
       case showTables: ShowTablesCommand =>
-        DDLHelper.showTables(showTables, sparkSession)
+        DDLHelper.showTables(showTables)
       case CarbonCreateSecondaryIndexCommand(
       indexModel, tableProperties, ifNotExists, isDeferredRefresh, isCreateSIndex) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
@@ -213,8 +208,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         }
       case showIndex@ShowIndexesCommand(_, _) =>
         try {
-          ExecutedCommandExec(showIndex) ::
-          Nil
+          ExecutedCommandExec(showIndex) :: Nil
         } catch {
           case c: Exception =>
             sys.error("Operation not allowed on non-carbon table")

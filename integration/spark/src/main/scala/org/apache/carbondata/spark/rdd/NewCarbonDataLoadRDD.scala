@@ -19,7 +19,7 @@ package org.apache.carbondata.spark.rdd
 
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
-import java.util.{Date, UUID}
+import java.util.UUID
 
 import scala.collection.mutable
 import scala.util.Try
@@ -45,6 +45,7 @@ import org.apache.carbondata.core.segmentmeta.SegmentMetaDataInfo
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, DataTypeUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses, TableProcessingOperations}
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
@@ -109,10 +110,7 @@ class NewCarbonDataLoadRDD[K, V](
 
   ss.sparkContext.setLocalProperty("spark.scheduler.pool", "DDL")
 
-  private val jobTrackerId: String = {
-    val formatter = new SimpleDateFormat("yyyyMMddHHmm")
-    formatter.format(new Date())
-  }
+  private val jobTrackerId = CarbonInputFormatUtil.createJobTrackerID()
 
   override def internalGetPartitions: Array[Partition] = {
     blocksGroupBy.zipWithIndex.map { b =>

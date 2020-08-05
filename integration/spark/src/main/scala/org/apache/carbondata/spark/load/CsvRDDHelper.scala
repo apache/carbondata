@@ -17,18 +17,13 @@
 
 package org.apache.carbondata.spark.load
 
-import java.text.SimpleDateFormat
-import java.util.{Date, Locale}
-
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
-import org.apache.hadoop.mapreduce.task.{JobContextImpl, TaskAttemptContextImpl}
-import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
@@ -40,10 +35,11 @@ import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.adapter.CarbonToSparkAdapter
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CarbonSparkUtil, CommonUtil}
 
 object CsvRDDHelper {
 
@@ -63,9 +59,7 @@ object CsvRDDHelper {
     val defaultParallelism = spark.sparkContext.defaultParallelism
     CommonUtil.configureCSVInputFormat(hadoopConf, model)
     hadoopConf.set(FileInputFormat.INPUT_DIR, model.getFactFilePath)
-    val jobConf = new JobConf(hadoopConf)
-    SparkHadoopUtil.get.addCredentials(jobConf)
-    val jobContext = new JobContextImpl(jobConf, null)
+    val jobContext = CarbonSparkUtil.createHadoopJob(hadoopConf)
     val inputFormat = new CSVInputFormat()
     val rawSplits = inputFormat.getSplits(jobContext).toArray
     var totalLength = 0L
@@ -118,11 +112,8 @@ object CsvRDDHelper {
     val readFunction = new (PartitionedFile => Iterator[InternalRow]) with Serializable {
       override def apply(file: PartitionedFile): Iterator[InternalRow] = {
         new Iterator[InternalRow] {
-          val jobTrackerId: String = {
-            val formatter = new SimpleDateFormat("yyyyMMddHHmmss", Locale.US)
-            formatter.format(new Date())
-          }
           ThreadLocalSessionInfo.setConfigurationToCurrentThread(serializableConfiguration.value)
+          val jobTrackerId = CarbonInputFormatUtil.createJobTrackerID()
           val attemptId = new TaskAttemptID(jobTrackerId, 0, TaskType.MAP, 0, 0)
           val hadoopAttemptContext = new TaskAttemptContextImpl(FileFactory.getConfiguration,
             attemptId)

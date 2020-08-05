@@ -60,14 +60,6 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
           .equalsIgnoreCase(CompactionType.SEGMENT_INDEX.toString)) {
           val carbonMainTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
           val indexProviderMap = carbonMainTable.getIndexesMap
-          val loadFolderDetailsArray = SegmentStatusManager
-            .readLoadMetadata(carbonMainTable.getMetadataPath)
-          val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String, String]()
-          loadFolderDetailsArray.foreach(loadMetadataDetails => {
-            segmentFileNameMap
-              .put(loadMetadataDetails.getLoadName,
-                String.valueOf(loadMetadataDetails.getLoadStartTime))
-          })
           if (!indexProviderMap.isEmpty &&
               null != indexProviderMap.get(IndexType.SI.getIndexProviderName)) {
             val iterator = indexProviderMap.get(IndexType.SI.getIndexProviderName)
@@ -94,7 +86,7 @@ class AlterTableCompactionPostEventListener extends OperationEventListener with 
               CarbonMergeFilesRDD.mergeIndexFiles(
                 sQLContext.sparkSession,
                 validSegmentIds,
-                segmentFileNameMap,
+                SegmentStatusManager.mapSegmentToStartTime(carbonMainTable),
                 indexCarbonTable.getTablePath,
                 indexCarbonTable,
                 mergeIndexProperty = true)

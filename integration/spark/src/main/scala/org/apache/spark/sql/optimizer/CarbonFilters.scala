@@ -31,7 +31,7 @@ import org.apache.spark.sql.CarbonEndsWith
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonSessionCatalogUtil}
-import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.indexstore.PartitionSpec
@@ -146,15 +146,6 @@ object CarbonFilters {
       }
     }
 
-    def getSparkUnknownExpression(expr: Expression, exprType: ExpressionType) = {
-      new SparkUnknownExpression(expr.transform {
-        case AttributeReference(name, dataType, _, _) =>
-          CarbonBoundReference(new CarbonColumnExpression(name.toString,
-            CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(dataType)),
-            dataType, expr.nullable)
-      }, exprType)
-    }
-
     def getCarbonExpression(name: String) = {
       var sparkDatatype = dataTypeOf(name)
       new CarbonColumnExpression(name,
@@ -182,6 +173,16 @@ object CarbonFilters {
     }
 
     createFilter(predicate)
+  }
+
+  private def getSparkUnknownExpression(expr: Expression,
+      exprType: ExpressionType = ExpressionType.UNKNOWN) = {
+    new SparkUnknownExpression(expr.transform {
+      case AttributeReference(name, dataType, _, _) =>
+        CarbonBoundReference(new CarbonColumnExpression(name,
+          CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(dataType)),
+          dataType, expr.nullable)
+    }, exprType)
   }
 
   /**
@@ -304,14 +305,7 @@ object CarbonFilters {
         new AndExpression(l, r)
       case strTrim: StringTrim if isStringTrimCompatibleWithCarbon(strTrim) =>
         transformExpression(strTrim)
-      case _ =>
-        new SparkUnknownExpression(expr.transform {
-          case AttributeReference(name, dataType, _, _) =>
-            CarbonBoundReference(new CarbonColumnExpression(name.toString,
-              CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(dataType)),
-              dataType, expr.nullable)
-        }
-        )
+      case _ => getSparkUnknownExpression(expr)
     }
   }
 

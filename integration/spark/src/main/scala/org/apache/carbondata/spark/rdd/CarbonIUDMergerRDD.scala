@@ -35,6 +35,7 @@ import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 import org.apache.carbondata.spark.MergeResult
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 /**
  * IUD carbon merger RDD
@@ -56,9 +57,7 @@ class CarbonIUDMergerRDD[K, V](
     val absoluteTableIdentifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
       tablePath, new CarbonTableIdentifier(databaseName, factTableName, tableId)
     )
-    val jobConf: JobConf = new JobConf(FileFactory.getConfiguration)
-    SparkHadoopUtil.get.addCredentials(jobConf)
-    val job: Job = new Job(jobConf)
+    val job: Job = CarbonSparkUtil.createHadoopJob()
     val format = CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)
     val defaultParallelism = sparkContext.defaultParallelism
     val noOfBlocks = 0

@@ -107,9 +107,7 @@ object AlterTableUtil {
    */
   private def updateSchemaForSortColumns(
       thriftTable: TableInfo,
-      lowerCasePropertiesMap: mutable.Map[String, String],
-      schemaConverter: SchemaConverter
-  ): SchemaEvolutionEntry = {
+      lowerCasePropertiesMap: mutable.Map[String, String]): SchemaEvolutionEntry = {
     var schemaEvolutionEntry: SchemaEvolutionEntry = null
     val sortColumnsOption = lowerCasePropertiesMap.get(CarbonCommonConstants.SORT_COLUMNS)
     if (sortColumnsOption.isDefined) {
@@ -387,6 +385,18 @@ object AlterTableUtil {
     schemaEvolutionEntry
   }
 
+  def readLatestTableSchema(carbonTable: CarbonTable)(sparkSession: SparkSession): TableInfo = {
+    // get the latest carbon table
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
+    val thriftTableInfo: TableInfo = metastore.getThriftTableInfo(carbonTable)
+    val schemaConverter = new ThriftWrapperSchemaConverterImpl()
+    // read the latest schema file
+    val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(thriftTableInfo,
+      carbonTable.getDatabaseName, carbonTable.getTableName, carbonTable.getTablePath)
+    schemaConverter.fromWrapperToExternalTableInfo(
+      wrapperTableInfo, carbonTable.getDatabaseName, carbonTable.getTableName)
+  }
+
   /**
    * This method add/modify the table comments.
    *
@@ -406,26 +416,14 @@ object AlterTableUtil {
     try {
       locks = AlterTableUtil
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
-      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
       val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
       val lowerCasePropertiesMap: mutable.Map[String, String] = mutable.Map.empty
       // convert all the keys to lower case
       properties.foreach { entry =>
         lowerCasePropertiesMap.put(entry._1.toLowerCase, entry._2)
       }
-      // get the latest carbon table
-      // read the latest schema file
-      val thriftTableInfo: TableInfo = metastore.getThriftTableInfo(carbonTable)
-      val schemaConverter = new ThriftWrapperSchemaConverterImpl()
-      val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
-        thriftTableInfo,
-        dbName,
-        tableName,
-        carbonTable.getTablePath)
-      val thriftTable = schemaConverter.fromWrapperToExternalTableInfo(
-        wrapperTableInfo, dbName, tableName)
-      val tblPropertiesMap: mutable.Map[String, String] =
-        thriftTable.fact_table.getTableProperties.asScala
+      val thriftTable = readLatestTableSchema(carbonTable)(sparkSession)
+      val tblPropertiesMap = thriftTable.fact_table.getTableProperties.asScala
 
       // validate for spatial index column
       CommonUtil.validateForSpatialTypeColumn(tblPropertiesMap ++ lowerCasePropertiesMap)
@@ -462,8 +460,7 @@ object AlterTableUtil {
       // if SORT_COLUMN is changed, it will move them to the head of column list
       // Make an schemaEvolution entry as we changed the schema with different column order with
       // alter set sort columns
-      val schemaEvolutionEntry = updateSchemaForSortColumns(thriftTable,
-        lowerCasePropertiesMap, schemaConverter)
+      val schemaEvolutionEntry = updateSchemaForSortColumns(thriftTable, lowerCasePropertiesMap)
       // validate long string columns
       val longStringColumns = lowerCasePropertiesMap.get("long_string_columns");
       if (longStringColumns.isDefined) {

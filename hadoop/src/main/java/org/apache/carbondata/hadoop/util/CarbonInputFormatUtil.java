@@ -19,6 +19,7 @@ package org.apache.carbondata.hadoop.util;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 
 import org.apache.carbondata.core.index.IndexUtil;
@@ -56,12 +57,12 @@ public class CarbonInputFormatUtil {
     IndexUtil.setIndexJob(conf, IndexUtil.createIndexJob(className));
   }
 
-  public static String createJobTrackerID(java.util.Date date) {
-    return new SimpleDateFormat("yyyyMMddHHmmss", Locale.US).format(date);
+  public static String createJobTrackerID() {
+    return new SimpleDateFormat("yyyyMMddHHmmss", Locale.US).format(new Date());
   }
 
-  public static JobID getJobId(java.util.Date date, int batch) {
-    String jobTrackerID = createJobTrackerID(date);
+  public static JobID getJobId(int batch) {
+    String jobTrackerID = createJobTrackerID();
     return new JobID(jobTrackerID, batch);
   }
 }

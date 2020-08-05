@@ -16,8 +16,6 @@
  */
 package org.apache.carbondata.indexserver
 
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
@@ -36,6 +34,7 @@ import org.apache.carbondata.core.readcommitter.{LatestFilesReadCommittedScope, 
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{IndexServerLoadEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 
 object DistributedRDDUtils {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -344,10 +343,7 @@ object DistributedRDDUtils {
     (smaller.grouped(quot) ++ bigger.grouped(quot + 1)).toList
   }
 
-  def generateTrackerId: String = {
-    val formatter = new SimpleDateFormat("yyyyMMddHHmm")
-    formatter.format(new Date())
-  }
+  def generateTrackerId: String = CarbonInputFormatUtil.createJobTrackerID()
 
   /**
    * This function creates an event for pre-priming of the index server

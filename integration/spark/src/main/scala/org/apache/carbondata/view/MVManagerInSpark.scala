@@ -25,7 +25,7 @@ import org.apache.spark.sql.{CarbonEnv, CarbonUtils, SparkSession}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.view.{MVManager, MVSchema, MVStatus}
+import org.apache.carbondata.core.view.{MVCatalog, MVCatalogFactory, MVManager, MVSchema, MVStatus}
 
 class MVManagerInSpark(session: SparkSession) extends MVManager {
   override def getDatabases: util.List[String] = {
@@ -82,5 +82,24 @@ object MVManagerInSpark {
         viewManager.onTruncate(viewSchemas)
       }
     }
+  }
+
+  /**
+   * when first time MVCatalogs are initialized, it stores session info also,
+   * but when carbon session is newly created, catalog map will not be cleared,
+   * so if session info is different, remove the entry from map.
+   */
+  def getOrReloadMVCatalog(sparkSession: SparkSession): MVCatalogInSpark = {
+    val catalogFactory = new MVCatalogFactory[MVSchemaWrapper] {
+      override def newCatalog(): MVCatalog[MVSchemaWrapper] = {
+        new MVCatalogInSpark(sparkSession)
+      }
+    }
+    val viewManager = MVManagerInSpark.get(sparkSession)
+    var viewCatalog = viewManager.getCatalog(catalogFactory, false).asInstanceOf[MVCatalogInSpark]
+    if (!viewCatalog.session.equals(sparkSession)) {
+      viewCatalog = viewManager.getCatalog(catalogFactory, true).asInstanceOf[MVCatalogInSpark]
+    }
+    viewCatalog
   }
 }

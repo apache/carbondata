@@ -50,6 +50,7 @@ import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, CarbonInputSpli
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.rdd.{CarbonRDD, CarbonSparkPartition}
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 
 class CarbonSecondaryIndexRDD[K, V](
@@ -191,10 +192,7 @@ class CarbonSecondaryIndexRDD[K, V](
     val startTime = System.currentTimeMillis()
     val absoluteTableIdentifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
       carbonStoreLocation, databaseName, factTableName, tableId)
-    val jobConf: JobConf = new JobConf(hadoopConf)
-    SparkHadoopUtil.get.addCredentials(jobConf)
-    val job: Job = new Job(jobConf)
-
+    val job = CarbonSparkUtil.createHadoopJob(hadoopConf)
     if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
       // set the configuration for current segment file("current.segment") as
       // same as carbon output committer

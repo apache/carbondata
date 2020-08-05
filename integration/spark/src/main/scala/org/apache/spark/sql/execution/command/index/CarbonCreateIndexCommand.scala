@@ -179,20 +179,9 @@ case class CarbonCreateIndexCommand(
           new IndexTableInfo(dbName, indexName,
             indexProperties),
           false)
-
         // set index information in parent table
-        val parentIndexMetadata = if (
-          parentTable.getTableInfo.getFactTable.getTableProperties
-            .get(parentTable.getCarbonTableIdentifier.getTableId) != null) {
-          parentTable.getIndexMetadata
-        } else {
-          new IndexMetadata(false)
-        }
-        parentIndexMetadata.addIndexTableInfo(indexProviderName,
-          indexName,
+        IndexTableUtil.addIndexInfoToParentTable(parentTable, indexProviderName, indexName,
           indexProperties)
-        parentTable.getTableInfo.getFactTable.getTableProperties
-          .put(parentTable.getCarbonTableIdentifier.getTableId, parentIndexMetadata.serialize)
 
         sparkSession.sql(
           s"""ALTER TABLE $dbName.$parentTableName SET SERDEPROPERTIES ('indexInfo' =

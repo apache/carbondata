@@ -61,12 +61,7 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
         Nil
       case changeColumn: AlterTableChangeColumnCommand
         if isCarbonTable(changeColumn.tableName) =>
-        val columnName = changeColumn.columnName
-        val newColumn = changeColumn.newColumn
-        var isColumnRename = false
-        if (!columnName.equalsIgnoreCase(newColumn.name)) {
-          isColumnRename = true
-        }
+        val isColumnRename = !changeColumn.columnName.equalsIgnoreCase(changeColumn.newColumn.name)
         val operation = if (isColumnRename) {
           "Alter table column rename"
         } else {

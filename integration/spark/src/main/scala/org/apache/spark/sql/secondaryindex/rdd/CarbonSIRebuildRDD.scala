@@ -56,7 +56,7 @@ import org.apache.carbondata.processing.merger._
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark.MergeResult
 import org.apache.carbondata.spark.rdd.{CarbonRDD, CarbonSparkPartition}
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonSparkUtil, CommonUtil}
 
 
 /**
@@ -82,9 +82,7 @@ class CarbonSIRebuildRDD[K, V](
     val absoluteTableIdentifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
       indexTablePath, new CarbonTableIdentifier(databaseName, indexTableName, indexTableId)
     )
-    val jobConf: JobConf = new JobConf(FileFactory.getConfiguration)
-    SparkHadoopUtil.get.addCredentials(jobConf)
-    val job: Job = new Job(jobConf)
+    val job: Job = CarbonSparkUtil.createHadoopJob()
     val format = CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)
     val defaultParallelism = sparkContext.defaultParallelism
     val noOfBlocks = 0

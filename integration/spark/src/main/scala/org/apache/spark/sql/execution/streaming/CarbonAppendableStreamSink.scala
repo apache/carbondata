@@ -243,7 +243,7 @@ object CarbonAppendableStreamSink {
     val job = CarbonSparkUtil.createHadoopJob(hadoopConf)
     job.setOutputKeyClass(classOf[Void])
     job.setOutputValueClass(classOf[InternalRow])
-    val jobId = CarbonInputFormatUtil.getJobId(new Date, batchId.toInt)
+    val jobId = CarbonInputFormatUtil.getJobId(batchId.toInt)
     job.setJobID(jobId)
 
     val description = WriteDataFileJobDescription(
@@ -317,7 +317,7 @@ object CarbonAppendableStreamSink {
       rowSchema: StructType,
       isVarcharTypeMapping: Array[Boolean]): (TaskCommitMessage, StreamFileIndex) = {
 
-    val jobId = CarbonInputFormatUtil.getJobId(new Date, sparkStageId)
+    val jobId = CarbonInputFormatUtil.getJobId(sparkStageId)
     val taskId = new TaskID(jobId, TaskType.MAP, sparkPartitionId)
     val taskAttemptId = new TaskAttemptID(taskId, sparkAttemptNumber)
 

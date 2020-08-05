@@ -43,10 +43,9 @@ object MergeIndexUtil {
     val sparkSession = compactionCallableModel.sqlContext.sparkSession
     if (!carbonTable.isStreamingSink) {
       val mergedSegmentIds = getMergedSegmentIds(mergedLoads)
-      val segmentFileNameMap = getSegmentFileMap(carbonTable)
       CarbonMergeFilesRDD.mergeIndexFiles(sparkSession,
         mergedSegmentIds,
-        segmentFileNameMap,
+        SegmentStatusManager.mapSegmentToStartTime(carbonTable),
         carbonTable.getTablePath,
         carbonTable, false)
     }
@@ -59,27 +58,12 @@ object MergeIndexUtil {
     }
   }
 
-  private def getSegmentFileMap(carbonTable: CarbonTable): util.HashMap[String, String] = {
-    val loads = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
-    if (loads != null && loads.length > 1) {
-      val segmentFileNameMap = new util.HashMap[String, String](loads.length)
-      loads.foreach { loadMetadataDetails =>
-        segmentFileNameMap.put(loadMetadataDetails.getLoadName,
-          String.valueOf(loadMetadataDetails.getLoadStartTime))
-      }
-      segmentFileNameMap
-    } else {
-      new util.HashMap[String, String](0);
-    }
-  }
-
   def mergeIndexFilesForCompactedSegments(sparkSession: SparkSession,
       carbonTable: CarbonTable,
       mergedLoads: util.List[String]): Unit = {
     // get only the valid segments of the table
     val validSegments = CarbonDataMergerUtil.getValidSegmentList(carbonTable).asScala
     val mergedSegmentIds = getMergedSegmentIds(mergedLoads)
-    val segmentFileNameMap = getSegmentFileMap(carbonTable)
     // filter out only the valid segments from the list of compacted segments
     // Example: say compacted segments list contains 0.1, 3.1, 6.1, 0.2.
     // In this list 0.1, 3.1 and 6.1 are compacted to 0.2 in the level 2 compaction.
@@ -89,7 +73,7 @@ object MergeIndexUtil {
     if (null != validMergedSegIds && validMergedSegIds.nonEmpty) {
       CarbonMergeFilesRDD.mergeIndexFiles(sparkSession,
         validMergedSegIds,
-        segmentFileNameMap,
+        SegmentStatusManager.mapSegmentToStartTime(carbonTable),
         carbonTable.getTablePath,
         carbonTable,
         false)

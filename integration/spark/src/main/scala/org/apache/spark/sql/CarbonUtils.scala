@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql
 
-import java.util.concurrent.atomic.AtomicLong
-
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.plans.logical._

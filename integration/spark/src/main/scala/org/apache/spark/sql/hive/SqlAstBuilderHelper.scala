@@ -29,20 +29,13 @@ import org.apache.spark.sql.execution.command.table.{CarbonExplainCommand, Carbo
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.types.DecimalType
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-
 trait SqlAstBuilderHelper extends SparkSqlAstBuilder {
 
 
   override def visitChangeColumn(ctx: ChangeColumnContext): LogicalPlan = {
 
     val newColumn = visitColType(ctx.colType)
-    val isColumnRename = if (!ctx.identifier.getText.equalsIgnoreCase(newColumn.name)) {
-      true
-    } else {
-      false
-    }
+    val isColumnRename = !ctx.identifier.getText.equalsIgnoreCase(newColumn.name)
 
     val (typeString, values): (String, Option[List[(Int, Int)]]) = newColumn.dataType match {
       case d: DecimalType => ("decimal", Some(List((d.precision, d.scale))))

@@ -28,11 +28,8 @@ import scala.util.Random
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{SparkEnv, TaskContext}
-import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, RDD}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
@@ -72,7 +69,7 @@ import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonData
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.{DataLoadResultImpl, _}
 import org.apache.carbondata.spark.load._
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonSparkUtil, CommonUtil, Util}
 import org.apache.carbondata.view.MVManagerInSpark
 
 /**
@@ -1132,10 +1129,8 @@ object CarbonDataRDDFactory {
              org.apache.hadoop.io.compress.BZip2Codec""".stripMargin)
 
     CommonUtil.configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConf)
-    val jobConf = new JobConf(hadoopConf)
-    SparkHadoopUtil.get.addCredentials(jobConf)
+    val jobContext = CarbonSparkUtil.createHadoopJob(hadoopConf)
     val inputFormat = new org.apache.hadoop.mapreduce.lib.input.TextInputFormat
-    val jobContext = new Job(jobConf)
     val rawSplits = inputFormat.getSplits(jobContext).toArray
     val blockList = rawSplits.map { inputSplit =>
       val fileSplit = inputSplit.asInstanceOf[FileSplit]

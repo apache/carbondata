@@ -541,13 +541,6 @@ case class CarbonMergeDataSetCommand(
     }.filter(_ != null)
   }
 
-  private def collectCarbonRelation(plan: LogicalPlan): Seq[CarbonDatasourceHadoopRelation] = {
-    plan collect {
-      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-    }
-  }
-
   private def getInsertHistoryStatus(mergeMatches: MergeDataSetMatches) = {
     val insertHistOfUpdate = mergeMatches.matchList.exists(p =>
       p.getActions.exists(_.isInstanceOf[InsertInHistoryTableAction])
