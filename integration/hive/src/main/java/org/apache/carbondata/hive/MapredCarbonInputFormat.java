@@ -19,6 +19,7 @@ package org.apache.carbondata.hive;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -35,6 +36,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -43,6 +45,8 @@ import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
+
+import org.apache.carbondata.hive.util.HiveCarbonUtil;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.InvalidPathException;
@@ -73,7 +77,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
    * This method will read the schema from the physical file and populate into CARBON_TABLE
    */
   private static void populateCarbonTable(Configuration configuration, String paths)
-      throws IOException, InvalidConfigurationException {
+      throws IOException, InvalidConfigurationException, SQLException {
     if (null != paths) {
       // read the schema file to get the absoluteTableIdentifier having the correct table id
       // persisted in the schema
@@ -88,10 +92,16 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
         // persisted in the schema
         carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
       } else {
-        // InferSchema from data file
-        carbonTable = CarbonTable.buildFromTableInfo(SchemaReader
-            .inferSchema(absoluteTableIdentifier, false));
-        carbonTable.setTransactionalTable(false);
+        String carbonDataFile = CarbonUtil
+            .getFilePathExternalFilePath(absoluteTableIdentifier.getTablePath(), configuration);
+        if (carbonDataFile == null) {
+          carbonTable = HiveCarbonUtil.getCarbonTable(configuration);
+        } else {
+          // InferSchema from data file
+          carbonTable = CarbonTable.buildFromTableInfo(SchemaReader
+              .inferSchema(absoluteTableIdentifier, false));
+          carbonTable.setTransactionalTable(false);
+        }
       }
       configuration.set(CARBON_TABLE, ObjectSerializationUtil.convertObjectToString(carbonTable));
       setTableInfo(configuration, carbonTable.getTableInfo());
@@ -101,7 +111,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
   }
 
   private static CarbonTable getCarbonTable(Configuration configuration, String path)
-      throws IOException, InvalidConfigurationException {
+      throws IOException, InvalidConfigurationException, SQLException {
     populateCarbonTable(configuration, path);
     // read it from schema file in the store
     String carbonTableStr = configuration.get(CARBON_TABLE);
@@ -193,7 +203,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
       jobConf.set(DATABASE_NAME, "_dummyDb_" + UUID.randomUUID().toString());
       jobConf.set(TABLE_NAME, "_dummyTable_" + UUID.randomUUID().toString());
       queryModel = getQueryModel(jobConf, path);
-    } catch (InvalidConfigurationException e) {
+    } catch (InvalidConfigurationException | SQLException e) {
       LOGGER.error("Failed to create record reader: " + e.getMessage(), e);
       return null;
     }
@@ -202,7 +212,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
   }
 
   private QueryModel getQueryModel(Configuration configuration, String path)
-      throws IOException, InvalidConfigurationException {
+      throws IOException, InvalidConfigurationException, SQLException {
     CarbonTable carbonTable = getCarbonTable(configuration, path);
     String projectionString = getProjection(configuration, carbonTable);
     String[] projectionColumns = projectionString.split(",");
