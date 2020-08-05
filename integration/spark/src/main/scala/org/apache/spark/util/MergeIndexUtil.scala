@@ -59,14 +59,18 @@ object MergeIndexUtil {
     }
   }
 
-  private def getSegmentFileMap(carbonTable: CarbonTable) = {
-    SegmentStatusManager
-      .readLoadMetadata(carbonTable.getMetadataPath)
-      .map { loadMetadataDetails =>
-        loadMetadataDetails.getLoadName -> String.valueOf(loadMetadataDetails.getLoadStartTime)
+  private def getSegmentFileMap(carbonTable: CarbonTable): util.HashMap[String, String] = {
+    val loads = SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath)
+    if (loads != null && loads.length > 1) {
+      val segmentFileNameMap = new util.HashMap[String, String](loads.length)
+      loads.foreach { loadMetadataDetails =>
+        segmentFileNameMap.put(loadMetadataDetails.getLoadName,
+          String.valueOf(loadMetadataDetails.getLoadStartTime))
       }
-      .toMap
-      .asJava
+      segmentFileNameMap
+    } else {
+      new util.HashMap[String, String](0);
+    }
   }
 
   def mergeIndexFilesForCompactedSegments(sparkSession: SparkSession,
