@@ -213,13 +213,13 @@ object CarbonParserUtil {
 
     // Process spatial index property
     val indexFields = processSpatialIndexProperty(tableProperties, fields)
-    val allFields = fields ++ indexFields
+    val allFields = indexFields ++ fields
 
     // do not allow below key words as column name
     validateColumnNames(allFields)
     CommonUtil.validateForSpatialTypeColumn(tableProperties)
 
-    fields.zipWithIndex.foreach { case (field, index) =>
+    allFields.zipWithIndex.foreach { case (field, index) =>
       field.schemaOrdinal = index
     }
 
