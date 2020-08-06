@@ -389,14 +389,16 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
   public void updateLoadMetaDataDetailsToSegments(List<Segment> validSegments,
       List<org.apache.carbondata.hadoop.CarbonInputSplit> prunedSplits) {
+    Map<String, Segment> validSegmentsMap = validSegments.stream()
+        .collect(Collectors.toMap(Segment::getSegmentNo, segment -> segment, (e1, e2) -> e1));
     for (CarbonInputSplit split : prunedSplits) {
       Segment segment = split.getSegment();
       if (segment.getLoadMetadataDetails() == null || segment.getReadCommittedScope() == null) {
-        if (validSegments.contains(segment)) {
+        if (validSegmentsMap.containsKey(segment.getSegmentNo())) {
           segment.setLoadMetadataDetails(
-              validSegments.get(validSegments.indexOf(segment)).getLoadMetadataDetails());
+              validSegmentsMap.get(segment.getSegmentNo()).getLoadMetadataDetails());
           segment.setReadCommittedScope(
-              validSegments.get(validSegments.indexOf(segment)).getReadCommittedScope());
+              validSegmentsMap.get(segment.getSegmentNo()).getReadCommittedScope());
         }
       }
     }
