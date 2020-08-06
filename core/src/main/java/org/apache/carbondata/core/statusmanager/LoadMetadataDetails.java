@@ -489,7 +489,7 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public long getLastModifiedTime() {
-    if (updateDeltaEndTimestamp != null) {
+    if (!StringUtils.isEmpty(updateDeltaEndTimestamp)) {
       return convertTimeStampToLong(updateDeltaEndTimestamp);
     }
     return convertTimeStampToLong(timestamp);
