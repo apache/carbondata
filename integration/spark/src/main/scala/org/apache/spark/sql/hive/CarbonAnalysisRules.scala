@@ -254,9 +254,10 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
     }
     // In spark, PreprocessTableInsertion rule has below cast logic.
     // It was missed in carbon when implemented insert into rules.
-    var newChildOutput = if (child.output.size == carbonDSRelation.carbonRelation.output.size) {
-      val expectedOutput = carbonDSRelation.carbonRelation.output
-      child.output.zip(expectedOutput).map {
+    val actualOutput = child.output
+    val expectedOutput = carbonDSRelation.carbonRelation.output
+    var newChildOutput = child.output.zip(expectedOutput)
+      .map {
         case (actual, expected) =>
           if (expected.dataType.sameType(actual.dataType) &&
               expected.name == actual.name &&
@@ -269,10 +270,7 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
             Alias(Cast(actual, expected.dataType), expected.name)(
               explicitMetadata = Option(expected.metadata))
           }
-      }
-    } else {
-      child.output
-    }
+      } ++ actualOutput.takeRight(actualOutput.size - expectedOutput.size)
     if (newChildOutput.size >= carbonDSRelation.carbonRelation.output.size ||
         carbonDSRelation.carbonTable.isHivePartitionTable) {
       newChildOutput = newChildOutput.zipWithIndex.map { columnWithIndex =>
