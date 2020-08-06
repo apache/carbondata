@@ -110,6 +110,7 @@ public class CarbondataSplitManager extends HiveSplitManager {
     HiveTableHandle hiveTable = (HiveTableHandle) tableHandle;
     SchemaTableName schemaTableName = hiveTable.getSchemaTableName();
 
+    carbonTableReader.setPrestoQueryId(session.getQueryId());
     // get table metadata
     SemiTransactionalHiveMetastore metastore =
         metastoreProvider.apply((HiveTransactionHandle) transactionHandle);

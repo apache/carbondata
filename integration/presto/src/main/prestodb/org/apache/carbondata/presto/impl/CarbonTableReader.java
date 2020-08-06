@@ -103,6 +103,11 @@ public class CarbonTableReader {
   private String queryId;
 
   /**
+   * presto cli query id
+   */
+  private String prestoQueryId;
+
+  /**
    * Logger instance
    */
   private static final Logger LOGGER =
@@ -256,6 +261,7 @@ public class CarbonTableReader {
     List<CarbonLocalMultiBlockSplit> multiBlockSplitList = new ArrayList<>();
     CarbonTable carbonTable = tableCacheModel.getCarbonTable();
     TableInfo tableInfo = tableCacheModel.getCarbonTable().getTableInfo();
+    config.set("presto.cli.query.id", prestoQueryId);
     config.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, "");
     String carbonTablePath = carbonTable.getAbsoluteTableIdentifier().getTablePath();
     config.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
@@ -397,4 +403,9 @@ public class CarbonTableReader {
   public void setQueryId(String queryId) {
     this.queryId = queryId;
   }
+
+  public void setPrestoQueryId(String prestoQueryId) {
+    this.prestoQueryId = prestoQueryId;
+  }
+
 }

@@ -2472,4 +2472,14 @@ public final class CarbonCommonConstants {
   public static final String STRING_LENGTH_EXCEEDED_MESSAGE =
       "Record %s of column %s exceeded " + MAX_CHARS_PER_COLUMN_DEFAULT +
           " characters. Please consider long string data type.";
+
+  /**
+   * property which defines the presto query
+   */
+  @CarbonProperty public static final String IS_QUERY_FROM_PRESTO = "is_query_from_presto";
+
+  /**
+   * property which defines the presto query default value
+   */
+  public static final String IS_QUERY_FROM_PRESTO_DEFAULT = "false";
 }

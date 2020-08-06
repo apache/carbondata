@@ -20,9 +20,13 @@ package org.apache.indexserver
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
+
 import mockit.{Mock, MockUp}
+import org.apache.hadoop.conf.Configuration
+
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
+
 import org.apache.carbondata.core.index.{IndexInputFormat, Segment}
 import org.apache.carbondata.core.index.dev.expr.IndexInputSplitWrapper
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexInputSplit
@@ -144,7 +148,7 @@ class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
       }
     }
     try{
-      distributedRDDUtilsTest.execute(mockDataMapFormat.getMockInstance)
+      distributedRDDUtilsTest.execute(mockDataMapFormat.getMockInstance, new Configuration())
     } catch {
       case ex: Exception =>
     }
@@ -176,7 +180,7 @@ class DistributedRDDUtilsTest extends FunSuite with BeforeAndAfterEach {
       }
     }
     try{
-      distributedRDDUtilsTest.execute(mockDataMapFormat.getMockInstance)
+      distributedRDDUtilsTest.execute(mockDataMapFormat.getMockInstance, new Configuration())
     } catch {
       case ex: Exception =>
     }

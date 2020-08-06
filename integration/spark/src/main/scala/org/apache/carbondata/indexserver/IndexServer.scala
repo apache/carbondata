@@ -305,6 +305,14 @@ object IndexServer extends ServerInterface {
   def getClient: ServerInterface = {
     val sparkSession = SparkSQLUtil.getSparkSession
     val configuration = SparkSQLUtil.sessionState(sparkSession).newHadoopConf()
+    getClient(configuration)
+  }
+
+  /**
+   * @return Return a new Client to communicate with the Index Server.
+   */
+  def getClient(configuration: Configuration): ServerInterface = {
+
     import org.apache.hadoop.ipc.RPC
     RPC.getProtocolProxy(classOf[ServerInterface],
       RPC.getProtocolVersion(classOf[ServerInterface]),

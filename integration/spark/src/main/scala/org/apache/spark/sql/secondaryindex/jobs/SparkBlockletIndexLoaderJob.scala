@@ -90,7 +90,10 @@ class SparkBlockletIndexLoaderJob extends AbstractIndexJob {
     }
   }
 
-  override def executeCountJob(indexFormat: IndexInputFormat): lang.Long = 0L
+  override def executeCountJob(indexFormat: IndexInputFormat,
+      configuration: Configuration): lang.Long = {
+    0L
+  }
 }
 
 class IndexCacher(

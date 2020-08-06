@@ -153,7 +153,9 @@ public class CarbonLocalInputSplit {
         ColumnarFormatVersion.valueOf(carbonLocalInputSplit.getVersion()),
         carbonLocalInputSplit.getDeleteDeltaFiles());
     inputSplit.setFormat(carbonLocalInputSplit.getFileFormat());
-    if (FileFormat.COLUMNAR_V3.ordinal() == inputSplit.getFileFormat().ordinal()) {
+    if (FileFormat.COLUMNAR_V3.ordinal() == inputSplit.getFileFormat().ordinal()
+        && null != carbonLocalInputSplit.detailInfo && !carbonLocalInputSplit.detailInfo
+        .equalsIgnoreCase("null")) {
       Gson gson = new Gson();
       BlockletDetailInfo blockletDetailInfo =
           gson.fromJson(carbonLocalInputSplit.detailInfo, BlockletDetailInfo.class);

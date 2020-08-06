@@ -301,3 +301,6 @@ Presto carbon only supports reading the carbon table which is written by spark c
 During reading, it supports the non-distributed indexes like block index and bloom index.
 It doesn't support Materialized View as it needs query plan to be changed and presto does not allow it.
 Also, Presto carbon supports streaming segment read from streaming table created by spark.
+
+Presto also supports caching block/blocklet indexes in distributed index server. Refer 
+[Presto Setup with CarbonData Distributed IndexServer](./prestosql-guide.md#presto-setup-with-carbondata-distributed-indexserver)

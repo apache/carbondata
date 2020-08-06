@@ -167,6 +167,10 @@ public class CarbondataModule extends HiveClientModule {
     binder.bind(CarbonTableReader.class).in(Scopes.SINGLETON);
 
     configBinder(binder).bindConfig(ParquetFileWriterConfig.class);
+
+    // configure carbon properties
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.IS_QUERY_FROM_PRESTO, "true");
   }
 
 }

@@ -482,7 +482,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         try {
           List<ExtendedBlocklet> extendedBlocklets =
               getDistributedBlockRowCount(table, partitions, filteredSegment,
-                  allSegments.getInvalidSegments(), toBeCleanedSegments);
+                  allSegments.getInvalidSegments(), toBeCleanedSegments, job.getConfiguration());
           for (ExtendedBlocklet blocklet : extendedBlocklets) {
             String filePath = blocklet.getFilePath().replace("\\", "/");
             String blockName = filePath.substring(filePath.lastIndexOf("/") + 1);
@@ -538,7 +538,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       if (CarbonProperties.getInstance()
           .isDistributedPruningEnabled(table.getDatabaseName(), table.getTableName())) {
         totalRowCount =
-            getDistributedCount(table, partitions, filteredSegment);
+            getDistributedCount(table, partitions, filteredSegment, job.getConfiguration());
       } else {
         TableIndex defaultIndex = IndexStoreManager.getInstance().getDefaultIndex(table);
         totalRowCount = defaultIndex.getRowCount(filteredSegment, partitions, defaultIndex);
