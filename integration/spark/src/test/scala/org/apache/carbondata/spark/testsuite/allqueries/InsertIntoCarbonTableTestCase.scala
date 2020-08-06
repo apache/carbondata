@@ -391,6 +391,17 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     assert(e.getMessage.contains("number of columns are different"))
   }
 
+  test("test insert into partitioned table with int type to double type") {
+    sql("DROP TABLE IF EXISTS table1")
+    sql("CREATE TABLE table1 (cnt double) partitioned by (pt string) stored as carbondata")
+    sql("insert overwrite table table1 partition(pt='2020') select 10")
+    checkAnswer(
+      sql("select * from table1"),
+      sql("select 10.0, '2020'")
+    )
+    sql(s"DROP TABLE IF EXISTS table1")
+  }
+
   override def afterAll {
     sql("drop table if exists load")
     sql("drop table if exists inser")
