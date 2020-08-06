@@ -56,7 +56,6 @@ public class PolygonExpression extends UnknownExpression implements ConditionalE
   private static final ExpressionResult falseExpRes =
       new ExpressionResult(DataTypes.BOOLEAN, false);
 
-
   public PolygonExpression(String polygon, String columnName, CustomIndex indexInstance) {
     this.polygon = polygon;
     this.instance = indexInstance;

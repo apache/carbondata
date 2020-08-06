@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.secondaryindex.Jobs;
-
+package org.apache.spark.sql.secondaryindex.jobs;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -32,13 +31,13 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
+import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.index.IndexInputSplit;
 import org.apache.carbondata.core.index.IndexStoreManager;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.index.dev.CacheableIndex;
 import org.apache.carbondata.core.index.dev.IndexFactory;
 import org.apache.carbondata.core.index.dev.expr.IndexExprWrapper;
-import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.indexstore.BlockletIndexStore;
 import org.apache.carbondata.core.indexstore.BlockletIndexWrapper;
@@ -88,7 +87,8 @@ public class BlockletIndexInputFormat
     this.validSegments = validSegments;
   }
 
-  @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
+  @Override
+  public List<InputSplit> getSplits(JobContext job) throws IOException {
     IndexFactory indexFactory =
         IndexStoreManager.getInstance().getDefaultIndex(table).getIndexFactory();
     CacheableIndex factory = (CacheableIndex) indexFactory;
@@ -117,9 +117,9 @@ public class BlockletIndexInputFormat
   }
 
   @Override
-  public RecordReader<TableBlockIndexUniqueIdentifier, BlockletIndexDetailsWithSchema>
-  createRecordReader(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
-      throws IOException, InterruptedException {
+  public RecordReader<TableBlockIndexUniqueIdentifier,
+      BlockletIndexDetailsWithSchema> createRecordReader(InputSplit inputSplit,
+      TaskAttemptContext taskAttemptContext) {
     return new RecordReader<TableBlockIndexUniqueIdentifier, BlockletIndexDetailsWithSchema>() {
       private BlockletIndexWrapper wrapper = null;
       private TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier = null;
@@ -143,7 +143,8 @@ public class BlockletIndexInputFormat
             BlockletIndexUtil.getTableBlockUniqueIdentifiers(segment).iterator();
       }
 
-      @Override public boolean nextKeyValue() throws IOException, InterruptedException {
+      @Override
+      public boolean nextKeyValue() {
         if (iterator.hasNext()) {
           TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier = iterator.next();
           this.tableBlockIndexUniqueIdentifier  = tableBlockIndexUniqueIdentifier;
@@ -158,21 +159,25 @@ public class BlockletIndexInputFormat
         return false;
       }
 
-      @Override public TableBlockIndexUniqueIdentifier getCurrentKey() {
+      @Override
+      public TableBlockIndexUniqueIdentifier getCurrentKey() {
         return tableBlockIndexUniqueIdentifier;
       }
 
-      @Override public BlockletIndexDetailsWithSchema getCurrentValue() {
+      @Override
+      public BlockletIndexDetailsWithSchema getCurrentValue() {
         BlockletIndexDetailsWithSchema blockletIndexDetailsWithSchema =
             new BlockletIndexDetailsWithSchema(wrapper, table.getTableInfo().isSchemaModified());
         return blockletIndexDetailsWithSchema;
       }
 
-      @Override public float getProgress() {
+      @Override
+      public float getProgress() {
         return 0;
       }
 
-      @Override public void close() {
+      @Override
+      public void close() {
         if (null != tableBlockIndexUniqueIdentifierWrapper) {
           if (null != wrapper && null != wrapper.getIndexes() && !wrapper.getIndexes()
               .isEmpty()) {

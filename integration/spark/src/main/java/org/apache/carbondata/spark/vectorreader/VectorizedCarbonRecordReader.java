@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -49,11 +48,12 @@ import org.apache.carbondata.hadoop.InputMetricsStats;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.log4j.Logger;
 import org.apache.spark.memory.MemoryMode;
+import org.apache.spark.sql.CarbonVectorProxy;
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.execution.vectorized.ColumnVectorUtils;
-import org.apache.spark.sql.CarbonVectorProxy;
 import org.apache.spark.sql.types.DecimalType;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -221,16 +221,16 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
         DirectDictionaryGenerator generator = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(dim.getDimension().getDataType());
         fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
-            CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(generator.getReturnType()), true, null);
+            CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(generator.getReturnType()), true,
+            null);
       } else {
         if (dim.getDimension().getDataType() == DataTypes.STRING
             || dim.getDimension().getDataType() == DataTypes.VARCHAR || dim.getDimension()
             .getColumnSchema().isLocalDictColumn()) {
           this.isNoDictStringField[dim.getOrdinal()] = true;
         }
-        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(),
-            CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(dim.getDimension().getDataType()), true,
-            null);
+        fields[dim.getOrdinal()] = new StructField(dim.getColumnName(), CarbonSparkDataSourceUtil
+            .convertCarbonToSparkDataType(dim.getDimension().getDataType()), true, null);
       }
     }
 
@@ -238,11 +238,11 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       ProjectionMeasure msr = queryMeasures.get(i);
       DataType dataType = msr.getMeasure().getDataType();
       if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.SHORT || dataType == DataTypes.INT
-          || dataType == DataTypes.LONG || dataType == DataTypes.FLOAT
-          || dataType == DataTypes.BYTE || dataType == DataTypes.BINARY) {
+          || dataType == DataTypes.LONG || dataType == DataTypes.FLOAT || dataType == DataTypes.BYTE
+          || dataType == DataTypes.BINARY) {
         fields[msr.getOrdinal()] = new StructField(msr.getColumnName(),
-            CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(msr.getMeasure().getDataType()), true,
-            null);
+            CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(msr.getMeasure().getDataType()),
+            true, null);
       } else if (DataTypes.isDecimal(dataType)) {
         fields[msr.getOrdinal()] = new StructField(msr.getColumnName(),
             new DecimalType(msr.getMeasure().getPrecision(), msr.getMeasure().getScale()), true,
@@ -298,13 +298,11 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
 
   /**
    * Whether to use lazy load in vector or not.
-   * @return
    */
   private boolean isUseLazyLoad() {
     boolean useLazyLoad = false;
     if (queryModel.getIndexFilter() != null) {
-      Expression expression =
-          queryModel.getIndexFilter().getExpression();
+      Expression expression = queryModel.getIndexFilter().getExpression();
       useLazyLoad = true;
       // In case of join queries only not null filter would e pushed down so check and disable the
       // lazy load in that case.

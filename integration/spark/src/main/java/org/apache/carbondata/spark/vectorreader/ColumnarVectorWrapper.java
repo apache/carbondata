@@ -48,8 +48,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   private CarbonColumnVector dictionaryVector;
 
-  ColumnarVectorWrapper(CarbonVectorProxy writableColumnVector,
-      boolean[] filteredRows, int ordinal) {
+  ColumnarVectorWrapper(CarbonVectorProxy writableColumnVector, boolean[] filteredRows,
+      int ordinal) {
     this.sparkColumnVectorProxy = writableColumnVector.getColumnVector(ordinal);
     this.filteredRows = filteredRows;
     this.carbonVectorProxy = writableColumnVector;
@@ -298,7 +298,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override
   public void setDictionary(CarbonDictionary dictionary) {
-      sparkColumnVectorProxy.setDictionary(dictionary);
+    sparkColumnVectorProxy.setDictionary(dictionary);
   }
 
   @Override

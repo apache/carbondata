@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql.secondaryindex.query;
 
 import java.io.IOException;
@@ -57,12 +58,11 @@ public class CarbonSecondaryIndexExecutor {
   // converter for UTF8String and decimal conversion
   private DataTypeConverter dataTypeConverter;
 
-  private static final Logger LOGGER =
-      LogServiceFactory.getLogService(CarbonSecondaryIndexExecutor.class.getName());
+  private static final Logger LOGGER = LogServiceFactory.getLogService(
+      CarbonSecondaryIndexExecutor.class.getName());
 
   /**
    * Constructor
-   *
    */
   public CarbonSecondaryIndexExecutor(TaskBlockInfo taskBlockInfo, CarbonTable carbonTable,
       List<String> secondaryIndexColumns, DataTypeConverter dataTypeConverter) {
@@ -80,12 +80,12 @@ public class CarbonSecondaryIndexExecutor {
    * @return List of Carbon iterators
    */
   public List<CarbonIterator<RowBatch>> processTableBlocks() throws QueryExecutionException {
-    List<CarbonIterator<RowBatch>> resultList =
-        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<CarbonIterator<RowBatch>> resultList = new ArrayList<>(
+        CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     List<TableBlockInfo> blockList = null;
     queryModel = prepareQueryModel();
-    this.queryExecutor =
-        QueryExecutorFactory.getQueryExecutor(queryModel, FileFactory.getConfiguration());
+    this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel,
+        FileFactory.getConfiguration());
     // for each segment get task block info
     Set<String> taskBlockListMapping = taskBlockInfo.getTaskSet();
     for (String task : taskBlockListMapping) {
@@ -112,7 +112,6 @@ public class CarbonSecondaryIndexExecutor {
 
   /**
    * get executor and execute the query model.
-   *
    */
   private CarbonIterator<RowBatch> executeBlockList(List<TableBlockInfo> blockList)
       throws QueryExecutionException {
@@ -133,8 +132,7 @@ public class CarbonSecondaryIndexExecutor {
   public QueryModel prepareQueryModel() {
 
     // Add implicit column position id or row id in case of secondary index creation
-    List<CarbonDimension> implicitDimensionList =
-        carbonTable.getImplicitDimensions();
+    List<CarbonDimension> implicitDimensionList = carbonTable.getImplicitDimensions();
     String[] columnsArray = new String[implicitDimensionList.size() + secondaryIndexColumns.length];
     int j = 0;
     for (String secondaryIndexColumn : secondaryIndexColumns) {

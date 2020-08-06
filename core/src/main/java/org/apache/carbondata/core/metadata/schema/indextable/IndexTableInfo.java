@@ -176,6 +176,4 @@ public class IndexTableInfo implements Serializable {
   public void setIndexProperties(Map<String, String> indexProperties) {
     this.indexProperties = indexProperties;
   }
-
-
 }

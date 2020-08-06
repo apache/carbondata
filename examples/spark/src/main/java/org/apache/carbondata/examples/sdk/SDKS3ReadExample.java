@@ -27,10 +27,11 @@ import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.sdk.file.CarbonReader;
 
+import static org.apache.carbondata.sdk.file.utils.SDKUtil.listFiles;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
-import static org.apache.carbondata.sdk.file.utils.SDKUtil.listFiles;
 import static org.apache.hadoop.fs.s3a.Constants.ACCESS_KEY;
 import static org.apache.hadoop.fs.s3a.Constants.ENDPOINT;
 import static org.apache.hadoop.fs.s3a.Constants.SECRET_KEY;

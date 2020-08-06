@@ -15,17 +15,36 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark;
+package org.apache.spark.sql.secondaryindex.exception;
 
-import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
-import org.apache.carbondata.hadoop.InputMetricsStats;
+public class IndexTableExistException extends Exception {
 
-import org.apache.spark.TaskContext;
 
-/**
- * Initializes bytes read call back
- */
-public interface InitInputMetrics extends InputMetricsStats {
+  /**
+   * default serial version ID.
+   */
+  private static final long serialVersionUID = 1L;
 
-  void initBytesReadCallback(TaskContext context, CarbonMultiBlockSplit carbonMultiBlockSplit, Long inputMetricsInterval);
+  /**
+   * The Error message.
+   */
+  private String msg;
+
+  /**
+   * Constructor
+   *
+   * @param msg The error message for this exception.
+   */
+  public IndexTableExistException(String msg) {
+    super(msg);
+    this.msg = msg;
+  }
+
+  /**
+   * getMessage
+   */
+  @Override
+  public String getMessage() {
+    return this.msg;
+  }
 }

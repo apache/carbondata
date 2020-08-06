@@ -14,26 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.spark.sql.secondaryindex.exception;
+
+package org.apache.carbondata.spark;
+
+import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
+import org.apache.carbondata.hadoop.InputMetricsStats;
+
+import org.apache.spark.TaskContext;
 
 /**
- * Exception class specific to SecondaryIndex creation
+ * Initializes bytes read call back
  */
-public class SecondaryIndexException extends Exception {
+public interface InitInputMetrics extends InputMetricsStats {
 
-  private String message;
-
-  public SecondaryIndexException(String message) {
-    super(message);
-    this.message = message;
-  }
-
-  public SecondaryIndexException(String message, Throwable t) {
-    super(message, t);
-    this.message = message;
-  }
-
-  @Override public String getMessage() {
-    return message;
-  }
+  void initBytesReadCallback(TaskContext context, CarbonMultiBlockSplit carbonMultiBlockSplit,
+      Long inputMetricsInterval);
 }

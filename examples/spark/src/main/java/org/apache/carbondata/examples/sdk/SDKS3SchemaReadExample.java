@@ -18,8 +18,8 @@
 package org.apache.carbondata.examples.sdk;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.sdk.file.CarbonSchemaReader;
 import org.apache.carbondata.core.metadata.datatype.Field;
+import org.apache.carbondata.sdk.file.CarbonSchemaReader;
 import org.apache.carbondata.sdk.file.Schema;
 
 import org.apache.hadoop.conf.Configuration;
