@@ -70,10 +70,6 @@ with Serializable {
     None
   }
 
-  SparkSession.getActiveSession.get.sessionState.conf.setConfString(
-    "spark.sql.sources.commitProtocolClass",
-    "org.apache.spark.sql.execution.datasources.CarbonSQLHadoopMapReduceCommitProtocol")
-
   override def prepareWrite(
       sparkSession: SparkSession,
       job: Job,
