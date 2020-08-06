@@ -122,7 +122,7 @@ public class IndexUtil {
         new IndexInputFormat(carbonTable, validAndInvalidSegmentsInfo.getValidSegments(),
             invalidSegment, true, indexToClear);
     try {
-      indexJob.execute(indexInputFormat);
+      indexJob.execute(indexInputFormat, null);
     } catch (Exception e) {
       // Consider a scenario where clear index job is called from drop table
       // and index server crashes, in this no exception should be thrown and
@@ -273,9 +273,10 @@ public class IndexUtil {
   public static List<ExtendedBlocklet> executeIndexJob(CarbonTable carbonTable,
       FilterResolverIntf resolver, IndexJob indexJob, List<PartitionSpec> partitionsToPrune,
       List<Segment> validSegments, List<Segment> invalidSegments, IndexLevel level,
-      List<String> segmentsToBeRefreshed) {
+      List<String> segmentsToBeRefreshed, Configuration configuration) {
     return executeIndexJob(carbonTable, resolver, indexJob, partitionsToPrune, validSegments,
-        invalidSegments, level, false, segmentsToBeRefreshed, false);
+        invalidSegments, level, false, segmentsToBeRefreshed, false,
+        configuration);
   }
 
   /**
@@ -286,7 +287,8 @@ public class IndexUtil {
   public static List<ExtendedBlocklet> executeIndexJob(CarbonTable carbonTable,
       FilterResolverIntf resolver, IndexJob indexJob, List<PartitionSpec> partitionsToPrune,
       List<Segment> validSegments, List<Segment> invalidSegments, IndexLevel level,
-      Boolean isFallbackJob, List<String> segmentsToBeRefreshed, boolean isCountJob) {
+      Boolean isFallbackJob, List<String> segmentsToBeRefreshed, boolean isCountJob,
+      Configuration configuration) {
     List<String> invalidSegmentNo = new ArrayList<>();
     for (Segment segment : invalidSegments) {
       invalidSegmentNo.add(segment.getSegmentNo());
@@ -299,7 +301,7 @@ public class IndexUtil {
       indexInputFormat.setCountStarJob();
       indexInputFormat.setIsWriteToFile(false);
     }
-    return indexJob.execute(indexInputFormat);
+    return indexJob.execute(indexInputFormat, configuration);
   }
 
   public static SegmentStatusManager.ValidAndInvalidSegmentsInfo getValidAndInvalidSegments(

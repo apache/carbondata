@@ -20,11 +20,13 @@ import java.util
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.log4j.Logger
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.SizeEstimator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.{AbstractIndexJob, IndexInputFormat}
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -43,7 +45,8 @@ class DistributedIndexJob extends AbstractIndexJob {
 
   val LOGGER: Logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  override def execute(indexFormat: IndexInputFormat): util.List[ExtendedBlocklet] = {
+  override def execute(indexFormat: IndexInputFormat,
+      configuration: Configuration): util.List[ExtendedBlocklet] = {
     if (LOGGER.isDebugEnabled) {
       val messageSize = SizeEstimator.estimate(indexFormat)
       LOGGER.debug(s"Size of message sent to Index Server: $messageSize")
@@ -55,14 +58,27 @@ class DistributedIndexJob extends AbstractIndexJob {
     val (response, time) = logTime {
       try {
         val spark = SparkSQLUtil.getSparkSession
-        indexFormat.setTaskGroupId(SparkSQLUtil.getTaskGroupId(spark))
-        indexFormat.setTaskGroupDesc(SparkSQLUtil.getTaskGroupDesc(spark))
+        // In case of presto with index server flow, sparksession will be null
+        if (null != spark) {
+          indexFormat.setTaskGroupId(SparkSQLUtil.getTaskGroupId(spark))
+          indexFormat.setTaskGroupDesc(SparkSQLUtil.getTaskGroupDesc(spark))
+        } else {
+          val queryId = configuration.get("presto.cli.query.id")
+          if (null != queryId) {
+            indexFormat.setTaskGroupId(queryId)
+          }
+        }
         var filterInf = indexFormat.getFilterResolverIntf
         val filterProcessor = new FilterExpressionProcessor
         filterInf = removeSparkUnknown(filterInf,
           indexFormat.getCarbonTable.getAbsoluteTableIdentifier, filterProcessor)
         indexFormat.setFilterResolverIntf(filterInf)
-        IndexServer.getClient.getSplits(indexFormat)
+        val client = if (null != spark) {
+          IndexServer.getClient
+        } else {
+          IndexServer.getClient(configuration)
+        }
+        client.getSplits(indexFormat)
           .getExtendedBlocklets(indexFormat.getCarbonTable.getTablePath, indexFormat
             .getQueryId, indexFormat.isCountStarJob)
       } finally {
@@ -121,7 +137,8 @@ class DistributedIndexJob extends AbstractIndexJob {
  */
 class EmbeddedIndexJob extends AbstractIndexJob {
 
-  override def execute(indexFormat: IndexInputFormat): util.List[ExtendedBlocklet] = {
+  override def execute(indexFormat: IndexInputFormat,
+      configuration: Configuration): util.List[ExtendedBlocklet] = {
     val spark = SparkSQLUtil.getSparkSession
     val originalJobDesc = spark.sparkContext.getLocalProperty("spark.job.description")
     indexFormat.setIsWriteToFile(false)

@@ -101,6 +101,11 @@ public class CarbonTableReader {
   private String queryId;
 
   /**
+   * presto cli query id
+   */
+  private String prestoQueryId;
+
+  /**
    * Logger instance
    */
   private static final Logger LOGGER =
@@ -254,6 +259,7 @@ public class CarbonTableReader {
     List<CarbonLocalMultiBlockSplit> multiBlockSplitList = new ArrayList<>();
     CarbonTable carbonTable = tableCacheModel.getCarbonTable();
     TableInfo tableInfo = tableCacheModel.getCarbonTable().getTableInfo();
+    config.set("presto.cli.query.id", prestoQueryId);
     config.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, "");
     String carbonTablePath = carbonTable.getAbsoluteTableIdentifier().getTablePath();
     config.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
@@ -280,6 +286,8 @@ public class CarbonTableReader {
               new IndexFilter(carbonTable, filters, true), filteredPartitions);
       Job job = Job.getInstance(jobConf);
       List<InputSplit> splits = carbonTableInputFormat.getSplits(job);
+      boolean distributedPruningEnabled = CarbonProperties.getInstance()
+          .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName());
       Gson gson = new Gson();
       if (splits != null && splits.size() > 0) {
         for (InputSplit inputSplit : splits) {
@@ -290,7 +298,7 @@ public class CarbonTableReader {
               carbonInputSplit.getNumberOfBlocklets(), carbonInputSplit.getVersion().number(),
               carbonInputSplit.getDeleteDeltaFiles(), carbonInputSplit.getBlockletId(),
               gson.toJson(carbonInputSplit.getDetailInfo()),
-              carbonInputSplit.getFileFormat().ordinal()));
+              carbonInputSplit.getFileFormat().ordinal(), distributedPruningEnabled));
         }
         // Use block distribution
         List<List<CarbonLocalInputSplit>> inputSplits =
@@ -395,4 +403,9 @@ public class CarbonTableReader {
   public void setQueryId(String queryId) {
     this.queryId = queryId;
   }
+
+  public void setPrestoQueryId(String prestoQueryId) {
+    this.prestoQueryId = prestoQueryId;
+  }
+
 }

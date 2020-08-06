@@ -412,15 +412,16 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
   List<ExtendedBlocklet> getDistributedBlockRowCount(CarbonTable table,
       List<PartitionSpec> partitionNames, List<Segment> validSegments,
-      List<Segment> invalidSegments, List<String> segmentsToBeRefreshed) {
+      List<Segment> invalidSegments, List<String> segmentsToBeRefreshed,
+      Configuration configuration) {
     return getDistributedSplit(table, null, partitionNames, validSegments, invalidSegments,
-        segmentsToBeRefreshed, true);
+        segmentsToBeRefreshed, true, configuration);
   }
 
   private List<ExtendedBlocklet> getDistributedSplit(CarbonTable table,
       FilterResolverIntf filterResolverIntf, List<PartitionSpec> partitionNames,
       List<Segment> validSegments, List<Segment> invalidSegments,
-      List<String> segmentsToBeRefreshed, boolean isCountJob) {
+      List<String> segmentsToBeRefreshed, boolean isCountJob, Configuration configuration) {
     try {
       IndexJob indexJob = (IndexJob) IndexUtil.createIndexJob(IndexUtil.DISTRIBUTED_JOB_NAME);
       if (indexJob == null) {
@@ -428,7 +429,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       }
       return IndexUtil
           .executeIndexJob(table, filterResolverIntf, indexJob, partitionNames, validSegments,
-              invalidSegments, null, false, segmentsToBeRefreshed, isCountJob);
+              invalidSegments, null, false, segmentsToBeRefreshed, isCountJob, configuration);
     } catch (Exception e) {
       // Check if fallback is disabled for testing purposes then directly throw exception.
       if (CarbonProperties.getInstance().isFallBackDisabled()) {
@@ -436,9 +437,10 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       }
       LOG.error("Exception occurred while getting splits using index server. Initiating Fall "
           + "back to embedded mode", e);
-      return IndexUtil.executeIndexJob(table, filterResolverIntf,
-          IndexUtil.getEmbeddedJob(), partitionNames, validSegments,
-          invalidSegments, null, true, segmentsToBeRefreshed, isCountJob);
+      return IndexUtil
+          .executeIndexJob(table, filterResolverIntf, IndexUtil.getEmbeddedJob(), partitionNames,
+              validSegments, invalidSegments, null, true, segmentsToBeRefreshed, isCountJob,
+              configuration);
     }
   }
 
@@ -528,7 +530,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       try {
         prunedBlocklets =
             getDistributedSplit(carbonTable, filter.getResolver(), partitionsToPrune, segmentIds,
-                invalidSegments, segmentsToBeRefreshed, false);
+                invalidSegments, segmentsToBeRefreshed, false, job.getConfiguration());
       } catch (Exception e) {
         // Check if fallback is disabled then directly throw exception otherwise try driver
         // pruning.
@@ -568,7 +570,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
           if (distributedCG && indexJob != null) {
             cgPrunedBlocklets = IndexUtil
                 .executeIndexJob(carbonTable, filter.getResolver(), indexJob, partitionsToPrune,
-                    segmentIds, invalidSegments, IndexLevel.CG, new ArrayList<>());
+                    segmentIds, invalidSegments, IndexLevel.CG, new ArrayList<>(),
+                    job.getConfiguration());
           } else {
             cgPrunedBlocklets = cgIndexExprWrapper.prune(segmentIds, partitionsToPrune);
           }
@@ -602,9 +605,10 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
           // Prune segments from already pruned blocklets
           IndexUtil.pruneSegments(segmentIds, prunedBlocklets);
           // Prune segments from already pruned blocklets
-          fgPrunedBlocklets = IndexUtil.executeIndexJob(
-              carbonTable, filter.getResolver(), indexJob, partitionsToPrune, segmentIds,
-              invalidSegments, fgIndexExprWrapper.getIndexLevel(), new ArrayList<>());
+          fgPrunedBlocklets = IndexUtil
+              .executeIndexJob(carbonTable, filter.getResolver(), indexJob, partitionsToPrune,
+                  segmentIds, invalidSegments, fgIndexExprWrapper.getIndexLevel(),
+                  new ArrayList<>(), job.getConfiguration());
           // note that the 'fgPrunedBlocklets' has extra index related info compared with
           // 'prunedBlocklets', so the intersection should keep the elements in 'fgPrunedBlocklets'
           prunedBlocklets =

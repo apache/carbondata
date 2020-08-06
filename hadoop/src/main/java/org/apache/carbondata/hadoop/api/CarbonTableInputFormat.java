@@ -482,7 +482,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         try {
           List<ExtendedBlocklet> extendedBlocklets =
               getDistributedBlockRowCount(table, partitions, filteredSegment,
-                  allSegments.getInvalidSegments(), toBeCleanedSegments);
+                  allSegments.getInvalidSegments(), toBeCleanedSegments, job.getConfiguration());
           for (ExtendedBlocklet blocklet : extendedBlocklets) {
             String filePath = blocklet.getFilePath().replace("\\", "/");
             String blockName = filePath.substring(filePath.lastIndexOf("/") + 1);
