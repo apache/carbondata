@@ -23,7 +23,7 @@ import java.util.concurrent.{Callable, Executors, ExecutorService, TimeUnit}
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.mapreduce.{InputSplit, Job, TaskAttemptID, TaskType}
+import org.apache.hadoop.mapreduce.{InputSplit, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, TaskContext, TaskKilledException}
@@ -39,6 +39,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.spark.rdd.CarbonRDD
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 class SparkBlockletIndexLoaderJob extends AbstractIndexJob {
   override def execute(carbonTable: CarbonTable,
@@ -143,7 +144,7 @@ class IndexLoaderRDD(
   private val jobTrackerId = CarbonInputFormatUtil.createJobTrackerID()
 
   override def internalGetPartitions: Array[Partition] = {
-    val job = Job.getInstance(new Configuration())
+    val job = CarbonSparkUtil.createHadoopJob()
     val splits = indexFormat.getSplits(job)
     splits.asScala.zipWithIndex.map(f => new IndexLoaderPartition(id, f._2, f._1)).toArray
   }
