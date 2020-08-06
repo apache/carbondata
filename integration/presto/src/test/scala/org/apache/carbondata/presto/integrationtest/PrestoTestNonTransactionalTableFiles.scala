@@ -17,10 +17,11 @@
 
 package org.apache.carbondata.presto.integrationtest
 
-import java.io.File
+import java.io.{BufferedInputStream, File, FileInputStream}
 import java.sql.SQLException
 import java.util
 
+import org.apache.commons.codec.binary.Hex
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.RandomStringUtils
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike}
@@ -44,6 +45,7 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
                                   + "../../../..").getCanonicalPath
   private val storePath = s"$rootPath/integration/presto/target/store"
   private val writerPath = storePath + "/sdk_output/files"
+  private val writerPathBinary = storePath + "/sdk_output/files1"
   private val prestoServer = new PrestoServer
   private var varcharString = new String
 
@@ -83,6 +85,17 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
       .execute(
         "create table sdk_output.files(name varchar, age int, id tinyint, height double, salary " +
         "real, address varchar) with" +
+        "(format='CARBON') ")
+  }
+
+  private def createTableBinary = {
+    prestoServer.execute("drop table if exists sdk_output.files1")
+    prestoServer.execute("drop schema if exists sdk_output")
+    prestoServer.execute("create schema sdk_output")
+    prestoServer
+      .execute(
+        "create table sdk_output.files1(name boolean, age int, id varbinary, height double, salary " +
+        "real) with" +
         "(format='CARBON') ")
   }
 
@@ -173,27 +186,36 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
   }
 
   // prepare sdk writer output with other schema
-  def buildTestDataOtherDataType(rows: Int, sortColumns: Array[String]): Any = {
+  def buildTestDataOtherDataType(rows: Int, sortColumns: Array[String], path : String): Any = {
     val fields: Array[Field] = new Array[Field](5)
     // same column name, but name as boolean type
     fields(0) = new Field("name", DataTypes.BOOLEAN)
     fields(1) = new Field("age", DataTypes.INT)
-    fields(2) = new Field("id", DataTypes.BYTE)
+    fields(2) = new Field("id", DataTypes.BINARY)
     fields(3) = new Field("height", DataTypes.DOUBLE)
     fields(4) = new Field("salary", DataTypes.FLOAT)
 
+    val imagePath = rootPath + "/sdk/sdk/src/test/resources/image/carbondatalogo.jpg"
     try {
+      var i = 0
+      val bis = new BufferedInputStream(new FileInputStream(imagePath))
+      var hexValue: Array[Char] = null
+      val originBinary = new Array[Byte](bis.available)
+      while (bis.read(originBinary) != -1) {
+        hexValue = Hex.encodeHex(originBinary)
+      }
+      bis.close()
+      val binaryValue = String.valueOf(hexValue)
       val builder = CarbonWriter.builder()
       val writer =
-        builder.outputPath(writerPath)
+        builder.outputPath(path)
           .uniqueIdentifier(System.currentTimeMillis()).withBlockSize(2).sortBy(sortColumns)
           .withCsvInput(new Schema(fields)).writtenBy("TestNonTransactionalCarbonTable").build()
-      var i = 0
       while (i < rows) {
         writer
           .write(Array[String]("true",
             String.valueOf(i),
-            String.valueOf(i),
+            binaryValue,
             String.valueOf(i.toDouble / 2),
             String.valueOf(i.toFloat / 2)))
         i += 1
@@ -260,7 +282,7 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
 
   test("test reading different schema") {
     buildTestDataSingleFile()
-    buildTestDataOtherDataType(3, null)
+    buildTestDataOtherDataType(3, null, writerPath)
     val exception =
       intercept[SQLException] {
         val actualResult: List[Map[String, Any]] = prestoServer
@@ -269,6 +291,23 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     assert(exception.getMessage()
       .contains("All common columns present in the files doesn't have same datatype"))
     cleanTestData()
+  }
+
+  test("test reading binary") {
+    FileUtils.deleteDirectory(new File(writerPathBinary))
+    createTableBinary
+    buildTestDataOtherDataType(3, null, writerPathBinary)
+    val actualResult: List[Map[String, Any]] = prestoServer
+      .executeQuery("select id from files1 ")
+    assert(actualResult.size == 3)
+    // check the binary byte Array size, as original hex encoded image byte array size is 118198
+    assert(actualResult.head("id").asInstanceOf[Array[Byte]].length == 118198)
+    // validate some initial bytes
+    assert(actualResult.head("id").asInstanceOf[Array[Byte]](0) == 56)
+    assert(actualResult.head("id").asInstanceOf[Array[Byte]](1) == 57)
+    assert(actualResult.head("id").asInstanceOf[Array[Byte]](2) == 53)
+    assert(actualResult.head("id").asInstanceOf[Array[Byte]](3) == 48)
+    FileUtils.deleteDirectory(new File(writerPathBinary))
   }
 
   test("test reading without carbon index file") {
