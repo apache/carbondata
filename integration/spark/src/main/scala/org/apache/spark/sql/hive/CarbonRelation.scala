@@ -207,9 +207,6 @@ case class CarbonRelation(
                   null != validSeg.getLoadMetadataDetails.getIndexSize) {
                 size = size + validSeg.getLoadMetadataDetails.getDataSize.toLong +
                        validSeg.getLoadMetadataDetails.getIndexSize.toLong
-              } else {
-                size = size + FileFactory.getDirectorySize(
-                  CarbonTablePath.getSegmentPath(tablePath, validSeg.getSegmentNo))
               }
             }
             // update the new table status time

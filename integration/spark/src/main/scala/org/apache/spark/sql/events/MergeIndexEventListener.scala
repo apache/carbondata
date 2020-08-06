@@ -53,7 +53,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
         val carbonTable = loadModel.getCarbonDataLoadSchema.getCarbonTable
         val compactedSegments = loadModel.getMergedSegmentIds
         val sparkSession = SparkSession.getActiveSession.get
-        var partitionInfo: util.List[String] = null
+        var partitionInfo: util.List[String] = new util.ArrayList[String]()
         val partitionPath = operationContext.getProperty("partitionPath")
         if (partitionPath != null) {
           partitionInfo = ObjectSerializationUtil

@@ -108,6 +108,22 @@ public class LoadMetadataDetailsUnitTest {
     assertEquals(expected_result, result);
   }
 
+  @Test public void testGetLastTimeStamp() throws Exception {
+    SimpleDateFormat parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
+    long timeStamp = parser.parse("01-01-2016 00:00:00:000").getTime();
+    loadMetadataDetails.setUpdateDeltaEndTimestamp("01-01-2016 00:00:00:000");
+    assertEquals(loadMetadataDetails.getLastModifiedTime(), timeStamp);;
+    loadMetadataDetails.setUpdateDeltaEndTimestamp("01-01-2016 00:00:00");
+    assertEquals(loadMetadataDetails.getLastModifiedTime(), timeStamp);;
+    loadMetadataDetails.setUpdateDeltaEndTimestamp(null);
+    loadMetadataDetails.setLoadEndTime(timeStamp);
+    assertEquals(loadMetadataDetails.getLastModifiedTime(), timeStamp);
+    loadMetadataDetails.setUpdateDeltaEndTimestamp("");
+    assertEquals(loadMetadataDetails.getLastModifiedTime(), timeStamp);
+    loadMetadataDetails.setUpdateDeltaEndTimestamp("#");
+    assertEquals(loadMetadataDetails.getLastModifiedTime(), 0L);
+  }
+
   public static Long getTime(String date) {
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
     try {
