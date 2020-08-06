@@ -54,7 +54,7 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
     if (null == data) {
       return null;
     }
-    return org.apache.spark.sql.types.Decimal.apply((BigDecimal)data);
+    return org.apache.spark.sql.types.Decimal.apply((BigDecimal) data);
   }
 
   @Override
@@ -161,9 +161,8 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
           fields[i] = new StructField(carbonColumn.getColName(),
               convertCarbonToSparkDataType(carbonColumn.getDataType()), true, null);
         } else {
-          fields[i] = new StructField(carbonColumn.getColName(),
-              convertCarbonToSparkDataType(
-                  org.apache.carbondata.core.metadata.datatype.DataTypes.INT), true, null);
+          fields[i] = new StructField(carbonColumn.getColName(), convertCarbonToSparkDataType(
+              org.apache.carbondata.core.metadata.datatype.DataTypes.INT), true, null);
         }
       } else if (carbonColumn.isMeasure()) {
         DataType dataType = carbonColumn.getDataType();
@@ -173,16 +172,16 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.LONG
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BINARY
             || dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.VARCHAR) {
-          fields[i] = new StructField(carbonColumn.getColName(),
-              convertCarbonToSparkDataType(dataType), true, null);
+          fields[i] =
+              new StructField(carbonColumn.getColName(), convertCarbonToSparkDataType(dataType),
+                  true, null);
         } else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isDecimal(dataType)) {
           CarbonMeasure measure = (CarbonMeasure) carbonColumn;
           fields[i] = new StructField(carbonColumn.getColName(),
               new DecimalType(measure.getPrecision(), measure.getScale()), true, null);
         } else {
-          fields[i] = new StructField(carbonColumn.getColName(),
-              convertCarbonToSparkDataType(
-                  org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE), true, null);
+          fields[i] = new StructField(carbonColumn.getColName(), convertCarbonToSparkDataType(
+              org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE), true, null);
         }
       }
     }

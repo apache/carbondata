@@ -57,8 +57,8 @@ public class CarbonStreamRecordReader extends StreamRecordReader {
   protected void initializeAtFirstRow() throws IOException {
     super.initializeAtFirstRow();
     outputRow = new GenericInternalRow(outputValues);
-    outputSchema = new StructType((StructField[])
-        DataTypeUtil.getDataTypeConverter().convertCarbonSchemaToSparkSchema(projection));
+    outputSchema = new StructType((StructField[]) DataTypeUtil.getDataTypeConverter()
+        .convertCarbonSchemaToSparkSchema(projection));
   }
 
   @Override
@@ -160,7 +160,7 @@ public class CarbonStreamRecordReader extends StreamRecordReader {
   private void putRowToColumnBatch(int rowId) {
     for (int i = 0; i < projection.length; i++) {
       Object value = outputValues[i];
-      vectorProxy.getColumnVector(i).putRowToColumnBatch(rowId,value);
+      vectorProxy.getColumnVector(i).putRowToColumnBatch(rowId, value);
 
     }
   }

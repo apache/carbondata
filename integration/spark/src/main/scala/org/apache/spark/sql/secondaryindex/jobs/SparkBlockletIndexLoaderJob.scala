@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.secondaryindex.Jobs
+package org.apache.spark.sql.secondaryindex.jobs
 
 import java.{lang, util}
 import java.text.SimpleDateFormat
-import java.util.concurrent.{Callable, Executors, ExecutorService, TimeUnit}
 import java.util.Date
+import java.util.concurrent.{Callable, Executors, ExecutorService, TimeUnit}
 
 import scala.collection.JavaConverters._
 
@@ -32,7 +32,6 @@ import org.apache.spark.{Partition, TaskContext, TaskKilledException}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.util.SparkSQLUtil
 
-import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.index.{AbstractIndexJob, IndexInputFormat, IndexStoreManager}
 import org.apache.carbondata.core.index.dev.CacheableIndex
@@ -43,8 +42,6 @@ import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.spark.rdd.CarbonRDD
 
 class SparkBlockletIndexLoaderJob extends AbstractIndexJob {
-  private val LOGGER = LogServiceFactory
-    .getLogService(classOf[SparkBlockletIndexLoaderJob].getName)
   override def execute(carbonTable: CarbonTable,
       indexFormat: FileInputFormat[Void, BlockletIndexWrapper]): Unit = {
     val loader: BlockletIndexInputFormat = indexFormat

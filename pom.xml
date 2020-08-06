@@ -398,6 +398,13 @@
           <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
           <outputFile>${basedir}/target/checkstyle-output.xml</outputFile>
         </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>6.19</version>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <goals>

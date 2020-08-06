@@ -14,22 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql.index;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.spark.sql.secondaryindex.exception.IndexTableExistException;
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.index.IndexType;
 import org.apache.carbondata.core.metadata.schema.indextable.IndexTableInfo;
 
+import org.apache.spark.sql.secondaryindex.exception.IndexTableExistException;
+
 public class IndexTableUtil {
   /**
    * adds index table info into parent table properties
-   *
    */
   public static String checkAndAddIndexTable(String gsonData, IndexTableInfo newIndexTable,
       boolean isSecondaryIndex) throws IndexTableExistException {

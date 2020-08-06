@@ -14,35 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql.secondaryindex.exception;
 
-public class IndexTableExistException extends Exception {
+/**
+ * Exception class specific to SecondaryIndex creation
+ */
+public class SecondaryIndexException extends Exception {
 
+  private String message;
 
-  /**
-   * default serial version ID.
-   */
-  private static final long serialVersionUID = 1L;
-
-  /**
-   * The Error message.
-   */
-  private String msg;
-
-  /**
-   * Constructor
-   *
-   * @param msg The error message for this exception.
-   */
-  public IndexTableExistException(String msg) {
-    super(msg);
-    this.msg = msg;
+  public SecondaryIndexException(String message) {
+    super(message);
+    this.message = message;
   }
 
-  /**
-   * getMessage
-   */
-  @Override public String getMessage() {
-    return this.msg;
+  public SecondaryIndexException(String message, Throwable t) {
+    super(message, t);
+    this.message = message;
+  }
+
+  @Override
+  public String getMessage() {
+    return message;
   }
 }

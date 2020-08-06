@@ -110,6 +110,7 @@ public final class IndexStoreManager {
     }
     return indexes;
   }
+
   /**
    * It gives the default index of the table. Default index of any table is BlockletIndex
    *

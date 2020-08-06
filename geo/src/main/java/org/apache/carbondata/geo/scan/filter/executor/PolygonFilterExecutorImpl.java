@@ -85,7 +85,7 @@ public class PolygonFilterExecutorImpl extends RowLevelFilterExecutorImpl {
     int startIndex = getNearestRangeIndex(ranges, min);
     int endIndex = getNearestRangeIndex(ranges, max);
     if (endIndex > startIndex) {
-       // Multiple ranges fall between min and max. Need to scan this block or blocklet
+      // Multiple ranges fall between min and max. Need to scan this block or blocklet
       return true;
     }
     // Got same index for both min and max values.

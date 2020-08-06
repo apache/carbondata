@@ -192,9 +192,9 @@ public class IndexUtil {
     if (!CarbonProperties.getInstance()
         .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName())
         && BlockletIndexUtil.loadIndexesParallel(carbonTable)) {
-      String clsName = "org.apache.spark.sql.secondaryindex.Jobs.SparkBlockletIndexLoaderJob";
+      String clsName = "org.apache.spark.sql.secondaryindex.jobs.SparkBlockletIndexLoaderJob";
       IndexJob indexJob = (IndexJob) createIndexJob(clsName);
-      String className = "org.apache.spark.sql.secondaryindex.Jobs.BlockletIndexInputFormat";
+      String className = "org.apache.spark.sql.secondaryindex.jobs.BlockletIndexInputFormat";
       FileInputFormat indexFormat =
           createIndexJob(carbonTable, indexExprWrapper, validSegments, className);
       indexJob.execute(carbonTable, indexFormat);

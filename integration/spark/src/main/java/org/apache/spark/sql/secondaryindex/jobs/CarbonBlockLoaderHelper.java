@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.secondaryindex.Jobs;
+package org.apache.spark.sql.secondaryindex.jobs;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
