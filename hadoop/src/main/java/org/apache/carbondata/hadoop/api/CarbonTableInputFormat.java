@@ -538,7 +538,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       if (CarbonProperties.getInstance()
           .isDistributedPruningEnabled(table.getDatabaseName(), table.getTableName())) {
         totalRowCount =
-            getDistributedCount(table, partitions, filteredSegment);
+            getDistributedCount(table, partitions, filteredSegment, job.getConfiguration());
       } else {
         TableIndex defaultIndex = IndexStoreManager.getInstance().getDefaultIndex(table);
         totalRowCount = defaultIndex.getRowCount(filteredSegment, partitions, defaultIndex);

@@ -37,6 +37,6 @@ public interface IndexJob extends Serializable {
 
   List<ExtendedBlocklet> execute(IndexInputFormat indexInputFormat, Configuration configuration);
 
-  Long executeCountJob(IndexInputFormat indexInputFormat);
+  Long executeCountJob(IndexInputFormat indexInputFormat, Configuration configuration);
 
 }

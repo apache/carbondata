@@ -391,8 +391,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * table. If the job fails for some reason then an embedded job is fired to
    * get the count.
    */
-  Long getDistributedCount(CarbonTable table,
-      List<PartitionSpec> partitionNames, List<Segment> validSegments) {
+  Long getDistributedCount(CarbonTable table, List<PartitionSpec> partitionNames,
+      List<Segment> validSegments, Configuration configuration) {
     IndexInputFormat indexInputFormat =
         new IndexInputFormat(table, null, validSegments, new ArrayList<>(),
             partitionNames, false, null, false, false);
@@ -402,11 +402,11 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       if (indexJob == null) {
         throw new ExceptionInInitializerError("Unable to create index job");
       }
-      return indexJob.executeCountJob(indexInputFormat);
+      return indexJob.executeCountJob(indexInputFormat, configuration);
     } catch (Exception e) {
       LOG.error("Failed to get count from index server. Initializing fallback", e);
       IndexJob indexJob = IndexUtil.getEmbeddedJob();
-      return indexJob.executeCountJob(indexInputFormat);
+      return indexJob.executeCountJob(indexInputFormat, configuration);
     }
   }
 

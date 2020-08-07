@@ -26,7 +26,6 @@ import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.SizeEstimator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.{AbstractIndexJob, IndexInputFormat}
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -126,8 +125,14 @@ class DistributedIndexJob extends AbstractIndexJob {
     filterInf
   }
 
-  override def executeCountJob(indexFormat: IndexInputFormat): java.lang.Long = {
-    IndexServer.getClient.getCount(indexFormat).get()
+  override def executeCountJob(indexFormat: IndexInputFormat,
+      configuration: Configuration): java.lang.Long = {
+    val client = if (null == SparkSQLUtil.getSparkSession) {
+      IndexServer.getClient(configuration)
+    } else {
+      IndexServer.getClient
+    }
+    client.getCount(indexFormat).get()
   }
 }
 
@@ -154,7 +159,8 @@ class EmbeddedIndexJob extends AbstractIndexJob {
     splits
   }
 
-  override def executeCountJob(inputFormat: IndexInputFormat): java.lang.Long = {
+  override def executeCountJob(inputFormat: IndexInputFormat,
+      configuration: Configuration): java.lang.Long = {
     inputFormat.setFallbackJob()
     IndexServer.getCount(inputFormat).get()
   }
