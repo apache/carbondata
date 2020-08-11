@@ -103,7 +103,7 @@ CarbonData has rich set of features to support various use cases in Big Data ana
 
 - ##### S3
 
-  CarbonData can write to S3, OBS or any cloud storage confirming to S3 protocol. CarbonData uses the HDFS api to write to cloud object stores.
+  CarbonData can write to S3, OBS or any cloud storage conforming to S3 protocol. CarbonData uses the HDFS api to write to cloud object stores.
 
 - ##### HDFS
 
