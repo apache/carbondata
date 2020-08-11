@@ -34,7 +34,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.result.RowBatch;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
-import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -247,12 +246,9 @@ public class SecondaryIndexQueryResultProcessor {
   private Object[] prepareRowObjectForSorting(Object[] row) {
     ByteArrayWrapper wrapper = (ByteArrayWrapper) row[0];
     // ByteBuffer[] noDictionaryBuffer = new ByteBuffer[noDictionaryCount];
+
     List<CarbonDimension> dimensions = segmentProperties.getDimensions();
     Object[] preparedRow = new Object[dimensions.size() + measureCount];
-
-    // get dictionary values for date type
-    byte[] dictionaryKey = wrapper.getDictionaryKey();
-    int[] dictionaryValues = ByteUtil.convertBytesToIntArray(dictionaryKey);
 
     int noDictionaryIndex = 0;
     int dictionaryIndex = 0;
@@ -262,7 +258,7 @@ public class SecondaryIndexQueryResultProcessor {
       CarbonDimension dims = dimensions.get(i);
       if (dims.hasEncoding(Encoding.DICTIONARY)) {
         // dictionary
-        preparedRow[i] = dictionaryValues[dictionaryIndex++];
+        preparedRow[i] = wrapper.getDictionaryKeyByIndex(dictionaryIndex++);
       } else {
         // no dictionary dims
         byte[] noDictionaryKeyByIndex = wrapper.getNoDictionaryKeyByIndex(noDictionaryIndex++);

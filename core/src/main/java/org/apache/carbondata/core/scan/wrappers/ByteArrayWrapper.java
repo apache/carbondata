@@ -19,6 +19,7 @@ package org.apache.carbondata.core.scan.wrappers;
 
 import java.io.Serializable;
 
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 
 /**
@@ -102,6 +103,15 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
    */
   public byte[][] getComplexTypesKeys() {
     return this.complexTypesKeys;
+  }
+
+  /**
+   * to get the dictionary column data
+   * @param index
+   * @return
+   */
+  public int getDictionaryKeyByIndex(int index) {
+    return ByteUtil.convertBytesToInt(this.getDictionaryKey(), index * 4);
   }
 
   /**
