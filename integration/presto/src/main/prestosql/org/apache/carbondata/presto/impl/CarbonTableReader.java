@@ -285,6 +285,8 @@ public class CarbonTableReader {
           createInputFormat(jobConf, carbonTable.getAbsoluteTableIdentifier(),
               new IndexFilter(carbonTable, filters, true), filteredPartitions);
       Job job = Job.getInstance(jobConf);
+      CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.IS_QUERY_FROM_PRESTO, "true");
       List<InputSplit> splits = carbonTableInputFormat.getSplits(job);
       boolean distributedPruningEnabled = CarbonProperties.getInstance()
           .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName());

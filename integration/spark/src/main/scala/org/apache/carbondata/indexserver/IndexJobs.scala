@@ -26,6 +26,7 @@ import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.util.SizeEstimator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.{AbstractIndexJob, IndexInputFormat}
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -33,7 +34,7 @@ import org.apache.carbondata.core.scan.expression.BinaryExpression
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.scan.filter.resolver.{FilterResolverIntf, LogicalFilterResolverImpl, RowLevelFilterResolverImpl}
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.spark.util.CarbonScalaUtil.logTime
 
 /**
@@ -56,9 +57,13 @@ class DistributedIndexJob extends AbstractIndexJob {
       .info("Temp folder path for Query ID: " + indexFormat.getQueryId + " is " + splitFolderPath)
     val (response, time) = logTime {
       try {
-        val spark = SparkSQLUtil.getSparkSession
-        // In case of presto with index server flow, sparksession will be null
-        if (null != spark) {
+        val isQueryFromPresto = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.IS_QUERY_FROM_PRESTO,
+            CarbonCommonConstants.IS_QUERY_FROM_PRESTO_DEFAULT)
+          .toBoolean
+        // In case of presto with index server flow, sparkSession will be null
+        if (!isQueryFromPresto) {
+          val spark = SparkSQLUtil.getSparkSession
           indexFormat.setTaskGroupId(SparkSQLUtil.getTaskGroupId(spark))
           indexFormat.setTaskGroupDesc(SparkSQLUtil.getTaskGroupDesc(spark))
         } else {
@@ -72,10 +77,10 @@ class DistributedIndexJob extends AbstractIndexJob {
         filterInf = removeSparkUnknown(filterInf,
           indexFormat.getCarbonTable.getAbsoluteTableIdentifier, filterProcessor)
         indexFormat.setFilterResolverIntf(filterInf)
-        val client = if (null != spark) {
-          IndexServer.getClient
-        } else {
+        val client = if (isQueryFromPresto) {
           IndexServer.getClient(configuration)
+        } else {
+          IndexServer.getClient
         }
         client.getSplits(indexFormat)
           .getExtendedBlocklets(indexFormat.getCarbonTable.getTablePath, indexFormat
@@ -127,7 +132,11 @@ class DistributedIndexJob extends AbstractIndexJob {
 
   override def executeCountJob(indexFormat: IndexInputFormat,
       configuration: Configuration): java.lang.Long = {
-    val client = if (null == SparkSQLUtil.getSparkSession) {
+    val isQueryFromPresto = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.IS_QUERY_FROM_PRESTO,
+        CarbonCommonConstants.IS_QUERY_FROM_PRESTO_DEFAULT)
+      .toBoolean
+    val client = if (isQueryFromPresto) {
       IndexServer.getClient(configuration)
     } else {
       IndexServer.getClient

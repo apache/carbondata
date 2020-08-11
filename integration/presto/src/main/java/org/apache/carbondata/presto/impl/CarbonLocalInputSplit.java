@@ -129,7 +129,7 @@ public class CarbonLocalInputSplit {
       @JsonProperty("blockletId") String blockletId,
       @JsonProperty("detailInfo") String detailInfo,
       @JsonProperty("fileFormatOrdinal") int fileFormatOrdinal,
-      boolean isDistributedPruningEnabled) {
+      @JsonProperty("isDistributedPruningEnabled") boolean isDistributedPruningEnabled) {
     this.path = path;
     this.start = start;
     this.length = length;
