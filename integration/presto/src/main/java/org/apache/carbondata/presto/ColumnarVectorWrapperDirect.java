@@ -19,6 +19,7 @@ package org.apache.carbondata.presto;
 
 import java.math.BigDecimal;
 import java.util.BitSet;
+import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
@@ -30,7 +31,7 @@ import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 /**
  * Fills the vector directly with out considering any deleted rows.
  */
-class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill {
+public class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill {
   /**
    * It is adapter class of complete ColumnarBatch.
    */
@@ -45,7 +46,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   private BitSet nullBitSet;
 
-  ColumnarVectorWrapperDirect(CarbonColumnVectorImpl columnVector) {
+  public ColumnarVectorWrapperDirect(CarbonColumnVectorImpl columnVector) {
     this.columnVector = columnVector;
     this.dictionaryVector = columnVector.getDictionaryVector();
     this.nullBitSet = new BitSet();
@@ -203,8 +204,19 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill 
 
   @Override
   public void putObject(int rowId, Object obj) {
-    throw new UnsupportedOperationException(
-        "Not supported this opeartion from " + this.getClass().getName());
+    columnVector.putObject(rowId, obj);
+  }
+
+  public CarbonColumnVectorImpl getColumnVector() {
+    return this.columnVector;
+  }
+
+  public List<CarbonColumnVector> getChildrenVector() {
+    return columnVector.getChildrenVector();
+  }
+
+  public void putComplexObject(List<Integer> offsetVector) {
+    columnVector.putComplexObject(offsetVector);
   }
 
   @Override

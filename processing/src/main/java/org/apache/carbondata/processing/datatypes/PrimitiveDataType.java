@@ -240,16 +240,17 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       BadRecordLogHolder logHolder, Boolean isWithoutConverter) throws IOException {
     String parsedValue = null;
     // write null value
-    if (null == input ||
-        (this.carbonDimension.getDataType() == DataTypes.STRING && input.equals(nullFormat))) {
+    if (null == input || ((this.carbonDimension.getDataType() == DataTypes.STRING
+        || this.carbonDimension.getDataType() == DataTypes.VARCHAR) && input.equals(nullFormat))) {
       updateNullValue(dataOutputStream, logHolder);
       return;
     }
     // write null value after converter
     if (!isWithoutConverter) {
       parsedValue = DataTypeUtil.parseValue(input.toString(), carbonDimension);
-      if (null == parsedValue || (this.carbonDimension.getDataType() == DataTypes.STRING
-          && parsedValue.equals(nullFormat))) {
+      if (null == parsedValue || ((this.carbonDimension.getDataType() == DataTypes.STRING
+          || this.carbonDimension.getDataType() == DataTypes.VARCHAR) && parsedValue
+          .equals(nullFormat))) {
         updateNullValue(dataOutputStream, logHolder);
         return;
       }
@@ -413,7 +414,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   private void updateNullValue(DataOutputStream dataOutputStream, BadRecordLogHolder logHolder)
       throws IOException {
-    if (this.carbonDimension.getDataType() == DataTypes.STRING) {
+    if (this.carbonDimension.getDataType() == DataTypes.STRING
+        || this.carbonDimension.getDataType() == DataTypes.VARCHAR) {
       if (DataTypeUtil.isByteArrayComplexChildColumn(dataType)) {
         dataOutputStream.writeInt(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
       } else {

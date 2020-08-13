@@ -20,10 +20,12 @@ package org.apache.carbondata.core.datastore.page.encoding.compress;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
@@ -36,11 +38,14 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
+import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertibleVector;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.SequentialFill;
@@ -243,23 +248,74 @@ public class DirectCompressCodec implements ColumnPageCodec {
       CarbonColumnVector vector = vectorInfo.vector;
       DataType vectorDataType = vector.getType();
       BitSet deletedRows = vectorInfo.deletedRows;
-      vector = ColumnarVectorWrapperDirectFactory
-          .getDirectVectorWrapperFactory(vector, vectorInfo.invertedIndex, nullBits, deletedRows,
-              true, false);
-      fillVector(pageData, vector, vectorDataType, pageDataType, pageSize, vectorInfo, nullBits);
-      if ((deletedRows == null || deletedRows.isEmpty())
-          && !(vectorInfo.vector instanceof SequentialFill)) {
-        for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
-          vector.putNull(i);
-        }
+      if (vectorDataType.isComplexType() && vectorInfo.vectorStack.isEmpty()) {
+        // Only if vectorStack is empty, initialize with the parent vector
+        vectorInfo.vectorStack.push(vectorInfo.vector);
       }
-      if (vector instanceof ConvertibleVector) {
-        ((ConvertibleVector) vector).convert();
+      // If top of vector stack is a complex vector,
+      // then add their children into the stack and load them too.
+      if (!vectorInfo.vectorStack.isEmpty() && vectorInfo.vectorStack.peek().getType()
+          .isComplexType()) {
+        CarbonColumnVector parentVector = vectorInfo.vectorStack.peek();
+        CarbonColumnVectorImpl parentVectorImpl =
+            (CarbonColumnVectorImpl) (parentVector.getColumnVector());
+        // parse the parent page data,
+        // save the information about number of child in each row in parent vector
+        if (DataTypes.isStructType(parentVectorImpl.getType())) {
+          parentVectorImpl.setNumberOfChildElementsForStruct(pageData, pageSize);
+        } else {
+          parentVectorImpl.setNumberOfChildElementsForArray(pageData, pageSize);
+        }
+        for (CarbonColumnVector childVector : parentVector.getColumnVector().getChildrenVector()) {
+          // push each child
+          vectorInfo.vectorStack.push(childVector);
+          // load the child page, here child page loading flow updated vector from top of the stack
+          // and pop() the child vector once loading is finished.
+          ((CarbonColumnVectorImpl) (vectorInfo.vectorStack.peek().getColumnVector())).loadPage();
+        }
+        vector = ColumnarVectorWrapperDirectFactory
+            .getDirectVectorWrapperFactory(vectorInfo, parentVector, vectorInfo.invertedIndex,
+                nullBits, vectorInfo.deletedRows, true, false);
+        fillVectorBasedOnType(pageData, vector, vectorDataType, pageDataType, pageSize,
+            vectorInfo, nullBits);
+      } else {
+        pageSize = ColumnVectorInfo.getUpdatedPageSizeForChildVector(vectorInfo, pageSize);
+        vector = ColumnarVectorWrapperDirectFactory
+            .getDirectVectorWrapperFactory(vectorInfo, vector, vectorInfo.invertedIndex, nullBits,
+                deletedRows, true, false);
+        fillVectorBasedOnType(pageData, vector, vector.getType(), pageDataType, pageSize,
+            vectorInfo, nullBits);
+        if ((deletedRows == null || deletedRows.isEmpty())
+            && !(vectorInfo.vector instanceof SequentialFill)) {
+          for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
+            vector.putNull(i);
+          }
+        }
+        if (vector instanceof ConvertibleVector) {
+          ((ConvertibleVector) vector).convert();
+        }
       }
     }
 
-    private void fillVector(byte[] pageData, CarbonColumnVector vector, DataType vectorDataType,
-        DataType pageDataType, int pageSize, ColumnVectorInfo vectorInfo, BitSet nullBits) {
+    private void fillVectorBasedOnType(byte[] pageData, CarbonColumnVector vector,
+        DataType vectorDataType, DataType pageDataType, int pageSize, ColumnVectorInfo vectorInfo,
+        BitSet nullBits) {
+      if (vectorInfo.vector.getColumnVector() != null
+          && vector.getColumnVector() == vectorInfo.vector.getColumnVector() && vectorInfo.vector
+          .getColumnVector().getType().isComplexType()) {
+        List<Integer> childElementsForEachRow =
+            ((CarbonColumnVectorImpl) vector.getColumnVector())
+                .getNumberOfChildrenElementsInEachRow();
+        vector.getColumnVector().putComplexObject(childElementsForEachRow);
+      } else {
+        fillPrimitiveType(pageData, vector, vectorDataType, pageDataType, pageSize, vectorInfo,
+            nullBits);
+      }
+    }
+
+    private void fillPrimitiveType(byte[] pageData, CarbonColumnVector vector,
+        DataType vectorDataType, DataType pageDataType, int pageSize, ColumnVectorInfo vectorInfo,
+        BitSet nullBits) {
       int rowId = 0;
       if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
         if (vectorDataType == DataTypes.SHORT) {
@@ -314,7 +370,6 @@ public class DirectCompressCodec implements ColumnPageCodec {
             vector.putDouble(rowId++, ByteUtil.toShortLittleEndian(pageData, i));
           }
         }
-
       } else if (pageDataType == DataTypes.SHORT_INT) {
         if (vectorDataType == DataTypes.INT) {
           for (int i = 0; i < pageSize; i++) {
@@ -374,6 +429,53 @@ public class DirectCompressCodec implements ColumnPageCodec {
           }
         } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
+          decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
+        }
+      } else if (pageDataType == DataTypes.BYTE_ARRAY) {
+        // for complex primitive types
+        if (vectorDataType == DataTypes.STRING || vectorDataType == DataTypes.BINARY
+            || vectorDataType == DataTypes.VARCHAR) {
+          // for complex primitive string, binary, varchar type
+          int offset = 0;
+          for (int i = 0; i < pageSize; i++) {
+            int len = ByteBuffer.wrap(pageData, offset, DataTypes.INT.getSizeInBytes()).getInt();
+            offset += DataTypes.INT.getSizeInBytes();
+            if (vectorDataType == DataTypes.BINARY && len == 0) {
+              vector.putNull(i);
+              continue;
+            }
+            byte[] row = new byte[len];
+            System.arraycopy(pageData, offset, row, 0, len);
+            if (Arrays.equals(row, CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY)) {
+              vector.putNull(i);
+            } else {
+              vector.putObject(i, row);
+            }
+            offset += len;
+          }
+        } else if (vectorDataType == DataTypes.DATE) {
+          // for complex primitive date type
+          int offset = 0;
+          for (int i = 0; i < pageSize; i++) {
+            int len = ByteBuffer.wrap(pageData, offset, DataTypes.INT.getSizeInBytes()).getInt();
+            offset += DataTypes.INT.getSizeInBytes();
+            int surrogateInternal =
+                ByteUtil.toXorInt(pageData, offset, DataTypes.INT.getSizeInBytes());
+            if (len == 0) {
+              vector.putObject(0, null);
+            } else {
+              vector.putObject(0, surrogateInternal - DateDirectDictionaryGenerator.cutOffDate);
+            }
+            offset += len;
+          }
+        } else if (DataTypes.isDecimal(vectorDataType)) {
+          // for complex primitive decimal type
+          DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
+          if (decimalConverter == null) {
+            decimalConverter = DecimalConverterFactory.INSTANCE
+                .getDecimalConverter(((DecimalType) vectorDataType).getPrecision(),
+                    ((DecimalType) vectorDataType).getScale());
+          }
           decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
         }
       } else if (vectorDataType == DataTypes.FLOAT) {

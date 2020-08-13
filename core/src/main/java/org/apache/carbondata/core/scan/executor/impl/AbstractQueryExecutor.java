@@ -98,6 +98,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   protected CarbonIterator queryIterator;
 
+  // Size of the ReusableDataBuffer based on the number of dimension projection columns
+  private int reusableDimensionBufferSize;
+
   public AbstractQueryExecutor(Configuration configuration) {
     ThreadLocalSessionInfo.setConfigurationToCurrentThread(configuration);
     queryProperties = new QueryExecutorProperties();
@@ -149,11 +152,26 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       QueryUtil.getAllFilterDimensionsAndMeasures(queryModel.getIndexFilter().getResolver(),
           queryProperties.complexFilterDimension, queryProperties.filterMeasures);
     }
-
     queryStatistic = new QueryStatistic();
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_DICTIONARY, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
+    for (int i = 0; i < queryModel.getProjectionDimensions().size(); i++) {
+      reusableDimensionBufferSize++;
+      findChildrenSize(queryModel.getProjectionDimensions().get(i).getDimension());
+    }
+  }
+
+  // Recursively determine the size needed for ReusableDataBuffer[]
+  private void findChildrenSize(CarbonDimension carbonDimension) {
+    if (carbonDimension == null || carbonDimension.getListOfChildDimensions() == null) {
+      return;
+    }
+    List<CarbonDimension> childDimension = carbonDimension.getListOfChildDimensions();
+    reusableDimensionBufferSize += childDimension.size();
+    for (CarbonDimension dimension : childDimension) {
+      findChildrenSize(dimension);
+    }
   }
 
   /**
@@ -508,7 +526,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     int[] dimensionChunkIndexes = QueryUtil.getDimensionChunkIndexes(projectDimensions,
         segmentProperties.getDimensionOrdinalToChunkMapping(),
         currentBlockFilterDimensions, allProjectionListDimensionIndexes);
-    ReusableDataBuffer[] dimensionBuffer = new ReusableDataBuffer[projectDimensions.size()];
+    ReusableDataBuffer[] dimensionBuffer = new ReusableDataBuffer[reusableDimensionBufferSize];
     for (int i = 0; i < dimensionBuffer.length; i++) {
       dimensionBuffer[i] = new ReusableDataBuffer();
     }

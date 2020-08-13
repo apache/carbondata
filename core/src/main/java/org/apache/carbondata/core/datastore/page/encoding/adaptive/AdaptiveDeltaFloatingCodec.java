@@ -254,9 +254,11 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
         DataType pageDataType, int pageSize) {
       CarbonColumnVector vector = vectorInfo.vector;
       BitSet deletedRows = vectorInfo.deletedRows;
-      DataType vectorDataType = vector.getType();
+      pageSize = ColumnVectorInfo.getUpdatedPageSizeForChildVector(vectorInfo, pageSize);
       vector = ColumnarVectorWrapperDirectFactory
-          .getDirectVectorWrapperFactory(vector, null, nullBits, deletedRows, true, false);
+          .getDirectVectorWrapperFactory(vectorInfo, vector, null, nullBits, deletedRows, true,
+              false);
+      DataType vectorDataType = vector.getType();
       int rowId = 0;
       if (vectorDataType == DataTypes.FLOAT) {
         float floatFactor = factor.floatValue();
@@ -281,6 +283,13 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
           int size = pageSize * DataTypes.INT.getSizeInBytes();
           for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
             vector.putFloat(rowId++, (max - ByteUtil.toIntLittleEndian(pageData, i)) / floatFactor);
+          }
+        } else if (pageDataType == DataTypes.LONG) {
+          // complex primitive float type can enter here.
+          int size = pageSize * DataTypes.LONG.getSizeInBytes();
+          for (int i = 0; i < size; i += DataTypes.LONG.getSizeInBytes()) {
+            vector.putFloat(rowId++,
+                (float) ((max - ByteUtil.toLongLittleEndian(pageData, i)) / factor));
           }
         } else {
           throw new RuntimeException("internal error: " + this.toString());

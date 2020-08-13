@@ -56,7 +56,8 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbstractDimensio
     BitSet deletedRows = vectorInfo.deletedRows;
     BitSet nullBits = new BitSet(numOfRows);
     vector = ColumnarVectorWrapperDirectFactory
-        .getDirectVectorWrapperFactory(vector, invertedIndex, nullBits, deletedRows, false, false);
+        .getDirectVectorWrapperFactory(vectorInfo, vector, invertedIndex, nullBits, deletedRows,
+            false, false);
     fillVector(data, vectorInfo, vector);
     if (vector instanceof ConvertibleVector) {
       ((ConvertibleVector) vector).convert();

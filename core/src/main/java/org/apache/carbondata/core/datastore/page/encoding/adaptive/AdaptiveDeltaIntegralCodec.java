@@ -311,12 +311,8 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
     public void decodeAndFillVector(byte[] pageData, ColumnVectorInfo vectorInfo, BitSet nullBits,
         DataType pageDataType, int pageSize) {
       CarbonColumnVector vector = vectorInfo.vector;
-      DataType vectorDataType = vector.getType();
       BitSet deletedRows = vectorInfo.deletedRows;
-      vector = ColumnarVectorWrapperDirectFactory
-          .getDirectVectorWrapperFactory(vector, vectorInfo.invertedIndex, nullBits, deletedRows,
-              true, false);
-      fillVector(pageData, vector, vectorDataType, pageDataType, pageSize, vectorInfo);
+      fillVector(pageData, vector, pageDataType, pageSize, vectorInfo, nullBits);
       if ((deletedRows == null || deletedRows.isEmpty())
           && !(vectorInfo.vector instanceof SequentialFill)) {
         for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
@@ -328,8 +324,14 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
       }
     }
 
-    private void fillVector(byte[] pageData, CarbonColumnVector vector,
-        DataType vectorDataType, DataType pageDataType, int pageSize, ColumnVectorInfo vectorInfo) {
+    private void fillVector(byte[] pageData, CarbonColumnVector vector, DataType pageDataType,
+        int pageSize, ColumnVectorInfo vectorInfo, BitSet nullBits) {
+      // get the updated values if it is decode of child vector
+      pageSize = ColumnVectorInfo.getUpdatedPageSizeForChildVector(vectorInfo, pageSize);
+      vector = ColumnarVectorWrapperDirectFactory
+          .getDirectVectorWrapperFactory(vectorInfo, vector, null, nullBits, vectorInfo.deletedRows,
+              true, false);
+      DataType vectorDataType = vector.getType();
       int newScale = 0;
       if (vectorInfo.measure != null) {
         newScale = vectorInfo.measure.getMeasure().getScale();
@@ -352,7 +354,7 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, (max - (long) pageData[i]) * 1000);
           }
-        } else if (vectorDataType == DataTypes.BOOLEAN) {
+        } else if (vectorDataType == DataTypes.BOOLEAN || vectorDataType == DataTypes.BYTE) {
           for (int i = 0; i < pageSize; i++) {
             vector.putByte(i, (byte) (max - pageData[i]));
           }
