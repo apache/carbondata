@@ -41,7 +41,6 @@ import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.result.RowBatch;
 import org.apache.carbondata.core.scan.result.iterator.DetailQueryResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
-import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -331,6 +330,9 @@ public class SecondaryIndexQueryResultProcessor {
     return preparedRow;
   }
 
+  /**
+   * This method will return complex array primitive data
+   */
   private Object getData(Object[] data, int index, DataType dataType) {
     if (data.length == 0) {
       return new byte[0];
