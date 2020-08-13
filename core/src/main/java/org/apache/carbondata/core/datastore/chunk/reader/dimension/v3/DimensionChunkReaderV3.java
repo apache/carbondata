@@ -257,6 +257,11 @@ public class DimensionChunkReaderV3 extends AbstractDimensionChunkReader {
           .decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo,
               nullBitSet, isLocalDictEncodedPage, pageMetadata.numberOfRowsInpage,
               reusableDataBuffer);
+      if (vectorInfo.vector.getType().isComplexType() && !vectorInfo.vectorStack.isEmpty()) {
+        // For complex type, always top of the vector stack is processed in decodeAndFillVector.
+        // so, pop() the top vector as its processing is finished.
+        vectorInfo.vectorStack.pop();
+      }
       return null;
     } else {
       return decoder

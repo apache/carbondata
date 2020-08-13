@@ -26,6 +26,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.StructField;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
@@ -163,6 +164,19 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     return 0;
   }
 
+  public StructField fillChildFields(CarbonDimension dimension) {
+    List<CarbonDimension> listOfChildDimensions =
+            dimension.getListOfChildDimensions();
+    List<StructField> childFields = null;
+    if (listOfChildDimensions != null) {
+      childFields = new ArrayList<>();
+      for (CarbonDimension childDimension : listOfChildDimensions) {
+        childFields.add(fillChildFields(childDimension));
+      }
+    }
+    return new StructField(dimension.getColName(), dimension.getDataType(), childFields);
+  }
+
   /**
    * Returns the ColumnarBatch object that will be used for all rows returned by this reader.
    * This object is reused. Calling this enables the vectorized reader. This should be called
@@ -173,11 +187,15 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     List<ProjectionDimension> queryDimension = queryModel.getProjectionDimensions();
     List<ProjectionMeasure> queryMeasures = queryModel.getProjectionMeasures();
     StructField[] fields = new StructField[queryDimension.size() + queryMeasures.size()];
-    for (int i = 0; i < queryDimension.size(); i++) {
-      ProjectionDimension dim = queryDimension.get(i);
+    for (ProjectionDimension dim : queryDimension) {
       if (dim.getDimension().isComplex()) {
+        List<CarbonDimension> childDimensions = dim.getDimension().getListOfChildDimensions();
+        List<StructField> childFields = new ArrayList<StructField>();
+        for (CarbonDimension childDimension : childDimensions) {
+          childFields.add(fillChildFields(childDimension));
+        }
         fields[dim.getOrdinal()] =
-            new StructField(dim.getColumnName(), dim.getDimension().getDataType());
+            new StructField(dim.getColumnName(), dim.getDimension().getDataType(), childFields);
       } else if (dim.getDimension().getDataType() == DataTypes.DATE) {
         DirectDictionaryGenerator generator = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(dim.getDimension().getDataType());

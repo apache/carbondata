@@ -20,6 +20,7 @@ package org.apache.carbondata.core.scan.result.vector.impl.directread;
 import java.math.BigDecimal;
 import java.util.BitSet;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 
 /**
@@ -39,6 +40,11 @@ class ColumnarVectorWrapperDirectWithDeleteDelta extends AbstractCarbonColumnarV
     super(vectorWrapper);
     this.deletedRows = deletedRows;
     this.nullBits = nullBits;
+  }
+
+  @Override
+  public DataType getType() {
+    return columnVector.getType();
   }
 
   @Override

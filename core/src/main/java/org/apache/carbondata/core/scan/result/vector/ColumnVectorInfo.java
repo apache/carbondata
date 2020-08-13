@@ -18,12 +18,16 @@
 package org.apache.carbondata.core.scan.result.vector;
 
 import java.util.BitSet;
+import java.util.List;
+import java.util.Stack;
 
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 
 public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
   public int offset;
@@ -39,6 +43,8 @@ public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
   public int[] invertedIndex;
   public BitSet deletedRows;
   public DecimalConverterFactory.DecimalConverter decimalConverter;
+  // Vector stack is used in complex column vectorInfo to store all the children vectors.
+  public Stack<CarbonColumnVector> vectorStack = new Stack<>();
 
   @Override
   public int compareTo(ColumnVectorInfo o) {
@@ -68,5 +74,24 @@ public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
     int result = 1;
     result = prime * result + (ordinal);
     return result;
+  }
+
+  public static Integer getUpdatedPageSizeForChildVector(ColumnVectorInfo vectorInfo,
+      int parentPageSize) {
+    int newPageSize = 0;
+    CarbonColumnVector vector = vectorInfo.vector;
+    if (DataTypes.isArrayType(vector.getType())) {
+      // If it is array children vector,
+      // page size will not same as parent pageSize, so need to re calculate.
+      List<Integer> childElementsCountForEachRow =
+          ((CarbonColumnVectorImpl) vector.getColumnVector())
+              .getNumberOfChildrenElementsInEachRow();
+      for (int childElementsCount : childElementsCountForEachRow) {
+        newPageSize += childElementsCount;
+      }
+      return newPageSize;
+    } else {
+      return parentPageSize;
+    }
   }
 }

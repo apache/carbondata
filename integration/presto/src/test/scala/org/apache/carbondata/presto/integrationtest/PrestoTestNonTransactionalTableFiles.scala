@@ -24,19 +24,20 @@ import java.util
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.RandomStringUtils
-import org.scalatest.{BeforeAndAfterAll, FunSuiteLike}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuiteLike}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field}
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, Field, StructField}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.presto.server.PrestoServer
 import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 
+import io.prestosql.jdbc.PrestoArray
 
-class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAfterAll {
+class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAfterAll with BeforeAndAfterEach {
 
   private val logger = LogServiceFactory
     .getLogService(classOf[PrestoTestNonTransactionalTableFiles].getCanonicalName)
@@ -55,8 +56,9 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     val map = new util.HashMap[String, String]()
     map.put("hive.metastore", "file")
     map.put("hive.metastore.catalog.dir", s"file://$storePath")
-
     prestoServer.startServer("sdk_output", map)
+    prestoServer.execute("drop schema if exists sdk_output")
+    prestoServer.execute("create schema sdk_output")
   }
 
   override def afterAll(): Unit = {
@@ -71,6 +73,12 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     buildTestData(3, null, true)
   }
 
+  def buildStructData(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    createTable
+    buildTestData(3, null, true)
+  }
+
   def buildTestDataMultipleFiles(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     createTable
@@ -79,8 +87,6 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
 
   private def createTable = {
     prestoServer.execute("drop table if exists sdk_output.files")
-    prestoServer.execute("drop schema if exists sdk_output")
-    prestoServer.execute("create schema sdk_output")
     prestoServer
       .execute(
         "create table sdk_output.files(name varchar, age int, id tinyint, height double, salary " +
@@ -90,8 +96,6 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
 
   private def createTableBinary = {
     prestoServer.execute("drop table if exists sdk_output.files1")
-    prestoServer.execute("drop schema if exists sdk_output")
-    prestoServer.execute("create schema sdk_output")
     prestoServer
       .execute(
         "create table sdk_output.files1(name boolean, age int, id varbinary, height double, salary " +
@@ -356,4 +360,340 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
     val expectedRes: List[Map[String, Any]] = List(Map("_col0" -> 32001))
     assert(actualRes.toString() equals expectedRes.toString())
   }
+
+  test("test struct of primitive type") {
+    import scala.collection.JavaConverters._
+    val writerPathComplex = storePath + "/sdk_output/files4"
+    FileUtils.deleteDirectory(new File(writerPathComplex))
+    prestoServer.execute("drop table if exists sdk_output.files4")
+    prestoServer
+      .execute(
+        "create table sdk_output.files4(stringField varchar, structField ROW(byteField tinyint, shortField SMALLINT, intField Integer, " +
+        "longField BIGINT, floatField real, doubleField DOUBLE, binaryField varbinary, dateField date, timeStampField timestamp, " +
+        "booleanField boolean, longStringField varchar, decimalField decimal(8,2), stringChildField varchar)) with(format='CARBON') ")
+
+    val imagePath = rootPath + "/sdk/sdk/src/test/resources/image/carbondatalogo.jpg"
+    val bis = new BufferedInputStream(new FileInputStream(imagePath))
+    var hexValue: Array[Char] = null
+    val originBinary = new Array[Byte](bis.available)
+    while (bis.read(originBinary) != -1) {
+      hexValue = Hex.encodeHex(originBinary)
+    }
+    bis.close()
+    val binaryValue = String.valueOf(hexValue)
+
+    val longChar = RandomStringUtils.randomAlphabetic(33000)
+
+    val fields = List(new StructField("byteField", DataTypes.BYTE),
+      new StructField("shortField", DataTypes.SHORT),
+      new StructField("intField", DataTypes.INT),
+      new StructField("longField", DataTypes.LONG),
+      new StructField("floatField", DataTypes.FLOAT),
+      new StructField("doubleField", DataTypes.DOUBLE),
+      new StructField("binaryField", DataTypes.BINARY),
+      new StructField("dateField", DataTypes.DATE),
+      new StructField("timeStampField", DataTypes.TIMESTAMP),
+      new StructField("booleanField", DataTypes.BOOLEAN),
+      new StructField("longStringField", DataTypes.VARCHAR),
+      new StructField("decimalField", DataTypes.createDecimalType(8, 2)),
+      new StructField("stringChildField", DataTypes.STRING))
+    val structType = Array(new Field("stringField", DataTypes.STRING), new Field
+    ("structField", "struct", fields.asJava))
+
+    try {
+      val options: util.Map[String, String] = Map("bAd_RECords_action" -> "FORCE", "quotechar" -> "\"").asJava
+      val builder = CarbonWriter.builder()
+      val writer =
+        builder.outputPath(writerPathComplex)
+          .uniqueIdentifier(System.nanoTime()).withLoadOptions(options).withBlockSize(2).enableLocalDictionary(false)
+          .withCsvInput(new Schema(structType)).writtenBy("presto").build()
+
+      val array1 = Array[String]("row1",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null)
+
+      val array2 = Array[String]("row2", "5"
+                                           + "\001" + "5"
+                                           + "\001" + "5"
+                                           + "\001" + "5"
+                                           + "\001" + "5.512"
+                                           + "\001" + "5.512"
+                                           + "\001" + binaryValue
+                                           + "\001" + "2019-03-02"
+                                           + "\001" + "2019-02-12 03:03:34"
+                                           + "\001" + "true"
+                                           + "\001" + longChar
+                                           + "\001" + "1.234567"
+                                           + "\001" + "stringName")
+      writer.write(array1)
+      writer.write(array2)
+      writer.close()
+    } catch {
+      case ex: Exception => throw new RuntimeException(ex)
+      case _: Throwable => None
+    }
+    val actualResult: List[Map[String, Any]] = prestoServer
+      .executeQuery("select * from files4 ")
+    assert(actualResult.size == 2)
+
+
+    for(i <- 0 to 1) {
+      val row = actualResult(i)("stringfield")
+      val result = actualResult(i)("structfield").asInstanceOf[java.util.Map[String,Any]]
+      if(row == "row1") { assert(result.get("bytefield") == null)
+        assert(result.get("shortfield") == null)
+        assert(result.get("intfield") == null)
+        assert(result.get("longfield") == null)
+        assert(result.get("floatfield") == null)
+        assert(result.get("doublefield") == null)
+        assert(result.get("binaryfield") == null)
+        assert(result.get("datefield") == null)
+        assert(result.get("timestampfield") == null)
+        assert(result.get("booleanfield") == null)
+        assert(result.get("longstringfield") == null)
+        assert(result.get("decimalfield") == null)
+        assert(result.get("stringchildfield") == null)
+      } else {
+        assert(result.get("bytefield") == 5)
+        assert(result.get("shortfield") == 5)
+        assert(result.get("intfield") == 5)
+        assert(result.get("longfield") == 5L)
+        assert(result.get("floatfield") == 5.512f)
+        assert(result.get("doublefield") == 5.512)
+        assert((result.get("binaryfield").asInstanceOf[Array[Byte]]).length == 118198)
+        assert(result.get("datefield") == "2019-03-02")
+        assert(result.get("timestampfield") == "2019-02-12 03:03:34.000")
+        assert(result.get("booleanfield") == true)
+        assert(result.get("longstringfield") == longChar)
+        assert(result.get("decimalfield") == "1.23")
+        assert(result.get("stringchildfield") == "stringName")
+      }
+    }
+    FileUtils.deleteDirectory(new File(writerPathComplex))
+  }
+
+  test("test struct of date type with huge data") {
+    import scala.collection.JavaConverters._
+    val writerPathComplex = storePath + "/sdk_output/files2"
+    FileUtils.deleteDirectory(new File(writerPathComplex))
+    prestoServer.execute("drop table if exists sdk_output.files2")
+    prestoServer
+      .execute(
+        "create table sdk_output.files2(structField ROW(dateField date)) with(format='CARBON') ")
+    val fields = List(
+      new StructField("dateField", DataTypes.DATE))
+    val structType = Array(new Field("structField", "struct", fields.asJava))
+    try {
+      val builder = CarbonWriter.builder()
+      val writer =
+        builder.outputPath(writerPathComplex)
+          .uniqueIdentifier(System.nanoTime()).withBlockSize(2).enableLocalDictionary(false)
+          .withCsvInput(new Schema(structType)).writtenBy("presto").build()
+      var i = 0
+      while (i < 100000) {
+        val array = Array[String]("2019-03-02")
+        writer.write(array)
+        i += 1
+      }
+      writer.close()
+    } catch {
+      case ex: Exception => throw new RuntimeException(ex)
+      case _: Throwable => None
+    }
+    val actualResult: List[Map[String, Any]] = prestoServer
+      .executeQuery("select structField from files2 ")
+    assert(actualResult.size == 100000)
+    FileUtils.deleteDirectory(new File(writerPathComplex))
+  }
+
+  test("test Array of primitive type") {
+    val writerPathComplex = storePath + "/sdk_output/files5"
+    import scala.collection.JavaConverters._
+    FileUtils.deleteDirectory(new File(writerPathComplex))
+    prestoServer.execute("drop table if exists sdk_output.files5")
+    prestoServer
+      .execute(
+        "create table sdk_output.files5(arrayByte ARRAY(tinyint), arrayShort ARRAY(smallint), arrayInt ARRAY(int), " +
+        "arrayLong ARRAY(bigint), arrayFloat ARRAY(real), arrayDouble ARRAY(double), " +
+        "arrayBinary ARRAY(varbinary), arrayDate ARRAY(date), arrayTimestamp ARRAY(timestamp), arrayBoolean ARRAY(boolean), " +
+        "arrayVarchar ARRAY(varchar), arrayDecimal ARRAY(decimal(8,2)), arrayString ARRAY(varchar), stringField varchar ) with(format='CARBON') ")
+
+    val imagePath = rootPath + "/sdk/sdk/src/test/resources/image/carbondatalogo.jpg"
+    val bis = new BufferedInputStream(new FileInputStream(imagePath))
+    var hexValue: Array[Char] = null
+    val originBinary = new Array[Byte](bis.available)
+    while (bis.read(originBinary) != -1) {
+      hexValue = Hex.encodeHex(originBinary)
+    }
+    bis.close()
+    val binaryValue = String.valueOf(hexValue)
+
+    val longChar = RandomStringUtils.randomAlphabetic(33000)
+
+    val fields1 = List(new StructField("byteField", DataTypes.BYTE))
+    val structType1 = new Field("arrayByte", "array", fields1.asJava)
+    val fields2 = List(new StructField("shortField", DataTypes.SHORT))
+    val structType2 = new Field("arrayShort", "array", fields2.asJava)
+    val fields3 = List(new StructField("intField", DataTypes.INT))
+    val structType3 = new Field("arrayInt", "array", fields3.asJava)
+    val fields4 = List(new StructField("longField", DataTypes.LONG))
+    val structType4 = new Field("arrayLong", "array", fields4.asJava)
+    val fields5 = List(new StructField("floatField", DataTypes.FLOAT))
+    val structType5 = new Field("arrayFloat", "array", fields5.asJava)
+    val fields6 = List(new StructField("DoubleField", DataTypes.DOUBLE))
+    val structType6 = new Field("arrayDouble", "array", fields6.asJava)
+    val fields7 = List(new StructField("binaryField", DataTypes.BINARY))
+    val structType7 = new Field("arrayBinary", "array", fields7.asJava)
+    val fields8 = List(new StructField("dateField", DataTypes.DATE))
+    val structType8 = new Field("arrayDate", "array", fields8.asJava)
+    val fields9 = List(new StructField("timestampField", DataTypes.TIMESTAMP))
+    val structType9 = new Field("arrayTimestamp", "array", fields9.asJava)
+    val fields10 = List(new StructField("booleanField", DataTypes.BOOLEAN))
+    val structType10 = new Field("arrayBoolean", "array", fields10.asJava)
+    val fields11 = List(new StructField("varcharField", DataTypes.VARCHAR))
+    val structType11 = new Field("arrayVarchar", "array", fields11.asJava)
+    val fields12 = List(new StructField("decimalField", DataTypes.createDecimalType(8, 2)))
+    val structType12 = new Field("arrayDecimal", "array", fields12.asJava)
+    val fields13 = List(new StructField("stringField", DataTypes.STRING))
+    val structType13 = new Field("arrayString", "array", fields13.asJava)
+    val structType14 = new Field("stringField", DataTypes.STRING)
+
+    try {
+      val options: util.Map[String, String] = Map("bAd_RECords_action" -> "FORCE", "quotechar" -> "\"").asJava
+      val builder = CarbonWriter.builder()
+      val writer =
+        builder.outputPath(writerPathComplex).withLoadOptions(options)
+          .uniqueIdentifier(System.nanoTime()).withBlockSize(2).enableLocalDictionary(false)
+          .withCsvInput(new Schema(Array[Field](structType1,structType2,structType3,structType4,structType5,structType6,
+            structType7,structType8,structType9,structType10,structType11,structType12,structType13,structType14))).writtenBy("presto").build()
+
+      var array = Array[String](null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "row1")
+      writer.write(array)
+      array = Array[String]("3" + "\001" + "5" + "\001" + "4",
+        "4" + "\001" + "5" + "\001" + "6",
+        "4",
+        "2" + "\001" + "59999999" + "\001" + "99999999999" ,
+        "5.4646" + "\001" + "5.55" + "\001" + "0.055",
+        "5.46464646464" + "\001" + "5.55" + "\001" + "0.055",
+        binaryValue,
+        "2019-03-02" + "\001" + "2020-03-02" + "\001" + "2021-04-02",
+        "2019-02-12 03:03:34" + "\001" +"2020-02-12 03:03:34" + "\001" + "2021-03-12 03:03:34",
+        "true" + "\001" + "false",
+        longChar,
+        "999.232323" + "\001" + "0.1234",
+        "japan" + "\001" + "china" + "\001" + "iceland",
+        "row2")
+      writer.write(array)
+      writer.close()
+    } catch {
+      case e: Exception =>
+        assert(false)
+    }
+    val actualResult: List[Map[String, Any]] = prestoServer
+      .executeQuery("select * from files5 ")
+
+    assert(actualResult.size == 2)
+    for( row <- 0 to 1) {
+      var column1 = actualResult(row)("stringfield")
+      if(column1 == "row1") {
+        var column2 =  actualResult(row)("arraybyte").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+        var column3 =  actualResult(row)("arrayshort").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+        var column4 =  actualResult(row)("arrayint").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+        assert(column2(0) == null)
+        assert(column3(0) == null)
+        assert(column4(0) == null)
+      } else if(column1 == "row2") {
+        var column2 =  actualResult(row)("arrayint").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+        if (column2.sameElements(Array(4))) {
+          var column3 =  actualResult(row)("arraybyte").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+          var column4 =  actualResult(row)("arrayshort").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+          var column5 =  actualResult(row)("arraylong").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+          var column6 =  actualResult(row)("arrayfloat").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+          var column7 =  actualResult(row)("arraydouble").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+          var column8 =  actualResult(row)("arraybinary").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+          var column9 =  actualResult(row)("arraydate").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+          var column10 =  actualResult(row)("arraytimestamp").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+          var column11 =  actualResult(row)("arrayboolean").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+          var column12 =  actualResult(row)("arrayvarchar").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+          var column13 =  actualResult(row)("arraydecimal").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+          var column14 =  actualResult(row)("arraystring").asInstanceOf[PrestoArray].getArray().asInstanceOf[Array[Object]]
+
+          assert(column3.sameElements(Array(3,5,4)))
+          assert(column4.sameElements(Array(4,5,6)))
+          assert(column5.sameElements(Array(2L,59999999L, 99999999999L)))
+          assert(column6.sameElements(Array(5.4646f,5.55f,0.055f)))
+          assert(column7.sameElements(Array(5.46464646464,5.55,0.055)))
+          assert(column8(0).asInstanceOf[Array[Byte]].size == 118198)
+          assert(column9.sameElements(Array("2019-03-02","2020-03-02","2021-04-02")))
+          assert(column10.sameElements(Array("2019-02-12 03:03:34.000","2020-02-12 03:03:34.000","2021-03-12 03:03:34.000")))
+          assert(column11.sameElements(Array(true,false)))
+          assert(column12.sameElements(Array(longChar)))
+          assert(column13.sameElements(Array("999.23","0.12")))
+          assert(column14.sameElements(Array("japan","china","iceland")))
+        }
+      }
+    }
+    FileUtils.deleteDirectory(new File(writerPathComplex))
+  }
+
+  test("test Array of date type with huge data") {
+    val writerPathComplex = storePath + "/sdk_output/files6"
+    import scala.collection.JavaConverters._
+    FileUtils.deleteDirectory(new File(writerPathComplex))
+    prestoServer.execute("drop table if exists sdk_output.files6")
+    prestoServer
+      .execute(
+        "create table sdk_output.files6(arrayDate ARRAY(date)) with(format='CARBON') ")
+    val fields8 = List(new StructField("intField", DataTypes.DATE))
+    val structType8 = new Field("arrayDate", "array", fields8.asJava)
+    try {
+      val builder = CarbonWriter.builder()
+      val writer =
+        builder.outputPath(writerPathComplex)
+          .uniqueIdentifier(System.nanoTime()).withBlockSize(2).enableLocalDictionary(false)
+          .withCsvInput(new Schema(Array[Field](structType8))).writtenBy("presto").build()
+
+      var i = 0
+      while (i < 50000) {
+        val array = Array[String]("2019-03-02" + "\001" + "2020-03-02" + "\001" + "2021-04-02")
+        writer.write(array)
+        val array1 = Array[String]("2021-04-02")
+        writer.write(array1)
+        i += 1
+      }
+      writer.close()
+    } catch {
+      case e: Exception =>
+        assert(false)
+    }
+    val actualResult: List[Map[String, Any]] = prestoServer
+      .executeQuery("select * from files6 ")
+    assert(actualResult.size == 100 * 1000)
+    FileUtils.deleteDirectory(new File(writerPathComplex))
+  }
+
 }

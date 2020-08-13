@@ -18,8 +18,11 @@
 package org.apache.carbondata.core.scan.result.vector.impl;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -70,9 +73,13 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   private CarbonColumnVector dictionaryVector;
 
+  private List<CarbonColumnVector> childrenVector;
+
   private LazyPageLoader lazyPage;
 
   private boolean loaded;
+
+  private List<Integer> childElementsForEachRow;
 
   public CarbonColumnVectorImpl(int batchSize, DataType dataType) {
     this.batchSize = batchSize;
@@ -100,6 +107,53 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       data = new Object[batchSize];
     }
 
+  }
+
+  @Override
+  public List<CarbonColumnVector> getChildrenVector() {
+    return childrenVector;
+  }
+
+  public void setChildrenVector(List<CarbonColumnVector> childrenVector) {
+    this.childrenVector = childrenVector;
+  }
+
+  public List<Integer> getNumberOfChildrenElementsInEachRow() {
+    return childElementsForEachRow;
+  }
+
+  public void setNumberOfChildElementsInEachRow(List<Integer> childrenElements) {
+    this.childElementsForEachRow = childrenElements;
+  }
+
+  public void setNumberOfChildElementsForArray(byte[] parentPageData, int pageSize) {
+    // for complex array type, go through parent page to get the child information
+    ByteBuffer childInfoBuffer = ByteBuffer.wrap(parentPageData);
+    List<Integer> childElementsForEachRow = new ArrayList<>();
+    // Parent page array data looks like
+    // number of children in each row [4 byte], Offset [4 byte],
+    // number of children in each row [4 byte], Offset [4 byte]...
+    while (pageSize != childElementsForEachRow.size()) {
+      // get the number of children in current row
+      childElementsForEachRow.add(childInfoBuffer.getInt());
+      // skip offset
+      childInfoBuffer.getInt();
+    }
+    setNumberOfChildElementsInEachRow(childElementsForEachRow);
+  }
+
+  public void setNumberOfChildElementsForStruct(byte[] parentPageData, int pageSize) {
+    // for complex struct type, go through parent page to get the child information
+    ByteBuffer childInfoBuffer = ByteBuffer.wrap(parentPageData);
+    List<Integer> childElementsForEachRow = new ArrayList<>();
+    // Parent page struct data looks like
+    // number of children in each row [2 byte], number of children in each row [2 byte],
+    // number of children in each row [2 byte], number of children in each row [2 byte]...
+    while (pageSize != childElementsForEachRow.size()) {
+      int elements = childInfoBuffer.getShort();
+      childElementsForEachRow.add(elements);
+    }
+    setNumberOfChildElementsInEachRow(childElementsForEachRow);
   }
 
   @Override

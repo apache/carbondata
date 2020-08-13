@@ -48,6 +48,10 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
     }
   }
 
+  public CarbonColumnVector getColumnVector() {
+    return columnVector;
+  }
+
   @Override
   public void putBoolean(int rowId, boolean value) {
     if (!filteredRows[rowId]) {

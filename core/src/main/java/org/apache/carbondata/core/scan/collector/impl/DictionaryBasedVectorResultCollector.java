@@ -98,6 +98,14 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
         columnVectorInfo.dimension = queryDimensions[i];
         columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
         allColumnInfo[queryDimensions[i].getOrdinal()] = columnVectorInfo;
+      } else if (queryDimensions[i].getDimension().isComplex()) {
+        ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
+        complexList.add(columnVectorInfo);
+        columnVectorInfo.dimension = queryDimensions[i];
+        columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
+        columnVectorInfo.genericQueryType =
+            executionInfo.getComplexDimensionInfoMap().get(columnVectorInfo.ordinal);
+        allColumnInfo[queryDimensions[i].getOrdinal()] = columnVectorInfo;
       } else if (queryDimensions[i].getDimension().getDataType() != DataTypes.DATE) {
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
         noDictInfoList.add(columnVectorInfo);
@@ -111,14 +119,6 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
         columnVectorInfo.directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
         columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
-        allColumnInfo[queryDimensions[i].getOrdinal()] = columnVectorInfo;
-      } else if (queryDimensions[i].getDimension().isComplex()) {
-        ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
-        complexList.add(columnVectorInfo);
-        columnVectorInfo.dimension = queryDimensions[i];
-        columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
-        columnVectorInfo.genericQueryType =
-            executionInfo.getComplexDimensionInfoMap().get(columnVectorInfo.ordinal);
         allColumnInfo[queryDimensions[i].getOrdinal()] = columnVectorInfo;
       } else {
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
@@ -251,7 +251,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
 
   private void fillResultToColumnarBatch(BlockletScannedResult scannedResult) {
     scannedResult.fillDataChunks(dictionaryInfo, noDictionaryInfo, measureColumnInfo,
-        measureInfo.getMeasureOrdinals());
+        measureInfo.getMeasureOrdinals(), complexInfo);
 
   }
 
