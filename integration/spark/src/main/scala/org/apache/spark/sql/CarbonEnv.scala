@@ -63,6 +63,8 @@ class CarbonEnv {
 
   var initialized = false
 
+  var sparkWarehouse : String = _
+
   def init(sparkSession: SparkSession): Unit = this.synchronized {
     // after locking, check initialized at first
     if (initialized) {
@@ -70,6 +72,7 @@ class CarbonEnv {
     }
     val properties = CarbonProperties.getInstance()
     var storePath = properties.getProperty(CarbonCommonConstants.STORE_LOCATION)
+    sparkWarehouse = sparkSession.conf.get("spark.sql.warehouse.dir")
     if (storePath == null) {
       storePath = FileFactory.getUpdatedFilePath(sparkSession.conf.get("spark.sql.warehouse.dir"))
       properties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
@@ -333,13 +336,19 @@ object CarbonEnv {
     if ((!EnvHelper.isLegacy(sparkSession)) &&
         (dbName.equals("default") || databaseLocation.endsWith(".db"))) {
       val carbonStorePath = CarbonProperties.getStorePath()
-      val hiveStorePath = sparkSession.conf.get("spark.sql.warehouse.dir")
+      var hiveStorePath = sparkSession.conf.get("spark.sql.warehouse.dir")
+      if (dbName.equals("default")) {
+        // in case of default, get the previous configured spark directory if present.
+        // (to avoid spark default path as hivestorepath when reset)
+       hiveStorePath = getInstance(sparkSession).sparkWarehouse
+      }
       // if carbon.store does not point to spark.sql.warehouse.dir then follow the old table path
       // format
       if (carbonStorePath != null && !hiveStorePath.equals(carbonStorePath)) {
-        databaseLocation = CarbonProperties.getStorePath +
-                           CarbonCommonConstants.FILE_SEPARATOR +
-                           dbName
+        databaseLocation =
+          CarbonUtil.checkAndAppendFileSystemURIScheme(CarbonProperties.getStorePath) +
+          CarbonCommonConstants.FILE_SEPARATOR +
+          dbName
       }
     }
     databaseLocation

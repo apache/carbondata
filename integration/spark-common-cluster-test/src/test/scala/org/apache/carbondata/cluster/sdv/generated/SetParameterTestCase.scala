@@ -17,7 +17,9 @@
 package org.apache.carbondata.cluster.sdv.generated
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.common.util._
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
@@ -250,6 +252,37 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
     sql("SET carbon.enable.index.server=false")
     sql("SET carbon.enable.index.server.default.source=false")
     sql("RESET")
+  }
+
+  test("TC_014-test mv after reset properties") {
+    sql("drop table if exists maintable")
+    sql("drop MATERIALIZED VIEW if exists mv1")
+    sql("CREATE TABLE maintable(empno int,empname string,projectcode int, projectjoindate " +
+        "Timestamp, projectenddate date,salary double) STORED AS carbondata")
+    sql("CREATE MATERIALIZED VIEW mv1 as select timeseries(projectenddate,'day'), sum" +
+        "(projectcode) from maintable group by timeseries(projectenddate,'day')")
+    sql("insert into maintable select 1000,'PURUJIT',00012,'2015-07-26 12:07:28','2016-05-20'," +
+        "15000.00")
+    sql("insert into maintable select 1001,'PANKAJ',00010,'2015-07-26 17:32:20','2016-05-20'," +
+        "25000.00")
+    val query: String = "select timeseries(projectenddate,'day'), sum(projectcode) from " +
+                        "maintable group by timeseries(projectenddate,'day')"
+    val df1 = sql(s"$query")
+    sql("set carbon.input.segments.defualt.maintable=1")
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "mv1"))
+    sql("reset")
+    assert(TestUtil.verifyMVHit(df1.queryExecution.optimizedPlan, "mv1"))
+    sql("drop MATERIALIZED VIEW mv1")
+    sql("drop table maintable")
+  }
+
+  object TestUtil {
+    def verifyMVHit(logicalPlan: LogicalPlan, mvName: String): Boolean = {
+      val tables = logicalPlan collect {
+        case l: LogicalRelation => l.catalogTable.get
+      }
+      tables.exists(_.identifier.table.equalsIgnoreCase(mvName))
+    }
   }
 
   private def getLogFileCount(dbName: String, tableName: String, segment: String): Int = {
