@@ -23,33 +23,18 @@ import com.google.common.base.Objects
 class TableCluster @JsonCreator()(@JsonProperty("fact") @JsonRawValue fact: Set[String],
     @JsonProperty("dimension") @JsonRawValue dimension: Set[String]) {
 
-  //  @JsonProperty
   def getFact(): Set[String] = {
     fact
   }
 
-  //
-  //  @JsonProperty
   def getDimension(): Set[String] = {
     dimension
   }
 
-  @Override
   override def toString: String = {
     Objects.toStringHelper(this)
       .add("fact", fact)
       .add("dimension", dimension)
       .toString
   }
-
-  /*
-  @Override
-  def toString = {
-    MoreObjects.toStringHelper(this)
-    .add("fact", fact)
-    .add("dimension", dimension)
-    .toString
-  }
-  *
-  */
 }

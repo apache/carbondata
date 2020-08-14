@@ -23,8 +23,8 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 import org.apache.carbondata.examples.util.ExampleUtils
-import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.CarbonProjection
+import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 
 // scalastyle:off println
 object HadoopFileExample {

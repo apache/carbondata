@@ -19,9 +19,7 @@ package org.apache.carbondata.spark.adapter
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, ExprId, Expression, NamedExpression}
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
-import org.apache.spark.sql.types.{DataType, Metadata}
 
 object CarbonToSparkAdapter {
   def createFilePartition(index: Int, files: ArrayBuffer[PartitionedFile]): FilePartition = {

@@ -21,11 +21,11 @@ import java.util
 
 import com.univocity.parsers.common.TextParsingException
 import org.apache.hadoop.conf.Configuration
+import org.apache.spark.TaskContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
-import org.apache.spark.TaskContext
 import org.apache.spark.util.LongAccumulator
 
 import org.apache.carbondata.common.logging.LogServiceFactory

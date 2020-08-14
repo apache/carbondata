@@ -17,8 +17,8 @@
 
 package org.apache.spark.sql.execution.command.cache
 
-import scala.collection.mutable
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.AnalysisException

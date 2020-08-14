@@ -20,13 +20,6 @@ package org.apache.spark.sql.parser
 import scala.language.implicitConversions
 
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.catalyst.CarbonParserUtil
-import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
-import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableColRenameDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
-
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 /**
  * Parser for All Carbon DDL, DML cases in Unified context
