@@ -63,6 +63,7 @@
         <option value="org.apache.carbondata" />
       </array>
     </option>
+    <option name="sortAsScalastyle" value="true" />
     <option name="METHOD_BRACE_FORCE" value="1" />
     <option name="NOT_CONTINUATION_INDENT_FOR_PARAMS" value="true" />
     <option name="USE_ALTERNATE_CONTINUATION_INDENT_FOR_PARAMS" value="true" />
@@ -114,6 +115,10 @@
     </indentOptions>
   </codeStyleSettings>
   <codeStyleSettings language="Scala">
+    <option name="KEEP_BLANK_LINES_IN_DECLARATIONS" value="1" />
+    <option name="KEEP_BLANK_LINES_IN_CODE" value="1" />
+    <option name="KEEP_BLANK_LINES_BEFORE_RBRACE" value="0" />
+    <option name="BLANK_LINES_BEFORE_PACKAGE" value="1" />
     <option name="ALIGN_MULTILINE_PARAMETERS" value="false" />
     <option name="ALIGN_MULTILINE_BINARY_OPERATION" value="true" />
     <option name="CALL_PARAMETERS_WRAP" value="5" />

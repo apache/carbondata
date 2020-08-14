@@ -48,7 +48,7 @@ object CarbonToSparkAdapter {
     })
   }
 
-  def addSparkListener(sparkContext: SparkContext) = {
+  def addSparkListener(sparkContext: SparkContext): Unit = {
     sparkContext.addSparkListener(new SparkListener {
       override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
         SparkSession.setDefaultSession(null)
@@ -94,11 +94,11 @@ object CarbonToSparkAdapter {
       qualifier = newSubsume.split("\n").map(_.trim))
   }
 
-  def createScalaUDF(s: ScalaUDF, reference: AttributeReference) = {
+  def createScalaUDF(s: ScalaUDF, reference: AttributeReference): ScalaUDF = {
     ScalaUDF(s.function, s.dataType, Seq(reference), s.inputsNullSafe, s.inputTypes)
   }
 
-  def createExprCode(code: String, isNull: String, value: String, dataType: DataType) = {
+  def createExprCode(code: String, isNull: String, value: String, dataType: DataType): ExprCode = {
     ExprCode(
       code"$code",
       JavaCode.isNullVariable(isNull),
@@ -181,11 +181,12 @@ object CarbonToSparkAdapter {
     subQueryAlias.child.output.map(_.withQualifier(newAlias))
   }
 
-  def getHiveExternalCatalog(sparkSession: SparkSession) =
+  def getHiveExternalCatalog(sparkSession: SparkSession): HiveExternalCatalog = {
     sparkSession.sessionState.catalog.externalCatalog
       .asInstanceOf[ExternalCatalogWithListener]
       .unwrapped
       .asInstanceOf[HiveExternalCatalog]
+  }
 }
 
 class CarbonOptimizer(

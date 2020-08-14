@@ -24,8 +24,8 @@ import org.apache.spark.sql.internal.SQLConf
 /**
  * use this wrapper to adapter multiple spark versions
  */
-class SparkSqlAstBuilderWrapper(conf: SQLConf)
+abstract class SparkSqlAstBuilderWrapper(conf: SQLConf)
   extends SparkSqlAstBuilder(conf) {
 
-  def visitPropertyKeyValues(ctx: TablePropertyListContext): Map[String, String] = ???
+  def visitPropertyKeyValues(ctx: TablePropertyListContext): Map[String, String]
 }

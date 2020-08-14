@@ -29,8 +29,8 @@ import org.apache.spark.{CarbonInputMetrics, DataSkewRangePartitioner, TaskConte
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.sql.types.{ByteType, DateType, LongType, StringType, TimestampType}
 import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
