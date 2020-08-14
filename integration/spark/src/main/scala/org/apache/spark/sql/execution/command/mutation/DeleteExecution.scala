@@ -234,6 +234,12 @@ object DeleteExecution {
                   TupleIdEnum.BLOCKLET_ID.getTupleIdIndex),
                 Integer.parseInt(CarbonUpdateUtil.getRequiredFieldFromTID(TID,
                   TupleIdEnum.PAGE_ID.getTupleIdIndex)))
+            } else if (TID.contains("#")) {
+              // this is in case of the external segment, where the tuple id has external path with#
+              (CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.EXTERNAL_OFFSET),
+                CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.EXTERNAL_BLOCKLET_ID),
+                Integer.parseInt(CarbonUpdateUtil.getRequiredFieldFromTID(TID,
+                  TupleIdEnum.EXTERNAL_PAGE_ID)))
             } else {
               (CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.OFFSET),
                 CarbonUpdateUtil.getRequiredFieldFromTID(TID, TupleIdEnum.BLOCKLET_ID),
@@ -268,8 +274,14 @@ object DeleteExecution {
           if (null == columnCompressor) {
             columnCompressor = CompressorFactory.getInstance.getCompressor.getName
           }
-          var blockNameFromTupleID = CarbonUpdateUtil.getRequiredFieldFromTID(TID,
-            TupleIdEnum.BLOCK_ID)
+          var blockNameFromTupleID =
+            if (TID.contains("#")) {
+              CarbonUpdateUtil.getRequiredFieldFromTID(TID,
+                TupleIdEnum.EXTERNAL_BLOCK_ID)
+            } else {
+              CarbonUpdateUtil.getRequiredFieldFromTID(TID,
+                TupleIdEnum.BLOCK_ID)
+            }
           blockNameFromTupleID = blockNameFromTupleID.replace(CarbonCommonConstants.UNDERSCORE,
             CarbonTablePath.BATCH_PREFIX)
           val completeBlockName = if (carbonTable.isHivePartitionTable) {

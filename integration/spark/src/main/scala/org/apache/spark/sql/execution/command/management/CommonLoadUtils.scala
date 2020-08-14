@@ -89,7 +89,12 @@ object CommonLoadUtils {
     import org.apache.spark.sql.functions.udf
     // extracting only segment from tupleId
     val getSegIdUDF = udf((tupleId: String) =>
-      CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID))
+      // this is in case of the external segment, where the tuple id has external path with #
+      if (tupleId.contains("#")) {
+        CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.EXTERNAL_SEGMENT_ID)
+      } else {
+        CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID)
+      })
     // getting all fields except tupleId field as it is not required in the value
     val otherFields = CarbonScalaUtil.getAllFieldsWithoutTupleIdField(fields)
     // extract tupleId field which will be used as a key

@@ -56,7 +56,7 @@ class SubQueryTestSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   test("tupleId") {
-    checkExistence(sql("select getTupleId() as tupleId from subquery"), true, "0/0/0-0_batchno0-0-")
+    checkExistence(sql("select getTupleId() as tupleId from subquery"), true, "0/0-0_0-0-")
   }
 
   override def afterAll() {
