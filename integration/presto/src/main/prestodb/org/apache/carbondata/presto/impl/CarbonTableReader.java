@@ -290,8 +290,6 @@ public class CarbonTableReader {
       CarbonProperties.getInstance()
           .addProperty(CarbonCommonConstants.IS_QUERY_FROM_PRESTO, "true");
       List<InputSplit> splits = carbonTableInputFormat.getSplits(job);
-      boolean distributedPruningEnabled = CarbonProperties.getInstance()
-          .isDistributedPruningEnabled(carbonTable.getDatabaseName(), carbonTable.getTableName());
       Gson gson = new Gson();
       if (splits != null && splits.size() > 0) {
         for (InputSplit inputSplit : splits) {
@@ -302,7 +300,7 @@ public class CarbonTableReader {
               carbonInputSplit.getNumberOfBlocklets(), carbonInputSplit.getVersion().number(),
               carbonInputSplit.getDeleteDeltaFiles(), carbonInputSplit.getBlockletId(),
               gson.toJson(carbonInputSplit.getDetailInfo()),
-              carbonInputSplit.getFileFormat().ordinal(), distributedPruningEnabled));
+              carbonInputSplit.getFileFormat().ordinal()));
         }
         // Use block distribution
         List<List<CarbonLocalInputSplit>> inputSplits =

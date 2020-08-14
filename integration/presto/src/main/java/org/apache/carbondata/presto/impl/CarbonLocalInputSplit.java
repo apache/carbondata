@@ -46,7 +46,6 @@ public class CarbonLocalInputSplit {
   private String detailInfo;
   private int fileFormatOrdinal;
   private FileFormat fileFormat;
-  private boolean isDistributedPruningEnabled;
 
   /**
    * Number of BlockLets in a block
@@ -128,8 +127,7 @@ public class CarbonLocalInputSplit {
       @JsonProperty("deleteDeltaFiles") String[] deleteDeltaFiles,
       @JsonProperty("blockletId") String blockletId,
       @JsonProperty("detailInfo") String detailInfo,
-      @JsonProperty("fileFormatOrdinal") int fileFormatOrdinal,
-      @JsonProperty("isDistributedPruningEnabled") boolean isDistributedPruningEnabled) {
+      @JsonProperty("fileFormatOrdinal") int fileFormatOrdinal) {
     this.path = path;
     this.start = start;
     this.length = length;
@@ -143,7 +141,6 @@ public class CarbonLocalInputSplit {
     this.detailInfo = detailInfo;
     this.fileFormatOrdinal = fileFormatOrdinal;
     this.fileFormat = FileFormat.getByOrdinal(fileFormatOrdinal);
-    this.isDistributedPruningEnabled = isDistributedPruningEnabled;
   }
 
   public static CarbonInputSplit convertSplit(CarbonLocalInputSplit carbonLocalInputSplit) {
@@ -157,7 +154,8 @@ public class CarbonLocalInputSplit {
         carbonLocalInputSplit.getDeleteDeltaFiles());
     inputSplit.setFormat(carbonLocalInputSplit.getFileFormat());
     if (FileFormat.COLUMNAR_V3.ordinal() == inputSplit.getFileFormat().ordinal()
-        && !carbonLocalInputSplit.isDistributedPruningEnabled) {
+        && null != carbonLocalInputSplit.detailInfo && !carbonLocalInputSplit.detailInfo
+        .equalsIgnoreCase("null")) {
       Gson gson = new Gson();
       BlockletDetailInfo blockletDetailInfo =
           gson.fromJson(carbonLocalInputSplit.detailInfo, BlockletDetailInfo.class);
