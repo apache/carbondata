@@ -41,7 +41,7 @@ import org.apache.log4j.Logger;
 public abstract class CarbonWriter extends ProxyFileWriter<Object[]> {
 
   private static final Logger LOGGER =
-      LogServiceFactory.getLogService(CarbonS3Writer.class.getName());
+      LogServiceFactory.getLogService(CarbonWriter.class.getName());
 
   public CarbonWriter(final CarbonWriterFactory factory,
       final String identifier, final CarbonTable table) {
@@ -87,7 +87,8 @@ public abstract class CarbonWriter extends ProxyFileWriter<Object[]> {
               "Upload file[" + file.getAbsolutePath() + "] to [" + remotePath + "] start.");
         }
         try {
-          CarbonUtil.copyCarbonDataFileToCarbonStorePath(file.getAbsolutePath(), remotePath, 1024);
+          CarbonUtil.copyCarbonDataFileToCarbonStorePath(file.getAbsolutePath(), remotePath,
+                  1024 * 1024 * 2);
         } catch (CarbonDataWriterException exception) {
           LOGGER.error(exception.getMessage(), exception);
           throw exception;
@@ -131,7 +132,8 @@ public abstract class CarbonWriter extends ProxyFileWriter<Object[]> {
         LOGGER.debug("Upload file[" + file.getAbsolutePath() + "] to [" + remotePath + "] start.");
       }
       try {
-        CarbonUtil.copyCarbonDataFileToCarbonStorePath(file.getAbsolutePath(), remotePath, 1024);
+        CarbonUtil.copyCarbonDataFileToCarbonStorePath(file.getAbsolutePath(), remotePath,
+                  1024 * 1024 * 2);
       } catch (CarbonDataWriterException exception) {
         LOGGER.error(exception.getMessage(), exception);
         throw exception;
