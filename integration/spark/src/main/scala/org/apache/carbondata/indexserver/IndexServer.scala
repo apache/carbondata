@@ -247,9 +247,6 @@ object IndexServer extends ServerInterface {
   def main(args: Array[String]): Unit = {
     if (serverIp.isEmpty) {
       throw new RuntimeException(s"Please set the server IP to use Index Cache Server")
-    } else if (!isExecutorLRUConfigured) {
-      throw new RuntimeException(s"Executor LRU cache size is not set. Please set using " +
-                                 s"${ CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE }")
     } else {
       createCarbonSession()
       LOGGER.info("Starting Index Cache Server")
