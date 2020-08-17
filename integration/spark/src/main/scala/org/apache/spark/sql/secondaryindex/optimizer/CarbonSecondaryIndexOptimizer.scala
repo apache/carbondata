@@ -33,6 +33,7 @@ import org.apache.spark.sql.hive.{CarbonHiveIndexMetadataUtil, CarbonRelation}
 import org.apache.spark.sql.index.CarbonIndexUtil
 import org.apache.spark.sql.secondaryindex.optimizer
 import org.apache.spark.sql.secondaryindex.optimizer.NodeType.NodeType
+import org.apache.spark.sql.types.{Metadata, MetadataBuilder}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -281,8 +282,15 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
             filterAttributes += attr.name.toLowerCase
             attrNew
         }
-        val positionReference =
-          Seq(attributeMap(CarbonCommonConstants.POSITION_REFERENCE.toLowerCase()))
+        val positionRef = attributeMap(CarbonCommonConstants.POSITION_REFERENCE.toLowerCase())
+        var positionReference = Seq(positionRef)
+
+        if (isComplexFilter && !hasComplexFilterWithPrimitive) {
+          val metadata = new MetadataBuilder().putString(CarbonCommonConstants
+            .IS_TUPLE_ID_TILL_ROW_FOR_SI_COMPLEX, "true").build()
+          positionReference = Seq(CarbonToSparkAdapter.createAttributeReference(positionRef,
+            metadata))
+        }
         // Add Filter on logicalRelation
         var planTransform: LogicalPlan = Filter(indexTableFilter,
           indexTableToLogicalRelationMapping(tableName))

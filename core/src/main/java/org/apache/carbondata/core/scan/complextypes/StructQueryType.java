@@ -115,15 +115,10 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
 
   @Override
   public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
-    return getDataBasedOnDataType(dataBuffer, false);
-  }
-
-  @Override
-  public Object getDataBasedOnDataType(ByteBuffer dataBuffer, boolean getBytesData) {
     int childLength = dataBuffer.getShort();
     Object[] fields = new Object[childLength];
     for (int i = 0; i < childLength; i++) {
-      fields[i] =  children.get(i).getDataBasedOnDataType(dataBuffer, false);
+      fields[i] =  children.get(i).getDataBasedOnDataType(dataBuffer);
     }
     return DataTypeUtil.getDataTypeConverter().wrapWithGenericRow(fields);
   }
@@ -133,9 +128,14 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     int childLength = dataBuffer.getShort();
     Object[] fields = new Object[childLength];
     for (int i = 0; i < childLength; i++) {
-      fields[i] =  children.get(i).getDataBasedOnDataType(dataBuffer, true);
+      fields[i] =  children.get(i).getObjectDataBasedOnDataType(dataBuffer);
     }
     return fields;
+  }
+
+  @Override
+  public Object getObjectDataBasedOnDataType(ByteBuffer dataBuffer) {
+    return getDataBasedOnDataType(dataBuffer);
   }
 
   @Override
@@ -154,7 +154,7 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
       return null;
     } else {
       //      childLength = dataBuffer.getShort();
-      return getDataBasedOnDataType(dataBuffer, false);
+      return getDataBasedOnDataType(dataBuffer);
     }
   }
 
@@ -167,7 +167,7 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
       if (presentColumn.getNumberOfChild() > 0) {
         // This is complex Column. And all its child will be present in the corresponding data
         // buffer.
-        return getDataBasedOnDataType(childBuffer.get(presentColumn), false);
+        return getDataBasedOnDataType(childBuffer.get(presentColumn));
       } else {
         // This is a child column with with primitive data type.
         return children.get(0)

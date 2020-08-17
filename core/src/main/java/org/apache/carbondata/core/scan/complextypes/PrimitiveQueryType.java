@@ -108,17 +108,17 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
 
   @Override
   public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
-    return getDataBasedOnDataType(dataBuffer, false);
-  }
-
-  @Override
-  public Object getDataBasedOnDataType(ByteBuffer dataBuffer, boolean getBytesData) {
-    return getDataObject(dataBuffer, -1, getBytesData);
+    return getDataObject(dataBuffer, -1);
   }
 
   @Override
   public Object[] getObjectArrayDataBasedOnDataType(ByteBuffer dataBuffer) {
     return new Object[0];
+  }
+
+  @Override
+  public Object getObjectDataBasedOnDataType(ByteBuffer dataBuffer) {
+    return getDataObject(dataBuffer, -1, true);
   }
 
   @Override
@@ -138,9 +138,13 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     } else {
       size = child.getDataType().getSizeInBytes();
     }
-    actualData = getDataObject(dataBuffer, size, false);
+    actualData = getDataObject(dataBuffer, size);
 
     return actualData;
+  }
+
+  private Object getDataObject(ByteBuffer dataBuffer, int size) {
+    return getDataObject(dataBuffer, size, false);
   }
 
   private Object getDataObject(ByteBuffer dataBuffer, int size, boolean getBytesData) {

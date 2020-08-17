@@ -41,6 +41,12 @@ import org.apache.log4j.Logger;
 public class ImplicitExpression extends Expression {
 
   /**
+   * Logger instance
+   */
+  private static final Logger LOGGER =
+      LogServiceFactory.getLogService(ImplicitExpression.class.getName());
+
+  /**
    * map that contains the mapping of block id to the valid blocklets in that block which contain
    * the data as per the applied filter
    */
@@ -49,20 +55,19 @@ public class ImplicitExpression extends Expression {
   /**
    * checks if implicit filter exceeds complex filter threshold
    */
-  private boolean isThresholdReached;
+  private boolean isComplexThresholdReached;
 
-  public ImplicitExpression(List<Expression> implicitFilterList) {
-    final Logger LOGGER = LogServiceFactory.getLogService(getClass().getName());
+  public ImplicitExpression(List<Expression> implicitFilterList, boolean isTupleIdTillRowLevel) {
     // initialize map with half the size of filter list as one block id can contain
     // multiple blocklets
     blockIdToBlockletIdMapping = new HashMap<>(implicitFilterList.size() / 2);
     for (Expression value : implicitFilterList) {
       String blockletPath = ((LiteralExpression) value).getLiteralExpValue().toString();
-      addBlockEntry(blockletPath);
+      addBlockEntry(blockletPath, isTupleIdTillRowLevel);
     }
     int complexFilterThreshold = CarbonProperties.getInstance().getComplexFilterThresholdForSI();
-    isThresholdReached = implicitFilterList.size() > complexFilterThreshold;
-    if (isThresholdReached) {
+    isComplexThresholdReached = implicitFilterList.size() > complexFilterThreshold;
+    if (isComplexThresholdReached) {
       LOGGER.info("Implicit Filter Size: " + implicitFilterList.size() + ", Threshold is: "
           + complexFilterThreshold);
     }
@@ -72,20 +77,23 @@ public class ImplicitExpression extends Expression {
     this.blockIdToBlockletIdMapping = blockIdToBlockletIdMapping;
   }
 
-  private void addBlockEntry(String blockletPath) {
+  private void addBlockEntry(String blockletPath, boolean isTupleIdTillRowLevel) {
     String[] blockletPathSplits = blockletPath.split(CarbonCommonConstants.FILE_SEPARATOR);
     String blockId =
-        blockletPathSplits[0] + CarbonCommonConstants.FILE_SEPARATOR + blockletPathSplits[1]
-            + CarbonCommonConstants.FILE_SEPARATOR + blockletPathSplits[2];
+        blockletPathSplits[0] + CarbonCommonConstants.FILE_SEPARATOR + blockletPathSplits[1];
     Set<String> blockletIds =
         blockIdToBlockletIdMapping.computeIfAbsent(blockId, k -> new HashSet<>());
-    if (blockletPathSplits.length > 4 && !isThresholdReached) {
+    if (isTupleIdTillRowLevel) {
       // set row id's instead of blocklet id
-      blockletIds.add(
-          blockletPathSplits[3] + CarbonCommonConstants.FILE_SEPARATOR + blockletPathSplits[4]
-              + CarbonCommonConstants.FILE_SEPARATOR + blockletPathSplits[5]);
-    } else if (blockletPathSplits.length > 3) {
-      blockletIds.add(blockletPathSplits[3]);
+      // case 1: if filter contains only complex filter
+      if (blockletPathSplits.length > 3 && !isComplexThresholdReached) {
+        blockletIds.add(
+            blockletPathSplits[2] + CarbonCommonConstants.FILE_SEPARATOR + blockletPathSplits[3]
+                + CarbonCommonConstants.FILE_SEPARATOR + blockletPathSplits[4]);
+      } else {
+        // case 2: if filter contains complex and primitive filter
+        blockletIds.add(blockletPathSplits[2]);
+      }
     } else {
       blockId =
           blockletPath.substring(0, blockletPath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));

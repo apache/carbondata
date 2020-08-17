@@ -443,34 +443,32 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
       databaseName: String, tableName: String, indexTableName: String,
       absoluteTableIdentifier: AbsoluteTableIdentifier): TableInfo = {
     var schemaOrdinal = -1
-    val complexDimensions = carbonTable.getAllDimensions.asScala
-      .filter(dim => dim.getDataType.isComplexType &&
-                     indexModel.columnNames.asJava.contains(dim.getColName))
-    if (complexDimensions.size > 1) {
-      throw new ErrorMessage("SI creation with more than one complex type is not supported yet");
-    }
     var allColumns = List[ColumnSchema]()
+    var complexColumnExists = false
     indexModel.columnNames.foreach { indexCol =>
       val dimension = carbonTable.getDimensionByName(indexCol)
-      if (!dimension.isComplex) {
-        val colSchema = dimension.getColumnSchema
-        schemaOrdinal += 1
-        allColumns = allColumns :+ cloneColumnSchema(colSchema, schemaOrdinal, null)
-      }
-    }
-    // validate complex dimensions supported for SI
-    complexDimensions.foreach { complexDim =>
       schemaOrdinal += 1
-      if (complexDim.getNumberOfChild > 0) {
-        val complexChildDims = complexDim.getListOfChildDimensions.asScala
-        if (complexChildDims
-          .exists(col => DataTypes.isArrayType(col.getDataType))) {
-          throw new ErrorMessage("SI creation with nested array complex type is not supported yet");
+      if (dimension.isComplex) {
+        if (complexColumnExists) {
+          throw new ErrorMessage(
+            "SI creation with more than one complex type is not supported yet")
         }
+        if (dimension.getNumberOfChild > 0) {
+          val complexChildDims = dimension.getListOfChildDimensions.asScala
+          if (complexChildDims.exists(col => DataTypes.isArrayType(col.getDataType))) {
+            throw new ErrorMessage(
+              "SI creation with nested array complex type is not supported yet")
+          }
+        }
+        allColumns = allColumns :+ cloneColumnSchema(
+          dimension.getColumnSchema,
+          schemaOrdinal,
+          dimension.getListOfChildDimensions.get(0).getColumnSchema.getDataType)
+        complexColumnExists = true
+      } else {
+        val colSchema = dimension.getColumnSchema
+        allColumns = allColumns :+ cloneColumnSchema(colSchema, schemaOrdinal)
       }
-      allColumns = allColumns :+ cloneColumnSchema(complexDim.getColumnSchema,
-        schemaOrdinal,
-        complexDim.getListOfChildDimensions.get(0).getColumnSchema.getDataType)
     }
     // Setting TRUE on all sort columns
     allColumns.foreach(f => f.setSortColumn(true))
@@ -645,7 +643,7 @@ private[sql] case class CarbonCreateSecondaryIndexCommand(
 
   def cloneColumnSchema(parentColumnSchema: ColumnSchema,
       schemaOrdinal: Int,
-      dataType: DataType): ColumnSchema = {
+      dataType: DataType = null): ColumnSchema = {
     val columnSchema = new ColumnSchema()
     val encodingList = parentColumnSchema.getEncodingList
     // if data type is arrayType, then store the column as its CHILD data type in SI

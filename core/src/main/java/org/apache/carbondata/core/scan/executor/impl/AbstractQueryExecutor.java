@@ -396,9 +396,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
               queryModel,
               abstractIndex,
               dataRefNode.numberOfNodes(),
-              dataRefNode.getBlockInfos().get(0).getFilePath(),
-              dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath(),
-              dataRefNode.getBlockInfos().get(0).getSegment());
+              dataRefNode.getTableBlockInfo().getFilePath(),
+              dataRefNode.getTableBlockInfo().getDeletedDeltaFilePath(),
+              dataRefNode.getTableBlockInfo().getSegment());
       if (null == dimensionReusableDataBuffers || null == measureReusableDataBuffers) {
         dimensionReusableDataBuffers = blockExecutionInfoForBlock.getDimensionReusableDataBuffer();
         measureReusableDataBuffers = blockExecutionInfoForBlock.getMeasureReusableDataBuffer();
