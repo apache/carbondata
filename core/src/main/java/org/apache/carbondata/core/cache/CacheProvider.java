@@ -148,19 +148,37 @@ public class CacheProvider {
       carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE,
           CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
     } else {
-      // if executor cache size is not configured then driver cache conf will be used
       String executorCacheSize = CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE);
-      if (null != executorCacheSize) {
-        carbonLRUCache =
-            new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE,
-                CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
-      } else {
-        LOGGER.info(
-            "Executor LRU cache size not configured. Initializing with driver LRU cache size.");
-        carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE,
-            CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
+      if (null == executorCacheSize) {
+        String executorCachePercent = CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.CARBON_EXECUTOR_LRU_CACHE_PERCENT);
+        long mSizeMB = Runtime.getRuntime().maxMemory() / (1024 * 1024);
+        long executorLruCache;
+        if (null != executorCachePercent) {
+          int percentValue = Integer.parseInt(executorCachePercent);
+          if (percentValue >= 5 && percentValue <= 95) {
+            double mPercent = (double) percentValue / 100;
+            executorLruCache = (long) (mSizeMB * mPercent);
+          } else {
+            LOGGER.info("Illegal value provided to Executor LRU cache percent. " +
+                    "Initializing with default executor LRU cache percentage size.");
+            executorLruCache = (long) (mSizeMB *
+                    CarbonCommonConstants.CARBON_DEFAULT_EXECUTOR_LRU_CACHE_PERCENT);
+          }
+        } else {
+          LOGGER.info("Value of Executor LRU cache percentage is not provided. " +
+                  "Initializing with default executor LRU cache percentage size.");
+          executorLruCache = (long) (mSizeMB *
+                  CarbonCommonConstants.CARBON_DEFAULT_EXECUTOR_LRU_CACHE_PERCENT);
+        }
+        CarbonProperties.getInstance()
+                .addProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE,
+                        String.valueOf(executorLruCache));
       }
+      carbonLRUCache =
+              new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE,
+                      CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
     }
   }
 

@@ -1281,6 +1281,19 @@ public final class CarbonCommonConstants {
       "carbon.max.executor.lru.cache.size";
 
   /**
+   * executor lru cache percent upto which lru cache will be loaded in memory.
+   * Value lies between (1 - 100)
+   */
+  @CarbonProperty
+  public static final String CARBON_EXECUTOR_LRU_CACHE_PERCENT =
+          "carbon.executor.lru.cache.percent";
+
+  /**
+   * when executor LRU cache is not configured, set it to 70% percent of executor memory size
+   */
+  public static final double CARBON_DEFAULT_EXECUTOR_LRU_CACHE_PERCENT = 0.7d;
+
+  /**
    * max lru cache size default value in MB
    */
   public static final String CARBON_MAX_LRU_CACHE_SIZE_DEFAULT = "-1";
