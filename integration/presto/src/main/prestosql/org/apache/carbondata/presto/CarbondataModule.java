@@ -21,6 +21,8 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
 
 import com.google.inject.Binder;
@@ -162,6 +164,10 @@ public class CarbondataModule extends HiveModule {
     binder.bind(CarbonTableReader.class).in(Scopes.SINGLETON);
 
     configBinder(binder).bindConfig(ParquetFileWriterConfig.class);
+
+    // configure carbon properties
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.IS_QUERY_FROM_PRESTO, "true");
   }
 
 }
