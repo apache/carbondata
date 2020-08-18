@@ -19,6 +19,8 @@ package org.apache.carbondata.spark.testsuite.badrecordloger
 
 import java.io.File
 
+import scala.collection.mutable.ListBuffer
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterEach
@@ -26,6 +28,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.util.BadRecordUtil
 
 class BadRecordActionTest extends QueryTest {
 
@@ -270,6 +273,24 @@ class BadRecordActionTest extends QueryTest {
     }
   }
 
+  test("test bad record FAIL with invalid timestamp range") {
+    val csvPath = s"$resourcesPath/badrecords/invalidTimeStampRange.csv"
+    val rows = new ListBuffer[Array[String]]
+    rows += Array("ID", "date", "time")
+    rows += Array("1", "2016-7-24", "342016-7-24 01:02:30")
+    BadRecordUtil.createCSV(rows, csvPath)
+    sql("DROP TABLE IF EXISTS test_time")
+    sql("CREATE TABLE IF NOT EXISTS test_time (ID Int, date Date, time Timestamp) STORED AS carbondata " +
+        "TBLPROPERTIES('dateformat'='yyyy-MM-dd', 'timestampformat'='yyyy-MM-dd HH:mm:ss') ")
+    val exception = intercept[Exception] {
+      sql(s" LOAD DATA LOCAL INPATH '$resourcesPath/badrecords/invalidTimeStampRange.csv' " +
+          s"into table test_time options ('bad_records_action'='fail')")
+    }
+    assert(exception.getMessage.contains("Data load failed due to bad record: The value with column name time and column data" +
+        " type TIMESTAMP is not a valid TIMESTAMP type.Please enable bad record logger to know the detail reason"))
+    sql("DROP TABLE IF EXISTS test_time")
+    FileUtils.forceDelete(new File(csvPath))
+  }
 
   private def currentPath: String = {
     new File(this.getClass.getResource("/").getPath + "../../")
