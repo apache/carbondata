@@ -1592,6 +1592,16 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT = "false";
 
+  // Property to enable parsing the timestamp/date data with setLenient = true in load
+  // flow if it fails with parse invalid timestamp data. (example: 1941-03-15 00:00:00
+  // is valid time in Asia/Calcutta zone and is invalid and will fail to parse in Asia/Shanghai
+  // zone as DST is observed and clocks were turned forward 1 hour to 1941-03-15 01:00:00)
+  @CarbonProperty(dynamicConfigurable = true)
+  public static final String
+      CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE = "carbon.load.dateformat.setlenient.enable";
+
+  public static final String CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE_DEFAULT = "false";
+
   //////////////////////////////////////////////////////////////////////////////////////////
   // Constant value start here
   //////////////////////////////////////////////////////////////////////////////////////////

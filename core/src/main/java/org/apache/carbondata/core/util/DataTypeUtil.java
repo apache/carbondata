@@ -34,6 +34,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -435,7 +436,8 @@ public final class DataTypeUtil {
 
   private static Object parseTimestamp(String dimensionValue, String dateFormat) {
     Date dateToStr;
-    DateFormat dateFormatter;
+    DateFormat dateFormatter = null;
+    long timeValue;
     try {
       if (null != dateFormat && !dateFormat.trim().isEmpty()) {
         dateFormatter = new SimpleDateFormat(dateFormat);
@@ -444,9 +446,40 @@ public final class DataTypeUtil {
         dateFormatter = timestampFormatter.get();
       }
       dateToStr = dateFormatter.parse(dimensionValue);
-      return dateToStr.getTime();
+      timeValue = dateToStr.getTime();
+      validateTimeStampRange(timeValue);
+      return timeValue;
     } catch (ParseException e) {
-      throw new NumberFormatException(e.getMessage());
+      // If the parsing fails, try to parse again with setLenient to true if the property is set
+      // (example: 1941-03-15 00:00:00 is invalid data and will fail to parse in Asia/Shanghai zone
+      // as DST is observed and clocks were turned forward 1 hour to 1941-03-15 01:00:00)
+      if (CarbonProperties.getInstance().isSetLenientEnabled()) {
+        try {
+          dateFormatter.setLenient(true);
+          dateToStr = dateFormatter.parse(dimensionValue);
+          timeValue = dateToStr.getTime();
+          validateTimeStampRange(timeValue);
+          LOGGER.info("Parsed data with lenience as true, setting back to default mode");
+          return timeValue;
+        } catch (ParseException ex) {
+          LOGGER.info("Failed to parse data with lenience as true, setting back to default mode");
+          throw new NumberFormatException(ex.getMessage());
+        } finally {
+          dateFormatter.setLenient(false);
+        }
+      } else {
+        throw new NumberFormatException(e.getMessage());
+      }
+    }
+  }
+
+  private static void validateTimeStampRange(Long timeValue) {
+    if (timeValue < DateDirectDictionaryGenerator.MIN_VALUE
+        || timeValue > DateDirectDictionaryGenerator.MAX_VALUE) {
+      throw new NumberFormatException(
+          "timestamp column data value: " + timeValue + "is not in valid range of: "
+              + DateDirectDictionaryGenerator.MIN_VALUE + " and "
+              + DateDirectDictionaryGenerator.MAX_VALUE);
     }
   }
 

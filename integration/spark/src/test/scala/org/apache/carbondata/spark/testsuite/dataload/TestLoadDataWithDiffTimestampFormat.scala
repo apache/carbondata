@@ -17,9 +17,13 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
+import java.io.File
 import java.sql.{Date, Timestamp}
 import java.text.SimpleDateFormat
+import java.util.TimeZone
 
+import scala.collection.mutable.ListBuffer
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
 
@@ -29,10 +33,15 @@ import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.spark.util.BadRecordUtil
 
 class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterAll {
 
+  val defaultTimeZone = TimeZone.getDefault
+  val csvPath = s"$resourcesPath/differentZoneTimeStamp.csv"
+
   override def beforeAll {
+    generateCSVFile()
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
 
@@ -306,7 +315,51 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
     }
   }
 
+  test("test load, update data with setlenient carbon property for daylight " +
+       "saving time from different timezone") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE, "true")
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"))
+    sql("DROP TABLE IF EXISTS test_time")
+    sql("CREATE TABLE IF NOT EXISTS test_time (ID Int, date Date, time Timestamp) STORED AS carbondata " +
+        "TBLPROPERTIES('dateformat'='yyyy-MM-dd', 'timestampformat'='yyyy-MM-dd HH:mm:ss') ")
+    sql(s" LOAD DATA LOCAL INPATH '$resourcesPath/differentZoneTimeStamp.csv' into table test_time")
+    sql(s"insert into test_time select 11, '2016-7-24', '1941-3-15 00:00:00' ")
+    sql("update test_time set (time) = ('1941-3-15 00:00:00') where ID='2'")
+    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 1"), Seq(Row(Timestamp.valueOf("1941-3-15 01:00:00"))))
+    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 11"), Seq(Row(Timestamp.valueOf("1941-3-15 01:00:00"))))
+    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 2"), Seq(Row(Timestamp.valueOf("1941-3-15 01:00:00"))))
+    sql("DROP TABLE test_time")
+    CarbonProperties.getInstance().removeProperty(CarbonCommonConstants.CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE)
+  }
+
+  test("test load, update data with setlenient session level property for daylight " +
+       "saving time from different timezone") {
+    sql("set carbon.load.dateformat.setlenient.enable = true")
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"))
+    sql("DROP TABLE IF EXISTS test_time")
+    sql("CREATE TABLE IF NOT EXISTS test_time (ID Int, date Date, time Timestamp) STORED AS carbondata " +
+        "TBLPROPERTIES('dateformat'='yyyy-MM-dd', 'timestampformat'='yyyy-MM-dd HH:mm:ss') ")
+    sql(s" LOAD DATA LOCAL INPATH '$resourcesPath/differentZoneTimeStamp.csv' into table test_time")
+    sql(s"insert into test_time select 11, '2016-7-24', '1941-3-15 00:00:00' ")
+    sql("update test_time set (time) = ('1941-3-15 00:00:00') where ID='2'")
+    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 1"), Seq(Row(Timestamp.valueOf("1941-3-15 01:00:00"))))
+    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 11"), Seq(Row(Timestamp.valueOf("1941-3-15 01:00:00"))))
+    checkAnswer(sql("SELECT time FROM test_time WHERE ID = 2"), Seq(Row(Timestamp.valueOf("1941-3-15 01:00:00"))))
+    sql("DROP TABLE test_time")
+    defaultConfig()
+  }
+
+  def generateCSVFile(): Unit = {
+    val rows = new ListBuffer[Array[String]]
+    rows += Array("ID", "date", "time")
+    rows += Array("1", "1941-3-15", "1941-3-15 00:00:00")
+    rows += Array("2", "2016-7-24", "2016-7-24 01:02:30")
+    BadRecordUtil.createCSV(rows, csvPath)
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS t3")
+    FileUtils.forceDelete(new File(csvPath))
+    TimeZone.setDefault(defaultTimeZone)
   }
 }

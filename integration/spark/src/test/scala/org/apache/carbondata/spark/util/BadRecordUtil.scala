@@ -17,7 +17,9 @@
 
 package org.apache.carbondata.spark.util
 
-import java.io.{File, FileFilter}
+import java.io.{BufferedWriter, File, FileFilter, FileWriter}
+import scala.collection.mutable.ListBuffer
+import au.com.bytecode.opencsv.CSVWriter
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -67,5 +69,18 @@ object BadRecordUtil {
       .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC)
     badRecordLocation = badRecordLocation + "/" + dbName + "/" + tableName
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(badRecordLocation))
+  }
+
+  def createCSV(rows: ListBuffer[Array[String]], csvPath: String): Unit = {
+    val out = new BufferedWriter(new FileWriter(csvPath))
+    val writer: CSVWriter = new CSVWriter(out)
+    try {
+      for (row <- rows) {
+        writer.writeNext(row)
+      }
+    } finally {
+      out.close()
+      writer.close()
+    }
   }
 }

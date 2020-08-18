@@ -32,6 +32,7 @@ import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_ENABLE_MV;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_MAJOR_COMPACTION_SIZE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_QUERY_STAGE_INPUT;
@@ -153,6 +154,7 @@ public class SessionParams implements Serializable, Cloneable {
       case ENABLE_UNSAFE_IN_QUERY_EXECUTION:
       case ENABLE_AUTO_LOAD_MERGE:
       case CARBON_PUSH_ROW_FILTERS_FOR_VECTOR:
+      case CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE:
       case CARBON_ENABLE_INDEX_SERVER:
       case CARBON_QUERY_STAGE_INPUT:
       case CARBON_ENABLE_MV:

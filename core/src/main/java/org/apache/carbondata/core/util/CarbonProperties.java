@@ -2076,4 +2076,11 @@ public final class CarbonProperties {
   public static void setAuditEnabled(boolean enabled) {
     getInstance().addProperty(CarbonCommonConstants.CARBON_ENABLE_AUDIT, String.valueOf(enabled));
   }
+
+  public boolean isSetLenientEnabled() {
+    String configuredValue =
+        getProperty(CarbonCommonConstants.CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE,
+            CarbonCommonConstants.CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE_DEFAULT);
+    return Boolean.parseBoolean(configuredValue);
+  }
 }
