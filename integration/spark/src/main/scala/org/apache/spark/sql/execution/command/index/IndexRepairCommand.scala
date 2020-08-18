@@ -112,7 +112,8 @@ extends DataCommand {
           indexTables.foreach {
             indexTableName =>
               CarbonIndexUtil.processSIRepair(indexTableName, mainCarbonTable, carbonLoadModel,
-                indexMetadata, mainTableDetails, secondaryIndexProvider)(sparkSession)
+                indexMetadata, mainTableDetails, secondaryIndexProvider,
+                Integer.MAX_VALUE)(sparkSession)
           }
         } else {
           val indexTablesToRepair = indexTables.filter(indexTable => indexTable
@@ -120,7 +121,8 @@ extends DataCommand {
           indexTablesToRepair.foreach {
             indexTableName =>
               CarbonIndexUtil.processSIRepair(indexTableName, mainCarbonTable, carbonLoadModel,
-                indexMetadata, mainTableDetails, secondaryIndexProvider)(sparkSession)
+                indexMetadata, mainTableDetails, secondaryIndexProvider,
+                Integer.MAX_VALUE)(sparkSession)
           }
           if (indexTablesToRepair.isEmpty) {
             throw new Exception("Unable to find index table" + indexTableToRepair.get)

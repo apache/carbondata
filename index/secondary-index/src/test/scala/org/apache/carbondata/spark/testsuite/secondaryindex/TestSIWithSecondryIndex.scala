@@ -175,6 +175,7 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
     val carbontable = CarbonEnv.getCarbonTable(Some("default"), "uniqdata")(sqlContext.sparkSession)
     val details = SegmentStatusManager.readLoadMetadata(indexTable.getMetadataPath)
     val failSegments = List("3","4")
+    sql(s"""set carbon.si.repair.limit = 2""")
     var loadMetadataDetailsList = Array[LoadMetadataDetails]()
     details.foreach{detail =>
       if(failSegments.contains(detail.getLoadName)){
@@ -201,6 +202,7 @@ class TestSIWithSecondryIndex extends QueryTest with BeforeAndAfterAll {
            |SERDEPROPERTIES ('isSITableEnabled' = 'false')""".stripMargin)
     val count2 = sql("select * from uniqdata where workgroupcategoryname = 'developer'").count()
     val df2 = sql("select * from uniqdata where workgroupcategoryname = 'developer'").queryExecution.sparkPlan
+    sql(s"""set carbon.si.repair.limit = 1""")
     assert(count1 == count2)
     assert(isFilterPushedDownToSI(df1))
     assert(!isFilterPushedDownToSI(df2))

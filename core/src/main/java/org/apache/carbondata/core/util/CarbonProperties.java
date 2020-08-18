@@ -2083,4 +2083,36 @@ public final class CarbonProperties {
             CarbonCommonConstants.CARBON_LOAD_DATEFORMAT_SETLENIENT_ENABLE_DEFAULT);
     return Boolean.parseBoolean(configuredValue);
   }
+
+  public boolean isSIRepairEnabled(String dbName, String tableName) {
+    // Check if user has enabled/disabled the use of property for the current db and table using
+    // the set command
+    String configuredValue = getSessionPropertyValue(
+            CarbonCommonConstants.CARBON_LOAD_SI_REPAIR + "." + dbName + "." + tableName);
+    if (configuredValue == null) {
+      // if not set in session properties then check carbon.properties for the same.
+      configuredValue = getProperty(CarbonCommonConstants.CARBON_LOAD_SI_REPAIR,
+            CarbonCommonConstants.CARBON_LOAD_SI_REPAIR_DEFAULT);
+    }
+    boolean propertyEnabled =  Boolean.parseBoolean(configuredValue);
+    if (propertyEnabled) {
+      LOGGER.info("SI Repair is enabled for " + dbName + "." + tableName);
+    }
+    return propertyEnabled;
+  }
+
+  public int getMaxSIRepairLimit(String dbName, String tableName) {
+    // Check if user has enabled/disabled the use of property for the current db and table using
+    // the set command
+    String thresholdValue = getSessionPropertyValue(
+            CarbonCommonConstants.CARBON_LOAD_SI_REPAIR + "." + dbName + "." + tableName);
+    if (thresholdValue == null) {
+      // if not set in session properties then check carbon.properties for the same.
+      thresholdValue = getProperty(CarbonCommonConstants.CARBON_SI_REPAIR_LIMIT);
+    }
+    if (thresholdValue == null) {
+      return Integer.MAX_VALUE;
+    }
+    return Math.abs(Integer.parseInt(thresholdValue));
+  }
 }

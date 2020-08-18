@@ -2273,6 +2273,26 @@ public final class CarbonCommonConstants {
       500;
 
   /**
+   * Configured property to enable/disable load failed segments in SI table during
+   * load/insert command.
+   */
+  @CarbonProperty(dynamicConfigurable = true)
+  public static final String CARBON_LOAD_SI_REPAIR =  "carbon.load.si.repair";
+
+  /**
+   * Default value for load failed segments in SI table during
+   * load/insert command.
+   */
+  public static final String CARBON_LOAD_SI_REPAIR_DEFAULT = "true";
+
+  /**
+   * Property to give a limit to the number of segments that are reloaded in the
+   * SI table in the FailedSegments listener.
+   */
+  @CarbonProperty(dynamicConfigurable = true)
+  public static final String CARBON_SI_REPAIR_LIMIT =  "carbon.si.repair.limit";
+
+  /**
    * Set it to true to enable audit
    */
   public static final String CARBON_ENABLE_AUDIT = "carbon.audit.enabled";

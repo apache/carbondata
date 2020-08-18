@@ -383,7 +383,8 @@ object CarbonIndexUtil {
 
   def processSIRepair(indexTableName: String, carbonTable: CarbonTable,
     carbonLoadModel: CarbonLoadModel, indexMetadata: IndexMetadata,
-      mainTableDetails: List[LoadMetadataDetails], secondaryIndexProvider: String)
+      mainTableDetails: List[LoadMetadataDetails], secondaryIndexProvider: String,
+                      repairLimit: Int)
   (sparkSession: SparkSession) : Unit = {
     // when Si creation and load to main table are parallel, get the carbonTable from the
     // metastore which will have the latest index Info
@@ -423,14 +424,14 @@ object CarbonIndexUtil {
         case loadMetaDetail: LoadMetadataDetails =>
           if (loadMetaDetail.getSegmentStatus == SegmentStatus.MARKED_FOR_DELETE &&
             checkIfMainTableLoadIsValid(mainTableDetails.toArray,
-              loadMetaDetail.getLoadName)) {
+              loadMetaDetail.getLoadName) && repairLimit > failedLoadMetadataDetails.size() ) {
             failedLoadMetadataDetails.add(loadMetaDetail)
           } else if ((loadMetaDetail.getSegmentStatus ==
             SegmentStatus.INSERT_IN_PROGRESS ||
             loadMetaDetail.getSegmentStatus ==
               SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) &&
             checkIfMainTableLoadIsValid(mainTableDetails.toArray,
-              loadMetaDetail.getLoadName)) {
+              loadMetaDetail.getLoadName) && repairLimit > failedLoadMetadataDetails.size()) {
             val segmentLock = CarbonLockFactory
               .getCarbonLockObj(indexTable.getAbsoluteTableIdentifier,
                 CarbonTablePath.addSegmentPrefix(loadMetaDetail.getLoadName) +
@@ -454,37 +455,39 @@ object CarbonIndexUtil {
       // status file and get the skipped segments if any
       CarbonInternalLoaderUtil.getListOfValidSlices(mainTableDetails.toArray).asScala
         .foreach(metadataDetail => {
-          val detail = siTblLoadMetadataDetails
-            .filter(metadata => metadata.getLoadName.equals(metadataDetail))
-          val mainTableDetail = mainTableDetails
-            .filter(metadata => metadata.getLoadName.equals(metadataDetail))
-          if (null == detail || detail.length == 0) {
-            val newDetails = new LoadMetadataDetails
-            newDetails.setLoadName(metadataDetail)
-            LOGGER.error("Added in SILoadFailedSegment " + newDetails.getLoadName  + " for SI" +
-              " table " + indexTableName + "." + carbonTable.getTableName )
-            failedLoadMetadataDetails.add(newDetails)
-          } else if (detail != null && detail.length != 0 && metadataDetail != null
-            && metadataDetail.length != 0) {
-            // If SI table has compacted segments and main table does not have
-            // compacted segments due to some failure while compaction, need to
-            // reload the original segments in this case.
-            if (detail(0).getSegmentStatus == SegmentStatus.COMPACTED &&
-              mainTableDetail(0).getSegmentStatus == SegmentStatus.SUCCESS) {
-              detail(0).setSegmentStatus(SegmentStatus.SUCCESS)
-              // in concurrent scenario, if a compaction is going on table, then SI
-              // segments are updated first in table status and then the main table
-              // segment, so in any load runs parallel this listener shouldn't consider
-              // those segments accidentally. So try to take the segment lock.
-              val segmentLockOfProbableOnCompactionSeg = CarbonLockFactory
-                .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
-                  CarbonTablePath.addSegmentPrefix(mainTableDetail(0).getLoadName) +
-                    LockUsage.LOCK)
-              if (segmentLockOfProbableOnCompactionSeg.lockWithRetries()) {
-                segmentLocks += segmentLockOfProbableOnCompactionSeg
-                LOGGER.error("Added in SILoadFailedSegment " + detail(0).getLoadName  + " for SI " +
-                  "table " + indexTableName + "." + carbonTable.getTableName )
-                failedLoadMetadataDetails.add(detail(0))
+          if (repairLimit > failedLoadMetadataDetails.size()) {
+            val detail = siTblLoadMetadataDetails
+              .filter(metadata => metadata.getLoadName.equals(metadataDetail))
+            val mainTableDetail = mainTableDetails
+              .filter(metadata => metadata.getLoadName.equals(metadataDetail))
+            if (null == detail || detail.length == 0) {
+              val newDetails = new LoadMetadataDetails
+              newDetails.setLoadName(metadataDetail)
+              LOGGER.error("Added in SILoadFailedSegment " + newDetails.getLoadName + " for SI" +
+                " table " + indexTableName + "." + carbonTable.getTableName)
+              failedLoadMetadataDetails.add(newDetails)
+            } else if (detail != null && detail.length != 0 && metadataDetail != null
+              && metadataDetail.length != 0) {
+              // If SI table has compacted segments and main table does not have
+              // compacted segments due to some failure while compaction, need to
+              // reload the original segments in this case.
+              if (detail(0).getSegmentStatus == SegmentStatus.COMPACTED &&
+                mainTableDetail(0).getSegmentStatus == SegmentStatus.SUCCESS) {
+                detail(0).setSegmentStatus(SegmentStatus.SUCCESS)
+                // in concurrent scenario, if a compaction is going on table, then SI
+                // segments are updated first in table status and then the main table
+                // segment, so in any load runs parallel this listener shouldn't consider
+                // those segments accidentally. So try to take the segment lock.
+                val segmentLockOfProbableOnCompactionSeg = CarbonLockFactory
+                  .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
+                    CarbonTablePath.addSegmentPrefix(mainTableDetail(0).getLoadName) +
+                      LockUsage.LOCK)
+                if (segmentLockOfProbableOnCompactionSeg.lockWithRetries()) {
+                  segmentLocks += segmentLockOfProbableOnCompactionSeg
+                  LOGGER.error("Added in SILoadFailedSegment " + detail(0).getLoadName + " for SI "
+                    + "table " + indexTableName + "." + carbonTable.getTableName)
+                  failedLoadMetadataDetails.add(detail(0))
+                }
               }
             }
           }
