@@ -572,11 +572,31 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
               rightNodeTableName = tableRight,
               nodeType = NodeType.And), newFilterCondition, tableNameRight)
           case (Some(tableLeft), None) =>
-            // return the left node
-            (newSIFilterTreeLeft, newLeft, tableNameLeft)
+            // recursively check for if all are NotNull
+            val leftNotNull = checkIfNotNullPresent(left)
+            val rightNotEqualTo = right match {
+              case Not(EqualTo(left: AttributeReference, right: Literal)) => true
+              case _ => false
+            }
+            if (leftNotNull && rightNotEqualTo) {
+              (filterTree, condition, None)
+            } else {
+              // return the left node
+              (newSIFilterTreeLeft, newLeft, tableNameLeft)
+            }
           case (None, Some(tableRight)) =>
-            // return the right node
-            (newSIFilterTreeRight, newRight, tableNameRight)
+            // recursively check for if all are NotNull
+            val rightNotNull = checkIfNotNullPresent(right)
+            val leftNotEqualTo = left match {
+              case Not(EqualTo(left: AttributeReference, right: Literal)) => true
+              case _ => false
+            }
+            if (rightNotNull && leftNotEqualTo) {
+              (filterTree, condition, None)
+            } else {
+              // return the right node
+              (newSIFilterTreeRight, newRight, tableNameRight)
+            }
           case _ =>
             (filterTree, condition, None)
         }
@@ -602,6 +622,20 @@ class CarbonSecondaryIndexOptimizer(sparkSession: SparkSession) {
             filterTree
         }
         (newFilterTree, condition, tableName)
+    }
+  }
+
+
+  def checkIfNotNullPresent(condition: Expression): Boolean = {
+    condition match {
+      case and@And(left, right) =>
+        if (checkIfNotNullPresent(left) && checkIfNotNullPresent(right)) {
+          true
+        } else {
+          false
+        }
+      case IsNotNull(child: AttributeReference) => true
+      case _ => false
     }
   }
 
